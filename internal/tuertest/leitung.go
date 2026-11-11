@@ -23,7 +23,9 @@ func BeobachteLeitung(t *testing.T) (broker *sse.Broker, zaehleBisMarke func(ere
 	broker = sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
-	strom := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }))
+	// Der Strom gilt als vertraut: Er sieht die Fassung eines Ereignisses mit Kennungen.
+	immer := func(*http.Request) bool { return true }
+	strom := httptest.NewServer(broker.Tuer(immer, func(*http.Request) string { return "" }, immer))
 	t.Cleanup(func() {
 		cancel()
 		strom.CloseClientConnections()

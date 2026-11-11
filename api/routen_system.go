@@ -121,11 +121,12 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// Der Live-Strom: nur Sitzung, kein Fachrecht. Jede angemeldete Oberfläche öffnet ihn
 	// (authStore und die Omnibox der Theke), und an ihm hängt der Herzschlag für die Anzeige
 	// „offline". Hinge er an einem Fachrecht, liefe jede Rolle ohne dieses Recht in eine Schleife
-	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ,
-	// Kennungen, Zeitstempel), keinen Namen und kein Buch (thekenEreignis in
-	// api/theke/eingabe_anfrage_antwort.go, VerlangeAnmeldung in api/tuer/sitzung.go). Die
-	// Anmeldung prüft er beim Aufbau und vor jedem Lebenszeichen (IstSitzungGueltig).
-	liveLeitung := s.Broker.Tuer(s.IstSitzungGueltig, kontoDerAnfrage)
+	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ und
+	// Zeitstempel), keinen Namen und kein Buch; die Kennung des Lesers bekommt nur, wer an der
+	// Theke bucht oder Leser einsehen darf (thekenEreignis in api/tuer/tuer.go, SiehtLeserKennung
+	// in api/tuer/rechte.go, VerlangeAnmeldung in api/tuer/sitzung.go). Die Anmeldung prüft er beim
+	// Aufbau und vor jedem Lebenszeichen (IstSitzungGueltig).
+	liveLeitung := s.Broker.Tuer(s.IstSitzungGueltig, kontoDerAnfrage, s.SiehtLeserKennung)
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
 }
 

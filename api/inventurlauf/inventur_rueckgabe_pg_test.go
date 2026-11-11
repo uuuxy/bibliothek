@@ -105,7 +105,7 @@ func TestScanVerbuchen_VerliehenesBuchWirdZurueckgebucht(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
-	strom := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }))
+	strom := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }, func(*http.Request) bool { return true }))
 	resp, err := http.Get(strom.URL)
 	if err != nil {
 		cancel()

@@ -241,7 +241,7 @@ func TestNebenlaeufigkeit(t *testing.T) {
 // verteiltes Ereignis kommt beim Browser an.
 func TestTuerLiefertStromUndEreignisse(t *testing.T) {
 	broker := NewBroker()
-	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto))
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto, immerGueltig))
 	defer srv.Close()
 
 	ctx, abbrechen := context.WithCancel(context.Background())
@@ -305,7 +305,7 @@ func TestTuerBeendetDenStromOhneGueltigeAnmeldung(t *testing.T) {
 		gefragt.Add(1)
 		return gueltig.Load()
 	}
-	srv := httptest.NewServer(broker.Tuer(gilt, ohneKonto))
+	srv := httptest.NewServer(broker.Tuer(gilt, ohneKonto, immerGueltig))
 	defer srv.Close()
 
 	ctx, abbrechen := context.WithCancel(context.Background())
@@ -362,7 +362,7 @@ func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
 	cancel()
 	warteAufHerunterfahren(t, broker)
 
-	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto))
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto, immerGueltig))
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL) //nolint:noctx // Testaufruf gegen den lokalen Testserver
@@ -415,7 +415,7 @@ func TestMeldeAn_GrenzenJeKontoUndGesamt(t *testing.T) {
 func TestTuerWeistUeberDerGrenzeAb(t *testing.T) {
 	broker := NewBroker()
 	broker.grenzeJeKonto = 1
-	srv := httptest.NewServer(broker.Tuer(immerGueltig, func(*http.Request) string { return "konto-1" }))
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, func(*http.Request) string { return "konto-1" }, immerGueltig))
 	defer srv.Close()
 	ctx, abbrechen := context.WithCancel(context.Background())
 	defer abbrechen()
@@ -470,4 +470,77 @@ func (b *Broker) istGeschlossen() bool {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return b.geschlossen
+}
+
+// ── Zwei Fassungen eines Ereignisses ───────────────────────────────────────────
+
+// oeffneStrom öffnet einen Strom an der Tür und liefert einen Leser hinter der Begrüßung.
+func oeffneStrom(t *testing.T, ctx context.Context, adresse string) *bufio.Reader {
+	t.Helper()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, adresse, nil)
+	if err != nil {
+		t.Fatalf("Anfrage: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Verbindung: %v", err)
+	}
+	t.Cleanup(func() { closeutil.Schliesse(resp.Body, "sse-test response body") })
+	leser := bufio.NewReader(resp.Body)
+	if zeile := leseZeile(t, leser); zeile != "event: connected" {
+		t.Fatalf("erste Zeile %q, erwartet die Begrüßung", zeile)
+	}
+	return leser
+}
+
+// datenNach liest bis zum Ereignis mit diesem Namen und liefert seine Datenzeile.
+func datenNach(t *testing.T, leser *bufio.Reader, ereignis string) string {
+	t.Helper()
+	for range 40 {
+		if leseZeile(t, leser) == "event: "+ereignis {
+			return leseZeile(t, leser)
+		}
+	}
+	t.Fatalf("das Ereignis %q kam nicht im Strom an", ereignis)
+	return ""
+}
+
+// Die Meldung über eine Ausleihe geht an jedes angemeldete Konto, die Kennung des Lesers darin
+// nur an Konten, die sie sehen dürfen. Die Tür fragt beim Aufbau und nach jedem Stück des Stroms
+// neu: Wird das Recht entzogen, während der Strom offen ist, wirkt es spätestens mit dem
+// nächsten Lebenszeichen.
+func TestVerteileNachVertrauen_KennungNurFuerVertrauteStroeme(t *testing.T) {
+	broker := NewBroker()
+	broker.takt = 20 * time.Millisecond
+	var thekeDarf atomic.Bool
+	thekeDarf.Store(true)
+	theke := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto, func(*http.Request) bool { return thekeDarf.Load() }))
+	defer theke.Close()
+	portal := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto, func(*http.Request) bool { return false }))
+	defer portal.Close()
+
+	ctx, abbrechen := context.WithCancel(context.Background())
+	defer abbrechen()
+	anDerTheke := oeffneStrom(t, ctx, theke.URL)
+	imPortal := oeffneStrom(t, ctx, portal.URL)
+	warteAufFensterzahl(t, broker, 2)
+
+	const mit, ohne = `{"event":"ausleihe","student_id":"l1"}`, `{"event":"ausleihe"}`
+	broker.VerteileNachVertrauen("action", mit, ohne)
+	if got := datenNach(t, anDerTheke, "action"); got != "data: "+mit {
+		t.Errorf("Theke bekam %q, erwartet die Fassung mit Kennung", got)
+	}
+	if got := datenNach(t, imPortal, "action"); got != "data: "+ohne {
+		t.Errorf("Portal bekam %q, erwartet die Fassung ohne Kennung", got)
+	}
+
+	// Das Recht wird entzogen, der Strom bleibt offen. Nach dem nächsten Lebenszeichen kommt
+	// auch dort nur noch die Fassung ohne Kennung.
+	thekeDarf.Store(false)
+	datenNach(t, anDerTheke, "ping")
+	datenNach(t, anDerTheke, "ping")
+	broker.VerteileNachVertrauen("action", mit, ohne)
+	if got := datenNach(t, anDerTheke, "action"); got != "data: "+ohne {
+		t.Errorf("nach dem Entzug bekam die Theke %q, erwartet die Fassung ohne Kennung", got)
+	}
 }

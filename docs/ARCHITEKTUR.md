@@ -2053,7 +2053,11 @@ Eine Tür, nach deren Commit andere Arbeitsplätze etwas anderes zeigen müssten
 Ereignis an alle verbundenen Stationen: Ausleihe und Rückgabe an der Theke und in der Inventur
 (`action`, `SendeThekenEreignis`), der LMF-Plan (`lmf-plan`), die Sitzungsfristen
 (`sitzungsfristen`), das Nachbuchen (`nachbuch-meldungen`) und die Bestätigung einer Bestellung
-(`bestellstand`). Alles andere steht am zweiten Arbeitsplatz beim nächsten Laden da. Der Broker hat
+(`bestellstand`). Alles andere steht am zweiten Arbeitsplatz beim nächsten Laden da. Die Leitung
+verlangt nur eine Anmeldung; `action` nennt deshalb weder Namen noch Buch, und die Kennung des
+Lesers steht nur in der Fassung für Konten mit `perform_actions` oder `view_students`
+(`sse.VerteileNachVertrauen`, `tuer.SiehtLeserKennung`; gefragt beim Aufbau und nach jedem Stück
+des Stroms). Der Broker hat
 **keinen** Event-Loop (Details und die Begründung:
 [5.4.4](#544-ssessego--broker-ohne-event-loop)). Im Client:
 Reconnect mit Guards (`isLoggedIn`, Timeout), damit ein abgemeldeter Tab nicht endlos
@@ -3728,10 +3732,6 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Selbstanmeldung schreibt). Ein Protokoll wären neue Personendaten des Personals mit eigener
   Frist; der Datenschutz-Nachweis sagt das so. Anlass: ein Vorfall oder eine Frage des
   Datenschutzbeauftragten.
-- **Die Live-Leitung** (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
-  trägt zu jeder Ausleihe und Rückgabe die Kennung des Lesers und den Zeitpunkt, aber weder
-  Namen noch Buch (PII-Matrix, Stufe 0). Zuhörer sind nur Theke und Abgänger-Seite. Frage mit
-  Anlass: Braucht jeder Empfänger die Kennung?
 - **Ausleihe und Rückgabe stempeln den Beginn ihrer Transaktion** (`CURRENT_TIMESTAMP` in
   `sqlAusleihe` und `BucheRueckgabeZum`, `repository/ausleihe.go`). Beginnt eine Ausleihe vor
   der Rückgabe desselben Exemplars und wartet an dessen Zeilensperre, liegt ihr `ausgeliehen_am`

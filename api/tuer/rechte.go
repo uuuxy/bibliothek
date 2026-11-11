@@ -180,3 +180,10 @@ func (b *Basis) HatRecht(r *http.Request, recht string) bool {
 	}
 	return erlaubt
 }
+
+// SiehtLeserKennung sagt, ob das Konto der Anfrage in der Live-Leitung die Kennung des Lesers
+// bekommt: wer an der Theke bucht oder Leser einsehen darf. Ein Fehler beim Nachsehen zählt als
+// nein (HatRecht).
+func (b *Basis) SiehtLeserKennung(r *http.Request) bool {
+	return b.HatRecht(r, "perform_actions") || b.HatRecht(r, "view_students")
+}

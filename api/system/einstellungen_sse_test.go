@@ -29,7 +29,7 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
 
-	stream := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }))
+	stream := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }, func(*http.Request) bool { return true }))
 	resp, err := http.Get(stream.URL)
 	if err != nil {
 		cancel()

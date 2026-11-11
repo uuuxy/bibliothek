@@ -69,9 +69,10 @@ func (b *Basis) Jetzt() time.Time {
 
 // thekenEreignis ist die Meldung „action" der Live-Leitung nach einer Ausleihe oder Rückgabe.
 // Jedes angemeldete Konto bekommt sie, auch das Kollegium; sie trägt deshalb keinen Namen und
-// kein Buch. Die Oberfläche braucht nur Art und Leser (Omnibox.svelte lädt die offene Akte neu,
-// Abgaenger.svelte die Liste); mit Titel oder Nummer des Buchs ergäbe die Kennung des Lesers eine
-// Lesehistorie neben der befristeten.
+// kein Buch. Die Kennung des Lesers steht nur in der Fassung für Konten, die an der Theke buchen
+// oder Leser einsehen dürfen (SiehtLeserKennung in rechte.go): Omnibox.svelte lädt damit die offene Akte neu.
+// Wer nur „Mein Portal" sieht, läse sonst mit, wann welches Kind ausleiht. Mit Titel oder Nummer
+// des Buchs ergäbe die Kennung eine Lesehistorie neben der befristeten.
 type thekenEreignis struct {
 	Art       string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
 	LeserID   string `json:"student_id,omitempty"`
@@ -82,10 +83,16 @@ type thekenEreignis struct {
 // Live-Leitung, damit die übrigen Arbeitsplätze die offene Akte neu laden. Theke und Inventur
 // buchen beide zurück und melden es hier, in derselben Form.
 func (b *Basis) SendeThekenEreignis(art, leserID string) {
-	daten, err := json.Marshal(thekenEreignis{Art: art, LeserID: leserID, Zeitpunkt: time.Now().Unix()})
-	if err == nil {
-		b.Broker.Verteile("action", string(daten))
+	jetzt := time.Now().Unix()
+	mitLeser, err := json.Marshal(thekenEreignis{Art: art, LeserID: leserID, Zeitpunkt: jetzt})
+	if err != nil {
+		return
 	}
+	ohneLeser, err := json.Marshal(thekenEreignis{Art: art, Zeitpunkt: jetzt})
+	if err != nil {
+		return
+	}
+	b.Broker.VerteileNachVertrauen("action", string(mitLeser), string(ohneLeser))
 }
 
 // Datumsformate (Go-Referenzzeit "Mon Jan 2 15:04:05 MST 2006").

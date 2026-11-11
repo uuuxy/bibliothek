@@ -49,6 +49,9 @@ type Broker struct {
 	// fenster ordnet jedem offenen Strom das Konto zu, das ihn geöffnet hat.
 	fenster map[chan string]string
 	jeKonto map[string]int
+	// vertraut sind die Ströme, deren Konto die Fassung eines Ereignisses mit Kennungen sehen
+	// darf (VerteileNachVertrauen). Ein Strom ohne Eintrag bekommt die knappe Fassung.
+	vertraut map[chan string]bool
 	// gemeldet sind die Konten, deren Abweisung schon im Log steht, solange sie an der Grenze
 	// bleiben; gesamtGemeldet dasselbe für die Grenze aller Ströme. Ein Konto, das immer wieder
 	// anklopft, schreibt so eine Zeile und nicht eine je Versuch.
@@ -66,7 +69,8 @@ type Broker struct {
 func NewBroker() *Broker {
 	return &Broker{
 		fenster: make(map[chan string]string), jeKonto: make(map[string]int), gemeldet: make(map[string]bool),
-		takt: lebenszeichenTakt, grenzeJeKonto: hoechstensJeKonto, grenzeGesamt: hoechstensGesamt,
+		vertraut: make(map[chan string]bool),
+		takt:     lebenszeichenTakt, grenzeJeKonto: hoechstensJeKonto, grenzeGesamt: hoechstensGesamt,
 	}
 }
 
@@ -95,6 +99,7 @@ func (b *Broker) fahreHerunter() {
 		delete(b.fenster, kanal)
 	}
 	clear(b.jeKonto)
+	clear(b.vertraut)
 	slog.Info("SSE: Broker heruntergefahren, alle Ströme geschlossen")
 }
 
@@ -140,6 +145,7 @@ func (b *Broker) meldeAb(kanal chan string) {
 		return
 	}
 	delete(b.fenster, kanal)
+	delete(b.vertraut, kanal)
 	close(kanal)
 	if b.jeKonto[konto]--; b.jeKonto[konto] <= 0 {
 		delete(b.jeKonto, konto)
@@ -172,6 +178,38 @@ func (b *Broker) Verteile(ereignis, daten string) {
 	}
 }
 
+// merkeVertrauen hält fest, ob der Strom die Fassung mit Kennungen bekommt. Für einen Strom, der
+// schon abgemeldet ist, tut es nichts.
+func (b *Broker) merkeVertrauen(kanal chan string, ja bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if _, offen := b.fenster[kanal]; offen {
+		b.vertraut[kanal] = ja
+	}
+}
+
+// VerteileNachVertrauen schickt ein Ereignis in zwei Fassungen: datenVertraut an die Ströme, deren
+// Konto Kennungen sehen darf (Tuer, vertraut), datenUebrige an alle anderen. So erfährt jede
+// Oberfläche, dass etwas geschehen ist, aber nur die Theke, bei wem.
+func (b *Broker) VerteileNachVertrauen(ereignis, datenVertraut, datenUebrige string) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	voll := fmt.Sprintf("event: %s\ndata: %s\n\n", ereignis, datenVertraut)
+	knapp := fmt.Sprintf("event: %s\ndata: %s\n\n", ereignis, datenUebrige)
+	for kanal := range b.fenster {
+		nachricht := knapp
+		if b.vertraut[kanal] {
+			nachricht = voll
+		}
+		select {
+		case kanal <- nachricht:
+		default:
+			// Wie in Verteile: Ein Fenster mit vollem Puffer verpasst das Ereignis.
+		}
+	}
+}
+
 // Tuer liefert die Tür, an der ein Fenster seinen Strom öffnet: Kopfzeilen für den Strom, ein
 // Lebenszeichen alle 15 Sekunden, dann die Ereignisse.
 //
@@ -179,7 +217,10 @@ func (b *Broker) Verteile(ereignis, daten string) {
 // aufgebaut wurde, und beendet ihn sonst. Der Strom hat keine Frist: Wer ihn mit einem kopierten
 // Token geöffnet hat, läse nach Abmelden oder Sperre sonst bis zum nächsten Neustart mit. konto
 // nennt das Konto der Anmeldung; je Konto und insgesamt ist die Zahl der Ströme begrenzt.
-func (b *Broker) Tuer(gilt func(*http.Request) bool, konto func(*http.Request) string) http.HandlerFunc {
+// vertraut sagt, ob das Konto die Fassung mit Kennungen bekommt (VerteileNachVertrauen); gefragt
+// wird beim Aufbau und nach jedem Stück des Stroms neu, damit ein entzogenes Recht spätestens
+// mit dem nächsten Lebenszeichen wirkt.
+func (b *Broker) Tuer(gilt func(*http.Request) bool, konto func(*http.Request) string, vertraut func(*http.Request) bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		kanal, err := b.meldeAn(konto(r))
 		if errors.Is(err, errHerunterfahren) {
@@ -194,6 +235,7 @@ func (b *Broker) Tuer(gilt func(*http.Request) bool, konto func(*http.Request) s
 			return
 		}
 		defer b.meldeAb(kanal)
+		b.merkeVertrauen(kanal, vertraut(r))
 
 		rc := http.NewResponseController(w)
 		hebeFristenAuf(rc)
@@ -204,7 +246,7 @@ func (b *Broker) Tuer(gilt func(*http.Request) bool, konto func(*http.Request) s
 		// Browser bricht mit ERR_HTTP2_PROTOCOL_ERROR ab. Der Strom läuft über HTTP/1.1 und
 		// HTTP/2 auch ohne; CORS regelt corsMiddleware für alle Wege.
 
-		b.schreibeEreignisse(w, r, rc, kanal, gilt)
+		b.schreibeEreignisse(w, r, rc, kanal, gilt, vertraut)
 	}
 }
 
@@ -223,7 +265,7 @@ func hebeFristenAuf(rc *http.ResponseController) {
 // schreibeEreignisse schreibt die Begrüßung, alle 15 Sekunden ein Lebenszeichen und die
 // verteilten Ereignisse, bis der Browser die Verbindung schließt, der Broker herunterfährt,
 // die Anmeldung nicht mehr gilt oder das Schreiben scheitert.
-func (b *Broker) schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, kanal <-chan string, gilt func(*http.Request) bool) {
+func (b *Broker) schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, kanal chan string, gilt, vertraut func(*http.Request) bool) {
 	// schreibe schickt ein Stück des Stroms sofort hinaus. Ein Fehler heißt, dass der Browser
 	// weg ist; die Tür endet dann.
 	schreibe := func(stueck string) error {
@@ -247,6 +289,7 @@ func (b *Broker) schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *
 		if !weiter || schreibe(stueck) != nil {
 			return
 		}
+		b.merkeVertrauen(kanal, vertraut(r))
 	}
 }
 
