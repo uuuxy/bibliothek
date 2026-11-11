@@ -8,7 +8,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
@@ -94,38 +93,38 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 	// darunter die Anschrift klein und grau.
 	zeilen := []core.Row{
 		row.New(6).Add(
-			col.New().Add(text.New(schule.Name, props.Text{Size: 12, Style: fontstyle.Bold})),
+			col.New().Add(marotoText(schule.Name, props.Text{Size: 12, Style: fontstyle.Bold})),
 		),
 		row.New(10).Add(
-			col.New().Add(text.New(schule.Absenderzeile(), props.Text{
+			col.New().Add(marotoText(schule.Absenderzeile(), props.Text{
 				Size:  8,
 				Color: &props.Color{Red: 100, Green: 100, Blue: 100},
 			})),
 		),
 		row.New(15).Add(
-			col.New().Add(text.New(
+			col.New().Add(marotoText(
 				fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s (Klasse %s)", schueler.Vorname, schueler.Nachname, schueler.Klasse),
 				props.Text{Size: 14, Style: fontstyle.Bold, Align: align.Center},
 			)),
 		),
 		row.New(10).Add(
-			col.New().Add(text.New(
+			col.New().Add(marotoText(
 				fmt.Sprintf("Stand: %s", jetzt.In(schulzeit.Zone()).Format(datumsformat)),
 				props.Text{Size: 10, Align: align.Right},
 			)),
 		),
 		row.New(10).Add(col.New()), // Abstand
 		row.New(10).Add(
-			col.New(kontoauszugSpalteTitel).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
-			col.New(kontoauszugSpalteBarcode).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
-			col.New(kontoauszugSpalteAusgeliehen).Add(text.New("Ausgeliehen", props.Text{Size: 10, Style: fontstyle.Bold})),
-			col.New(kontoauszugSpalteRueckgabe).Add(text.New("Rückgabe", props.Text{Size: 10, Style: fontstyle.Bold})),
+			col.New(kontoauszugSpalteTitel).Add(marotoText("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
+			col.New(kontoauszugSpalteBarcode).Add(marotoText("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
+			col.New(kontoauszugSpalteAusgeliehen).Add(marotoText("Ausgeliehen", props.Text{Size: 10, Style: fontstyle.Bold})),
+			col.New(kontoauszugSpalteRueckgabe).Add(marotoText("Rückgabe", props.Text{Size: 10, Style: fontstyle.Bold})),
 		),
 	}
 
 	if len(buecher) == 0 {
 		zeilen = append(zeilen, row.New(10).Add(
-			col.New().Add(text.New("-- Keine offenen Ausleihen --", props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center})),
+			col.New().Add(marotoText("-- Keine offenen Ausleihen --", props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center})),
 		))
 	}
 
@@ -145,10 +144,10 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 		}
 		zeilen = append(zeilen,
 			row.New(8).Add(
-				col.New(kontoauszugSpalteTitel).Add(text.New(buch.Titel, props.Text{Size: 10})),
-				col.New(kontoauszugSpalteBarcode).Add(text.New(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
-				col.New(kontoauszugSpalteAusgeliehen).Add(text.New(buch.Ausleihdatum.In(schulzeit.Zone()).Format(datumsformat), props.Text{Size: 10})),
-				col.New(kontoauszugSpalteRueckgabe).Add(text.New(rueckgabe, rueckgabeText)),
+				col.New(kontoauszugSpalteTitel).Add(marotoText(buch.Titel, props.Text{Size: 10})),
+				col.New(kontoauszugSpalteBarcode).Add(marotoText(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
+				col.New(kontoauszugSpalteAusgeliehen).Add(marotoText(buch.Ausleihdatum.In(schulzeit.Zone()).Format(datumsformat), props.Text{Size: 10})),
+				col.New(kontoauszugSpalteRueckgabe).Add(marotoText(rueckgabe, rueckgabeText)),
 			),
 		)
 	}
@@ -159,15 +158,15 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 		zeilen = append(zeilen,
 			row.New(15).Add(col.New()),
 			row.New(8).Add(col.New().Add(
-				text.New("_________________________________________________________", props.Text{Size: 10}),
+				marotoText("_________________________________________________________", props.Text{Size: 10}),
 			)),
 			row.New(8).Add(col.New().Add(
-				text.New("Datum, Unterschrift Bibliotheksteam (Freigabe zum Schulabgang)", props.Text{Size: 9, Style: fontstyle.Italic}),
+				marotoText("Datum, Unterschrift Bibliotheksteam (Freigabe zum Schulabgang)", props.Text{Size: 9, Style: fontstyle.Italic}),
 			)),
 		)
 	} else {
 		zeilen = append(zeilen, row.New(10).Add(col.New().Add(
-			text.New(kontoauszugHinweis(ueberfaellig), props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
+			marotoText(kontoauszugHinweis(ueberfaellig), props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
 		)))
 	}
 

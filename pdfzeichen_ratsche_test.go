@@ -82,7 +82,7 @@ func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
 // selbst.
 //
 // Blindheit: ein Übersetzer unter anderem Namen; eine Methode Format, die keinen Zeitpunkt
-// formatiert; Erzeuger mit maroto.
+// formatiert. Die Erzeuger mit maroto hält TestPDFMaroto_TextNurUeberMarotoText.
 
 // druckMethoden nennt je Druckmethode von gofpdf die Zahl ihrer Argumente und die Stelle des
 // Texts. Die Zahl hält andere Methoden gleichen Namens heraus (ein Write mit einem Argument).
@@ -256,5 +256,77 @@ func TestPDFDruck_DetektorKenntJedeForm(t *testing.T) {
 		"w.Write(bytes)\nbetrag.Text(wert)\np.Cell(10, 5, tr(name))\n}\n"
 	if v, n := druckaufrufeOhneUebersetzer(t, "probe.go", andere); n != 5 || len(v) != 4 {
 		t.Errorf("Druckmethoden: gelesen %d, gemeldet %d (%v) — erwartet 5 gelesen und 4 gemeldet", n, len(v), v)
+	}
+}
+
+// marotoTextPakete sind die Bausteine von maroto, die Text setzen. maroto übersetzt ihn selbst mit
+// dem cp1252-Übersetzer von gofpdf, an der Ersetzung aus pdfzeichen vorbei.
+var marotoTextPakete = map[string]bool{
+	"github.com/johnfercher/maroto/v2/pkg/components/text":      true,
+	"github.com/johnfercher/maroto/v2/pkg/components/signature": true,
+}
+
+// marotoTextTuer ist die eine Datei, die sie einbinden darf (pdf.marotoText).
+const marotoTextTuer = "pdf/maroto_text.go"
+
+// Ratsche: Jeder Text, den ein Erzeuger mit maroto druckt, geht durch pdf.marotoText.
+//
+// Warum: maroto ruft den cp1252-Übersetzer von gofpdf für jeden Text in einer Standardschrift
+// selbst auf. Ein Text, der direkt an text.New geht, steht als „Ay.e" statt „Ayse" auf
+// Kontoauszug, Rechnung oder LMF-Plan.
+//
+// Regel: Die Bausteine mit Text (marotoTextPakete) bindet nur marotoTextTuer ein. Sieht nicht: die
+// Seitenzahl aus der Konfiguration von maroto (ein festes Muster) und die Angaben im Kopf des
+// Dokuments (Titel, Autor); beides ist nicht im Einsatz.
+func TestPDFMaroto_TextNurUeberMarotoText(t *testing.T) {
+	var verstoesse []string
+	mitMaroto, tuerGefunden := 0, false
+	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if d.Name() == "node_modules" || d.Name() == ".git" || d.Name() == "frontend" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+			return nil
+		}
+		datei, err := parser.ParseFile(token.NewFileSet(), pfad, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, imp := range datei.Imports {
+			paket, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(paket, "github.com/johnfercher/maroto/") {
+				mitMaroto++
+			}
+			if !marotoTextPakete[paket] {
+				continue
+			}
+			if filepath.ToSlash(pfad) == marotoTextTuer {
+				tuerGefunden = true
+				continue
+			}
+			verstoesse = append(verstoesse, pfad+": "+paket)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Nicht-leer-Garantie: Ohne die Tür und ohne Erzeuger mit maroto prüft die Regel nichts.
+	if !tuerGefunden || mitMaroto < 10 {
+		t.Fatalf("%s bindet das Text-Paket nicht ein (%v), %d Einbindungen von maroto gefunden — die Regel greift ins Leere",
+			marotoTextTuer, tuerGefunden, mitMaroto)
+	}
+	if len(verstoesse) > 0 {
+		t.Fatalf("Text an maroto vorbei an der Ersetzung: ş, ł, ğ stünden als Punkte auf dem Blatt.\n  %s\n"+
+			"Form: marotoText(wert, props.Text{…}) aus %s.", strings.Join(verstoesse, "\n  "), marotoTextTuer)
 	}
 }

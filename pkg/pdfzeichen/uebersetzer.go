@@ -6,8 +6,8 @@
 // Drucker, „Łukasz" als „.ukasz". Ein Etikett, ein Brief oder ein Bescheid mit entstelltem
 // Namen ist schlimmer als einer ohne Häkchen unter dem s; deshalb wird vorher ersetzt.
 //
-// Jeder Übersetzer eines Dokuments läuft durch Uebersetzer; pdfzeichen_ratsche_test.go im
-// Wurzelpaket hält es.
+// Jeder Übersetzer eines Dokuments läuft durch Uebersetzer, jeder Text an maroto durch Ersetze;
+// pdfzeichen_ratsche_test.go im Wurzelpaket hält beides.
 package pdfzeichen
 
 import "strings"
@@ -35,5 +35,11 @@ var ersatz = strings.NewReplacer(
 //
 // Die Funktion nimmt den Übersetzer und nicht das Dokument; so kommt das Paket ohne gofpdf aus.
 func Uebersetzer(cp1252 func(string) string) func(string) string {
-	return func(text string) string { return cp1252(ersatz.Replace(text)) }
+	return func(text string) string { return cp1252(Ersetze(text)) }
+}
+
+// Ersetze ist die Ersetzung allein, für Erzeuger, die den cp1252-Übersetzer selbst aufrufen:
+// maroto tut das für jeden Text in einer Standardschrift (pdf.marotoText).
+func Ersetze(text string) string {
+	return ersatz.Replace(text)
 }

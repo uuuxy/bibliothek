@@ -6,7 +6,6 @@ package pdf
 import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 )
 
@@ -179,7 +178,7 @@ func (s lmfSatz) reihen() []core.Row {
 					r.Add(col.New(z.breite))
 					continue
 				}
-				r.Add(col.New(z.breite).Add(text.New(z.text, z.stil)))
+				r.Add(col.New(z.breite).Add(marotoText(z.text, z.stil)))
 			}
 		}
 		reihen = append(reihen, r)

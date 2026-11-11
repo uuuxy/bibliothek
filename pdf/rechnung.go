@@ -9,7 +9,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/code"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
@@ -75,7 +74,7 @@ func baueAnschrift(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 	// Fensterfeld nach DIN 5008: die Absenderzeile über der Anschrift.
 	m.AddRow(15,
 		col.New(12).Add(
-			text.New(schule.Absenderzeile(), props.Text{
+			marotoText(schule.Absenderzeile(), props.Text{
 				Size:  8,
 				Style: fontstyle.Bold,
 				Align: align.Left,
@@ -100,7 +99,7 @@ func baueAnschrift(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 	for _, zeile := range anschriftZeilen {
 		m.AddRow(5,
 			col.New(12).Add(
-				text.New(zeile, props.Text{
+				marotoText(zeile, props.Text{
 					Size:  10,
 					Align: align.Left,
 				}),
@@ -116,7 +115,7 @@ func baueKopf(m core.Maroto) {
 	// Datum rechtsbündig
 	m.AddRow(10,
 		col.New(12).Add(
-			text.New(fmt.Sprintf("Datum: %s", schulzeit.Jetzt().Format("02.01.2006")), props.Text{
+			marotoText(fmt.Sprintf("Datum: %s", schulzeit.Jetzt().Format("02.01.2006")), props.Text{
 				Size:  10,
 				Align: align.Right,
 			}),
@@ -126,7 +125,7 @@ func baueKopf(m core.Maroto) {
 	// Betreff
 	m.AddRow(15,
 		col.New(12).Add(
-			text.New("Ersatzforderung für verlorene Medien", props.Text{
+			marotoText("Ersatzforderung für verlorene Medien", props.Text{
 				Size:  12,
 				Style: fontstyle.Bold,
 				Align: align.Left,
@@ -139,12 +138,12 @@ func baueEinleitung(m core.Maroto) {
 	// Einleitung
 	m.AddRow(10,
 		col.New(12).Add(
-			text.New("Sehr geehrte Erziehungsberechtigte,", props.Text{Size: 10}),
+			marotoText("Sehr geehrte Erziehungsberechtigte,", props.Text{Size: 10}),
 		),
 	)
 	m.AddRow(15,
 		col.New(12).Add(
-			text.New("bitte überweisen Sie die Ersatzforderung für folgende Medien:", props.Text{Size: 10}),
+			marotoText("bitte überweisen Sie die Ersatzforderung für folgende Medien:", props.Text{Size: 10}),
 		),
 	)
 }
@@ -152,10 +151,10 @@ func baueEinleitung(m core.Maroto) {
 func bauePositionen(m core.Maroto, positionen []RechnungsPosition) {
 	// Kopf der Tabelle
 	m.AddRow(10,
-		col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
-		col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
-		col.New(2).Add(text.New("Ausgeliehen", props.Text{Size: 10, Style: fontstyle.Bold})),
-		col.New(2).Add(text.New("Preis", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(5).Add(marotoText("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
+		col.New(3).Add(marotoText("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
+		col.New(2).Add(marotoText("Ausgeliehen", props.Text{Size: 10, Style: fontstyle.Bold})),
+		col.New(2).Add(marotoText("Preis", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 
 	// Zeilen der Tabelle
@@ -167,8 +166,8 @@ func bauePositionen(m core.Maroto, positionen []RechnungsPosition) {
 
 	// Summenzeile
 	m.AddRow(15,
-		col.New(10).Add(text.New("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
-		col.New(2).Add(text.New(summe.Text()+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(10).Add(marotoText("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(marotoText(summe.Text()+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 }
 
@@ -188,11 +187,11 @@ func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsang
 	for _, block := range zahlungswegBloecke(land, traeger, zahlung) {
 		if block.Ueberschrift != "" {
 			m.AddRow(6, col.New(12).Add(
-				text.New(block.Ueberschrift, props.Text{Size: 9, Style: fontstyle.Bold}),
+				marotoText(block.Ueberschrift, props.Text{Size: 9, Style: fontstyle.Bold}),
 			))
 		}
 		for _, zeile := range block.Zeilen {
-			m.AddRow(5, col.New(12).Add(text.New(zeile, props.Text{Size: 9})))
+			m.AddRow(5, col.New(12).Add(marotoText(zeile, props.Text{Size: 9})))
 		}
 		m.AddRow(6, col.New(12))
 	}
@@ -203,14 +202,14 @@ func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsang
 func positionsZeilen(position RechnungsPosition) []core.Row {
 	return []core.Row{
 		row.New(12).Add(
-			col.New(5).Add(text.New(position.Titel, props.Text{Size: 10})),
+			col.New(5).Add(marotoText(position.Titel, props.Text{Size: 10})),
 			code.NewBarCol(3, position.Barcode, props.Barcode{Center: true, Percent: 90}),
-			col.New(2).Add(text.New(position.Ausleihdatum.In(schulzeit.Zone()).Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(position.Ersatzpreis.Text()+" EUR", props.Text{Size: 10, Align: align.Right})),
+			col.New(2).Add(marotoText(position.Ausleihdatum.In(schulzeit.Zone()).Format("02.01.2006"), props.Text{Size: 10})),
+			col.New(2).Add(marotoText(position.Ersatzpreis.Text()+" EUR", props.Text{Size: 10, Align: align.Right})),
 		),
 		row.New(5).Add(
 			col.New(5),
-			col.New(3).Add(text.New(position.Barcode, props.Text{Size: 8, Align: align.Center})),
+			col.New(3).Add(marotoText(position.Barcode, props.Text{Size: 8, Align: align.Center})),
 			col.New(4),
 		),
 	}

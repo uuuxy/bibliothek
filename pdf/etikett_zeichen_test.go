@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Die Etiketten der Bücher laufen durch die Zeichenersetzung (pdfzeichen) wie jeder andere
@@ -40,6 +41,54 @@ func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 		for _, verboten := range []string{".afak", ".ukasz", "W.sniewski"} {
 			if strings.Contains(text, verboten) {
 				t.Errorf("%s: entstellter Titel auf dem Etikett: %q", name, verboten)
+			}
+		}
+	}
+}
+
+// Die Erzeuger mit maroto (Kontoauszug und Laufzettel, Rechnung, LMF-Plan) übergeben ihren Text
+// dem cp1252-Übersetzer von gofpdf, den maroto selbst aufruft; ohne die Ersetzung käme
+// „Şafak Wiśniewski" als „.afak Wi.niewski" auf das Blatt. Geprüft am fertigen PDF.
+func TestMarotoErzeugerDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
+	jetzt := time.Date(2026, 11, 11, 9, 0, 0, 0, time.UTC)
+	auszug, err := ErzeugeKontoauszuege([]KontoauszugEintrag{{
+		Schueler: KontoauszugSchueler{Vorname: "Şafak", Nachname: "Wiśniewski", Klasse: "07G1"},
+		Buecher:  []KontoauszugBuch{{Titel: "Łukasz und die Brücke", Barcode: "B-1", Ausleihdatum: jetzt, Rueckgabedatum: jetzt}},
+	}}, testSchule(), true)
+	if err != nil {
+		t.Fatalf("Kontoauszug: %v", err)
+	}
+	rechnung, err := ErzeugeRechnung(Schueler{Vorname: "Şafak", Nachname: "Wiśniewski", Strasse: "Łąkowa", Hausnummer: "3",
+		PLZ: "61381", Ort: "Friedrichsdorf"},
+		[]RechnungsPosition{{Titel: "Łukasz und die Brücke", Barcode: "B-2", Ausleihdatum: jetzt, Ersatzpreis: 1995, Land: true}},
+		testSchule(), testZahlung())
+	if err != nil {
+		t.Fatalf("Rechnung: %v", err)
+	}
+	plan, err := ErzeugeLMFPlan(lmfTestPlan(3, "Frau Yılmaz holt ab"), jetzt)
+	if err != nil {
+		t.Fatalf("LMF-Plan: %v", err)
+	}
+
+	for _, fall := range []struct {
+		name     string
+		roh      []byte
+		erwartet []string
+		verboten []string
+	}{
+		{"Kontoauszug", auszug, []string{"Safak Wisniewski", "Lukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz"}},
+		{"Rechnung", rechnung, []string{"Safak Wisniewski", "Lakowa 3", "Lukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz", ".akowa"}},
+		{"LMF-Plan", plan, []string{"Yilmaz"}, []string{"Y.lmaz"}},
+	} {
+		text := pdfText(t, fall.roh)
+		for _, stueck := range fall.erwartet {
+			if !strings.Contains(text, stueck) {
+				t.Errorf("%s: %q steht nicht auf dem Blatt", fall.name, stueck)
+			}
+		}
+		for _, stueck := range fall.verboten {
+			if strings.Contains(text, stueck) {
+				t.Errorf("%s: entstellter Text auf dem Blatt: %q", fall.name, stueck)
 			}
 		}
 	}

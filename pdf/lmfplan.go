@@ -7,7 +7,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
@@ -67,12 +66,12 @@ func ErzeugeLMFPlan(abschnitte []LMFPlanAbschnitt, stand time.Time) ([]byte, err
 	p := page.New()
 
 	p.Add(row.New(satz.masse.kopfHoehe()).Add(col.New(breite).Add(
-		text.New("LMF-PLAN", props.Text{Size: satz.masse.dok, Style: fontstyle.Bold, Align: align.Center}))))
+		marotoText("LMF-PLAN", props.Text{Size: satz.masse.dok, Style: fontstyle.Bold, Align: align.Center}))))
 	for _, r := range satz.reihen() {
 		p.Add(r)
 	}
 	p.Add(row.New(satz.masse.fussHoehe()).Add(col.New(breite).Add(
-		text.New("Stand: "+stand.Format(datumsformat), props.Text{Size: satz.masse.fuss, Style: fontstyle.Italic, Align: align.Right}))))
+		marotoText("Stand: "+stand.Format(datumsformat), props.Text{Size: satz.masse.fuss, Style: fontstyle.Italic, Align: align.Right}))))
 
 	m.AddPages(p)
 	dokument, err := m.Generate()
