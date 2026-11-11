@@ -14,6 +14,9 @@
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
 	import { nimmDatei } from '../utils/dateiwahl.js';
+	import { leseKartenBild } from './kartenBild.js';
+	import { snackbars } from '../stores/snackbars.svelte.js';
+	import { fehlertext } from '../utils/fehlertext.js';
 	import { Trash } from '@lucide/svelte';
 
 	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
@@ -45,16 +48,16 @@
 	];
 
 	/** @param {Event} e */
-	function ladeBildHoch(e) {
+	async function ladeBildHoch(e) {
 		const file = nimmDatei(e);
 		// Das Element von jetzt: Bis die Datei gelesen ist, kann schon ein anderes gewählt sein.
 		const element = el;
 		if (!file || !element) return;
-		const reader = new FileReader();
-		reader.onload = (ev) => {
-			if (ev.target && typeof ev.target.result === 'string') element.content = ev.target.result;
-		};
-		reader.readAsDataURL(file);
+		try {
+			element.content = await leseKartenBild(file);
+		} catch (err) {
+			snackbars.addToast(fehlertext(err), 'error');
+		}
 	}
 
 	function loesche() {

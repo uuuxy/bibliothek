@@ -18,6 +18,7 @@
 	import { hatRecht } from '../../../../lib/menue.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
+	import { verkleinereBild } from '../../../../lib/utils/bildVerkleinern.js';
 
 	let { titelListe = $bindable(), istBearbeitung = $bindable(), formular = $bindable() } = $props();
 
@@ -94,44 +95,11 @@
 		}
 	}
 
+	// Ein Cover wird höchstens 600 × 900 Pixel groß gespeichert.
 	/** @param {File} file */
 	async function compressImageToWebp(file) {
-		return new Promise((resolve, reject) => {
-			const img = new Image();
-			img.onload = () => {
-				URL.revokeObjectURL(img.src);
-				const canvas = document.createElement('canvas');
-				let width = img.width;
-				let height = img.height;
-				const MAX_WIDTH = 600;
-				const MAX_HEIGHT = 900;
-
-				if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-					const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
-					width = Math.round(width * ratio);
-					height = Math.round(height * ratio);
-				}
-
-				canvas.width = width;
-				canvas.height = height;
-				const ctx = canvas.getContext('2d');
-				if (ctx) ctx.drawImage(img, 0, 0, width, height);
-
-				canvas.toBlob(
-					(blob) => {
-						if (!blob) reject(new Error('Compression failed'));
-						else
-							resolve(
-								new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' })
-							);
-					},
-					'image/webp',
-					0.82
-				);
-			};
-			img.onerror = () => reject(new Error('Invalid image'));
-			img.src = URL.createObjectURL(file);
-		});
+		const blob = await verkleinereBild(file, { maxBreite: 600, maxHoehe: 900, guete: 0.82 });
+		return new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), { type: 'image/webp' });
 	}
 
 	/** „Cover neu holen": nur das Bild, Titel und Autor bleiben (Server-Regel). */

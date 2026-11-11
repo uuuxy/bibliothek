@@ -264,6 +264,12 @@ func (a *EinstellungsAbfragen) Lade(ctx context.Context) (*SystemEinstellungen, 
 	return LadeEinstellungen(ctx, a.db)
 }
 
+// sqlLadeEinstellungen liest jede Zeile außer dem Ausweis-Design. Das Design liegt in derselben
+// Tabelle, trägt Bilder als Base64 und darf mehrere Megabyte groß sein; keine Einstellung steht
+// darin. Jede Ausleihe liest die Einstellungen und holte es sonst bei jedem Scan mit.
+const sqlLadeEinstellungen = `SELECT schluessel, wert FROM system_einstellungen WHERE schluessel <> '` +
+	AusweisLayoutSchluessel + `'`
+
 // LadeEinstellungen liest die Einstellungen über q, den Pool oder die Transaktion des Rufers,
 // und liefert bei einem Lesefehler dasselbe wie Lade. Die Abholfrist liest so die Sommerferien
 // über den Zugang, auf dem sie die Vormerkung zuteilt.
@@ -272,7 +278,7 @@ func LadeEinstellungen(ctx context.Context, q interface {
 }) (*SystemEinstellungen, error) {
 	e := einstellungenVorgabe()
 
-	rows, err := q.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
+	rows, err := q.Query(ctx, sqlLadeEinstellungen)
 	if err != nil {
 		return e, err
 	}

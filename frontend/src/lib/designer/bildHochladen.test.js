@@ -3,8 +3,16 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import Eigenschaften from './Eigenschaften.svelte';
 import Werkzeugleiste from './Werkzeugleiste.svelte';
 import { fuegeBilderHinzu, idStore, resetDesign } from './idDesignerStore.svelte.js';
+import { snackbars } from '../stores/snackbars.svelte.js';
 
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// jsdom zeichnet kein Bild: Das Verkleinern einer großen Datei scheitert hier wie an einer
+// Datei, die der Browser nicht lesen kann.
+vi.mock('../utils/bildVerkleinern.js', () => ({
+	verkleinereBild: vi.fn(async () => {
+		throw new Error('Invalid image');
+	})
+}));
 
 // Ein Bild für die Karte kommt nur über das Dateifeld: Ein Schul-Logo lässt sich sonst nicht
 // auf den Ausweis bringen.
@@ -34,6 +42,26 @@ const LEISTE = {
 
 describe('Ausweis-Designer: Bild hochladen', () => {
 	beforeEach(() => resetDesign());
+
+	// Ein Bild, das nicht ankommt, wird beim Namen gemeldet und hält die übrigen nicht auf.
+	it('die Werkzeugleiste meldet die Datei, die nicht ankommt, und nimmt die übrigen', async () => {
+		const melden = vi.spyOn(snackbars, 'addToast');
+		const vorher = idStore.front.elements.length;
+		const { container } = render(Werkzeugleiste, LEISTE);
+		const feld = /** @type {HTMLInputElement} */ (container.querySelector('input[type="file"]'));
+		const gross = new File([new Uint8Array(400_000)], 'plakat.png', { type: 'image/png' });
+
+		await fireEvent.change(feld, { target: { files: [datei(), gross] } });
+
+		await waitFor(() =>
+			expect(melden).toHaveBeenCalledWith(
+				'„plakat.png“ ist kein Bild, das der Browser lesen kann.',
+				'error'
+			)
+		);
+		expect(idStore.front.elements).toHaveLength(vorher + 1);
+		melden.mockRestore();
+	});
 
 	it('die Werkzeugleiste legt je Datei ein Bild auf die Karte', async () => {
 		const vorher = idStore.front.elements.length;

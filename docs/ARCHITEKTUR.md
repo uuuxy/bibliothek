@@ -2179,6 +2179,14 @@ Bleibt die Antwort aus, gilt der Stand im Speicher; gibt es keinen, steht die Me
 wird gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht
 und es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.
 
+**Bilder im Design.** Logo und freie Bilder liegen als Data-URL im Design, und das Design geht nach
+jeder Änderung ganz an den Server. `designer/kartenBild.js` lässt eine Datei bis 300 kB, wie sie
+ist, verkleinert eine größere auf höchstens 1200 Pixel Kantenlänge (rund 350 dpi über die Breite
+der Karte) und weist mit dem Namen der Datei ab, was danach über 1 MB liegt. Der Server nimmt für
+das ganze Design 5 MiB an. Es steht als Zeile `ausweis_layout` in `system_einstellungen`;
+`repository.LadeEinstellungen` liest diese Zeile nicht mit, weil jede Ausleihe die Einstellungen
+liest (`repository/einstellungen_ohne_design_pg_test.go`).
+
 **Etiketten: zwei Wege zum selben Blatt.** Ein Buch-Etikett entsteht im Druck-Center und für den
 Händler (Seite und Mailanhang). Ins Druck-Center führen der Etikett-Knopf der Exemplarkarte,
 „Barcodes drucken" in der Maske eines Titels und die Liste „Fehlende Etiketten"; einen eigenen

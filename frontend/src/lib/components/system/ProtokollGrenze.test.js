@@ -39,7 +39,10 @@ describe.each([
 	['Verwaltungsprotokoll', VerwaltungsProtokoll],
 	['Logbuch', Logbuch]
 ])('%s: gekappte Liste', (_name, Seite) => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	// Mit Klammern: Was beforeEach zurückgibt, ruft Vitest nach dem Test als Aufräumfunktion.
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('nennt die Grenze bei 1000 geladenen Einträgen', async () => {
 		antworte(1000);

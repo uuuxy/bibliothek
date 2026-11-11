@@ -21,6 +21,9 @@
 	import Button from '../components/ui/Button.svelte';
 	import WerkzeugleisteAuswahl from './WerkzeugleisteAuswahl.svelte';
 	import WerkzeugleisteDruck from './WerkzeugleisteDruck.svelte';
+	import { leseKartenBild } from './kartenBild.js';
+	import { snackbars } from '../stores/snackbars.svelte.js';
+	import { fehlertext } from '../utils/fehlertext.js';
 
 	/** @type {HTMLInputElement | undefined} */
 	let bildUploadEl = $state();
@@ -68,18 +71,15 @@
 		const feld = /** @type {HTMLInputElement} */ (e.currentTarget);
 		const files = feld.files;
 		if (!files || files.length === 0) return;
+		// Jede Datei für sich: Ein Bild, das nicht ankommt, hält die übrigen nicht auf.
+		const gelesen = await Promise.allSettled(Array.from(files).map(leseKartenBild));
 		/** @type {string[]} */
-		const bildDaten = await Promise.all(
-			Array.from(files).map(
-				(file) =>
-					new Promise((resolve) => {
-						const reader = new FileReader();
-						reader.onload = (ev) => resolve(/** @type {string} */ (ev.target?.result ?? ''));
-						reader.readAsDataURL(file);
-					})
-			)
-		);
-		fuegeBilderHinzu(side, bildDaten);
+		const bildDaten = [];
+		for (const g of gelesen) {
+			if (g.status === 'fulfilled') bildDaten.push(g.value);
+			else snackbars.addToast(fehlertext(g.reason), 'error');
+		}
+		if (bildDaten.length > 0) fuegeBilderHinzu(side, bildDaten);
 		// Leeren, damit sich dieselbe Datei noch einmal wählen lässt.
 		feld.value = '';
 	}
