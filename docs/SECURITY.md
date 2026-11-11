@@ -267,8 +267,7 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 
 - **Decompression-Bomb-Schutz:** `pkg/imageutil.PruefeBildgroesse()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
 - **MIME-Prüfung:** Über echte Dekodierung, nicht nur Dateiendung.
-- **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem.
-- **Path-Traversal:** Alle Pfadoperationen nutzen `filepath.Base` + `filepath.Clean` + Prefix-Guard.
+- **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem, also auch kein Dateipfad, den eine Anfrage beeinflussen könnte.
 
 ### Cover-Uploads
 
@@ -676,7 +675,7 @@ Rechtsgrundlagen** (Entwurf nach HBDI-Muster in
 | **Zweck**           | Nachweis von Ausleihe und Rücklauf (Bestandskartei, HKM-Leitfaden 11.3), Mahnung, Schadensersatz (12.3–12.7, Leistungsbescheid über die Schulaufsicht)                                         | Ausleihverwaltung, Rückgabeerinnerung, Vormerkung                                                                                                           |
 | **Anschrift**       | gedruckte Rechnung / Elternbrief                                                                                                                                                               | gedruckter Elternbrief bei Mahnung                                                                                                                          |
 | **Eltern-E-Mail**   | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System                                                                                                                     | dito                                                                                                                                                        |
-| **Löschung**        | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen                                                                                                                                | Abgänger-Routine + Lesehistorie-Trennung nach 90 Tagen                                                                                                      |
+| **Löschung**        | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen                                                                                                                                | Abgänger-Routine + Lesehistorie-Trennung einen Tag nach der Rückgabe                                                                                        |
 
 Lit. b
 (Vertrag) passt auf keine der beiden Tätigkeiten, lit. c (rechtliche Verpflichtung)
@@ -684,9 +683,9 @@ trifft allenfalls die Lernmittel mittelbar. Die Einordnung oben folgt dem hessis
 Rahmen (SchDSV, § 83a HSchG, HBDI-Muster); bestätigen muss sie der schulische
 Datenschutzbeauftragte.
 
-**Aufbewahrung/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge) leert die
-Anonymisierungsroutine (`repository.AnonymisiereAbgaenger`) diese Felder umgehend; Lesehistorie
-nach Frist (oben). Was bei der Schule liegt: [datenschutz/nachweis.md](datenschutz/nachweis.md#10-was-bei-der-schule-liegt), Abschnitt 10.
+**Aufbewahrung/Löschung:** Nach dem Abgang eines Schülers (ohne offene Vorgänge) leert die
+Anonymisierungsroutine (`repository.AnonymisiereAbgaenger`) diese Felder nach der Karenzzeit
+(`abgaenger_karenz_tage`, Vorgabe 90 Tage); Lesehistorie nach Frist (oben, beide einstellbar). Was bei der Schule liegt: [datenschutz/nachweis.md](datenschutz/nachweis.md#10-was-bei-der-schule-liegt), Abschnitt 10.
 
 ---
 

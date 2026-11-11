@@ -199,9 +199,9 @@ gearbeitet; die Schlüssel des Servers sind bekannt geworden.
 Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 
 - Alle Sicherungen liegen auf demselben Server; ein zweiter Ort ist nicht eingerichtet (7.3).
-  Wird er als S3-Speicher eingerichtet, löscht das Programm dort nie: Ohne eine Löschregel am
-  Speicher bliebe jede Sicherung dort unbegrenzt, mit allen Personen, die zu ihrem Zeitpunkt im
-  Programm standen.
+  Wird er als S3-Speicher eingerichtet, löscht das Programm dort nach derselben Aufbewahrung wie
+  auf dem Server (`jobs/backup_auslagerung.go`). Lässt sich die Liste am Speicher nicht lesen,
+  löscht es in dieser Nacht nichts.
 - Die Sicherungen decken die Sommerferien ab; gelöschte Personen bleiben
   damit bis zu etwa drei Monate in den Sicherungen. Wer einen älteren Stand zurückspielt, holt
   Personen zurück, die seitdem von Hand endgültig gelöscht wurden, und das Protokoll dieser
@@ -228,7 +228,7 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über ein
   früheres Konto).
 - Anmeldungen stehen nicht im Protokoll; nach einem Missbrauch lässt sich nicht nachsehen, wann
-  und von wo ein Konto angemeldet war (6.1).
+  und von wo ein Konto angemeldet war ([ARCHITEKTUR.md](../ARCHITEKTUR.md) 11.5).
 
 ## 10. Was bei der Schule liegt
 
