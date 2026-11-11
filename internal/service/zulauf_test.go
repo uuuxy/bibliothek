@@ -179,3 +179,25 @@ func TestLadeZulauf_AbfragefehlerGehtWeiter(t *testing.T) {
 		t.Errorf("unmet expectations: %v", err)
 	}
 }
+
+// Zwei Titel mit demselben Wortlaut in einer Bestellung, etwa Schülerbuch und Arbeitsheft,
+// sind zwei Posten: Jeder trägt seine ISBN, sein Cover und seine Exemplare und lässt sich im
+// Wareneingang allein ankreuzen.
+func TestOrdneExemplarZu_GleicherTitelEigenerPosten(t *testing.T) {
+	gruppe := &Zulaufgruppe{}
+	ordneExemplarZu(gruppe, exemplarZurGruppe{TitelID: "t1", Titel: "Green Line 3", ISBN: "111", CoverURL: "c1", ExemplarID: "e1"})
+	ordneExemplarZu(gruppe, exemplarZurGruppe{TitelID: "t2", Titel: "Green Line 3", ISBN: "222", CoverURL: "c2", ExemplarID: "e2"})
+	ordneExemplarZu(gruppe, exemplarZurGruppe{TitelID: "t1", Titel: "Green Line 3", ISBN: "111", CoverURL: "c1", ExemplarID: "e3"})
+
+	if len(gruppe.Posten) != 2 {
+		t.Fatalf("%d Posten, erwartet 2: %+v", len(gruppe.Posten), gruppe.Posten)
+	}
+	erst, zweit := gruppe.Posten[0], gruppe.Posten[1]
+	if erst.TitelID != "t1" || erst.ISBN != "111" || erst.Menge != 2 || strings.Join(erst.ExemplarIDs, ",") != "e1,e3" {
+		t.Errorf("erster Posten: %+v", *erst)
+	}
+	if zweit.TitelID != "t2" || zweit.ISBN != "222" || zweit.CoverURL != "c2" || zweit.Menge != 1 ||
+		strings.Join(zweit.ExemplarIDs, ",") != "e2" {
+		t.Errorf("zweiter Posten: %+v", *zweit)
+	}
+}

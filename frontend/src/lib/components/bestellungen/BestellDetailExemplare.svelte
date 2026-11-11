@@ -15,15 +15,16 @@
 	let { exemplare } = $props();
 
 	// Nach Titel gebündelt: Ein Karton mit 30 Büchern ergäbe sonst 30 gleiche Zeilen, in
-	// denen nur die Nummer wechselt. Die Reihenfolge kommt aus der Abfrage (Titel, dann
-	// Barcode aufsteigend) — hier wird nur gruppiert, nicht umsortiert.
+	// denen nur die Nummer wechselt. Gebündelt wird nach der Kennung des Titels, denn
+	// Schülerbuch und Arbeitsheft heißen oft gleich. Die Reihenfolge kommt aus der Abfrage
+	// (Titel, Kennung, dann Barcode aufsteigend) — hier wird nur gruppiert, nicht umsortiert.
 	const gruppen = $derived.by(() => {
-		/** @type {{titel: string, stuecke: any[]}[]} */
+		/** @type {{titelId: string, titel: string, stuecke: any[]}[]} */
 		const out = [];
 		for (const e of exemplare) {
 			const letzte = out.at(-1);
-			if (letzte && letzte.titel === e.titel_name) letzte.stuecke.push(e);
-			else out.push({ titel: e.titel_name, stuecke: [e] });
+			if (letzte && letzte.titelId === e.titel_id) letzte.stuecke.push(e);
+			else out.push({ titelId: e.titel_id, titel: e.titel_name, stuecke: [e] });
 		}
 		return out;
 	});
@@ -36,7 +37,7 @@
 	</p>
 {:else}
 	<div class="space-y-4">
-		{#each gruppen as g (g.titel)}
+		{#each gruppen as g (g.titelId)}
 			<div>
 				<p class="mb-1.5 text-sm font-semibold text-on-surface">
 					{g.titel}

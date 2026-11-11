@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"bibliothek/api/tuer"
@@ -168,5 +169,36 @@ func TestBestelldetail_UnbekannteBestellungIst404(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status = %d, erwartet 404 — Rumpf: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// Zwei Titel mit demselben Wortlaut in einer Lieferung, etwa Schülerbuch und Arbeitsheft, mit
+// verschränkten Barcodes: Die Exemplare kommen je Titel zusammen, darin nach Barcode. Die Ansicht
+// bündelt aufeinanderfolgende Exemplare desselben Titels; kämen sie verschränkt, zerfiele jeder
+// Titel in Gruppen von einem Stück.
+func TestBestelldetail_GleicherTitelKommtJeKennungZusammen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Gleichnamig", true)
+	bestellung := bestellungFuerLieferant(t, pool, lieferant)
+	buch := testdaten.LegeTitelAn(t, pool, "Green Line 3", 0)
+	heft := testdaten.LegeTitelAn(t, pool, "Green Line 3", 0)
+	exemplarAusBestellung(t, pool, buch, bestellung, "GL-0001", true)
+	exemplarAusBestellung(t, pool, heft, bestellung, "GL-0002", true)
+	exemplarAusBestellung(t, pool, buch, bestellung, "GL-0003", true)
+	exemplarAusBestellung(t, pool, heft, bestellung, "GL-0004", true)
+
+	detail := holeDetail(t, srv, pool, bestellung)
+
+	barcodes := make([]string, 0, len(detail.Exemplare))
+	for _, e := range detail.Exemplare {
+		barcodes = append(barcodes, e.BarcodeID)
+	}
+	// Welcher der beiden Titel vorn steht, entscheidet seine Kennung; beide Reihen sind richtig.
+	reihe := strings.Join(barcodes, " ")
+	if reihe != "GL-0001 GL-0003 GL-0002 GL-0004" && reihe != "GL-0002 GL-0004 GL-0001 GL-0003" {
+		t.Errorf("Exemplare in der Reihe %q, erwartet je Titel zusammen und darin nach Barcode", reihe)
 	}
 }

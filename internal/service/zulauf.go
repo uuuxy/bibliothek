@@ -139,10 +139,12 @@ type exemplarZurGruppe struct {
 	ExemplarID string
 }
 
-// ordneExemplarZu zählt ein Exemplar zum Posten seines Titels oder legt den Posten an.
+// ordneExemplarZu zählt ein Exemplar zum Posten seines Titels oder legt den Posten an. Der
+// Posten gehört zur Kennung des Titels: Schülerbuch und Arbeitsheft heißen oft gleich und haben
+// doch eigene ISBN, eigenes Cover und eigene Exemplare.
 func ordneExemplarZu(gruppe *Zulaufgruppe, e exemplarZurGruppe) {
 	for _, posten := range gruppe.Posten {
-		if posten.Titel == e.Titel {
+		if posten.TitelID == e.TitelID {
 			posten.Menge++
 			posten.ExemplarIDs = append(posten.ExemplarIDs, e.ExemplarID)
 			return

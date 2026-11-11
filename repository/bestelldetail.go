@@ -184,14 +184,16 @@ func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID
 
 // ladeExemplare liefert die Bücher, die aus dieser Bestellung entstanden sind, sortiert nach
 // Titel und Barcode: Der Barcode klebt auf dem Buch, und wer es im Regal sucht, sucht in
-// aufsteigender Reihenfolge.
+// aufsteigender Reihenfolge. Zwischen beiden steht die Kennung des Titels, damit zwei Titel mit
+// demselben Wortlaut (Schülerbuch und Arbeitsheft) nicht ineinander verschränkt kommen: Die
+// Ansicht bündelt aufeinanderfolgende Exemplare desselben Titels.
 func (a *BestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT e.barcode_id, e.titel_id::text, t.titel, e.etikett_gedruckt, e.ist_ausgesondert
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.bestellung_id = $1
-		ORDER BY t.titel COLLATE deutsch, e.barcode_id
+		ORDER BY t.titel COLLATE deutsch, e.titel_id, e.barcode_id
 	`, bestellungID)
 	if err != nil {
 		return nil, err
