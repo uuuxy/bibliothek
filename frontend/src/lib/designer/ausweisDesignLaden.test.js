@@ -5,12 +5,8 @@ import {
 	ladeAusweisDesign,
 	meldeDesignNichtGeladen
 } from './ausweisDesignLaden.js';
-import {
-	defaultFrontElements,
-	idStore,
-	PLATZHALTER_SCHULNAME,
-	vergissDesignLadezustand
-} from './idDesignerStore.svelte.js';
+import { defaultFrontElements, idStore, PLATZHALTER_SCHULNAME } from './idDesignerStore.svelte.js';
+import { vergissDesignLadezustand } from './designSitzung.js';
 import { apiFetch } from '../apiFetch.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
 import { ohneKommentare, relPfad, sammleQuelldateien, srcRoot } from '../hygiene-quellen.js';

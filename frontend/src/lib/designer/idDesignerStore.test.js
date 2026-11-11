@@ -7,8 +7,10 @@ import {
 	wendeSchulstammdatenAn,
 	PLATZHALTER_SCHULNAME,
 	PLATZHALTER_ADRESSE,
-	fuegeRahmenHinzu
+	fuegeRahmenHinzu,
+	serializeDesign
 } from './idDesignerStore.svelte.js';
+import { designStand, designWurdeGeladen, vergissDesignLadezustand } from './designSitzung.js';
 
 function header() {
 	return idStore.front.elements.find((e) => e.id === 'header');
@@ -147,5 +149,27 @@ describe('applyDesign: die Druckart', () => {
 
 		applyDesign({ printMode: 'card' });
 		expect(idStore.printMode).toBe('card');
+	});
+});
+
+// Der Änderungsstand kommt mit dem Design vom Server und geht beim Speichern zurück
+// (idDesignPersistenz). Er steht neben dem Store, nicht darin: Das Design, das an den Server
+// geht, trägt ihn nicht.
+describe('applyDesign: Änderungsstand', () => {
+	beforeEach(() => {
+		vergissDesignLadezustand();
+	});
+
+	it('merkt sich den Stand der Antwort und hält ihn aus dem Design heraus', () => {
+		applyDesign({ stand: '2026-11-11T21:15:03.123456Z', printMode: 'card' });
+		expect(designStand()).toBe('2026-11-11T21:15:03.123456Z');
+		expect(designWurdeGeladen()).toBe(true);
+		expect(JSON.stringify(serializeDesign())).not.toContain('2026-11-11T21:15:03');
+	});
+
+	it('nimmt eine Antwort ohne Stand als „noch keines gespeichert"', () => {
+		applyDesign({ stand: 'alt' });
+		applyDesign({});
+		expect(designStand()).toBe('');
 	});
 });

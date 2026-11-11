@@ -5,8 +5,13 @@ import AusweisDesigner from './AusweisDesigner.svelte';
 import { apiFetch } from '../apiFetch.js';
 import { authStore } from '../stores/authStore.svelte.js';
 import { idStore, resetDesign } from './idDesignerStore.svelte.js';
+import { serverAntwort } from '../serverAntwort.js';
 
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// leseApiFehler bleibt echt: Die Meldung des Servers soll ankommen, wie sie der Bildschirm zeigt.
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../stores/authStore.svelte.js', () => ({
 	authStore: { currentUser: /** @type {any} */ (null) }
 }));
@@ -190,5 +195,73 @@ describe('AusweisDesigner: Auto-Save beim Verlassen', () => {
 		const put = vi.mocked(apiFetch).mock.calls.find(([, optionen]) => optionen?.method === 'PUT');
 		expect(put, 'beim Verlassen muss der ausstehende Stand gespeichert werden').toBeTruthy();
 		expect(String(put?.[1]?.body)).toContain('smaragd');
+	});
+});
+
+// Das Design kannte keinen Änderungsstand: Ein Designer, der seit dem Vormittag offen stand,
+// ersetzte mit seiner nächsten Änderung das ganze Design, das ein anderer Platz inzwischen
+// gespeichert hatte. Jetzt schickt er den Stand mit, den er geladen hat, und der Server lehnt
+// einen überholten ab.
+describe('AusweisDesigner: ein anderer Platz hat inzwischen gespeichert', () => {
+	const konflikt = () =>
+		serverAntwort(409, {
+			error:
+				'Das Ausweis-Design wurde inzwischen an einem anderen Platz geändert. Nichts gespeichert.'
+		});
+
+	it('schickt den geladenen Stand mit und danach den aus der Antwort', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (_url, optionen) =>
+			optionen?.method === 'PUT'
+				? antwort(true, { status: 'gespeichert', stand: 'S2' })
+				: antwort(true, { stand: 'S1' })
+		);
+		render(AusweisDesigner);
+		await stillhalten();
+
+		idStore.printMode = 'etikett';
+		await entprellungAbwarten();
+		idStore.printMode = 'card';
+		await entprellungAbwarten();
+
+		expect(schreibende().map(([url]) => url)).toEqual([
+			'/api/ausweis-layout?stand=S1',
+			'/api/ausweis-layout?stand=S2'
+		]);
+	});
+
+	it('sagt es, speichert nicht wieder dasselbe und lädt auf Wunsch neu, ohne zu schreiben', async () => {
+		let design = { stand: 'S1', printMode: 'card' };
+		vi.mocked(apiFetch).mockImplementation(async (_url, optionen) =>
+			optionen?.method === 'PUT' ? konflikt() : antwort(true, design)
+		);
+		const { findByText, getByRole, queryByRole, queryByText } = render(AusweisDesigner);
+		await stillhalten();
+
+		idStore.printMode = 'etikett';
+		await entprellungAbwarten();
+
+		expect(
+			await findByText(
+				'Speichern fehlgeschlagen: Das Ausweis-Design wurde inzwischen an einem anderen Platz geändert. Nichts gespeichert.'
+			)
+		).toBeTruthy();
+		// „Erneut speichern" liefe wieder in den Konflikt.
+		expect(queryByRole('button', { name: 'Erneut speichern' })).toBeNull();
+		expect(schreibende()).toHaveLength(1);
+
+		// Der andere Platz hat inzwischen den Etikettenbogen gewählt und auf S2 gespeichert.
+		design = { stand: 'S2', printMode: 'card' };
+		getByRole('button', { name: 'Neu laden und verwerfen' }).click();
+		await stillhalten();
+		await entprellungAbwarten();
+
+		expect(idStore.printMode, 'die Änderung dieses Platzes ist verworfen').toBe('card');
+		expect(queryByText(/Speichern fehlgeschlagen/)).toBeNull();
+		expect(schreibende(), 'das eben Geladene wird nicht zurückgeschrieben').toHaveLength(1);
+
+		// Die nächste Änderung geht auf dem neuen Stand hinaus.
+		idStore.printMode = 'etikett';
+		await entprellungAbwarten();
+		expect(schreibende().at(-1)?.[0]).toBe('/api/ausweis-layout?stand=S2');
 	});
 });

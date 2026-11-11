@@ -32,7 +32,6 @@ import (
 // Commit begründen. Sinkt ein Zähler (Stelle behoben oder entfernt), wird er hier abgesenkt; die
 // Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
-	"repository/ausweis_layout.go:SchreibeAusweisLayout":      1,
 	"repository/dsgvo_auskunft.go:ProtokolliereDSGVOAuskunft": 1,
 	// Die Anweisungen des LUSD-Imports: die Sperre des Laufs (kein Schreibvorgang), Adoption
 	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf

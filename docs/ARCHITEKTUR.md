@@ -2171,7 +2171,13 @@ Etikett) und Bogenformat: Alle Arbeitsplätze drucken dasselbe. Vor dem Design t
 jedem Weg ersetzt `applyDesign` damit den Platzhalter „Musterstadt“. Steht nur `schule` in der
 Antwort, ist noch keines gespeichert; ein gescheitertes Lesen beantwortet der Server deshalb mit
 einem Fehler (`api/druck/ausweis_layout_tuer_pg_test.go`). Gespeichert wird nur eine Änderung: Den
-Designer zu öffnen, schreibt nichts. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
+Designer zu öffnen, schreibt nichts. Und gespeichert wird nur auf dem Stand, den der Designer
+geladen hat: Die Antwort trägt neben `schule` den Änderungsstand `stand`, das Speichern schickt ihn
+als `?stand=` zurück (leer: noch keines gespeichert) und bekommt den neuen. Hat ein anderer Platz
+inzwischen gespeichert, antwortet der Server mit 409 und schreibt nichts
+(`repository.SchreibeAusweisLayout`, Prüfen und Schreiben in einer Anweisung); der Designer bietet
+dann „Neu laden und verwerfen“ an. Der Stand steht neben dem Store (`designer/designSitzung.js`),
+nicht im Design. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
 bleiben offen. Gedruckt wird nur mit geladenem Design: Jeder Druckweg fragt vor dem Druckdialog
 `designFuerDruck` (`designer/ausweisDesignLaden.js`). Es holt das Design jedes Mal neu, denn eine
 Seite bleibt an der Theke tagelang offen, und Design und Schule ändern sich an anderen Plätzen.

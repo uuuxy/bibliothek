@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -29,8 +30,9 @@ import (
 // Und „noch kein Design" antwortet sie nur, wenn wirklich keines gespeichert ist: Gedruckt würde
 // sonst mit den Vorgabewerten.
 
-// kopfDerSchule ist der Teil der Antwort vor dem Design (designMitSchule).
-var kopfDerSchule = regexp.MustCompile(`^\{"schule":\{[^{}]*\}`)
+// kopfDerSchule ist der Teil der Antwort vor dem Design (designMitSchule): die Schule und der
+// Änderungsstand.
+var kopfDerSchule = regexp.MustCompile(`^\{"schule":\{[^{}]*\},"stand":"[^"]*"`)
 
 // ohneKopf liefert die Antwort ohne den Kopf der Schule: das Design, wie es gespeichert ist.
 func ohneKopf(t *testing.T, rumpf string) string {
@@ -83,9 +85,26 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		}
 		return ohneKopf(t, rec.Body.String())
 	}
+	// stand liest den Änderungsstand, wie ihn der Designer beim Laden bekommt.
+	stand := func(t *testing.T) string {
+		t.Helper()
+		var antwort struct {
+			Stand string `json:"stand"`
+		}
+		rec := rufe(t, http.MethodGet, pfad, "")
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Stand lesen: %v: %.200s", err, rec.Body.String())
+		}
+		return antwort.Stand
+	}
+	speichereAuf := func(t *testing.T, rumpf, aufStand string) *httptest.ResponseRecorder {
+		t.Helper()
+		return rufe(t, http.MethodPut, pfad+"?stand="+url.QueryEscape(aufStand), rumpf)
+	}
+	// speichere speichert wie ein Designer, der den Stand gerade geladen hat.
 	speichere := func(t *testing.T, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
-		return rufe(t, http.MethodPut, pfad, rumpf)
+		return speichereAuf(t, rumpf, stand(t))
 	}
 	// abgewiesen prüft den Status und dass das gespeicherte Design dasselbe geblieben ist.
 	abgewiesen := func(t *testing.T, rumpf string, status int) *httptest.ResponseRecorder {
@@ -177,6 +196,55 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		}
 		if rec := speichere(t, design); rec.Code != http.StatusOK {
 			t.Fatalf("Speichern: Status %d", rec.Code)
+		}
+	})
+
+	// Der Fall, für den es den Stand gibt: Platz A hat den Designer seit dem Vormittag offen,
+	// Platz B speichert am Nachmittag. Die nächste Änderung an A ersetzte sonst das ganze Design
+	// von B, ohne Hinweis an einem der beiden Plätze.
+	t.Run("ein veralteter Stand: 409, das Design des anderen Platzes bleibt", func(t *testing.T) {
+		standVonA := stand(t)
+		const vonB = `{"printMode":"etikett","front":[{"id":"logo-neu"}],"back":[]}`
+		recB := speichere(t, vonB)
+		if recB.Code != http.StatusOK {
+			t.Fatalf("Speichern an Platz B: Status %d: %s", recB.Code, recB.Body.String())
+		}
+		var antwortB struct {
+			Stand string `json:"stand"`
+		}
+		if err := json.Unmarshal(recB.Body.Bytes(), &antwortB); err != nil {
+			t.Fatalf("Antwort von B lesen: %v", err)
+		}
+		if antwortB.Stand == "" || antwortB.Stand == standVonA || antwortB.Stand != stand(t) {
+			t.Errorf("die Antwort nennt den Stand %q; vorher %q, geladen %q", antwortB.Stand, standVonA, stand(t))
+		}
+
+		recA := speichereAuf(t, design, standVonA)
+		if recA.Code != http.StatusConflict {
+			t.Errorf("Speichern an Platz A auf dem alten Stand: Status %d, erwartet 409: %.200s", recA.Code, recA.Body.String())
+		}
+		if got := tuertest.Fehlermeldung(t, recA); got != "Das Ausweis-Design wurde inzwischen an einem anderen Platz geändert. Nichts gespeichert." {
+			t.Errorf("Meldung %q", got)
+		}
+		if rumpf := lade(t); rumpf != vonB {
+			t.Errorf("gespeichert ist %q, erwartet das Design von Platz B", rumpf)
+		}
+
+		// Mit dem Stand aus der Antwort speichert B weiter, ohne neu zu laden.
+		if rec := speichereAuf(t, design, antwortB.Stand); rec.Code != http.StatusOK {
+			t.Errorf("Speichern auf dem Stand aus der Antwort: Status %d: %s", rec.Code, rec.Body.String())
+		}
+	})
+
+	// Ohne Stand speichert nur, wer noch kein Design vorfindet: Eine Anfrage ohne ?stand= (eine
+	// Seite von vor dieser Regel) ersetzt kein gespeichertes Design.
+	t.Run("ohne Stand bei gespeichertem Design: 409", func(t *testing.T) {
+		vorher := lade(t)
+		if rec := rufe(t, http.MethodPut, pfad, `{"front":[],"back":[]}`); rec.Code != http.StatusConflict {
+			t.Errorf("Status %d, erwartet 409: %.200s", rec.Code, rec.Body.String())
+		}
+		if nachher := lade(t); nachher != vorher {
+			t.Errorf("das Design wurde ersetzt: %.80s → %.80s", vorher, nachher)
 		}
 	})
 

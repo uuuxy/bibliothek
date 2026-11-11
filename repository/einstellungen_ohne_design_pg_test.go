@@ -29,19 +29,21 @@ func TestLadeEinstellungen_LiestDasAusweisDesignNichtMit(t *testing.T) {
 	ctx := context.Background()
 
 	design := `{"front":{"elements":[{"content":"data:image/png;base64,` + strings.Repeat("A", 2<<20) + `"}]}}`
-	if err := SchreibeAusweisLayout(ctx, pool, design); err != nil {
+	entferneDesign := func() {
+		if _, err := pool.Exec(context.Background(),
+			`DELETE FROM system_einstellungen WHERE schluessel = $1`, AusweisLayoutSchluessel); err != nil {
+			t.Errorf("Design entfernen: %v", err)
+		}
+	}
+	entferneDesign()
+	t.Cleanup(entferneDesign)
+	if _, err := SchreibeAusweisLayout(ctx, pool, design, ""); err != nil {
 		t.Fatalf("SchreibeAusweisLayout: %v", err)
 	}
 	schule := "Schule der Probe"
 	if err := NewEinstellungsAbfragen(pool).Schreibe(ctx, &EinstellungenPatch{SchuleName: &schule}); err != nil {
 		t.Fatalf("Schreibe: %v", err)
 	}
-	t.Cleanup(func() {
-		if _, err := pool.Exec(context.Background(),
-			`DELETE FROM system_einstellungen WHERE schluessel = $1`, AusweisLayoutSchluessel); err != nil {
-			t.Errorf("Design entfernen: %v", err)
-		}
-	})
 
 	zugang := &merkeAbfrage{pool: pool}
 	e, err := LadeEinstellungen(ctx, zugang)
@@ -77,7 +79,7 @@ func TestLadeEinstellungen_LiestDasAusweisDesignNichtMit(t *testing.T) {
 	}
 
 	// Das Design selbst bleibt über seinen eigenen Weg lesbar.
-	if got, err := LadeAusweisLayout(ctx, pool); err != nil || got != design {
+	if got, _, err := LadeAusweisLayout(ctx, pool); err != nil || got != design {
 		t.Errorf("LadeAusweisLayout: %d Bytes, Fehler %v; erwartet %d Bytes", len(got), err, len(design))
 	}
 }

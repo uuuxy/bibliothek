@@ -2,6 +2,7 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { bestaetigen } from '../stores/bestaetigung.svelte.js';
 import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
+import { designStand, merkeDesignStand } from './designSitzung.js';
 import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
 
 /**
@@ -13,7 +14,7 @@ import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
  * der ihn wieder abräumt.
  */
 
-/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladend: boolean, readonly ladekreis: boolean, readonly ladefehler: string, readonly speicherfehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, erneutSpeichern: () => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
+/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladend: boolean, readonly ladekreis: boolean, readonly ladefehler: string, readonly speicherfehler: string, readonly konflikt: boolean, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, erneutSpeichern: () => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
 export function erzeugeDesignAblage() {
 	/** @type {'idle'|'saving'|'saved'|'error'} */
 	let zustand = $state('idle');
@@ -34,6 +35,9 @@ export function erzeugeDesignAblage() {
 	// wartet auf „Erneut speichern"; sonst ginge er erst mit der nächsten Änderung hinaus. Nur das
 	// jüngste Speichern zählt: Ein älterer Stand, der zuletzt scheitert, überschriebe den neueren.
 	let speicherfehler = $state('');
+	// Ein anderer Platz hat das Design inzwischen gespeichert (409). „Erneut speichern" scheiterte
+	// wieder daran; der Bildschirm bietet stattdessen an, neu zu laden.
+	let konflikt = $state(false);
 	/** @type {string | null} */
 	let ungespeichert = null;
 	let speicherLauf = 0;
@@ -58,6 +62,9 @@ export function erzeugeDesignAblage() {
 		get speicherfehler() {
 			return speicherfehler;
 		},
+		get konflikt() {
+			return konflikt;
+		},
 
 		/** Lädt das zentral gespeicherte Design. Leeres {} (Erststart) → Vorgabewerte. */
 		async laden() {
@@ -73,6 +80,11 @@ export function erzeugeDesignAblage() {
 				applyDesign(await res.json());
 				ladefehler = '';
 				geladen = true;
+				// Der geladene Stand ist der des Servers: Ein Konflikt davor ist damit erledigt.
+				konflikt = false;
+				speicherfehler = '';
+				ungespeichert = null;
+				if (zustand === 'error') zustand = 'idle';
 			} catch (e) {
 				ladefehler =
 					'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Netzwerkfehler). Es wird nichts gespeichert, solange das so ist.';
@@ -91,17 +103,26 @@ export function erzeugeDesignAblage() {
 		async speichern(body) {
 			const meiner = ++speicherLauf;
 			let grund = '';
+			let veraltet = false;
 			try {
-				const res = await apiFetch('/api/ausweis-layout', {
+				// Der Stand, auf dem dieser Platz arbeitet: Der Server schreibt nur, wenn seiner noch
+				// derselbe ist, und nennt in der Antwort den neuen.
+				const stand = encodeURIComponent(designStand());
+				const res = await apiFetch(`/api/ausweis-layout?stand=${stand}`, {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body
 				});
-				if (!res.ok) grund = await leseApiFehler(res);
+				if (res.ok) merkeDesignStand((await res.json())?.stand);
+				else {
+					veraltet = res.status === 409;
+					grund = await leseApiFehler(res);
+				}
 			} catch (e) {
 				grund = fehlertext(e);
 			}
 			if (meiner !== speicherLauf) return;
+			konflikt = veraltet;
 			speicherfehler = grund;
 			ungespeichert = grund ? body : null;
 			zustand = grund ? 'error' : 'saved';

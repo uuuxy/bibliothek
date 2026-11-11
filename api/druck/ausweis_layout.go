@@ -26,10 +26,14 @@ type ausweisSchule struct {
 	Adresse string `json:"adresse"`
 }
 
-// designMitSchule stellt der Antwort den Kopf der Schule voran. Das gespeicherte Design bleibt
-// dabei Byte für Byte, wie es ist. Ist es kein Objekt, gilt es als nicht gespeichert; die
-// Oberfläche nimmt dann ihre Vorgaben.
-func designMitSchule(design string, e *repository.SystemEinstellungen) ([]byte, error) {
+// meldungDesignVeraltet steht im Designer, dessen Stand ein anderer Platz überholt hat.
+const meldungDesignVeraltet = "Das Ausweis-Design wurde inzwischen an einem anderen Platz geändert. Nichts gespeichert."
+
+// designMitSchule stellt der Antwort den Kopf voran: die Schule und den Änderungsstand des
+// Designs, den der Designer beim Speichern zurückschickt (leer: noch keines gespeichert). Das
+// gespeicherte Design bleibt dabei Byte für Byte, wie es ist. Ist es kein Objekt, gilt es als
+// nicht gespeichert; die Oberfläche nimmt dann ihre Vorgaben.
+func designMitSchule(design, stand string, e *repository.SystemEinstellungen) ([]byte, error) {
 	ort := strings.TrimSpace(e.SchulePLZ + " " + e.SchuleOrt)
 	adresse := e.SchuleStrasse
 	if adresse != "" && ort != "" {
@@ -37,7 +41,8 @@ func designMitSchule(design string, e *repository.SystemEinstellungen) ([]byte, 
 	}
 	kopf, err := json.Marshal(struct {
 		Schule ausweisSchule `json:"schule"`
-	}{ausweisSchule{Name: e.SchuleName, Adresse: adresse + ort}})
+		Stand  string        `json:"stand"`
+	}{ausweisSchule{Name: e.SchuleName, Adresse: adresse + ort}, stand})
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +64,7 @@ func designMitSchule(design string, e *repository.SystemEinstellungen) ([]byte, 
 // immer leer ist; gedruckt würde sonst mit den Vorgaben statt mit dem Design der Schule.
 func (t *Tueren) AusweisLayout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		wert, err := repository.LadeAusweisLayout(r.Context(), t.DB.Pool)
+		wert, stand, err := repository.LadeAusweisLayout(r.Context(), t.DB.Pool)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			wert = "{}"
@@ -74,7 +79,7 @@ func (t *Tueren) AusweisLayout() http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design laden: einstellungen: %w", err))
 			return
 		}
-		antwort, err := designMitSchule(wert, einstellungen)
+		antwort, err := designMitSchule(wert, stand, einstellungen)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design laden: %w", err))
 			return
@@ -85,7 +90,9 @@ func (t *Tueren) AusweisLayout() http.HandlerFunc {
 }
 
 // AusweisLayoutSchreiben speichert das Design der Ausweise für alle Arbeitsplätze. Es nimmt
-// nur gültiges JSON bis MaxAusweisLayoutBytes an.
+// nur gültiges JSON bis MaxAusweisLayoutBytes an, und nur auf dem Stand, den der Designer
+// geladen hat (?stand=, leer: noch keines gespeichert). Hat ein anderer Platz inzwischen
+// gespeichert, antwortet es mit 409 und schreibt nichts. Die Antwort nennt den neuen Stand.
 func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAusweisLayoutBytes+1))
@@ -102,11 +109,16 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 			return
 		}
 
-		if err := repository.SchreibeAusweisLayout(r.Context(), t.DB.Pool, string(body)); err != nil {
+		stand, err := repository.SchreibeAusweisLayout(r.Context(), t.DB.Pool, string(body), r.URL.Query().Get("stand"))
+		if errors.Is(err, repository.ErrAusweisLayoutVeraltet) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungDesignVeraltet, err)
+			return
+		}
+		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design speichern: %w", err))
 			return
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "gespeichert"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "gespeichert", "stand": stand})
 	}
 }

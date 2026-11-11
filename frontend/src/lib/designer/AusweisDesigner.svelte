@@ -73,6 +73,14 @@
 		if (ausstehend !== null) ablage.speichern(ausstehend);
 	});
 
+	// Nach einem Konflikt den Stand des Servers holen. `gesehen` fängt neu an, sonst speicherte
+	// der Effekt das eben Geladene gleich wieder.
+	async function neuLaden() {
+		clearTimeout(speicherZeitgeber);
+		ausstehend = gesehen = gewaehlteKennung = null;
+		await ablage.laden();
+	}
+
 	async function zuruecksetzen() {
 		if (await ablage.zuruecksetzen()) gewaehlteKennung = null;
 	}
@@ -133,7 +141,9 @@
 			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
 		{:else if ablage.zustand === 'error'}
 			<span role="alert" class="text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>
-			<Button variant="ghost" onclick={() => ablage.erneutSpeichern()}>Erneut speichern</Button>
+			<Button variant="ghost" onclick={ablage.konflikt ? neuLaden : () => ablage.erneutSpeichern()}>
+				{ablage.konflikt ? 'Neu laden und verwerfen' : 'Erneut speichern'}
+			</Button>
 		{/if}
 		<Button variant="ghost" onclick={zuruecksetzen} disabled={gesperrt}>
 			Standardwerte wiederherstellen

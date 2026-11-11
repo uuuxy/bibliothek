@@ -39,7 +39,7 @@ async function alterTitelImGespeichertenDesign(page) {
 		await gehZu(page, '/druck-center');
 		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 		const schreiben = page.waitForResponse(
-			(a) => a.url().endsWith('/api/ausweis-layout') && a.request().method() === 'PUT'
+			(a) => a.url().includes('/api/ausweis-layout') && a.request().method() === 'PUT'
 		);
 		await page.getByRole('combobox', { name: 'Karten-Hintergrund' }).click();
 		await page.getByRole('option').nth(1).click();

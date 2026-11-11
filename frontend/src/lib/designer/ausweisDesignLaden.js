@@ -4,11 +4,11 @@ import { fehlertext } from '../utils/fehlertext.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
 import {
 	applyDesign,
-	designWurdeGeladen,
 	idStore,
 	PLATZHALTER_ADRESSE,
 	PLATZHALTER_SCHULNAME
 } from './idDesignerStore.svelte.js';
+import { designWurdeGeladen } from './designSitzung.js';
 
 /** @type {Promise<boolean> | null} */
 let lauf = null;

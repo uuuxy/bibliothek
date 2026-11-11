@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { erzeugeAusweisdruck, mitAusweisnummer } from './ausweisdruck.svelte.js';
-import { idStore, vergissDesignLadezustand } from '../../designer/idDesignerStore.svelte.js';
+import { idStore } from '../../designer/idDesignerStore.svelte.js';
+import { vergissDesignLadezustand } from '../../designer/designSitzung.js';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 

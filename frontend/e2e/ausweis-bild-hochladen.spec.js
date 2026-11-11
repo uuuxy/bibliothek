@@ -14,7 +14,8 @@ const PIXEL = Buffer.from(
 
 test.beforeEach(async ({ page }) => {
 	// Das Design gilt für alle Arbeitsplätze; aus dieser Probe wird nichts gespeichert.
-	await page.route('**/api/ausweis-layout', (route) =>
+	// Mit Stern: Das Speichern trägt den Änderungsstand als ?stand=….
+	await page.route('**/api/ausweis-layout*', (route) =>
 		route.request().method() === 'PUT'
 			? route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
 			: route.continue()

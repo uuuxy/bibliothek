@@ -8,7 +8,8 @@ import (
 )
 
 func TestDesignMitSchule(t *testing.T) {
-	const kopf = `{"schule":{"name":"Musterschule","adresse":"Schulweg 1, 12345 Neustadt"}`
+	const stand = "2026-11-11T21:15:03.123456Z"
+	const kopf = `{"schule":{"name":"Musterschule","adresse":"Schulweg 1, 12345 Neustadt"},"stand":"` + stand + `"`
 	schule := &repository.SystemEinstellungen{
 		SchuleName: "Musterschule", SchuleStrasse: "Schulweg 1", SchulePLZ: "12345", SchuleOrt: "Neustadt",
 	}
@@ -22,7 +23,7 @@ func TestDesignMitSchule(t *testing.T) {
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
-			ist, err := designMitSchule(fall.design, schule)
+			ist, err := designMitSchule(fall.design, stand, schule)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -50,7 +51,7 @@ func TestDesignMitSchule_Anschrift(t *testing.T) {
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
-			ist, err := designMitSchule("{}", &fall.e)
+			ist, err := designMitSchule("{}", "", &fall.e)
 			if err != nil {
 				t.Fatal(err)
 			}
