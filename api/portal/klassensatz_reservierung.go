@@ -71,7 +71,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if req.Anzahl > bestand {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Nur %d Exemplare im Bestand, %d lassen sich nicht reservieren", bestand, req.Anzahl), nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Nur %s im Bestand, %d lassen sich nicht reservieren", exemplarText(bestand), req.Anzahl), nil)
 		return
 	}
 
@@ -235,8 +235,8 @@ func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
 // Mail zum Anliegen.
 func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	text := fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
-		"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n",
-		e.TitelName, e.Klasse, e.Anzahl)
+		"  Titel:  %s\n  Klasse: %s\n  Anzahl: %s\n",
+		e.TitelName, e.Klasse, exemplarText(e.Anzahl))
 	if e.Notiz != "" {
 		text += fmt.Sprintf("  Ihre Notiz: %s\n", e.Notiz)
 	}
@@ -272,4 +272,13 @@ func leerAlsNil(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+// exemplarText nennt eine Zahl von Exemplaren in Einzahl oder Mehrzahl, für die Meldung an die
+// Lehrkraft und die Bereit-Mail.
+func exemplarText(n int) string {
+	if n == 1 {
+		return "1 Exemplar"
+	}
+	return fmt.Sprintf("%d Exemplare", n)
 }

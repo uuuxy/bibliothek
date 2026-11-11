@@ -144,8 +144,17 @@ func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto Foto) {
 	dsgvoZeile(p, tr, "Hinweis", foto.Hinweis)
 }
 
+// ausleihUeberschrift nennt die Zahl der Einträge der Ausleihhistorie; bei einem einzigen steht
+// die Einzahl.
+func ausleihUeberschrift(n int) string {
+	if n == 1 {
+		return "3. Ausleihhistorie (1 Eintrag)"
+	}
+	return fmt.Sprintf("3. Ausleihhistorie (%d Einträge)", n)
+}
+
 func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []Ausleihe) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("3. Ausleihhistorie (%d Einträge)", len(ausleihen)))
+	dsgvoAbschnitt(p, tr, ausleihUeberschrift(len(ausleihen)))
 	if len(ausleihen) == 0 {
 		dsgvoLeer(p, tr)
 		return

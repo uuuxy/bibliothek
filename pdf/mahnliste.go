@@ -120,11 +120,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	pdf.Ln(6)
 	pdf.SetFont("Arial", "I", 9)
 	pdf.SetTextColor(160, 60, 60)
-	pdf.Cell(0, 5, tr(fmt.Sprintf(
-		"Bitte gib die folgenden %d %s umgehend in der Schulbibliothek ab.",
-		len(sch.Medien),
-		pluralMedium(len(sch.Medien)),
-	)))
+	pdf.Cell(0, 5, tr(aufforderungZurAbgabe(len(sch.Medien))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(8)
 
@@ -200,10 +196,11 @@ func ErzeugeMahnliste(schueler []MahnlisteSchueler) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// pluralMedium nennt das Wort zur Zahl der Bücher.
-func pluralMedium(n int) string {
+// aufforderungZurAbgabe ist der Satz auf dem Blatt des Kindes. Bei einem einzigen Buch hat er
+// eine eigene Form: Mit der Zahl im Satz für mehrere stünde dort „die folgenden 1 Medium".
+func aufforderungZurAbgabe(n int) string {
 	if n == 1 {
-		return "Medium"
+		return "Bitte gib das folgende Medium umgehend in der Schulbibliothek ab."
 	}
-	return "Medien"
+	return fmt.Sprintf("Bitte gib die folgenden %d Medien umgehend in der Schulbibliothek ab.", n)
 }

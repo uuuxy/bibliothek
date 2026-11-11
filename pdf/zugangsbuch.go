@@ -128,7 +128,7 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Zuga
 
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
-	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ", abschnitt.Titel, abschnitt.Exemplare)), "1", 1, "R", true, 0, "")
+	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %s  ", abschnitt.Titel, exemplarText(abschnitt.Exemplare))), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(6)
 	return len(zeilen)
@@ -156,7 +156,7 @@ func zugangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, gesamt int, ohneBes
 	}
 	p.SetFont("Arial", "B", 11)
 	p.SetFillColor(220, 230, 255)
-	p.CellFormat(180, 9, tr(fmt.Sprintf("Zugänge im Zeitraum: %d Exemplare  ", gesamt)), "1", 1, "R", true, 0, "")
+	p.CellFormat(180, 9, tr(fmt.Sprintf("Zugänge im Zeitraum: %s  ", exemplarText(gesamt))), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 
 	if ohneBestellung {

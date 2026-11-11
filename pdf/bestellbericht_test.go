@@ -142,7 +142,7 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 		{true, []string{
 			"Bestellungen: 3", "Exemplare: 55", "Gesamtbetrag: 245,50 €", "Bestellungen im Detail",
 			"Block-Zwei", "03.09.2026  ·  Haendler-C  ·  Kd.-Nr. K-1", "Summe (5 Exemplare)", "45,50 €",
-			"Summe Block-Zwei (1 Bestellungen, 5 Exemplare)", "45,50 €",
+			"Summe Block-Zwei (1 Bestellung, 5 Exemplare)", "45,50 €",
 			"Block-Eins", "03.09.2026  ·  Haendler-A  ·  Kd.-Nr. K-1", "Summe (30 Exemplare)", "120,00 €",
 			"03.09.2026  ·  Haendler-B  ·  Kd.-Nr. K-1", "Summe (20 Exemplare)", "80,00 €",
 			"Summe Block-Eins (2 Bestellungen, 50 Exemplare)", "200,00 €",
@@ -151,7 +151,7 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 		{false, []string{
 			"Bestellungen: 3", "Exemplare: 55", "Bestellungen im Detail",
 			"Block-Zwei", "03.09.2026  ·  Haendler-C  ·  Kd.-Nr. K-1", "Summe: 5 Exemplare",
-			"Summe Block-Zwei (1 Bestellungen, 5 Exemplare)",
+			"Summe Block-Zwei (1 Bestellung, 5 Exemplare)",
 			"Block-Eins", "03.09.2026  ·  Haendler-A  ·  Kd.-Nr. K-1", "Summe: 30 Exemplare",
 			"03.09.2026  ·  Haendler-B  ·  Kd.-Nr. K-1", "Summe: 20 Exemplare",
 			"Summe Block-Eins (2 Bestellungen, 50 Exemplare)",

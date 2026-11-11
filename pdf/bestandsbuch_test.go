@@ -63,7 +63,7 @@ func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 	pruefeBlatt(t, buchText(t, roh, err), []string{
 		"Abgangsbuch", "Philipp-Reis-Schule", "Zeitraum: 16.03.2026 bis 15.09.2026",
 		"Topf Eins", "12.04.2026", "B-00042", "Mathebuch 7", "Mat 7", "Verlust",
-		"Summe Topf Eins: 1 Exemplare",
+		"Summe Topf Eins: 1 Exemplar",
 		"Topf Zwei", "13.04.2026", "B-00815", "Aussortiert", "14.04.2026", "B-00816", "Sonstiges",
 		"Summe Topf Zwei: 2 Exemplare",
 		"Abgänge im Zeitraum: 9 Exemplare",
@@ -72,6 +72,7 @@ func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 	}, []string{
 		"Topf Leer", // eine Überschrift ohne Zeilen hilft auf dem abgehefteten Blatt niemandem
 		"kein Exemplar aus dem Bestand gegangen",
+		"Eins: 1 Exemplare", // die Mehrzahl hinter der Eins stand hier fest im Satz
 	})
 }
 
@@ -105,9 +106,9 @@ func TestZugangsbuch_DrucktAbschnitteUndZahlen(t *testing.T) {
 	pruefeBlatt(t, buchText(t, roh, err), []string{
 		"Zugangsbuch", "Zeitraum: 16.03.2026 bis 15.09.2026",
 		"Topf Eins", "03.05.2026", "B-00100", "Mathebuch 7", "Buchhandlung Land",
-		"Summe Topf Eins: 1 Exemplare",
+		"Summe Topf Eins: 1 Exemplar",
 		"Zugänge im Zeitraum: 5 Exemplare",
-	}, []string{"Topf Leer", "keine Bestellung hinterlegt", "kein Exemplar in den Bestand gekommen"})
+	}, []string{"Topf Leer", "keine Bestellung hinterlegt", "kein Exemplar in den Bestand gekommen", "Eins: 1 Exemplare"})
 }
 
 // Den Abschnitt der Zugänge ohne hinterlegte Bestellung erklärt das Blatt genau dann, wenn die
@@ -120,11 +121,12 @@ func TestZugangsbuch_ErklaertOhneZuordnungNurAufVerlangen(t *testing.T) {
 		Gesamt: 1,
 	}
 	roh, err := ErzeugeZugangsbuch(buch, SchuleInfo{})
-	pruefeBlatt(t, buchText(t, roh, err), []string{"Summe ohne Zuordnung: 1 Exemplare"}, []string{"keine Bestellung hinterlegt"})
+	pruefeBlatt(t, buchText(t, roh, err), []string{"Summe ohne Zuordnung: 1 Exemplar", "Zugänge im Zeitraum: 1 Exemplar"},
+		[]string{"keine Bestellung hinterlegt", ": 1 Exemplare"})
 
 	buch.OhneZuordnung = true
 	roh, err = ErzeugeZugangsbuch(buch, SchuleInfo{})
-	pruefeBlatt(t, buchText(t, roh, err), []string{"keine Bestellung hinterlegt", "Summe ohne Zuordnung: 1 Exemplare"}, nil)
+	pruefeBlatt(t, buchText(t, roh, err), []string{"keine Bestellung hinterlegt", "Summe ohne Zuordnung: 1 Exemplar"}, nil)
 
 	leer, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis}, SchuleInfo{})
 	pruefeBlatt(t, buchText(t, leer, err), []string{"kein Exemplar in den Bestand gekommen", "Zugänge im Zeitraum: 0 Exemplare"}, nil)

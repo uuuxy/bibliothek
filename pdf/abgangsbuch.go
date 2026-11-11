@@ -134,8 +134,8 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abga
 
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
-	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ",
-		abschnitt.Titel, abschnitt.Exemplare)), "1", 1, "R", true, 0, "")
+	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %s  ",
+		abschnitt.Titel, exemplarText(abschnitt.Exemplare))), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(6)
 	return len(zeilen)
@@ -163,18 +163,14 @@ func abgangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, buch Abgangsbuch) {
 	}
 	p.SetFont("Arial", "B", 11)
 	p.SetFillColor(220, 230, 255)
-	p.CellFormat(180, 9, tr(fmt.Sprintf("Abgänge im Zeitraum: %d Exemplare  ", buch.Gesamt)), "1", 1, "R", true, 0, "")
+	p.CellFormat(180, 9, tr(fmt.Sprintf("Abgänge im Zeitraum: %s  ", exemplarText(buch.Gesamt))), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 
 	if buch.OhneZeitpunkt > 0 {
 		p.Ln(4)
 		p.SetFont("Arial", "I", 9)
 		p.SetTextColor(90, 90, 90)
-		p.MultiCell(180, 5, tr(fmt.Sprintf(
-			"Hinweis: %d weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt ist. "+
-				"Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und können keinem Zeitraum "+
-				"zugeordnet werden; sie stehen deshalb in keiner Halbjahresliste.", buch.OhneZeitpunkt)),
-			"", "L", false)
+		p.MultiCell(180, 5, tr(hinweisOhneZeitpunkt(buch.OhneZeitpunkt)), "", "L", false)
 		p.SetTextColor(0, 0, 0)
 	}
 
@@ -182,13 +178,37 @@ func abgangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, buch Abgangsbuch) {
 		p.Ln(4)
 		p.SetFont("Arial", "I", 9)
 		p.SetTextColor(90, 90, 90)
-		p.MultiCell(180, 5, tr(fmt.Sprintf(
-			"Hinweis: %d Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt "+
-				"ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. "+
-				"Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen "+
-				"deshalb in keiner Liste oben. Ihre Nummern sind im Protokoll nachschlagbar.",
-			buch.AusKatalogGeloescht)),
-			"", "L", false)
+		p.MultiCell(180, 5, tr(hinweisAusKatalogGeloescht(buch.AusKatalogGeloescht)), "", "L", false)
 		p.SetTextColor(0, 0, 0)
 	}
+}
+
+// hinweisOhneZeitpunkt nennt die Exemplare, die ohne Abgangsdatum ausgesondert sind. Der Satz
+// hat für ein einzelnes Exemplar eine eigene Form.
+func hinweisOhneZeitpunkt(n int) string {
+	if n == 1 {
+		return "Hinweis: 1 weiteres Exemplar ist ausgesondert, ohne dass ein Abgangsdatum bekannt ist. " +
+			"Es wurde vor der Einführung des Abgangsbuchs ausgebucht und kann keinem Zeitraum " +
+			"zugeordnet werden; es steht deshalb in keiner Halbjahresliste."
+	}
+	return fmt.Sprintf(
+		"Hinweis: %d weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt ist. "+
+			"Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und können keinem Zeitraum "+
+			"zugeordnet werden; sie stehen deshalb in keiner Halbjahresliste.", n)
+}
+
+// hinweisAusKatalogGeloescht nennt die Exemplare, die im Zeitraum aus dem Katalog gelöscht statt
+// ausgesondert wurden, in der Form für eines oder für mehrere.
+func hinweisAusKatalogGeloescht(n int) string {
+	if n == 1 {
+		return "Hinweis: 1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht, statt " +
+			"ausgesondert zu werden — mit seinem Titel oder als endgültig entfernter Verlust. " +
+			"Titel, Signatur und Abgangsgrund sind mit ihm gelöscht worden; es steht " +
+			"deshalb in keiner Liste oben. Seine Nummer ist im Protokoll nachschlagbar."
+	}
+	return fmt.Sprintf(
+		"Hinweis: %d Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt "+
+			"ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. "+
+			"Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen "+
+			"deshalb in keiner Liste oben. Ihre Nummern sind im Protokoll nachschlagbar.", n)
 }

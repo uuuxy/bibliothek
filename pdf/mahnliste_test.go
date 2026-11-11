@@ -145,9 +145,9 @@ func TestMahnliste_JeSchuelerEineSeiteMitSeinenBuechern(t *testing.T) {
 		t.Fatalf("%d Seiten, erwartet 2 (je Schüler eine)", len(seiten))
 	}
 	pruefeBlatt(t, strings.Join(seiten[0], "\n"), []string{
-		"Anna Apfel", "05F", "Bitte gib die folgenden 1 Medium umgehend in der Schulbibliothek ab.",
+		"Anna Apfel", "05F", "Bitte gib das folgende Medium umgehend in der Schulbibliothek ab.",
 		"Gregs Tagebuch", "Jeff Kinney", "B-00042", "01.06.2026", "9 Tage",
-	}, []string{"Ben Birne", "Ehemalige", "Atlas", "B-00815", "Medien"})
+	}, []string{"Ben Birne", "Ehemalige", "Atlas", "B-00815", "Medien", "folgenden 1"})
 	pruefeBlatt(t, strings.Join(seiten[1], "\n"), []string{
 		"Ben Birne", "Ehemalige", "Bitte gib die folgenden 2 Medien umgehend in der Schulbibliothek ab.",
 		"Atlas", "Diercke", "B-00815", "12.05.2026", "29 Tage",
