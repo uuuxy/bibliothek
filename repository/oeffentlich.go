@@ -116,11 +116,14 @@ func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error)
 	return folien, nil
 }
 
-// ladeMeistgelesene liefert die Titel, die in den letzten tage Tagen die meisten Leser hatten.
+// ladeMeistgelesene liefert die Titel, die in den letzten tage Tagen am häufigsten ausgeliehen
+// wurden.
 //
-// Gezählt wird je Leser einmal und nicht je Ausleihe: Wer denselben Titel zweimal leiht, ist
-// ein Leser, und ein Klassensatz an eine Lehrkraft ist ein Vorgang und keine dreißig Leser.
-// Anonymisierte Ausleihen zählen nicht; sie liegen ohnehin außerhalb der Fenster.
+// Gezählt werden Ausleihen, nicht Leser: Die Lesehistorie trennt eine Ausleihe der
+// Schülerbücherei einen Tag nach der Rückgabe von ihrem Leser (LesehistorieTageVorgabe). Eine
+// Zählung nach Lesern sähe im Fenster fast nur, was gerade noch ausgeliehen ist, und ein Roman,
+// den fünfzehn Kinder gelesen und zurückgebracht haben, stünde hinter einem, der bei dreien zu
+// Hause liegt. Ein Klassensatz an eine Lehrkraft bleibt draußen: Er ist eine Dauerleihe.
 func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
 	cover := "TRUE"
 	if nurMitCover {
@@ -132,7 +135,6 @@ func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl in
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel bt ON bt.id = e.titel_id
 		WHERE a.ausgeliehen_am >= NOW() - make_interval(days => $1::int)
-		  AND a.schueler_id IS NOT NULL
 		  -- Dauerleihen zählen nicht: Ein Klassensatz ist ein Vorgang, keine 30 Leser.
 		  -- Bis Migration 125 fiel er von selbst heraus — er stand in einer anderen
 		  -- Spalte, und die Zählung sah nur schueler_id. Seit alle Leser in einer Tabelle
@@ -143,7 +145,7 @@ func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl in
 		  AND `+cover+`
 		  AND `+OeffentlichSichtbar("bt")+`
 		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
-		ORDER BY COUNT(DISTINCT a.schueler_id) DESC, bt.titel COLLATE deutsch ASC
+		ORDER BY COUNT(*) DESC, bt.titel COLLATE deutsch ASC
 		LIMIT $2::int`, tage, anzahl)
 }
 

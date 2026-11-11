@@ -77,13 +77,13 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 	}
 }
 
-// „Beliebt" heißt viele Leser, nicht viele Exemplare.
+// „Beliebt" heißt oft ausgeliehen, nicht viele Exemplare in einer Hand.
 //
 // Lehrer-Ausleihen sind je Exemplar eine Zeile in ausleihen (repository/ausleihe.go): Ein
 // Klassensatz „Die Welle" ×30 an eine Lehrkraft wären 30 Ausleihen — er hätte „Beliebt
 // diese Woche" und „Buch des Monats" beherrscht, obwohl ihn kein einziger Schüler
-// freiwillig gelesen hat. Und ein Schüler, der denselben Titel zweimal ausleiht, ist ein
-// Leser, nicht zwei. Gezählt werden deshalb Schüler-Ausleihen, je Schüler einmal.
+// freiwillig gelesen hat. Die Dauerleihe zählt deshalb nicht; jede andere Ausleihe zählt, auch
+// eine, die von ihrem Leser schon getrennt ist.
 func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -95,8 +95,8 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 	}
 	lehrkraft := legeLehrkraftAn(t, pool)
 
-	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu ein Schüler und eine anonymisierte
-	// Ausleihe (kein Ausleiher mehr) — 32 Zeilen, ein Leser.
+	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu ein Schüler und eine Ausleihe, die von
+	// ihrem Leser schon getrennt ist — 32 Zeilen, zwei zählen.
 	welle := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Die Welle", "Jug Rho", true, 20)
 	for i := range 30 {
 		legeAusleiheDerLehrkraftAn(t, pool, testdaten.LegeExemplarAn(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
@@ -109,16 +109,16 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 		t.Fatalf("anonymisierte Ausleihe anlegen: %v", err)
 	}
 
-	// Drei Ausleihen, zwei Leser: Mia leiht Tschick zweimal (erst zurückgeben, dann noch
-	// einmal — zwei offene Ausleihen auf einem Exemplar verbietet die Datenbank), Ben einmal.
+	// Drei Ausleihen: Mia leiht Tschick zweimal (erst zurückgeben, dann noch einmal — zwei
+	// offene Ausleihen auf einem Exemplar verbietet die Datenbank), Ben einmal.
 	tschick := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Tschick", "Jug Her", true, 10)
 	tschick1 := testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-1", true, "")
 	legeZurueckgegebeneAusleiheAn(t, pool, tschick1, leser[0])
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, tschick1, leser[0])
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
 
-	// Drei Leser nacheinander, aber kein Cover: führt „Beliebt" an, ist aber kein
-	// „Buch des Monats".
+	// Drei Ausleihen nacheinander, aber kein Cover: führt „Beliebt" an (bei Gleichstand nach
+	// dem Titel), ist aber kein „Buch des Monats".
 	ohneCover := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
 	ohneCover1 := testdaten.LegeExemplarAn(t, pool, ohneCover, "LES-OHNE-1", true, "")
 	legeZurueckgegebeneAusleiheAn(t, pool, ohneCover1, leser[0])
@@ -127,14 +127,54 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 
 	antwort := leseMonitorAntwort(t, pool)
 	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Tschick" {
-		t.Errorf("Buch des Monats = %+v, erwartet Tschick (zwei Leser, Cover) — zählt der Monitor Exemplare statt Leser?", antwort.BuchDesMonats)
+		t.Errorf("Buch des Monats = %+v, erwartet Tschick (drei Ausleihen, Cover) — zählt der Monitor den Klassensatz mit?", antwort.BuchDesMonats)
 	}
 	var beliebt []string
 	for _, b := range antwort.Beliebt {
 		beliebt = append(beliebt, b.Titel)
 	}
 	if erwartet := []string{"Roman ohne Cover", "Tschick", "Die Welle"}; fmt.Sprint(beliebt) != fmt.Sprint(erwartet) {
-		t.Errorf("Beliebt = %v, erwartet %v (nach Lesern: 3, 2, 1)", beliebt, erwartet)
+		t.Errorf("Beliebt = %v, erwartet %v (nach Ausleihen: 3, 3, 2)", beliebt, erwartet)
+	}
+}
+
+// Die Lesehistorie trennt eine Ausleihe der Schülerbücherei einen Tag nach der Rückgabe von
+// ihrem Leser (repository.LesehistorieTageVorgabe). Der Monitor zählte verschiedene Leser und
+// sah deshalb fast nur, was gerade noch ausgeliehen war: Der Roman, den fünfzehn Kinder gelesen
+// und zurückgebracht hatten, stand hinter dem, der bei dreien zu Hause lag, oder kam gar nicht vor.
+func TestMonitor_ZaehltAuchVomLeserGetrennteAusleihen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	// Fünfzehnmal gelesen und zurückgebracht, die Zuordnung zum Leser ist gelöst.
+	renner := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Der Renner", "Jug Ren", true, 20)
+	rennerExemplar := testdaten.LegeExemplarAn(t, pool, renner, "GETRENNT-RENNER-1", true, "")
+	for i := range 15 {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+			VALUES ($1, NOW() - make_interval(hours => 60 + $2::int), NOW() + interval '21 days', NOW() - make_interval(hours => 50 + $2::int))`,
+			rennerExemplar, i); err != nil {
+			t.Fatalf("getrennte Ausleihe anlegen: %v", err)
+		}
+	}
+	// Liegt bei drei Kindern zu Hause.
+	lieger := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Der Lieger", "Jug Lie", true, 10)
+	for i, name := range []string{"Mia", "Ben", "Lea"} {
+		kind := testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("S-GETRENNT-%d", i), name, "5a")
+		testdaten.LegeAusleiheVorZweiTagenAn(t, pool, testdaten.LegeExemplarAn(t, pool, lieger, fmt.Sprintf("GETRENNT-LIEGER-%d", i), true, ""), kind)
+	}
+
+	antwort := leseMonitorAntwort(t, pool)
+	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Der Renner" {
+		t.Errorf("Buch des Monats = %+v, erwartet Der Renner (15 Ausleihen gegen 3)", antwort.BuchDesMonats)
+	}
+	var beliebt []string
+	for _, b := range antwort.Beliebt {
+		beliebt = append(beliebt, b.Titel)
+	}
+	if erwartet := []string{"Der Renner", "Der Lieger"}; fmt.Sprint(beliebt) != fmt.Sprint(erwartet) {
+		t.Errorf("Beliebt = %v, erwartet %v", beliebt, erwartet)
 	}
 }
 
