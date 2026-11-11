@@ -2,6 +2,7 @@ package mahnwesen
 
 import (
 	"net/http"
+	"net/mail"
 	"strings"
 
 	"bibliothek/api/tuer"
@@ -58,6 +59,14 @@ func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Klasse und E-Mail-Adresse der Lehrkraft angeben", nil)
 			return
 		}
+		// Beim Speichern prüfen wie den Absender (mail_einstellungen.go): Eine Adresse mit
+		// Tippfehler fiele sonst erst beim Versand der Mahnliste auf.
+		adresse, err := mail.ParseAddress(req.LehrerEmail)
+		if err != nil {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse der Lehrkraft ist ungültig", err)
+			return
+		}
+		req.LehrerEmail = adresse.Address
 
 		ctx := r.Context()
 
