@@ -7,7 +7,7 @@
 // einen Moment den Plan von vorhin.
 
 import { melde } from '../../../inventur/lib/store.svelte.js';
-import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
+import { bestaetigen, verwerfenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import * as dienst from './lmfplanDienst.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 
@@ -74,11 +74,8 @@ export function erzeugePlaner() {
 	 * sonst stehen lassen und sagen, dass es einen neueren Stand gibt.
 	 */
 	function fremdesSignal() {
-		if (hatUngespeichertes()) {
-			zustand.fremdeAenderung = true;
-			return;
-		}
-		lade();
+		if (hatUngespeichertes()) zustand.fremdeAenderung = true;
+		else lade();
 	}
 
 	async function lade() {
@@ -86,11 +83,12 @@ export function erzeugePlaner() {
 		const meineArt = zustand.art;
 		zustand.laedt = true;
 		zustand.fremdeAenderung = false;
-		// Alles, was am vorigen Plan hing, geht zurück auf Anfang. Sonst stünden die Plätze
-		// des anderen Plans in der Tabelle, bis die neue Vorschau kommt (250 ms + Rundlauf)
-		// — und ein Klick auf eine Datumszelle nähme genau diesen fremden Platz als festen
-		// Platz mit (LmfPlanPlatzZellen). `stand = null` sperrt zugleich die Kopf-Aktionen,
-		// die sonst auf dem alten Plan arbeiten.
+		// Alles, was am vorigen Plan hing, geht zurück auf Anfang, auch eine Vorschau, die noch
+		// unterwegs ist (`laufNr`). Sonst stünden die Plätze des anderen Plans in der Tabelle, bis
+		// die neue Vorschau kommt (250 ms + Rundlauf), und ein Klick auf eine Datumszelle nähme
+		// genau diesen fremden Platz als festen Platz mit (LmfPlanPlatzZellen). `stand = null`
+		// sperrt zugleich die Kopf-Aktionen, die sonst auf dem alten Plan arbeiten.
+		laufNr++;
 		zustand.stand = null;
 		zustand.entwurf = dienst.leererEntwurf();
 		zustand.plaetze = [];
@@ -112,8 +110,10 @@ export function erzeugePlaner() {
 		}
 	}
 
-	/** Art wechseln — und den Plan der neuen Art laden. @param {string} w */
-	function waehleArt(w) {
+	/** Art wechseln und den Plan der neuen Art laden. Ungespeichertes ginge dabei verloren;
+	 *  deshalb dieselbe Rückfrage wie beim Wechsel der Seite. @param {string} w */
+	async function waehleArt(w) {
+		if (hatUngespeichertes() && !(await verwerfenBestaetigen('Verwerfen und weiter'))) return;
 		zustand.art = w;
 		lade();
 	}
