@@ -13,6 +13,9 @@ import (
 // Freigaben gesammelt, darunter weit gefasste (docker exec, git config, npm run) und solche mit
 // dem Heimatpfad des Entwicklers. Persönliche Freigaben gehören in die unversionierte
 // .claude/settings.local.json.
+//
+// Blindheit: Ob eine Freigabe der Liste zu weit gefasst ist, entscheidet, wer sie einträgt;
+// die unversionierte Datei sieht der Test nicht.
 func TestWerkzeugEinstellung_NurFreigabenFuerAlle(t *testing.T) {
 	// fuerAlle sind die Freigaben, die jeder bekommen darf: Sie lesen oder prüfen nur, oder es
 	// sind Skripte dieses Repositorys. Eine neue Zeile hier ist eine Entscheidung für alle.
