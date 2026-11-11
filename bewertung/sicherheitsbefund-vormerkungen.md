@@ -1,5 +1,8 @@
 # Security Finding — Vormerkungsliste gibt Schülernamen an die Helfer-Rolle heraus
 
+> **Behoben.** Der Bericht ist ein Prüfprotokoll und steht unverändert, wie er geschrieben wurde. Was
+> daraus geworden ist, steht in der [README](README.md) unter „Umsetzungsstand“.
+
 **Schweregrad:** Mittel–Hoch
 **Kategorie:** Fehlerhafte Autorisierung / Datenpreisgabe (Rolle unter der vorgesehenen Schwelle)
 **Status:** Bestätigt durch Code-Analyse

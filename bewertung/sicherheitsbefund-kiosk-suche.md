@@ -1,5 +1,8 @@
 # Security Finding — Kiosk-Suche gibt vollständige Schüler-PII an die Helfer-Rolle heraus
 
+> **Behoben.** Der Bericht ist ein Prüfprotokoll und steht unverändert, wie er geschrieben wurde. Was
+> daraus geworden ist, steht in der [README](README.md) unter „Umsetzungsstand“.
+
 **Schweregrad:** Hoch
 **Kategorie:** Fehlerhafte Autorisierung / Datenpreisgabe (horizontale Über-Exposition an eine unterprivilegierte Rolle)
 **Status:** Bestätigt durch Code-Analyse (Repro-Pfad unten)
