@@ -4,7 +4,8 @@
      Besonderheiten (Vermerk, wie die Bibliothek ihn geschrieben hat). Lesend — der Portal-Reiter
      und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer.
      `heute` (JJJJ-MM-TT) hebt die Zeilen dieses Tages hervor, damit man sofort sieht, welche
-     Klassen heute dran sind (Tabelle: aria-current="date"). -->
+     Klassen heute dran sind (Tabelle: aria-current="date"). `aktion` steht rechts in der Zeile
+     der ersten Überschrift (im Portal „Als PDF"). -->
 <script>
 	import Tabelle from '../ui/Tabelle.svelte';
 	import {
@@ -16,8 +17,8 @@
 		wochentag
 	} from './lmfplanDienst.js';
 
-	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[], heute?: string }} */
-	let { termine, eingangsjahrgaenge = [], heute = '' } = $props();
+	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[], heute?: string, aktion?: import('svelte').Snippet }} */
+	let { termine, eingangsjahrgaenge = [], heute = '', aktion } = $props();
 
 	const bloecke = $derived(
 		ARTEN.map((a) => ({
@@ -28,9 +29,12 @@
 	);
 </script>
 
-{#each bloecke as block (block.art)}
+{#each bloecke as block, i (block.art)}
 	<section class="mt-6" aria-label={block.label}>
-		<h2 class="text-base font-medium text-on-surface px-4">{artBeschriftung(block.art)}</h2>
+		<div class="flex flex-wrap items-center justify-between gap-3 pl-4">
+			<h2 class="text-base font-medium text-on-surface">{artBeschriftung(block.art)}</h2>
+			{#if i === 0}{@render aktion?.()}{/if}
+		</div>
 		<p class="px-4 pb-2 text-sm text-on-surface-variant max-w-3xl">
 			{artErklaerung(block.art, eingangsjahrgaenge)}
 		</p>

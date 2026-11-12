@@ -52,6 +52,28 @@ describe('LMF-Plan im Portal: „Als PDF" scheitert', () => {
 	});
 });
 
+// Über dem Plan steht kein Erklärsatz: Die Überschrift nennt den Plan, der Satz darunter sagt,
+// was geschieht (M3, UX writing: „Use headings and subheads to prioritize and group
+// information"). „Als PDF" steht in der Zeile der Überschrift statt allein in einer Zeile darüber.
+describe('PortalLmfPlan: Kopf des Plans', () => {
+	it('zeigt Überschrift und „Als PDF" in einer Zeile, ohne Erklärsatz darüber', async () => {
+		render(PortalLmfPlan);
+		const titel = await screen.findByRole('heading', {
+			name: 'Büchertausch vor den Sommerferien'
+		});
+		const knopf = screen.getByRole('button', { name: 'Als PDF' });
+		expect(knopf.parentElement).toBe(titel.parentElement);
+		expect(screen.queryByText(/als nächster dran/)).toBeNull();
+	});
+
+	it('zeigt ohne Plan keinen PDF-Knopf', async () => {
+		vi.mocked(ladePlan).mockResolvedValue({ termine: [], eingangsjahrgaenge: [] });
+		render(PortalLmfPlan);
+		await screen.findByText('Der nächste Plan folgt');
+		expect(screen.queryByRole('button', { name: 'Als PDF' })).toBeNull();
+	});
+});
+
 // Die Seite läuft im Lehrerzimmer nebenbei: Eine verschobene Stunde kommt ohne F5, auch wenn der
 // Rechner dazwischen geschlafen hat (den Aufbau der Leitung deckt liveEvents.test.js).
 describe('PortalLmfPlan: der Plan bleibt aktuell', () => {

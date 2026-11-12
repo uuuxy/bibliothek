@@ -2,7 +2,8 @@
      in der Bibliothek, für alle gleich, immer der aktuelle Stand (kein abgelegtes PDF).
      Nur der Plan, der als nächster dran ist (Server: LMFAbfragen.LadeNaechstenPlan): bis zum
      letzten Tag des Büchertauschs dieser, danach die Ausgabe. Die Zeilen von heute sind
-     hervorgehoben, im PDF nicht.
+     hervorgehoben, im PDF nicht. Kein Erklärsatz über dem Plan: Überschrift und der Satz
+     darunter sagen, was hier steht; „Als PDF" steht in der Zeile der Überschrift.
      Kein Bezug auf Klassenleitungen: Auch Fachlehrer gehen mit ihren Klassen zum
      Büchertausch, und nicht jede Klasse hat eine hinterlegte Adresse. -->
 <script>
@@ -86,21 +87,6 @@
 	});
 </script>
 
-<div class="flex flex-wrap items-center justify-between gap-3 pb-2">
-	<p class="text-sm text-on-surface-variant max-w-2xl">
-		Wann welche Klasse ihre Schulbücher tauscht oder bekommt: immer der Plan, der als nächster dran
-		ist, auf dem aktuellen Stand der Bibliothek.
-	</p>
-	<Button
-		variant="secondary"
-		onclick={() => dienst.ladePdf().catch((e) => snackbars.addToast(fehlertext(e), 'error'))}
-		disabled={termine.length === 0}
-	>
-		<Printer class="h-4 w-4" aria-hidden="true" />
-		Als PDF
-	</Button>
-</div>
-
 {#if laedt}
 	<div class="py-12 flex justify-center items-center">
 		<Ladekreis size="lg" />
@@ -120,5 +106,15 @@
 		</p>
 	</div>
 {:else}
-	<LmfPlanTabelle {termine} {eingangsjahrgaenge} {heute} />
+	<LmfPlanTabelle {termine} {eingangsjahrgaenge} {heute}>
+		{#snippet aktion()}
+			<Button
+				variant="secondary"
+				onclick={() => dienst.ladePdf().catch((e) => snackbars.addToast(fehlertext(e), 'error'))}
+			>
+				<Printer class="h-4 w-4" aria-hidden="true" />
+				Als PDF
+			</Button>
+		{/snippet}
+	</LmfPlanTabelle>
 {/if}
