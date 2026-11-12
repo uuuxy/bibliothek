@@ -34,9 +34,13 @@ func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel 
 func LegeAusleiheAmTagAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, ausgeliehenAm, frist time.Time) string {
 	t.Helper()
 	ausleiheID := LegeAusleiheMitFristAn(t, pool, schuelerID, titel, frist)
-	if _, err := pool.Exec(context.Background(),
-		`UPDATE ausleihen SET ausgeliehen_am = $1 WHERE id = $2`, ausgeliehenAm, ausleiheID); err != nil {
+	ergebnis, err := pool.Exec(context.Background(),
+		`UPDATE ausleihen SET ausgeliehen_am = $1 WHERE id = $2`, ausgeliehenAm, ausleiheID)
+	if err != nil {
 		t.Fatalf("Ausleihtag für %q setzen: %v", titel, err)
+	}
+	if n := ergebnis.RowsAffected(); n != 1 {
+		t.Fatalf("Ausleihtag für %q setzen: %d Zeilen getroffen, erwartet 1", titel, n)
 	}
 	return ausleiheID
 }
