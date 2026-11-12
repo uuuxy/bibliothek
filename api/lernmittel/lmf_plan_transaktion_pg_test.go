@@ -94,7 +94,7 @@ func TestLMFPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 
 	stichtag := time.Date(2027, time.July, 31, 23, 59, 0, 0, schulzeit.Zone())
 	anna := testdaten.LegeSchuelerAn(t, pool, "TX-1", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), stichtag)
 
 	// Ein veröffentlichter Plan mit 9H1 — Annas Frist folgt seinem Termin.
 	if rec := lmfPlanAufruf(t, echt, http.MethodPut, "rueckgabe",
@@ -166,9 +166,9 @@ func TestLMFPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 
 	stichtag := schulzeit.TagesEnde(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
 	anna := testdaten.LegeSchuelerAn(t, pool, "TX-2", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), stichtag)
 	emil := testdaten.LegeSchuelerAn(t, pool, "TX-3", "Emil", "8G1")
-	emilLmf := testdaten.LegeAusleiheMitFristAn(t, pool, emil, "LMF Bio 8 Emil", stichtag)
+	emilLmf := testdaten.LegeAusleiheAmTagAn(t, pool, emil, "LMF Bio 8 Emil", ausleihtagImSchuljahr(), stichtag)
 
 	if rec := lmfPlanAufruf(t, echt, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-28","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {

@@ -58,7 +58,7 @@ func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		return schulzeit.TagesEnde(x)
 	}
 	anna := testdaten.LegeSchuelerAn(t, pool, "AUD-1", "Anna", "9H1")
-	testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))
+	testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Audit", ausleihtagImSchuljahr(), tag("2027-07-31"))
 
 	// Wie lmfPlanAufruf, aber mit angemeldetem Benutzer im Kontext — ohne ihn schreibt
 	// kein Audit, und der Test wäre grün, ohne etwas zu belegen.

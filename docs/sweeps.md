@@ -473,7 +473,10 @@ geschrieben.
    eines Bestands, mit den Zusagen nach jedem Schritt: keine offene Ausleihe und keine offene Forderung ohne Person,
    kein aktives Konto gelöscht, nichts anonymisiert, was nicht weg ist. Rot ohne Fehler im Programm
    bleiben die zwei Shell-Tests in `docs/`, die mit der echten Uhr rechnen, und Jahre voraus die
-   Horizonte der Ferientabellen und des LMF-Plans.
+   Horizonte der Ferientabellen und des LMF-Plans. Ein Test mit festen Daten wird kalenderabhängig,
+   sobald eine Regel den heutigen Tag oder den Ausleihtag an einem Datum des Tests misst, etwa am
+   Tauschbeginn des LMF-Plans: Ab diesem Datum wird er von selbst rot, mitten im Betrieb. Solche
+   Tests setzen den Ausleihtag fest (`testdaten.LegeAusleiheAmTagAn`).
 8. **Felder, die nie kommen:** Die Antworten der Schnittstelle in der Seite als Proxy umhüllen und
    über die ganze Suite sammeln, was gelesen wird und in keiner Antwort stand. Am Go-Code einordnen:
    `omitempty`, Attrappe im Test oder Fehler. Eine Attrappe im Unit-Test beweist das Feld nicht.

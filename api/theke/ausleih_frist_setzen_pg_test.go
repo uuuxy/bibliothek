@@ -155,7 +155,10 @@ func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 		t.Fatalf("Test-Admin: %v", err)
 	}
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-TZ-1", "Zone", "5a")
-	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+	// Ausgeliehen am 01.09.2026: Mit dem heutigen Tag läge die Frist von Hand unten ab dem 16.07.2027
+	// vor der Ausleihe und würde abgelehnt.
+	ausleihe := testdaten.LegeAusleiheAmTagAn(t, pool, sid, "Buch TZ",
+		time.Date(2026, time.September, 1, 8, 0, 0, 0, time.UTC), time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	auditRepo := repository.NewProtokollAbfragen(pool)

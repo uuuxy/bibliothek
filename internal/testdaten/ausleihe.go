@@ -27,6 +27,20 @@ func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel 
 	return ausleiheID
 }
 
+// LegeAusleiheAmTagAn legt eine Ausleihe an wie LegeAusleiheMitFristAn, ausgeliehen am Tag
+// ausgeliehenAm statt heute. Wer eine Regel prüft, die am Ausleihtag hängt (Tauschbeginn des
+// LMF-Plans, Frist von Hand nicht vor der Ausleihe), braucht ihn fest: Sonst hängt der Test am
+// Kalender und wird an einem bestimmten Tag von selbst rot.
+func LegeAusleiheAmTagAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, ausgeliehenAm, frist time.Time) string {
+	t.Helper()
+	ausleiheID := LegeAusleiheMitFristAn(t, pool, schuelerID, titel, frist)
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE ausleihen SET ausgeliehen_am = $1 WHERE id = $2`, ausgeliehenAm, ausleiheID); err != nil {
+		t.Fatalf("Ausleihtag für %q setzen: %v", titel, err)
+	}
+	return ausleiheID
+}
+
 // LegeAusleiheVorZweiTagenAn legt am Exemplar eine Ausleihe von vor zwei Tagen an: Sie liegt in
 // jedem Zeitfenster des Monitors. Die Zeit kommt aus der Datenbank, weil die Fenster dort
 // gerechnet werden.

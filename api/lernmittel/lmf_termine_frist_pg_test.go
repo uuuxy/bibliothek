@@ -47,16 +47,16 @@ func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	stichtag := tag("2027-07-31")
 
 	anna := testdaten.LegeSchuelerAn(t, pool, "F-1", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
-	annaRoman := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "Roman Anna", tag("2026-10-01"))
-	annaMehrjahr := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Atlas Anna", tag("2028-07-31"))
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), stichtag)
+	annaRoman := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "Roman Anna", ausleihtagImSchuljahr(), tag("2026-10-01"))
+	annaMehrjahr := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Atlas Anna", ausleihtagImSchuljahr(), tag("2028-07-31"))
 	ben := testdaten.LegeSchuelerAn(t, pool, "F-2", "Ben", "09h1") // andere Schreibweise, dieselbe Klasse
-	benLmf := testdaten.LegeAusleiheMitFristAn(t, pool, ben, "LMF Mathe 9 Ben", stichtag)
+	benLmf := testdaten.LegeAusleiheAmTagAn(t, pool, ben, "LMF Mathe 9 Ben", ausleihtagImSchuljahr(), stichtag)
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET is_manually_blocked = true, block_reason = 'Test' WHERE id = $1`, ben); err != nil {
 		t.Fatal(err)
 	}
 	emil := testdaten.LegeSchuelerAn(t, pool, "F-3", "Emil", "8G1")
-	emilLmf := testdaten.LegeAusleiheMitFristAn(t, pool, emil, "LMF Bio 8 Emil", stichtag)
+	emilLmf := testdaten.LegeAusleiheAmTagAn(t, pool, emil, "LMF Bio 8 Emil", ausleihtagImSchuljahr(), stichtag)
 
 	frist := func(id string) time.Time { return testdaten.LadeFrist(t, pool, id) }
 	erwarte := func(was, id string, soll time.Time) {
@@ -220,7 +220,7 @@ func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 		return schulzeit.TagesEnde(x)
 	}
 	anna := testdaten.LegeSchuelerAn(t, pool, "Z-1", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Zwei", ausleihtagImSchuljahr(), tag("2027-07-31"))
 
 	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std., das Ende) nennen dieselbe
 	// Klasse.
@@ -437,7 +437,7 @@ func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 
 	setzeStichtag("06-30")
 	anna := testdaten.LegeSchuelerAn(t, pool, "ST-1", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheMitFristAn(t, pool, anna, "LMF Mathe 9 Anna", tagesEnde(2027, time.June, 30))
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), tagesEnde(2027, time.June, 30))
 
 	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
@@ -458,6 +458,13 @@ func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	if ist, will := testdaten.LadeFrist(t, pool, annaLmf), tagesEnde(2027, time.June, 30); !ist.Equal(will) {
 		t.Errorf("Annas Frist ohne Termin: %v, erwartet den eingestellten Stichtag %v", ist.In(schulzeit.Zone()), will)
 	}
+}
+
+// ausleihtagImSchuljahr ist der Ausleihtag der Bücher in den Tests des Plans: im Schuljahr 2026/27
+// und vor dem Tausch jedes Plans hier. Mit dem heutigen Tag gälte ein Schulbuch ab dem Tauschbeginn
+// im Juni 2027 als im Tausch ausgegeben, und seine Frist ginge ins nächste Schuljahr (F51).
+func ausleihtagImSchuljahr() time.Time {
+	return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 }
 
 // lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad. Ein Speichern trägt den
