@@ -300,7 +300,8 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   Seite eine Anfrage zählt), `aktion`, `titel`, `exemplar`, `leser`, `konto`, `klasse`,
   `empfaenger`, `anzahl`, `dauer`. Eine Dauer steht als Text (`12ms`); der
   JSON-Handler schriebe sie sonst in Nanosekunden. Eine Person steht mit ihrer Kennung im Log,
-  nicht mit ihrem Namen.
+  nicht mit ihrem Namen: Die Zeilen ERROR und WARN gehen mit allen Feldern in die Alarm-Mail.
+  `namen_im_log_test.go` hält es.
 - Wer einen Fehler in den Text eines anderen setzt, wickelt ihn ein, auch zweimal:
   `fmt.Errorf("%w: sperrliste: %w", ErrPruefungGestoert, err)`. Mit `%v` reißt die Kette, und
   die Antwort erkennt einen Abbruch des Browsers nicht mehr: Statt 499 stünde er als ERROR im Log
