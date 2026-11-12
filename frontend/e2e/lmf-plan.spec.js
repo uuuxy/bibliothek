@@ -82,6 +82,17 @@ function kurz(/** @type {Date} */ tag) {
  */
 async function zeilenAktion(page, zeile, nummer, eintrag) {
 	await zeile.getByRole('button', { name: `Aktionen Zeile ${nummer}` }).click();
+	// Ganz zu lesen, nicht abgeschnitten (ui/Menue.svelte): Die Aktionen-Zelle trägt
+	// whitespace-nowrap, das Menü darf es nicht erben.
+	const texte = await page.getByRole('menu').evaluate((m) => {
+		const alle = [...m.querySelectorAll('[role="menuitem"] span')];
+		return {
+			gezaehlt: alle.length,
+			ueberDenRand: alle.filter((s) => s.scrollWidth > s.clientWidth).map((s) => s.textContent)
+		};
+	});
+	expect(texte.gezaehlt, 'Text der Menüeinträge nicht gefunden').toBeGreaterThan(0);
+	expect(texte.ueberDenRand, 'Menüeinträge, die über ihren Rand laufen').toEqual([]);
 	await page.getByRole('menuitem', { name: eintrag }).click();
 }
 

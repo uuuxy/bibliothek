@@ -1,6 +1,6 @@
 // Lage eines Menüs am Knopf — dieselbe Regel wie selectGeometrie.berechneBox, nur mit
-// gemessener statt gerechneter Höhe: Seit das Menü einen Kopf tragen darf (Auswahlfeld im
-// Mahnwesen), steht seine Höhe erst nach dem Rendern fest.
+// gemessener statt gerechneter Größe: Breite und Höhe folgen den Einträgen (Menue.svelte)
+// und stehen erst nach dem Rendern fest.
 //
 // Rechts- oder linksbündig am Knopf, nach unten, wenn Platz ist — sonst nach oben, wenn
 // dort mehr Platz ist. Immer 8 px vom Fensterrand weg.
@@ -17,7 +17,7 @@ const ABSTAND = 4;
 /**
  * @param {{ left: number, right: number, top: number, bottom: number }} anker Rechteck des Knopfs
  * @param {number} hoehe Gemessene Höhe des Menüs
- * @param {number} breite Breite des Menüs
+ * @param {number} breite Gemessene Breite des Menüs
  * @param {'rechts' | 'links'} ausrichtung Welche Kante des Knopfs das Menü trifft
  * @param {{ breite: number, hoehe: number }} fenster
  * @returns {{ left: number, top: number }}

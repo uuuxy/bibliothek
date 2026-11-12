@@ -854,6 +854,12 @@ frontend/src
 - **Eine gekürzte Liste sagt es in einem Satz über der Liste** (`text-sm
   text-on-surface-variant`): wie viele zu sehen sind, in welcher Reihenfolge und wie man an die
   übrigen kommt („50 von 312 Treffern. Ein Suchwort grenzt ein.“).
+- **Ein Menü (`ui/Menue`) ist so breit wie sein längster Eintrag, 112 bis 280 px; ein längerer
+  Eintrag bricht um,** statt abgeschnitten zu werden (Material 3, Text truncation: „Don't cut off
+  text without providing a way for users to view it"). Die Fläche hängt im DOM am Auslöser und
+  setzt `whitespace-normal`, sonst erbte sie das `whitespace-nowrap` einer Tabellenzelle. Die
+  Liste des Auswahlfelds (`SelectListe`) bleibt einzeilig: Ihre Lage rechnet mit 48 px je Zeile
+  (`selectGeometrie.js`). Gemessen: `frontend/e2e/lmf-plan.spec.js` (`zeilenAktion`).
 - **Ein leeres Pflichtfeld sperrt den Knopf nicht.** Der Klick nennt am Feld, was fehlt, und
   führt dorthin; der Fehlertext steht ab dem ersten Klick und geht, sobald das Feld gefüllt ist
   (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,

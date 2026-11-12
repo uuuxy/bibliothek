@@ -60,7 +60,7 @@ Nur, was kein Test leisten kann.
 - [x] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
 - [x] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
 - [x] Die Grenze der Protokoll-Listen (1000 Einträge) an einer Stelle festlegen. (5.178)
-- [ ] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
+- [x] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
 
 ### Termin
 
@@ -86,14 +86,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.179 Abgeschnittene Einträge im Menü ⋮
-
-`ui/Menue.svelte` kürzt jeden Eintrag auf eine Zeile (`truncate`), ohne Tooltip und ohne Umbruch.
-Im Zeilenmenü des LMF-Planers steht deshalb „Mit der Zeile davor zusamme…“. Nach der Regel des
-Projekts darf Text nur gekürzt werden, wenn der Rest erreichbar bleibt. Nächster Schritt: bei
-m3.material.io (Menus) nachlesen, ob ein Eintrag umbricht oder das Menü breiter wird, und alle
-Menüs nach Einträgen absuchen, die heute abgeschnitten werden.
 
 ### 7.2 Frisches Littera-Backup
 
