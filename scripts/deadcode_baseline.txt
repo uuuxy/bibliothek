@@ -116,6 +116,7 @@ internal/testdaten/leser.go: unreachable func: LegeAdminKontoAn
 internal/testdaten/leser.go: unreachable func: LadeSchuelerStatus
 internal/testdaten/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/testdaten/ausleihe.go: unreachable func: LegeAusleiheMitFristAn
+internal/testdaten/ausleihe.go: unreachable func: LegeAusleiheAmTagAn
 internal/testdaten/ausleihe.go: unreachable func: LegeAusleiheVorZweiTagenAn
 internal/testdaten/ausleihe.go: unreachable func: LegeOffeneAusleiheAn
 internal/testdaten/ausleihe.go: unreachable func: LadeFrist
