@@ -71,10 +71,44 @@ describe('LmfPlanReihenfolge', () => {
 		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
 	});
 
-	it('schiebt eine Zeile nach unten', async () => {
-		const { container, getByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Zeile 1 nach unten'));
+	it('schiebt eine Zeile um einen Platz über das Menü — die Zeile selbst trägt keine Pfeile', async () => {
+		// Mit der Maus wird gezogen; ohne Ziehen stehen die Schritte im Menü, wie „Folie nach
+		// oben verschieben" in Google Präsentationen.
+		const { container, getByLabelText, getByRole, queryByLabelText } = zeige(
+			start.map((z) => ({ ...z }))
+		);
+		expect(queryByLabelText('Zeile 1 nach unten')).toBeNull();
+		await fireEvent.click(getByLabelText('Aktionen Zeile 1'));
+		expect(getByRole('menuitem', { name: 'Nach oben' }).getAttribute('aria-disabled')).toBe('true');
+		await fireEvent.click(getByRole('menuitem', { name: 'Nach unten' }));
 		expect(klassenJeZeile(container)).toEqual(['10R2', '10R1', '10R3']);
+		await menue(getByLabelText, getByRole, 2, 'Nach oben');
+		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
+	});
+
+	it('zieht die Linie nur zwischen zwei Tagen', () => {
+		// Material 3, Lists: Trennlinien teilen eine Liste in Gruppen, sparsam eingesetzt.
+		// Die Zeile, auf die derselbe Tag folgt, trägt die Marke; ui/Tabelle lässt die Linie weg.
+		const { container } = render(LmfPlanReihenfolge, {
+			zeilen: start.map((z) => ({ ...z })),
+			plaetze: [
+				{ datum: '2027-06-10', stunde: 5 },
+				{ datum: '2027-06-10', stunde: 6 },
+				{ datum: '2027-06-11', stunde: 1 }
+			],
+			marker: KEIN_MARKER,
+			bereit: true,
+			ausgelassen: [],
+			draussen: () => false,
+			markiert: null,
+			onklasseraus: vi.fn(),
+			onhinein: vi.fn(),
+			ontausch: vi.fn()
+		});
+		const weiter = [...container.querySelectorAll('tbody tr')].map((tr) =>
+			tr.hasAttribute('data-gruppe-weiter')
+		);
+		expect(weiter).toEqual([true, false, false]);
 	});
 
 	it('schiebt eine Zeile an den Anfang und ans Ende — die weiten Wege im Menü', async () => {

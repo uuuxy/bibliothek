@@ -1,7 +1,7 @@
 <!-- @component LmfPlanReihenfolge — Abschnitt „Reihenfolge": der Plan als Tabelle in
      der Form, die das Kollegium kennt (Wochentag, Datum, Stunde, Klassen,
-     Besonderheiten), nur dass sie hier bearbeitet wird: Zeilen ziehen oder mit den
-     Pfeilen schieben, zwei Zeilen zu einer Stunde zusammenlegen („10R1/10R2"), eine
+     Besonderheiten), nur dass sie hier bearbeitet wird: Zeilen ziehen oder über ihr Menü
+     verschieben, zwei Zeilen zu einer Stunde zusammenlegen („10R1/10R2"), eine
      Zeile ohne Klasse davor einfügen („Bücher setzen"), festlegen, Klasse aus dem Plan
      nehmen. Die Umformungen rechnet lmfplanZeilen.js, die Zeile selbst ist
      LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen. Die Zellen sind selbst der kurze
@@ -11,9 +11,9 @@
      Über der Tabelle liegt LmfPlanVorrat („Noch nicht im Plan"):
      Ein Klick plant die Klasse an ihren Platz (Nachbar-Regel), ein Chip lässt sich auf
      eine Zeile ziehen und landet davor; die neue Zeile wird angescrollt und leuchtet
-     kurz. Nach M3 Lists ohne Trennlinie je Zeile („Limit dividers … only when a
-     stronger visual separation is necessary"): Zeilenhöhe 48 px und die Hover-Fläche
-     trennen, die Linie steht nur unter dem Kopf. -->
+     kurz. Nach M3 Lists steht eine Trennlinie nur zwischen zwei Tagen („Limit dividers …
+     only when a stronger visual separation is necessary"); innerhalb eines Tages trennen
+     Zeilenhöhe und Hover-Fläche. -->
 <script>
 	import Button from '../ui/Button.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
@@ -135,6 +135,7 @@
 						gezogen={gezogen === i}
 						ziel={ziel === i}
 						markiert={leuchtet === i}
+						tagGehtWeiter={!!plaetze[i]?.datum && plaetze[i + 1]?.datum === plaetze[i].datum}
 						onziehstart={() => (gezogen = i)}
 						onziehueber={() => (ziel = i)}
 						onablegen={(e) => ablegen(e, i)}

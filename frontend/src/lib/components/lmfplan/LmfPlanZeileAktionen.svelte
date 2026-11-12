@@ -1,11 +1,9 @@
-<!-- @component LmfPlanZeileAktionen — die Aktionen einer Zeile im Planer. Sichtbar
-     bleibt, was jede Zeile ständig braucht: hoch und runter (M3: Icon-Buttons „to
-     display actions in a compact layout"). Alles andere — an den Anfang oder ans Ende
-     (die weiten Wege, wie im Zeilenmenü einer YouTube-Playlist), zusammenlegen oder
-     trennen, davor einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen —
-     liegt im Überlaufmenü (M3 Menus: „Use menus in situations that need extra actions,
-     like: Overflow menus"). Sechs Icon-Buttons je Zeile wären rund dreihundert auf der
-     Seite. -->
+<!-- @component LmfPlanZeileAktionen — das Überlaufmenü einer Zeile im Planer (M3 Menus:
+     „Use menus in situations that need extra actions, like: Overflow menus"). Mit der Maus
+     wird die Zeile gezogen; ohne Ziehen stehen die Wege hier, ein Platz und die weiten
+     Sprünge, wie „Folie nach oben verschieben" bis „Folie ans Ende verschieben" in Google
+     Präsentationen. Dazu zusammenlegen oder trennen, davor einfügen, festlegen oder lösen,
+     Klasse herausnehmen, entfernen. Pfeile in jeder Zeile wären über hundert Knöpfe. -->
 <script>
 	import {
 		ArrowDown,
@@ -20,7 +18,6 @@
 		Trash,
 		X
 	} from '@lucide/svelte';
-	import Button from '../ui/Button.svelte';
 	import Menue from '../ui/Menue.svelte';
 
 	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, platzlos?: boolean, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
@@ -43,6 +40,8 @@
 	} = $props();
 
 	const eintraege = $derived([
+		{ id: 'hoch', text: 'Nach oben', icon: ArrowUp, disabled: nummer === 1 },
+		{ id: 'runter', text: 'Nach unten', icon: ArrowDown, disabled: nummer === anzahl },
 		{ id: 'anfang', text: 'An den Anfang', icon: ArrowUpToLine, disabled: nummer === 1 },
 		{ id: 'ende', text: 'Ans Ende', icon: ArrowDownToLine, disabled: nummer === anzahl },
 		klassen > 1
@@ -65,6 +64,8 @@
 	]);
 
 	const aktionen = {
+		hoch: () => onhoch(),
+		runter: () => onrunter(),
 		anfang: () => onanfang(),
 		ende: () => onende(),
 		trennen: () => ontrennen(),
@@ -76,31 +77,8 @@
 	};
 </script>
 
-<!-- 16 px Abstand, damit sich die Trefferflächen der drei Symbolknöpfe nicht berühren. -->
-<div class="inline-flex items-center gap-4">
-	<Button
-		variant="symbol"
-		size="sm"
-		onclick={onhoch}
-		disabled={nummer === 1}
-		data-tip="Nach oben"
-		aria-label="Zeile {nummer} nach oben"
-	>
-		<ArrowUp class="h-4 w-4" aria-hidden="true" />
-	</Button>
-	<Button
-		variant="symbol"
-		size="sm"
-		onclick={onrunter}
-		disabled={nummer === anzahl}
-		data-tip="Nach unten"
-		aria-label="Zeile {nummer} nach unten"
-	>
-		<ArrowDown class="h-4 w-4" aria-hidden="true" />
-	</Button>
-	<Menue
-		etikett="Aktionen Zeile {nummer}"
-		{eintraege}
-		onwahl={(id) => aktionen[/** @type {keyof typeof aktionen} */ (id)]?.()}
-	/>
-</div>
+<Menue
+	etikett="Aktionen Zeile {nummer}"
+	{eintraege}
+	onwahl={(id) => aktionen[/** @type {keyof typeof aktionen} */ (id)]?.()}
+/>

@@ -79,11 +79,9 @@
 		     Tabelle beschriebe die Datenbank, nicht die Seite. -->
 		<p class="mt-3 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
 			{#if veroeffentlicht}
-				Plan vom {datumKurz(stand.plan.erster_tag)}, veröffentlicht am {datumKurz(
-					stand.plan.veroeffentlicht_am.slice(0, 10)
-				)}.
+				Veröffentlicht am {datumKurz(stand.plan.veroeffentlicht_am.slice(0, 10))}.
 			{:else if laufend}
-				Entwurf vom {datumKurz(stand.plan.erster_tag)}, noch nicht veröffentlicht.
+				Entwurf, noch nicht veröffentlicht.
 			{:else if stand?.plan && stand.vorbei}
 				Der Plan vom {datumKurz(stand.plan.erster_tag)} ist vorbei; Vorschlag aus seiner Reihenfolge,
 				noch nicht gespeichert.

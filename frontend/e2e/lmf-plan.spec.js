@@ -156,7 +156,27 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(zeile).toContainText(soll.wochentag);
 	await expect(zeile).toContainText(soll.datum);
 	await expect(zeile).toContainText(soll.stunde);
-	await zeile.getByLabel(`Besonderheiten Zeile ${nummer}`, { exact: true }).fill(vermerk);
+	// Linie nur zwischen zwei Tagen: innerhalb eines Tages keine, am Tageswechsel eine.
+	const linien = await tabelle.evaluate((t) => {
+		const zeilen = [...t.querySelectorAll('tbody tr')];
+		const datum = (/** @type {any} */ tr) => tr.cells[2]?.textContent.trim();
+		const farbe = (/** @type {any} */ tr) => getComputedStyle(tr.cells[0]).borderBottomColor;
+		const naechste = (/** @type {number} */ i) =>
+			i + 1 < zeilen.length ? datum(zeilen[i + 1]) : '';
+		const innen = zeilen.findIndex((tr, i) => datum(tr) && datum(tr) === naechste(i));
+		const ende = zeilen.findIndex((tr, i) => datum(tr) && naechste(i) && datum(tr) !== naechste(i));
+		return { innen: farbe(zeilen[innen]), ende: farbe(zeilen[ende]) };
+	});
+	expect(linien.innen, 'keine Linie innerhalb eines Tages').toBe('rgba(0, 0, 0, 0)');
+	expect(linien.ende, 'Linie am Tageswechsel').not.toBe('rgba(0, 0, 0, 0)');
+
+	// Die Besonderheiten stehen als Text; ein Klick öffnet das Feld, Enter übernimmt.
+	await zeile.getByRole('button', { name: `Besonderheiten Zeile ${nummer}:` }).click();
+	const vermerkFeld = zeile.getByLabel(`Besonderheiten Zeile ${nummer}`, { exact: true });
+	await vermerkFeld.fill(vermerk);
+	await vermerkFeld.press('Enter');
+	await expect(vermerkFeld).toHaveCount(0);
+	await expect(zeile).toContainText(vermerk);
 
 	// Escape im Überlaufmenü schließt NUR das Menü — bis 06.09.2026 sprang derselbe
 	// Tastendruck zusätzlich an die Theke (Router hört vor dem Overlay auf window).
@@ -186,8 +206,8 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
 	soll = erwarteterPlatz(nummer);
 	await expect(verschoben).toContainText(soll.stunde);
-	// Der Vermerk steht in einem Eingabefeld (kein Text) — geprüft wird er im Portal,
-	// wo er nach dem Speichern als Text in der Zeile steht.
+	// Der Vermerk zieht mit der Zeile um und steht nach dem Speichern auch im Portal.
+	await expect(verschoben).toContainText(vermerk);
 
 	// Und dann mit der Klassenzeile darüber: ZWEI Klassen in EINER Stunde — so stehen
 	// „10R1/10R2" und „6F1/6F2" im Plan der Schule (Absprache vom 05.09.: „das muss alles super
@@ -206,10 +226,9 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText(
-		`Entwurf vom ${kurz(ERSTER_TAG)}`
+	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveText(
+		'Entwurf, noch nicht veröffentlicht.'
 	);
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht veröffentlicht');
 
 	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung —
 	// aber erst nach dem Veröffentlichen.
@@ -240,7 +259,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 			.getByRole('dialog', { name: 'Plan veröffentlichen?' })
 			.getByRole('button', { name: 'Veröffentlichen' })
 			.click();
-		await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('veröffentlicht am');
+		await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Veröffentlicht am');
 		await expect(page.getByRole('button', { name: 'Veröffentlichen' })).toHaveCount(0);
 
 		await lehrer.reload();
@@ -359,8 +378,8 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(zeile).toContainText('Freitag');
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText(
-		`Entwurf vom ${kurz(ERSTER_TAG)}`
+	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveText(
+		'Entwurf, noch nicht veröffentlicht.'
 	);
 	try {
 		const stand = await (await page.request.get('/api/lmf-plan/ausgabe')).json();
@@ -510,6 +529,7 @@ test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({
 	const nummer = Number(
 		await tabelle.getByRole('row').nth(1).getByRole('cell').first().innerText()
 	);
+	await tabelle.getByRole('button', { name: `Besonderheiten Zeile ${nummer}:` }).click();
 	const feld = tabelle.getByLabel(`Besonderheiten Zeile ${nummer}`, { exact: true });
 	await feld.fill('E2E ungespeichert');
 
@@ -519,7 +539,12 @@ test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({
 	await dialog.getByRole('button', { name: 'Bleiben' }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page).toHaveURL(/\/schuljahr$/);
-	await expect(feld, 'die Eingabe steht noch').toHaveValue('E2E ungespeichert');
+	// Der Klick ins Menü hat das Feld geschlossen; die Eingabe steht als Text in der Zeile.
+	await expect(feld).toHaveCount(0);
+	await expect(
+		tabelle.getByRole('button', { name: `Besonderheiten Zeile ${nummer}:` }),
+		'die Eingabe steht noch'
+	).toContainText('E2E ungespeichert');
 
 	await menuepunkt(page, 'Ausleihe').click();
 	await dialog.getByRole('button', { name: 'Verwerfen und weiter' }).click();

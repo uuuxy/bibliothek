@@ -108,7 +108,10 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		antworte({ ...STAND, plan: PLAN, zeilen: ZEILEN, vorschlag: undefined });
 		render(LmfPlan);
 		expect(await screen.findByRole('button', { name: 'Veröffentlichen' })).toBeTruthy();
-		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('Entwurf vom 28.06.27');
+		// Ohne Datum: oben stünde der gespeicherte Beginn, unter „Zeitraum" der gerechnete.
+		expect(screen.getByTestId('lmf-plan-hinweis').textContent.trim()).toBe(
+			'Entwurf, noch nicht veröffentlicht.'
+		);
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain(
 			'noch nicht veröffentlicht'
 		);
@@ -129,8 +132,8 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		expect(await screen.findByTestId('lmf-plan-hinweis')).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Veröffentlichen' })).toBeNull();
-		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain(
-			'veröffentlicht am 20.05.27'
+		expect(screen.getByTestId('lmf-plan-hinweis').textContent.trim()).toBe(
+			'Veröffentlicht am 20.05.27.'
 		);
 		// Ohne Schüler in 09H1 (klassen leer): die Zeile sagt es.
 		expect(screen.getByText('ohne Schüler')).toBeTruthy();
@@ -190,7 +193,7 @@ describe('LmfPlan: Art umschalten', () => {
 			await tick();
 		}
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('noch nicht gespeichert');
-		expect(screen.queryByText(/Entwurf vom/)).toBeNull();
+		expect(screen.queryByText(/Entwurf, noch nicht veröffentlicht/)).toBeNull();
 	});
 });
 

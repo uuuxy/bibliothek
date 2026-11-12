@@ -8,6 +8,9 @@
        - Zelle: 14 px in `on-surface`, py-2 → Zeilen von 36–40 px, unsere Dichte.
        - Trennlinien zwischen den Zeilen in `outline-variant` (M3 Divider), keine
          Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTabelle).
+       - Gruppen: `data-gruppe-weiter` an der Zeile nimmt die Linie darunter weg; dann trennt
+         die Linie nur Gruppen (M3 Lists: „Limit dividers … only when a stronger visual
+         separation is necessary"). Im LMF-Planer ist ein Tag eine Gruppe.
        - Hover: State-Layer 8 % `on-surface` — dieselbe Regel wie bei den Knöpfen.
        - Gewählt: `aria-selected="true"` an der Zeile → `secondary-container`, wie in
          M3-Listen.
@@ -91,6 +94,10 @@
 	table :global(td) {
 		padding: 0.5rem 1rem;
 		border-bottom: 1px solid var(--color-outline-variant);
+	}
+	/* Durchsichtig statt weg: Jede Zeile bleibt gleich hoch, ob mit Linie oder ohne. */
+	table :global(tbody tr[data-gruppe-weiter] > td) {
+		border-bottom-color: transparent;
 	}
 	table :global(tbody tr) {
 		transition: background-color 100ms var(--default-transition-timing-function);

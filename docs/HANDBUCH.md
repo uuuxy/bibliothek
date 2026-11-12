@@ -368,7 +368,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   umschalten; je Art gibt es einen Plan pro Schuljahr. Rechts _Als PDF_, _Plan verwerfen_,
   _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_. Die Leiste bleibt beim
   Scrollen oben stehen; der Satz darunter sagt, was man sieht („Vorschlag aus dem
-  Vorjahr, noch nicht gespeichert", „Entwurf vom …", „veröffentlicht am …").
+  Vorjahr, noch nicht gespeichert", „Entwurf, noch nicht veröffentlicht", „Veröffentlicht am …").
 - **Entwurf und Veröffentlichen:** _Plan speichern_ legt einen
   **Entwurf** an — zentral gespeichert, auf jedem PC gleich, aber für das Kollegium
   unsichtbar: nicht im Portal, nicht im PDF des Portals, und es werden keine Fristen
@@ -408,15 +408,19 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   ein kleines Fenster mit Datum und Grund. Die Zeile _Übersprungen: …_ nennt jeden Werktag im
   Plan-Zeitraum, der ausfällt, mit Grund — so ist ein fehlender Donnerstag in der
   Tabelle erklärt.
-- **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den
-  Pfeilen schieben; alles Weitere steht im Menü ⋮ der Zeile: _An den Anfang_ und _Ans
-  Ende_ (die weiten Wege mit einem Klick), _Mit der Zeile davor
-  zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"; die Klassen stehen dann
-  als Chips mit ×), _In einzelne Stunden trennen_ macht daraus wieder zwei, _Zeile davor
-  einfügen_ setzt eine Zeile ohne Klasse („Bücher setzen", „Nachzügler", „Aufräumen" — sie
-  braucht einen Vermerk), _Klasse aus dem Plan nehmen_, _Zeile entfernen_. Wochentag,
-  Datum und Stunde rechnet der Server bei jeder Änderung neu (Vorschau), gespeichert wird
-  erst mit _Plan speichern_.
+- **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Eine Linie steht nur zwischen zwei
+  Tagen. Zeilen mit der Maus ziehen; der Griff ⠿ links erscheint, sobald die Maus auf der
+  Zeile steht. Ohne Ziehen steht alles im Menü ⋮ der Zeile: _Nach oben_ und _Nach unten_
+  (ein Platz), _An den Anfang_ und _Ans Ende_ (die weiten Wege mit einem Klick), _Mit der
+  Zeile davor zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"; die Klassen
+  stehen dann als Chips mit ×), _In einzelne Stunden trennen_ macht daraus wieder zwei,
+  _Zeile davor einfügen_ setzt eine Zeile ohne Klasse („Bücher setzen", „Nachzügler",
+  „Aufräumen" — sie braucht einen Vermerk), _Klasse aus dem Plan nehmen_, _Zeile entfernen_.
+  Die **Besonderheiten** stehen als Text in der Zeile: Ein Klick öffnet das Feld, Enter oder
+  ein Klick daneben übernimmt, Escape stellt den Text von vorher wieder her; einer Zeile
+  ohne Klasse steht das Feld rot offen, bis ein Text darin steht. Wochentag, Datum und
+  Stunde rechnet der Server bei jeder Änderung neu (Vorschau), gespeichert wird erst mit
+  _Plan speichern_.
 - **Fester Platz** (im Menü ⋮: _Datum und Stunde festlegen_): Die Klasse mit dem
   Ausflug bekommt Datum und Stunde von Hand — vorbelegt mit ihrem bisherigen Platz —, die
   übrigen Zeilen fließen um sie herum und lassen die belegte Stunde aus. _Festen Platz
