@@ -74,7 +74,14 @@ func LMFStichtagAbTag(tag time.Time, stichtag string) time.Time {
 	imSchuljahr := LMFStichtagImSchuljahr(tag, stichtag)
 	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	if imSchuljahr.Before(heute) {
-		imSchuljahr = LMFStichtagImSchuljahr(SchuljahrBeginn(tag).AddDate(1, 0, 0), stichtag)
+		imSchuljahr = LMFStichtagImFolgendenSchuljahr(tag, stichtag)
 	}
 	return imSchuljahr
+}
+
+// LMFStichtagImFolgendenSchuljahr liefert den Stichtag des Schuljahres nach dem des Tages. Ein
+// Schulbuch aus dem Büchertausch bekommt ihn beim Ausleihen und beim Veröffentlichen des Plans
+// über dieselbe Rechnung.
+func LMFStichtagImFolgendenSchuljahr(tag time.Time, stichtag string) time.Time {
+	return LMFStichtagImSchuljahr(SchuljahrBeginn(tag).AddDate(1, 0, 0), stichtag)
 }

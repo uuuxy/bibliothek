@@ -457,13 +457,20 @@ ein Name daneben nicht.
 
 **Der Termin einer Klasse beim Büchertausch ist die Frist ihrer Schulbücher.** Beim
 Veröffentlichen (und bei jeder Speicherung eines veröffentlichten Plans)
-folgen die offenen Schulbuch-Ausleihen der Klassen (die Meldung nennt die Zahl); neue
-Ausleihen bekommen ihn gleich. Wer am Termintag seiner Klasse oder danach noch ein
-Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück: Die Frist ist dann der
-Stichtag des folgenden Schuljahres. Fällt eine Klasse aus dem Plan oder wird er verworfen,
-gehen die Fristen an den allgemeinen Stichtag zurück (_Einstellungen → Ausleihe_, Vorgabe
-31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen, von Hand gesetzte
-Fristen und Ausgabe-Pläne. (§2.3)
+folgen die offenen Schulbuch-Ausleihen der Klassen (die Meldung nennt die Zahl).
+
+**Ab dem ersten Tag des Büchertauschs gilt jedes neu ausgegebene Schulbuch dem nächsten
+Schuljahr:** Die Frist ist der Stichtag des folgenden Schuljahres, für jedes Kind — auch aus
+einer Klasse, die nicht im Plan steht, als Nachzügler, für ein getauschtes oder nachgereichtes
+Buch und vor dem Termin der eigenen Klasse. Vor dem Büchertausch bekommt ein neues Schulbuch
+den Termin seiner Klasse. Das Programm kennt den Büchertausch nur aus dem **veröffentlichten**
+Plan; wird er erst während des Tauschs veröffentlicht oder rückt sein Beginn nach vorn,
+bekommen die seitdem ausgegebenen Schulbücher die Frist nachträglich.
+
+Fällt eine Klasse aus dem Plan oder wird er verworfen, gehen die Fristen an den allgemeinen
+Stichtag zurück (_Einstellungen → Ausleihe_, Vorgabe 31.07.); Schulbücher aus dem Tausch
+bleiben beim nächsten Schuljahr, und eine von Hand gesetzte Frist bleibt stehen. Nicht
+angefasst: gesperrte Schüler, mehrjährige Ausleihen und Ausgabe-Pläne. (§2.3)
 
 ## Leserdatei
 

@@ -141,30 +141,31 @@ type LMFTerminLage struct {
 	Naechster time.Time
 	// Bevorstehend: es gibt einen solchen Termin.
 	Bevorstehend bool
-	// Vergangen: Die Klasse hatte im Schuljahr des Tages schon einen Rückgabe-Termin am oder
-	// vor dem Tag. Dann bekommt ein Schulbuch, das jetzt noch ausgegeben wird, den Stichtag des
-	// folgenden Schuljahres als Frist. Mit dem Stichtag des laufenden Schuljahres läge die
-	// Frist in den Ferien; danach wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt.
-	Vergangen bool
+	// TauschBegonnen: Der Büchertausch des Schuljahres hat am oder vor dem Tag begonnen, gleich
+	// mit welcher Klasse oder Zeile. Wer jetzt ein Schulbuch bekommt, bekommt es für das nächste
+	// Schuljahr, auch aus einer Klasse, die nicht im Plan steht, oder als Nachzügler. Mit dem
+	// Stichtag des laufenden Schuljahres läge die Frist in den Ferien; danach wäre das Kind
+	// überfällig und nach 14 Tagen gesperrt.
+	TauschBegonnen bool
 }
 
 // LadeRueckgabeTerminLage liefert die Lage der Klasse zum Tag: den nächsten Termin danach
-// und ob im laufenden Schuljahr schon einer am oder vor dem Tag lag. Eine Abfrage, damit
-// beide Antworten denselben Stand sehen.
+// und ob der Büchertausch des laufenden Schuljahres am oder vor dem Tag begonnen hat. Eine
+// Abfrage, damit beide Antworten denselben Stand sehen.
 func (a *LMFAbfragen) LadeRueckgabeTerminLage(ctx context.Context, klasse string, tag time.Time) (LMFTerminLage, error) {
 	tag = tag.In(schulzeit.Zone())
 	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
 	var lage LMFTerminLage
 	var naechster *time.Time
+	// LEFT JOIN: Auch eine Zeile ohne Klasse („Bücher setzen") gehört zum Büchertausch.
 	err := a.db.QueryRow(ctx, `
-		SELECT min(t.datum) FILTER (WHERE t.datum > $1::date),
+		SELECT min(t.datum) FILTER (WHERE t.datum > $1::date AND klassen_normkey(k.klasse) = klassen_normkey($2)),
 		       coalesce(bool_or(t.datum <= $1::date AND t.datum >= $3::date), false)
 		FROM lmf_termine t
-		JOIN lmf_termin_klassen k ON k.termin_id = t.id
 		JOIN lmf_plaene p ON p.id = t.plan_id
-		WHERE t.art = 'rueckgabe' AND p.veroeffentlicht_am IS NOT NULL
-		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`,
-		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.Vergangen)
+		LEFT JOIN lmf_termin_klassen k ON k.termin_id = t.id
+		WHERE t.art = 'rueckgabe' AND p.veroeffentlicht_am IS NOT NULL`,
+		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.TauschBegonnen)
 	if err != nil {
 		return LMFTerminLage{}, err
 	}
@@ -224,6 +225,35 @@ func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Da
 		  AND a.rueckgabe_frist >= $3 AND a.rueckgabe_frist < $4
 		  AND ($5::date IS NULL OR (a.rueckgabe_frist AT TIME ZONE $6)::date = $5::date)`,
 		frist, klassen, von, bis, nurTag, schulzeit.Zone().String())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
+// SetzeLernmittelFristAbTauschbeginn gibt den offenen Schulbüchern, die am oder nach dem Beginn
+// des Büchertauschs ausgegeben wurden, die Frist des folgenden Schuljahres: dieselbe Regel, die
+// der Ausleihdienst beim Ausleihen über LMFTerminLage.TauschBegonnen anwendet. Sie zieht nach,
+// wenn der Plan erst während des Tauschs veröffentlicht wird oder sein Beginn nach vorn rückt.
+// Angefasst werden wie bei SetzeLernmittelFristFuerKlassen nur Schüler nach
+// sqlSchulbuchFristGehtMit mit einer Klasse und nur Fristen im Schuljahr [von, bis).
+func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex Datenbank, beginn, frist, von, bis time.Time) (int64, error) {
+	tag, err := ex.Exec(ctx, `
+		UPDATE ausleihen a
+		SET rueckgabe_frist = $1,
+		    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+		    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
+		FROM schueler s, buecher_exemplare e, buecher_titel t
+		WHERE a.schueler_id = s.id
+		  AND a.exemplar_id = e.id
+		  AND e.titel_id = t.id
+		  AND a.rueckgabe_am IS NULL
+		  AND `+sqlSchulbuchFristGehtMit+`
+		  AND COALESCE(s.klasse, '') <> ''
+		  AND t.ist_lernmittel
+		  AND a.ausgeliehen_am >= $2
+		  AND a.rueckgabe_frist >= $3 AND a.rueckgabe_frist < $4`,
+		frist, beginn, von, bis)
 	if err != nil {
 		return 0, err
 	}

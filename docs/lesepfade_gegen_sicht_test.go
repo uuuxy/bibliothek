@@ -61,7 +61,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/klassensaetze.go":           {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
 	"repository/betriebszustand.go":         {3, "Demo-Zähler (scripts/seed_demo.sql legt nur Schüler an, Präfix DEMO-S-), Klassenliste und Wächter Ehemalige (ist_abgaenger gibt es nur bei Schülern)"},
 	"repository/lmf_plan.go":                {1, "Klassen im LMF-Plan — Klassen haben nur Schüler"},
-	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie repository/ausleihe_frist.go)"},
+	"repository/lmf_termine.go":             {2, "Fristübernahme je KLASSE und für Schulbücher aus dem Büchertausch; ein Kollege leiht auf Dauer und läuft nie durch die Schulbuchfrist (ausleih_vorgang.go, istSchueler; wie repository/ausleihe_frist.go)"},
 	"repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
 	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},

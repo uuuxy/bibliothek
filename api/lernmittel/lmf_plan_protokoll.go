@@ -2,8 +2,9 @@ package lernmittel
 
 // Die Spur der Massenänderungen am Plan. Veröffentlichen, Speichern eines veröffentlichten
 // Plans und Verwerfen schreiben über service.KoppleLMFPlanFristen die Rückgabefristen aller
-// Klassen des Plans um und löschen dabei, wo die neue Frist in der Zukunft liegt, Mahnstufe
-// und Mahndatum der betroffenen Ausleihen (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen).
+// Klassen des Plans und der Schulbücher aus dem Büchertausch um und löschen dabei, wo die neue
+// Frist in der Zukunft liegt, Mahnstufe und Mahndatum der betroffenen Ausleihen
+// (repository.LMFAbfragen.SetzeLernmittelFristFuerKlassen und SetzeLernmittelFristAbTauschbeginn).
 // Im Plan der Schule sind das rund siebzig Klassen in einem Klick.
 //
 // Die Frist einer einzelnen Ausleihe steht im Protokoll (api/theke/ausleihe.go,

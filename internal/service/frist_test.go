@@ -323,7 +323,7 @@ func TestBestimmeFrist_LMFOhneLeseclub(t *testing.T) {
 		WillReturnRows(rows)
 	// Kein Klassen-Termin im LMF-Plan → der Stichtag bleibt.
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow((*time.Time)(nil), false))
+		WillReturnRows(pgxmock.NewRows([]string{"min", "tausch_begonnen"}).AddRow((*time.Time)(nil), false))
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
 	exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
@@ -346,7 +346,7 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
+		WillReturnRows(pgxmock.NewRows([]string{"min", "tausch_begonnen"}).AddRow(&termin, false))
 
 	exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.bestimmeFrist(context.Background(), exemplar, "9H1")
@@ -424,24 +424,30 @@ func TestLadeEinstellungen_LeererWertFaelltAufVorgabeZurueck(t *testing.T) {
 	}
 }
 
-// Am oder nach dem Rückgabetermin der Klasse ist die Frist der Stichtag des folgenden
-// Schuljahres. Wäre es der Termin selbst (heute 23:59) oder der Stichtag des laufenden
-// Schuljahres, ein Tag in den Ferien, stünde nach den Ferien die ganze Klasse überfällig da und
-// wäre nach 14 Tagen gesperrt. Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je
-// einen Fall hat (Bugklasse „Frist am Tag des Ereignisses"); die Lage kommt hier aus pgxmock,
-// am echten Postgres prüft sie lmf_frist_termintag_pg_test.go.
-func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
+// Ab dem Beginn des Büchertauschs ist die Frist eines Schulbuchs der Stichtag des folgenden
+// Schuljahres, für jede Klasse. Wäre es der Termin der Klasse oder der Stichtag des laufenden
+// Schuljahres, ein Tag in den Ferien, stünde nach den Ferien das Kind überfällig da und wäre
+// nach 14 Tagen gesperrt. Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen
+// Fall hat (Bugklasse „Frist am Tag des Ereignisses"); die Lage kommt hier aus pgxmock, am echten
+// Postgres prüft sie lmf_frist_termintag_pg_test.go.
+func TestBestimmeFrist_AbBeginnDesBuechertauschsGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
 	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schulzeit.Zone())
 	faelle := []struct {
-		name         string
-		heute        time.Time
-		bevorstehend *time.Time
-		vergangen    bool
-		stichtag     string
-		want         time.Time
+		name           string
+		heute          time.Time
+		bevorstehend   *time.Time
+		tauschBegonnen bool
+		stichtag       string
+		want           time.Time
 	}{
-		{"Tag davor: der Termin ist die Frist", termin.AddDate(0, 0, -1), &termin, false, "07-31",
+		{"vor dem Büchertausch: der Termin ist die Frist", termin.AddDate(0, 0, -4), &termin, false, "07-31",
 			time.Date(2027, time.June, 29, 23, 59, 59, 0, schulzeit.Zone())},
+		{"Tausch läuft, Termin der Klasse steht noch an: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), &termin, true, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
+		{"Tausch läuft, Klasse steht nicht im Plan: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), nil, true, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
+		{"vor dem Büchertausch, Klasse steht nicht im Plan: Stichtag des laufenden Schuljahres", termin.AddDate(0, 0, -4), nil, false, "07-31",
+			time.Date(2027, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 		{"am Termintag: Stichtag des folgenden Schuljahres", termin, nil, true, "07-31",
 			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
 		{"Tag danach: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "07-31",
@@ -463,7 +469,7 @@ func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres
 			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("lmf_stichtag", strPtr(fall.stichtag)))
 			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
-				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
+				WillReturnRows(pgxmock.NewRows([]string{"min", "tausch_begonnen"}).AddRow(fall.bevorstehend, fall.tauschBegonnen))
 
 			exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 			got, err := svc.bestimmeFrist(context.Background(), exemplar, "9H2")

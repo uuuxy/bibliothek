@@ -34,14 +34,19 @@ import (
 // (LMFAbfragen.LadeRueckgabeTerminLage). Mit zwei Regeln hätte dasselbe Schulbuch je nach Weg
 // eine andere Frist.
 //
-// Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
-// bekommt jede Klasse des neuen Plans ihren frühesten Termin.
+// Zuerst bekommen die Schulbücher, die seit Beginn des Büchertauschs ausgegeben wurden, das
+// folgende Schuljahr; ihre Frist liegt danach außerhalb des Schuljahres, das die beiden
+// weiteren Schritte anfassen. Dann kehren die Klassen, die im neuen Plan nicht mehr stehen,
+// zum Stichtag zurück, und jede Klasse des neuen Plans bekommt ihren frühesten Termin.
 func KoppleLMFPlanFristen(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, q repository.Datenbank, art string, alt, neu []repository.LMFPlanZeile) (int64, error) {
 	if art != repository.LMFTerminRueckgabe {
 		return 0, nil
 	}
 	termine := fruehesteTermineJeKlasse(neu)
-	var gesamt int64
+	gesamt, err := setzeLMFFristenAbTauschbeginn(ctx, lmfAbfragen, q, neu)
+	if err != nil {
+		return gesamt, err
+	}
 	for _, z := range alt {
 		n, err := loeseLMFFristenVomTermin(ctx, lmfAbfragen, q, z.Datum, ohneTermin(z.Klassen, termine))
 		if err != nil {
@@ -117,6 +122,34 @@ func setzeLMFFristenAufTermin(ctx context.Context, lmfAbfragen *repository.LMFAb
 	von, bis := schuljahrGrenzen(neuTag)
 	return lmfAbfragen.SetzeLernmittelFristFuerKlassen(ctx, q, klassen,
 		schulzeit.TagesEnde(neuTag), von, bis, nil)
+}
+
+// setzeLMFFristenAbTauschbeginn gibt den Schulbüchern, die am oder nach dem ersten Tag des Plans
+// ausgegeben wurden, den Stichtag des folgenden Schuljahres, wie der Ausleihdienst beim Ausleihen
+// (ladeLMFPlanFrist). Nötig, wenn der Plan erst während des Tauschs veröffentlicht wird oder
+// sein Beginn nach vorn rückt; sonst bekämen diese Bücher den Termin der Klasse und wären nach
+// ihm überfällig.
+func setzeLMFFristenAbTauschbeginn(ctx context.Context, lmfAbfragen *repository.LMFAbfragen, q repository.Datenbank, zeilen []repository.LMFPlanZeile) (int64, error) {
+	ersterTag := ""
+	for _, z := range zeilen {
+		if ersterTag == "" || z.Datum < ersterTag {
+			ersterTag = z.Datum
+		}
+	}
+	if ersterTag == "" {
+		return 0, nil
+	}
+	beginn, err := schulzeit.Kalendertag(ersterTag)
+	if err != nil {
+		return 0, err
+	}
+	einstellungen, err := repository.LadeEinstellungen(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	stichtag := repository.LMFStichtagImFolgendenSchuljahr(beginn, einstellungen.LMFStichtag)
+	von, bis := schuljahrGrenzen(beginn)
+	return lmfAbfragen.SetzeLernmittelFristAbTauschbeginn(ctx, q, beginn, schulzeit.TagesEnde(stichtag), von, bis)
 }
 
 // schuljahrGrenzen liefert [1. August des Schuljahres, 1. August des nächsten).

@@ -136,27 +136,28 @@ func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
 	return 0
 }
 
-// ladeLMFPlanFrist liefert die Frist eines Schulbuchs, wenn der LMF-Plan der Klasse sie
-// bestimmt:
+// ladeLMFPlanFrist liefert die Frist eines Schulbuchs, wenn der veröffentlichte Rückgabe-Plan
+// sie bestimmt:
 //
-//   - Steht der Rückgabetermin der Klasse bevor, ist er die Frist, vor dem allgemeinen
-//     Stichtag, und nur für die einjährige Ausleihe. Ein Band über mehrere Jahrgänge bleibt
-//     beim Kind und rechnet weiter über den Stichtag.
-//   - Am oder nach dem Rückgabetermin gibt die Klasse ein neu ausgegebenes Schulbuch erst im
-//     nächsten Schuljahr zurück; die Frist ist dessen Stichtag, auch wenn noch ein Termin für
-//     Nachzügler folgt. Mit dem Stichtag des laufenden Schuljahres wäre die Klasse nach den
-//     Ferien überfällig und nach 14 Tagen gesperrt.
-//   - Beim Band über mehrere Jahrgänge steckt in diesem Sprung schon eines der verbleibenden
-//     Jahre, deshalb zusatzJahre-1: Ein Kind der 7 mit einem Band bis Jahrgang 9, ausgegeben
-//     nach dem Termin im Juli, gibt ihn am Ende der Klasse 9 zurück.
+//   - Ab dem ersten Tag des Büchertauschs gilt jedes neu ausgegebene Schulbuch dem nächsten
+//     Schuljahr; die Frist ist dessen Stichtag. Das gilt für jede Klasse, auch eine, die nicht im
+//     Plan steht, für Nachzügler und für Kinder, deren Termin noch bevorsteht: Im Zeitraum des
+//     Tauschs holt niemand mehr ein Schulbuch für das laufende Schuljahr. Mit dessen Stichtag
+//     wäre das Kind nach den Ferien überfällig und nach 14 Tagen gesperrt. Beim Veröffentlichen
+//     zieht der Plan dieselbe Regel nach (SetzeLernmittelFristAbTauschbeginn).
+//   - Vor dem Büchertausch ist der bevorstehende Rückgabetermin der Klasse die Frist, nur für
+//     die einjährige Ausleihe. Ein Band über mehrere Jahrgänge bleibt beim Kind und rechnet
+//     weiter über den Stichtag.
+//   - Beim Band über mehrere Jahrgänge steckt im Sprung ins nächste Schuljahr schon eines der
+//     verbleibenden Jahre, deshalb zusatzJahre-1: Ein Kind der 7 mit einem Band bis Jahrgang 9,
+//     ausgegeben im Büchertausch, gibt ihn am Ende der Klasse 9 zurück.
 //
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
 func (d *AusleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time, einst *ausleihEinstellungen, zusatzJahre int) (time.Time, bool) {
 	if exemplar.IstLernmittel && klasse != "" {
 		lage, lageErr := repository.NewLMFAbfragen(d.pool).LadeRueckgabeTerminLage(ctx, klasse, heute)
-		if lageErr == nil && lage.Vergangen {
-			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
-			stichtag := repository.LMFStichtagImSchuljahr(folgendes, einst.LMFStichtag)
+		if lageErr == nil && lage.TauschBegonnen {
+			stichtag := repository.LMFStichtagImFolgendenSchuljahr(heute, einst.LMFStichtag)
 			return schulzeit.TagesEnde(stichtag.AddDate(max(zusatzJahre-1, 0), 0, 0)), true
 		}
 		if lageErr == nil && lage.Bevorstehend && zusatzJahre == 0 {
