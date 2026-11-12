@@ -98,4 +98,33 @@ describe('LmfPlanVermerkZelle', () => {
 		expect(knopf.textContent).toContain('Besonderheit eintragen');
 		expect(knopf.hasAttribute('title')).toBe(false);
 	});
+	it('behält das Feld einer Zeile ohne Klasse auch nach Enter und Escape, solange ihr Text fehlt', async () => {
+		// Das Feld bleibt stehen und im Fokus: Schlösse die Taste es innerlich, verschwände es beim
+		// nächsten Buchstaben, und der Rest der Eingabe ginge ins Leere (im Browser: aus „Nach" wurde „N").
+		const { getByLabelText } = zeige([{ klassen: [], vermerk: '' }]);
+		const feld = getByLabelText('Besonderheiten Zeile 1');
+		await fireEvent.focus(feld);
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		await fireEvent.input(feld, { target: { value: 'N' } });
+		expect(getByLabelText('Besonderheiten Zeile 1')).toBe(feld);
+
+		await fireEvent.input(feld, { target: { value: '' } });
+		await fireEvent.keyDown(feld, { key: 'Escape' });
+		await fireEvent.input(feld, { target: { value: 'N' } });
+		expect(getByLabelText('Besonderheiten Zeile 1')).toBe(feld);
+	});
+
+	it('gibt den Fokus nach Enter und nach Escape an die Zelle zurück', async () => {
+		// Sonst stünde der Fokus nirgends, und die Tabulatortaste begänne oben auf der Seite.
+		const { getByRole, getByLabelText } = zeige([{ klassen: ['10R1'], vermerk: 'nur Rückgabe' }]);
+		for (const key of ['Enter', 'Escape']) {
+			await fireEvent.click(getByRole('button', { name: /^Besonderheiten Zeile 1:/ }));
+			await tick();
+			await fireEvent.keyDown(getByLabelText('Besonderheiten Zeile 1'), { key });
+			await tick();
+			expect(document.activeElement, key).toBe(
+				getByRole('button', { name: /^Besonderheiten Zeile 1:/ })
+			);
+		}
+	});
 });

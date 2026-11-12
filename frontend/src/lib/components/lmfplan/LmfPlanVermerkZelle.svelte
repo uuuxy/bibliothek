@@ -12,6 +12,8 @@
 
 	let offen = $state(false);
 	let vorher = '';
+	/** @type {HTMLButtonElement | undefined} */
+	let knopf = $state();
 	const fehlt = $derived(ohneKlasse && !vermerk.trim());
 
 	// Auch das Feld einer Pflichtzeile öffnet sich so: Sonst verschwände es beim ersten
@@ -28,14 +30,24 @@
 		document.getElementById(`lmf-zeile-vermerk-${i}`)?.focus();
 	}
 
+	// Die Taste beendet das Schreiben, der Fokus geht zurück auf die Zelle. Fehlt der Pflichttext,
+	// bleibt das Feld stehen und im Fokus, also auch offen: Sonst verschwände es beim nächsten
+	// Buchstaben.
+	async function beenden() {
+		if (fehlt) return;
+		offen = false;
+		await tick();
+		knopf?.focus();
+	}
+
 	/** @param {KeyboardEvent} e */
 	function taste(e) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
-			offen = false;
+			beenden();
 		} else if (e.key === 'Escape') {
 			vermerk = vorher;
-			offen = false;
+			beenden();
 		}
 	}
 </script>
@@ -57,6 +69,7 @@
 		<!-- Maße wie das Feld (36 px, Rand, 12 px Einzug): Beim Öffnen springt weder die Zeile
 		     noch der Text. -->
 		<button
+			bind:this={knopf}
 			type="button"
 			class="flex h-9 w-full max-w-maske cursor-pointer items-center rounded-xl border border-transparent px-3 text-left text-on-surface hover:bg-surface-container"
 			title={vermerk.trim() || undefined}
