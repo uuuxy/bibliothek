@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"strconv"
 	"time"
 )
 
@@ -21,12 +20,12 @@ type ProtokollZeile struct {
 	Akteur             string
 }
 
-// LadeProtokoll liefert die jüngsten Einträge des Protokolls der Vorgänge, höchstens limit.
+// LadeProtokoll liefert die jüngsten Einträge des Protokolls der Vorgänge, höchstens grenze.
 //
 // LEFT JOIN, weil Vorgänge des Programms selbst (Bereinigung, Sicherung, automatische Sperre)
 // keinen Bearbeiter tragen und trotzdem im Protokoll stehen müssen. COALESCE, weil Bearbeiter
 // und Name damit leer sein können und die Felder der Zeile es nicht sind.
-func LadeProtokoll(ctx context.Context, db Datenbank, limit int) ([]ProtokollZeile, error) {
+func LadeProtokoll(ctx context.Context, db Datenbank, grenze int) ([]ProtokollZeile, error) {
 	query := `
 			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
 			       COALESCE(l.bearbeiter_id::text, ''),
@@ -35,8 +34,8 @@ func LadeProtokoll(ctx context.Context, db Datenbank, limit int) ([]ProtokollZei
 			FROM audit_log l
 			LEFT JOIN benutzer b ON l.bearbeiter_id = b.id
 			ORDER BY l.timestamp DESC
-			LIMIT ` + strconv.Itoa(limit)
-	rows, err := db.Query(ctx, query)
+			LIMIT $1`
+	rows, err := db.Query(ctx, query, grenze)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +66,9 @@ type AdminProtokollZeile struct {
 	Zeitstempel time.Time
 }
 
-// LadeAdminProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung. Eine
-// Zeile, die sich nicht lesen lässt, wird ausgelassen.
-func LadeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeile, error) {
+// LadeAdminProtokoll liefert die jüngsten Einträge des Protokolls der Verwaltung, höchstens
+// grenze. Eine Zeile, die sich nicht lesen lässt, wird ausgelassen.
+func LadeAdminProtokoll(ctx context.Context, db Datenbank, grenze int) ([]AdminProtokollZeile, error) {
 	query := `
 			SELECT 
 				a.id, a.admin_id, coalesce(b.vorname || ' ' || b.nachname, 'System/Unbekannt'),
@@ -77,9 +76,9 @@ func LadeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeil
 			FROM audit_logs a
 			LEFT JOIN benutzer b ON a.admin_id = b.id
 			ORDER BY a.zeitstempel DESC
-			LIMIT 1000
+			LIMIT $1
 		`
-	rows, err := db.Query(ctx, query)
+	rows, err := db.Query(ctx, query, grenze)
 	if err != nil {
 		return nil, err
 	}

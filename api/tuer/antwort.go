@@ -2,6 +2,7 @@ package tuer
 
 import (
 	"net/http"
+	"strconv"
 
 	"bibliothek/pkg/httpresp"
 )
@@ -11,6 +12,20 @@ func AntworteJSON(w http.ResponseWriter, status int, antwort any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	httpresp.SchreibeJSON(w, antwort)
+}
+
+// HeaderGrenze nennt in der Antwort einer Liste, die der Server kappt, die Grenze, die für diese
+// Antwort gilt. Daran sagt die Oberfläche, dass es hinter der letzten Zeile weitergeht
+// (frontend/src/lib/utils/listenGrenze.js); die Zahl steht so nur im Server.
+const HeaderGrenze = "X-Grenze"
+
+// AntworteListe schreibt eine Liste als JSON und nennt im Kopf HeaderGrenze die Grenze, bei der
+// der Server sie kappt; 0 heißt, für diese Antwort gilt keine.
+func AntworteListe(w http.ResponseWriter, liste any, grenze int) {
+	if grenze > 0 {
+		w.Header().Set(HeaderGrenze, strconv.Itoa(grenze))
+	}
+	AntworteJSON(w, http.StatusOK, liste)
 }
 
 // AntworteErfolg antwortet mit {"status": "success"}, wo eine Tür nichts anderes zurückgibt.

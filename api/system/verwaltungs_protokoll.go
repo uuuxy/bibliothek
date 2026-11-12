@@ -22,12 +22,13 @@ type verwaltungsEintrag struct {
 	Zeitstempel time.Time `json:"zeitstempel"`
 }
 
-// VerwaltungsProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung.
+// VerwaltungsProtokoll liefert die jüngsten Einträge des Protokolls der Verwaltung, höchstens
+// protokollMaxZeilen.
 func (t *Tueren) VerwaltungsProtokoll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.LadeAdminProtokoll(ctx, t.DB.Pool)
+		zeilen, err := repository.LadeAdminProtokoll(ctx, t.DB.Pool, protokollMaxZeilen)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -38,6 +39,6 @@ func (t *Tueren) VerwaltungsProtokoll() http.HandlerFunc {
 			liste = append(liste, verwaltungsEintrag(z))
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, liste)
+		tuer.AntworteListe(w, liste, protokollMaxZeilen)
 	}
 }

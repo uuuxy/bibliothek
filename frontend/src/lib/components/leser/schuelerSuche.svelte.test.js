@@ -17,8 +17,16 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 // zweites Glied trägt (Register, Bestands-Durchgang 10.09.2026).
 const treffer = [{ id: 's1', vorname: 'Mia', nachname: 'Muster', klasse: '07A' }];
 
-/** @param {any} body */
-const ok = (body) => /** @type {any} */ ({ ok: true, json: async () => body });
+/**
+ * @param {any} body
+ * @param {number} [grenze] was der Server im Kopf X-Grenze nennt; ohne gilt keine Grenze
+ */
+const ok = (body, grenze = 0) =>
+	/** @type {any} */ ({
+		ok: true,
+		headers: new Headers(grenze ? { 'X-Grenze': String(grenze) } : {}),
+		json: async () => body
+	});
 /** @param {string} meldung */
 const fehler = (meldung) =>
 	/** @type {any} */ ({
@@ -74,7 +82,7 @@ describe('Leserdatei-Suche', () => {
 			if (!String(url).startsWith('/api/schueler')) return ok([]);
 			if (!ersteListe) return ok([{ id: 's2', vorname: 'Xaver', nachname: 'Neu', klasse: '08B' }]);
 			ersteListe = false;
-			return /** @type {any} */ ({ ok: true, json: liesAlt });
+			return /** @type {any} */ ({ ok: true, headers: new Headers(), json: liesAlt });
 		});
 		/** @type {any} */
 		let suche;
@@ -169,13 +177,9 @@ describe('Leserdatei-Suche', () => {
 		}
 	});
 
-	// Die Kappung hängt am SUCHTEXT, nicht am Filter (Rasterdurchgang 17.09.2026).
-	//
-	// Bis dahin meldete `gekuerzt` bei gesetztem Jahrgang `false` — mit der Begründung, ein
-	// Filter laufe „wie die Suche auf dem Server ohne Kappung". Am echten Postgres
-	// nachgemessen stimmt das nicht: Das LIMIT 500 hängt allein daran, ob ein Suchtext da
-	// ist; 520 Leser einer Klasse ergeben 500 Zeilen. Eine gekappte Liste, die sich für
-	// vollständig ausgibt, ist genau der Fehler, gegen den diese Anzeige einmal gebaut wurde.
+	// Ob die Liste gekappt ist, sagt der Server mit der Antwort (repository.LeserListeGrenze):
+	// ohne Suchtext ja, auch mit Filter; 520 Leser einer Klasse ergeben 500 Zeilen. Eine gekappte
+	// Liste, die sich für vollständig ausgibt, ist der Fehler, gegen den diese Anzeige gebaut ist.
 	it('meldet eine gekappte Liste auch dann, wenn nach Jahrgang gefiltert ist', async () => {
 		const fuenfhundert = Array.from({ length: 500 }, (_, i) => ({
 			id: `s${i}`,
@@ -183,7 +187,7 @@ describe('Leserdatei-Suche', () => {
 			nachname: `Nr${i}`,
 			klasse: '05F1'
 		}));
-		vi.mocked(apiFetch).mockResolvedValue(ok(fuenfhundert));
+		vi.mocked(apiFetch).mockResolvedValue(ok(fuenfhundert, 500));
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
@@ -195,10 +199,34 @@ describe('Leserdatei-Suche', () => {
 			expect(suche.schueler).toHaveLength(500);
 			expect(suche.gekuerzt, 'die gefilterte Liste gibt sich als vollständig aus').toBe(true);
 
-			// Mit Suchtext gibt es kein LIMIT — dann ist die Liste wirklich vollständig.
+			// Mit Suchtext nennt der Server keine Grenze — dann ist die Liste vollständig.
+			vi.mocked(apiFetch).mockResolvedValue(ok(fuenfhundert));
 			suche.suchtext = 'Nr';
 			await suche.lade();
 			expect(suche.gekuerzt).toBe(false);
+		} finally {
+			stopp();
+		}
+	});
+
+	// Die Zahl steht nur im Server. Mit einer eigenen 500 gäbe die Ansicht eine Liste, die der
+	// Server bei 300 kappt, als vollständig aus.
+	it('nimmt die Grenze aus der Antwort des Servers', async () => {
+		const dreihundert = Array.from({ length: 300 }, (_, i) => ({
+			id: `s${i}`,
+			vorname: 'P',
+			nachname: `Nr${i}`,
+			klasse: '05F1'
+		}));
+		vi.mocked(apiFetch).mockResolvedValue(ok(dreihundert, 300));
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche();
+		});
+		try {
+			await suche.lade();
+			expect(suche.gekuerzt).toBe(true);
 		} finally {
 			stopp();
 		}

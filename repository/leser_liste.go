@@ -57,6 +57,17 @@ func (a *LeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 // über suche — die Suche läuft auf dem Server und kennt keine Grenze bei 500.
 const leserListeMax = 500
 
+// LeserListeGrenze ist die Obergrenze der Leserliste zu diesem Suchtext, 0 ohne Grenze: Nur die
+// reine Liste wird gekappt, eine Suche muss jede Zeile erreichen. Ein Klassen- oder
+// Jahrgangsfilter hebt sie nicht auf. Die Tür nennt sie der Oberfläche (tuer.AntworteListe),
+// die Abfrage kappt mit ihr; beide lesen dieselbe Regel.
+func LeserListeGrenze(suche string) int {
+	if len(suchTokens(suche)) > 0 {
+		return 0
+	}
+	return leserListeMax
+}
+
 // LadeSchuelerListe liefert die aktiven Schüler samt Ausleihzahlen, auf Wunsch auf Klassen
 // eingegrenzt oder auf einen Suchtext (Name oder Ausweisnummer).
 //
@@ -137,9 +148,9 @@ func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche s
 		// listet die Klasse). Das darf die Serversuche nicht stillschweigend verlieren.
 		bedingungen = append(bedingungen, leserSuchBedingung(true))
 		args = append(args, tokens, tokens[0])
-	} else {
-		// Nur die reine Liste wird gekappt. Eine Suche muss jede Zeile erreichen.
-		limit = fmt.Sprintf(" LIMIT %d", leserListeMax)
+	}
+	if grenze := LeserListeGrenze(suche); grenze > 0 {
+		limit = fmt.Sprintf(" LIMIT %d", grenze)
 	}
 
 	// = ANY statt =, weil der Filter auch einen ganzen Jahrgang meinen kann. Eine Klasse ist

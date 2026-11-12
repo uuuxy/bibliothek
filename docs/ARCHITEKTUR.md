@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 08.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 12.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -2006,7 +2006,7 @@ höchstens Serverzeit).
 | **Dateien ohne Prüfwert im Namen gehen mit `no-cache` und ohne Datum hinaus** | `index.html`, `sw.js`, Manifest: Nach einem Rückbau sind sie älter als die im Browser; ein Vergleich nach Datum antwortete 304, und der Browser lüde den verworfenen Bau. Mit Service Worker erkennt er einen anderen Bau nur an `sw.js`. Unter `assets/` trägt jeder Name einen Prüfwert |
 | **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg**: Die Liste wäre still unvollständig                                  |
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
-| **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei, auch wenn zusätzlich gefiltert wurde                                                  |
+| **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei, auch wenn zusätzlich gefiltert wurde. Antwortet die Tür mit einer Liste, nennt sie die Grenze im Kopf `X-Grenze` (`tuer.AntworteListe`); die Oberfläche führt keine eigene Zahl (`utils/listenGrenze.js`) |
 | **Fehlt einer Liste eine Quelle, sagt sie es**                  | Antwortet die DNB in der Bestellsuche nicht, bleibt es bei 200 mit den Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall. Ist ein fremder Dienst die einzige Quelle, antwortet die Tür mit 502 |
 | **Ein Lesefehler ist keine Vorgabe**                           | Das Lesen der Einstellungen liefert bei einem Fehler die Vorgaben samt Fehler. Eine Tür, die daraus ein Blatt oder eine Mail füllt, verweigert dann die Antwort, statt ohne Kopf der Schule oder mit der Bankverbindung der Vorgabe zu drucken (`repository/einstellungen_lesefehler_ratsche_test.go`) |
 | **Ein Fehler wird an seinem Namen erkannt**                     | `errors.Is`, ein eigener Fehlertyp mit `errors.As` oder bei Datenbankfehlern der SQLSTATE mit dem Namen der Bedingung (`pgconn.PgError`). Ein Vergleich am Text bricht still, sobald jemand die Meldung umformuliert (`fehler_am_wortlaut_test.go`) |

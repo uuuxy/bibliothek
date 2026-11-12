@@ -2,6 +2,7 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import ProtokollGrenze from './ProtokollGrenze.svelte';
+	import { grenzeAus } from '../../utils/listenGrenze.js';
 	import { onMount } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -15,6 +16,7 @@
 
 	/** @type {any[]} */
 	let logs = $state.raw([]);
+	let grenze = $state(0);
 	/** @type {string|null} */
 	let fehler = $state(null);
 	let laedt = $state(true);
@@ -30,6 +32,7 @@
 				}
 				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Admin-Logbuchs'));
 			}
+			grenze = grenzeAus(res);
 			logs = await res.json();
 		} catch (err) {
 			fehler = fehlertext(err);
@@ -48,7 +51,7 @@
 	     und der Seitentitel steht im Seitenrahmen von SystemLogs. Zwei <h1> auf einer Seite
 	     waeren auch fuer Screenreader falsch. -->
 	<div class="flex items-center justify-end gap-4">
-		<ProtokollGrenze anzahl={logs.length} />
+		<ProtokollGrenze anzahl={logs.length} {grenze} />
 		<Button variant="secondary" onclick={fetchLogs}>
 			<RefreshCw class="h-4 w-4" aria-hidden="true" />
 			Aktualisieren

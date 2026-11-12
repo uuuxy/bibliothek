@@ -27,12 +27,14 @@ type protokollEintrag struct {
 	Akteur string `json:"akteur"`
 }
 
-// protokollMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge: Auf dem Prüfstand mit
-// 247.000 Zeilen wäre die ganze Tabelle eine Antwort von 72 MB JSON, die der Browser nicht mehr
-// darstellt, und das Logbuch wächst im Betrieb unbegrenzt. 1000 wie bei VerwaltungsProtokoll.
+// protokollMaxZeilen begrenzt Logbuch und Verwaltungsprotokoll auf die jüngsten Einträge: Auf
+// dem Prüfstand mit 247.000 Zeilen wäre die ganze Tabelle eine Antwort von 72 MB JSON, die der
+// Browser nicht mehr darstellt, und beide Protokolle wachsen im Betrieb unbegrenzt. Die Antwort
+// nennt die Zahl (tuer.AntworteListe); die Oberfläche führt sie nicht ein zweites Mal.
 const protokollMaxZeilen = 1000
 
-// Protokoll liefert die jüngsten 1000 Einträge des Protokolls der Vorgänge.
+// Protokoll liefert die jüngsten Einträge des Protokolls der Vorgänge, höchstens
+// protokollMaxZeilen.
 func (t *Tueren) Protokoll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -48,6 +50,6 @@ func (t *Tueren) Protokoll() http.HandlerFunc {
 			liste = append(liste, protokollEintrag(z))
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, liste)
+		tuer.AntworteListe(w, liste, protokollMaxZeilen)
 	}
 }

@@ -1,6 +1,7 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { normalisiereScan } from '../../utils/scanEinordnen.js';
+import { grenzeAus, istGekappt } from '../../utils/listenGrenze.js';
 
 /**
  * Die Serversuche der Schülerdatei. Eigene Datei wie ausweisdruck.svelte.js:
@@ -19,6 +20,8 @@ import { normalisiereScan } from '../../utils/scanEinordnen.js';
 export function erzeugeSchuelerSuche() {
 	/** @type {any[]} */
 	let schueler = $state.raw([]);
+	/** Die Grenze, die der Server für die geladene Liste nennt; 0, wenn keine gilt. */
+	let grenze = $state(0);
 	let laedt = $state(false);
 	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
 	let ladefehler = $state('');
@@ -45,10 +48,6 @@ export function erzeugeSchuelerSuche() {
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
 
-	/** Muss zu leserListeMax im Backend passen: Erreicht die ungefilterte
-	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
-	const LISTEN_GRENZE = 500;
-
 	// Nur die JÜNGSTE Anfrage darf die Liste schreiben: Überholen sich zwei Suchen, entschiede
 	// sonst der Server, welche Antwort zuletzt eintrifft.
 	let ladeNr = 0;
@@ -74,14 +73,19 @@ export function erzeugeSchuelerSuche() {
 			// Erst gelesen, dann verglichen: Auch das Lesen des Rumpfs dauert.
 			let liste = [];
 			let fehler = '';
-			if (res.ok) liste = (await res.json()) || [];
-			else fehler = await leseApiFehler(res);
+			let neueGrenze = 0;
+			if (res.ok) {
+				neueGrenze = grenzeAus(res);
+				liste = (await res.json()) || [];
+			} else fehler = await leseApiFehler(res);
 			if (nr !== ladeNr) return;
 			schueler = liste;
+			grenze = neueGrenze;
 			ladefehler = fehler;
 		} catch (err) {
 			if (nr === ladeNr) {
 				schueler = [];
+				grenze = 0;
 				ladefehler = 'Die Leserdatei konnte nicht geladen werden (Netzwerkfehler).';
 			}
 			console.error('Fehler beim Laden der Leserdatei:', err);
@@ -165,11 +169,10 @@ export function erzeugeSchuelerSuche() {
 			return suchtext.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
-			// Nur der Suchtext hebt die Kappung auf, ein Filter nicht: Das LIMIT 500 hängt
-			// allein daran, ob ein Suchtext da ist (repository/leser_liste.go), der
-			// Klassenfilter wird erst danach angehängt. 520 Leser einer Klasse ergeben 500
-			// Zeilen.
-			return !suchtext.trim() && schueler.length >= LISTEN_GRENZE;
+			// Wann die Liste gekappt wird, entscheidet der Server (repository.LeserListeGrenze):
+			// ohne Suchtext ja, auch mit Klassen- oder Jahrgangsfilter. Er nennt die Grenze mit
+			// der Antwort.
+			return istGekappt(schueler.length, grenze);
 		},
 		lade,
 

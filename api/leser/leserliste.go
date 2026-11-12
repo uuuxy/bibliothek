@@ -63,7 +63,7 @@ func (t *Tueren) Leserliste(leserAbfragen *repository.LeserAbfragen, lmfAbfragen
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, leser)
+		tuer.AntworteListe(w, leser, repository.LeserListeGrenze(suche))
 		return nil
 	})
 }

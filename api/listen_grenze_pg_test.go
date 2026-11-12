@@ -42,8 +42,8 @@ import (
 
 // listenGrenze: je Liste (Route und Ort in der Antwort, „$" ist die Wurzel) die Antwort.
 var listenGrenze = map[string]string{
-	"GET /api/audit $":            "LIMIT 1000, die jüngsten zuerst (auditLogMaxZeilen, api/system/protokoll.go)",
-	"GET /api/admin/auditlog $":   "LIMIT 1000, die jüngsten zuerst (api/system/verwaltungs_protokoll.go)",
+	"GET /api/audit $":            "LIMIT 1000, die jüngsten zuerst (protokollMaxZeilen, api/system/protokoll.go)",
+	"GET /api/admin/auditlog $":   "LIMIT 1000, die jüngsten zuerst (protokollMaxZeilen, api/system/protokoll.go)",
 	"GET /api/schueler/deleted $": "LIMIT 1000, die jüngsten Löschungen zuerst (papierkorbGrenze, api/leser/papierkorb.go)",
 	"GET /api/books $": "Kappung bei 50000 Titeln mit Warnung im Log (titelListeGrenze, " +
 		"repository/titel_liste.go)",
@@ -139,7 +139,7 @@ var listenGrenze = map[string]string{
 	"GET /api/reservierungen/klassensatz/offen $":                         "keine Obergrenze in der Abfrage; nur die offenen (erledigt = false), eine Warteschlange, die mit dem Erledigen schrumpft (ReservierungsAbfragen.LadeOffene)",
 	"GET /api/schlagworte $":                                              "LIMIT 500 ohne Suche, die häufigsten zuerst; mit ?suche= LIMIT 50 (schlagwortVorschlaegeMax, schlagwortVorschlaegeSucheMax; repository.FindeSchlagwortVorschlaege)",
 	"GET /api/schlagworte/pflege $.zeilen":                                "LIMIT 200, alphabetisch; die Zahlen der ganzen Tabelle stehen daneben (schlagwortPflegeTrefferMax, repository.LadeSchlagworteZurPflege)",
-	"GET /api/schueler $":                                                 "LIMIT 500 ohne Suchbegriff (leserListeMax, repository/leser_liste.go); mit Suchbegriff keine Obergrenze, mit Absicht: Eine Suche muss jede Zeile erreichen",
+	"GET /api/schueler $":                                                 "LIMIT 500 ohne Suchbegriff (repository.LeserListeGrenze); mit Suchbegriff keine Obergrenze, mit Absicht: Eine Suche muss jede Zeile erreichen",
 	"GET /api/signaturen/buecher $.buecher":                               "500 Titel, mit ?limit= weniger (die Vorschau am Vorschlagsmenü holt 2); eine Zeile mehr wird gelesen, damit die Antwort die Kappung ansagt (regalansichtGrenze, api/katalog/signaturen.go; repository.LadeTitelUnterSignatur)",
 	"GET /api/systematics $":                                              "keine Obergrenze in der Abfrage; alle Sachgruppen der Systematik, wächst mit der Ordnung des Bestands, nicht mit den Büchern (repository.LadeSystematikKategorien)",
 	"GET /api/vormerkungen $":                                             "keine Obergrenze in der Abfrage; die Vormerkungen des einen Titels oder Schülers, der Filter ist Pflicht; erfüllte und verfallene werden gelöscht, die Tabelle hält nur offene (VormerkungsAbfragen.LadeListe; Migration 040)",

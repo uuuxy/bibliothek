@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 11.11.2026
+Stand: 12.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -60,7 +60,7 @@ Nur, was kein Test leisten kann.
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
 - [x] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
 - [x] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
-- [ ] Die Grenze der Protokoll-Listen (1000 Einträge) an einer Stelle festlegen. (5.178)
+- [x] Die Grenze der Protokoll-Listen (1000 Einträge) an einer Stelle festlegen. (5.178)
 
 ### Termin
 
@@ -86,15 +86,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.178 Grenze der Protokoll-Listen an einer Stelle
-
-Die Listen „Logbuch“ und „Verwaltungsprotokoll“ zeigen höchstens 1000 Einträge. Die Zahl steht
-dreimal: `protokollMaxZeilen` in `api/system/protokoll.go`, `LIMIT 1000` in
-`repository.LadeAdminProtokoll` und `GRENZE` in `ProtokollGrenze.svelte`, die den Satz „Die 1000
-jüngsten Einträge“ zeigt. Keine Prüfung hält sie zusammen; ändert sich die Grenze im Server,
-behauptet die Oberfläche eine falsche Zahl oder schweigt. Vorschlag: eine Konstante im Server, die
-Antwort nennt die Grenze (Kopfzeile wie `X-Treffer-Gesamt` der Portal-Suche).
 
 ### 7.2 Frisches Littera-Backup
 

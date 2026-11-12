@@ -34,10 +34,10 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 			return err
 		}},
 		{"Protokoll der Verwaltung", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
-			mock.ExpectQuery(`FROM audit_logs a`).WillReturnRows(
+			mock.ExpectQuery(`FROM audit_logs a`).WithArgs(1000).WillReturnRows(
 				pgxmock.NewRows([]string{"id", "admin_id", "admin_name", "aktion", "details", "ip", "zeitstempel"}).
 					AddRow(nil, nil, "Nina", "LOGIN", "{}", "10.0.0.1", jetzt))
-			_, err := LadeAdminProtokoll(ctx, mock)
+			_, err := LadeAdminProtokoll(ctx, mock, 1000)
 			return err
 		}},
 		{"Renner", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
