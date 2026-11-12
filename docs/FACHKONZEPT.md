@@ -815,7 +815,8 @@ stehen in der Mail zusätzlich die erste Zeile (auf zehn Minuten genau) und die 
 Sekunde) und die ganze letzte Zeile, wie das Log sie schreibt, mit allen Feldern, bei einem
 Panic samt Stack (höchstens 4000 Zeichen): Damit lässt sich ein Fehler beheben, ohne das Log am
 Server zu lesen. Das Log nennt eine Person mit ihrer Kennung, nicht mit ihrem Namen
-([STIL.md](STIL.md), Abschnitt 11). Gezählt werden auch die Zeilen der Stufe WARN, getrennt von
+([STIL.md](STIL.md), Abschnitt 11); Mailadressen in Ursache und Zeile, etwa im Feld `empfaenger`
+eines gescheiterten Versands, stehen in der Mail nur mit ihrer Domain („…@schule.de“). Gezählt werden auch die Zeilen der Stufe WARN, getrennt von
 den Fehlern; die Seite zeigt nur die Fehler, die Mail die Warnungen mit dem Schalter. Jede
 einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im
 Log finden“). Der Zählerstand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`)

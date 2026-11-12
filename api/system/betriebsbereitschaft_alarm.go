@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"strings"
 
 	"bibliothek/internal/bereitschaft"
@@ -225,6 +226,16 @@ func schreibeWarnungsteil(sb *strings.Builder, warnBefunde []bereitschaft.Befund
 	}
 }
 
+// mailadresse erkennt eine Mailadresse in der Ursache oder der Logzeile einer Meldung, etwa im Feld
+// empfaenger eines gescheiterten Versands.
+var mailadresse = regexp.MustCompile(`[A-Za-z0-9._%+\-]+@([A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,})`)
+
+// ohneMailadressen kürzt jede Mailadresse auf ihre Domain („…@schule.de"): Die Mail verlässt den
+// Server, die volle Adresse steht im Log am Server, und für die Diagnose reicht die Domain.
+func ohneMailadressen(text string) string {
+	return mailadresse.ReplaceAllString(text, "…@$1")
+}
+
 // Die Zeichen vor dem Bereich: Kritisches und Fehler drücken, Warnungen nicht.
 const (
 	zeichenKritisch = "‼"
@@ -239,13 +250,13 @@ func schreibeAlarmTeil(sb *strings.Builder, zeichen string, b bereitschaft.Befun
 	for _, m := range meldungen {
 		fmt.Fprintf(sb, "            %s\n", m.Text)
 		if m.Zusatz != "" {
-			fmt.Fprintf(sb, "              %s\n", m.Zusatz)
+			fmt.Fprintf(sb, "              %s\n", ohneMailadressen(m.Zusatz))
 		}
 		if m.Zeitraum != "" {
 			fmt.Fprintf(sb, "              Zeit: %s\n", m.Zeitraum)
 		}
 		if m.Logzeile != "" {
-			fmt.Fprintf(sb, "              Letzte Zeile im Log: %s\n", m.Logzeile)
+			fmt.Fprintf(sb, "              Letzte Zeile im Log: %s\n", ohneMailadressen(m.Logzeile))
 		}
 	}
 	if b.Folge != "" {

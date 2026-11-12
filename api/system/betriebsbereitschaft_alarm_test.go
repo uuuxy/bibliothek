@@ -146,6 +146,31 @@ func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
 	}
 }
 
+// Die Mail verlässt den Server: Mailadressen in Ursache und Logzeile einer Meldung stehen nur mit
+// ihrer Domain darin, etwa die Adresse eines gescheiterten Versands im Feld empfaenger. Die volle
+// Adresse bleibt im Log am Server.
+func TestFormatiereAlarmMail_OhneMailadressen(t *testing.T) {
+	fehler := fehlerImLogAntwort{
+		Stufe: bereitschaft.StufeKritisch, Anzahl: 1, Befund: "1 Fehlermeldung in den letzten 24 Stunden.",
+		Meldungen: []fehlerZeile{{
+			Text:     "Anliegen-Mail fehlgeschlagen",
+			Zusatz:   "1 × · 02:31 · 550 5.1.1 <anna.lehrer@schule.de>: Recipient address rejected",
+			Logzeile: `{"msg":"Anliegen-Mail fehlgeschlagen","empfaenger":"b.vater@mail.eltern-net.de","konto":"7f3c"}`,
+		}},
+	}
+	_, text, _ := formatiereAlarmMail(nil, fehler, alarmWarnungen{})
+	for _, muss := range []string{"<…@schule.de>: Recipient address rejected", `"empfaenger":"…@mail.eltern-net.de"`, `"konto":"7f3c"`} {
+		if !strings.Contains(text, muss) {
+			t.Errorf("Mail ohne %q:\n%s", muss, text)
+		}
+	}
+	for _, darfNicht := range []string{"anna.lehrer", "b.vater"} {
+		if strings.Contains(text, darfNicht) {
+			t.Errorf("Mail nennt %q:\n%s", darfNicht, text)
+		}
+	}
+}
+
 // Die Wahl der Empfänger: konfiguriert schlägt Verteiler, Müll ohne @ fällt raus, und ganz
 // ohne Konfiguration greift der Admin-Rückfall; ein Alarm, der niemanden erreicht, ist keiner.
 func TestWaehleAlarmEmpfaenger(t *testing.T) {
