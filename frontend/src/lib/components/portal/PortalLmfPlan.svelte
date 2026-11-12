@@ -12,6 +12,7 @@
 	import { CalendarDays, Printer } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -94,17 +95,11 @@
 {:else if fehler}
 	<LadeFehler titel="LMF-Plan nicht geladen" text={fehler} onerneut={erneutLaden} />
 {:else if termine.length === 0}
-	<div class="py-12 text-center space-y-3 animate-fade-in">
-		<div
-			class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"
-		>
-			<CalendarDays class="h-8 w-8" aria-hidden="true" />
-		</div>
-		<h3 class="font-bold text-on-surface">Der nächste Plan folgt</h3>
-		<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-			Sobald die Bibliothek ihn veröffentlicht, steht er hier.
-		</p>
-	</div>
+	<SuchZustand
+		symbol={CalendarDays}
+		titel="Der nächste Plan folgt"
+		hinweis="Sobald die Bibliothek ihn veröffentlicht, steht er hier."
+	/>
 {:else}
 	<LmfPlanTabelle {termine} {eingangsjahrgaenge} {heute}>
 		{#snippet aktion()}
