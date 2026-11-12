@@ -2,6 +2,7 @@ package docs
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -34,13 +35,17 @@ func TestWerkzeugeDerAnleitungenLiegenImImage(t *testing.T) {
 
 	quellen := map[string]string{}
 	trefferJeForm := make([]int, len(werkzeugAufrufe))
-	for _, muster := range []string{"*.md", "../*.sh", "../scripts/*.sh"} {
-		treffer, err := filepath.Glob(muster)
-		if err != nil {
-			t.Fatalf("Glob %q: %v", muster, err)
-		}
-		for _, pfad := range treffer {
-			inhalt, err := os.ReadFile(pfad) //nolint:gosec // Testdateien aus dem Repo
+	dateien := projektDateien(t)
+	for _, muster := range []string{"docs/*.md", "*.sh", "scripts/*.sh"} {
+		for _, pfad := range dateien {
+			passt, err := path.Match(muster, pfad)
+			if err != nil {
+				t.Fatalf("Muster %q: %v", muster, err)
+			}
+			if !passt {
+				continue
+			}
+			inhalt, err := os.ReadFile(filepath.Join("..", filepath.FromSlash(pfad))) //nolint:gosec // Testdateien aus dem Repo
 			if err != nil {
 				t.Fatalf("%s lesen: %v", pfad, err)
 			}

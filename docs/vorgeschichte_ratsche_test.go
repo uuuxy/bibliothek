@@ -2,7 +2,6 @@ package docs
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -88,45 +87,34 @@ func zeilenMitDatum(inhalt string) int {
 	return n
 }
 
-// dokumenteMitInhalt liest die Dokumente in docs/ und in der Wurzel, je unter ihrem Pfad ab der
-// Wurzel des Repositorys.
+// dokumenteMitInhalt liest die Dokumente in docs/ und in der Wurzel, die git führt, je unter
+// ihrem Pfad ab der Wurzel des Repositorys.
 func dokumenteMitInhalt(t *testing.T) map[string]string {
 	t.Helper()
 	dokumente := map[string]string{}
-	inDocs := 0
-	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+	inDocs, inWurzel := 0, 0
+	for _, datei := range projektDateien(t) {
+		if !strings.HasSuffix(datei, ".md") {
+			continue
 		}
-		if eintrag.IsDir() || !strings.HasSuffix(pfad, ".md") {
-			return nil
+		switch {
+		case strings.HasPrefix(datei, "docs/"):
+			inDocs++
+		case !strings.Contains(datei, "/"):
+			inWurzel++
+		default:
+			continue
 		}
-		roh, err := os.ReadFile(pfad) //nolint:gosec // Dokumente aus dem Repo
+		roh, err := os.ReadFile(filepath.Join("..", filepath.FromSlash(datei))) //nolint:gosec // Dokumente aus dem Repo
 		if err != nil {
-			return err
+			t.Fatalf("%s lesen: %v", datei, err)
 		}
-		dokumente["docs/"+filepath.ToSlash(pfad)] = string(roh)
-		inDocs++
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("docs/ lesen: %v", err)
-	}
-	wurzel, err := filepath.Glob("../*.md")
-	if err != nil {
-		t.Fatalf("Wurzel lesen: %v", err)
-	}
-	for _, pfad := range wurzel {
-		roh, err := os.ReadFile(pfad) //nolint:gosec // Dokumente aus dem Repo
-		if err != nil {
-			t.Fatalf("%s lesen: %v", pfad, err)
-		}
-		dokumente[filepath.Base(pfad)] = string(roh)
+		dokumente[datei] = string(roh)
 	}
 	// Nicht-leer-Garantie je Quelle: Greift ein Sammler ins Leere, wäre die Ratsche still grün.
-	if inDocs < 10 || len(wurzel) < 2 {
+	if inDocs < 10 || inWurzel < 2 {
 		t.Fatalf("nur %d Dokumente in docs/ und %d in der Wurzel gefunden — der Sammler greift ins Leere",
-			inDocs, len(wurzel))
+			inDocs, inWurzel)
 	}
 	return dokumente
 }

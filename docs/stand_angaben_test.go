@@ -1,7 +1,6 @@
 package docs
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,20 +38,13 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// bliebe grün. Die Stände der Abschnitte in invarianten.md liegen weit außerhalb.
 	const kopfZeilen = 24
 
-	// Rekursiv statt fester Globs: Ein Dokument in einem tieferen Ordner fiele sonst mit
-	// veraltetem Kopf still durch, und das Gate sähe dabei grün aus.
+	// Alle Ordner unter docs/ statt fester Globs: Ein Dokument in einem tieferen Ordner fiele sonst
+	// mit veraltetem Kopf still durch, und das Gate sähe dabei grün aus.
 	var dateien []string
-	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+	for _, datei := range projektDateien(t) {
+		if strings.HasPrefix(datei, "docs/") && strings.HasSuffix(datei, ".md") {
+			dateien = append(dateien, datei)
 		}
-		if !eintrag.IsDir() && strings.HasSuffix(pfad, ".md") {
-			dateien = append(dateien, pfad)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("Dokumente suchen: %v", err)
 	}
 
 	if len(dateien) < 10 {
@@ -61,7 +53,7 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 
 	var geprueft int
 	for _, datei := range dateien {
-		rohdaten, readErr := os.ReadFile(datei)
+		rohdaten, readErr := os.ReadFile(filepath.Join("..", filepath.FromSlash(datei)))
 		if readErr != nil {
 			t.Fatalf("%s lesen: %v", datei, readErr)
 		}

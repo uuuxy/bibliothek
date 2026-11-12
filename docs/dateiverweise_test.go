@@ -22,15 +22,15 @@ import (
 //
 // Ein Verweis ist ein Pfad, der mit einem Ordner der Wurzel beginnt und auf eine Dateiendung
 // endet (api/router.go, docs/OFFEN.md); die Oberfläche und die Skripte nennen Pfade auch ab
-// frontend/. In den Dokumenten zählen dazu die Ziele der Links. Gemessen wird an den Dateien,
-// die zum Repository gehören (git ls-files), nicht am Arbeitsplatz: Dort liegen gebaute
-// Dateien, die es im Prüflauf nicht gibt.
+// frontend/. In den Dokumenten zählen dazu die Ziele der Links. Gelesen und gemessen wird an den
+// Dateien, die git führt (git ls-files), nicht am Arbeitsplatz: Dort liegen gebaute und
+// abgelegte Dateien, die es im Prüflauf nicht gibt.
 //
 // Blindheit: ein Dateiname ohne Ordner (router.go), ein Muster (api/bestell*.go), ein Ordner
 // ohne Datei, ein Pfad hinter einem Commit (git show 424f186a:docs/x.md meint die Geschichte),
-// eine Datei, die .gitignore ausnimmt, im Go-Code alles außer den Kommentaren, Migrationen und
-// schema.sql (sie beschreiben den Stand ihres Tages), und ob die Datei noch enthält, was der
-// Verweis meint.
+// eine Datei, die .gitignore ausnimmt, eine neue Datei vor git add, im Go-Code alles außer den
+// Kommentaren, Migrationen und schema.sql (sie beschreiben den Stand ihres Tages), und ob die
+// Datei noch enthält, was der Verweis meint.
 //
 // Bei Rot: den Pfad nachziehen. Nennt die Stelle mit Absicht eine Datei, die es nicht gibt,
 // steht sie mit Grund in dateiverweiseOhneDatei.
@@ -86,6 +86,11 @@ func TestDateiverweise_ZeigenAufDateienDieEsGibt(t *testing.T) {
 			continue
 		}
 		if slices.ContainsFunc(v.ziele, func(ziel string) bool { return ausgenommen[ziel] }) {
+			continue
+		}
+		if liegtNurAmArbeitsplatz(v.ziele) {
+			t.Errorf("%s:%d nennt %s — die Datei liegt nur am Arbeitsplatz, git führt sie nicht. Mit git add "+
+				"aufnehmen; der Prüflauf auf GitHub fände sie sonst nicht.", v.quelle, v.zeile, v.text)
 			continue
 		}
 		t.Errorf("%s:%d nennt %s — die Datei gibt es nicht. Den Pfad nachziehen; nennt die Stelle mit "+
@@ -150,13 +155,19 @@ func hatEndung(datei string, endungen ...string) bool {
 	return slices.Contains(endungen, strings.TrimPrefix(path.Ext(datei), "."))
 }
 
-// projektDateien nennt die Dateien des Repositorys: was git führt und was neu dazugekommen ist,
-// ohne das, was .gitignore ausnimmt, und ohne das, was im Arbeitsbaum gelöscht ist.
+// projektDateien nennt die Dateien, die git führt, ohne die im Arbeitsbaum gelöschten; eine neue
+// Datei zählt ab git add. Eine nur abgelegte Datei, etwa ein Bericht in der Wurzel, kennt der
+// Prüflauf auf GitHub nicht, und sie soll den Push nicht sperren.
 func projektDateien(t *testing.T) []string {
 	t.Helper()
-	geloescht := gitListe(t, "ls-files", "-z", "--deleted")
+	return projektDateienIn(t, "..")
+}
+
+func projektDateienIn(t *testing.T, wurzel string) []string {
+	t.Helper()
+	geloescht := gitListe(t, wurzel, "ls-files", "-z", "--deleted")
 	var dateien []string
-	for _, datei := range gitListe(t, "ls-files", "-z", "--cached", "--others", "--exclude-standard") {
+	for _, datei := range gitListe(t, wurzel, "ls-files", "-z", "--cached") {
 		if !slices.Contains(geloescht, datei) {
 			dateien = append(dateien, datei)
 		}
@@ -164,10 +175,19 @@ func projektDateien(t *testing.T) []string {
 	return dateien
 }
 
-func gitListe(t *testing.T, argumente ...string) []string {
+// liegtNurAmArbeitsplatz meldet, ob eines der Ziele als Datei im Arbeitsbaum liegt, die git
+// nicht führt.
+func liegtNurAmArbeitsplatz(ziele []string) bool {
+	return slices.ContainsFunc(ziele, func(ziel string) bool {
+		info, err := os.Stat(filepath.Join("..", filepath.FromSlash(ziel)))
+		return err == nil && !info.IsDir()
+	})
+}
+
+func gitListe(t *testing.T, wurzel string, argumente ...string) []string {
 	t.Helper()
 	befehl := exec.Command("git", argumente...)
-	befehl.Dir = ".."
+	befehl.Dir = wurzel
 	befehl.Env = umgebungOhneGit()
 	ausgabe, err := befehl.Output()
 	if err != nil {
@@ -401,5 +421,40 @@ func TestDateiverweise_Selbstprobe(t *testing.T) {
 	if len(kommentare) != 2 || kommentare[0].zeile != 3 || kommentare[1].zeile != 4 ||
 		strings.Contains(kommentare[0].text+kommentare[1].text, "erdacht") {
 		t.Errorf("Kommentare: %v", kommentare)
+	}
+}
+
+// Die Prüfungen der Dokumente lesen, was git führt, auch was git add eben aufgenommen hat; eine
+// nur abgelegte und eine im Arbeitsbaum gelöschte Datei lesen sie nicht.
+func TestProjektDateien_NurWasGitFuehrt(t *testing.T) {
+	wurzel := t.TempDir()
+	git := func(argumente ...string) {
+		t.Helper()
+		befehl := exec.Command("git", argumente...)
+		befehl.Dir = wurzel
+		befehl.Env = umgebungOhneGit()
+		if ausgabe, err := befehl.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", argumente, err, ausgabe)
+		}
+	}
+	git("init", "-q")
+	for _, datei := range []string{"gefuehrt.md", "docs/aufgenommen.md", "abgelegt.md", "docs/abgelegt.md", "geloescht.md"} {
+		pfad := filepath.Join(wurzel, filepath.FromSlash(datei))
+		if err := os.MkdirAll(filepath.Dir(pfad), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(pfad, []byte("# Titel\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git("add", "gefuehrt.md", "docs/aufgenommen.md", "geloescht.md")
+	if err := os.Remove(filepath.Join(wurzel, "geloescht.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	gelesen := projektDateienIn(t, wurzel)
+	slices.Sort(gelesen)
+	if want := []string{"docs/aufgenommen.md", "gefuehrt.md"}; !slices.Equal(gelesen, want) {
+		t.Errorf("projektDateien liest %v, erwartet %v", gelesen, want)
 	}
 }
