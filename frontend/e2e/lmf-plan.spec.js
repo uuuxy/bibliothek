@@ -230,10 +230,11 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(geteilt).toContainText(vorherige);
 	await expect(geteilt).toContainText(klasse);
 
-	// Die getippte Klasse hat noch keine Schüler — der Planer sagt es (Absprache vom 06.09.2026:
-	// Klassen wechseln mit dem Schuljahr; was übrig bleibt, gehört raus oder kommt mit dem Import).
+	// Die getippte Klasse hat noch keine Schüler — das Schild an der Klasse sagt es (Absprache vom
+	// 06.09.2026: Klassen wechseln mit dem Schuljahr; was übrig bleibt, gehört raus oder kommt mit
+	// dem Import). Ein Satz über der Tabelle wiederholt es nicht.
 	await expect(zeile.getByText('ohne Schüler')).toBeVisible();
-	await expect(page.getByTestId('lmf-ohne-schueler')).toContainText(klasse);
+	await expect(page.getByTestId('lmf-reihenfolge-hinweis')).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
@@ -273,8 +274,8 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Veröffentlicht am');
 		await expect(page.getByRole('button', { name: 'Veröffentlichen' })).toHaveCount(0);
 
-		await lehrer.reload();
-		await lehrer.getByRole('tab', { name: 'LMF-Plan' }).click();
+		// Ohne Neuladen: Das Veröffentlichen schickt das Signal „lmf-plan" über die Leitung, und das
+		// offene Portal holt den Plan selbst neu (lmf_plan_live.go).
 		await expect(portalZeile).toBeVisible();
 		await expect(portalZeile).toContainText(soll.wochentag);
 		await expect(portalZeile).toContainText(soll.stunde);
@@ -434,9 +435,12 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	expect(new Date(`${wert}T12:00:00`).getDay(), 'ein Donnerstag').toBe(4);
 	await expect(page.getByLabel('Ende am letzten Tag')).toContainText('4. Stunde');
 	await expect(page.getByLabel('Erster Tag')).toHaveCount(0);
-	await expect(page.getByTestId('lmf-zeitraum-hinweis')).toContainText('Sommerferien');
+	await expect(
+		page.getByTestId('lmf-zeitraum-hinweis'),
+		'kein Satz bei bekannten Ferien'
+	).toHaveCount(0);
 
-	// Die letzte Zeile der Reihenfolge liegt auf dem Anker, die Vorschau nennt den Beginn.
+	// Die letzte Zeile der Reihenfolge liegt auf dem Anker; den Beginn zeigt die erste Zeile.
 	const zeilen = page.getByTestId('lmf-reihenfolge').getByRole('row');
 	const letzte = zeilen.last();
 	await expect(letzte).toContainText('4. Std.');
@@ -445,20 +449,23 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 			new Date(`${wert}T12:00:00`)
 		)
 	);
-	await expect(page.getByTestId('lmf-zeitraum-hinweis')).toContainText('Der Plan beginnt');
 
-	// Eine Zeile mehr: das Ende bleibt, der Beginn rückt nach vorn.
-	const beginnVorher = await page.getByTestId('lmf-zeitraum-hinweis').innerText();
+	// Eine Zeile mehr: das Ende bleibt, der Beginn in der ersten Zeile rückt nach vorn.
+	const platzDerErsten = async () => {
+		const zellen = zeilen.nth(1).getByRole('cell');
+		return `${await zellen.nth(2).innerText()} ${await zellen.nth(3).innerText()}`;
+	};
+	const beginnVorher = await platzDerErsten();
 	const erste = zeilen.nth(1);
 	await erste.getByRole('button', { name: 'Aktionen Zeile 1' }).click();
 	await page.getByRole('menuitem', { name: 'Zeile davor einfügen' }).click();
 	await expect(zeilen.last()).toContainText('4. Std.');
-	await expect(page.getByTestId('lmf-zeitraum-hinweis')).not.toHaveText(beginnVorher);
+	await expect.poll(platzDerErsten).not.toBe(beginnVorher);
 
 	// „Noch nicht im Plan" (06.09.2026): Die Oberstufe liegt eingeklappt hinter „bleiben
 	// draußen" — offen steht nichts, die Regel hat jede Klasse eingeordnet. Ausgeklappt
-	// plant ein Klick 12T1 ein; ohne Jahrgang 12 im Plan ans Ende. „An den Anfang" holt
-	// die Zeile mit einem Klick nach oben — vorher 60 Pfeilklicks.
+	// plant ein Klick 12T1 ein; ohne Jahrgang 12 im Plan ans Ende. An ihren Platz kommt sie
+	// am Griff, wie der Chip unten.
 	await expect(page.getByText('Noch nicht im Plan:')).toHaveCount(0);
 	await page.getByRole('button', { name: /Klassen bleiben draußen/ }).click();
 	const draussen = page.getByTestId('lmf-vorrat-draussen').getByRole('button');
@@ -470,10 +477,7 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	await draussen.first().click();
 	const zeileA = zeilen.filter({ hasText: klasseA });
 	await expect(zeileA).toHaveCount(1);
-	await zeileA.getByRole('button', { name: /Aktionen Zeile/ }).click();
-	await page.getByRole('menuitem', { name: 'An den Anfang' }).click();
-	await expect(zeilen.nth(1)).toContainText(klasseA);
-	await expect(zeilen.nth(1).getByRole('cell').first()).toHaveText('1');
+	await expect(zeilen.last()).toContainText(klasseA);
 
 	// Ein Chip auf eine Zeile ziehen setzt die Klasse DAVOR: auf Zeile 2 → Zeile 2.
 	// Von Hand mit der Maus, nicht locator.dragTo: hover() scrollt das Ziel erst in den

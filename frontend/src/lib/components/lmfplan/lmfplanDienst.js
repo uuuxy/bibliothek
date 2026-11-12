@@ -215,19 +215,15 @@ export function ankerGesetzt(art, e) {
 	return Boolean(art === 'rueckgabe' ? e.letzter_tag : e.erster_tag);
 }
 
-/** Rechnet die Plätze und die Ausfälle (Feiertage, freie Tage) ohne zu speichern, dazu
- *  den gerechneten Beginn (beim Büchertausch: wo der Plan anfängt). Leer, wenn der
- *  Anker noch fehlt.
+/** Rechnet die Plätze und die Ausfälle (Feiertage, freie Tage) ohne zu speichern. Leer,
+ *  wenn der Anker noch fehlt.
  *  @param {string} art @param {PlanEntwurf} entwurf
- *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[], beginn: { datum: string, stunde: number } | null }>} */
+ *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[] }>} */
 export async function rechneVorschau(art, entwurf) {
-	if (!ankerGesetzt(art, entwurf)) return { plaetze: [], ausfaelle: [], beginn: null };
+	if (!ankerGesetzt(art, entwurf)) return { plaetze: [], ausfaelle: [] };
 	const { res, json, meldung } = await sende(art, entwurf, true, 'Vorschau fehlgeschlagen');
 	if (!res.ok) throw new Error(meldung);
-	const beginn = json.plan?.erster_tag
-		? { datum: json.plan.erster_tag, stunde: json.plan.startstunde }
-		: null;
-	return { plaetze: json.zeilen ?? [], ausfaelle: json.ausfaelle ?? [], beginn };
+	return { plaetze: json.zeilen ?? [], ausfaelle: json.ausfaelle ?? [] };
 }
 
 /** Alles am Entwurf, wovon die Plätze abhängen — als EIN Text, den die Vorschau

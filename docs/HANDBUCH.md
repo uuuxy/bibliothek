@@ -389,12 +389,11 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 - **Zeitraum** (je Art verschieden): Der **Büchertausch endet am
   Donnerstag vor den Sommerferien in der 4. Stunde** — _Letzter Tag_ und _Ende am letzten
   Tag_ sind aus der Ferientabelle Hessen (KMK-Beschluss, bis 2030 hinterlegt) vorbelegt,
-  die Reihenfolge läuft rückwärts davor, und der Satz darunter nennt Ferien und den
-  gerechneten Beginn („Der Plan beginnt Donnerstag, 11.06.26 in der 3. Stunde"). Kommen
-  Klassen dazu, beginnt der Plan früher; das Ende bleibt. Die **Bücherausgabe beginnt** —
+  die Reihenfolge läuft rückwärts davor; wo sie beginnt, zeigt die erste Zeile der Tabelle.
+  Kommen Klassen dazu, beginnt der Plan früher; das Ende bleibt. Die **Bücherausgabe beginnt** —
   _Erster Tag_ (vorbelegt: erster Schultag nach den Ferien), _Beginn am ersten Tag_
   (vorbelegt 2. Stunde, wie im Plan 2026: Montag 10.08., 2. Stunde). Dazu
-  _Stunden je Tag_ (Vorgabe 6). Fehlt ein Jahr in der Ferientabelle, sagt der Satz das,
+  _Stunden je Tag_ (Vorgabe 6). Fehlt ein Jahr in der Ferientabelle, sagt ein Satz unter _Zeitraum_ das,
   und der Tag wird von Hand eingetragen. **Die Sommerferien pflegt die Schule selbst:**
   _Einstellungen → LUSD & Versetzung → Sommerferien_ zeigt die Jahre
   des Programms und nimmt weitere auf (Beginn und Ende, Quelle
@@ -410,8 +409,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   Tabelle erklärt.
 - **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Eine Linie steht nur zwischen zwei
   Tagen. Zeilen mit der Maus ziehen; der Griff ⠿ links erscheint, sobald die Maus auf der
-  Zeile steht. Ohne Ziehen steht alles im Menü ⋮ der Zeile: _Nach oben_ und _Nach unten_
-  (ein Platz), _An den Anfang_ und _Ans Ende_ (die weiten Wege mit einem Klick), _Mit der
+  Zeile steht; verschoben wird nur so. Im Menü ⋮ der Zeile: _Mit der
   Zeile davor zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"; die Klassen
   stehen dann als Chips mit ×), _In einzelne Stunden trennen_ macht daraus wieder zwei,
   _Zeile davor einfügen_ setzt eine Zeile ohne Klasse („Bücher setzen", „Nachzügler",
@@ -436,11 +434,10 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   August-Import). Was Regel oder gespeicherter Plan bewusst auslassen — die Oberstufe,
   die Rückgabe und Ausgabe an dieser Schule selbst organisiert —, steht eingeklappt
   hinter _11 Klassen bleiben draußen_ und lässt sich von dort genauso einplanen.
-- **Klassen ohne Schüler** („ohne Schüler" an der Klasse, oben in der Reihenfolge
-  gezählt): eine Klasse aus dem Vorjahr, die es nicht mehr gibt, oder eine vor dem
+- **Klassen ohne Schüler** („ohne Schüler" an der Klasse): eine Klasse aus dem Vorjahr, die es nicht mehr gibt, oder eine vor dem
   LUSD-Import getippte. Klassen muss niemand anlegen oder löschen — ein Name im Plan
   registriert sich selbst, und eine Klasse ohne aktive Schüler verschwindet von allein
-  aus jeder Liste. Nach dem LUSD-Import zeigt der Satz, was übrig blieb: raus damit,
+  aus jeder Liste. Nach dem LUSD-Import zeigt das Schild an der Klasse, was übrig blieb: raus damit,
   oder es kommt noch. Neue Klassen mit Schülern erscheinen unter _Noch nicht im Plan_.
 - **Vorjahr als Vorlage**: Ist der letzte Plan vorbei, beginnt der nächste mit dessen
   Reihenfolge und Auslassungen; neue Klassen hängen hinten an. Ganz ohne Vorjahr gilt die

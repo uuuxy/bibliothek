@@ -16,11 +16,10 @@
 	import LmfPlanVermerkZelle from './LmfPlanVermerkZelle.svelte';
 	import LmfPlanZeileAktionen from './LmfPlanZeileAktionen.svelte';
 
-	/** @type {{ zeile: import('./lmfplanDienst.js').PlanZeile, i: number, anzahl: number, platz: { datum: string, stunde: number } | undefined, gezogen: boolean, ziel: boolean, markiert: boolean, tagGehtWeiter: boolean, marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, vorrat: string[], onziehstart: () => void, onziehueber: () => void, onablegen: (e: DragEvent) => void, onklasseraus: (klasse: string) => void, ontausch: (alt: string, neu: string) => void, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onentfernen: () => void }} */
+	/** @type {{ zeile: import('./lmfplanDienst.js').PlanZeile, i: number, platz: { datum: string, stunde: number } | undefined, gezogen: boolean, ziel: boolean, markiert: boolean, tagGehtWeiter: boolean, marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, vorrat: string[], onziehstart: () => void, onziehueber: () => void, onablegen: (e: DragEvent) => void, onklasseraus: (klasse: string) => void, ontausch: (alt: string, neu: string) => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onentfernen: () => void }} */
 	let {
 		zeile = $bindable(),
 		i,
-		anzahl,
 		platz,
 		gezogen,
 		ziel,
@@ -33,10 +32,6 @@
 		onablegen,
 		onklasseraus,
 		ontausch,
-		onhoch,
-		onrunter,
-		onanfang,
-		onende,
 		onzusammen,
 		ontrennen,
 		oneinfuegen,
@@ -83,14 +78,9 @@
 	<td class="px-4 py-1 text-right whitespace-nowrap">
 		<LmfPlanZeileAktionen
 			nummer={i + 1}
-			{anzahl}
 			klassen={zeile.klassen.length}
 			fest={Boolean(zeile.fest)}
 			platzlos={!platz}
-			{onhoch}
-			{onrunter}
-			{onanfang}
-			{onende}
 			{onzusammen}
 			{ontrennen}
 			{oneinfuegen}

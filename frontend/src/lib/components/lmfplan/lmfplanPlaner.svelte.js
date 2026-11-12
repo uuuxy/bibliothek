@@ -32,9 +32,6 @@ export function erzeugePlaner() {
 		plaetze: [],
 		/** @type {import('./lmfplanDienst.js').Ausfall[]} */
 		ausfaelle: [],
-		/** Der gerechnete Beginn des Büchertauschs (der Plan hängt am Ende) — vom Server.
-		 *  @type {{ datum: string, stunde: number } | null} */
-		beginn: null,
 		/** Die gerade eingeplante Zeile — die Tabelle scrollt hin und hebt sie kurz hervor.
 		 *  @type {{ index: number } | null} */
 		markiert: null,
@@ -93,7 +90,6 @@ export function erzeugePlaner() {
 		zustand.entwurf = dienst.leererEntwurf();
 		zustand.plaetze = [];
 		zustand.ausfaelle = [];
-		zustand.beginn = null;
 		zustand.markiert = null;
 		try {
 			const geladen = await dienst.ladeStand(meineArt);
@@ -129,7 +125,6 @@ export function erzeugePlaner() {
 			if (meine !== laufNr) return; // eine jüngere Anfrage ist schon unterwegs oder da
 			zustand.plaetze = z.plaetze.map((p) => ({ datum: p.datum, stunde: p.stunde }));
 			zustand.ausfaelle = z.ausfaelle;
-			zustand.beginn = z.beginn;
 		} catch (e) {
 			if (meine === laufNr) melde(fehlertext(e), 'error');
 		}

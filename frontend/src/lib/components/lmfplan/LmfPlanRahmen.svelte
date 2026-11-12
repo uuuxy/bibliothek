@@ -8,7 +8,7 @@
      Folgetage — rechnet der Server; hier steht nichts, was er auch weiß.
 
      M3-Aufbau eines Abschnitts (Typografie-Rollen): Title-Medium, darunter ein Satz
-     Supporting Text in On-Surface-Variant (hier der gerechnete: Ferien und Beginn),
+     Supporting Text in On-Surface-Variant nur, wenn die Sommerferien fehlen,
      dann der Inhalt auf einem Raster mit vier Spalten: drei Felder und die freien Tage
      als Chip-Spalte, in einer Zeile.
 
@@ -19,10 +19,10 @@
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
 	import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
-	import { STUNDEN, datumKurz, wochentag } from './lmfplanDienst.js';
+	import { STUNDEN } from './lmfplanDienst.js';
 
-	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], beginn: { datum: string, stunde: number } | null, sommerferien: import('./lmfplanDienst.js').Sommerferien | null }} */
-	let { art, entwurf = $bindable(), ausfaelle, beginn, sommerferien } = $props();
+	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], sommerferien: import('./lmfplanDienst.js').Sommerferien | null }} */
+	let { art, entwurf = $bindable(), ausfaelle, sommerferien } = $props();
 
 	const ende = $derived(art === 'rueckgabe');
 	// Die Felder des Ankers — je Art ein anderes Paar im Entwurf.
@@ -35,30 +35,22 @@
 		if (entwurf[stundeFeld] > entwurf.stunden_je_tag) entwurf[stundeFeld] = entwurf.stunden_je_tag;
 	});
 
-	// Ein Textknoten je Satz — kein Umbruch in der Vorlage, der im Text als Leerraum landet.
-	const beginnText = $derived(
-		ende && beginn
-			? `Der Plan beginnt ${wochentag(beginn.datum)}, ${datumKurz(beginn.datum)} in der ${beginn.stunde}. Stunde.`
+	// Zeigt auf die Einstellung, nicht auf ein Programm-Update; die Selbstprüfung sagt dasselbe.
+	const ferienText = $derived(
+		sommerferien && !sommerferien.bekannt
+			? `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt — unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`
 			: ''
 	);
-	const ferienText = $derived.by(() => {
-		if (!sommerferien) return '';
-		if (!sommerferien.bekannt)
-			// Zeigt auf die Einstellung, nicht auf ein Programm-Update; die Selbstprüfung sagt
-			// dasselbe.
-			return `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt — unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`;
-		return `Sommerferien ${sommerferien.jahr}: ${datumKurz(sommerferien.von)} bis ${datumKurz(sommerferien.bis)}.`;
-	});
 </script>
 
 <section aria-labelledby="lmf-zeitraum-titel">
 	<h2 id="lmf-zeitraum-titel" class="text-base font-medium text-on-surface">Zeitraum</h2>
-	<!-- Der eine Satz unter dem Titel ist der dynamische (Ferien, gerechneter Beginn); die
-	     Regel selbst („endet am Donnerstag vor den Ferien") steht als Hinweis unter dem
-	     Datumsfeld und im Handbuch, denn als eigener Satz kostete sie eine Zeile. -->
-	{#if ferienText || beginnText}
+	<!-- Ein Satz unter dem Titel nur, wenn die Sommerferien fehlen. Den Beginn zeigt die erste
+	     Zeile der Reihenfolge, die Regel („Donnerstag vor den Sommerferien") der Hinweis unter
+	     dem Datumsfeld: Jede Angabe steht einmal. -->
+	{#if ferienText}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-zeitraum-hinweis">
-			{[ferienText, beginnText].filter(Boolean).join(' ')}
+			{ferienText}
 		</p>
 	{/if}
 	<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">

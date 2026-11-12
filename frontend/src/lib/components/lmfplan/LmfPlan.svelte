@@ -116,7 +116,6 @@
 				art={z.art}
 				bind:entwurf={z.entwurf}
 				ausfaelle={z.ausfaelle}
-				beginn={z.beginn}
 				sommerferien={z.stand?.sommerferien ?? null}
 			/>
 			<LmfPlanReihenfolge

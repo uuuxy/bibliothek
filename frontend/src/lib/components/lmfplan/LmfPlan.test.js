@@ -223,24 +223,23 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		return gesendet;
 	}
 
-	it('belegt den letzten Tag vor, schickt ihn als letzter_tag und nennt den Beginn', async () => {
+	it('belegt den letzten Tag vor, schickt ihn als letzter_tag; den Beginn zeigt die erste Zeile', async () => {
 		const gesendet = antworte({ ...STAND, vorschlag: { ...STAND.vorschlag, rahmen: RAHMEN } });
 		render(LmfPlan);
 		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
 		expect(feld.value).toBe('2027-06-24');
 		expect(screen.getByText('Ende am letzten Tag')).toBeTruthy();
 		expect(screen.queryByLabelText('Erster Tag')).toBeNull();
-		const hinweis = await screen.findByTestId('lmf-zeitraum-hinweis');
-		expect(hinweis.textContent).toContain('Sommerferien 2027: 28.06.27 bis 06.08.27');
 		await vi.waitFor(() => expect(gesendet.length).toBeGreaterThan(0));
 		expect(gesendet[0].letzter_tag).toBe('2027-06-24');
 		expect(gesendet[0].letzte_stunde).toBe(4);
 		expect(gesendet[0].vorschau).toBe(true);
-		await vi.waitFor(() =>
-			expect(screen.getByTestId('lmf-zeitraum-hinweis').textContent).toContain(
-				'Der Plan beginnt Donnerstag, 24.06.27 in der 4. Stunde'
-			)
-		);
+		// Jede Angabe einmal: Den Beginn zeigt die erste Zeile der Reihenfolge; über dem Raster
+		// des Zeitraums steht kein Satz, solange die Sommerferien bekannt sind.
+		const erste = () => screen.getByTestId('lmf-reihenfolge').querySelector('tbody tr');
+		await vi.waitFor(() => expect(erste()?.textContent).toContain('24.06.27'));
+		expect(erste()?.textContent).toContain('4. Std.');
+		expect(screen.queryByTestId('lmf-zeitraum-hinweis')).toBeNull();
 	});
 
 	it('nennt das fehlende Ferienjahr und lässt den Tag leer (Gegenprobe)', async () => {

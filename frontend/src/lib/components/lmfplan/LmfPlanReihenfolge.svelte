@@ -54,12 +54,6 @@
 		return () => clearTimeout(timer);
 	});
 
-	// Klassen im Plan ohne Schüler (Vorjahr, vor dem Import getippt) — der Satz oben
-	// zählt sie, damit man nach dem LUSD-Import sieht, was übrig geblieben ist.
-	const ohneSchueler = $derived(
-		[...new Set(zeilen.flatMap((z) => z.klassen))].filter((k) => marker.ohneSchueler(k))
-	);
-
 	/** Ablegen auf Zeile i: eine gezogene Zeile wandert dorthin, ein gezogener Chip
 	 *  („Noch nicht im Plan") wird davor eingeplant.
 	 *  @param {DragEvent} e @param {number} i */
@@ -90,20 +84,10 @@
 <section aria-labelledby="lmf-reihenfolge-titel">
 	<h2 id="lmf-reihenfolge-titel" class="text-base font-medium text-on-surface">Reihenfolge</h2>
 	<!-- Kein Bedienungssatz, denn Erklärungstexte kosten Zeilen. Der Satz erscheint nur, wenn
-	     er etwas zu sagen hat: der fehlende erste Tag oder Klassen ohne Schüler. -->
-	{#if !bereit || ohneSchueler.length > 0}
+	     der erste Tag fehlt; eine Klasse ohne Schüler zeigt ihr Chip in der Zeile. -->
+	{#if !bereit}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-reihenfolge-hinweis">
-			{#if !bereit}
-				Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
-			{/if}
-			{#if ohneSchueler.length > 0}
-				<span data-testid="lmf-ohne-schueler">
-					{ohneSchueler.length === 1 ? 'Eine Klasse' : `${ohneSchueler.length} Klassen`} im Plan
-					{ohneSchueler.length === 1 ? 'hat' : 'haben'} noch keine Schüler ({ohneSchueler.join(
-						', '
-					)}) — sie kommen mit dem LUSD-Import oder gehören aus dem Plan.
-				</span>
-			{/if}
+			Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
 		</p>
 	{/if}
 	<LmfPlanVorrat klassen={ausgelassen} {draussen} {marker} onhinein={(k) => onhinein(k)} />
@@ -128,7 +112,6 @@
 					<LmfPlanZeile
 						bind:zeile={zeilen[i]}
 						{i}
-						anzahl={zeilen.length}
 						platz={plaetze[i]}
 						{marker}
 						vorrat={ausgelassen}
@@ -141,10 +124,6 @@
 						onablegen={(e) => ablegen(e, i)}
 						onklasseraus={(k) => klasseRaus(i, k)}
 						ontausch={(alt, neu) => ontausch(i, alt, neu)}
-						onhoch={() => (zeilen = op.verschiebe(zeilen, i, i - 1))}
-						onrunter={() => (zeilen = op.verschiebe(zeilen, i, i + 1))}
-						onanfang={() => (zeilen = op.verschiebe(zeilen, i, 0))}
-						onende={() => (zeilen = op.verschiebe(zeilen, i, zeilen.length - 1))}
 						onzusammen={() => (zeilen = op.zusammenlegen(zeilen, i))}
 						ontrennen={() => (zeilen = op.trennen(zeilen, i))}
 						oneinfuegen={() => (zeilen = op.einfuegen(zeilen, i))}

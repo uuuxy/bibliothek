@@ -1,36 +1,18 @@
 <!-- @component LmfPlanZeileAktionen — das Überlaufmenü einer Zeile im Planer (M3 Menus:
-     „Use menus in situations that need extra actions, like: Overflow menus"). Mit der Maus
-     wird die Zeile gezogen; ohne Ziehen stehen die Wege hier, ein Platz und die weiten
-     Sprünge, wie „Folie nach oben verschieben" bis „Folie ans Ende verschieben" in Google
-     Präsentationen. Dazu zusammenlegen oder trennen, davor einfügen, festlegen oder lösen,
-     Klasse herausnehmen, entfernen. Pfeile in jeder Zeile wären über hundert Knöpfe. -->
+     „Use menus in situations that need extra actions, like: Overflow menus"). Verschoben wird
+     nur am Griff der Zeile: Die Reihenfolge schlägt das Programm vor, von Hand bleibt die
+     Korrektur „diese Klasse neben jene". Hier stehen zusammenlegen oder trennen, davor
+     einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen. -->
 <script>
-	import {
-		ArrowDown,
-		ArrowDownToLine,
-		ArrowUp,
-		ArrowUpToLine,
-		Merge,
-		Pin,
-		PinOff,
-		Plus,
-		Split,
-		Trash,
-		X
-	} from '@lucide/svelte';
+	import { Merge, Pin, PinOff, Plus, Split, Trash, X } from '@lucide/svelte';
 	import Menue from '../ui/Menue.svelte';
 
-	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, platzlos?: boolean, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
+	/** @type {{ nummer: number, klassen: number, fest: boolean, platzlos?: boolean, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
 	let {
 		nummer,
-		anzahl,
 		klassen,
 		fest,
 		platzlos = false,
-		onhoch,
-		onrunter,
-		onanfang,
-		onende,
 		onzusammen,
 		ontrennen,
 		oneinfuegen,
@@ -40,18 +22,13 @@
 	} = $props();
 
 	const eintraege = $derived([
-		{ id: 'hoch', text: 'Nach oben', icon: ArrowUp, disabled: nummer === 1 },
-		{ id: 'runter', text: 'Nach unten', icon: ArrowDown, disabled: nummer === anzahl },
-		{ id: 'anfang', text: 'An den Anfang', icon: ArrowUpToLine, disabled: nummer === 1 },
-		{ id: 'ende', text: 'Ans Ende', icon: ArrowDownToLine, disabled: nummer === anzahl },
 		klassen > 1
-			? { id: 'trennen', text: 'In einzelne Stunden trennen', icon: Split, trennerDavor: true }
+			? { id: 'trennen', text: 'In einzelne Stunden trennen', icon: Split }
 			: {
 					id: 'zusammen',
 					text: 'Mit der Zeile davor zusammenlegen',
 					icon: Merge,
-					disabled: nummer === 1,
-					trennerDavor: true
+					disabled: nummer === 1
 				},
 		{ id: 'einfuegen', text: 'Zeile davor einfügen', icon: Plus },
 		fest
@@ -64,10 +41,6 @@
 	]);
 
 	const aktionen = {
-		hoch: () => onhoch(),
-		runter: () => onrunter(),
-		anfang: () => onanfang(),
-		ende: () => onende(),
 		trennen: () => ontrennen(),
 		zusammen: () => onzusammen(),
 		einfuegen: () => oneinfuegen(),

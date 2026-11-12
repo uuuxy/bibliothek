@@ -71,19 +71,17 @@ describe('LmfPlanReihenfolge', () => {
 		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
 	});
 
-	it('schiebt eine Zeile um einen Platz über das Menü — die Zeile selbst trägt keine Pfeile', async () => {
-		// Mit der Maus wird gezogen; ohne Ziehen stehen die Schritte im Menü, wie „Folie nach
-		// oben verschieben" in Google Präsentationen.
-		const { container, getByLabelText, getByRole, queryByLabelText } = zeige(
+	it('verschiebt nur am Griff — weder Pfeile in der Zeile noch Verschiebe-Einträge im Menü', async () => {
+		// Die Reihenfolge schlägt das Programm vor; von Hand bleibt die Korrektur „diese Klasse
+		// neben jene", und die macht das Ziehen.
+		const { getByLabelText, getByRole, queryByRole, queryByLabelText } = zeige(
 			start.map((z) => ({ ...z }))
 		);
 		expect(queryByLabelText('Zeile 1 nach unten')).toBeNull();
 		await fireEvent.click(getByLabelText('Aktionen Zeile 1'));
-		expect(getByRole('menuitem', { name: 'Nach oben' }).getAttribute('aria-disabled')).toBe('true');
-		await fireEvent.click(getByRole('menuitem', { name: 'Nach unten' }));
-		expect(klassenJeZeile(container)).toEqual(['10R2', '10R1', '10R3']);
-		await menue(getByLabelText, getByRole, 2, 'Nach oben');
-		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
+		expect(getByRole('menuitem', { name: 'Zeile davor einfügen' })).toBeTruthy();
+		for (const name of ['Nach oben', 'Nach unten', 'An den Anfang', 'Ans Ende'])
+			expect(queryByRole('menuitem', { name }), name).toBeNull();
 	});
 
 	it('zieht die Linie nur zwischen zwei Tagen', () => {
@@ -109,16 +107,6 @@ describe('LmfPlanReihenfolge', () => {
 			tr.hasAttribute('data-gruppe-weiter')
 		);
 		expect(weiter).toEqual([true, false, false]);
-	});
-
-	it('schiebt eine Zeile an den Anfang und ans Ende — die weiten Wege im Menü', async () => {
-		// 60 Zeilen, ein Pfeil je Klick: Der Weg von unten nach oben war 50 Klicks
-		// (06.09.2026). Wie im Zeilenmenü einer Playlist gibt es die Sprünge direkt.
-		const { container, getByLabelText, getByRole } = zeige(start.map((z) => ({ ...z })));
-		await menue(getByLabelText, getByRole, 3, 'An den Anfang');
-		expect(klassenJeZeile(container)).toEqual(['10R3', '10R1', '10R2']);
-		await menue(getByLabelText, getByRole, 1, 'Ans Ende');
-		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
 	});
 
 	it('plant eine Klasse aus „Noch nicht im Plan" über den Chip ein — und beim Ablegen auf eine Zeile davor', async () => {
