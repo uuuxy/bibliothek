@@ -3,7 +3,8 @@
 // und stehen erst nach dem Rendern fest.
 //
 // Rechts- oder linksbündig am Knopf, nach unten, wenn Platz ist — sonst nach oben, wenn
-// dort mehr Platz ist. Immer 8 px vom Fensterrand weg.
+// dort mehr Platz ist. Immer 8 px vom Fensterrand weg: Passt es auf keiner Seite, rückt es ins
+// Fenster und deckt den Knopf zum Teil (Compose versucht zuletzt die Lage bündig am Fensterrand).
 
 /**
  * Ein Eintrag des Menüs. Hier und nicht im Bauteil, weil ein .svelte seine JSDoc-Typen
@@ -26,9 +27,10 @@ export function berechneMenueBox(anker, hoehe, breite, ausrichtung, fenster) {
 	const untenPlatz = fenster.hoehe - anker.bottom;
 	const nachOben = untenPlatz < hoehe && anker.top > untenPlatz;
 	const links = ausrichtung === 'links' ? anker.left : anker.right - breite;
+	const unten = Math.min(anker.bottom + ABSTAND, Math.max(RAND, fenster.hoehe - hoehe - RAND));
 	return {
 		left: Math.max(RAND, Math.min(links, fenster.breite - breite - RAND)),
-		top: nachOben ? Math.max(RAND, anker.top - hoehe - ABSTAND) : anker.bottom + ABSTAND
+		top: nachOben ? Math.max(RAND, anker.top - hoehe - ABSTAND) : unten
 	};
 }
 

@@ -34,6 +34,13 @@ describe('berechneMenueBox', () => {
 		);
 		expect(box.top).toBe(700 - 200 - 4);
 	});
+	it('rückt ins Fenster, wenn es weder darunter noch darüber passt', () => {
+		// Knopf etwa in der Mitte, Menü 580 px hoch: unten 384 px Platz, oben 380 px. Nach unten
+		// geöffnet lief es 200 px über den Fensterrand, der letzte Eintrag war nicht zu sehen.
+		const anker = { left: 500, right: 600, top: 380, bottom: 416 };
+		expect(berechneMenueBox(anker, 580, 256, 'rechts', fenster).top).toBe(800 - 580 - 8);
+		expect(berechneMenueBox(anker, 900, 256, 'rechts', fenster).top).toBe(8);
+	});
 	it('bleibt 8 px vom Fensterrand weg', () => {
 		const box = berechneMenueBox(
 			{ left: 0, right: 40, top: 100, bottom: 136 },

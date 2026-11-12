@@ -859,7 +859,9 @@ frontend/src
   text without providing a way for users to view it"). Die Fläche hängt im DOM am Auslöser und
   setzt `whitespace-normal`, sonst erbte sie das `whitespace-nowrap` einer Tabellenzelle. Die
   Liste des Auswahlfelds (`SelectListe`) bleibt einzeilig: Ihre Lage rechnet mit 48 px je Zeile
-  (`selectGeometrie.js`). Gemessen: `frontend/e2e/lmf-plan.spec.js` (`zeilenAktion`).
+  (`selectGeometrie.js`). Gemessen: `frontend/e2e/lmf-plan.spec.js` (`zeilenAktion`). Menü und
+  Liste bleiben im Fenster: Passt die Fläche weder unter noch über ihren Auslöser, rückt sie
+  hinein und deckt ihn zum Teil (`menueGeometrie.test.js`, `selectGeometrie.test.js`).
 - **Ein leeres Pflichtfeld sperrt den Knopf nicht.** Der Klick nennt am Feld, was fehlt, und
   führt dorthin; der Fehlertext steht ab dem ersten Klick und geht, sobald das Feld gefüllt ist
   (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,

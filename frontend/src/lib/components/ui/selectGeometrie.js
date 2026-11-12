@@ -22,9 +22,12 @@ export function berechneBox(ausloeser, anzahl) {
 	const untenPlatz = window.innerHeight - r.bottom;
 	const hoehe = Math.min(LISTE_MAX, anzahl * ZEILE + 16);
 	const nachOben = untenPlatz < hoehe && r.top > untenPlatz;
+	// Passt sie auf keiner Seite, rückt sie ins Fenster und deckt das Feld zum Teil, wie das
+	// Menü (menueGeometrie.js); sonst lägen die letzten Einträge unter dem Fensterrand.
+	const unten = Math.min(r.bottom + 4, Math.max(8, window.innerHeight - hoehe - 8));
 	return {
 		left: r.left,
-		top: nachOben ? Math.max(8, r.top - hoehe - 4) : r.bottom + 4,
+		top: nachOben ? Math.max(8, r.top - hoehe - 4) : unten,
 		breite: r.width
 	};
 }
