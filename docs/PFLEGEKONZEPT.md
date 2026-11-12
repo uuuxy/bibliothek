@@ -322,6 +322,12 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   eine Funktion zurück, ruft Vitest sie nach dem Test als Aufräumer.
   `beforeEach(() => mock.mockReset())` gibt den Mock selbst zurück; lehnt er dann ab, kommt
   der Fehler aus dem Aufräumer. Den Rumpf des Hakens in geschweifte Klammern setzen.
+- **Ein Frontend-Test ist in der CI rot, am Arbeitsplatz grün.** Die CI mischt die Reihenfolge
+  der Tests (`npm run test -- --sequence.shuffle`), der Hook am Arbeitsplatz nicht. Den Seed nennt
+  der Schritt „Run Vitest“ oben im Log („Running tests with seed …“); `npx vitest run <datei>
+  --sequence.shuffle --sequence.seed=<seed>` stellt die Reihenfolge nach. Meist stellt ein anderer
+  Test derselben Datei einen geteilten Zustand um, etwa einen Store, und setzt ihn nicht zurück:
+  Das `beforeEach` setzt alles zurück, was ein Test der Datei verstellt.
 - **svelte-check meldet „Invalid character" in einem Kommentar.** Steht in einer JSDoc-Zeile
   direkt hinter dem Namen des Parameters ein deutsches Anführungszeichen („), liest der Parser
   es als Teil des Namens. Ein Wort davor genügt.
