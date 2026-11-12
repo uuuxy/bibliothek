@@ -25,7 +25,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
-- [ ] Die Adressen in `update_caddy.sh` aus einer Datei am Server lesen. (7.16)
 - [x] Die Läufe unter anderen Bedingungen wiederholen, wenn die übrigen Änderungen drin sind. (7.15)
 - [x] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
@@ -212,19 +211,6 @@ Passwort des Mailversands und die Sicherungen ([datenschutz/nachweis.md](datensc
 „Verschlüsselung"). Wer die Platte bekommt, bei Diebstahl, Austausch oder Entsorgung, liest alle
 Daten der Schüler. Beim Einrichten des Schulservers die Platte verschlüsseln, danach den Nachweis
 um den Satz ergänzen.
-
-### 7.16 Adressen des Servers in `update_caddy.sh`
-
-Das Repository ist öffentlich, und die Adresse des Servers steht nicht darin
-([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Einleitung). `update_caddy.sh` schreibt die Caddy-Datei
-des Testservers aus dem Skript: drei Hostnamen (dieses Programm und zwei weitere Dienste auf
-demselben Rechner) und die Mailadresse für die Zertifikate. Die Dokumente nennen den Hostnamen
-nicht mehr.
-
-- **Vorschlag:** Das Skript liest Hostnamen und Mailadresse aus einer Datei am Server, die nicht
-  im Repository liegt, und bricht ohne sie ab, bevor es die laufende Caddy-Datei ersetzt.
-- **Nächster Schritt:** Die Datei muss am Server liegen, bevor das geänderte Skript dort läuft.
-  Deshalb erst nach Absprache bauen, und den Schulserver von Anfang an so einrichten.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
