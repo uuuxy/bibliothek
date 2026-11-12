@@ -29,7 +29,7 @@ func TestAlarmPunkte(t *testing.T) {
 		"Fehler: Voriger Lauf des Servers ist abgestürzt",
 		"Fehler: weitere Meldungen",
 	}
-	if got := AlarmPunkte(befunde, gruppen); !slices.Equal(got, want) {
+	if got := AlarmPunkte(befunde, gruppen, false); !slices.Equal(got, want) {
 		t.Fatalf("AlarmPunkte =\n%q\nerwartet\n%q", got, want)
 	}
 
@@ -37,8 +37,37 @@ func TestAlarmPunkte(t *testing.T) {
 	befunde[1].Befund = "Letztes Backup vor 31 Stunden."
 	gruppen[0].Anzahl, gruppen[0].Zuletzt, gruppen[0].Ursache = 2, time.Now(), "api/probe.go:7: panic: y"
 	gruppen[1].Anzahl = 40
-	if got := AlarmPunkte(befunde, gruppen); !slices.Equal(got, want) {
+	if got := AlarmPunkte(befunde, gruppen, false); !slices.Equal(got, want) {
 		t.Errorf("mit neuen Zahlen, Uhrzeiten und Ursachen =\n%q\nerwartet unverändert\n%q", got, want)
+	}
+}
+
+// Mit dem Schalter alarm_warnungen zählen auch die Warnungen als Punkte, als eigene Art; ohne
+// ihn nicht, sonst löste eine Warnung, die die Mail nicht nennt, eine neue Mail aus.
+func TestAlarmPunkte_MitWarnungen(t *testing.T) {
+	befunde := []Befund{
+		{Bereich: "Demo-Daten", Stufe: StufeWarnung},
+		{Bereich: "Littera-Übernahme", Stufe: StufeKritisch},
+	}
+	gruppen := []logger.Fehlergruppe{
+		{Meldung: "LUSD-Abgleich abgewiesen", Route: "POST /api/lusd/import", Anzahl: 2, Warnung: true},
+		{Sammel: true, Warnung: true, Anzahl: 3},
+		{Meldung: "Anfrage mit Serverfehler beendet", Anzahl: 1},
+	}
+	if got, want := AlarmPunkte(befunde, gruppen, false), []string{
+		"Befund: Littera-Übernahme",
+		"Fehler: Anfrage mit Serverfehler beendet",
+	}; !slices.Equal(got, want) {
+		t.Errorf("ohne Schalter =\n%q\nerwartet\n%q", got, want)
+	}
+	if got, want := AlarmPunkte(befunde, gruppen, true), []string{
+		"Befund: Littera-Übernahme",
+		"Fehler: Anfrage mit Serverfehler beendet",
+		"Warnung im Log: LUSD-Abgleich abgewiesen POST /api/lusd/import",
+		"Warnung im Log: weitere Meldungen",
+		"Warnung: Demo-Daten",
+	}; !slices.Equal(got, want) {
+		t.Errorf("mit Schalter =\n%q\nerwartet\n%q", got, want)
 	}
 }
 

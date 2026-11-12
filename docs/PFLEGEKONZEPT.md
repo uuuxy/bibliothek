@@ -190,6 +190,9 @@ Pflege. Die beweglichen Ferientage legt jede Schule selbst; sie stehen nicht im 
 
 Die Alarm-Mails gehen an die Adressen unter Einstellungen → Erreichbarkeit & Alarme, ist das
 Feld leer, an alle aktiven Admin-Konten. **Vorschlag:** Entwicklung und Vertretung stehen dort.
+Mit dem Schalter „Auch Warnungen mailen“ nennt die Mail auch Warnungen, darunter abgewiesene
+LUSD-Abgleiche und das Ergebnis der Littera-Übernahme; je Meldung steht die ganze letzte Zeile
+im Log darin, genug, um den Fehler ohne Zugang zum Server zu beheben.
 
 ---
 

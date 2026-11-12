@@ -563,7 +563,10 @@ angesehen. `WARN` heißt: Das Programm hat sich selbst geholfen. `INFO` ist der 
 Die Zeilen mit `ERROR` zählt der Server selbst: System → Einstellungen → Fehler im Log nennt die
 der letzten 24 Stunden je Meldung mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene
 Anfrage mit ihrer Route, und die tägliche Alarm-Mail geht an die Alarm-Empfänger (Einstellungen →
-Erreichbarkeit & Alarme, leer: alle aktiven Admins). Der Zählerstand liegt alle zehn Sekunden in
+Erreichbarkeit & Alarme, leer: alle aktiven Admins). Die Mail nennt je Meldung erste und letzte
+Zeit und die ganze letzte Zeile mit allen Feldern, bei einem Panic samt Stack. Die Zeilen mit
+`WARN` zählt der Server ebenso, getrennt; die Seite zeigt sie nicht, die Mail nennt sie mit dem
+Schalter „Auch Warnungen mailen“ in derselben Kategorie. Der Zählerstand liegt alle zehn Sekunden in
 der Datenbank und übersteht ein Update. Jede Zeile einzeln zeigen die Befehle, im
 Programmverzeichnis am Server:
 

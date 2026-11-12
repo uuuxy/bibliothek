@@ -55,17 +55,21 @@ func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
 func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, uebernehmen bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		meldeAbweisung(r, meldungLUSDHochladen)
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungLUSDHochladen, err)
 		return
 	}
 	datei, err := leseLUSDDatei(r)
 	if err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, lusdDateiMeldung(err), err)
+		meldung := lusdDateiMeldung(err)
+		meldeAbweisung(r, meldung)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, err)
 		return
 	}
 	lauf := lusd.Lauf{Anwenden: uebernehmen, MassenabgangBestaetigt: uebernehmen && r.FormValue("confirm_graduates") == "true"}
 	if uebernehmen {
 		if lauf.Umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
+			meldeAbweisung(r, meldungUmbenennungUnlesbar)
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungUmbenennungUnlesbar, err)
 			return
 		}
@@ -76,6 +80,10 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	res, err := lusd.FuehreAus(r.Context(), t.DB.Pool, datei, lauf)
 	if err != nil {
 		status, meldung := lusdLaufFehler(err)
+		// Ein Serverfehler steht schon als Fehler im Log (apierrors), die Abweisung als Warnung.
+		if status != http.StatusInternalServerError {
+			meldeAbweisung(r, meldung)
+		}
 		apierrors.AntworteFehlerMitMeldung(w, status, meldung, err)
 		return
 	}
@@ -85,6 +93,14 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 		t.protokolliereLUSDImport(r, res, lauf.MassenabgangBestaetigt)
 	}
 	tuer.AntworteJSON(w, http.StatusOK, res)
+}
+
+// meldeAbweisung schreibt einen abgewiesenen Abgleich als Warnung ins Log: Den Grund sieht sonst
+// nur, wer den Abgleich gerade macht, und mit dem Schalter alarm_warnungen nennt ihn die
+// Alarm-Mail. Der Grund ist der Satz der Antwort; er nennt Zeile, Blatt, Spalte oder Zahlen,
+// keine Namen.
+func meldeAbweisung(r *http.Request, grund string) {
+	slog.Warn("LUSD-Abgleich abgewiesen", "route", r.Pattern, "fehler", grund)
 }
 
 // Sätze zum Hochladen und Lesen der Datei aus der LUSD.

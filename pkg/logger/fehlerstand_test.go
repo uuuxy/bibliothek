@@ -14,7 +14,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
+
+// ohneZeitUndZeile vergleicht Gruppen ohne Erstmals und Zeile; beide prüft
+// TestFehlerstand_HaeltDieLetzteZeileFest.
+var ohneZeitUndZeile = cmpopts.IgnoreFields(Fehlergruppe{}, "Erstmals", "Zeile")
 
 var testStart = time.Date(2026, 10, 24, 10, 5, 0, 0, time.UTC)
 
@@ -28,8 +33,9 @@ func trageZeileEin(t *testing.T, stand *Fehlerstand, zeit time.Time, stufe slog.
 	}
 }
 
-// Jede Zeile geht unverändert weiter; gezählt wird nur ERROR, mit der Ursache aus dem Feld fehler.
-func TestFehlerstand_ZaehltNurFehlerUndGibtJedeZeileWeiter(t *testing.T) {
+// Jede Zeile geht unverändert weiter; gezählt werden ERROR und WARN, je Stufe getrennt, mit der
+// Ursache aus dem Feld fehler. INFO zählt nicht.
+func TestFehlerstand_ZaehltFehlerUndWarnungenGetrenntUndGibtJedeZeileWeiter(t *testing.T) {
 	var ausgabe bytes.Buffer
 	stand := NewFehlerstand()
 	log := slog.New(stand.SchalteVor(slog.NewJSONHandler(&ausgabe, nil)))
@@ -43,14 +49,17 @@ func TestFehlerstand_ZaehltNurFehlerUndGibtJedeZeileWeiter(t *testing.T) {
 		t.Errorf("Zeilen im Log = %d, erwartet 4:\n%s", n, ausgabe.String())
 	}
 	gruppen := stand.Gruppen(time.Now())
-	if len(gruppen) != 2 {
-		t.Fatalf("Gruppen = %+v, erwartet die zwei Meldungen der Stufe ERROR", gruppen)
+	if len(gruppen) != 3 {
+		t.Fatalf("Gruppen = %+v, erwartet die zwei Meldungen der Stufe ERROR und die eine der Stufe WARN", gruppen)
 	}
 	ursachen := map[string]string{}
 	for _, g := range gruppen {
 		ursachen[g.Meldung] = g.Ursache
 		if g.Anzahl != 1 {
 			t.Errorf("Anzahl für %q = %d, erwartet 1", g.Meldung, g.Anzahl)
+		}
+		if istWarnung := g.Meldung == "Vorgabe statt Einstellung"; g.Warnung != istWarnung {
+			t.Errorf("Gruppe %q: Warnung = %v, erwartet %v", g.Meldung, g.Warnung, istWarnung)
 		}
 	}
 	if u := ursachen["Mail nicht zugestellt"]; u != "dial tcp: i/o timeout" {
@@ -305,14 +314,80 @@ func TestFehlerstand_AbbruchIstKeinFehler(t *testing.T) {
 
 	log.Error("Fehler beim Laden der Bücherliste", "fehler", fmt.Errorf("fehler beim iterieren: %w", context.Canceled))
 	log.Error("Fehler beim Laden der Bücherliste", "fehler", fmt.Errorf("lesen: %w", context.DeadlineExceeded))
+	log.Warn("Vorschau abgebrochen", "fehler", context.Canceled)
 
 	zeilen := strings.Split(strings.TrimSpace(ausgabe.String()), "\n")
-	if len(zeilen) != 2 || !strings.Contains(zeilen[0], `"level":"WARN"`) || !strings.Contains(zeilen[1], `"level":"ERROR"`) {
-		t.Errorf("Log = %q, erwartet den Abbruch als WARN und die Frist als ERROR", zeilen)
+	if len(zeilen) != 3 || !strings.Contains(zeilen[0], `"level":"WARN"`) || !strings.Contains(zeilen[1], `"level":"ERROR"`) ||
+		!strings.Contains(zeilen[2], `"level":"WARN"`) {
+		t.Errorf("Log = %q, erwartet den Abbruch als WARN, die Frist als ERROR und die Warnung als WARN", zeilen)
 	}
 	gruppen := stand.Gruppen(time.Now())
 	if len(gruppen) != 1 || gruppen[0].Anzahl != 1 || !strings.Contains(gruppen[0].Ursache, "deadline exceeded") {
-		t.Errorf("Gruppen = %+v, erwartet nur die abgelaufene Frist", gruppen)
+		t.Errorf("Gruppen = %+v, erwartet nur die abgelaufene Frist: Ein Abbruch zählt auch als Warnung nicht", gruppen)
+	}
+}
+
+// Dieselbe Meldung als Fehler und als Warnung sind zwei Gruppen, und die Warnung übersteht den
+// Neustart als Warnung. Ein Stand ohne das Feld warnung, abgelegt vor der Zählung der Warnungen,
+// liest sich als Fehler.
+func TestFehlerstand_WarnungUeberstehtDenNeustartAlsWarnung(t *testing.T) {
+	stand := NewFehlerstand()
+	trageZeileEin(t, stand, testStart, slog.LevelError, "Mail", slog.String("fehler", "kaputt"))
+	trageZeileEin(t, stand, testStart.Add(time.Minute), slog.LevelWarn, "Mail", slog.String("fehler", "nochmal versucht"))
+	wert, _, _ := ablageNachUebernahme(t, stand, testStart.Add(time.Hour))
+
+	nachher := NewFehlerstand()
+	if err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
+		t.Fatalf("Uebernimm: %v", err)
+	}
+	will := []Fehlergruppe{
+		{Meldung: "Mail", Anzahl: 1, Zuletzt: testStart.Add(time.Minute), Ursache: "nochmal versucht", Warnung: true},
+		{Meldung: "Mail", Anzahl: 1, Zuletzt: testStart, Ursache: "kaputt"},
+	}
+	if diff := cmp.Diff(will, nachher.Gruppen(testStart.Add(time.Hour)), ohneZeitUndZeile); diff != "" {
+		t.Errorf("Gruppen nach dem Neustart (-will +ist):\n%s", diff)
+	}
+
+	alt := NewFehlerstand()
+	if err := alt.Uebernimm(`{"gruppen":[{"meldung":"A","faecher":{"1792836000":1},"zuletzt":"2026-10-24T10:00:00Z"}]}`, testStart); err != nil {
+		t.Fatalf("Uebernimm des alten Stands: %v", err)
+	}
+	if g := alt.Gruppen(testStart); len(g) != 1 || g[0].Warnung {
+		t.Errorf("Gruppen aus dem alten Stand = %+v, erwartet die eine als Fehler", g)
+	}
+}
+
+// Über der Höchstzahl zählt eine Warnung in ihrer eigenen Sammelgruppe: In der Sammelgruppe der
+// Fehler machte sie die Mail kritisch.
+func TestFehlerstand_WarnungUeberDerHoechstzahl(t *testing.T) {
+	stand := NewFehlerstand()
+	for i := range hoechstzahlGruppen {
+		trageZeileEin(t, stand, testStart, slog.LevelError, fmt.Sprintf("Meldung %d", i))
+	}
+	trageZeileEin(t, stand, testStart.Add(time.Minute), slog.LevelWarn, "Warnung 1")
+	trageZeileEin(t, stand, testStart.Add(2*time.Minute), slog.LevelWarn, "Warnung 2")
+
+	var sammelFehler, sammelWarnung int
+	for _, g := range stand.Gruppen(testStart.Add(time.Hour)) {
+		switch {
+		case g.Sammel && g.Warnung:
+			sammelWarnung += g.Anzahl
+		case g.Sammel:
+			sammelFehler += g.Anzahl
+		}
+	}
+	if sammelFehler != 0 || sammelWarnung != 2 {
+		t.Errorf("Sammelgruppen: Fehler %d, Warnungen %d; erwartet 0 und 2", sammelFehler, sammelWarnung)
+	}
+	wert, _, _ := ablageNachUebernahme(t, stand, testStart.Add(time.Hour))
+	nachher := NewFehlerstand()
+	if err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
+		t.Fatalf("Uebernimm: %v", err)
+	}
+	for _, g := range nachher.Gruppen(testStart.Add(time.Hour)) {
+		if g.Sammel && (!g.Warnung || g.Anzahl != 2) {
+			t.Errorf("Sammelgruppe nach dem Neustart = %+v, erwartet die zwei Warnungen", g)
+		}
 	}
 }
 
@@ -334,7 +409,7 @@ func TestFehlerstand_ZaehltJeRoute(t *testing.T) {
 		{Meldung: meldung, Route: "POST /api/b", Anzahl: 1, Zuletzt: testStart.Add(2 * time.Minute), Ursache: "b"},
 		{Meldung: meldung, Route: "GET /api/a/{id}", Anzahl: 2, Zuletzt: testStart.Add(time.Minute)},
 	}
-	if diff := cmp.Diff(will, nachher.Gruppen(testStart.Add(time.Hour))); diff != "" {
+	if diff := cmp.Diff(will, nachher.Gruppen(testStart.Add(time.Hour)), ohneZeitUndZeile); diff != "" {
 		t.Errorf("Gruppen nach dem Neustart (-will +ist):\n%s", diff)
 	}
 }
@@ -352,12 +427,73 @@ func TestFehlerstand_FruehereFormUnlesbar(t *testing.T) {
 	}
 }
 
-// Gezählt wird jede Zeile der Stufe ERROR, auch wenn die Ausgabe dahinter nichts schreibt; sonst
-// verwürfe slog sie, bevor der Fehlerstand sie sieht.
+// Gezählt wird jede Zeile der Stufen ERROR und WARN, auch wenn die Ausgabe dahinter nichts
+// schreibt; sonst verwürfe slog sie, bevor der Fehlerstand sie sieht.
 func TestFehlerstand_ZaehltOhneAusgabe(t *testing.T) {
 	stand := NewFehlerstand()
-	slog.New(stand.SchalteVor(slog.DiscardHandler)).Error("Mail nicht zugestellt", "fehler", "x")
-	if g := stand.Gruppen(time.Now()); len(g) != 1 || g[0].Anzahl != 1 {
-		t.Errorf("Gruppen = %+v, erwartet die eine Zeile", g)
+	log := slog.New(stand.SchalteVor(slog.DiscardHandler))
+	log.Error("Mail nicht zugestellt", "fehler", "x")
+	log.Warn("Vorgabe statt Einstellung")
+	if g := stand.Gruppen(time.Now()); len(g) != 2 || g[0].Anzahl != 1 || g[1].Anzahl != 1 {
+		t.Errorf("Gruppen = %+v, erwartet die Zeile der Stufe ERROR und die der Stufe WARN", g)
+	}
+}
+
+// Je Meldung hält der Fehlerstand die letzte Zeile so fest, wie das Log sie schreibt, mit den
+// Feldern aus With und WithGroup und dem Stack; die Mail zeigt sie ganz, damit sich der Fehler
+// ohne Zugang zum Server beheben lässt. Sie übersteht den Neustart, eine zu lange wird gekürzt,
+// und Erstmals ist der Beginn des ersten Fachs.
+func TestFehlerstand_HaeltDieLetzteZeileFest(t *testing.T) {
+	stand := NewFehlerstand()
+	log := slog.New(stand.SchalteVor(slog.DiscardHandler)).With("lauf", "nacht").WithGroup("sicherung")
+	log.Error("Backup: S3 upload failed", "fehler", "erste")
+	log.Error("Backup: S3 upload failed", "fehler", "403 AccessDenied", "stack", "goroutine 1 [running]:\nmain.main()")
+
+	gruppen := stand.Gruppen(time.Now())
+	if len(gruppen) != 1 {
+		t.Fatalf("Gruppen = %+v, erwartet eine", gruppen)
+	}
+	zeile := gruppen[0].Zeile
+	for _, muss := range []string{`"time":"`, `"level":"ERROR"`, `"msg":"Backup: S3 upload failed"`, `"lauf":"nacht"`,
+		`"sicherung":{`, `"fehler":"403 AccessDenied"`, `goroutine 1 [running]:\nmain.main()`} {
+		if !strings.Contains(zeile, muss) {
+			t.Errorf("Zeile ohne %s: %s", muss, zeile)
+		}
+	}
+	if strings.Contains(zeile, "erste") || strings.HasSuffix(zeile, "\n") {
+		t.Errorf("Zeile = %q, erwartet die letzte, ohne Zeilenumbruch am Ende", zeile)
+	}
+	if e, z := gruppen[0].Erstmals, gruppen[0].Zuletzt; !e.Equal(e.Truncate(fehlerFach)) || e.After(z) || z.Sub(e) >= 2*fehlerFach {
+		t.Errorf("Erstmals = %v, erwartet den Beginn des Fachs der ersten Zeile vor %v", e, z)
+	}
+
+	wert, _, _ := ablageNachUebernahme(t, stand, time.Now())
+	nachher := NewFehlerstand()
+	if err := nachher.Uebernimm(wert, time.Now()); err != nil {
+		t.Fatalf("Uebernimm: %v", err)
+	}
+	if g := nachher.Gruppen(time.Now()); len(g) != 1 || g[0].Zeile != zeile {
+		t.Errorf("Zeile nach dem Neustart = %+v, erwartet dieselbe", g)
+	}
+
+	lang := NewFehlerstand()
+	slog.New(lang.SchalteVor(slog.DiscardHandler)).Error("Lang", "fehler", strings.Repeat("x", 2*hoechstlaengeZeile))
+	if z := lang.Gruppen(time.Now())[0].Zeile; utf8.RuneCountInString(z) != hoechstlaengeZeile || !strings.HasSuffix(z, "…") {
+		t.Errorf("lange Zeile: %d Zeichen, Ende %q; erwartet %d mit …", utf8.RuneCountInString(z), z[len(z)-5:], hoechstlaengeZeile)
+	}
+}
+
+// Erstmals ist der Beginn des ältesten Fachs im Zeitraum: Ein Fach, das aus dem Zeitraum fällt,
+// zählt nicht mehr.
+func TestFehlerstand_ErstmalsImZeitraum(t *testing.T) {
+	stand := NewFehlerstand()
+	trageZeileEin(t, stand, testStart, slog.LevelError, "A")
+	trageZeileEin(t, stand, testStart.Add(3*time.Hour), slog.LevelError, "A")
+	if g := stand.Gruppen(testStart.Add(4 * time.Hour)); !g[0].Erstmals.Equal(testStart.Truncate(fehlerFach)) {
+		t.Errorf("Erstmals = %v, erwartet %v", g[0].Erstmals, testStart.Truncate(fehlerFach))
+	}
+	spaeter := testStart.Add(FehlerZeitraum + 2*time.Hour)
+	if g := stand.Gruppen(spaeter); len(g) != 1 || !g[0].Erstmals.Equal(testStart.Add(3*time.Hour).Truncate(fehlerFach)) {
+		t.Errorf("Gruppen %v = %+v, erwartet Erstmals im Fach der zweiten Zeile", spaeter, g)
 	}
 }

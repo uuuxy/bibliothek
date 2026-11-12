@@ -74,6 +74,10 @@ type SystemEinstellungen struct {
 	// Selbstprüfung. Leer heißt alle aktiven Admin-Konten: Ein Alarm, der niemanden erreicht,
 	// ist keiner.
 	AlarmEmpfaenger *string `json:"alarm_empfaenger"`
+	// AlarmWarnungen nimmt in die Alarm-Mail auch die Warnungen auf: Warnungen im Log,
+	// Warnungen der Selbstprüfung, abgewiesene LUSD-Abgleiche. Vorgabe aus: Ohne den Schalter
+	// meldet die Mail nur Fehler und kritische Befunde.
+	AlarmWarnungen bool `json:"alarm_warnungen"`
 	// Fristen des Datenschutzes und der Sitzung, je als Zeiger; Vorgaben und Begründung stehen
 	// in einstellungen_datenschutz.go. Die Lesehistorie zählt die Tage nach der Rückgabe, nach
 	// denen eine Ausleihe vom Leser getrennt wird, je für Schülerbücherei und Lernmittel; Theke
@@ -249,6 +253,8 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 			v := *wert
 			e.AlarmEmpfaenger = &v
 		}
+	case "alarm_warnungen":
+		e.AlarmWarnungen = wert != nil && *wert == "true"
 	case "oeffentliche_adresse":
 		if wert != nil {
 			v := *wert

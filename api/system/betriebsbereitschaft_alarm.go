@@ -9,9 +9,9 @@ package system
 // Kritisch soll drücken. Ein Neustart wiederholt die letzte Mail nicht
 // (internal/bereitschaft/alarm.go).
 //
-// Warnungen lösen bewusst keine Mail aus (die Demo-Daten-Warnung wäre Dauerrauschen,
-// und ein Alarm, der dauernd feuert, wird stummgeschaltet); ihre Zahl steht als
-// Fußnote in der Mail.
+// Warnungen lösen eine Mail nur mit dem Schalter alarm_warnungen aus (Einstellungen →
+// Erreichbarkeit & Alarme): Ohne ihn wäre die Demo-Daten-Warnung Dauerrauschen, und ein Alarm,
+// der dauernd feuert, wird stummgeschaltet; ihre Zahl steht dann als Fußnote in der Mail.
 
 import (
 	"context"
@@ -48,12 +48,17 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 
 	befunde := bereitschaft.Pruefe(lage)
 	gruppen := t.fehlergruppen(lage.Jetzt)
-	fehler := baueFehlerImLog(gruppen, lage.Jetzt, hoechstzahlMeldungenInDerMail)
-	betreff, textkoerper, kritische := formatiereAlarmMail(befunde, fehler)
+	fehlerGruppen, warnGruppen := trenneWarnungen(gruppen)
+	fehler := baueFehlerImLog(fehlerGruppen, lage.Jetzt, hoechstzahlMeldungenInDerMail)
+	warnungen := alarmWarnungen{an: lage.AlarmWarnungen}
+	if warnungen.an {
+		warnungen.imLog = baueWarnungenImLog(warnGruppen, lage.Jetzt, hoechstzahlMeldungenInDerMail)
+	}
+	betreff, textkoerper, kritische := formatiereAlarmMail(befunde, fehler, warnungen)
 	if betreff == "" {
 		return
 	}
-	punkte := bereitschaft.AlarmPunkte(befunde, gruppen)
+	punkte := bereitschaft.AlarmPunkte(befunde, gruppen, lage.AlarmWarnungen)
 	zuletzt := ladeGemeldetenAlarm(ctx, zustandAbfragen)
 	if !bereitschaft.IstMailFaellig(zuletzt, punkte, lage.Jetzt) {
 		slog.Info("Bereitschafts-Alarm: nichts Neues seit der letzten Mail", "befunde", kritische,
@@ -129,60 +134,118 @@ func schreibeGemeldetenAlarm(ctx context.Context, zustand *repository.Betriebszu
 	}
 }
 
-// formatiereAlarmMail baut Betreff und Text aus den Befunden und den Fehlern im Log. Reine
-// Funktion — prüfbar ohne Mailserver, Datenbank oder Umgebung. Ohne kritischen Befund und ohne
-// Fehlermeldung bleibt der Betreff leer, und es geht keine Mail hinaus.
-func formatiereAlarmMail(befunde []bereitschaft.Befund, fehler fehlerImLogAntwort) (betreff, textkoerper string, kritische int) {
-	var kritischeBefunde []bereitschaft.Befund
-	warnungen := 0
-	for _, b := range befunde {
-		switch b.Stufe {
-		case bereitschaft.StufeKritisch:
-			kritischeBefunde = append(kritischeBefunde, b)
-		case bereitschaft.StufeWarnung:
-			warnungen++
-		}
+// alarmWarnungen ist, was die Mail mit dem Schalter alarm_warnungen zusätzlich nennt. Der
+// Nullwert heißt: Schalter aus.
+type alarmWarnungen struct {
+	an    bool
+	imLog fehlerImLogAntwort
+}
+
+// formatiereAlarmMail baut Betreff und Text aus den Befunden, den Fehlern im Log und, mit dem
+// Schalter, den Warnungen. Reine Funktion — prüfbar ohne Mailserver, Datenbank oder Umgebung.
+// Ohne etwas zu melden bleibt der Betreff leer, und es geht keine Mail hinaus.
+func formatiereAlarmMail(befunde []bereitschaft.Befund, fehler fehlerImLogAntwort, warnungen alarmWarnungen) (betreff, textkoerper string, kritische int) {
+	kritischeBefunde, warnBefunde := teileBefunde(befunde)
+	// Gezählt wird nur, was die Mail ausschreibt: Warnungen nur mit dem Schalter.
+	fehlerImLog, gemeldeteWarnBefunde, warnungenImLog := 0, 0, 0
+	if fehler.Stufe == bereitschaft.StufeKritisch {
+		fehlerImLog = fehler.Anzahl
 	}
-	mitFehlern := fehler.Stufe == bereitschaft.StufeKritisch
-	if len(kritischeBefunde) == 0 && !mitFehlern {
+	if warnungen.an {
+		gemeldeteWarnBefunde, warnungenImLog = len(warnBefunde), warnungen.imLog.Anzahl
+	}
+	if len(kritischeBefunde)+fehlerImLog+gemeldeteWarnBefunde+warnungenImLog == 0 {
 		return "", "", 0
 	}
-
-	var teile []string
-	if len(kritischeBefunde) > 0 {
-		teile = append(teile, fmt.Sprintf("%d kritische(r) Befund(e) der Betriebsbereitschaft", len(kritischeBefunde)))
-	}
-	if mitFehlern {
-		teile = append(teile, fehlermeldungen(fehler.Anzahl)+" im Log")
-	}
-	betreff = "Bibliothek: " + strings.Join(teile, ", ")
+	betreff = alarmBetreff(len(kritischeBefunde), fehlerImLog, gemeldeteWarnBefunde, warnungenImLog)
 
 	var sb strings.Builder
 	sb.WriteString("Die tägliche Selbstprüfung meldet Zustände, die zu klären sind.\n" +
 		"Diese Mail kommt täglich, solange sie bestehen.\n\n")
 	for _, b := range kritischeBefunde {
-		schreibeAlarmTeil(&sb, b, nil)
+		schreibeAlarmTeil(&sb, zeichenKritisch, b, nil)
 	}
-	if mitFehlern {
-		schreibeAlarmTeil(&sb, bereitschaft.Befund{
+	if fehlerImLog > 0 {
+		schreibeAlarmTeil(&sb, zeichenKritisch, bereitschaft.Befund{
 			Bereich: "Fehler im Log", Befund: fehler.Befund, Folge: fehler.Folge, Abhilfe: fehler.Abhilfe,
 		}, fehler.Meldungen)
 	}
-	if warnungen > 0 {
-		fmt.Fprintf(&sb, "Daneben stehen %d Warnung(en) — Details unter System → Einstellungen → Betriebsbereitschaft.\n", warnungen)
-	}
+	schreibeWarnungsteil(&sb, warnBefunde, warnungen)
 	return betreff, sb.String(), len(kritischeBefunde)
 }
 
-// schreibeAlarmTeil schreibt einen Teil der Mail: Bereich und Befund, die Meldungen darunter, dann
-// Folge und Abhilfe.
-func schreibeAlarmTeil(sb *strings.Builder, b bereitschaft.Befund, meldungen []fehlerZeile) {
-	fmt.Fprintf(sb, "‼ %s\n", b.Bereich)
+// teileBefunde trennt die kritischen Befunde von den Warnungen; Befunde in Ordnung fallen weg.
+func teileBefunde(befunde []bereitschaft.Befund) (kritisch, warnung []bereitschaft.Befund) {
+	for _, b := range befunde {
+		switch b.Stufe {
+		case bereitschaft.StufeKritisch:
+			kritisch = append(kritisch, b)
+		case bereitschaft.StufeWarnung:
+			warnung = append(warnung, b)
+		}
+	}
+	return kritisch, warnung
+}
+
+// alarmBetreff nennt im Betreff, was die Mail ausschreibt, je mit seiner Zahl; eine Zahl 0 fehlt.
+func alarmBetreff(kritische, fehlerImLog, warnBefunde, warnungenImLog int) string {
+	var teile []string
+	if kritische > 0 {
+		teile = append(teile, fmt.Sprintf("%d kritische(r) Befund(e) der Betriebsbereitschaft", kritische))
+	}
+	if fehlerImLog > 0 {
+		teile = append(teile, fehlermeldungen(fehlerImLog)+" im Log")
+	}
+	if warnBefunde > 0 {
+		teile = append(teile, fmt.Sprintf("%d Warnung(en) der Betriebsbereitschaft", warnBefunde))
+	}
+	if warnungenImLog > 0 {
+		teile = append(teile, warnungenText(warnungenImLog)+" im Log")
+	}
+	return "Bibliothek: " + strings.Join(teile, ", ")
+}
+
+// schreibeWarnungsteil schreibt die Warnungen: mit dem Schalter ausgeschrieben, die der
+// Betriebsbereitschaft und die im Log; ohne ihn nur die Zahl der Warnungen der
+// Betriebsbereitschaft als Fußnote.
+func schreibeWarnungsteil(sb *strings.Builder, warnBefunde []bereitschaft.Befund, warnungen alarmWarnungen) {
+	if !warnungen.an {
+		if len(warnBefunde) > 0 {
+			fmt.Fprintf(sb, "Daneben stehen %d Warnung(en) — Details unter System → Einstellungen → Betriebsbereitschaft.\n", len(warnBefunde))
+		}
+		return
+	}
+	for _, b := range warnBefunde {
+		schreibeAlarmTeil(sb, zeichenWarnung, b, nil)
+	}
+	if l := warnungen.imLog; l.Anzahl > 0 {
+		schreibeAlarmTeil(sb, zeichenWarnung, bereitschaft.Befund{
+			Bereich: "Warnungen im Log", Befund: l.Befund, Folge: l.Folge, Abhilfe: l.Abhilfe,
+		}, l.Meldungen)
+	}
+}
+
+// Die Zeichen vor dem Bereich: Kritisches und Fehler drücken, Warnungen nicht.
+const (
+	zeichenKritisch = "‼"
+	zeichenWarnung  = "⚠"
+)
+
+// schreibeAlarmTeil schreibt einen Teil der Mail: Zeichen, Bereich und Befund, die Meldungen
+// darunter, dann Folge und Abhilfe.
+func schreibeAlarmTeil(sb *strings.Builder, zeichen string, b bereitschaft.Befund, meldungen []fehlerZeile) {
+	fmt.Fprintf(sb, "%s %s\n", zeichen, b.Bereich)
 	fmt.Fprintf(sb, "   Befund:  %s\n", b.Befund)
 	for _, m := range meldungen {
 		fmt.Fprintf(sb, "            %s\n", m.Text)
 		if m.Zusatz != "" {
 			fmt.Fprintf(sb, "              %s\n", m.Zusatz)
+		}
+		if m.Zeitraum != "" {
+			fmt.Fprintf(sb, "              Zeit: %s\n", m.Zeitraum)
+		}
+		if m.Logzeile != "" {
+			fmt.Fprintf(sb, "              Letzte Zeile im Log: %s\n", m.Logzeile)
 		}
 	}
 	if b.Folge != "" {

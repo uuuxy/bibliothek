@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"bibliothek/api/tuer"
+	"bibliothek/internal/littera"
 	"bibliothek/jobs"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
@@ -106,6 +107,7 @@ func (t *Tueren) sammleLage(
 // einstellungenInDieLage übernimmt, was die Prüfungen aus den Einstellungen brauchen.
 func einstellungenInDieLage(lage *bereitschaft.Lage, einstellungen *repository.SystemEinstellungen) {
 	lage.OeffentlicheAdresse = einstellungen.AdresseFuerLinks()
+	lage.AlarmWarnungen = einstellungen.AlarmWarnungen
 	if einstellungen.AlarmEmpfaenger != nil {
 		lage.AlarmEmpfaenger = strings.TrimSpace(*einstellungen.AlarmEmpfaenger)
 	}
@@ -170,6 +172,12 @@ func sicherungUndFerienInDieLage(ctx context.Context, zustandAbfragen *repositor
 		var probe jobs.RestoreProbeErgebnis
 		if json.Unmarshal([]byte(probeJSON), &probe) == nil {
 			lage.RestoreProbe = &probe
+		}
+	}
+	if ergebnisJSON, err := zustandAbfragen.LadeEinstellungswert(ctx, littera.ErgebnisSchluessel); err == nil {
+		var ergebnis littera.Ergebnis
+		if json.Unmarshal([]byte(ergebnisJSON), &ergebnis) == nil {
+			lage.LitteraUebernahme = &ergebnis
 		}
 	}
 }

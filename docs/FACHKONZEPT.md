@@ -752,7 +752,7 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden einundzwanzig Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Schlüssel und
+**Geprüft werden zweiundzwanzig Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Schlüssel und
 Bestand (lässt sich je verschlüsselter Spalte ein Wert mit dem laufenden
 `APP_ENCRYPTION_KEY` entschlüsseln — der Fall dahinter ist die Wiederherstellung mit neuer `.env`), Anmeldung
 (IMAP), vertraute Proxys (Einträge in `TRUSTED_PROXIES`, die der Server übergeht), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten (Schüler UND
@@ -774,7 +774,11 @@ Anschrift sonst auf Dauer; Warnung mit Abhilfe „Verlust melden, Forderung beza
 stornieren", kein Automatismus; `ZaehleEhemaligeMitOffenenVorgaengen`); und der **Schadensersatz-Bescheid**
 (welche Pflichtangaben fehlen — Nummer des Schulamtsbereichs, Schulnummer,
 Aufsichtsbehörde, Schulleitung, Anschrift der Schule; dieselbe Prüfung, mit der das Erstellen
-abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt).
+abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt); und die **Littera-Übernahme**
+(das Ergebnis, das `littera-altbestand` nach dem schreibenden Lauf in `system_einstellungen`
+ablegt, `littera_uebernahme_ergebnis`: eine Woche lang kritisch, wenn der Lauf abbrach oder
+unvollständig war, eine Warnung bei Warnungen im Protokoll; danach steht es als erledigt da,
+damit eine hingenommene Lücke nicht für immer täglich meldet; `pruefeLitteraUebernahme`).
 
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
@@ -790,8 +794,12 @@ nächsten Lauf. Ein gescheiterter Versand zählt nicht als gemeldet. Der
 Empfängerkreis ist einstellbar (Einstellungen → Erreichbarkeit & Alarme,
 `alarm_empfaenger`, mehrere Adressen mit Komma); ist er leer, gehen die Mails als
 sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden erreicht,
-ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);
-ihre Zahl steht als Fußnote. Auf Spielwiesen (`APP_ENV=local/development/test`)
+ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen
+ohne den Schalter „Auch Warnungen mailen“ (`alarm_warnungen`, Vorgabe aus) keine Mail aus
+(Dauerrauschen stumpft ab); ihre Zahl steht dann als Fußnote. Mit dem Schalter nennt die Mail
+auch die Warnungen der Betriebsbereitschaft und die Warnungen im Log, je mit „⚠“ hinter dem
+Kritischen, und schon sie allein lösen sie aus; darunter fällt der abgewiesene LUSD-Abgleich
+(„LUSD-Abgleich abgewiesen“, Grund wie in der Antwort, ohne Namen). Auf Spielwiesen (`APP_ENV=local/development/test`)
 schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
 
 **Fehler im Log** stehen auf einer eigenen Seite gleich darunter (Kategorie „Fehler im Log“,
@@ -802,7 +810,13 @@ mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene Anfrage je Route, 
 24 Stunden, die jüngste zuerst. Einen Absturz des Servers meldet der nächste Start mit der Stelle im
 Code, ebenso einen harten Abbruch und einen Ausfall des Rechners; Update und Neustart melden nichts. Schon
 eine Zeile ist ein Grund für die tägliche Mail; sie nennt die Fehler in einem eigenen Teil nach den
-kritischen Befunden, höchstens fünf Meldungen einzeln, und der Betreff nennt ihre Zahl. Jede
+kritischen Befunden, bis zu dreißig Meldungen einzeln, und der Betreff nennt ihre Zahl. Je Meldung
+stehen in der Mail zusätzlich die erste Zeile (auf zehn Minuten genau) und die letzte (auf die
+Sekunde) und die ganze letzte Zeile, wie das Log sie schreibt, mit allen Feldern, bei einem
+Panic samt Stack (höchstens 4000 Zeichen): Damit lässt sich ein Fehler beheben, ohne das Log am
+Server zu lesen. Das Log nennt eine Person mit ihrer Kennung, nicht mit ihrem Namen
+([STIL.md](STIL.md), Abschnitt 11). Gezählt werden auch die Zeilen der Stufe WARN, getrennt von
+den Fehlern; die Seite zeigt nur die Fehler, die Mail die Warnungen mit dem Schalter. Jede
 einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im
 Log finden“). Der Zählerstand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`)
 und übersteht so ein Update: Die nächste Mail des Wächters nennt auch die Fehler davor.

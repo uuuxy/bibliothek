@@ -3549,7 +3549,8 @@ steht in `db/rechte_vorgabe.go`, `leitung` wird abgeleitet (A12), Migrationen la
 spätere Handvergabe wird **nicht** zurückgedreht). Die Betriebsbereitschaft vergleicht die
 Matrix mit der Vorgabe und nennt jede Abweichung (`pruefeRechteVorgabe`, Bereich
 „Rechte-Vorgabe") — als Warnung, weil eine Abweichung eine Entscheidung des Admins sein kann.
-Eine Warnung löst keine Alarm-Mail aus; sie steht auf der Seite, bis jemand hinsieht. Jede
+Eine Warnung löst ohne den Schalter „Auch Warnungen mailen“ (`alarm_warnungen`) keine Alarm-Mail
+aus; sie steht auf der Seite, bis jemand hinsieht. Jede
 Änderung an der Matrix steht mit Person, Rolle und Recht im Protokoll (`RECHT_GEAENDERT`).
 
 #### R6 — Die E-Mail ist die Identität

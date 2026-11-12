@@ -54,8 +54,8 @@ func TestEinstellungen_SchreibpfadUndLesepfadSindDeckungsgleich(t *testing.T) {
 // der der Vorgabe gleicht, machte den Test blind.
 func probewert(schluessel string) string {
 	switch {
-	// Die Vorgabe ist false, die Regel der Arbeitshilfe; also unterscheidet nur "true".
-	case schluessel == "ersatzwert_immer_kaufpreis":
+	// Die Vorgabe ist false (Arbeitshilfe, Alarm nur bei Fehlern); also unterscheidet nur "true".
+	case schluessel == "ersatzwert_immer_kaufpreis", schluessel == "alarm_warnungen":
 		return "true"
 	case strings.HasSuffix(schluessel, "_aktiv"), schluessel == "preise_erfassen":
 		// Die Schalter haben verschiedene Vorgaben: "false" weicht von

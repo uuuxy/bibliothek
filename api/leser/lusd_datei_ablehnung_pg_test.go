@@ -162,9 +162,14 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 			http.StatusBadRequest, "Die Zuordnung für Zeile 2 im Blatt „7b“ ist nicht mehr gültig. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
-		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict,
-			"4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Bitte die Datei prüfen. Ist der "+
-				"Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit Bestätigung wiederholen.")
+		const meldung = "4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Bitte die Datei prüfen. Ist der " +
+			"Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit Bestätigung wiederholen."
+		protokoll := leseLogMit(t)
+		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict, meldung)
+		// Die Rückfrage steht als Warnung im Log, wie jede Abweisung (TestLUSDAbweisung_StehtAlsWarnungImLog).
+		if n := warnungenMitGrund(t, protokoll, meldung); n != 1 {
+			t.Errorf("%d Warnungen zum Massenabgang im Log, erwartet 1:\n%s", n, protokoll)
+		}
 	})
 
 	if n := zaehle(t, pool, "ist_abgaenger"); n != 0 {

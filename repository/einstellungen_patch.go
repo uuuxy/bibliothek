@@ -50,6 +50,7 @@ type EinstellungenPatch struct {
 
 	OeffentlicheAdresse *string `json:"oeffentliche_adresse,omitempty"`
 	AlarmEmpfaenger     *string `json:"alarm_empfaenger,omitempty"`
+	AlarmWarnungen      *bool   `json:"alarm_warnungen,omitempty"`
 
 	LesehistorieTage            *int `json:"lesehistorie_tage,omitempty"`
 	LesehistorieLernmittelTage  *int `json:"lesehistorie_lernmittel_tage,omitempty"`
@@ -156,6 +157,7 @@ func paareAusPatch(p *EinstellungenPatch) [][2]string {
 	s.schalter("ersatzwert_immer_kaufpreis", p.ErsatzwertImmerKaufpreis)
 	s.text("oeffentliche_adresse", p.OeffentlicheAdresse)
 	s.text("alarm_empfaenger", p.AlarmEmpfaenger)
+	s.schalter("alarm_warnungen", p.AlarmWarnungen)
 
 	// Alle Zahlen auf einmal, in der Reihenfolge von zahlenFelder.
 	s.zahlen(p)

@@ -13,6 +13,7 @@
 	 * nur seinen internen Namen, und ein Link auf „localhost" wäre beim Lieferanten wertlos.
 	 */
 	import Feld from '../../ui/Feld.svelte';
+	import Switch from '../../ui/Switch.svelte';
 	import { Copy, Check } from '@lucide/svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
@@ -32,10 +33,12 @@
 	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
 	const geladen = {
 		oeffentliche_adresse: start.oeffentliche_adresse ?? '',
-		alarm_empfaenger: start.alarm_empfaenger ?? ''
+		alarm_empfaenger: start.alarm_empfaenger ?? '',
+		alarm_warnungen: start.alarm_warnungen ?? false
 	};
 	let adresse = $state(geladen.oeffentliche_adresse);
 	let alarmEmpfaenger = $state(geladen.alarm_empfaenger);
+	let alarmWarnungen = $state(geladen.alarm_warnungen);
 
 	// Die beiden öffentlichen Seiten (Katalog, Flur-Monitor) haben keinen Menüpunkt — wer
 	// ihre Adresse nicht kennt, findet sie nicht. Hier stehen sie,
@@ -63,13 +66,17 @@
 
 	const eingabe = () => ({
 		geladen,
-		felder: { oeffentliche_adresse: adresse, alarm_empfaenger: alarmEmpfaenger }
+		felder: {
+			oeffentliche_adresse: adresse,
+			alarm_empfaenger: alarmEmpfaenger,
+			alarm_warnungen: alarmWarnungen
+		}
 	});
 </script>
 
 <KategorieRahmen
 	titel="Erreichbarkeit & Alarme"
-	kurz="Unter welcher Adresse Dritte das System erreichen und wer die Alarm-Mails bekommt — leer schaltet beides ab."
+	kurz="Unter welcher Adresse Dritte das System erreichen und wer die Alarm-Mails bekommt."
 	{eingabe}
 	{onSaved}
 >
@@ -79,9 +86,13 @@
 			Bestellmail bekommt. Ohne sie geht die Bestellung ohne Link raus.
 		</p>
 		<p>
-			Alarm-Empfänger bekommen die Kritisch-Meldungen der Betriebsbereitschaft (mehrere Adressen mit
-			Komma). Bleibt das Feld leer, gehen sie an alle aktiven Admin-Konten — ein Alarm, der
-			niemanden erreicht, ist keiner.
+			Alarm-Empfänger bekommen täglich die Kritisch-Meldungen der Betriebsbereitschaft und die
+			Fehler im Log (mehrere Adressen mit Komma). Bleibt das Feld leer, gehen sie an alle aktiven
+			Admin-Konten — ein Alarm, der niemanden erreicht, ist keiner.
+		</p>
+		<p>
+			Mit „Auch Warnungen mailen" nennt die Mail zusätzlich die Warnungen: im Log, in der
+			Betriebsbereitschaft, einen abgewiesenen LUSD-Abgleich und das Ergebnis der Littera-Übernahme.
 		</p>
 	{/snippet}
 
@@ -102,6 +113,16 @@
 			placeholder="it@schule.de, leitung@schule.de"
 			hint="Leer = alle aktiven Admin-Konten."
 		/>
+	</div>
+
+	<div class="mt-6 flex items-start justify-between gap-4 border-t border-outline-variant pt-6">
+		<div class="flex flex-col gap-1">
+			<span class="text-sm font-medium text-on-surface">Auch Warnungen mailen</span>
+			<span class="text-sm text-on-surface-variant"
+				>Die tägliche Alarm-Mail nennt dann auch Warnungen, nicht nur Fehler.</span
+			>
+		</div>
+		<Switch bind:checked={alarmWarnungen} etikett="Warnungen mailen umschalten" />
 	</div>
 
 	<section class="mt-6" aria-labelledby="oeffentliche-seiten">

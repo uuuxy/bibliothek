@@ -255,7 +255,20 @@ func uebertrage(s schalter, ab *littera.Altbestand) int {
 	bericht := schreibeTeile(ctx, schreiber, s, ab)
 	bericht.Warnungen, bericht.Fehler = protokoll.Warnungen(), protokoll.FehlerAnzahl()
 	drucke(bericht, s)
+	legeErgebnisAb(pool, bericht)
 	return rueckgabewert(bericht)
+}
+
+// legeErgebnisAb hält das Ergebnis des schreibenden Laufs für die Selbstprüfung fest, die es eine
+// Woche lang nennt und mailt. Ein Lauf, der vor dem Schreiben abbricht, kommt hier nicht an: Er
+// hat nichts verändert und überschriebe sonst das Ergebnis eines guten Laufs. Eigene Frist, weil
+// die des Laufs nach einem langen oder abgebrochenen Lauf abgelaufen sein kann.
+func legeErgebnisAb(pool *pgxpool.Pool, b littera.Bericht) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := littera.SchreibeErgebnis(ctx, pool, littera.ErgebnisAus(b, time.Now(), protokollPfad)); err != nil {
+		log.Printf("WARNUNG: Ergebnis nicht abgelegt, die Selbstprüfung kennt diesen Lauf nicht: %v", err)
+	}
 }
 
 func optionen(s schalter) littera.Optionen {

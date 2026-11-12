@@ -16,7 +16,7 @@ func TestFormatiereAlarmMail(t *testing.T) {
 		betreff, _, n := formatiereAlarmMail([]bereitschaft.Befund{
 			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
 			{Bereich: "Anmeldung", Stufe: bereitschaft.StufeOK},
-		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK})
+		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK}, alarmWarnungen{})
 		if n != 0 || betreff != "" {
 			t.Fatalf("kritische = %d, Betreff %q, erwartet 0 und keine Mail", n, betreff)
 		}
@@ -28,7 +28,7 @@ func TestFormatiereAlarmMail(t *testing.T) {
 				Befund: "Kein Ziel außer Haus eingerichtet.", Folge: "Ein Plattenausfall kostet alles.",
 				Abhilfe: "S3_ENDPOINT setzen."},
 			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
-		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK})
+		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK}, alarmWarnungen{})
 		if n != 1 {
 			t.Fatalf("kritische = %d, erwartet 1", n)
 		}
@@ -62,7 +62,7 @@ func TestFormatiereAlarmMail_FehlerImLog(t *testing.T) {
 	kritisch := bereitschaft.Befund{Bereich: "Auslagerung der Backups", Stufe: bereitschaft.StufeKritisch,
 		Befund: "Kein Ziel außer Haus.", Folge: "Ein Plattenausfall kostet alles.", Abhilfe: "S3_ENDPOINT setzen."}
 
-	betreff, text, n := formatiereAlarmMail(nil, fehler)
+	betreff, text, n := formatiereAlarmMail(nil, fehler, alarmWarnungen{})
 	if n != 0 || betreff != "Bibliothek: 3 Fehlermeldungen im Log" {
 		t.Errorf("nur Fehler: kritische = %d, Betreff %q, erwartet 0 und den Betreff der Fehler", n, betreff)
 	}
@@ -81,7 +81,7 @@ func TestFormatiereAlarmMail_FehlerImLog(t *testing.T) {
 		t.Errorf("erster Satz der Mail: %q", strings.SplitN(text, "\n", 2)[0])
 	}
 
-	betreff, text, n = formatiereAlarmMail([]bereitschaft.Befund{kritisch}, fehler)
+	betreff, text, n = formatiereAlarmMail([]bereitschaft.Befund{kritisch}, fehler, alarmWarnungen{})
 	if want := "Bibliothek: 1 kritische(r) Befund(e) der Betriebsbereitschaft, 3 Fehlermeldungen im Log"; n != 1 || betreff != want {
 		t.Errorf("beides: kritische = %d, Betreff %q, erwartet 1 und %q", n, betreff, want)
 	}
@@ -90,9 +90,59 @@ func TestFormatiereAlarmMail_FehlerImLog(t *testing.T) {
 	}
 
 	for _, stufe := range []string{bereitschaft.StufeOK, bereitschaft.StufeWarnung} {
-		if betreff, _, _ := formatiereAlarmMail(nil, fehlerImLogAntwort{Stufe: stufe}); betreff != "" {
+		if betreff, _, _ := formatiereAlarmMail(nil, fehlerImLogAntwort{Stufe: stufe}, alarmWarnungen{}); betreff != "" {
 			t.Errorf("Fehler im Log mit Stufe %q: Betreff %q, erwartet keine Mail", stufe, betreff)
 		}
+	}
+}
+
+// Mit dem Schalter alarm_warnungen nennt die Mail auch Warnungen der Betriebsbereitschaft und
+// des Logs, mit „⚠" hinter dem Kritischen; schon sie allein lösen sie dann aus. Je Meldung stehen
+// Zeitraum und letzte Logzeile darunter. Ohne den Schalter bleibt es bei der Fußnote.
+func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
+	warnBefund := bereitschaft.Befund{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung,
+		Befund: "2000 Demo-Schüler", Folge: "Echte und Demo-Daten mischen sich.", Abhilfe: "Demo-Daten löschen."}
+	imLog := fehlerImLogAntwort{
+		Stufe: bereitschaft.StufeWarnung, Anzahl: 2, Befund: "2 Warnungen in den letzten 24 Stunden, zuletzt heute um 11:59.",
+		Meldungen: []fehlerZeile{{
+			Text: "LUSD-Abgleich abgewiesen: POST /api/lusd/import", Zusatz: "2 × · zuletzt 11:59 · Pflichtspalte fehlt",
+			Zeitraum: "erstmals gegen 24.10.2026 11:00, zuletzt 24.10.2026 11:59:00",
+			Logzeile: `{"level":"WARN","msg":"LUSD-Abgleich abgewiesen"}`,
+		}},
+		Folge: "Eine Warnung heißt: Das Programm hat sich selbst geholfen.", Abhilfe: "Befehl mit WARN.",
+	}
+	ohneFehler := fehlerImLogAntwort{Stufe: bereitschaft.StufeOK}
+
+	if betreff, _, _ := formatiereAlarmMail([]bereitschaft.Befund{warnBefund}, ohneFehler, alarmWarnungen{imLog: imLog}); betreff != "" {
+		t.Errorf("Schalter aus: Betreff %q, erwartet keine Mail", betreff)
+	}
+
+	betreff, text, n := formatiereAlarmMail([]bereitschaft.Befund{warnBefund}, ohneFehler, alarmWarnungen{an: true, imLog: imLog})
+	if want := "Bibliothek: 1 Warnung(en) der Betriebsbereitschaft, 2 Warnungen im Log"; n != 0 || betreff != want {
+		t.Errorf("Schalter an: kritische = %d, Betreff %q, erwartet 0 und %q", n, betreff, want)
+	}
+	for _, muss := range []string{
+		"⚠ Demo-Daten\n   Befund:  2000 Demo-Schüler\n",
+		"⚠ Warnungen im Log\n",
+		"              Zeit: erstmals gegen 24.10.2026 11:00, zuletzt 24.10.2026 11:59:00\n",
+		"              Letzte Zeile im Log: {\"level\":\"WARN\",\"msg\":\"LUSD-Abgleich abgewiesen\"}\n",
+	} {
+		if !strings.Contains(text, muss) {
+			t.Errorf("Mail ohne %q:\n%s", muss, text)
+		}
+	}
+	if strings.Contains(text, "Daneben stehen") {
+		t.Errorf("Schalter an: Die Warnungen stehen ausgeschrieben, nicht als Fußnote:\n%s", text)
+	}
+
+	kritisch := bereitschaft.Befund{Bereich: "Auslagerung der Backups", Stufe: bereitschaft.StufeKritisch, Befund: "Kein Ziel."}
+	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, kritisch}, ohneFehler, alarmWarnungen{an: true, imLog: imLog})
+	if i, j := strings.Index(text, "‼ Auslagerung der Backups"), strings.Index(text, "⚠ Demo-Daten"); i < 0 || j < i {
+		t.Errorf("Kritisches an %d, Warnung an %d, erwartet erst das Kritische:\n%s", i, j, text)
+	}
+	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, kritisch}, ohneFehler, alarmWarnungen{imLog: imLog})
+	if !strings.Contains(text, "Daneben stehen 1 Warnung(en)") || strings.Contains(text, "⚠") {
+		t.Errorf("Schalter aus: erwartet nur die Fußnote:\n%s", text)
 	}
 }
 

@@ -13,6 +13,7 @@ package bereitschaft
 import (
 	"time"
 
+	"bibliothek/internal/littera"
 	"bibliothek/jobs"
 	"bibliothek/repository"
 )
@@ -101,6 +102,8 @@ type Lage struct {
 	// AlarmEmpfaenger ist die Einstellung alarm_empfaenger, durch Komma getrennt. Leer gehen
 	// die Kritisch-Alarme an alle aktiven Admin-Konten.
 	AlarmEmpfaenger string
+	// AlarmWarnungen ist die Einstellung alarm_warnungen: Die Mail nennt dann auch Warnungen.
+	AlarmWarnungen bool
 
 	// Die Klassennamen verbinden Schüler, Zuordnung der Klassenleitung und Bücherlisten nur
 	// als gleicher Text; reißt er, meldet nichts einen Fehler, und die Mahnliste läuft leer.
@@ -149,6 +152,10 @@ type Lage struct {
 	// NachbuchMeldungenOffen zählt die Nachbuch-Meldungen der Theke, die seit mehr als 14
 	// Tagen niemand quittiert hat: Abweichungen zwischen Offline-Scan und Wirklichkeit.
 	NachbuchMeldungenOffen *int
+
+	// LitteraUebernahme ist das Ergebnis des letzten schreibenden Laufs von littera-altbestand.
+	// nil: nie gelaufen oder nicht lesbar.
+	LitteraUebernahme *littera.Ergebnis
 }
 
 // IstEchterBetrieb sagt, ob die Umgebung der Betrieb ist. In local, development und test
@@ -182,6 +189,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeKlassenDrift(l),
 		pruefeBackupAlter(l, echt),
 		pruefeRestoreProbe(l, echt),
+		pruefeLitteraUebernahme(l),
 		pruefeLoeschroutinen(l),
 		pruefeEhemaligeOffen(l),
 		pruefeNachbuchMeldungenOffen(l),

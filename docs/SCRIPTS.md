@@ -186,6 +186,11 @@ Littera selbst (die Personen in ihre Gruppe setzen, neu sichern und ausgeben) od
 neue Gruppenbezeichnung, in `artAusUntergruppe` (`internal/littera/leser.go`).
 
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
+Nach dem schreibenden Lauf legt das Kommando sein Ergebnis in `system_einstellungen` ab
+(`littera_uebernahme_ergebnis`: Zeit, abgebrochen, vollständig, Zahl der Fehler und Warnungen,
+Name des Protokolls; keine Namen). Die Betriebsbereitschaft nennt es eine Woche lang, die
+Alarm-Mail meldet einen abgebrochenen oder unvollständigen Lauf, Warnungen mit dem Schalter
+„Auch Warnungen mailen“. Ein Lauf, der vor dem Schreiben abbricht, legt nichts ab.
 
 ### 1a. Katalogisat aus dem MAB2-Export (`cmd/littera-import`)
 

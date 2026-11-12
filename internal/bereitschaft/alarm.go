@@ -25,19 +25,30 @@ type GemeldeterAlarm struct {
 }
 
 // AlarmPunkte nennt, worüber die Mail berichtet: je kritischem Befund den Bereich, je
-// Fehlermeldung Text und Route. Zahlen, Uhrzeiten und Ursachen zählen nicht dazu: Eine Meldung,
-// die öfter kam, oder ein Backup, das älter wurde, ist kein neuer Punkt.
-func AlarmPunkte(befunde []Befund, gruppen []logger.Fehlergruppe) []string {
+// Fehlermeldung Text und Route, mit dem Schalter alarm_warnungen (mitWarnungen) ebenso die
+// Warnungen. Zahlen, Uhrzeiten und Ursachen zählen nicht dazu: Eine Meldung, die öfter kam, oder
+// ein Backup, das älter wurde, ist kein neuer Punkt.
+func AlarmPunkte(befunde []Befund, gruppen []logger.Fehlergruppe, mitWarnungen bool) []string {
 	var punkte []string
 	for _, b := range befunde {
-		if b.Stufe == StufeKritisch {
+		switch {
+		case b.Stufe == StufeKritisch:
 			punkte = append(punkte, "Befund: "+b.Bereich)
+		case b.Stufe == StufeWarnung && mitWarnungen:
+			punkte = append(punkte, "Warnung: "+b.Bereich)
 		}
 	}
 	for _, g := range gruppen {
-		punkt := "Fehler: weitere Meldungen"
+		art := "Fehler: "
+		if g.Warnung {
+			if !mitWarnungen {
+				continue
+			}
+			art = "Warnung im Log: "
+		}
+		punkt := art + "weitere Meldungen"
 		if !g.Sammel {
-			punkt = strings.TrimSpace("Fehler: " + g.Meldung + " " + g.Route)
+			punkt = strings.TrimSpace(art + g.Meldung + " " + g.Route)
 		}
 		punkte = append(punkte, punkt)
 	}
