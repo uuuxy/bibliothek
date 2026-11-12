@@ -27,8 +27,13 @@ const ehemalige = [
 ];
 
 /** Antwort wie apiFetch sie liefert — nur das, was die Komponente liest.
- *  @param {any[]} daten @returns {any} */
-const antwort = (daten) => ({ ok: true, json: async () => daten });
+ *  @param {any[]} daten @param {number} [grenze] was der Server im Kopf X-Grenze nennt
+ *  @returns {any} */
+const antwort = (daten, grenze = 0) => ({
+	ok: true,
+	headers: new Headers(grenze ? { 'X-Grenze': String(grenze) } : {}),
+	json: async () => daten
+});
 
 describe('EhemaligeListe', () => {
 	beforeEach(() => {
@@ -47,6 +52,25 @@ describe('EhemaligeListe', () => {
 		expect(getByText('2026')).toBeTruthy();
 		expect(getByText(/1 überfällig/)).toBeTruthy();
 		expect(getByText('Sperre aktiv')).toBeTruthy();
+	});
+
+	// Ohne Suchwort kappt der Server die Liste und nennt die Grenze. Ohne den Satz sähen 500
+	// Ehemalige aus wie alle, und wer jemanden dahinter sucht, hielte ihn für nicht da.
+	it('sagt, dass die Liste gekappt ist, und schweigt bei vollständiger Liste', async () => {
+		const drei = Array.from({ length: 3 }, (_, i) => ({ ...ehemalige[0], id: `g${i}` }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(drei, 3)).mockResolvedValue(antwort(drei));
+		const { findByText, getByRole, queryByText } = render(EhemaligeListe, { onSelect: () => {} });
+
+		expect(
+			await findByText(/^Die ersten 3 Ehemaligen\. Suche nach Name oder Ausweisnummer/)
+		).toBeTruthy();
+
+		// Mit Suchwort nennt der Server keine Grenze: Die Liste ist vollständig, der Satz geht.
+		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
+			target: { value: 'Wera' }
+		});
+		await vi.waitFor(() => expect(vi.mocked(apiFetch)).toHaveBeenCalledTimes(2), { timeout: 2000 });
+		await vi.waitFor(() => expect(queryByText(/^Die ersten \d+ Ehemaligen/)).toBeNull());
 	});
 
 	it('Klick auf die Zeile öffnet das Profil', async () => {
@@ -122,7 +146,9 @@ describe('EhemaligeListe', () => {
 		let gibErste = () => {};
 		const liesErste = vi.fn(() => new Promise((ja) => (gibErste = ja)));
 		vi.mocked(apiFetch)
-			.mockResolvedValueOnce(/** @type {any} */ ({ ok: true, json: liesErste }))
+			.mockResolvedValueOnce(
+				/** @type {any} */ ({ ok: true, headers: new Headers(), json: liesErste })
+			)
 			.mockResolvedValue(antwort([{ ...ehemalige[0], id: 'e2', vorname: 'Xaver' }]));
 		const { getByRole, findByRole } = render(EhemaligeListe, { onSelect: () => {} });
 		await vi.waitFor(() => expect(liesErste).toHaveBeenCalled());

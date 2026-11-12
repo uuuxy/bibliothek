@@ -70,6 +70,13 @@
 	{:else if papierkorb.liste.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">Der Papierkorb ist leer.</div>
 	{:else}
+		<!-- Der Server zeigt die jüngsten Löschungen bis zu seiner Grenze (Kopf X-Grenze); eine Suche
+		     gibt es hier nicht, der Satz sagt deshalb nur, dass Ältere fehlen, wie im Logbuch. -->
+		{#if papierkorb.gekappt}
+			<p class="px-6 pt-4 text-sm text-on-surface-variant">
+				Die {papierkorb.liste.length} zuletzt gelöschten Leser. Ältere Löschungen sind hier nicht sichtbar.
+			</p>
+		{/if}
 		<div class="overflow-x-auto w-full text-left">
 			<Tabelle beschriftung="Papierkorb">
 				<thead class="font-semibold">

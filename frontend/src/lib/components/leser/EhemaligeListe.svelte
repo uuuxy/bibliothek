@@ -10,6 +10,7 @@
 	import { Archive } from '@lucide/svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { normalisiereScan } from '../../utils/scanEinordnen.js';
+	import { grenzeAus, istGekappt } from '../../utils/listenGrenze.js';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 
@@ -18,6 +19,8 @@
 
 	/** @type {any[]} */
 	let zeilen = $state.raw([]);
+	/** Die Grenze, die der Server für die geladene Liste nennt; 0, wenn keine gilt. */
+	let grenze = $state(0);
 	let laedt = $state(true);
 	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
 	let ladefehler = $state('');
@@ -41,14 +44,19 @@
 			// Erst gelesen, dann verglichen: Auch das Lesen des Rumpfs dauert.
 			let liste = [];
 			let fehler = '';
-			if (res.ok) liste = (await res.json()) || [];
-			else fehler = await leseApiFehler(res);
+			let neueGrenze = 0;
+			if (res.ok) {
+				neueGrenze = grenzeAus(res);
+				liste = (await res.json()) || [];
+			} else fehler = await leseApiFehler(res);
 			if (nr !== ladeNr) return;
 			zeilen = liste;
+			grenze = neueGrenze;
 			ladefehler = fehler;
 		} catch (err) {
 			if (nr === ladeNr) {
 				zeilen = [];
+				grenze = 0;
 				ladefehler = 'Die Ehemaligen konnten nicht geladen werden (Netzwerkfehler).';
 			}
 			console.error('Fehler beim Laden der Ehemaligen:', err);
@@ -81,6 +89,13 @@
 		automatisch anonymisiert. Offene Bücher mahnt das Mahnwesen; die Abschlussklassen vor der
 		Entlassung stehen unter <em>Abgänger</em>.
 	</p>
+	<!-- Ohne Suchwort kappt der Server die Liste (Kopf X-Grenze); dann sagt es ein Satz über der
+	     Liste, mit dem Weg zum Rest, wie in der Leserdatei. -->
+	{#if !laedt && !ladefehler && istGekappt(zeilen.length, grenze)}
+		<p class="text-sm text-on-surface-variant">
+			Die ersten {zeilen.length} Ehemaligen. Suche nach Name oder Ausweisnummer, um die übrigen zu finden.
+		</p>
+	{/if}
 </div>
 
 {#if laedt}

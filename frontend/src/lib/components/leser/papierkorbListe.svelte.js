@@ -12,6 +12,7 @@
 // Klartext („offene Ausleihen", „bereits anonymisiert").
 import { SvelteSet } from 'svelte/reactivity';
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { grenzeAus, istGekappt } from '../../utils/listenGrenze.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /**
@@ -28,6 +29,8 @@ export function istAnonymisiert(s) {
 export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 	/** @type {any[]} */
 	let liste = $state.raw([]);
+	/** Die Grenze, die der Server für die geladene Liste nennt; 0, wenn keine gilt. */
+	let grenze = $state(0);
 	let laedt = $state(false);
 	let ladefehler = $state('');
 	let loeschtGerade = $state(false);
@@ -46,6 +49,10 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 		get ladefehler() {
 			return ladefehler;
 		},
+		/** Ob der Server die Liste bei seiner Grenze gekappt hat (Kopf X-Grenze). */
+		get gekappt() {
+			return istGekappt(liste.length, grenze);
+		},
 		get loeschtGerade() {
 			return loeschtGerade;
 		},
@@ -59,14 +66,17 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 			try {
 				const res = await apiFetch('/api/schueler/deleted');
 				if (res.ok) {
+					grenze = grenzeAus(res);
 					liste = (await res.json()) || [];
 					ladefehler = '';
 				} else {
 					liste = [];
+					grenze = 0;
 					ladefehler = await leseApiFehler(res, 'Der Papierkorb konnte nicht geladen werden.');
 				}
 			} catch (err) {
 				liste = [];
+				grenze = 0;
 				ladefehler = 'Der Papierkorb konnte nicht geladen werden (Netzwerkfehler).';
 				console.error('Fehler beim Laden des Papierkorbs:', err);
 			} finally {

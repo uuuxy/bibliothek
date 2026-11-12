@@ -43,12 +43,13 @@ const ANONYM = {
 	anonymized_at: '2026-07-04T02:00:00Z'
 };
 
-/** @param {any} body @param {{ok?: boolean, status?: number}} opts */
+/** @param {any} body @param {{ok?: boolean, status?: number, grenze?: number}} opts */
 function antwort(body, opts = {}) {
 	const ok = opts.ok ?? true;
 	return {
 		ok,
 		status: opts.status ?? (ok ? 200 : 409),
+		headers: new Headers(opts.grenze ? { 'X-Grenze': String(opts.grenze) } : {}),
 		json: async () => body,
 		text: async () => (typeof body === 'string' ? body : JSON.stringify(body))
 	};
@@ -72,6 +73,27 @@ describe('Papierkorb', () => {
 
 		// Und die andere Zeile sagt, warum sie keinen hat.
 		expect(screen.getByText(/anonymisiert \(DSGVO\)/i)).toBeTruthy();
+	});
+
+	// Der Server zeigt die jüngsten Löschungen bis zu seiner Grenze. Ohne den Satz sähe eine
+	// gekappte Liste aus wie der ganze Papierkorb.
+	it('sagt, dass der Papierkorb gekappt ist', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ (antwort([NORMAL, ANONYM], { grenze: 2 }))
+		);
+		render(Papierkorb, { props: {} });
+		expect(
+			await screen.findByText(
+				/^Die 2 zuletzt gelöschten Leser\. Ältere Löschungen sind hier nicht sichtbar\.$/
+			)
+		).toBeTruthy();
+	});
+
+	it('schweigt ohne Grenze (Gegenprobe)', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ (antwort([NORMAL, ANONYM])));
+		render(Papierkorb, { props: {} });
+		await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(3));
+		expect(screen.queryByText(/zuletzt gelöschten Leser/)).toBeNull();
 	});
 
 	it('nennt einen Ladefehler einen Ladefehler, nicht einen leeren Papierkorb', async () => {

@@ -24,7 +24,8 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 		// LIMIT gegen unbegrenztes Wachstum: Leser im Papierkorb sammeln sich an
 		// (die 180-Tage-Anonymisierung leert die Zeile, entfernt sie aber nicht). Der
 		// Papierkorb ist zum Wiederherstellen der jüngsten Löschungen da; 1000 ist weit
-		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht.
+		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht. Die
+		// Antwort nennt die Grenze, damit die Ansicht eine gekappte Liste als solche zeigt.
 		const papierkorbGrenze = 1000
 		zeilen, err := repository.LadePapierkorb(ctx, t.DB.Pool, papierkorbGrenze)
 		if err != nil {
@@ -50,7 +51,7 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 			})
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, leser)
+		tuer.AntworteListe(w, leser, papierkorbGrenze)
 	}
 }
 
