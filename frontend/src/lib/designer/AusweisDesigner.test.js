@@ -5,6 +5,7 @@ import AusweisDesigner from './AusweisDesigner.svelte';
 import { apiFetch } from '../apiFetch.js';
 import { authStore } from '../stores/authStore.svelte.js';
 import { idStore, resetDesign } from './idDesignerStore.svelte.js';
+import { vergissDesignLadezustand } from './designSitzung.js';
 import { serverAntwort } from '../serverAntwort.js';
 
 // leseApiFehler bleibt echt: Die Meldung des Servers soll ankommen, wie sie der Bildschirm zeigt.
@@ -54,6 +55,10 @@ const entprellungAbwarten = () => new Promise((fertig) => setTimeout(fertig, 900
 beforeEach(() => {
 	authStore.currentUser = { rolle: 'admin' };
 	resetDesign();
+	// resetDesign lässt Druckart und geladenen Stand stehen. CI mischt die Reihenfolge der Tests
+	// (--sequence.shuffle), ein Test darf also nicht erben, was ein anderer umgestellt hat.
+	idStore.printMode = 'card';
+	vergissDesignLadezustand();
 	vi.mocked(apiFetch).mockReset();
 	vi.mocked(apiFetch).mockImplementation(async (_url, optionen) =>
 		// Das GET antwortet wie beim Erststart: nur der Kopf der Schule, die Leinwand nimmt ihre Vorgaben.
