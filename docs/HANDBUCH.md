@@ -367,8 +367,9 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 - Oben _Büchertausch vor den Sommerferien_ / _Bücherausgabe nach den Sommerferien_
   umschalten; je Art gibt es einen Plan pro Schuljahr. Rechts _Als PDF_, _Plan verwerfen_,
   _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_. Die Leiste bleibt beim
-  Scrollen oben stehen; der Satz darunter sagt, was man sieht („Vorschlag aus dem
-  Vorjahr, noch nicht gespeichert", „Entwurf, noch nicht veröffentlicht", „Veröffentlicht am …").
+  Scrollen oben stehen. Ist der Plan gespeichert, sagt ein Satz darunter, ob das Kollegium
+  ihn schon sieht („Entwurf, noch nicht veröffentlicht", „Veröffentlicht am …"); beim
+  Vorschlag steht dort keiner.
 - **Entwurf und Veröffentlichen:** _Plan speichern_ legt einen
   **Entwurf** an — zentral gespeichert, auf jedem PC gleich, aber für das Kollegium
   unsichtbar: nicht im Portal, nicht im PDF des Portals, und es werden keine Fristen

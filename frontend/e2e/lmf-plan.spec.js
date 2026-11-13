@@ -123,7 +123,11 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
 	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
+	// Der Vorschlag der Ausgabe ist geladen (Feld und Knöpfe erst danach); beim Vorschlag
+	// steht kein Satz über dem Zeitraum.
+	await expect(page.getByLabel('Erster Tag')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Plan speichern' })).toBeVisible();
+	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveCount(0);
 
 	// Die Klasse in den Plan holen — über das Dialogfenster „Andere Klasse eintragen"
 	// (seit 06.09.2026 kein Dauerformular mehr). Sie landet NICHT am Ende, sondern nach
@@ -322,7 +326,8 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
 	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
+	await expect(page.getByLabel('Erster Tag')).toBeVisible();
+	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Andere Klasse eintragen' }).click();
 	await page.getByLabel('Klasse', { exact: true }).fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
@@ -427,7 +432,8 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	seedSQL(`DELETE FROM lmf_plaene WHERE art = 'rueckgabe';`);
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
+	await expect(page.getByRole('button', { name: 'Plan speichern' })).toBeVisible();
+	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveCount(0);
 
 	const letzterTag = page.getByLabel('Letzter Tag');
 	const wert = await letzterTag.inputValue();

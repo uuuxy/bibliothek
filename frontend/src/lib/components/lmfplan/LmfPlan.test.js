@@ -8,8 +8,8 @@ import { melde } from '../../../inventur/lib/store.svelte.js';
 
 // Scheitert das Laden, darf der Planer NICHT erscheinen.
 //
-// Sonst stünde nach einem Netzfehler „Vorschlag nach der Regel" da, der Planer böte die
-// Regel-Reihenfolge an — und ein Klick auf „Plan speichern" ersetzte den echten Plan des
+// Sonst böte der Planer nach einem Netzfehler die Regel-Reihenfolge an — und ein Klick auf
+// „Plan speichern" ersetzte den echten Plan des
 // Schuljahres durch diesen Entwurf und stellte die Fristen aller Klassen auf den
 // Stichtag zurück. Dieselbe Klasse wie an den Einstellungen am 31.08.2026; das Bauteil
 // dafür gab es schon (ui/LadeFehler.svelte), nur hier nicht.
@@ -82,10 +82,7 @@ describe('LmfPlan: gescheitertes Laden', () => {
 			/** @type {any} */ ({ ok: true, json: async () => STAND })
 		);
 		render(LmfPlan);
-		expect(
-			await screen.findByText(/Vorschlag nach der Regel, noch nicht gespeichert/)
-		).toBeTruthy();
-		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
+		expect(await screen.findByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		expect(screen.queryByText('Plan nicht geladen')).toBeNull();
 	});
 });
@@ -138,6 +135,22 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		// Ohne Schüler in 09H1 (klassen leer): die Zeile sagt es.
 		expect(screen.getByText('ohne Schüler')).toBeTruthy();
 	});
+
+	// Der Satz sagt, ob das Kollegium einen gespeicherten Plan sieht. Beim Vorschlag ist nichts
+	// gespeichert, und woher seine Reihenfolge stammt, braucht dort niemand.
+	it('zeigt beim Vorschlag nach der Regel keinen Satz', async () => {
+		antworte(STAND);
+		render(LmfPlan);
+		expect(await screen.findByRole('button', { name: 'Plan speichern' })).toBeTruthy();
+		expect(screen.queryByTestId('lmf-plan-hinweis')).toBeNull();
+	});
+
+	it('zeigt beim Vorschlag aus dem vergangenen Plan keinen Satz', async () => {
+		antworte({ ...STAND, plan: PLAN, zeilen: ZEILEN, vorbei: true });
+		render(LmfPlan);
+		expect(await screen.findByRole('button', { name: 'Plan speichern' })).toBeTruthy();
+		expect(screen.queryByTestId('lmf-plan-hinweis')).toBeNull();
+	});
 });
 
 // Der Anker des Büchertauschs (Absprache vom 06.09.2026: „es endet immer am gleichen Tag —
@@ -182,7 +195,7 @@ describe('LmfPlan: Art umschalten', () => {
 		await fireEvent.click(
 			screen.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' })
 		);
-		expect(await screen.findByText(/noch nicht gespeichert/)).toBeTruthy();
+		expect(await screen.findByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		// Jetzt trifft die alte Antwort ein — sie darf den Planer nicht mehr umschreiben.
 		// Ausgespült wird großzügig: Die Antwort läuft durch mehrere Mikrotasks (await im
 		// Mock, res.json(), der Effekt der Vorschau). Zu wenige Runden, und der Test sähe
@@ -192,8 +205,10 @@ describe('LmfPlan: Art umschalten', () => {
 			await Promise.resolve();
 			await tick();
 		}
-		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('noch nicht gespeichert');
-		expect(screen.queryByText(/Entwurf, noch nicht veröffentlicht/)).toBeNull();
+		// Die Ausgabe zeigt ihren Vorschlag ohne Satz; gewönne die alte Antwort, stünde dort
+		// „Entwurf, noch nicht veröffentlicht.“
+		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
+		expect(screen.queryByTestId('lmf-plan-hinweis')).toBeNull();
 	});
 });
 

@@ -1,6 +1,6 @@
 <!-- @component LmfPlanKopf — die Kopfzeile des Planers: Art des Plans, die Aktionen und
-     der eine Satz, der sagt, woran man gerade arbeitet (Vorschlag aus dem Vorjahr oder
-     nach der Regel, Entwurf, veröffentlichter Plan). Gespeichert wird ein Entwurf;
+     zu einem gespeicherten Plan der eine Satz, ob das Kollegium ihn sieht (Entwurf oder
+     veröffentlicht). Gespeichert wird ein Entwurf;
      „Veröffentlichen" (Migration 100) macht ihn für Portal und PDF des Kollegiums
      sichtbar und setzt beim Büchertausch die Fristen. Vorher nimmt die Schulleitung
      ihn ab, dafür das PDF. Die Aktionen erscheinen nur, wenn ein
@@ -34,7 +34,6 @@
 
 	const laufend = $derived(Boolean(stand?.plan) && !stand.vorbei);
 	const veroeffentlicht = $derived(laufend && Boolean(stand.plan.veroeffentlicht_am));
-	const vorschlag = $derived(stand?.vorschlag?.zeilen?.length > 0);
 </script>
 
 <div class="sticky top-0 z-10 -mt-6 bg-surface-container-lowest pt-6 pb-3">
@@ -73,22 +72,15 @@
 		{/if}
 	</div>
 
-	{#if !laedt && !ladeFehler}
-		<!-- Ein Satz Stand, keine Regelerklärung; die Regeln stehen im Handbuch. Der Satz
-		     beschreibt, was auf dem Bildschirm steht: „Noch kein Plan" über einer vollen
-		     Tabelle beschriebe die Datenbank, nicht die Seite. -->
+	{#if !laedt && !ladeFehler && laufend}
+		<!-- Nur dieser Satz zeigt, ob das Kollegium den Plan sieht; der Knopf „Veröffentlichen"
+		     fehlt danach einfach. Beim Vorschlag steht keiner: Gespeichert ist nichts, und
+		     wer Geändertes verlassen will, wird gefragt (verlassenSchutz). -->
 		<p class="mt-3 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
 			{#if veroeffentlicht}
 				Veröffentlicht am {datumKurz(stand.plan.veroeffentlicht_am.slice(0, 10))}.
-			{:else if laufend}
-				Entwurf, noch nicht veröffentlicht.
-			{:else if stand?.plan && stand.vorbei}
-				Der Plan vom {datumKurz(stand.plan.erster_tag)} ist vorbei; Vorschlag aus seiner Reihenfolge,
-				noch nicht gespeichert.
-			{:else if vorschlag}
-				Vorschlag nach der Regel, noch nicht gespeichert.
 			{:else}
-				Noch kein Plan.
+				Entwurf, noch nicht veröffentlicht.
 			{/if}
 		</p>
 	{/if}
