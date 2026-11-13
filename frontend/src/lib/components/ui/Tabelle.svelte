@@ -10,7 +10,7 @@
          Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTabelle).
        - Gruppen: `data-gruppe-weiter` an der Zeile nimmt die Linie darunter weg; dann trennt
          die Linie nur Gruppen (M3 Lists: „Limit dividers … only when a stronger visual
-         separation is necessary"). Im LMF-Planer ist ein Tag eine Gruppe.
+         separation is necessary"). Im LMF-Plan (Planer und Portal) ist ein Tag eine Gruppe.
        - Hover: State-Layer 8 % `on-surface` — dieselbe Regel wie bei den Knöpfen.
        - Gewählt: `aria-selected="true"` an der Zeile → `secondary-container`, wie in
          M3-Listen.

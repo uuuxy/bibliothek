@@ -118,7 +118,7 @@
 						gezogen={gezogen === i}
 						ziel={ziel === i}
 						markiert={leuchtet === i}
-						tagGehtWeiter={!!plaetze[i]?.datum && plaetze[i + 1]?.datum === plaetze[i].datum}
+						tagGehtWeiter={op.tagGehtWeiter(plaetze, i)}
 						onziehstart={() => (gezogen = i)}
 						onziehueber={() => (ziel = i)}
 						onablegen={(e) => ablegen(e, i)}

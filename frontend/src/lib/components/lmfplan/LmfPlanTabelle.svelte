@@ -2,7 +2,8 @@
      ein Block (Büchertausch vor den Sommerferien, Bücherausgabe nach den Sommerferien),
      darunter der eine Satz, was dort geschieht, darin Wochentag, Datum, Stunde, Klassen,
      Besonderheiten (Vermerk, wie die Bibliothek ihn geschrieben hat). Lesend — der Portal-Reiter
-     und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer.
+     und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer; Spaltenbreiten
+     und Linien sind dieselben wie dort, eine Linie steht nur zwischen zwei Tagen.
      `heute` (JJJJ-MM-TT) hebt die Zeilen dieses Tages hervor, damit man sofort sieht, welche
      Klassen heute dran sind (Tabelle: aria-current="date"). `aktion` steht rechts in der Zeile
      der ersten Überschrift (im Portal „Als PDF"). -->
@@ -16,6 +17,7 @@
 		stundeText,
 		wochentag
 	} from './lmfplanDienst.js';
+	import { tagGehtWeiter } from './lmfplanZeilen.js';
 
 	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[], heute?: string, aktion?: import('svelte').Snippet }} */
 	let { termine, eingangsjahrgaenge = [], heute = '', aktion } = $props();
@@ -42,19 +44,22 @@
 			<Tabelle beschriftung="Termine des Lernmittelplans">
 				<thead>
 					<tr>
-						<th>Wochentag</th>
-						<th>Datum</th>
-						<th>Stunde</th>
-						<th>Klassen</th>
+						<th class="w-px whitespace-nowrap">Wochentag</th>
+						<th class="w-px whitespace-nowrap">Datum</th>
+						<th class="w-px whitespace-nowrap">Stunde</th>
+						<th class="w-48">Klassen</th>
 						<th>Besonderheiten</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each block.zeilen as t (t.id)}
-						<tr aria-current={heute !== '' && t.datum === heute ? 'date' : undefined}>
-							<td>{wochentag(t.datum)}</td>
-							<td class="tabular-nums">{datumKurz(t.datum)}</td>
-							<td>{stundeText(t.stunde)}</td>
+					{#each block.zeilen as t, j (t.id)}
+						<tr
+							aria-current={heute !== '' && t.datum === heute ? 'date' : undefined}
+							data-gruppe-weiter={tagGehtWeiter(block.zeilen, j) || undefined}
+						>
+							<td class="whitespace-nowrap">{wochentag(t.datum)}</td>
+							<td class="tabular-nums whitespace-nowrap">{datumKurz(t.datum)}</td>
+							<td class="whitespace-nowrap">{stundeText(t.stunde)}</td>
 							<td class="font-medium">{t.klassen.join(' / ')}</td>
 							<td>
 								{t.vermerk}

@@ -89,4 +89,18 @@ describe('LmfPlanTabelle', () => {
 		rerender({ termine, heute: '' });
 		expect(aktuelle()).toHaveLength(0);
 	});
+
+	// Wie im Planer: Eine Linie steht nur zwischen zwei Tagen (ui/Tabelle, data-gruppe-weiter).
+	it('zieht eine Linie nur zwischen zwei Tagen', () => {
+		const art = 'rueckgabe';
+		/** @type {import('./lmfplanDienst.js').LmfTermin[]} */
+		const woche = [
+			{ id: 'm1', datum: '2027-06-21', stunde: 1, art, klassen: ['09G3'], vermerk: '' },
+			{ id: 'm2', datum: '2027-06-21', stunde: 2, art, klassen: ['09R1'], vermerk: '' },
+			{ id: 'd1', datum: '2027-06-22', stunde: 1, art, klassen: ['08R2'], vermerk: '' }
+		];
+		const { container } = render(LmfPlanTabelle, { termine: woche });
+		const zeilen = [...container.querySelectorAll('tbody tr')];
+		expect(zeilen.map((tr) => tr.hasAttribute('data-gruppe-weiter'))).toEqual([true, false, false]);
+	});
 });

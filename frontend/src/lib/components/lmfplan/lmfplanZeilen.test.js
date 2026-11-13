@@ -6,6 +6,7 @@ import {
 	klassenTeile,
 	klasseRaus,
 	klasseTauschen,
+	tagGehtWeiter,
 	verschiebe,
 	zusammenlegen
 } from './lmfplanZeilen.js';
@@ -202,5 +203,14 @@ describe('lmfplanDienst.klasseRaus', () => {
 		// Aus der letzten Zeile genommen, ist sie wirklich draußen.
 		const raus = klasseRaus({ ...leererEntwurf(), zeilen: [z('09H1')] }, '10R1');
 		expect(raus.ausgelassen).toEqual(['10R1']);
+	});
+});
+
+describe('tagGehtWeiter', () => {
+	// Ohne ersten Tag hat der Planer keine Plätze (undefined): dann nirgends eine Lücke.
+	it('sagt ja nur, wenn auf den Eintrag derselbe Tag folgt', () => {
+		const liste = [{ datum: '2027-06-21' }, { datum: '2027-06-21' }, { datum: '2027-06-22' }];
+		expect([0, 1, 2].map((i) => tagGehtWeiter(liste, i))).toEqual([true, false, false]);
+		expect(tagGehtWeiter([undefined, undefined], 0)).toBe(false);
 	});
 });

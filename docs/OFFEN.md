@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 12.11.2026
+Stand: 13.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -61,6 +61,8 @@ Nur, was kein Test leisten kann.
 - [x] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
 - [x] Die Grenze der Protokoll-Listen (1000 Einträge) an einer Stelle festlegen. (5.178)
 - [x] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
+- [ ] Planer-Tabelle: Zellen ohne eigene Farben wie in jeder anderen Tabelle; die Ratsche sieht
+  auch Zeilen-Bauteile. (5.180)
 
 ### Termin
 
@@ -86,6 +88,19 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.180 Planer-Tabelle: Zellen ohne eigene Farben
+
+Im LMF-Planer stehen Wochentag, Stunde und Nummer in `on-surface-variant`, und die Zellen haben
+eigene Abstände; jede andere Tabelle zeigt ihre Zellen in `on-surface` (Rezept in ui/Tabelle).
+Das Portal zeigt denselben Plan deshalb in anderen Farben. `frontend-hygiene-tabellen.test.js`
+prüft nur Dateien mit `<Tabelle>` und sieht die Zeilen-Bauteile des Planers nicht:
+LmfPlanPlatzZellen (9 Zellen), LmfPlanZeile (2), LmfPlanKlassenZelle (1).
+
+Zu entscheiden: den Planer angleichen (Wochentag und Stunde so hell wie das Datum). Danach die
+Ratsche auf Bauteile ausdehnen, deren Wurzel `<tr>` oder `<td>` ist, und am heutigen Stand rot
+sehen; die Einfügelinie beim Ziehen (`border-primary` an der Zeile) ist Funktion und braucht eine
+benannte Ausnahme.
 
 ### 7.2 Frisches Littera-Backup
 

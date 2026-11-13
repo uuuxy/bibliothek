@@ -96,6 +96,23 @@ async function zeilenAktion(page, zeile, nummer, eintrag) {
 	await page.getByRole('menuitem', { name: eintrag }).click();
 }
 
+/** Die Linie unter einer Zeile mitten im Tag und unter der letzten Zeile eines Tages (Farbe
+ *  der Unterkante). Planer und Portal ziehen eine Linie nur zwischen zwei Tagen.
+ *  @param {import('@playwright/test').Locator} tabelle
+ *  @param {number} datumSpalte */
+async function linienDerTage(tabelle, datumSpalte) {
+	return tabelle.evaluate((t, spalte) => {
+		const zeilen = [...t.querySelectorAll('tbody tr')];
+		const datum = (/** @type {any} */ tr) => tr.cells[spalte]?.textContent.trim();
+		const farbe = (/** @type {any} */ tr) => getComputedStyle(tr.cells[0]).borderBottomColor;
+		const naechste = (/** @type {number} */ i) =>
+			i + 1 < zeilen.length ? datum(zeilen[i + 1]) : '';
+		const innen = zeilen.findIndex((tr, i) => datum(tr) && datum(tr) === naechste(i));
+		const ende = zeilen.findIndex((tr, i) => datum(tr) && naechste(i) && datum(tr) !== naechste(i));
+		return { innen: farbe(zeilen[innen]), ende: farbe(zeilen[ende]) };
+	}, datumSpalte);
+}
+
 /** Der Platz, den der Server der Zeile mit dieser Nummer geben muss (Mo–Fr, 6 je Tag,
  *  am ersten Tag ab der Startstunde). */
 function erwarteterPlatz(/** @type {number} */ nummer) {
@@ -172,16 +189,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(zeile).toContainText(soll.datum);
 	await expect(zeile).toContainText(soll.stunde);
 	// Linie nur zwischen zwei Tagen: innerhalb eines Tages keine, am Tageswechsel eine.
-	const linien = await tabelle.evaluate((t) => {
-		const zeilen = [...t.querySelectorAll('tbody tr')];
-		const datum = (/** @type {any} */ tr) => tr.cells[2]?.textContent.trim();
-		const farbe = (/** @type {any} */ tr) => getComputedStyle(tr.cells[0]).borderBottomColor;
-		const naechste = (/** @type {number} */ i) =>
-			i + 1 < zeilen.length ? datum(zeilen[i + 1]) : '';
-		const innen = zeilen.findIndex((tr, i) => datum(tr) && datum(tr) === naechste(i));
-		const ende = zeilen.findIndex((tr, i) => datum(tr) && naechste(i) && datum(tr) !== naechste(i));
-		return { innen: farbe(zeilen[innen]), ende: farbe(zeilen[ende]) };
-	});
+	const linien = await linienDerTage(tabelle, 2);
 	expect(linien.innen, 'keine Linie innerhalb eines Tages').toBe('rgba(0, 0, 0, 0)');
 	expect(linien.ende, 'Linie am Tageswechsel').not.toBe('rgba(0, 0, 0, 0)');
 
@@ -281,6 +289,12 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		// Ohne Neuladen: Das Veröffentlichen schickt das Signal „lmf-plan" über die Leitung, und das
 		// offene Portal holt den Plan selbst neu (lmf_plan_live.go).
 		await expect(portalZeile).toBeVisible();
+		// Dieselben Linien wie im Planer: nur zwischen zwei Tagen (Datum in der zweiten Spalte).
+		const portalLinien = await linienDerTage(portal.getByRole('table'), 1);
+		expect(portalLinien.innen, 'Portal: keine Linie innerhalb eines Tages').toBe(
+			'rgba(0, 0, 0, 0)'
+		);
+		expect(portalLinien.ende, 'Portal: Linie am Tageswechsel').not.toBe('rgba(0, 0, 0, 0)');
 		await expect(portalZeile).toContainText(soll.wochentag);
 		await expect(portalZeile).toContainText(soll.stunde);
 		// Beide Klassen der geteilten Stunde stehen in EINER Zeile (Reihenfolge macht der

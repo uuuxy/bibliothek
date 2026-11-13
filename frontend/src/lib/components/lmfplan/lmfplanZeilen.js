@@ -138,3 +138,11 @@ export function klasseTauschen(zeilen, i, alt, neu) {
 		n === i ? { ...x, klassen: x.klassen.map((k) => (k === alt ? neu : k)) } : x
 	);
 }
+
+/** Folgt auf Eintrag i derselbe Tag? Dann fehlt die Linie unter seiner Zeile: Im Plan trennt
+ *  eine Linie nur zwei Tage (ui/Tabelle, `data-gruppe-weiter`). Planer und Portal fragen
+ *  beide hier, damit sie dieselben Linien ziehen.
+ *  @param {Array<{ datum?: string } | undefined>} liste @param {number} i */
+export function tagGehtWeiter(liste, i) {
+	return Boolean(liste[i]?.datum) && liste[i + 1]?.datum === liste[i]?.datum;
+}
