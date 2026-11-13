@@ -6,6 +6,7 @@ import { erzeugeDesignAblage } from './idDesignPersistenz.svelte.js';
 import { apiFetch } from '../apiFetch.js';
 import { serverAntwort } from '../serverAntwort.js';
 import { applyDesign } from './idDesignerStore.svelte.js';
+import { designStand, merkeDesignStand } from './designSitzung.js';
 
 vi.mock('../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -129,7 +130,7 @@ describe('Ausweis-Design speichern', () => {
 		expect(ablage.speicherfehler).toBe('Keine Verbindung zum Server.');
 	});
 
-	it('lässt einen älteren Stand, der zuletzt scheitert, den neueren nicht überschreiben', async () => {
+	it('lässt einen älteren Stand, der scheitert, den wartenden neueren nicht überschreiben', async () => {
 		/** @type {() => void} */
 		let scheitereAlt = () => {};
 		vi.mocked(apiFetch)
@@ -143,12 +144,49 @@ describe('Ausweis-Design speichern', () => {
 		const ablage = erzeugeDesignAblage();
 
 		const alt = ablage.speichern('{"stand":"alt"}');
-		await ablage.speichern('{"stand":"neu"}');
+		const neu = ablage.speichern('{"stand":"neu"}');
 		scheitereAlt();
-		await alt;
+		await Promise.all([alt, neu]);
 
 		expect(ablage.zustand).toBe('saved');
 		await ablage.erneutSpeichern();
 		expect(apiFetch).toHaveBeenCalledTimes(2);
+	});
+
+	// Der Server schreibt nur auf dem Stand, den der Platz zuletzt bekommen hat, und nennt den
+	// neuen erst in seiner Antwort. Gingen zwei Speicherungen desselben Platzes zugleich hinaus
+	// (ein Speichern mit großen Bildern dauert länger als die 800 ms bis zum nächsten), trüge die
+	// zweite den alten Stand und käme als „an einem anderen Platz geändert" zurück.
+	it('schickt eine Änderung während eines laufenden Speicherns erst nach dessen Antwort, mit dem neuen Stand', async () => {
+		merkeDesignStand('S0');
+		/** @type {(antwort: Response) => void} */
+		let antworteErste = () => {};
+		vi.mocked(apiFetch)
+			.mockImplementationOnce(
+				() =>
+					new Promise((ja) => {
+						antworteErste = ja;
+					})
+			)
+			.mockResolvedValueOnce(serverAntwort(200, { stand: 'S2' }));
+		const ablage = erzeugeDesignAblage();
+
+		const erste = ablage.speichern('{"n":1}');
+		const zweite = ablage.speichern('{"n":2}');
+		const dritte = ablage.speichern('{"n":3}');
+		await new Promise((weiter) => setTimeout(weiter, 0));
+		expect(apiFetch).toHaveBeenCalledTimes(1);
+		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/ausweis-layout?stand=S0');
+
+		antworteErste(serverAntwort(200, { stand: 'S1' }));
+		await Promise.all([erste, zweite, dritte]);
+
+		// Der überholte Stand 2 geht nicht mehr hinaus, der jüngste mit dem Stand der ersten Antwort.
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+		expect(vi.mocked(apiFetch).mock.calls[1][0]).toBe('/api/ausweis-layout?stand=S1');
+		expect(vi.mocked(apiFetch).mock.calls[1][1]?.body).toBe('{"n":3}');
+		expect(ablage.zustand).toBe('saved');
+		expect(ablage.konflikt).toBe(false);
+		expect(designStand()).toBe('S2');
 	});
 });

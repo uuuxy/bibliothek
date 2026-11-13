@@ -33,7 +33,7 @@ export function erzeugeDesignAblage() {
 	let ladekreis = $state(false);
 	// Scheitert das Speichern, gilt der Stand nur an diesem Platz. Der Grund steht da, und der Stand
 	// wartet auf „Erneut speichern"; sonst ginge er erst mit der nächsten Änderung hinaus. Nur das
-	// jüngste Speichern zählt: Ein älterer Stand, der zuletzt scheitert, überschriebe den neueren.
+	// jüngste Speichern zählt: Der Fehler eines älteren Stands überschriebe sonst den neueren.
 	let speicherfehler = $state('');
 	// Ein anderer Platz hat das Design inzwischen gespeichert (409). „Erneut speichern" scheiterte
 	// wieder daran; der Bildschirm bietet stattdessen an, neu zu laden.
@@ -41,6 +41,34 @@ export function erzeugeDesignAblage() {
 	/** @type {string | null} */
 	let ungespeichert = null;
 	let speicherLauf = 0;
+	let unterwegs = /** @type {Promise<void> | null} */ (null);
+
+	/** Schickt das Design mit dem Stand dieses Platzes: Der Server schreibt nur, wenn seiner noch
+	 *  derselbe ist, und nennt den neuen. @param {string} body @param {number} meiner */
+	async function sende(body, meiner) {
+		let grund = '';
+		let veraltet = false;
+		try {
+			const stand = encodeURIComponent(designStand());
+			const res = await apiFetch(`/api/ausweis-layout?stand=${stand}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body
+			});
+			if (res.ok) merkeDesignStand((await res.json())?.stand);
+			else {
+				veraltet = res.status === 409;
+				grund = await leseApiFehler(res);
+			}
+		} catch (e) {
+			grund = fehlertext(e);
+		}
+		if (meiner !== speicherLauf) return;
+		konflikt = veraltet;
+		speicherfehler = grund;
+		ungespeichert = grund ? body : null;
+		zustand = grund ? 'error' : 'saved';
+	}
 
 	return /** @satisfies {object} */ ({
 		get zustand() {
@@ -102,30 +130,12 @@ export function erzeugeDesignAblage() {
 		/** @param {string} body */
 		async speichern(body) {
 			const meiner = ++speicherLauf;
-			let grund = '';
-			let veraltet = false;
-			try {
-				// Der Stand, auf dem dieser Platz arbeitet: Der Server schreibt nur, wenn seiner noch
-				// derselbe ist, und nennt in der Antwort den neuen.
-				const stand = encodeURIComponent(designStand());
-				const res = await apiFetch(`/api/ausweis-layout?stand=${stand}`, {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body
-				});
-				if (res.ok) merkeDesignStand((await res.json())?.stand);
-				else {
-					veraltet = res.status === 409;
-					grund = await leseApiFehler(res);
-				}
-			} catch (e) {
-				grund = fehlertext(e);
-			}
-			if (meiner !== speicherLauf) return;
-			konflikt = veraltet;
-			speicherfehler = grund;
-			ungespeichert = grund ? body : null;
-			zustand = grund ? 'error' : 'saved';
+			// Nacheinander: Den Stand für das nächste Speichern nennt erst die Antwort des laufenden;
+			// zugleich abgeschickt, käme es als Konflikt mit dem eigenen Platz zurück.
+			while (unterwegs) await unterwegs;
+			if (meiner !== speicherLauf) return; // ein neuerer Stand wartet schon
+			unterwegs = sende(body, meiner).finally(() => (unterwegs = null));
+			return unterwegs;
 		},
 
 		/** Schickt den Stand noch einmal, dessen Speichern zuletzt scheiterte. */

@@ -2188,8 +2188,10 @@ geladen hat: Die Antwort trägt neben `schule` den Änderungsstand `stand`, das 
 als `?stand=` zurück (leer: noch keines gespeichert) und bekommt den neuen. Hat ein anderer Platz
 inzwischen gespeichert, antwortet der Server mit 409 und schreibt nichts
 (`repository.SchreibeAusweisLayout`, Prüfen und Schreiben in einer Anweisung); der Designer bietet
-dann „Neu laden und verwerfen“ an. Der Stand steht neben dem Store (`designer/designSitzung.js`),
-nicht im Design. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
+dann „Neu laden und verwerfen“ an. Er speichert nacheinander: Den Stand für das nächste Speichern
+nennt erst die Antwort des laufenden, zwei zugleich abgeschickte Speicherungen desselben Platzes
+kämen als Konflikt mit sich selbst zurück (`designer/idDesignPersistenz.svelte.js`). Der Stand
+steht neben dem Store (`designer/designSitzung.js`), nicht im Design. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
 bleiben offen. Gedruckt wird nur mit geladenem Design: Jeder Druckweg fragt vor dem Druckdialog
 `designFuerDruck` (`designer/ausweisDesignLaden.js`). Es holt das Design jedes Mal neu, denn eine
 Seite bleibt an der Theke tagelang offen, und Design und Schule ändern sich an anderen Plätzen.

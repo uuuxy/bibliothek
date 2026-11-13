@@ -25,6 +25,23 @@ async function oeffneDesigner(page) {
 	await expect(page.getByRole('button', { name: /Testdruck Vorderseite/ })).toBeVisible();
 }
 
+/** Legt das Design der Datenbank beiseite; legeDesignZurueck legt es genau so zurück. */
+function legeDesignBeiseite() {
+	seedSQL(`
+		DELETE FROM system_einstellungen WHERE schluessel = 'e2e_ausweis_layout_sicherung';
+		INSERT INTO system_einstellungen (schluessel, wert)
+		SELECT 'e2e_ausweis_layout_sicherung', wert FROM system_einstellungen WHERE schluessel = 'ausweis_layout';
+	`);
+}
+
+function legeDesignZurueck() {
+	seedSQL(`
+		DELETE FROM system_einstellungen WHERE schluessel = 'ausweis_layout';
+		UPDATE system_einstellungen SET schluessel = 'ausweis_layout'
+		WHERE schluessel = 'e2e_ausweis_layout_sicherung';
+	`);
+}
+
 /** Länger als die Entprellung des Auto-Save (800 ms). @param {import('@playwright/test').Page} page */
 const entprellungAbwarten = (page) => page.waitForTimeout(1200);
 
@@ -87,12 +104,7 @@ test('Mit dem Recht: Öffnen schreibt nichts, eine Änderung geht einmal hinaus'
 // Änderung an A ersetzte früher das ganze Design von B, ohne Hinweis an einem der beiden Plätze.
 // Jetzt lehnt der Server den überholten Stand ab, und A lädt auf Knopfdruck den von B.
 test('Zwei Plätze: Der ältere Stand überschreibt den neueren nicht', async ({ page, browser }) => {
-	// Das Design der Datenbank wird beiseitegelegt und am Ende genau so zurückgelegt.
-	seedSQL(`
-		DELETE FROM system_einstellungen WHERE schluessel = 'e2e_ausweis_layout_sicherung';
-		INSERT INTO system_einstellungen (schluessel, wert)
-		SELECT 'e2e_ausweis_layout_sicherung', wert FROM system_einstellungen WHERE schluessel = 'ausweis_layout';
-	`);
+	legeDesignBeiseite();
 	const kontextB = await browser.newContext();
 	const platzB = await kontextB.newPage();
 	try {
@@ -128,10 +140,48 @@ test('Zwei Plätze: Der ältere Stand überschreibt den neueren nicht', async ({
 		);
 	} finally {
 		await kontextB.close();
-		seedSQL(`
-			DELETE FROM system_einstellungen WHERE schluessel = 'ausweis_layout';
-			UPDATE system_einstellungen SET schluessel = 'ausweis_layout'
-			WHERE schluessel = 'e2e_ausweis_layout_sicherung';
-		`);
+		legeDesignZurueck();
+	}
+});
+
+// Ein Platz, zwei Änderungen kurz nacheinander. Kommt die Antwort auf das erste Speichern später
+// als die Entprellung des zweiten (großes Design, langsame Leitung), ging das zweite mit dem alten
+// Stand hinaus, und der Server wies es als „an einem anderen Platz geändert" ab: ein Konflikt des
+// Platzes mit sich selbst. Jetzt wartet das zweite die Antwort des ersten ab.
+test('Ein Platz: Eine Änderung während eines langsamen Speicherns ist kein Konflikt', async ({
+	page
+}) => {
+	legeDesignBeiseite();
+	try {
+		await uiLogin(page);
+		await oeffneDesigner(page);
+		// Der Server speichert sofort, seine Antwort auf das erste Speichern kommt zwei Sekunden später an.
+		let gehalten = false;
+		await page.route(/\/api\/ausweis-layout\?/, async (route) => {
+			if (route.request().method() !== 'PUT' || gehalten) return route.continue();
+			gehalten = true;
+			const antwort = await route.fetch();
+			await new Promise((weiter) => setTimeout(weiter, 2000));
+			await route.fulfill({ response: antwort });
+		});
+		const rumpfe = zaehleSchreiben(page);
+
+		await page.getByRole('button', { name: 'Etikettenbogen', exact: true }).click();
+		await expect.poll(() => rumpfe.length, 'das erste Speichern ist unterwegs').toBe(1);
+		await page.getByRole('combobox', { name: 'Barcode-Typ' }).click();
+		await page.getByRole('option').nth(1).click();
+
+		await expect.poll(() => rumpfe.length, 'das zweite Speichern geht hinaus').toBe(2);
+		await expect(page.getByText(/Zentral gespeichert/)).toBeVisible();
+		await expect(page.getByText(/Speichern fehlgeschlagen/)).toHaveCount(0);
+		expect(
+			querySQL(
+				`SELECT concat_ws(' ', wert::jsonb ->> 'printMode', wert::jsonb ->> 'barcodeType')
+				 FROM system_einstellungen WHERE schluessel = 'ausweis_layout'`
+			),
+			'gespeichert ist der Stand nach der zweiten Änderung'
+		).toBe(`etikett ${JSON.parse(rumpfe[1]).barcodeType}`);
+	} finally {
+		legeDesignZurueck();
 	}
 });
