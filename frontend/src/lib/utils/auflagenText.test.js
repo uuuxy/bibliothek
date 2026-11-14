@@ -74,27 +74,33 @@ describe('auflagenDerKlasse', () => {
 
 // Die Hinweiszeile der Theke bei gemischten Auflagen (4.18, Stufe 5).
 describe('auflagenHinweisText', () => {
-	it('nennt Klasse, die anderen Auflagen mit ihren Kindern und dieses Exemplar', () => {
+	it('nennt Titel, dieses Exemplar, Klasse und die anderen Auflagen mit ihren Kindern', () => {
 		expect(
-			auflagenHinweisText({
-				klasse: '07B',
-				auflage: '4. Aufl.',
-				erscheinungsjahr: 2023,
-				andere: [
-					{ auflage: '3. Aufl.', erscheinungsjahr: 2019, kinder: 12 },
-					{ auflage: '2. Aufl.', erscheinungsjahr: 2015, kinder: 1 }
-				]
-			})
+			auflagenHinweisText(
+				{
+					klasse: '07B',
+					auflage: '4. Aufl.',
+					erscheinungsjahr: 2023,
+					andere: [
+						{ auflage: '3. Aufl.', erscheinungsjahr: 2019, kinder: 12 },
+						{ auflage: '2. Aufl.', erscheinungsjahr: 2015, kinder: 1 }
+					]
+				},
+				'Mathe 7'
+			)
 		).toBe(
-			'Andere Auflage in der 07B: 12 Kinder haben 3. Aufl. · 2019, 1 Kind hat 2. Aufl. · 2015 — dieses Exemplar ist 4. Aufl. · 2023.'
+			'„Mathe 7" ist 4. Aufl. · 2023, eine andere Auflage als in der 07B: 12 Kinder haben 3. Aufl. · 2019, 1 Kind hat 2. Aufl. · 2015'
 		);
 	});
 
 	it('bleibt ein Satz, wenn Auflage oder Jahr fehlen', () => {
 		expect(
-			auflagenHinweisText({ klasse: '07B', erscheinungsjahr: 2023, andere: [{ kinder: 3 }] })
+			auflagenHinweisText(
+				{ klasse: '07B', erscheinungsjahr: 2023, andere: [{ kinder: 3 }] },
+				'Mathe 7'
+			)
 		).toBe(
-			'Andere Auflage in der 07B: 3 Kinder haben Auflage ohne Angabe — dieses Exemplar ist Ausgabe 2023.'
+			'„Mathe 7" ist Ausgabe 2023, eine andere Auflage als in der 07B: 3 Kinder haben Auflage ohne Angabe'
 		);
 	});
 });

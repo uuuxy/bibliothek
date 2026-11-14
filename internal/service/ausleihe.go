@@ -39,6 +39,11 @@ type AusleihErgebnis struct {
 	// AuflagenHinweis ist gesetzt, wenn Kinder derselben Klasse eine andere Auflage des
 	// ausgeliehenen Schulbuchs haben. Er ist nur ein Hinweis, die Ausleihe ist gebucht.
 	AuflagenHinweis *repository.AuflagenMischung
+	// KlassenHinweis ist gesetzt, wenn mehr als die Hälfte der Klasse ihre Schulbücher für das
+	// Schuljahr hat und kein anderes Kind davon dieses Buch. Er ist nur ein Hinweis.
+	KlassenHinweis *repository.BuchFremdInKlasse
+	// DoppeltHinweis sagt, dass das Kind dieses Buch schon als anderes Exemplar hat.
+	DoppeltHinweis bool
 }
 
 // AusleihDienst bucht Ausleihe und Rückgabe eines Buchs an der Theke, je in einer Transaktion,

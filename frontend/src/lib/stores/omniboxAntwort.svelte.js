@@ -4,6 +4,7 @@
 // der Theke und die Rückmeldung behält er und reicht sie als Funktionen herein.
 
 import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
+import { ausgabeHinweiseAus, ohneExemplar } from '../utils/ausgabeHinweise.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe, ob Schüler oder Kollege.
 function formatVorbesitzerName(daten) {
@@ -26,7 +27,8 @@ function leserMitKlasse(leser) {
  *   ladeLeser: (leser: any, abholbereit?: {titel: string, bereitgestellt_bis?: string}[]) => void,
  *   leseSchnellrueckgabe: () => boolean,
  *   setzeFremdrueckgabe: (hinweis: {vorbesitzerName: string}) => void,
- *   setzeAuflagenHinweis: (hinweis: any) => void,
+ *   leseAusgabeHinweise: () => import('../utils/ausgabeHinweise.js').AusgabeHinweis[],
+ *   setzeAusgabeHinweise: (liste: import('../utils/ausgabeHinweise.js').AusgabeHinweis[]) => void,
  *   setzeVormerkungHinweis: (hinweis: {titel?: string, user?: string}) => void,
  *   setzePrueflisteAnfrage: (anfrage: {query: string, geraet: any, overrideBlock: boolean}) => void,
  *   leuchteBildschirm: (type: string) => void,
@@ -40,7 +42,8 @@ export function erzeugeOmniboxAntwort({
 	ladeLeser,
 	leseSchnellrueckgabe,
 	setzeFremdrueckgabe,
-	setzeAuflagenHinweis,
+	leseAusgabeHinweise,
+	setzeAusgabeHinweise,
 	setzeVormerkungHinweis,
 	setzePrueflisteAnfrage,
 	leuchteBildschirm,
@@ -64,8 +67,11 @@ export function erzeugeOmniboxAntwort({
 		);
 	}
 
-	// Verarbeitet eine Rückgabe-Antwort (fremd/normal, Vormerkung, Session-Fortführung).
+	// Verarbeitet eine Rückgabe-Antwort (fremd/normal, Vormerkung, Session-Fortführung). Kommt ein
+	// eben ausgegebenes Buch zurück, weil die Theke es nach einem Hinweis zurücknimmt, fällt sein
+	// Hinweis weg.
 	function verarbeiteRueckgabe(daten, reloadProfileCb) {
+		setzeAusgabeHinweise(ohneExemplar(leseAusgabeHinweise(), daten.book?.id));
 		if (daten.fremdrueckgabe) {
 			verarbeiteFremdrueckgabe(daten);
 		} else {
@@ -115,15 +121,18 @@ export function erzeugeOmniboxAntwort({
 		}
 	}
 
+	// Liefert, ob die Ausleihe einen Hinweis zum Schulbuch trägt.
+	/** @returns {boolean} */
 	function verarbeiteAusleihe(daten, reloadProfileCb) {
-		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer anderen
-		// Auflage als die der Klasse, blitzt es wie bei der Fremdrückgabe, und die Zeile über dem
-		// Konto sagt, welche.
-		const auflagenHinweis = daten.auflagen_hinweis ?? null;
-		setzeAuflagenHinweis(auflagenHinweis);
-		leuchteBildschirm(auflagenHinweis ? 'warning' : 'success');
+		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Hat das Kind das Buch schon, hat
+		// es sonst niemand in der Klasse oder ist es eine andere Auflage, blitzt es wie bei der
+		// Fremdrückgabe, und eine Zeile über dem Konto sagt, was.
+		const neu = ausgabeHinweiseAus(daten, leseLeser()?.vorname);
+		setzeAusgabeHinweise([...ohneExemplar(leseAusgabeHinweise(), daten.book?.id), ...neu]);
+		const mitHinweis = neu.length > 0;
+		leuchteBildschirm(mitHinweis ? 'warning' : 'success');
 		spieleErfolgston('ausleihe');
-		leuchteRand(auflagenHinweis ? 'orange' : 'green');
+		leuchteRand(mitHinweis ? 'orange' : 'green');
 		melde(
 			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${leseLeser()?.vorname}.`
 		);
@@ -140,14 +149,16 @@ export function erzeugeOmniboxAntwort({
 		// gesagt — sonst sieht die Theke nur „ausgeliehen".
 		zeigeRueckkehrHinweise(daten);
 		if (reloadProfileCb) reloadProfileCb();
+		return mitHinweis;
 	}
 
 	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type. overrideBlock ist das
 	// Übergehen, mit dem der Scan geschickt wurde — die Zubehör-Liste reicht es weiter.
 	//
 	// Das Ergebnis sagt, ob danach ein wartender Scan gebucht werden darf: nur nach einer
-	// glatten Buchung. Eine Hinweiszeile über dem Konto (Fremdrückgabe, andere Auflage) steht
-	// bis zum nächsten Scan und verlangt einen Blick; der wartende Scan nähme sie gleich weg.
+	// glatten Buchung. Eine neue Hinweiszeile über dem Konto (Fremdrückgabe, Hinweis zum
+	// Schulbuch) verlangt einen Blick, bevor weiter gebucht wird; die Fremdrückgabe nähme der
+	// wartende Scan sogar gleich weg.
 	/** @returns {boolean} */
 	function verarbeiteAktionsErgebnis(daten, reloadProfileCb, q = '', overrideBlock = false) {
 		if (daten.type === 'student') {
@@ -155,8 +166,8 @@ export function erzeugeOmniboxAntwort({
 			return true;
 		}
 		if (daten.type === 'ausleihe') {
-			verarbeiteAusleihe(daten, reloadProfileCb);
-			return !daten.auflagen_hinweis;
+			const mitHinweis = verarbeiteAusleihe(daten, reloadProfileCb);
+			return !mitHinweis;
 		}
 		if (daten.type === 'rueckgabe') {
 			verarbeiteRueckgabe(daten, reloadProfileCb);

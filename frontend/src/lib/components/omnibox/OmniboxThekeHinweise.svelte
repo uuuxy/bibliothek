@@ -12,15 +12,17 @@
 	 * 3. Kollegium: Die Theke zeigt einem Kollegen dieselbe Akte wie einem Schüler, nur ohne
 	 *    Klasse. Der Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
 	 *    (ladeVorgang).
-	 * 4. Gemischte Auflagen: Das eben ausgeliehene Schulbuch ist eine andere Auflage als
-	 *    die, die Kinder derselben Klasse schon haben, und verschiedene Auflagen heißen
-	 *    verschiedene Seitenzahlen. Eine Zeile wie bei der Fremdrückgabe, kein Dialog: Die
-	 *    Ausleihe ist gebucht, wer will, legt das Buch zurück und holt die andere Auflage.
+	 * 4. Hinweise zu ausgegebenen Schulbüchern (utils/ausgabeHinweise.js): Das Kind hat das
+	 *    Buch schon, sonst hat es niemand in der Klasse, oder es ist eine andere Auflage als
+	 *    in der Klasse (andere Auflagen heißen andere Seitenzahlen). Je Hinweis eine Zeile wie
+	 *    bei der Fremdrückgabe, kein Dialog: Die Ausleihe ist gebucht, wer will, scannt das
+	 *    Buch erneut und nimmt es so zurück. Die Zeilen stehen, bis ein anderer Leser kommt;
+	 *    eine Snackbar ginge nicht, M3: „Only one snackbar may be displayed at a time", und sie
+	 *    verschwindet von selbst.
 	 */
-	import { TriangleAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
+	import { TriangleAlert, BookAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import { leserArtText, istKollegium } from '../leser/leserArt.js';
-	import { auflagenHinweisText } from '../../utils/auflagenText.js';
 </script>
 
 {#if omniboxStore.letzteFremdrueckgabe}
@@ -39,15 +41,19 @@
 	</div>
 {/if}
 
-{#if omniboxStore.letzterAuflagenHinweis}
+{#each omniboxStore.ausgabeHinweise as hinweis (hinweis.exemplar + hinweis.art)}
 	<div
 		class="bg-warning-container text-on-warning-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 		role="status"
 	>
-		<BookCopy class="h-4 w-4 shrink-0" aria-hidden="true" />
-		<span>{auflagenHinweisText(omniboxStore.letzterAuflagenHinweis)}</span>
+		{#if hinweis.art === 'auflagen'}
+			<BookCopy class="h-4 w-4 shrink-0" aria-hidden="true" />
+		{:else}
+			<BookAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+		{/if}
+		<span>{hinweis.text}</span>
 	</div>
-{/if}
+{/each}
 
 {#if omniboxStore.abholbereit.length > 0}
 	<div

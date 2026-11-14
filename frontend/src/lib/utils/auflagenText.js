@@ -63,15 +63,19 @@ export function auflagenDerKlasse(auflagen, kachelID) {
  * Die Hinweiszeile der Theke bei gemischten Auflagen (4.18, Stufe 5): Das eben ausgeliehene
  * Schulbuch ist eine andere Auflage als die, die Kinder derselben Klasse schon haben. Klasse
  * und Zahlen, keine Namen — genug, um das Buch zurückzulegen und die andere Auflage zu holen.
+ * Der Titel steht vorn, weil mehrere Hinweise untereinander stehen (utils/ausgabeHinweise.js).
+ * Der Doppelpunkt leitet die Aufzählung ein; einen Gedankenstrich gibt es nicht: „Em dashes are
+ * best avoided in UX writing" (M3, Content design, Grammar and punctuation).
  * @param {{ klasse: string, auflage?: string, erscheinungsjahr?: number,
  *   andere: { auflage?: string, erscheinungsjahr?: number, kinder: number }[] }} h
+ * @param {string} titel
  */
-export function auflagenHinweisText(h) {
+export function auflagenHinweisText(h, titel) {
 	const andere = h.andere
 		.map(
 			(a) =>
 				`${a.kinder} ${a.kinder === 1 ? 'Kind hat' : 'Kinder haben'} ${auflagenBeschriftung(a)}`
 		)
 		.join(', ');
-	return `Andere Auflage in der ${h.klasse}: ${andere} — dieses Exemplar ist ${auflagenBeschriftung(h)}.`;
+	return `„${titel}" ist ${auflagenBeschriftung(h)}, eine andere Auflage als in der ${h.klasse}: ${andere}`;
 }

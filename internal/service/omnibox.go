@@ -60,6 +60,11 @@ type OmniboxErgebnis struct {
 	// AuflagenHinweis ist gesetzt, wenn Kinder derselben Klasse eine andere Auflage des eben
 	// ausgeliehenen Schulbuchs haben.
 	AuflagenHinweis *repository.AuflagenMischung
+	// KlassenHinweis ist gesetzt, wenn kein anderes Kind der Klasse das eben ausgeliehene
+	// Schulbuch hat, obwohl mehr als die Hälfte ihre Schulbücher für das Schuljahr hat.
+	KlassenHinweis *repository.BuchFremdInKlasse
+	// DoppeltHinweis sagt, dass das Kind das eben ausgeliehene Schulbuch schon hat.
+	DoppeltHinweis bool
 }
 
 // AbholbereiteVormerkung ist ein Eintrag des Hinweises auf das Abholfach: Titel und Abholfrist,
@@ -471,6 +476,8 @@ func (d *OmniboxDienst) uebernimmAusleihErgebnis(ausleihErg *AusleihErgebnis, er
 	erg.VorgemerktFuer = ausleihErg.VorgemerktFuer
 	erg.RegalfreigabeBarcode = ausleihErg.RegalfreigabeBarcode
 	erg.AuflagenHinweis = ausleihErg.AuflagenHinweis
+	erg.KlassenHinweis = ausleihErg.KlassenHinweis
+	erg.DoppeltHinweis = ausleihErg.DoppeltHinweis
 }
 
 // OmniboxErgebnisAus überträgt ein Ergebnis der Ausleihe in die Form der Omnibox, mit derselben

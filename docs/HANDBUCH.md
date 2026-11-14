@@ -107,12 +107,22 @@ nach der Frist, nach der sich die Theke von selbst leert.
 
 **Die Theke warnt von selbst:**
 
-- Bekommt ein Kind ein **Schulbuch in einer anderen Auflage**, als Kinder seiner Klasse sie
-  schon haben (nur bei Auflagen, die in der Titel-Verwaltung zusammengefasst sind),
-  blitzt die Theke orange, und über dem Konto steht zum Beispiel „Andere Auflage in der
-  07B: 12 Kinder haben 3. Aufl. · 2019 — dieses Exemplar ist 4. Aufl. · 2023." Die Ausleihe ist
-  gebucht; wer die Klasse einheitlich haben will, nimmt das Buch zurück (erneut scannen) und
-  gibt die andere Auflage aus. Andere Auflagen haben andere Seitenzahlen. (§13)
+- Beim **Ausgeben von Schulbüchern** blitzt die Theke orange, und über dem Konto steht eine
+  Zeile, wenn etwas nicht zur Klasse passt. Die Ausleihe ist trotzdem gebucht; wer das Buch
+  zurücknehmen will, scannt es noch einmal, dann verschwindet auch seine Zeile. Die Zeilen
+  bleiben stehen, bis das nächste Kind geladen oder das Konto geschlossen wird, so dass man sie
+  auch beim schnellen Stapel noch lesen kann. Drei Fälle (§18.6, §13):
+  - Das Kind hat das Buch schon: _‹Vorname› hat „Mathematik 8" jetzt zweimal_.
+  - Kein anderes Kind der Klasse hat das Buch, obwohl schon mehr als die Hälfte ihre Bücher
+    hat, zum Beispiel _„Mathematik 7" hat sonst niemand in der 08G1. 19 von 28 Kindern haben
+    ihre Schulbücher schon._ Gezählt werden nur Bücher für dasselbe Schuljahr; beim
+    Büchertausch zählen die alten Bücher der Klasse also nicht mit. Vor der Hälfte kommt dieser
+    Hinweis nicht, in der Oberstufe nie. Bei einem Wahlfach wie Latein kann er beim ersten Kind
+    einmal kommen, obwohl alles stimmt.
+  - Ein Schulbuch in einer anderen Auflage, als Kinder der Klasse sie haben (nur bei Auflagen,
+    die in der Titel-Verwaltung zusammengefasst sind), zum Beispiel _„Mathe 7" ist 4. Aufl. ·
+    2023, eine andere Auflage als in der 07B: 12 Kinder haben 3. Aufl. · 2019_. Andere Auflagen
+    haben andere Seitenzahlen.
 - Kommt ein **vorgemerktes** Buch zurück, erscheint ein roter Hinweis: nicht ins Regal, die
   nächste Leserin wartet. Das Buch liegt drei Tage für sie bereit; fällt das Ende auf ein
   Wochenende oder in die Ferien, bis zum nächsten Schultag. (§4)

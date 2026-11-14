@@ -47,9 +47,9 @@ export function erzeugeOmniboxStore() {
 	} = rueckmeldung;
 
 	let letzteFremdrueckgabe = $state(/** @type {any} */ (null));
-	// Gehört das ausgeliehene Buch zu einer anderen Auflage als die der Klasse, steht der Hinweis
-	// bis zum nächsten Scan über dem Konto, wie die Fremdrückgabe (OmniboxThekeHinweise).
-	let letzterAuflagenHinweis = $state(/** @type {any} */ (null));
+	// Die Hinweise zu ausgegebenen Schulbüchern (utils/ausgabeHinweise.js) stehen über dem Konto, bis
+	// ein anderer Leser kommt: Beim Bücherstapel nähme sonst der nächste Scan sie nach einer Sekunde.
+	let ausgabeHinweise = $state(/** @type {any[]} */ ([]));
 	let vormerkungHinweis = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
 	// Die abholbereiten Vormerkungen des geladenen Lesers, damit an der Theke ins Abholfach
 	// gegriffen wird, solange er davorsteht. Jeder Scan, der einen Leser lädt, überschreibt sie
@@ -88,12 +88,14 @@ export function erzeugeOmniboxStore() {
 		// Die Schnellrückgabe endet, weil sie und ein geladener Leser einander ausschließen.
 		ladeLeser: (leser, fach) => {
 			schnellrueckgabe = false;
+			if (leser?.id !== aktiverLeser?.id) ausgabeHinweise = [];
 			aktiverLeser = leser;
 			abholbereit = fach ?? [];
 		},
 		leseSchnellrueckgabe: () => schnellrueckgabe,
 		setzeFremdrueckgabe: (hinweis) => (letzteFremdrueckgabe = hinweis),
-		setzeAuflagenHinweis: (hinweis) => (letzterAuflagenHinweis = hinweis),
+		leseAusgabeHinweise: () => ausgabeHinweise,
+		setzeAusgabeHinweise: (liste) => (ausgabeHinweise = liste),
 		setzeVormerkungHinweis: (hinweis) => (vormerkungHinweis = hinweis),
 		setzePrueflisteAnfrage: (anfrage) => (prueflisteAnfrage = anfrage),
 		leuchteBildschirm,
@@ -116,11 +118,8 @@ export function erzeugeOmniboxStore() {
 		leseLeser: () => aktiverLeser,
 		leseMerker: () => ohneNetz.offlineAusweis,
 		vergissMerker: () => (ohneNetz.offlineAusweis = ''),
-		// Die Hinweiszeilen über dem Konto stehen bis zum nächsten Scan.
-		leereHinweiszeilen: () => {
-			letzteFremdrueckgabe = null;
-			letzterAuflagenHinweis = null;
-		},
+		// Die Zeile zur Fremdrückgabe steht bis zum nächsten Scan.
+		leereHinweiszeilen: () => (letzteFremdrueckgabe = null),
 		schnappschuss,
 		verarbeiteVersandfehler,
 		verarbeiteAktionsFehler,
@@ -187,7 +186,7 @@ export function erzeugeOmniboxStore() {
 		abholbereit = [];
 		ohneNetz.offlineAusweis = '';
 		letzteFremdrueckgabe = null;
-		letzterAuflagenHinweis = null;
+		ausgabeHinweise = [];
 	}
 
 	// Escape beendet die Schnellrückgabe. Schließt es gerade einen Hinweis (Vormerkung),
@@ -335,6 +334,7 @@ export function erzeugeOmniboxStore() {
 		set aktiverLeser(v) {
 			verwirfWartende();
 			if (v) schnellrueckgabe = false;
+			if (v?.id !== aktiverLeser?.id) ausgabeHinweise = [];
 			aktiverLeser = v;
 		},
 		get schnellrueckgabe() {
@@ -355,8 +355,8 @@ export function erzeugeOmniboxStore() {
 		set letzteFremdrueckgabe(v) {
 			letzteFremdrueckgabe = v;
 		},
-		get letzterAuflagenHinweis() {
-			return letzterAuflagenHinweis;
+		get ausgabeHinweise() {
+			return ausgabeHinweise;
 		},
 		get vormerkungHinweis() {
 			return vormerkungHinweis;

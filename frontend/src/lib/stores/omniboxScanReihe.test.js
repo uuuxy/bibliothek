@@ -309,7 +309,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		buch.beantworte(antwort({ type: 'ausleihe', book: BUCH, auflagen_hinweis: hinweis }));
 		await laeuft;
 
-		expect(theke.letzterAuflagenHinweis).toEqual(hinweis);
+		expect(theke.ausgabeHinweise.map((/** @type {any} */ h) => h.art)).toEqual(['auflagen']);
 		expect(gebuchteNummern()).toEqual(['B-1']);
 		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});

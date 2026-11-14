@@ -288,6 +288,8 @@ func zurEingabeAntwort(ergebnis *service.OmniboxErgebnis) *eingabeAntwort {
 		AufsichtInformieren:  ergebnis.AufsichtInformieren,
 		Abholbereit:          zuAbholbereitenVormerkungen(ergebnis.Abholbereit),
 		AuflagenHinweis:      ergebnis.AuflagenHinweis,
+		KlassenHinweis:       ergebnis.KlassenHinweis,
+		DoppeltHinweis:       ergebnis.DoppeltHinweis,
 	}
 }
 

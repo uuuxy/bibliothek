@@ -68,6 +68,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs.
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
+	"repository/buch_in_klasse.go":  {2, "Hinweis an der Theke, wenn sonst niemand in der KLASSE das Buch hat — Klassen haben nur Schüler; dieselbe Klassendefinition wie repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
 	// Prüfhilfe der Tests, kein Lesepfad des Programms.
 	"internal/testdaten/leser.go": {1, "LadeSchuelerStatus lädt den Stand eines Schülers für die Tests zu LUSD-Abgleich und Versetzung — beide kennen nur Schüler"},
 }

@@ -22,6 +22,7 @@ func TestOmniboxErgebnisAus(t *testing.T) {
 	leser := &repository.Leser{ID: "leser-1", BarcodeID: "S-1", Vorname: "Ada", Nachname: "Beispiel"}
 	vorbesitzer := &repository.Leser{ID: "leser-2"}
 	hinweis := &repository.AuflagenMischung{Klasse: "08G1", Auflage: "2. Auflage"}
+	klasse := &repository.BuchFremdInKlasse{Klasse: "08G1", MitBuechern: 19, Kinder: 28}
 
 	antwort := OmniboxErgebnisAus(&AusleihErgebnis{
 		Art:                  "rueckgabe",
@@ -36,6 +37,8 @@ func TestOmniboxErgebnisAus(t *testing.T) {
 		VorgemerktFuer:       "Kollegin Muster",
 		RegalfreigabeBarcode: "B-2",
 		AuflagenHinweis:      hinweis,
+		KlassenHinweis:       klasse,
+		DoppeltHinweis:       true,
 	})
 	soll := &OmniboxErgebnis{
 		Art:                  "rueckgabe",
@@ -50,6 +53,8 @@ func TestOmniboxErgebnisAus(t *testing.T) {
 		VorgemerktFuer:       "Kollegin Muster",
 		RegalfreigabeBarcode: "B-2",
 		AuflagenHinweis:      hinweis,
+		KlassenHinweis:       klasse,
+		DoppeltHinweis:       true,
 	}
 	if !cmp.Equal(antwort, soll) {
 		t.Errorf("Antwort %+v, erwartet %+v", antwort, soll)

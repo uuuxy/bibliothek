@@ -159,8 +159,30 @@ func (d *AusleihDienst) verarbeiteAusleihe(
 	}
 	if vorgang.istSchueler() && exemplar.IstLernmittel {
 		erg.AuflagenHinweis = d.ladeAuflagenHinweis(ctx, exemplar.TitelID, vorgang.leserID)
+		d.ladeBuchHinweise(ctx, exemplar, vorgang.leserID, ausleihe, erg)
 	}
 	return erg, nil
+}
+
+// ladeBuchHinweise fragt nach der Buchung, ob das Kind das Buch schon hat und ob es sonst
+// niemand in der Klasse hat (repository.HatBuchSchon, repository.FindeBuchFremdInKlasse). Wie
+// beim Auflagen-Hinweis kostet ein Fehler die gebuchte Ausleihe nichts: Er landet im Log, und
+// die Theke zeigt den Hinweis nicht.
+func (d *AusleihDienst) ladeBuchHinweise(ctx context.Context, exemplar *repository.Exemplar, schuelerID string, ausleihe *repository.Ausleihe, erg *AusleihErgebnis) {
+	doppelt, err := repository.HatBuchSchon(ctx, d.pool, exemplar.ID, schuelerID)
+	if err != nil {
+		slog.Warn("doppelt-hinweis nicht ladbar", "fehler", err)
+	}
+	erg.DoppeltHinweis = doppelt
+	if ausleihe == nil {
+		return
+	}
+	fremd, err := repository.FindeBuchFremdInKlasse(ctx, d.pool, exemplar.TitelID, schuelerID, ausleihe.RueckgabeFrist)
+	if err != nil {
+		slog.Warn("klassen-hinweis nicht ladbar", "fehler", err)
+		return
+	}
+	erg.KlassenHinweis = fremd
 }
 
 // ladeAuflagenHinweis fragt nach der Buchung, ob die Klasse gemischte Auflagen bekommt

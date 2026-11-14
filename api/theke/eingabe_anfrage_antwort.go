@@ -54,6 +54,12 @@ type eingabeAntwort struct {
 	// der Kinder, keine Namen. PII-Matrix: Stufe 1 wie die übrige Theken-Antwort (die Klasse
 	// des Kindes steht dort ohnehin).
 	AuflagenHinweis *repository.AuflagenMischung `json:"auflagen_hinweis,omitempty"`
+	// KlassenHinweis: Mehr als die Hälfte der Klasse hat ihre Schulbücher für das Schuljahr, und
+	// kein anderes Kind davon hat das eben ausgeliehene Buch; Klasse und Zahlen, keine Namen.
+	// DoppeltHinweis: Das Kind hat das Buch schon als anderes Exemplar. PII-Matrix: Stufe 1 wie
+	// der Auflagen-Hinweis.
+	KlassenHinweis *repository.BuchFremdInKlasse `json:"klassen_hinweis,omitempty"`
+	DoppeltHinweis bool                          `json:"doppelt_hinweis,omitempty"`
 }
 
 // abholbereiteVormerkung ist ein Eintrag des Abholfach-Hinweises.
