@@ -17,12 +17,15 @@ test('Benutzerliste: Knöpfe nebeneinander, Ausweisnummer in einer Zeile', async
 		const gestapelt = [];
 		/** @type {string[]} */
 		const nummerGebrochen = [];
+		// Die Spalte über ihre Überschrift, damit eine neue Spalte davor die Messung nicht verschiebt.
+		const kopf = [...(zeilen[0]?.closest('table')?.querySelectorAll('thead th') ?? [])];
+		const nummerSpalte = kopf.findIndex((th) => th.textContent?.trim() === 'Ausweisnummer');
 		for (const zeile of zeilen) {
 			const name = zeile.children[0]?.textContent?.trim() ?? '';
 			const knoepfe = [...zeile.querySelectorAll('button')].map((k) => k.getBoundingClientRect());
 			if (knoepfe.length !== 2 || Math.abs(knoepfe[0].top - knoepfe[1].top) > 2)
 				gestapelt.push(name);
-			const nummer = zeile.children[2]?.firstElementChild;
+			const nummer = zeile.children[nummerSpalte]?.firstElementChild;
 			if (!nummer || nummer.getClientRects().length !== 1) nummerGebrochen.push(name);
 		}
 		return { zeilen: zeilen.length, gestapelt, nummerGebrochen };
