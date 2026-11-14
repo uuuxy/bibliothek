@@ -91,6 +91,9 @@ type Anmeldung struct {
 	// bremse zählt die Fehlversuche je E-Mail und Adresse für Anmelden und Entsperren: fünf in
 	// 15 Minuten.
 	bremse *fehlversuchsBremse
+	// absageFrist ist die kürzeste Zeit bis zur Absage einer Anmeldung, im Betrieb
+	// mindestdauerAbsage. Ein Test, der Fehlversuche zählt, setzt sie auf null.
+	absageFrist time.Duration
 }
 
 // NewAnmeldung baut die Anmeldung mit dem Geheimnis für die Signatur und der Laufzeit der
@@ -100,12 +103,13 @@ func NewAnmeldung(geheimnis string, pool Datenbank, laufzeit time.Duration) (*An
 		return nil, errors.New("JWT secret must be at least 32 bytes for security")
 	}
 	return &Anmeldung{
-		geheimnis:  []byte(geheimnis),
-		laufzeit:   laufzeit,
-		Sperrliste: newSperrliste(pool),
-		Sitzungen:  newSitzungen(pool, []byte(geheimnis)),
-		pool:       pool,
-		bremse:     newFehlversuchsBremse(5, 15*time.Minute),
+		geheimnis:   []byte(geheimnis),
+		laufzeit:    laufzeit,
+		Sperrliste:  newSperrliste(pool),
+		Sitzungen:   newSitzungen(pool, []byte(geheimnis)),
+		pool:        pool,
+		bremse:      newFehlversuchsBremse(5, 15*time.Minute),
+		absageFrist: mindestdauerAbsage,
 	}, nil
 }
 

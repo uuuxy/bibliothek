@@ -211,7 +211,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
 | T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
 | T6 | **Ein Host, ein Prozess**                                                      | Der Prozess hält Zustand im Speicher: SSE-Abonnenten, Rechte-Cache, Rate-Limit-Zähler, Idempotenz-Warteschleife. Eine zweite Instanz hinter einem Load Balancer wäre **nicht** nur Konfiguration.         |
-| T7 | **Anmeldung gegen den Schul-Mailserver (IMAP)**                                | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Folge: Die E-Mail **ist** die Identität, und `benutzer.email` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
+| T7 | **Anmeldung gegen den Schul-Mailserver (IMAP) oder den Verzeichnisdienst (LDAP), je Konto** | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Welcher Server prüft, nennt das Konto (Migration 172, A30). Folge: Die E-Mail **ist** die Identität, bei einem LDAP-Konto auch die LDAP-Kennung; `benutzer.email` oder `benutzer.ldap_kennung` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
 | T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`pkg/code39`).           |
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Server** (`/root/caddy/Caddyfile`). Am Testserver schreibt sie `update_caddy.sh`, am Schulserver wird der Abschnitt „Bibliothek" daraus übernommen ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3). |
 | T10| **Der Betrieb läuft nur über HTTPS**                                           | Die Cookies von Sitzung und CSRF tragen fest `Secure`; einen Schalter für den Betrieb über HTTP gibt es nicht. Ohne TLS gingen Sitzung, das Mail-Passwort jeder Anmeldung und die Schülerdaten offen durchs Schulnetz. Auch ein Server, den die Schule nur über eine IP-Adresse erreicht, braucht deshalb ein Zertifikat. Lokal genügt `http://localhost`: Dort nehmen Browser Cookies mit `Secure` an (MDN, Set-Cookie). |
@@ -381,8 +381,8 @@ graph TB
 
 #### Was ausdrücklich **nicht** angebunden ist
 
-- **Kein Single-Sign-On** (kein LDAP, kein OAuth, kein Kerberos) — IMAP ist die einzige
-  Identitätsquelle.
+- **Kein Single-Sign-On** (kein OAuth, kein Kerberos). Identitätsquellen sind der Mailserver
+  (IMAP) und der Verzeichnisdienst (LDAP, einfaches Bind), je Konto gewählt (A30).
 - **Keine Schnittstelle zur Schulverwaltung außer dem LUSD-Bericht als Datei.** Es gibt
   keinen Webservice, keine Datenbankkopplung und kein automatisches Nachladen.
 - **Keine Zahlungsschnittstelle.** Forderungen werden über Bescheid und Rechnung
@@ -1180,32 +1180,36 @@ nichts.
 
 ---
 
-### 6.1 Anmeldung (IMAP → JWT → CSRF)
+### 6.1 Anmeldung (IMAP oder LDAP → JWT → CSRF)
 
 ```mermaid
 sequenceDiagram
     participant B as Browser
     participant A as api/auth
-    participant I as Schul-IMAP
     participant DB as PostgreSQL
+    participant S as Schul-IMAP oder LDAP
 
-    B->>A: POST /login (E-Mail, Passwort)
+    B->>A: POST /login (E-Mail oder LDAP-Kennung, Passwort)
     Note over A: Anmeldung.bremse — Schlüssel »email|ip«
-    A->>DB: Konto zu dieser E-Mail?
-    alt Konto existiert und ist aktiv
-        A->>I: IMAP-Login, implizites TLS :993, min. TLS 1.2
-        I-->>A: OK
+    A->>DB: Konto zu E-Mail oder LDAP-Kennung?
+    alt Konto gefunden
+        A->>S: Server des Kontos: IMAP-Login (TLS :993)<br/>oder LDAP Suchen-dann-Binden (ldaps/StartTLS)
+        S-->>A: OK
+        Note over A: inaktiv → 403, kein Token
         A->>A: JWT (HMAC, 12 h) erzeugen
         A-->>B: Set-Cookie session_token (HttpOnly, Secure) + CSRF-Cookie
     else Kein Konto, aber Postfach der Schuldomain
-        A->>I: IMAP-Login
-        I-->>A: OK
+        A->>S: IMAP-Login
+        S-->>A: OK
         A->>DB: INAKTIVEN Eintrag anlegen, Rolle kollegium,<br/>zugang_beantragt_am, Audit »SELBSTANMELDUNG«
         A-->>B: »Zugang beantragt — die Bibliothek muss ihn freischalten«
         Note over A: kein Fehlversuch gezählt
+    else Kein Konto, keine Selbstanmeldung
+        Note over A,S: kein Server gefragt
+        A-->>B: 401 frühestens nach 3 s (Zähler auf »email|ip«)
     else Falsches Passwort
-        I-->>A: Abweisung
-        A-->>B: 401 (Zähler auf »email|ip«)
+        S-->>A: Abweisung
+        A-->>B: 401 frühestens nach 3 s (Zähler auf »email|ip«)
     end
 ```
 
@@ -2745,6 +2749,7 @@ veralten.
 | A27 | Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis                | 20.10.2026    | gültig   |
 | A28 | Keine erzeugten Typen für die Antworten des Servers                            | 25.10.2026    | gültig   |
 | A29 | Von außen nur die Bestellseite; die Grenze zieht Caddy                         | 28.09.2026    | gültig   |
+| A30 | LDAP neben IMAP, je Konto; erst das Konto, dann der Server                     | Migration 172 | gültig   |
 
 ---
 
@@ -2792,7 +2797,10 @@ Das Passwort des Schulpostfachs geht bei jeder Anmeldung und jedem Aufschließen
 Server. Wer ihn übernimmt, kann es mitlesen, und einen zweiten Faktor gibt es auf diesem Weg
 nicht. Der Server braucht deshalb denselben Schutz wie der Mailserver.
 
-**Fundstelle.** `auth/anmelden.go` (`pruefeIMAPZugang`), Migration 012;
+Welcher Server das Passwort prüft, nennt seit Migration 172 jedes Konto; LDAP ist der zweite
+Weg neben IMAP (A30).
+
+**Fundstelle.** `auth/anmelden.go` (`pruefeZugang`), Migration 012;
 `auth/pruefwert.go`, `auth/sperre.go`, Migration 155.
 
 ---
@@ -3336,6 +3344,58 @@ Seite für ihn unter `/bestellung/`; sonst sperrt Caddy sie von außen. Katalog,
 sind von außen gesperrt. Einrichtung und Probe: DEPLOYMENT.md 3.
 
 **Fundstelle.** `update_caddy.sh`, `api/routen_oeffentlich.go`.
+
+### A30 — LDAP neben IMAP, je Konto; erst das Konto, dann der Server
+
+**Entscheidung.** Jedes Konto nennt, welcher Server sein Passwort prüft
+(`benutzer.anmeldeverfahren`: `imap` oder `ldap`, Migration 172; Vorgabe `imap`). Ein LDAP-Konto
+trägt seine LDAP-Kennung (`ldap_kennung`, den Namen, den die Person beim Anmelden tippt). Geprüft
+wird mit Suchen-dann-Binden: Das Dienstkonto (`LDAP_BIND_DN`) sucht den Eintrag mit
+`LDAP_FILTER`, in dem `%s` für die gespeicherte Kennung steht, in jedem Ordner aus
+`LDAP_BASIS_DN` (mit `;` getrennt), dann meldet sich der Eintrag mit dem Passwort an. Die Anmeldung liest zuerst das Konto, über die E-Mail oder die Kennung, und
+fragt dann den Server, den es nennt. Eine Eingabe ohne Konto erreicht keinen Server; die
+Ausnahme ist die Selbstanmeldung, die den Mailserver fragt, ob es das Postfach gibt.
+
+**Anlass.** Schulen, deren Konten im Verzeichnisdienst (Active Directory, OpenLDAP) liegen. Ein
+Schalter für die ganze Anlage hätte alle Konten auf einmal umgestellt; je Konto laufen beide
+Wege nebeneinander. Erst das Konto zu lesen hält Eingaben ohne Konto vom Server fern: Ein
+Active Directory, das nach Fehlversuchen sperrt, sperrte sonst Konten, nur weil jemand an der
+Bibliothek Namen durchprobiert.
+
+**Folge.**
+
+- Die LDAP-Kennung öffnet ein Konto wie die E-Mail. Sie geht durch dieselbe Tür wie die E-Mail:
+  Recht `manage_users`, Schutz der Admin-Konten (`api/benutzer/admin_schutz.go`), Eintrag in
+  USER_CREATE und USER_UPDATE mit Verfahren und Kennung. Das eigene Verfahren und die eigene
+  Kennung ändert niemand selbst (`pruefeSelbstschutz`): Ein Tippfehler sperrte bei der nächsten
+  Anmeldung aus.
+- Eindeutig über beide Spalten: Der Index `uniq_benutzer_ldap_kennung_lower` hält die Kennung
+  eindeutig, die Tür lehnt eine Kennung ab, die die E-Mail eines anderen Kontos ist. Trifft eine
+  Eingabe trotzdem zwei Konten, wird keines angemeldet (`repository.ErrAnmeldungMehrdeutig`).
+- Die Absage „E-Mail-Adresse oder Passwort stimmt nicht" kommt frühestens nach drei Sekunden
+  (`mindestdauerAbsage`); sonst verriete die Antwortzeit, welche Eingaben ein Konto haben.
+  Grenze: Antwortet ein Server langsamer, ist der Unterschied wieder messbar.
+- Nur über TLS: `ldaps://` oder `ldap://` mit StartTLS, ohne Rückfall auf Klartext. Die Prüfung
+  des Zertifikats lässt sich nicht abschalten; eine eigene Zertifizierungsstelle kommt über
+  `LDAP_CA_DATEI`. Ein leeres Passwort erreicht den Server nicht, es wäre dort eine anonyme
+  Anmeldung (RFC 4513, 5.1.2).
+- Die Bremse zählt je Eingabe (um die Domain ergänzt) und Adresse. Wer abwechselnd E-Mail und
+  Kennung derselben Person tippt, hat zehn statt fünf Versuche; die Kontosperre des
+  Verzeichnisdienstes greift zusätzlich.
+- Rollen kommen nicht aus LDAP-Gruppen: Das Verzeichnis beantwortet „wer bist du", die Tabelle
+  `benutzer` „darfst du hinein".
+- Die LDAP-Kennung ist der Name, den die Person beim Anmelden tippt; `LDAP_FILTER` legt fest, wo
+  er im Verzeichnis steht, und darf feste Teile tragen (`(userPrincipalName=%s@schule.local)`).
+- Die Selbstanmeldung prüft weiter nur am Mailserver. Wer allein über LDAP anmeldet, lässt
+  `SELBSTANMELDUNG_DOMAIN` leer; dann legt keine Anmeldung ein Konto an.
+- Erster Start ohne Mailserver: `INITIAL_ADMIN_LDAP_KENNUNG` legt den ersten Admin als LDAP-Konto
+  an; ohne sie und ohne `IMAP_HOST` bricht der Start ab.
+
+**Fundstelle.** `auth/ldap.go`, `auth/anmelden.go` (`pruefeZugang`), `auth/sperre.go`,
+`api/benutzer/konto_pruefungen.go` (`pruefeAnmeldeverfahren`), Migration 172. Gates:
+`auth/ldap_test.go`, `auth/anmelden_verfahren_test.go`, `auth/sperre_pg_test.go`
+(`TestSperre_LDAPKontoSchliesstAmVerzeichnisdienstAuf`), `repository/anmeldeverfahren_pg_test.go`,
+`api/benutzer/anmeldeverfahren_test.go`, jedes am Rückbau rot gesehen.
 
 ---
 

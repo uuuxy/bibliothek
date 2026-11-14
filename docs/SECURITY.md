@@ -10,13 +10,23 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 
 ### Woran die Zugangsdaten geprüft werden
 
-Gegen den **Schul-Mailserver per IMAP** (`auth/anmelden.go`, `pruefeIMAPZugang`) —
-nicht gegen die eigene Datenbank. Es gibt seit Migration 012 keine Passwortspalte: Die
-Anwendung speichert **kein** Benutzerpasswort und keinen dauerhaften Passwort-Hash. Ein
-Konto ist damit die Verbindung aus einer E-Mail-Adresse, die auf dem Schulserver
-existiert, und einer Zeile in `benutzer`; wer `benutzer.email` schreiben darf, übernimmt
-das Konto. Der Brute-Force-Schutz unten schützt deshalb auch den **Mailserver** vor
-Credential-Stuffing über diesen Weg.
+Am Server, den das Konto nennt (`benutzer.anmeldeverfahren`, Migration 172, ARCHITEKTUR.md
+A30): am **Schul-Mailserver per IMAP** oder am **Verzeichnisdienst per LDAP** — nicht an der
+eigenen Datenbank. Es gibt seit Migration 012 keine Passwortspalte: Die Anwendung speichert
+**kein** Benutzerpasswort und keinen dauerhaften Passwort-Hash. Ein Konto ist damit die
+Verbindung aus einer Zeile in `benutzer` und einem Postfach oder Verzeichniseintrag; wer
+`benutzer.email` oder `benutzer.ldap_kennung` schreiben darf, übernimmt das Konto. Beide Spalten
+gehen deshalb nur durch die Tür der Benutzerverwaltung, mit dem Schutz der Admin-Konten und
+einem Eintrag im Protokoll (Gate `api/benutzer/anmeldeverfahren_test.go`).
+
+Die Anmeldung liest **zuerst das Konto** und fragt erst dann den Server
+(`auth/anmelden.go`, `pruefeZugang`). Eine Eingabe ohne Konto erreicht weder Mailserver noch
+Verzeichnisdienst, außer über die Selbstanmeldung; ein Active Directory, das nach Fehlversuchen
+sperrt, sperrt so niemanden, nur weil jemand an der Bibliothek Namen durchprobiert. Damit die
+Antwortzeit nicht verrät, welche Eingaben ein Konto haben, kommt jede Absage „E-Mail-Adresse
+oder Passwort stimmt nicht" frühestens nach drei Sekunden (`mindestdauerAbsage`, Gate
+`auth/anmelden_verfahren_test.go`). Der Brute-Force-Schutz unten schützt auch **Mailserver und
+Verzeichnisdienst** vor Credential-Stuffing über diesen Weg.
 
 Für die Dauer einer Anmeldung hält der Server einen **Prüfwert** des Passworts (Tabelle
 `sitzungen`, Migration 155; entschieden am 01.10.2026). Er hat einen Zweck: Die Sperre nach
@@ -318,7 +328,7 @@ ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
 
 ---
 
-## 📧 E-Mail-Sicherheit (SMTP/IMAP)
+## 📧 E-Mail-Sicherheit (SMTP/IMAP) und Verzeichnisdienst (LDAP)
 
 ### SMTP STARTTLS
 
@@ -344,6 +354,23 @@ ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
 ### IMAP
 
 - Implizites TLS (Port 993), `MinVersion: TLS 1.2`, ServerName-Verifikation, Timeouts.
+
+### LDAP
+
+- Nur über TLS: `ldaps://` oder `ldap://` mit StartTLS; lehnt der Server StartTLS ab, endet
+  die Anmeldung, ohne im Klartext weiterzumachen. `MinVersion: TLS 1.2`, ServerName-Verifikation;
+  abschalten lässt sich die Prüfung des Zertifikats nicht. Eine eigene Zertifizierungsstelle
+  kommt über `LDAP_CA_DATEI` hinzu.
+- Die Kennung geht maskiert in den Filter (`ldap.EscapeFilter`, RFC 4515): Eine Eingabe wie
+  `*)(uid=*` ändert den Filter nicht. Gesucht wird ohnehin mit der gespeicherten Kennung des
+  Kontos, nicht mit der Eingabe.
+- Ein leeres Passwort erreicht den Server nicht; es wäre dort eine anonyme Anmeldung, die
+  gelingt (RFC 4513, 5.1.2).
+- Trifft die Kennung mehrere Einträge, wird keiner angemeldet. Nur Code 49 und eine Kennung
+  ohne Eintrag heißen falsches Passwort; alles andere ist ein Ausfall (503, kein Fehlversuch).
+- Das Passwort des Dienstkontos (`LDAP_BIND_PASSWORT`) steht in der `.env`; das Dienstkonto
+  braucht nur Leserechte.
+- Gates: `auth/ldap_test.go` gegen einen Verzeichnisdienst im Test, der LDAP über TLS spricht.
 
 ---
 

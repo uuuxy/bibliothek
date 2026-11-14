@@ -79,9 +79,10 @@ var bleibtSchluessel = map[string]string{
 
 // bleibtNebenKontokennung: Schlüssel neben ziel_id, die die Tilgung stehen lässt, mit Grund.
 var bleibtNebenKontokennung = map[string]string{
-	"aktiv":       "Wahrheitswert: Das Konto ist freigeschaltet",
-	"rolle":       "Rolle des Kontos (kollegium, mitarbeiter …), kein Wert der Person",
-	"schueler_id": "Kennung des Lesers neben der des Kontos (KOLLEGIUMSKONTO_NACHGETRAGEN); die Tilgung des Lesers nimmt dort ziel_id",
+	"aktiv":            "Wahrheitswert: Das Konto ist freigeschaltet",
+	"anmeldeverfahren": "imap oder ldap: welcher Server prüft, kein Wert der Person",
+	"rolle":            "Rolle des Kontos (kollegium, mitarbeiter …), kein Wert der Person",
+	"schueler_id":      "Kennung des Lesers neben der des Kontos (KOLLEGIUMSKONTO_NACHGETRAGEN); die Tilgung des Lesers nimmt dort ziel_id",
 }
 
 // keinProtokoll: Maps mit schueler_id, die kein Protokolleintrag sind (Datei:Funktion → Grund).

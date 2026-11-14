@@ -307,7 +307,7 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("Entsperren ohne Zeile bei totem Mailserver: Status %d, erwartet 503: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
+	const erwartet = "Der Anmeldeserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 	if got := fehlermeldungAus(t, rec); got != erwartet {
 		t.Errorf("Entsperren: Meldung %q, erwartet %q", got, erwartet)
 	}
@@ -380,5 +380,38 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 	}
 	if n := zeilen(); n != 0 {
 		t.Fatalf("nach dem Löschen des Kontos: %d Zeilen, erwartet 0", n)
+	}
+}
+
+// Ein LDAP-Konto schließt am Verzeichnisdienst auf, nicht am Mailserver: Das Aufschließen fragt
+// den Server, den das Konto nennt.
+func TestSperre_LDAPKontoSchliesstAmVerzeichnisdienstAuf(t *testing.T) {
+	pool := pgPoolFuerSelbstanmeldung(t)
+	kontoID, _ := sperreKonto(t, pool)
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE benutzer SET anmeldeverfahren = 'ldap', ldap_kennung = 'mmueller' WHERE id = $1`, kontoID); err != nil {
+		t.Fatalf("Konto auf LDAP stellen: %v", err)
+	}
+	v := &miniVerzeichnis{treffer: einEintrag, passwoerter: map[string]string{testKontoDN: testKontoPasswort}}
+	starteMiniVerzeichnis(t, v)
+	t.Setenv(selbstanmeldeDomainVariable, "")
+
+	a := sperreAnmeldung(t, pool, time.Hour)
+	// Der Mailserver lehnt jedes Passwort ab: Fragte das Aufschließen ihn, ginge es nie auf.
+	befehle := mitMiniIMAP(t, a, "NO nicht hier")
+	cookie := sperreAnmelden(t, pool, a, "mmueller", testKontoPasswort)
+	if !sperreSperren(t, a, cookie) {
+		t.Fatal("Sperren: nicht gesperrt")
+	}
+	if rec := sperreEntsperren(pool, a, cookie, "falsch"); rec.Code != http.StatusUnauthorized {
+		t.Errorf("Entsperren mit falschem Passwort: Status %d, erwartet 401: %s", rec.Code, rec.Body.String())
+	}
+	if rec := sperreEntsperren(pool, a, cookie, testKontoPasswort); rec.Code != http.StatusOK {
+		t.Errorf("Entsperren: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	select {
+	case zeile := <-befehle:
+		t.Errorf("Mailserver bekam %q, erwartet nichts für ein LDAP-Konto", zeile)
+	default:
 	}
 }

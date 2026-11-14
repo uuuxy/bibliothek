@@ -305,7 +305,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/auth/refresh`         | selbst-prüfend   | 0     | Cookie-Erneuerung                                                                                     |
 | `GET /api/auth/me`               | selbst-prüfend   | 0     | eigenes Personal-Konto + Rechte                                                                       |
 | `POST /api/auth/logout`          | selbst-prüfend   | 0     | nur Status                                                                                            |
-| `GET /api/auth/domain`           | öffentlich       | 0     | Domain der Schule für den Hinweis der Anmeldeseite, keine Person                                      |
+| `GET /api/auth/domain`           | öffentlich       | 0     | Domain der Schule und ob LDAP eingerichtet ist, für das Feld der Anmeldeseite; keine Person           |
 | `POST /api/auth/sperren`         | selbst-prüfend   | 0     | sperrt die eigene Anmeldung nach Inaktivität; Antwort: gesperrt ja/nein                               |
 | `POST /api/auth/entsperren`      | selbst-prüfend   | 0     | schließt die eigene Anmeldung mit dem Passwort auf (Rate-Limit); Antwort: Personal-Konto + Rechte     |
 | `GET /health`                    | öffentlich       | 0     | Health-Check                                                                                          |

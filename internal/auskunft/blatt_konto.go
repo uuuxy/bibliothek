@@ -24,6 +24,8 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	dsgvoZeile(p, tr, "Vorname", k.Vorname)
 	dsgvoZeile(p, tr, "Nachname", k.Nachname)
 	dsgvoZeile(p, tr, "Rolle", dsgvoRolle(k.Rolle))
+	dsgvoZeile(p, tr, "Anmeldung über", dsgvoAnmeldeverfahren(k.Anmeldeverfahren))
+	dsgvoZeile(p, tr, "LDAP-Kennung", k.LDAPKennung)
 	dsgvoZeile(p, tr, "Aktiv", dsgvoJaNein(k.Aktiv))
 	dsgvoZeile(p, tr, "Zugang beantragt am", dsgvoZeitOderStrich(k.ZugangBeantragtAm))
 	dsgvoZeile(p, tr, "Angelegt am", dsgvoZeit(k.ErstelltAm))
@@ -209,4 +211,16 @@ func dsgvoKontoAktion(aktion string) string {
 		return "Konto angelegt: Schul-E-Mail in der Leserakte nachgetragen"
 	}
 	return aktion
+}
+
+// dsgvoAnmeldeverfahren nennt den Server, der das Passwort prüft, in Worten; einen unbekannten
+// Wert so, wie er gespeichert ist.
+func dsgvoAnmeldeverfahren(verfahren string) string {
+	switch verfahren {
+	case repository.AnmeldeverfahrenIMAP:
+		return "Mailserver der Schule (IMAP)"
+	case repository.AnmeldeverfahrenLDAP:
+		return "Verzeichnisdienst (LDAP)"
+	}
+	return verfahren
 }

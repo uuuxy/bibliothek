@@ -12,7 +12,7 @@ import (
 // IMAP_HOST=mock als Vorgabe in Compose hieße das: Wer die E-Mail-Adresse eines eingetragenen
 // Kontos kennt, ist angemeldet. Die Tests halten fest, in welchen Umgebungen die Attrappe
 // überhaupt erreichbar ist.
-func TestPruefeIMAPKonfiguration(t *testing.T) {
+func TestPruefeAnmeldeKonfig(t *testing.T) {
 	faelle := []struct {
 		name       string
 		appEnv     string
@@ -35,8 +35,8 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 			willFehler: true, fehlerEnth: "jedes Passwort",
 		},
 		{
-			name: "leerer Host verboten", appEnv: "production", imapHost: "",
-			willFehler: true, fehlerEnth: "nicht gesetzt",
+			name: "ohne Host und ohne LDAP verboten", appEnv: "production", imapHost: "",
+			willFehler: true, fehlerEnth: "weder IMAP_HOST noch LDAP_URL",
 		},
 	}
 
@@ -44,8 +44,9 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			t.Setenv("APP_ENV", f.appEnv)
 			t.Setenv("IMAP_HOST", f.imapHost)
+			t.Setenv("LDAP_URL", "")
 
-			err := PruefeIMAPKonfiguration()
+			err := PruefeAnmeldeKonfig()
 			if f.willFehler {
 				if err == nil {
 					t.Fatalf("APP_ENV=%q IMAP_HOST=%q: kein Fehler; erwartet Fehler", f.appEnv, f.imapHost)
@@ -64,11 +65,12 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 
 // Die Startmeldung nennt den Weg für den Server: Mailserver eintragen, APP_ENV lassen.
 // Sonst liest sie sich wie die Anweisung, APP_ENV auf local zu stellen.
-func TestPruefeIMAPKonfiguration_MeldungLaesstAppEnvStehen(t *testing.T) {
+func TestPruefeAnmeldeKonfig_MeldungLaesstAppEnvStehen(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("IMAP_HOST", "mock")
+	t.Setenv("LDAP_URL", "")
 
-	err := PruefeIMAPKonfiguration()
+	err := PruefeAnmeldeKonfig()
 	if err == nil {
 		t.Fatal("IMAP_HOST=mock in production: kein Fehler")
 	}
@@ -110,7 +112,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 	})
 }
 
-// Ein nicht erreichbarer Server liefert errMailserverNichtErreichbar. Daran erkennt die Tür der
+// Ein nicht erreichbarer Server liefert errAnmeldeserverNichtErreichbar. Daran erkennt die Tür der
 // Anmeldung den Ausfall (503) und unterscheidet ihn vom falschen Passwort (401 mit
 // Fehlversuch).
 func TestPruefeIMAPAnmeldung_ToterServerIstAusfall(t *testing.T) {
@@ -130,8 +132,8 @@ func TestPruefeIMAPAnmeldung_ToterServerIstAusfall(t *testing.T) {
 	t.Setenv("IMAP_PORT", port)
 
 	pruefFehler := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
-	if !errors.Is(pruefFehler, errMailserverNichtErreichbar) {
-		t.Fatalf("(&Anmeldung{}).pruefeIMAPAnmeldung(…) = %v, erwartet ErrMailserverNichtErreichbar", pruefFehler)
+	if !errors.Is(pruefFehler, errAnmeldeserverNichtErreichbar) {
+		t.Fatalf("(&Anmeldung{}).pruefeIMAPAnmeldung(…) = %v, erwartet errAnmeldeserverNichtErreichbar", pruefFehler)
 	}
 }
 

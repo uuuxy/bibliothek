@@ -241,11 +241,11 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 		}
 	}
 
-	// Die Konfiguration der Anmeldung früh prüfen: Ein fehlender oder auf "mock" stehender IMAP_HOST
-	// ist kein Detail, das bei der ersten Anmeldung auffallen darf; im einen Fall kann sich niemand
-	// anmelden, im anderen jeder.
-	if err := auth.PruefeIMAPKonfiguration(); err != nil {
-		slog.Error("IMAP-Konfiguration ungültig", "fehler", err)
+	// Die Konfiguration der Anmeldung früh prüfen: Ohne Mailserver und Verzeichnisdienst, mit
+	// unvollständigem LDAP oder mit IMAP_HOST=mock ist sie kein Detail, das bei der ersten Anmeldung
+	// auffallen darf; im einen Fall kann sich niemand anmelden, im anderen jeder.
+	if err := auth.PruefeAnmeldeKonfig(); err != nil {
+		slog.Error("Konfiguration der Anmeldung ungültig", "fehler", err)
 		os.Exit(1)
 	}
 

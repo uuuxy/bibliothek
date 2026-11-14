@@ -15,6 +15,8 @@ tmp
 # Kontext an den Docker-Daemon (BuildKit-Cache auf derselben Platte), und backups/ wächst
 # mit jedem Deploy. .gitignore führt beide aus demselben Grund.
 backups/
+# Zertifikate der eigenen Zertifizierungsstelle hängt Compose zur Laufzeit ein (LDAP_CA_ORDNER).
+certs/
 .env
 .env.*
 !.env.example

@@ -7,8 +7,9 @@
  * das Konto sagt nur noch, was er darf. Die Ausweisnummer bleibt hier — sie wird in die
  * Leserzeile geschrieben, bis die Leserdatei sie übernimmt.
  *
- * Kein Passwortfeld: Anmeldungen laufen über den Schul-Mailserver (IMAP), es gibt keine lokale
- * Passwortspalte.
+ * Kein Passwortfeld: Das Passwort prüft der Mailserver der Schule (IMAP) oder der
+ * Verzeichnisdienst (LDAP), es gibt keine lokale Passwortspalte. Welcher, sagt
+ * `anmeldeverfahren`; ein LDAP-Konto trägt dazu seine `ldap_kennung`.
  */
 
 import { nurGeaendertes } from '../../utils/geaendert.js';
@@ -22,7 +23,9 @@ export function leeresBenutzerFormular() {
 		nachname: '',
 		email: '',
 		rolle: 'mitarbeiter',
-		aktiv: true
+		aktiv: true,
+		anmeldeverfahren: 'imap',
+		ldap_kennung: ''
 	};
 }
 
@@ -38,7 +41,9 @@ export function benutzerFormularAus(user) {
 		nachname: user.nachname,
 		email: user.email,
 		rolle: user.rolle,
-		aktiv: user.aktiv
+		aktiv: user.aktiv,
+		anmeldeverfahren: user.anmeldeverfahren || 'imap',
+		ldap_kennung: user.ldap_kennung || ''
 	};
 	return { id: user.id, ...felder, geladen: { ...felder } };
 }
@@ -59,7 +64,10 @@ export function benutzerNutzlast(form) {
 		nachname: form.nachname,
 		email: form.email,
 		rolle: form.rolle,
-		aktiv: form.aktiv
+		aktiv: form.aktiv,
+		anmeldeverfahren: form.anmeldeverfahren,
+		// Ein IMAP-Konto hat keine Kennung; ein Rest aus dem Feld ginge sonst mit.
+		ldap_kennung: form.anmeldeverfahren === 'ldap' ? form.ldap_kennung : ''
 	};
 	if (!form.id) return mitVereinheitlichterNummer(felder);
 	if (!form.geladen) {
@@ -68,5 +76,12 @@ export function benutzerNutzlast(form) {
 		);
 	}
 	// Erst vergleichen, dann vereinheitlichen: Eine unberührte Nummer geht so nicht mit.
-	return mitVereinheitlichterNummer(nurGeaendertes(form.geladen, felder));
+	const geaendert = nurGeaendertes(form.geladen, felder);
+	// Verfahren und Kennung gehen zusammen: Eine Kennung allein lehnt der Server ab, denn ob das
+	// Konto LDAP ist, wüsste er sonst nicht.
+	if ('anmeldeverfahren' in geaendert || 'ldap_kennung' in geaendert) {
+		geaendert.anmeldeverfahren = felder.anmeldeverfahren;
+		geaendert.ldap_kennung = felder.ldap_kennung;
+	}
+	return mitVereinheitlichterNummer(geaendert);
 }

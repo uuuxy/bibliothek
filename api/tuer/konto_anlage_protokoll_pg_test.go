@@ -28,7 +28,10 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 
 	s := &Basis{DB: &db.Verbindung{Pool: pool}}
 	ctx := context.WithValue(t.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin})
-	s.ProtokolliereKontoAnlage(ctx, zielID, "neu@konto-anlage.example", "kollegium", "Vera", "Nachbar")
+	s.ProtokolliereKontoAnlage(ctx, KontoAnlage{
+		KontoID: zielID, Email: "neu@konto-anlage.example", Rolle: "kollegium", Vorname: "Vera", Nachname: "Nachbar",
+		Anmeldeverfahren: "imap",
+	})
 
 	var bearbeiter string
 	var roh []byte
@@ -46,7 +49,7 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 	}
 	erwartet := map[string]any{
 		"ziel_id": zielID, "email": "neu@konto-anlage.example", "rolle": "kollegium",
-		"vorname": "Vera", "nachname": "Nachbar",
+		"vorname": "Vera", "nachname": "Nachbar", "anmeldeverfahren": "imap",
 	}
 	if !cmp.Equal(details, erwartet) {
 		t.Errorf("Details %v, erwartet %v", details, erwartet)

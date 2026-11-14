@@ -39,7 +39,7 @@ func TestAnmelden_DatenbankfehlerIstKeinFalschesPasswort(t *testing.T) {
 
 	for versuch := 1; versuch <= 6; versuch++ {
 		mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
-			WithArgs(pgxmock.AnyArg()).
+			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(errors.New("dial tcp: connection refused"))
 
 		rec := httptest.NewRecorder()
@@ -81,7 +81,7 @@ func TestAnmelden_AbbruchDesBrowsersIstKeinAusfall(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
-		WithArgs(pgxmock.AnyArg()).
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(fmt.Errorf("zeile lesen: %w", context.Canceled))
 
 	rec := httptest.NewRecorder()
@@ -120,9 +120,9 @@ func TestSelbstanmeldung_ProtokollFehltStehtAlsFehler(t *testing.T) {
 		WithArgs("Ohne", "Protokoll", mail).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
-		WithArgs(mail).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("00000000-0000-0000-0000-0000000000a1", "kollegium", "Ohne", "Protokoll", false, mail, true))
+		WithArgs(mail, mail).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("00000000-0000-0000-0000-0000000000a1", "kollegium", "Ohne", "Protokoll", false, mail, true, "imap", ""))
 	mock.ExpectExec(`INSERT INTO audit_logs`).
 		WithArgs(pgxmock.AnyArg(), "SELBSTANMELDUNG", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(errors.New("audit_logs nicht beschreibbar"))

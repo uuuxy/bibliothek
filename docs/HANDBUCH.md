@@ -7,9 +7,10 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 **Zwei Grundsätze, die überall gelten:**
 
 - Es gibt **keine Passwörter** zu verwalten. Angemeldet wird mit dem Schul-Postfach
-  (E-Mail + Mail-Passwort). Ist die Domain der Schule eingerichtet, genügt der Name vor dem @;
-  den Rest ergänzt das Programm. Wer kein Konto hat, kann sich damit selbst anmelden und wird von
-  der Bibliothek freigeschaltet (→ Benutzer & Rechte).
+  (E-Mail + Mail-Passwort) oder, wo das Konto so eingestellt ist, mit dem Benutzernamen und
+  Passwort des Schulnetzes (LDAP). Ist die Domain der Schule eingerichtet, genügt der Name vor
+  dem @; den Rest ergänzt das Programm. Wer kein Konto hat, kann sich mit dem Postfach selbst
+  anmelden und wird von der Bibliothek freigeschaltet (→ Benutzer & Rechte).
 - **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
   Theke ohne Leserakten, Mitarbeitende den Thekenbetrieb, Admins alles.
 
@@ -831,6 +832,14 @@ selbst protokolliert; nach DSGVO-Tilgung zeigt auch dieser Weg nichts mehr. (§1
 Reiter **Benutzer** (anlegen, bearbeiten, deaktivieren; **Zugangsanfragen** aus der
 Selbstanmeldung freischalten) und **Rollen & Rechte** (Matrix; Änderungen wirken sofort auf
 Menü und Schnittstelle).
+
+**Anmeldung über** legt je Konto fest, wer das Passwort prüft: der _Mailserver der Schule
+(IMAP)_ oder der _Verzeichnisdienst (LDAP)_. Für LDAP tragen Sie die **LDAP-Kennung** ein, den
+Namen der Person im Verzeichnis (etwa ihren Anmeldenamen im Schulnetz); mit ihm oder mit der
+E-Mail meldet sie sich an. Die Kennung öffnet das Konto wie die E-Mail; die Kennung eines
+Admin-Kontos ändert nur ein Admin, das eigene Anmeldeverfahren nur eine andere Person mit
+Administratorrechten. Das eigene Konto lässt sich nicht löschen; der Papierkorb in dieser Zeile ist
+abgeschaltet.
 
 Die **Ausweisnummer** eines freigeschalteten Zugangs vergibt das Programm. Leeren Sie das Feld,
 bekommt die Person die nächste freie Nummer — die alte Karte gilt dann nicht mehr, ein neuer

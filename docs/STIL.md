@@ -131,7 +131,7 @@ Wer eine übergebene Funktion in einem Rahmen ausführt, heißt nach dem Rahmen:
 
 - Kürzel stehen durchgehend groß oder, am Anfang eines nicht öffentlichen Namens, durchgehend
   klein (Decisions, „Initialisms"): `LMFPlan`, `lmfPlan`, `DSGVOAuskunft`, `LUSDImport`. Das gilt
-  für `ID`, `URL`, `ISBN`, `PDF`, `CSV`, `JSON`, `SQL`, `HTTP`, `SMTP`, `IMAP`, `UUID`, `SSE`,
+  für `ID`, `URL`, `ISBN`, `PDF`, `CSV`, `JSON`, `SQL`, `HTTP`, `SMTP`, `IMAP`, `LDAP`, `UUID`, `SSE`,
   `CSRF`, `JWT`, `DNB`, `EAN`, `LMF`, `DSGVO`, `LUSD` und `OPAC`.
 - Ein Name wiederholt weder sein Paket noch seinen Empfänger (Decisions, „Repetition"): nicht
   `leser.LeserListe`, sondern `leser.Liste`; nicht `LieferantenAbfragen.GetSupplierByID`,

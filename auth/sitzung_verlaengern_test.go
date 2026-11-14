@@ -25,6 +25,9 @@ func newTestAnmeldung(t *testing.T, laufzeit time.Duration) (*Anmeldung, pgxmock
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
+	// Die Absage wartet im Betrieb drei Sekunden; die Tests der Anmeldung zählen Fehlversuche und
+	// warteten sonst je Versuch. TestAnmelden_AbsageWartetGleichLang prüft das Warten.
+	a.absageFrist = 0
 	return a, mock
 }
 

@@ -46,13 +46,14 @@ func tilgePersonenbezugImProtokoll(tabelle string) string {
 }
 
 // kontoSchluesselMitPersonenbezug sind die Schlüssel, die in einem Eintrag über ein Zugangskonto
-// (details->>'ziel_id': USER_CREATE, USER_UPDATE, Selbstanmeldung) Name oder Adresse tragen.
+// (details->>'ziel_id': USER_CREATE, USER_UPDATE, Selbstanmeldung) Name, Adresse oder den Namen im
+// Verzeichnisdienst (ldap_kennung) tragen.
 // Die Tilgung nimmt sie aus den Einträgen der früheren Konten eines Lesers. Der Weg dorthin ist
 // der Löscheintrag des Kontos, der den Leser nennt und dabei selbst Name und Adresse verliert
 // (konto_loeschspur.go): Blieben sie hier stehen, führte von der Kennung des getilgten Lesers
 // über die Kennung des Kontos ein Weg zu seinem Namen. Die Einträge eines bestehenden Kontos
 // bleiben wie das Konto selbst; es gehört der Anlage, die Tilgung löst nur die Verknüpfung.
-var kontoSchluesselMitPersonenbezug = []string{"vorname", "nachname", "email"}
+var kontoSchluesselMitPersonenbezug = []string{"vorname", "nachname", "email", "ldap_kennung"}
 
 // tilgePersonenbezugFruehererKonten baut die Anweisung dazu. $1 = Leser-Kennungen als text[].
 // Die Schlüssel sind Konstanten dieser Datei, keine Eingabe.

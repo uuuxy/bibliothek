@@ -99,7 +99,16 @@ CREATE TABLE benutzer (
     -- Die Freischaltung setzt es zurück.
     zugang_beantragt_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 172: welcher Server das Passwort prüft, und für LDAP der Name im Verzeichnis.
+    anmeldeverfahren TEXT NOT NULL DEFAULT 'imap',
+    ldap_kennung VARCHAR(255),
+    CONSTRAINT benutzer_anmeldeverfahren_bekannt
+        CHECK (anmeldeverfahren IN ('imap', 'ldap')),
+    CONSTRAINT benutzer_ldap_kennung_nur_bei_ldap
+        CHECK ((anmeldeverfahren = 'ldap') = (ldap_kennung IS NOT NULL)),
+    CONSTRAINT benutzer_ldap_kennung_nicht_leer
+        CHECK (ldap_kennung IS NULL OR btrim(ldap_kennung) <> '')
     -- Migration 123 ergaenzt hier leser_id — die Spalte steht NICHT in dieser
     -- CREATE TABLE, weil benutzer in dieser Datei VOR leser angelegt wird und eine
     -- Verknuepfung nach vorn nicht aufloesbar ist. Sie folgt als ALTER TABLE direkt
@@ -112,6 +121,9 @@ CREATE TABLE benutzer (
 
 -- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/anmelden.go).
 CREATE UNIQUE INDEX uniq_benutzer_email_lower ON benutzer (lower(email));
+-- Migration 172: Die Anmeldung findet ein LDAP-Konto auch über seine Kennung.
+CREATE UNIQUE INDEX uniq_benutzer_ldap_kennung_lower
+    ON benutzer (lower(ldap_kennung)) WHERE ldap_kennung IS NOT NULL;
 
 CREATE TRIGGER trg_benutzer_aktualisiert_am
 BEFORE UPDATE ON benutzer
@@ -1973,7 +1985,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('168_barcode_keine_lmf_nummer.sql'),
 ('169_passwort_geprueft_am.sql'),
 ('170_ausweisnummer_nicht_am_buch.sql'),
-('171_geloeschte_exemplare.sql')
+('171_geloeschte_exemplare.sql'),
+('172_anmeldeverfahren_je_konto.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

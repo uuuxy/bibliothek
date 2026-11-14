@@ -10,7 +10,7 @@ const NEUER_ANLAUF_MS = 60_000;
  * Sperrt die Anmeldung dieses Browsers am Server.
  *
  * `nichtSperrbar`: Der Server führt zu dieser Anmeldung keinen Prüfwert des Passworts und
- * sperrt sie deshalb nicht — sie ließe sich bei einem Ausfall des Mailservers nicht aufschließen.
+ * sperrt sie deshalb nicht — sie ließe sich bei einem Ausfall des Anmeldeservers nicht aufschließen.
  * `beendet`: Die Anmeldung gibt es am Server nicht mehr, zu sperren ist nichts.
  * @returns {Promise<'gesperrt' | 'nichtSperrbar' | 'beendet' | 'unerreicht'>}
  */
@@ -44,7 +44,7 @@ export async function sperreBisZumServer(faellig) {
 
 /**
  * Schickt das Passwort zum Aufschließen. Die Frist liegt über dem Standard: Der Server fragt
- * den Mailserver der Schule und wartet bei dessen Ausfall, bevor er selbst prüft.
+ * Mailserver oder Verzeichnisdienst und wartet bei dessen Ausfall, bevor er selbst prüft.
  * @param {string} passwort
  * @returns {Promise<Response>}
  */

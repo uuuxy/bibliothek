@@ -59,6 +59,8 @@ Tabelle · TabelleSortierKopf · VorschlagFeld · Zaehlerpille.
 - Ein neues Bauteil braucht in der Commit-Nachricht die Begründung, warum keins der
   vorhandenen passt.
 - Gilt genauso für Endpunkte: Erst `docs/api_inventar.md` lesen.
+- Nur bauen, was die Aufgabe verlangt: keine zusätzlichen Funktionen, Abstraktionen oder Helfer.
+- Was unklar ist: erst im Repository nachlesen, dann fragen — nicht annehmen.
 
 ---
 
@@ -71,6 +73,9 @@ Tabelle · TabelleSortierKopf · VorschlagFeld · Zaehlerpille.
 - Ein neues Gate zählt erst, wenn es einmal **rot** gesehen wurde — am Rückbau der Sache,
   die es schützen soll.
 - Die Suite nie in eine Pipe schicken (zsh liefert `PIPESTATUS` leer); Exit-Code positiv erfassen.
+- Läufe, die länger als ein paar Sekunden dauern (Go-Tests, `vitest`, `svelte-check`, Builds),
+  laufen im Hintergrund. Die Ausgabe geht per Umleitung (`> datei 2>&1`) in den Scratchpad;
+  gelesen werden nur die Fehlerstellen.
 
 ---
 
@@ -97,3 +102,20 @@ Tabelle · TabelleSortierKopf · VorschlagFeld · Zaehlerpille.
   groß, öffentlich nur, was ein anderes Paket braucht. `stil_ratsche_test.go` meldet jeden neuen
   Fund, in Tests an Namen und Dateinamen. Tests prüfen mit dem Paket `testing`, Vergleiche mit
   `==` oder `cmp` (`docs/STIL.md` 10); testify und `reflect.DeepEqual` sperrt der Linter.
+
+---
+
+## 5. Sparsam arbeiten
+
+- Große Dokumente (`docs/ARCHITEKTUR.md`, `FACHKONZEPT.md`, `HANDBUCH.md` …) nur abschnittsweise
+  lesen: erst `grep -n '^#'`, dann den Abschnitt. M3-Seiten einmal in den Scratchpad laden und
+  darin suchen.
+- Massenabfragen über ein Skript statt vieler Einzelaufrufe; Zwischenergebnisse im Scratchpad.
+- Ergebnisse von Subagenten mit Stichproben prüfen.
+- Keine Ankündigung vor Tool-Aufrufen, keine Füllsätze, nicht wiederholen, was die Tool-Ausgabe
+  schon zeigt.
+- Änderungen mit Edit und dem kleinsten eindeutigen `old_string`; Write nur für neue Dateien;
+  keine Skripte, die ganze Blöcke neu senden.
+- Zwischenstand: ein Satz. Abschlussbericht als kurze Liste: Ergebnisse, Abweichungen und
+  eigene Entscheidungen, nötige Handgriffe des Nutzers, Offenes.
+- Ausführlich bleiben: Erklärungen, wenn nach Warum oder Wie gefragt wird; Befunde und Risiken.

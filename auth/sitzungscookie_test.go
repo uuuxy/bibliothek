@@ -48,9 +48,9 @@ func TestAnmelden_CookieNurUeberHTTPS(t *testing.T) {
 	aktiviereIMAPAttrappe(t)
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("nberger@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
+		WithArgs("nberger@schule.de", "nberger@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false, "imap", ""))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
 	anfrage := httptest.NewRequest(http.MethodPost, "/login",

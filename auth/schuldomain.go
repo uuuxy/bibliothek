@@ -21,10 +21,19 @@ func ErgaenzeSchulDomain(eingabe string) string {
 	return eingabe + "@" + domain
 }
 
-// Domain liefert der Anmeldeseite die Domain der Schule, bevor jemand angemeldet ist: Der Hinweis
-// am Feld nennt damit, was der Server ergänzt. Ohne Domain ist die Antwort leer.
+// domainAntwort sagt der Anmeldeseite, was sie vor der Anmeldung über das Feld wissen muss.
+type domainAntwort struct {
+	// Domain ist die Domain der Schule, die der Server an einen Namen ohne @ hängt; leer ohne.
+	Domain string `json:"domain"`
+	// LDAP sagt, ob ein Verzeichnisdienst eingerichtet ist. Dann tippt manche Person statt der
+	// E-Mail ihre LDAP-Kennung, und das Feld darf keine Adresse verlangen.
+	LDAP bool `json:"ldap"`
+}
+
+// Domain liefert der Anmeldeseite die Domain der Schule und ob es LDAP gibt, bevor jemand
+// angemeldet ist: Beschriftung und Hinweis am Feld richten sich danach.
 func Domain() http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
-		httpresp.SchreibeJSON(w, SelbstanmeldeDomain())
+		httpresp.SchreibeJSON(w, domainAntwort{Domain: SelbstanmeldeDomain(), LDAP: leseLDAPKonfig().istEingerichtet()})
 	}
 }

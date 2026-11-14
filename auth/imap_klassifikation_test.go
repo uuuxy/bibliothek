@@ -136,7 +136,7 @@ func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 	if err == nil {
 		t.Fatal("pruefeIMAPAnmeldung(…) bei NO = nil, erwartet einen Fehler")
 	}
-	if errors.Is(err, errMailserverNichtErreichbar) {
+	if errors.Is(err, errAnmeldeserverNichtErreichbar) {
 		t.Fatalf("NO vom Server ist ein falsches Passwort, kein Ausfall: %v", err)
 	}
 	if !errors.Is(err, errAnmeldungAbgelehnt) {
@@ -148,7 +148,7 @@ func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimAnmeldenIstAusfall(t *testing
 	a := &Anmeldung{}
 	mitMiniIMAP(t, a, "CLOSE")
 	err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
-	if !errors.Is(err, errMailserverNichtErreichbar) {
+	if !errors.Is(err, errAnmeldeserverNichtErreichbar) {
 		t.Fatalf("Server schließt beim LOGIN ohne Antwort — das ist ein Ausfall, kein Passwortfehler: %v", err)
 	}
 }

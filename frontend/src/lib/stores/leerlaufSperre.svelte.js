@@ -259,8 +259,8 @@ export class LeerlaufSperre {
 	}
 
 	/**
-	 * Schließt mit dem Passwort der angemeldeten Person auf. Der Server prüft es beim
-	 * Mailserver der Schule und, wenn der nicht erreichbar ist, gegen den Prüfwert der Anmeldung.
+	 * Schließt mit dem Passwort der angemeldeten Person auf. Der Server prüft es beim Server des
+	 * Kontos und, wenn der nicht erreichbar ist, gegen den Prüfwert der Anmeldung.
 	 * @param {string} passwort
 	 * @returns {Promise<boolean>}
 	 */
@@ -369,7 +369,7 @@ export class LeerlaufSperre {
 async function fehlertext(res) {
 	if (res.status === 401) return 'Passwort falsch.';
 	if (res.status === 429) return 'Zu viele Versuche — bitte kurz warten.';
-	if (res.status === 503) return 'Anmeldedienst (Mailserver) nicht erreichbar.';
+	if (res.status === 503) return 'Anmeldedienst nicht erreichbar.';
 	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen (${res.status}).`);
 }
 

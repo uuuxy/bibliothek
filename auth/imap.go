@@ -126,6 +126,11 @@ func meldeBeiIMAPAn(ctx context.Context, c *client.Client, verbindung net.Conn, 
 	}
 }
 
+// imapIstEingerichtet sagt, ob ein Mailserver eingetragen ist.
+func imapIstEingerichtet() bool {
+	return strings.TrimSpace(os.Getenv("IMAP_HOST")) != ""
+}
+
 // istLokaleUmgebung meldet, ob APP_ENV eine Entwicklungs- oder Testumgebung bezeichnet. Nur dort
 // darf die Attrappe des Mailservers (IMAP_HOST=mock) greifen.
 func istLokaleUmgebung() bool {
@@ -137,31 +142,39 @@ func istLokaleUmgebung() bool {
 	}
 }
 
-// errMailserverNichtErreichbar trennt den Ausfall des Mailservers vom falschen Passwort. Wer bei
-// einem Ausfall sein richtiges Passwort erneut probiert, sperrte sich sonst nach fünf Versuchen
-// für 15 Minuten aus, und ein Ausfall des Servers sperrte das ganze Kollegium aus. Die Tür der
-// Anmeldung antwortet darauf mit 503 und zählt keinen Fehlversuch.
-var errMailserverNichtErreichbar = errors.New("mailserver nicht erreichbar")
+// errAnmeldeserverNichtErreichbar trennt den Ausfall von Mailserver oder Verzeichnisdienst vom
+// falschen Passwort. Wer bei einem Ausfall sein richtiges Passwort erneut probiert, sperrte sich
+// sonst nach fünf Versuchen für 15 Minuten aus, und ein Ausfall des Servers sperrte das ganze
+// Kollegium aus. Die Tür der Anmeldung antwortet darauf mit 503 und zählt keinen Fehlversuch.
+var errAnmeldeserverNichtErreichbar = errors.New("anmeldeserver nicht erreichbar")
 
-// meldungMailserverNichtErreichbar ist der Satz, mit dem Anmeldung und Entsperren auf einen
-// Ausfall des Mailservers antworten.
-const meldungMailserverNichtErreichbar = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
+// meldungAnmeldeserverNichtErreichbar ist der Satz, mit dem Anmeldung und Entsperren auf einen
+// Ausfall von Mailserver oder Verzeichnisdienst antworten.
+const meldungAnmeldeserverNichtErreichbar = "Der Anmeldeserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 
-// PruefeIMAPKonfiguration prüft IMAP_HOST beim Start des Servers, damit eine unbrauchbare oder
-// gefährliche Konfiguration der Anmeldung sofort auffällt und nicht erst bei der ersten
+// PruefeAnmeldeKonfig prüft die Einstellungen der Anmeldung beim Start des Servers, damit eine
+// unbrauchbare oder gefährliche Konfiguration sofort auffällt und nicht erst bei der ersten
 // Anmeldung.
 //
-// Abgelehnt werden zwei Fälle:
+// Abgelehnt werden drei Fälle:
 //
-//   - leer: Ohne Mailserver ist keine Anmeldung möglich. Geraten wird keiner, sonst spräche ein
-//     „go run" ohne Umgebung den echten Mailserver der Schule an, mit echten Anmeldeversuchen.
-//   - "mock" außerhalb von APP_ENV=local/development/test: Die Attrappe nimmt jedes Passwort für
-//     jede in benutzer eingetragene E-Mail-Adresse an. In einer Umgebung, die sich production
-//     nennt, ist das keine Konfiguration, sondern eine offene Tür.
-func PruefeIMAPKonfiguration() error {
+//   - weder IMAP_HOST noch LDAP_URL: Ohne Server ist keine Anmeldung möglich. Geraten wird
+//     keiner, sonst spräche ein „go run" ohne Umgebung den echten Mailserver der Schule an, mit
+//     echten Anmeldeversuchen.
+//   - IMAP_HOST=mock außerhalb von APP_ENV=local/development/test: Die Attrappe nimmt jedes
+//     Passwort für jede in benutzer eingetragene E-Mail-Adresse an. In einer Umgebung, die sich
+//     production nennt, ist das keine Konfiguration, sondern eine offene Tür.
+//   - LDAP_URL ohne Dienstkonto, Suchbasis oder gültigen Filter.
+func PruefeAnmeldeKonfig() error {
 	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
-	if host == "" {
-		return errors.New("IMAP_HOST ist nicht gesetzt — ohne Mailserver ist keine Anmeldung möglich (lokal: IMAP_HOST=mock mit APP_ENV=local)")
+	verzeichnis := leseLDAPKonfig()
+	if host == "" && !verzeichnis.istEingerichtet() {
+		return errKeinAnmeldeserver
+	}
+	if verzeichnis.istEingerichtet() {
+		if err := verzeichnis.pruefe(); err != nil {
+			return err
+		}
 	}
 	if host == "mock" && !istLokaleUmgebung() {
 		return fmt.Errorf("IMAP_HOST=mock nimmt jedes Passwort an — auf einem Server den Mailserver der Schule eintragen und APP_ENV nicht ändern; mock gilt nur auf dem Entwicklungsrechner zusammen mit APP_ENV=local (aktuell: APP_ENV=%q)", os.Getenv("APP_ENV"))
@@ -170,13 +183,14 @@ func PruefeIMAPKonfiguration() error {
 }
 
 // imapOhneServer entscheidet die Fälle, in denen kein Mailserver gefragt wird. Ohne Host wird
-// abgelehnt statt geraten (siehe PruefeIMAPKonfiguration). Die Attrappe (mock) nimmt jedes
-// Passwort an und gilt nur in der lokalen Entwicklung; die Prüfung hier ist die zweite Schranke
-// hinter der beim Start, falls die Variable zur Laufzeit gesetzt wird.
+// abgelehnt statt geraten (siehe PruefeAnmeldeKonfig); das ist ein Fehler der Einrichtung und
+// kein falsches Passwort. Die Attrappe (mock) nimmt jedes Passwort an und gilt nur in der lokalen
+// Entwicklung; die Prüfung hier ist die zweite Schranke hinter der beim Start, falls die Variable
+// zur Laufzeit gesetzt wird.
 func imapOhneServer(host string) (entschieden bool, err error) {
 	if host == "" {
-		slog.Error("IMAP_HOST ist nicht gesetzt — Anmeldung wird abgelehnt")
-		return true, fmt.Errorf("anmeldung fehlgeschlagen")
+		slog.Error("IMAP-Konto, aber IMAP_HOST ist nicht gesetzt — Anmeldung wird abgelehnt")
+		return true, errAnmeldeserverNichtErreichbar
 	}
 	if host != "mock" {
 		return false, nil
@@ -247,9 +261,9 @@ func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort str
 	c, verbindung, err := verbindeIMAP(ctx, adresse, tlsKonfig)
 	if err != nil {
 		// Ein Ausfall der Verbindung ist kein falsches Passwort: Die Tür antwortet 503 statt 401
-		// mit Fehlversuch (ErrMailserverNichtErreichbar).
+		// mit Fehlversuch (errAnmeldeserverNichtErreichbar).
 		slog.Error("IMAP Connection failed", "adresse", adresse, "fehler", err)
-		return errMailserverNichtErreichbar
+		return errAnmeldeserverNichtErreichbar
 	}
 	c.Timeout = imapBefehlsfrist
 	defer func() {
@@ -271,7 +285,7 @@ func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort str
 		if errors.Is(err, errAnmeldungAbgelehnt) {
 			return errAnmeldungAbgelehnt
 		}
-		return errMailserverNichtErreichbar
+		return errAnmeldeserverNichtErreichbar
 	}
 
 	return nil

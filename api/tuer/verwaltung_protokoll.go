@@ -48,10 +48,25 @@ func (b *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, deta
 // Themen legen ein Konto an, Benutzer & Rechte und die Leserdatei beim Anlegen einer Lehrkraft;
 // der Eintrag steht deshalb hier. ziel_id ist die Kennung des Kontos: Daran findet die Auskunft
 // den Eintrag, auch nachdem das Konto gelöscht ist (repository/dsgvo_konto.go).
-func (b *Basis) ProtokolliereKontoAnlage(ctx context.Context, kontoID, email, rolle, vorname, nachname string) {
-	b.ProtokolliereVerwaltung(ctx, "USER_CREATE", map[string]any{
-		"ziel_id": kontoID, "email": email, "rolle": rolle, "vorname": vorname, "nachname": nachname,
-	})
+func (b *Basis) ProtokolliereKontoAnlage(ctx context.Context, k KontoAnlage) {
+	details := map[string]any{
+		"ziel_id": k.KontoID, "email": k.Email, "rolle": k.Rolle, "vorname": k.Vorname, "nachname": k.Nachname,
+		"anmeldeverfahren": k.Anmeldeverfahren,
+	}
+	// Die Kennung öffnet ein LDAP-Konto wie die E-Mail ein IMAP-Konto; wer sie gesetzt hat,
+	// muss sich feststellen lassen.
+	if k.LDAPKennung != "" {
+		details["ldap_kennung"] = k.LDAPKennung
+	}
+	b.ProtokolliereVerwaltung(ctx, "USER_CREATE", details)
+}
+
+// KontoAnlage sind die Angaben eines neuen Kontos, die USER_CREATE festhält.
+type KontoAnlage struct {
+	KontoID, Email, Rolle, Vorname, Nachname string
+	// Anmeldeverfahren ist repository.AnmeldeverfahrenIMAP oder repository.AnmeldeverfahrenLDAP;
+	// LDAPKennung gehört nur zu LDAP.
+	Anmeldeverfahren, LDAPKennung string
 }
 
 // SchreibeAdminProtokoll schreibt einen Eintrag, dessen Details als JSON-Text vorliegen, mit

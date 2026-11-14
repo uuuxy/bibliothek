@@ -48,6 +48,7 @@ func (t *Tueren) sammleLage(
 		JWTGeheimnis:          os.Getenv("JWT_SECRET"),
 		Schluessel:            os.Getenv("APP_ENCRYPTION_KEY"),
 		IMAPHost:              os.Getenv("IMAP_HOST"),
+		LDAPURL:               strings.TrimSpace(os.Getenv("LDAP_URL")),
 		// Derselbe Vergleich wie in mailservice/versand.go: Nur "true" schaltet.
 		SMTPUnsicheresTLSErlaubt: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true",
 		SMTPKlartextErlaubt:      os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true",
