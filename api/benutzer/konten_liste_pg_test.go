@@ -16,8 +16,9 @@ import (
 
 // Die Kontenliste trägt, was die Tabelle der Konten zeigt: die Ausweisnummer aus der
 // Leserzeile, „aktiv", den offenen Antrag der Selbstanmeldung, an dem die Tabelle „wartet" von
-// „deaktiviert" unterscheidet, und die Leserzeile, von der aus die Zugangsanfragen nach einem
-// gleichnamigen Leser suchen.
+// „deaktiviert" unterscheidet, die Leserzeile, von der aus die Zugangsanfragen nach einem
+// gleichnamigen Leser suchen, und Anmeldeverfahren und LDAP-Kennung für den Dialog zum
+// Bearbeiten.
 func TestKonten_ZeigenDenStandJedesKontos(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -35,6 +36,9 @@ func TestKonten_ZeigenDenStandJedesKontos(t *testing.T) {
 	}
 	if _, err := pool.Exec(ctx, `UPDATE benutzer SET zugang_beantragt_am = now() WHERE id = $1`, wartet); err != nil {
 		t.Fatalf("Antrag setzen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE benutzer SET anmeldeverfahren = 'ldap', ldap_kennung = 'AKL' WHERE id = $1`, aktiv); err != nil {
+		t.Fatalf("Anmeldeverfahren setzen: %v", err)
 	}
 
 	rec := httptest.NewRecorder()
@@ -54,6 +58,12 @@ func TestKonten_ZeigenDenStandJedesKontos(t *testing.T) {
 	if k := jeKennung[aktiv]; !k.Aktiv || k.BarcodeID != "KL-4711" || k.LeserID != leserAktiv || k.ZugangBeantragtAm != nil {
 		t.Errorf("aktives Konto: aktiv %t, Ausweis %q, Leserzeile %q, Antrag %v; erwartet aktiv, KL-4711, %s, kein Antrag",
 			k.Aktiv, k.BarcodeID, k.LeserID, k.ZugangBeantragtAm, leserAktiv)
+	}
+	if k := jeKennung[aktiv]; k.Anmeldeverfahren != "ldap" || k.LDAPKennung != "AKL" {
+		t.Errorf("LDAP-Konto: Verfahren %q, Kennung %q; erwartet ldap, AKL", k.Anmeldeverfahren, k.LDAPKennung)
+	}
+	if k := jeKennung[aus]; k.Anmeldeverfahren != "imap" || k.LDAPKennung != "" {
+		t.Errorf("IMAP-Konto: Verfahren %q, Kennung %q; erwartet imap ohne Kennung", k.Anmeldeverfahren, k.LDAPKennung)
 	}
 	if k := jeKennung[wartet]; k.Aktiv || k.ZugangBeantragtAm == nil {
 		t.Errorf("Konto mit offenem Antrag: aktiv %t, Antrag %v; erwartet nicht aktiv, mit Antrag", k.Aktiv, k.ZugangBeantragtAm)

@@ -130,7 +130,7 @@ func legeZugangsanfrageAn(ctx context.Context, pool db.Pool, email string) (anme
 
 	// Dasselbe Lesen wie in der Anmeldung: Trifft die Anlage ein vorhandenes Konto, geht die
 	// Anmeldung mit ihm weiter.
-	gelesen, err := repository.LadeAnmeldeKonto(ctx, pool, email)
+	gelesen, err := repository.LadeAnmeldeKonto(ctx, pool, email, email)
 	if err != nil {
 		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %w", errAnmeldedienstGestoert, err)
 	}

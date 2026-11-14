@@ -68,6 +68,9 @@ type Lage struct {
 
 	// Anmeldung
 	IMAPHost string
+	// LDAPURL ist LDAP_URL, der Verzeichnisdienst für die Konten mit Anmeldeverfahren LDAP; leer
+	// heißt, es gibt keinen. Ob die übrigen LDAP-Angaben stimmen, prüft schon der Start.
+	LDAPURL string
 	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN, die Domain der Schule. Leer heißt, das
 	// Kollegium muss von Hand angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string

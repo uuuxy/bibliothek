@@ -177,6 +177,13 @@ var eindeutigkeitBestand = []string{
 	"uniq_ausleihen_aktiv_geraet @ ausleihen (geraet_id) WHERE ((rueckgabe_am IS NULL) AND (geraet_id IS NOT NULL))",
 	// Befragt: wie benutzer_email_key.
 	"uniq_benutzer_email_lower @ benutzer (lower((email)::text))",
+	// Migration 172, befragt: Einziger Schreiber einer Kennung ist die Benutzerverwaltung; sie
+	// prüft vorher ohne Rücksicht auf die Schreibweise, auch gegen die E-Mail anderer Konten
+	// (pruefeAnmeldeverfahren, 400 mit Satz). Legen zwei Plätze zugleich dieselbe Kennung an,
+	// bekommt der zweite 409 mit Satz (meldeLDAPKennungFehler). LegeErstenAdminAn schreibt in eine
+	// leere Tabelle. Der Teilindex lässt IMAP-Konten ohne Kennung zu; die Anmeldung sucht eine
+	// Kennung nur bei LDAP-Konten (LadeAnmeldeKonto).
+	"uniq_benutzer_ldap_kennung_lower @ benutzer (lower((ldap_kennung)::text)) WHERE (ldap_kennung IS NOT NULL)",
 	// Befragt: Jedes Konto bekommt seine eigene Leserzeile (Trigger trg_benutzer_hat_leserzeile,
 	// LegeKollegiumskontoAn mit der neuen Zeile). Die Zusammenführung bricht ab, wenn beide Seiten
 	// ein Konto haben, mit 409 und Satz (ErrZusammenfuehrenZweiKonten); ein Konto unter der

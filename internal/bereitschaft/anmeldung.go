@@ -11,14 +11,20 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 	case l.IMAPHost == "mock":
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Mock-Anmeldung", l.Umgebung)
-	case l.IMAPHost == "":
+	case l.IMAPHost == "" && l.LDAPURL == "":
 		b.Stufe = StufeKritisch
-		b.Befund = "IMAP_HOST ist leer."
+		b.Befund = "IMAP_HOST und LDAP_URL sind leer."
 		b.Folge = "Niemand kann sich anmelden."
-		b.Abhilfe = "Den IMAP-Host der Schule eintragen."
-	default:
+		b.Abhilfe = "Den IMAP-Host der Schule oder den Verzeichnisdienst (LDAP_URL) eintragen."
+	case l.LDAPURL == "":
 		b.Stufe = StufeOK
 		b.Befund = "Anmeldung läuft über " + l.IMAPHost + "."
+	case l.IMAPHost == "":
+		b.Stufe = StufeOK
+		b.Befund = "Anmeldung läuft über den Verzeichnisdienst " + l.LDAPURL + "; Konten mit IMAP kommen nicht hinein."
+	default:
+		b.Stufe = StufeOK
+		b.Befund = "Anmeldung läuft je Konto über " + l.IMAPHost + " oder den Verzeichnisdienst " + l.LDAPURL + "."
 	}
 	return b
 }

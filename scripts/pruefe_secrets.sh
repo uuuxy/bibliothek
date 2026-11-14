@@ -134,12 +134,15 @@ else
 fi
 
 imap="$(lies IMAP_HOST)"
+ldap="$(lies LDAP_URL)"
 if [ "$imap" = "mock" ]; then
 	kritisch "IMAP_HOST=mock" "Der Mock akzeptiert JEDES Passwort für jede bekannte E-Mail. Die Anmeldung steht damit offen."
+elif [ -z "$imap" ] && [ -z "$ldap" ]; then
+	warnung "IMAP_HOST und LDAP_URL sind nicht gesetzt" "Der Server startet dann gar nicht (auth.PruefeAnmeldeKonfig)."
 elif [ -z "$imap" ]; then
-	warnung "IMAP_HOST ist nicht gesetzt" "Der Prod-Stack startet dann gar nicht (Pflichtvariable in docker-compose.yml)."
+	gut "LDAP_URL=$ldap (ohne IMAP_HOST kommen nur Konten mit LDAP hinein)"
 else
-	gut "IMAP_HOST=$imap"
+	gut "IMAP_HOST=$imap${ldap:+, LDAP_URL=$ldap}"
 fi
 
 # Gelesen wie im Server: ohne Rücksicht auf Großschreibung und Leerzeichen.

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, within } from '@testing-library/svelte';
 import KontenTabelle from './KontenTabelle.svelte';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 const konto = (/** @type {Record<string, any>} */ felder = {}) => ({
 	id: 'u1',
@@ -31,10 +32,18 @@ const zellen = (/** @type {ReturnType<typeof tabelle>} */ screen, /** @type {str
 		.map((z) => z.textContent?.trim());
 
 describe('KontenTabelle', () => {
-	it('nennt je Konto Name, E-Mail, Ausweisnummer, Rolle und Zustand', () => {
+	it('nennt je Konto Name, E-Mail, Anmeldung, Ausweisnummer, Rolle und Zustand', () => {
 		const screen = tabelle([
-			konto(),
-			konto({ id: 'u2', vorname: 'Ole', nachname: 'Ohne', barcode_id: '', aktiv: false }),
+			konto({ anmeldeverfahren: 'imap', ldap_kennung: '' }),
+			konto({
+				id: 'u2',
+				vorname: 'Ole',
+				nachname: 'Ohne',
+				barcode_id: '',
+				aktiv: false,
+				anmeldeverfahren: 'ldap',
+				ldap_kennung: 'OOH'
+			}),
 			konto({
 				id: 'u3',
 				vorname: 'Anna',
@@ -44,15 +53,27 @@ describe('KontenTabelle', () => {
 			})
 		]);
 
-		expect(zellen(screen, 'Kora Muster').slice(0, 5)).toEqual([
+		expect(zellen(screen, 'Kora Muster').slice(0, 6)).toEqual([
 			'Kora Muster',
 			'kora@test.local',
+			'IMAP',
 			'A-11266',
 			'Kollegium',
 			'Aktiv'
 		]);
-		expect(zellen(screen, 'Ole Ohne').slice(2, 5)).toEqual(['Keine', 'Kollegium', 'Inaktiv']);
-		expect(zellen(screen, 'Anna Antrag')[4]).toBe('Zugang beantragt');
+		expect(zellen(screen, 'Ole Ohne').slice(2, 6)).toEqual([
+			'LDAP',
+			'Keine',
+			'Kollegium',
+			'Inaktiv'
+		]);
+		// Ein Konto aus einem Stand ohne Verfahren ist IMAP, die Vorgabe der Datenbank.
+		expect(zellen(screen, 'Anna Antrag').slice(2, 6)).toEqual([
+			'IMAP',
+			'A-11266',
+			'Kollegium',
+			'Zugang beantragt'
+		]);
 	});
 
 	// Grün und Gelb heißen im Programm „in Ordnung" und „Achtung". Die Rolle steht deshalb in
@@ -94,5 +115,21 @@ describe('KontenTabelle', () => {
 	it('sagt ohne Sinnbild, dass niemand gefunden wurde', () => {
 		const screen = tabelle([]);
 		expect(screen.container.textContent?.trim()).toBe('Keine Systembenutzer gefunden');
+	});
+
+	// Das eigene Konto löscht niemand: Der Server lehnt es ab, der Knopf ist deshalb schon in der
+	// Liste abgeschaltet und sagt, warum.
+	it('schaltet das Löschen des eigenen Kontos ab', () => {
+		authStore.currentUser = { user_id: 'u1' };
+		try {
+			const screen = tabelle([konto(), konto({ id: 'u2', vorname: 'Ole', nachname: 'Ohne' })]);
+			const eigen = screen.getByRole('button', { name: 'Kora Muster löschen' });
+			const fremd = screen.getByRole('button', { name: 'Ole Ohne löschen' });
+			expect(eigen.hasAttribute('disabled')).toBe(true);
+			expect(eigen.getAttribute('data-tip')).toBe('Das eigene Konto lässt sich nicht löschen');
+			expect(fremd.hasAttribute('disabled')).toBe(false);
+		} finally {
+			authStore.currentUser = null;
+		}
 	});
 });

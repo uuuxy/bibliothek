@@ -5,4 +5,5 @@ const (
 	headerContentType = "Content-Type"
 	contentTypeJSON   = "application/json"
 	imapVerbindung    = "imap connection"
+	ldapVerbindung    = "ldap connection"
 )

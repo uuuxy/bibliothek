@@ -26,7 +26,8 @@ type fehlversuche struct {
 }
 
 // fehlversuchsBremse lässt je Schlüssel höchstens maxFehlversuche gescheiterte Anmeldungen im
-// Zeitfenster zu. Sie schützt den Mailserver vor dem Durchprobieren von Passwörtern.
+// Zeitfenster zu. Sie schützt Mailserver und Verzeichnisdienst vor dem Durchprobieren von
+// Passwörtern.
 type fehlversuchsBremse struct {
 	mu              sync.Mutex
 	eintraege       map[string]*fehlversuche
@@ -110,17 +111,25 @@ type anmeldeAntwort struct {
 	Rechte   []string `json:"permissions"`
 }
 
-// anmeldeFrist umfasst den Mailserver (imapFrist) und die Schritte in der Datenbank danach. Sie
-// liegt über imapFrist, sonst endete der Kontext zwischen „Passwort richtig" und dem Lesen des
-// Kontos, und eine richtige, langsame Anmeldung zählte als Fehlversuch
-// (TestAnmeldeFrist_LaesstIMAPLuft).
+// anmeldeFrist umfasst den Server des Kontos (imapFrist, ldapFrist), die Schritte in der
+// Datenbank danach und das Warten bis zur Absage (mindestdauerAbsage). Sie liegt über imapFrist,
+// sonst endete der Kontext zwischen „Passwort richtig" und dem Anlegen der Sitzung, und eine
+// richtige, langsame Anmeldung zählte als Fehlversuch (TestAnmeldeFrist_LaesstIMAPLuft).
 const anmeldeFrist = imapFrist + 10*time.Second
+
+// mindestdauerAbsage ist die kürzeste Zeit bis zur Antwort „E-Mail-Adresse oder Passwort stimmt
+// nicht". Eine Eingabe ohne Konto erreicht keinen Server und wäre in Millisekunden abgelehnt, ein
+// falsches Passwort erst nach der Antwort des Servers; am Unterschied ließe sich ablesen, welche
+// Adressen ein Konto haben. Die Dauer liegt über der Verzögerung, mit der ein Mailserver ein
+// falsches Passwort beantwortet (Dovecot, auth_failure_delay: Vorgabe 2 Sekunden).
+const mindestdauerAbsage = 3 * time.Second
 
 // anmeldeRumpfMaxBytes begrenzt den Rumpf der Anmeldung (E-Mail und Passwort als JSON).
 const anmeldeRumpfMaxBytes = 16 << 10
 
-// Anmelden liefert die Tür der Anmeldung. Angemeldet wird nur mit E-Mail und Passwort gegen den
-// Mailserver der Schule (IMAP).
+// Anmelden liefert die Tür der Anmeldung. Angemeldet wird mit E-Mail oder LDAP-Kennung und
+// Passwort; das Passwort prüft der Server, den das Konto nennt: der Mailserver der Schule (IMAP)
+// oder der Verzeichnisdienst (LDAP).
 func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		adresse := adresseDerAnfrage(r)
@@ -137,9 +146,11 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
-		// Vor allem anderen: Bremse, Mailserver und Konto sehen dieselbe volle Adresse. Getrimmt wird
-		// hier, weil das Feld mit Domain ein Textfeld ist und der Browser Leerzeichen dann stehen lässt.
-		anfrage.Email = ErgaenzeSchulDomain(strings.TrimSpace(anfrage.Email))
+		// Getrimmt wird hier, weil das Feld ein Textfeld ist und der Browser Leerzeichen dann
+		// stehen lässt. Bremse und Selbstanmeldung sehen die um die Domain ergänzte Adresse; das
+		// Konto wird auch unter der Eingabe selbst gesucht, denn eine LDAP-Kennung hat kein @.
+		anfrage.Email = strings.TrimSpace(anfrage.Email)
+		eingabe := anmeldeEingabe{eingabe: anfrage.Email, email: ErgaenzeSchulDomain(anfrage.Email)}
 
 		ctx, cancel := context.WithTimeout(r.Context(), anmeldeFrist)
 		defer cancel()
@@ -148,13 +159,14 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		eingabe.passwort = passwort
 
-		schluessel, ok := anmeldung.pruefeFehlversuche(w, anfrage.Email, adresse)
+		schluessel, ok := anmeldung.pruefeFehlversuche(w, eingabe.email, adresse)
 		if !ok {
 			return
 		}
 
-		konto, ok := anmeldung.meldeAn(ctx, w, pool, anfrage.Email, passwort, schluessel)
+		konto, ok := anmeldung.meldeAn(ctx, w, pool, eingabe, schluessel)
 		if !ok {
 			return
 		}
@@ -251,19 +263,26 @@ func (a *Anmeldung) pruefeFehlversuche(w http.ResponseWriter, email, adresse str
 	return schluessel, true
 }
 
+// anmeldeEingabe ist, was die Anmeldung von der Person davor hat: die Eingabe im Feld, dieselbe
+// um die Domain der Schule ergänzt, und das Passwort.
+type anmeldeEingabe struct {
+	eingabe, email, passwort string
+}
+
 // meldeAn prüft Zugangsdaten und Stand des Kontos. Bei false ist die Fehlerantwort schon
 // geschrieben.
 //
-// Ein Fehlversuch zählt nur beim falschen Passwort. Ein Ausfall von Mailserver oder Datenbank
-// und ein offener Antrag sind keine Fehlversuche: Wer dort mit dem richtigen Passwort
-// weiterprobiert, darf sich nicht selbst aussperren.
-func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.Pool, email, passwort, schluessel string) (anmeldeKonto, bool) {
-	konto, err := a.pruefeIMAPZugang(ctx, pool, email, passwort)
+// Ein Fehlversuch zählt nur beim falschen Passwort. Ein Ausfall von Server oder Datenbank und ein
+// offener Antrag sind keine Fehlversuche: Wer dort mit dem richtigen Passwort weiterprobiert,
+// darf sich nicht selbst aussperren.
+func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.Pool, eingabe anmeldeEingabe, schluessel string) (anmeldeKonto, bool) {
+	beginn := time.Now()
+	konto, err := a.pruefeZugang(ctx, pool, eingabe)
 	if err != nil {
-		// Ein Ausfall des Mailservers ist kein falsches Passwort: 503 ohne Fehlversuch, sonst
+		// Ein Ausfall des Servers ist kein falsches Passwort: 503 ohne Fehlversuch, sonst
 		// sperrte sich aus, wer sein richtiges Passwort erneut probiert.
-		if errors.Is(err, errMailserverNichtErreichbar) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungMailserverNichtErreichbar, err)
+		if errors.Is(err, errAnmeldeserverNichtErreichbar) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldeserverNichtErreichbar, err)
 			return anmeldeKonto{}, false
 		}
 		// Ebenso ein Aussetzer der Datenbank. Der Grund steht im Log; hat der Browser die
@@ -273,6 +292,7 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 			return anmeldeKonto{}, false
 		}
 		a.bremse.merkeFehlversuch(schluessel)
+		a.warteBisZurAbsage(ctx, beginn)
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, meldungAnmeldungFalsch, nil)
 		return anmeldeKonto{}, false
 	}
@@ -297,37 +317,82 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 	return konto, true
 }
 
-// pruefeIMAPZugang prüft die Zugangsdaten am Mailserver und lädt danach das Konto. Ein Fehler
-// heißt, dass die Anmeldung nicht gilt. ErrMailserverNichtErreichbar geht unverändert weiter,
-// damit die Tür den Ausfall vom falschen Passwort unterscheidet (503 statt 401 mit Fehlversuch).
-func (a *Anmeldung) pruefeIMAPZugang(ctx context.Context, pool db.Pool, email, passwort string) (anmeldeKonto, error) {
-	if err := a.pruefeIMAPAnmeldung(ctx, email, passwort); err != nil {
+// pruefeZugang sucht zuerst das Konto und fragt dann den Server, den es nennt. Eine Eingabe ohne
+// Konto erreicht so weder Mailserver noch Verzeichnisdienst; ein Active Directory, das nach
+// Fehlversuchen sperrt, sperrt niemanden, nur weil jemand an der Bibliothek Namen durchprobiert.
+// Die eine Ausnahme ist die Selbstanmeldung (pruefeSelbstanmeldung).
+//
+// Ein Fehler heißt, dass die Anmeldung nicht gilt. errAnmeldeserverNichtErreichbar und
+// errAnmeldedienstGestoert gehen unverändert weiter, damit die Tür den Ausfall vom falschen
+// Passwort unterscheidet (503 statt 401 mit Fehlversuch).
+func (a *Anmeldung) pruefeZugang(ctx context.Context, pool db.Pool, eingabe anmeldeEingabe) (anmeldeKonto, error) {
+	konto, err := repository.LadeAnmeldeKonto(ctx, pool, eingabe.eingabe, eingabe.email)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return a.pruefeSelbstanmeldung(ctx, pool, eingabe)
+	case errors.Is(err, repository.ErrAnmeldungMehrdeutig):
+		slog.Error("Anmeldung: Die Eingabe trifft ein Konto über die E-Mail und ein anderes über die LDAP-Kennung")
+		return anmeldeKonto{}, errAnmeldungAbgelehnt
+	case err != nil:
+		// Verbindungsabriss, Pool erschöpft, Frist: ein Ausfall der Anmeldung, kein Fehlversuch.
+		return anmeldeKonto{}, fmt.Errorf("%w: benutzer lesen: %w", errAnmeldedienstGestoert, err)
+	}
+	if err := a.pruefePasswort(ctx, konto.ID, kontoZugang{
+		verfahren: konto.Anmeldeverfahren, email: konto.Email, ldapKennung: konto.LDAPKennung,
+	}, eingabe.passwort); err != nil {
 		return anmeldeKonto{}, err
 	}
-
-	konto, err := repository.LadeAnmeldeKonto(ctx, pool, email)
-	if err != nil {
-		// Nur „keine Zeile" ist der Fall der Selbstanmeldung. Jeder andere Fehler
-		// (Verbindungsabriss, Pool erschöpft, Frist) ist ein Ausfall der Anmeldung und kein
-		// Fehlversuch.
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return anmeldeKonto{}, fmt.Errorf("%w: benutzer lesen: %w", errAnmeldedienstGestoert, err)
-		}
-		// Ohne Konto: Ist die Selbstanmeldung für die Domain freigegeben, entsteht eine inaktive
-		// Anfrage, ein Eintrag, den die Bibliothek freischalten kann. Sonst gibt es keine
-		// Anmeldung.
-		neu, anlegeFehler := legeZugangsanfrageAn(ctx, pool, email)
-		if anlegeFehler != nil {
-			// „Nicht erlaubt" ist der gewöhnliche Fall (Domain nicht freigegeben) und braucht
-			// keine Zeile im Log. Jeder andere Fehler steht dort, sonst endete er als nacktes 401.
-			if !errors.Is(anlegeFehler, errSelbstanmeldungNichtErlaubt) {
-				slog.Error("Selbstanmeldung: Zugangsanfrage konnte nicht angelegt werden", "fehler", anlegeFehler)
-			}
-			return anmeldeKonto{}, anlegeFehler
-		}
-		return neu, nil
-	}
 	return anmeldeKontoAus(konto), nil
+}
+
+// pruefeSelbstanmeldung behandelt eine Eingabe ohne Konto. Gefragt wird der Mailserver nur, wenn
+// daraus über die Selbstanmeldung ein Konto werden kann: Adresse der freigegebenen Domain und ein
+// Mailserver, der das Postfach kennt. Sonst ist die Anmeldung abgelehnt, ohne Server.
+func (a *Anmeldung) pruefeSelbstanmeldung(ctx context.Context, pool db.Pool, eingabe anmeldeEingabe) (anmeldeKonto, error) {
+	if !darfSichSelbstAnmelden(eingabe.email) || !imapIstEingerichtet() {
+		return anmeldeKonto{}, errSelbstanmeldungNichtErlaubt
+	}
+	if err := a.pruefeIMAPAnmeldung(ctx, eingabe.email, eingabe.passwort); err != nil {
+		return anmeldeKonto{}, err
+	}
+	neu, err := legeZugangsanfrageAn(ctx, pool, eingabe.email)
+	if err != nil {
+		// „Nicht erlaubt" ist der gewöhnliche Fall und braucht keine Zeile im Log. Jeder andere
+		// Fehler steht dort, sonst endete er als nacktes 401.
+		if !errors.Is(err, errSelbstanmeldungNichtErlaubt) {
+			slog.Error("Selbstanmeldung: Zugangsanfrage konnte nicht angelegt werden", "fehler", err)
+		}
+		return anmeldeKonto{}, err
+	}
+	return neu, nil
+}
+
+// kontoZugang ist, was die Prüfung des Passworts über ein Konto wissen muss.
+type kontoZugang struct {
+	verfahren, email, ldapKennung string
+}
+
+// pruefePasswort fragt den Server, den das Konto nennt.
+func (a *Anmeldung) pruefePasswort(ctx context.Context, kontoID string, zugang kontoZugang, passwort string) error {
+	if zugang.verfahren == repository.AnmeldeverfahrenLDAP {
+		return pruefeLDAPAnmeldung(ctx, kontoID, zugang.ldapKennung, passwort)
+	}
+	return a.pruefeIMAPAnmeldung(ctx, zugang.email, passwort)
+}
+
+// warteBisZurAbsage hält die Absage bis mindestdauerAbsage nach beginn zurück; ein beendeter
+// Kontext beendet auch das Warten.
+func (a *Anmeldung) warteBisZurAbsage(ctx context.Context, beginn time.Time) {
+	rest := a.absageFrist - time.Since(beginn)
+	if rest <= 0 {
+		return
+	}
+	wecker := time.NewTimer(rest)
+	defer wecker.Stop()
+	select {
+	case <-wecker.C:
+	case <-ctx.Done():
+	}
 }
 
 // anmeldeKontoAus füllt die Angaben der Anmeldung aus dem gelesenen Konto: die eine Stelle für

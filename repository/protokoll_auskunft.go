@@ -58,6 +58,8 @@ var protokollAngaben = []ProtokollAngabe{
 	{"ort", "Ort", ProtokollText},
 	{"eltern_email", "Eltern-E-Mail", ProtokollText},
 	{"email", "E-Mail-Adresse", ProtokollText},
+	{"ldap_kennung", "LDAP-Kennung", ProtokollText},
+	{"anmeldeverfahren", "Anmeldung über", ProtokollText},
 	{"rolle", "Rolle", ProtokollRolle},
 	{"aktiv", "Konto aktiv", ProtokollJaNein},
 	{"lusd_id", "LUSD-ID", ProtokollText},

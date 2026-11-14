@@ -110,16 +110,27 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, zufaellig - siehe .env.example)}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
       # Kein Default: Die Attrappe "mock" (auth/imap.go) nimmt jedes Passwort für jede in
-      # benutzer vorhandene E-Mail an; als Vorgabe stünde die Anmeldung offen. Fehlt die
-      # Variable, startet der Stack nicht. Der Server verweigert den Start zusätzlich, wenn
-      # außerhalb von APP_ENV=local/development/test doch "mock" gesetzt ist.
-      - IMAP_HOST=${IMAP_HOST:?IMAP_HOST muss gesetzt sein - der Wert mock akzeptiert JEDES Passwort und ist nur lokal erlaubt}
+      # benutzer vorhandene E-Mail an; als Vorgabe stünde die Anmeldung offen. Leer ist erlaubt,
+      # wenn LDAP_URL gesetzt ist; fehlen beide, verweigert der Server den Start
+      # (auth.PruefeAnmeldeKonfig), ebenso mit "mock" außerhalb von APP_ENV=local/development/test.
+      - IMAP_HOST=${IMAP_HOST:-}
+      # Verzeichnisdienst für Konten mit Anmeldeverfahren LDAP (auth/ldap.go); leer = kein LDAP.
+      # LDAP_CA_DATEI ist ein Pfad im Container: Eine Datei aus LDAP_CA_ORDNER liegt dort unter
+      # /app/certs (volumes unten).
+      - LDAP_URL=${LDAP_URL:-}
+      - LDAP_CA_DATEI=${LDAP_CA_DATEI:-}
+      - LDAP_BIND_DN=${LDAP_BIND_DN:-}
+      - LDAP_BIND_PASSWORT=${LDAP_BIND_PASSWORT:-}
+      - LDAP_BASIS_DN=${LDAP_BASIS_DN:-}
+      - LDAP_FILTER=${LDAP_FILTER:-}
       # Leer = Selbstanmeldung aus. Muss hier stehen: Compose reicht ohne env_file
       # ausschliesslich die aufgefuehrten Variablen durch (siehe Backup-Block unten).
       - SELBSTANMELDUNG_DOMAIN=${SELBSTANMELDUNG_DOMAIN:-}
       # Keine Vorgabe: Die Adresse des ersten Admins gehört in die .env des Servers. Gelesen wird
       # sie nur bei leerer Tabelle benutzer, und dann bricht der Start ohne sie ab.
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
+      # Gesetzt, entsteht der erste Admin als LDAP-Konto mit dieser Kennung; nötig ohne IMAP_HOST.
+      - INITIAL_ADMIN_LDAP_KENNUNG=${INITIAL_ADMIN_LDAP_KENNUNG:-}
       # Leer ist der Normalfall und warnt deshalb nicht: Versendet wird mit der Mail-Konfiguration
       # in der Datenbank; die Umgebung ist nur Rückfall und Erstbefüllung (db/mail_konfig_uebernahme.go).
       - SMTP_HOST=${SMTP_HOST:-}
@@ -154,6 +165,10 @@ services:
     volumes:
       - bibliothek_uploads:/app/uploads
       - bibliothek_backups:/app/backups
+      # Zertifikate der eigenen Zertifizierungsstelle (LDAP_CA_DATEI=/app/certs/…). LDAP_CA_ORDNER
+      # zeigt auf einen Ordner außerhalb des Repositorys; ohne ihn gilt ./certs, das git und der
+      # Docker-Build auslassen.
+      - ${LDAP_CA_ORDNER:-./certs}:/app/certs:ro
     depends_on:
       postgres-db:
         condition: service_healthy

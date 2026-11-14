@@ -198,7 +198,19 @@ var fkAktionenBestand = []string{
 // „Die Datenbank hält sie für jeden anderen Schreiber" ist wahr, aber keine Antwort — so
 // stand es an chk_mehrjahresband_spanne, und zwei Schreiber liefen dagegen.
 var checkBedingungenBestand = []string{
-	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
+	"audit_log_akteur_check",
+	// Migration 172: Verfahren imap oder ldap, eine Kennung genau bei ldap, nie leer. Schreiber
+	// der beiden Spalten: Die Benutzerverwaltung (KontoAbfragen.LegeAn und Aendere) prüft
+	// Verfahren und Kennung vorher (pruefeAnmeldeverfahren, 400 mit Satz); nennt eine Änderung nur
+	// „ldap" für ein Konto ohne Kennung, übersetzt meldeLDAPKennungFehler die Ablehnung in 400 mit
+	// Satz, und Aendere leert die Kennung beim Wechsel zu imap. LegeErstenAdminAn schreibt imap oder
+	// ldap mit getrimmter, nicht leerer Kennung. Alle übrigen Schreiber von benutzer nennen die
+	// Spalten nicht und bekommen imap ohne Kennung. Gegenfrage: Die Anmeldung sucht eine Kennung
+	// nur bei anmeldeverfahren = 'ldap' und verlässt sich damit nicht auf mehr, als die Regel hält
+	// (TestAendere_AnmeldeverfahrenUndKennung).
+	"benutzer_anmeldeverfahren_bekannt", "benutzer_ldap_kennung_nicht_leer",
+	"benutzer_ldap_kennung_nur_bei_ldap",
+	"bestellungen_verlauf_bestaetigt_durch_check",
 	"bestellungen_verlauf_etiketten_groesse_check",
 	// Befragt: dieselbe Menge wie mitteltopf.IstGueltig — der Code prüft
 	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung/bestellung_mittel_pg_test.go).

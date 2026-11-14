@@ -50,7 +50,7 @@ var stilFremdeNamen = wortmenge("ServeHTTP RoundTrip MarshalJSON UnmarshalJSON W
 
 var (
 	stilKuerzel = regexp.MustCompile(`(Lmf|Dsgvo|Lusd|Dnb|Opac|Isbn|Pdf|Csv|Xlsx|Json|Sql|Http|` +
-		`Smtp|Imap|Url|Uuid|Sse|Csrf|Jwt|Ean|Id|Ip|Db)([A-Z0-9]|$)`)
+		`Smtp|Imap|Ldap|Url|Uuid|Sse|Csrf|Jwt|Ean|Id|Ip|Db)([A-Z0-9]|$)`)
 	stilDatum = regexp.MustCompile(`\b\d{1,2}\.\d{1,2}\.20\d{2}\b|\b20\d{2}-\d{2}-\d{2}\b`)
 	// stilQuelle trifft ein Datum, das zu einer Quelle gehört: Es benennt einen Erlass oder sagt,
 	// wann eine Seite gelesen wurde. Marke und Datum stehen in einer Zeile.

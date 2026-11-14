@@ -74,7 +74,7 @@ describe('Anmeldung: Domain der Schule', () => {
 	});
 
 	it('nimmt den Namen an und nennt die Domain unter dem Feld', async () => {
-		serverNennt('schule.example');
+		serverNennt({ domain: 'schule.example', ldap: false });
 		const k = render(Anmeldung);
 		const feld = await k.findByLabelText('Name oder E-Mail');
 		expect(feld.getAttribute('type')).toBe('text');
@@ -89,12 +89,28 @@ describe('Anmeldung: Domain der Schule', () => {
 	});
 
 	it('bleibt ohne Domain bei der vollen Adresse', async () => {
-		serverNennt('');
+		serverNennt({ domain: '', ldap: false });
 		const k = render(Anmeldung);
 		await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/domain'));
 		const feld = k.getByLabelText('E-Mail');
 		expect(feld.getAttribute('type')).toBe('email');
 		expect(beschreibung(feld) ?? '').toBe('');
+	});
+
+	// Mit LDAP tippt manche Person ihren Benutzernamen: Ein Feld vom Typ email ließe den Browser
+	// ihn abweisen, bevor er den Server erreicht.
+	it('nimmt mit LDAP auch einen Benutzernamen an', async () => {
+		serverNennt({ domain: '', ldap: true });
+		const k = render(Anmeldung);
+		const feld = await k.findByLabelText('E-Mail oder Benutzername');
+		expect(feld.getAttribute('type')).toBe('text');
+		expect(feld.getAttribute('autocomplete')).toBe('username');
+		expect(k.getByText('Mit den Zugangsdaten deiner Schule.')).toBeTruthy();
+
+		await klicke(k.getByRole('button', { name: 'Anmelden' }));
+		expect(beschreibung(feld)).toBe(
+			'Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen.'
+		);
 	});
 });
 

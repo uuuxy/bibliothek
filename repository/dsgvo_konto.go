@@ -28,6 +28,10 @@ type DSGVOZugangskonto struct {
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
 	ErstelltAm        time.Time  `json:"erstellt_am"`
 	AktualisiertAm    time.Time  `json:"aktualisiert_am"`
+	// Anmeldeverfahren und LDAPKennung: welcher Server das Passwort prüft und der Name der Person
+	// im Verzeichnisdienst.
+	Anmeldeverfahren string `json:"anmeldeverfahren"`
+	LDAPKennung      string `json:"ldap_kennung"`
 	// Die Klassen, deren Klassenleitung diese Adresse ist (klassen_lehrer_mapping): Dorthin
 	// geht die Liste der überfälligen Medien einer Klasse.
 	Klassenleitungen []string             `json:"klassenleitungen"`
@@ -66,7 +70,7 @@ type DSGVOKontoEreignis struct {
 // (dsgvo_konto_spalten_pg_test.go) hält sie gegen jede Spalte von benutzer.
 const dsgvoKontoSQL = `
 	SELECT id, email, vorname, nachname, rolle::text, aktiv, zugang_beantragt_am,
-	       erstellt_am, aktualisiert_am
+	       erstellt_am, aktualisiert_am, anmeldeverfahren, coalesce(ldap_kennung, '')
 	FROM benutzer
 	WHERE leser_id = $1`
 
@@ -107,7 +111,7 @@ func LadeDSGVOZugangskonto(ctx context.Context, q Datenbank, leserID string) (*D
 	var k DSGVOZugangskonto
 	err := q.QueryRow(ctx, dsgvoKontoSQL, leserID).Scan(
 		&k.ID, &k.Email, &k.Vorname, &k.Nachname, &k.Rolle, &k.Aktiv, &k.ZugangBeantragtAm,
-		&k.ErstelltAm, &k.AktualisiertAm)
+		&k.ErstelltAm, &k.AktualisiertAm, &k.Anmeldeverfahren, &k.LDAPKennung)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

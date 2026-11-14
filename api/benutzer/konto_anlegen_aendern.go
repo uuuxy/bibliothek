@@ -18,15 +18,17 @@ type kontoPflege interface {
 	// IstEmailVergeben meldet, ob eine Adresse schon zu einem Konto gehört; ausserID nimmt das
 	// Konto aus, das gerade bearbeitet wird.
 	IstEmailVergeben(ctx context.Context, email string, ausserID string) (bool, error)
+	// IstLDAPKennungVergeben meldet, ob eine LDAP-Kennung schon als Kennung oder E-Mail zu einem
+	// anderen Konto gehört.
+	IstLDAPKennungVergeben(ctx context.Context, kennung string, ausserID string) (bool, error)
 	// IstAusweisnummerVergeben meldet, ob eine Ausweisnummer schon vergeben ist; die Leserzeile
 	// des Kontos ausserID zählt nicht mit.
 	IstAusweisnummerVergeben(ctx context.Context, ausweisnummer string, ausserID string) (bool, error)
 	// HatLeserzeileOhneKonto meldet, ob ein Kollege dieses Namens schon eine Leserzeile ohne
 	// Konto hat.
 	HatLeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error)
-	// LegeAn legt ein Konto samt Leserzeile an und liefert seine ID; ausweisnummer nil oder ""
-	// lässt die Zeile ohne Nummer.
-	LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error)
+	// LegeAn legt ein Konto samt Leserzeile an und liefert seine ID.
+	LegeAn(ctx context.Context, neu repository.KontoNeu) (string, error)
 	// Aendere ändert die genannten Felder eines Kontos und liefert seinen Stand danach;
 	// repository.ErrKontoNichtGefunden, wenn es das Konto nicht gibt.
 	Aendere(ctx context.Context, p repository.KontoAenderung) (repository.KontoStand, error)
@@ -44,10 +46,13 @@ type kontoAnlegenAnfrage struct {
 	Nachname  string `json:"nachname" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
 	Rolle     string `json:"rolle" validate:"required"`
+	// Anmeldeverfahren fehlt oder ist "imap" oder "ldap"; LDAPKennung braucht nur LDAP.
+	Anmeldeverfahren string `json:"anmeldeverfahren"`
+	LDAPKennung      string `json:"ldap_kennung"`
 }
 
-// KontoAnlegen legt ein Konto an. Ein Passwort gibt es nicht: Angemeldet wird über den
-// Schul-Mailserver (IMAP) oder mit Barcode und PIN.
+// KontoAnlegen legt ein Konto an. Ein Passwort gibt es nicht: Es prüft der Mailserver der Schule
+// (IMAP) oder der Verzeichnisdienst (LDAP).
 func (t *Tueren) KontoAnlegen(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.legeKontoAn(w, r, kontoAbfragen)
@@ -84,6 +89,13 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 		return
 	}
 
+	verfahren, kennung, ok := pruefeAnmeldeverfahren(ctx, w, kontoAbfragen, anmeldePruefung{
+		verfahren: &req.Anmeldeverfahren, kennung: &req.LDAPKennung, neu: true,
+	})
+	if !ok {
+		return
+	}
+
 	nummer, ok := pruefeAusweisnummerEindeutig(ctx, w, kontoAbfragen, ausweisPruefung{
 		nummer:          req.BarcodeID,
 		ausgenommeneID:  "",
@@ -97,16 +109,22 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 
 	// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
 	// von selbst (Trigger trg_benutzer_hat_leserzeile).
-	kontoID, err := kontoAbfragen.LegeAn(ctx, nummer, req.Vorname, req.Nachname, req.Email, rolle)
+	kontoID, err := kontoAbfragen.LegeAn(ctx, repository.KontoNeu{
+		Vorname: req.Vorname, Nachname: req.Nachname, Email: req.Email, Rolle: rolle,
+		Anmeldeverfahren: *verfahren, LDAPKennung: deref(kennung), Ausweisnummer: nummer,
+	})
 	if err != nil {
-		if meldeAusweisKollision(w, err) {
+		if meldeAusweisKollision(w, err) || meldeLDAPKennungFehler(w, err) {
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	t.ProtokolliereKontoAnlage(r.Context(), kontoID, req.Email, rolle, req.Vorname, req.Nachname)
+	t.ProtokolliereKontoAnlage(r.Context(), tuer.KontoAnlage{
+		KontoID: kontoID, Email: req.Email, Rolle: rolle, Vorname: req.Vorname, Nachname: req.Nachname,
+		Anmeldeverfahren: *verfahren, LDAPKennung: deref(kennung),
+	})
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
@@ -115,17 +133,20 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 // kontoAendernAnfrage nennt, was an einem Konto geändert wird. Ein fehlendes Feld bleibt, wie es
 // ist: Die Maske schickt nur, was sie seit dem Öffnen geändert hat, damit sie nichts
 // überschreibt, was ein anderer Platz inzwischen gespeichert hat. Ein Passwort gibt es hier
-// nicht; Anmeldungen laufen über den Schul-Mailserver (IMAP).
+// nicht; es prüft der Mailserver der Schule (IMAP) oder der Verzeichnisdienst (LDAP).
 type kontoAendernAnfrage struct {
-	BarcodeID *string `json:"barcode_id"`
-	Vorname   *string `json:"vorname"`
-	Nachname  *string `json:"nachname"`
-	Email     *string `json:"email" validate:"omitempty,email"`
-	Rolle     *string `json:"rolle"`
-	Aktiv     *bool   `json:"aktiv"`
+	BarcodeID        *string `json:"barcode_id"`
+	Vorname          *string `json:"vorname"`
+	Nachname         *string `json:"nachname"`
+	Email            *string `json:"email" validate:"omitempty,email"`
+	Rolle            *string `json:"rolle"`
+	Aktiv            *bool   `json:"aktiv"`
+	Anmeldeverfahren *string `json:"anmeldeverfahren"`
+	LDAPKennung      *string `json:"ldap_kennung"`
 }
 
-// KontoAendern ändert Name, E-Mail, Ausweisnummer, Rolle oder „aktiv" eines Kontos.
+// KontoAendern ändert Name, E-Mail, Ausweisnummer, Rolle, „aktiv" oder das Anmeldeverfahren
+// eines Kontos.
 func (t *Tueren) KontoAendern(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereKonto(w, r, kontoAbfragen)
@@ -160,7 +181,7 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 	// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
 	// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
 	// laufen vor jedem Schreibzugriff (siehe admin_schutz.go).
-	if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
+	if !pruefeSelbstschutz(w, r, id, req) {
 		return
 	}
 	if req.Rolle != nil && !pruefeAdminVergabe(w, r, *req.Rolle) {
@@ -184,10 +205,16 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 
 	// Konten und Rollen stehen im Protokoll, damit sich feststellen lässt, wer ein Konto wann
 	// angelegt oder geändert hat. Der Eintrag nennt den Stand nach der Änderung, auch für
-	// Felder, die der Rumpf nicht nannte.
-	t.ProtokolliereVerwaltung(r.Context(), "USER_UPDATE", map[string]any{
+	// Felder, die der Rumpf nicht nannte. Die LDAP-Kennung steht dabei wie die E-Mail: Beide
+	// öffnen das Konto.
+	details := map[string]any{
 		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
-	})
+		"anmeldeverfahren": stand.Anmeldeverfahren,
+	}
+	if stand.LDAPKennung != "" {
+		details["ldap_kennung"] = stand.LDAPKennung
+	}
+	t.ProtokolliereVerwaltung(r.Context(), "USER_UPDATE", details)
 
 	t.Rechte.Leere()
 
@@ -198,7 +225,8 @@ func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 // nenntNichts sagt, ob der Rumpf kein Feld des Kontos nennt.
 func (a kontoAendernAnfrage) nenntNichts() bool {
 	return a.BarcodeID == nil && a.Vorname == nil && a.Nachname == nil &&
-		a.Email == nil && a.Rolle == nil && a.Aktiv == nil
+		a.Email == nil && a.Rolle == nil && a.Aktiv == nil &&
+		a.Anmeldeverfahren == nil && a.LDAPKennung == nil
 }
 
 // pruefeGenanntePflichtfelder lehnt ein genanntes, aber leeres Pflichtfeld ab: Vorname,
@@ -238,6 +266,15 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen
 	if req.Email != nil && !pruefeEmailEindeutig(ctx, w, kontoAbfragen, *req.Email, id) {
 		return aenderung, false
 	}
+	if req.Anmeldeverfahren != nil || req.LDAPKennung != nil {
+		verfahren, kennung, ok := pruefeAnmeldeverfahren(ctx, w, kontoAbfragen, anmeldePruefung{
+			verfahren: req.Anmeldeverfahren, kennung: req.LDAPKennung, ausgenommeneID: id,
+		})
+		if !ok {
+			return aenderung, false
+		}
+		aenderung.Anmeldeverfahren, aenderung.LDAPKennung = verfahren, kennung
+	}
 	if req.BarcodeID != nil {
 		nummer, ok := pruefeAusweisnummerEindeutig(ctx, w, kontoAbfragen, ausweisPruefung{
 			nummer:          *req.BarcodeID,
@@ -263,7 +300,7 @@ func antworteAufKontoAenderungsfehler(w http.ResponseWriter, err error) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, err)
 		return
 	}
-	if meldeAusweisKollision(w, err) {
+	if meldeAusweisKollision(w, err) || meldeLDAPKennungFehler(w, err) {
 		return
 	}
 	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

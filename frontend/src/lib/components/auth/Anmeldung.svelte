@@ -18,27 +18,33 @@
 	const passwortFehlt = $derived(verlangt && !authStore.loginPassword);
 
 	// Ist die Domain der Schule gesetzt, genügt der Name vor dem @; den Rest ergänzt der Server.
+	// Gibt es LDAP, tippt manche Person ihren Benutzernamen, und das Feld verlangt keine Adresse.
 	// Ohne Antwort bleibt das Feld bei der vollen Adresse.
 	let domain = $state('');
+	let ldap = $state(false);
 	async function ladeDomain() {
 		try {
 			const res = await fetch('/api/auth/domain');
-			if (!res.ok) {
-				domain = '';
-				return;
-			}
+			if (!res.ok) return;
 			const wert = await res.json();
-			domain = typeof wert === 'string' ? wert : '';
+			domain = typeof wert?.domain === 'string' ? wert.domain : '';
+			ldap = wert?.ldap === true;
 		} catch {
 			domain = '';
 		}
 	}
+	const freiesFeld = $derived(Boolean(domain) || ldap);
+	const etikett = $derived(
+		ldap ? 'E-Mail oder Benutzername' : domain ? 'Name oder E-Mail' : 'E-Mail'
+	);
 	// Ein Text unter dem Feld: Der Fehler ersetzt den Hinweis, statt unter ihm zu stehen.
 	const emailHinweis = $derived.by(() => {
-		if (emailFehlt)
+		if (emailFehlt) {
+			if (ldap) return 'Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen.';
 			return domain
 				? 'Bitte deinen Namen oder deine Schul-E-Mail eintragen.'
 				: 'Bitte deine Schul-E-Mail eintragen.';
+		}
 		return domain ? `Der Name vor dem @ genügt – @${domain} ergänzt das Programm.` : '';
 	});
 
@@ -68,16 +74,18 @@
 		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">
 			<h2 class="text-base font-bold text-on-surface">Anmelden</h2>
-			<p class="text-sm text-on-surface-variant">Mit den Zugangsdaten deiner Schul-E-Mail.</p>
+			<p class="text-sm text-on-surface-variant">
+				{ldap ? 'Mit den Zugangsdaten deiner Schule.' : 'Mit den Zugangsdaten deiner Schul-E-Mail.'}
+			</p>
 		</div>
 		<!-- Die Beschriftung steht über dem Feld wie in jeder Maske: Ein Platzhalter verschwände beim
 		     Tippen, und M3 verlangt „Label text should always be visible". -->
 		<div class="w-full space-y-4">
 			<Feld
 				id="login-email"
-				etikett={domain ? 'Name oder E-Mail' : 'E-Mail'}
-				type={domain ? 'text' : 'email'}
-				autocomplete={domain ? 'username' : 'email'}
+				{etikett}
+				type={freiesFeld ? 'text' : 'email'}
+				autocomplete={freiesFeld ? 'username' : 'email'}
 				autocapitalize="none"
 				spellcheck="false"
 				bind:value={authStore.loginEmail}

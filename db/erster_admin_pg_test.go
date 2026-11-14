@@ -30,6 +30,8 @@ func ersterStart(t *testing.T, tx pgx.Tx, adresse string) *Verbindung {
 		t.Fatalf("Konten leeren: %v", err)
 	}
 	t.Setenv("INITIAL_ADMIN_EMAIL", adresse)
+	t.Setenv("IMAP_HOST", "imap.example.test")
+	t.Setenv("INITIAL_ADMIN_LDAP_KENNUNG", "")
 	return &Verbindung{Pool: txAlsPool{tx: tx}}
 }
 
@@ -141,4 +143,30 @@ func TestLegeErstenAdminAn_KeineAdresseBrichtDenStartAb(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Ohne Mailserver käme ein IMAP-Admin nicht hinein: Mit INITIAL_ADMIN_LDAP_KENNUNG entsteht der
+// erste Admin als LDAP-Konto, ohne sie und ohne IMAP_HOST bricht der Start ab und die Tabelle
+// bleibt leer.
+func TestLegeErstenAdminAn_OhneMailserverAlsLDAPKonto(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	inTx(t, pool, func(tx pgx.Tx) {
+		d := ersterStart(t, tx, "erste.leitung@schule.example")
+		t.Setenv("IMAP_HOST", "")
+		if err := d.LegeErstenAdminAn(ctx); err == nil {
+			t.Fatal("LegeErstenAdminAn ohne IMAP_HOST und ohne LDAP-Kennung: kein Fehler")
+		}
+		if n := zaehleKonten(t, tx, `true`); n != 0 {
+			t.Fatalf("nach dem Abbruch %d Konten, erwartet 0", n)
+		}
+
+		t.Setenv("INITIAL_ADMIN_LDAP_KENNUNG", " eleitung ")
+		if err := d.LegeErstenAdminAn(ctx); err != nil {
+			t.Fatalf("LegeErstenAdminAn: %v", err)
+		}
+		if n := zaehleKonten(t, tx, `rolle = 'admin' AND aktiv AND anmeldeverfahren = 'ldap' AND ldap_kennung = 'eleitung'`); n != 1 {
+			t.Errorf("%d LDAP-Admins mit Kennung eleitung, erwartet 1", n)
+		}
+	})
 }

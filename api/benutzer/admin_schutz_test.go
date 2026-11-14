@@ -36,7 +36,11 @@ func (a *eskalationsAttrappe) HatLeserzeileOhneKonto(_ context.Context, _, _ str
 	return false, nil
 }
 
-func (a *eskalationsAttrappe) LegeAn(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
+func (a *eskalationsAttrappe) IstLDAPKennungVergeben(_ context.Context, _, _ string) (bool, error) {
+	return false, nil
+}
+
+func (a *eskalationsAttrappe) LegeAn(_ context.Context, _ repository.KontoNeu) (string, error) {
 	a.angelegt = true
 	return "neu-1", nil
 }

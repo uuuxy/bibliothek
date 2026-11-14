@@ -7,9 +7,9 @@ import (
 
 // errAnmeldedienstGestoert heißt: Die Anmeldung selbst ist gestört (Datenbank nicht erreichbar,
 // Pool erschöpft, Frist abgelaufen), im Unterschied zum falschen Passwort (401) und zum Ausfall
-// des Mailservers (errMailserverNichtErreichbar). Die Tür antwortet mit 503 und zählt keinen
-// Fehlversuch, sonst sperrte sich eine Lehrkraft mit richtigem Passwort während eines Aussetzers
-// der Datenbank für 15 Minuten selbst aus.
+// von Mailserver oder Verzeichnisdienst (errAnmeldeserverNichtErreichbar). Die Tür antwortet mit
+// 503 und zählt keinen Fehlversuch, sonst sperrte sich eine Lehrkraft mit richtigem Passwort
+// während eines Aussetzers der Datenbank für 15 Minuten selbst aus.
 var errAnmeldedienstGestoert = errors.New("anmeldedienst gestört — Anmeldung derzeit nicht möglich, bitte später erneut versuchen")
 
 // ErrPruefungGestoert heißt: Die Sitzung ließ sich nicht prüfen, weil die Datenbank nicht

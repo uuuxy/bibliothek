@@ -6,6 +6,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { rollenName } from './benutzerRollen.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -58,6 +59,7 @@
 				<tr>
 					<th>Name</th>
 					<th>E-Mail</th>
+					<th>Anmeldung</th>
 					<th>Ausweisnummer</th>
 					<th>Rolle</th>
 					<th>Status</th>
@@ -66,6 +68,8 @@
 			</thead>
 			<tbody class="font-medium">
 				{#each gefiltert as user, _i (_i)}
+					<!-- Das eigene Konto löscht niemand; der Server lehnt es ab, der Knopf sagt es vorher. -->
+					{@const eigenes = user.id === authStore.currentUser?.user_id}
 					<tr>
 						<td>
 							<span class="font-semibold">{user.vorname} {user.nachname}</span>
@@ -73,6 +77,9 @@
 						<!-- Eine Adresse hat keine Leerzeichen; ohne Umbruch an beliebiger Stelle
 						     schöbe eine lange die Knöpfe aus dem Fenster. -->
 						<td class="min-w-32 wrap-anywhere">{user.email}</td>
+						<!-- Welcher Server das Passwort prüft; eine Eigenschaft, kein Zustand, deshalb
+						     ohne Abzeichen. -->
+						<td>{user.anmeldeverfahren === 'ldap' ? 'LDAP' : 'IMAP'}</td>
 						<td class="whitespace-nowrap">
 							{#if user.barcode_id}
 								<span class="font-mono">{user.barcode_id}</span>
@@ -111,7 +118,8 @@
 									variant="symbol"
 									size="sm"
 									onclick={() => frageLoeschen(user)}
-									data-tip="Löschen"
+									disabled={eigenes}
+									data-tip={eigenes ? 'Das eigene Konto lässt sich nicht löschen' : 'Löschen'}
 									aria-label="{user.vorname} {user.nachname} löschen"
 								>
 									<Trash class="h-4 w-4" aria-hidden="true" />

@@ -65,6 +65,13 @@ services:
       # Mit dieser Adresse melden sich die Browser-Tests an (ADMIN_EMAIL in frontend/e2e/helpers.js).
       - INITIAL_ADMIN_EMAIL=admin@schule.example
       - IMAP_HOST=mock
+      # Verzeichnisdienst für Konten mit Anmeldeverfahren LDAP; leer = kein LDAP (siehe .env.example).
+      - LDAP_URL=${LDAP_URL:-}
+      - LDAP_CA_DATEI=${LDAP_CA_DATEI:-}
+      - LDAP_BIND_DN=${LDAP_BIND_DN:-}
+      - LDAP_BIND_PASSWORT=${LDAP_BIND_PASSWORT:-}
+      - LDAP_BASIS_DN=${LDAP_BASIS_DN:-}
+      - LDAP_FILTER=${LDAP_FILTER:-}
       # E2E: e2e/selbstanmeldung.spec.js meldet ein @test.local-Postfach ohne Konto an.
       - SELBSTANMELDUNG_DOMAIN=test.local
       - SMTP_HOST=${SMTP_HOST:-}
@@ -88,6 +95,10 @@ services:
     volumes:
       - bibliothek_uploads_local:/app/uploads
       - bibliothek_backups_local:/app/backups
+      # Zertifikate der eigenen Zertifizierungsstelle (LDAP_CA_DATEI=/app/certs/…). LDAP_CA_ORDNER
+      # zeigt auf einen Ordner außerhalb des Repositorys; ohne ihn gilt ./certs, das git und der
+      # Docker-Build auslassen.
+      - ${LDAP_CA_ORDNER:-./certs}:/app/certs:ro
     depends_on:
       postgres-db:
         condition: service_healthy

@@ -65,8 +65,8 @@ func TestAnmelden_UnbekanntesKontoIst401(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("unbekannt@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+		WithArgs("unbekannt@schule.de", "unbekannt@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}))
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
@@ -85,9 +85,9 @@ func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("inaktiv@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-1", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false))
+		WithArgs("inaktiv@schule.de", "inaktiv@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("u-1", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false, "imap", ""))
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
@@ -116,9 +116,9 @@ func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("nberger@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
+		WithArgs("nberger@schule.de", "nberger@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false, "imap", ""))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
@@ -170,8 +170,8 @@ func scheitereFuenfMal(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, em
 	rumpf := fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email)
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
-			WithArgs(email).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+			WithArgs(email, email).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}))
 		if rec := rufeAnmelden(t, a, mock, rumpf); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d = %d, erwartet 401", i, rec.Code)
 		}
@@ -211,8 +211,8 @@ func TestAnmelden_BremseGehoertDerAnmeldung(t *testing.T) {
 
 	zweite, zweiterMock := newTestAnmeldung(t, 12*time.Hour)
 	zweiterMock.ExpectQuery(benutzerSelect).
-		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+		WithArgs(email, email).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}))
 	rec := rufeAnmelden(t, zweite, zweiterMock, fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email))
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("Anmelden an der zweiten Anmeldung: Status %d, erwartet 401; die Fehlversuche der ersten zählen dort nicht", rec.Code)
@@ -232,9 +232,9 @@ func TestAnmelden_TokenTraegtKeineAusweisnummer(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("nberger@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
+		WithArgs("nberger@schule.de", "nberger@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false, "imap", ""))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := rufeAnmelden(t, a, mock,
@@ -304,14 +304,18 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	email := fmt.Sprintf("ausfall-%d@schule.de", time.Now().UnixNano())
 	rumpf := fmt.Sprintf(`{"email":%q,"password":"richtig"}`, email)
 
-	// Sechs Versuche gegen den toten Server: jedes Mal 503, nie 429, und die Datenbank wird nie
-	// gefragt.
+	// Sechs Versuche gegen den toten Server: Die Datenbank findet das Konto, der Mailserver
+	// antwortet nicht; jedes Mal 503, nie 429.
 	for i := 1; i <= 6; i++ {
+		mock.ExpectQuery(benutzerSelect).
+			WithArgs(email, email).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+				AddRow("u-1", "admin", "Zurueck", "ImDienst", true, email, false, "imap", ""))
 		rec := rufeAnmelden(t, a, mock, rumpf)
 		if rec.Code != http.StatusServiceUnavailable {
 			t.Fatalf("Versuch %d = %d, erwartet 503 bei totem Mailserver: %s", i, rec.Code, rec.Body.String())
 		}
-		const erwartet = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
+		const erwartet = "Der Anmeldeserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 		if got := fehlermeldungAus(t, rec); got != erwartet {
 			t.Fatalf("Versuch %d: Meldung %q, erwartet %q", i, got, erwartet)
 		}
@@ -321,9 +325,9 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	// Versuche während des Ausfalls keinen Fehlversuch zählen durften.
 	aktiviereIMAPAttrappe(t)
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-1", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
+		WithArgs(email, email).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt", "anmeldeverfahren", "ldap_kennung"}).
+			AddRow("u-1", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false, "imap", ""))
 	erwarteSitzungAngelegt(mock, "u-1")
 
 	rec := rufeAnmelden(t, a, mock, rumpf)

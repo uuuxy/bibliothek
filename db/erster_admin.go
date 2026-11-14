@@ -13,14 +13,14 @@ import (
 // Ohne Ausweisnummer: Sie gehört zur Leserzeile, die der Trigger trg_benutzer_hat_leserzeile mit
 // anlegt. Die Nummer vergibt trg_aktives_konto_hat_ausweis mit dem Commit.
 const sqlErsterAdmin = `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('System', 'Administrator', $1, 'admin', true)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, anmeldeverfahren, ldap_kennung)
+		VALUES ('System', 'Administrator', $1, 'admin', true, $2, NULLIF($3, ''))
 		RETURNING id
 	`
 
 // LegeErstenAdminAn legt das erste Konto an, wenn es noch keines gibt: einen Admin mit der
-// Adresse aus INITIAL_ADMIN_EMAIL. Ein Passwort braucht es nicht; angemeldet wird über den
-// Mailserver der Schule (IMAP).
+// Adresse aus INITIAL_ADMIN_EMAIL. Ein Passwort braucht es nicht; es prüft der Mailserver der
+// Schule (IMAP) oder, mit INITIAL_ADMIN_LDAP_KENNUNG, der Verzeichnisdienst (LDAP).
 func (v *Verbindung) LegeErstenAdminAn(ctx context.Context) error {
 	var anzahl int
 	err := v.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer").Scan(&anzahl)
@@ -47,11 +47,22 @@ func (v *Verbindung) LegeErstenAdminAn(ctx context.Context) error {
 		return fmt.Errorf("INITIAL_ADMIN_EMAIL ist keine E-Mail-Adresse: %q", email)
 	}
 
+	kennung := strings.TrimSpace(os.Getenv("INITIAL_ADMIN_LDAP_KENNUNG"))
+	verfahren := "imap"
+	if kennung != "" {
+		verfahren = "ldap"
+	}
+	// Ohne Mailserver käme ein IMAP-Admin nicht hinein, und nach diesem Start wirken die
+	// Variablen nicht mehr.
+	if verfahren == "imap" && strings.TrimSpace(os.Getenv("IMAP_HOST")) == "" {
+		return errors.New("IMAP_HOST ist nicht gesetzt — ohne Mailserver braucht der erste Admin INITIAL_ADMIN_LDAP_KENNUNG")
+	}
+
 	var adminID string
-	if err := v.Pool.QueryRow(ctx, sqlErsterAdmin, email).Scan(&adminID); err != nil {
+	if err := v.Pool.QueryRow(ctx, sqlErsterAdmin, email, verfahren, kennung).Scan(&adminID); err != nil {
 		return fmt.Errorf("failed to insert initial admin: %w", err)
 	}
 
-	slog.Info("Erster Admin-Benutzer wurde erfolgreich initialisiert.", "email", email)
+	slog.Info("Erster Admin-Benutzer wurde erfolgreich initialisiert.", "email", email, "anmeldeverfahren", verfahren)
 	return nil
 }

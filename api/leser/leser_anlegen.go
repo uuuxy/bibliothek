@@ -306,7 +306,10 @@ func (t *Tueren) legeLeserAn(ctx context.Context, w http.ResponseWriter, req les
 	// Dieselbe Spur wie über Benutzer & Rechte: Auch ein Konto, das über die Leserdatei
 	// entsteht, hinterlässt einen Eintrag im Protokoll.
 	if kontoID != "" {
-		t.ProtokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
+		t.ProtokolliereKontoAnlage(ctx, tuer.KontoAnlage{
+			KontoID: kontoID, Email: strings.ToLower(strings.TrimSpace(req.Email)), Rolle: "kollegium",
+			Vorname: req.Vorname, Nachname: req.Nachname, Anmeldeverfahren: repository.AnmeldeverfahrenIMAP,
+		})
 	}
 	return leserID, barcodeID, true
 }

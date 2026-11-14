@@ -67,17 +67,24 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 	return true
 }
 
-// pruefeSelbstschutz verhindert, dass jemand die eigene Rolle ändert oder das eigene Konto
-// deaktiviert, gleich welcher Rolle er angehört. Er darf nicht unterstellen, wer sich selbst
-// bearbeitet, sei Admin: Dann scheiterte ein Mitarbeiter mit manage_users am Speichern seines
-// eigenen Datensatzes, und durch ginge ausgerechnet rolle:"admin".
+// pruefeSelbstschutz verhindert, dass jemand die eigene Rolle oder das eigene Anmeldeverfahren
+// ändert oder das eigene Konto deaktiviert, gleich welcher Rolle er angehört. Er darf nicht
+// unterstellen, wer sich selbst bearbeitet, sei Admin: Dann scheiterte ein Mitarbeiter mit
+// manage_users am Speichern seines eigenen Datensatzes, und durch ginge ausgerechnet
+// rolle:"admin". Ein Tippfehler in der eigenen LDAP-Kennung sperrte den Admin bei der nächsten
+// Anmeldung aus, und gibt es keinen zweiten, hilft nur noch die Datenbank.
 //
-// neueRolle und aktiv sind nil, wenn die Änderung das Feld nicht nennt: Dann bleibt es, wie
-// es ist, und es gibt nichts zu schützen.
-func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueRolle *string, aktiv *bool) bool {
+// Ein Feld ist nil, wenn die Änderung es nicht nennt: Dann bleibt es, wie es ist, und es gibt
+// nichts zu schützen.
+func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, req kontoAendernAnfrage) bool {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok || claims.KontoID != id {
 		return true
+	}
+	neueRolle, aktiv := req.Rolle, req.Aktiv
+	if req.Anmeldeverfahren != nil || req.LDAPKennung != nil {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das eigene Anmeldeverfahren lässt sich nicht ändern. Das muss eine andere Person mit Administratorrechten tun.", nil)
+		return false
 	}
 	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die eigene Rolle lässt sich nicht ändern. Das muss eine andere Person mit Administratorrechten tun.", nil)

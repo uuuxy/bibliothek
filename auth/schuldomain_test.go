@@ -36,11 +36,13 @@ func TestErgaenzeSchulDomain_OhneDomainKeineRaterei(t *testing.T) {
 
 // Die Anmeldeseite bekommt die Domain als Wert, ohne Anmeldung; ohne Domain einen leeren Text.
 func TestDomain_NenntDieDomainDerSchule(t *testing.T) {
-	for _, tt := range []struct{ eingetragen, want string }{
-		{"Schule.Example", `"schule.example"`},
-		{"", `""`},
+	for _, tt := range []struct{ eingetragen, ldapURL, want string }{
+		{"Schule.Example", "", `{"domain":"schule.example","ldap":false}`},
+		{"", "", `{"domain":"","ldap":false}`},
+		{"", "ldaps://dc.schule.test", `{"domain":"","ldap":true}`},
 	} {
 		t.Setenv(selbstanmeldeDomainVariable, tt.eingetragen)
+		t.Setenv("LDAP_URL", tt.ldapURL)
 		rec := httptest.NewRecorder()
 		Domain()(rec, httptest.NewRequest(http.MethodGet, "/api/auth/domain", nil))
 		if rec.Code != http.StatusOK {

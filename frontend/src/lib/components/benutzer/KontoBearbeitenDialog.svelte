@@ -32,7 +32,16 @@
 	// Die Rolle sagt, was jemand darf — mehr entscheidet dieses Formular nicht. Das Feld
 	// „Personenart" ist mit Migration 125 weggefallen: Wer jemand ist, steht an seiner
 	// Leserzeile und gehört in die Leserdatei.
-	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN_AUSWAHL }];
+	// Dazu, welcher Server das Passwort prüft. Die LDAP-Kennung öffnet das Konto wie die E-Mail;
+	// ohne sie findet der Verzeichnisdienst den Eintrag nicht.
+	const ANMELDEVERFAHREN = [
+		{ value: 'imap', label: 'Mailserver der Schule (IMAP)' },
+		{ value: 'ldap', label: 'Verzeichnisdienst (LDAP)' }
+	];
+	const AUSWAHLEN = [
+		{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN_AUSWAHL },
+		{ id: 'anmeldeverfahren', label: 'Anmeldung über', options: ANMELDEVERFAHREN }
+	];
 </script>
 
 <Dialog {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
@@ -70,6 +79,17 @@
 				<Select id={auswahl.id} bind:value={formular[auswahl.id]} options={auswahl.options} />
 			</div>
 		{/each}
+		{#if formular.anmeldeverfahren === 'ldap'}
+			<Feld
+				id="ldap_kennung"
+				etikett="LDAP-Kennung"
+				bind:value={formular.ldap_kennung}
+				required
+				autocapitalize="none"
+				spellcheck="false"
+				hint="Der Name, mit dem sich die Person anmeldet, etwa ihr Kürzel."
+			/>
+		{/if}
 		{#if istAenderung}
 			<div class="flex items-center gap-3 py-1.5">
 				<Switch

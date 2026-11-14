@@ -31,6 +31,10 @@ type kontoAntwort struct {
 	// (Zugangsanfragen.svelte).
 	LeserID string   `json:"leser_id"`
 	Rechte  []string `json:"permissions"`
+	// Anmeldeverfahren und LDAPKennung füllen den Dialog zum Bearbeiten; ohne sie stünde dort
+	// jedes Konto als IMAP.
+	Anmeldeverfahren string `json:"anmeldeverfahren"`
+	LDAPKennung      string `json:"ldap_kennung"`
 }
 
 // Konten liefert alle Konten mit den Rechten ihrer Rolle.
@@ -66,6 +70,8 @@ func (t *Tueren) Konten(kontoAbfragen *repository.KontoAbfragen) http.HandlerFun
 
 				ZugangBeantragtAm: konto.ZugangBeantragtAm,
 				LeserID:           konto.LeserID,
+				Anmeldeverfahren:  konto.Anmeldeverfahren,
+				LDAPKennung:       konto.LDAPKennung,
 			}
 
 			// Die Rechte kommen aus role_permissions wie bei der Anmeldung und /api/auth/me,

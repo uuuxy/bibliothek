@@ -136,7 +136,42 @@ describe('benutzerFormular', () => {
 			nachname: 'K',
 			email: 'n@k',
 			rolle: 'mitarbeiter',
+			aktiv: true,
+			anmeldeverfahren: 'imap',
+			ldap_kennung: ''
+		});
+	});
+
+	// Verfahren und Kennung gehen zusammen an den Server: Eine Kennung allein lehnt er ab, denn ob
+	// das Konto LDAP ist, wüsste er sonst nicht.
+	it('schickt Anmeldeverfahren und LDAP-Kennung zusammen', () => {
+		const imap = benutzerFormularAus({
+			id: 'i',
+			vorname: 'A',
+			nachname: 'B',
+			email: 'a@b',
+			rolle: 'helfer',
 			aktiv: true
 		});
+		imap.anmeldeverfahren = 'ldap';
+		imap.ldap_kennung = 'abeh';
+		expect(benutzerNutzlast(imap)).toEqual({ anmeldeverfahren: 'ldap', ldap_kennung: 'abeh' });
+
+		const ldap = benutzerFormularAus({
+			id: 'l',
+			vorname: 'A',
+			nachname: 'B',
+			email: 'a@b',
+			rolle: 'helfer',
+			aktiv: true,
+			anmeldeverfahren: 'ldap',
+			ldap_kennung: 'abeh'
+		});
+		ldap.ldap_kennung = 'abeh2';
+		expect(benutzerNutzlast(ldap)).toEqual({ anmeldeverfahren: 'ldap', ldap_kennung: 'abeh2' });
+
+		// Zurück zu IMAP: Die Kennung geht leer mit, ein Rest aus dem Feld nicht.
+		ldap.anmeldeverfahren = 'imap';
+		expect(benutzerNutzlast(ldap)).toEqual({ anmeldeverfahren: 'imap', ldap_kennung: '' });
 	});
 });

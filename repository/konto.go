@@ -9,6 +9,7 @@ import (
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // Konto ist der Zugang einer Person zum Programm: Lehrkraft, Verwaltung oder Helfer (Tabelle
@@ -33,6 +34,11 @@ type Konto struct {
 	// LeserID ist die Leserzeile des Kontos: Dort stehen Ausweis und Ausleihen. Jedes Konto
 	// hat eine; dafür sorgt ein Trigger und nicht der Rufer.
 	LeserID string `json:"leser_id"`
+	// Anmeldeverfahren nennt den Server, der das Passwort prüft (AnmeldeverfahrenIMAP oder
+	// AnmeldeverfahrenLDAP).
+	Anmeldeverfahren string `json:"anmeldeverfahren"`
+	// LDAPKennung ist der Name des Kontos im Verzeichnisdienst; leer bei IMAP.
+	LDAPKennung string `json:"ldap_kennung"`
 }
 
 // KontoAbfragen liest und schreibt die Konten: die Zugänge von Lehrkräften, Verwaltung und
@@ -54,7 +60,8 @@ func NewKontoAbfragen(pool db.Pool) *KontoAbfragen {
 func (a *KontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 	query := `
 		SELECT b.id, coalesce(l.barcode_id, ''), b.vorname, b.nachname, b.email, b.rolle, b.aktiv,
-		       b.erstellt_am, b.zugang_beantragt_am, coalesce(b.leser_id::text, '')
+		       b.erstellt_am, b.zugang_beantragt_am, coalesce(b.leser_id::text, ''),
+		       b.anmeldeverfahren, coalesce(b.ldap_kennung, '')
 		FROM benutzer b
 		LEFT JOIN leser l ON l.id = b.leser_id
 		ORDER BY b.nachname COLLATE deutsch, b.vorname COLLATE deutsch
@@ -69,7 +76,7 @@ func (a *KontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 	for rows.Next() {
 		var k Konto
 		err := rows.Scan(&k.ID, &k.BarcodeID, &k.Vorname, &k.Nachname, &k.Email, &k.Rolle, &k.Aktiv, &k.ErstelltAm,
-			&k.ZugangBeantragtAm, &k.LeserID)
+			&k.ZugangBeantragtAm, &k.LeserID, &k.Anmeldeverfahren, &k.LDAPKennung)
 		if err != nil {
 			return nil, err
 		}
@@ -95,6 +102,21 @@ func (a *KontoAbfragen) IstEmailVergeben(ctx context.Context, email string, auss
 	} else {
 		err = a.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE LOWER(email) = LOWER($1) AND id != $2)", email, ausserID).Scan(&vergeben)
 	}
+	return vergeben, err
+}
+
+// IstLDAPKennungVergeben meldet, ob eine LDAP-Kennung schon zu einem anderen Konto gehört, als
+// Kennung oder als E-Mail; ausserID nimmt das Konto aus, das gerade bearbeitet wird. Die
+// Anmeldung findet ein Konto über beides, und eine Eingabe, die zwei Konten trifft, meldet keines
+// an (ErrAnmeldungMehrdeutig).
+func (a *KontoAbfragen) IstLDAPKennungVergeben(ctx context.Context, kennung string, ausserID string) (bool, error) {
+	var vergeben bool
+	err := a.pool.QueryRow(ctx, `
+		SELECT EXISTS(
+		    SELECT 1 FROM benutzer
+		     WHERE (LOWER(ldap_kennung) = LOWER($1) OR LOWER(email) = LOWER($1))
+		       AND id IS DISTINCT FROM NULLIF($2, '')::uuid)`,
+		kennung, ausserID).Scan(&vergeben)
 	return vergeben, err
 }
 
@@ -135,12 +157,25 @@ func (a *KontoAbfragen) HatLeserzeileOhneKonto(ctx context.Context, vorname, nac
 	return vorhanden, err
 }
 
+// KontoNeu sind die Angaben eines neuen Kontos.
+type KontoNeu struct {
+	Vorname  string
+	Nachname string
+	Email    string
+	Rolle    string
+	// Anmeldeverfahren ist AnmeldeverfahrenIMAP oder AnmeldeverfahrenLDAP; LDAPKennung gehört
+	// nur zu LDAP.
+	Anmeldeverfahren string
+	LDAPKennung      string
+	// Ausweisnummer nil oder leer lässt die Leserzeile ohne Nummer.
+	Ausweisnummer *string
+}
+
 // LegeAn legt ein Konto an, trägt die Ausweisnummer in seine Leserzeile ein und liefert die ID
 // des Kontos. Beides geschieht in einer Transaktion: Ein Konto ohne Leserzeile fände die Theke
 // nicht, eine Leserzeile ohne Konto stünde namenlos in der Lesertabelle. Die Zeile legt der
-// Trigger an (trg_benutzer_hat_leserzeile); die Ausweisnummer kennt er nicht, und ausweisnummer
-// nil oder "" lässt die Zeile ohne Nummer.
-func (a *KontoAbfragen) LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error) {
+// Trigger an (trg_benutzer_hat_leserzeile); die Ausweisnummer kennt er nicht.
+func (a *KontoAbfragen) LegeAn(ctx context.Context, neu KontoNeu) (string, error) {
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", err
@@ -149,16 +184,16 @@ func (a *KontoAbfragen) LegeAn(ctx context.Context, ausweisnummer *string, vorna
 
 	var kontoID, leserID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, $2, $3, $4::benutzer_rolle, true)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, anmeldeverfahren, ldap_kennung)
+		VALUES ($1, $2, $3, $4::benutzer_rolle, true, COALESCE(NULLIF($5, ''), 'imap'), NULLIF($6, ''))
 		RETURNING id, leser_id::text
-	`, vorname, nachname, email, rolle).Scan(&kontoID, &leserID)
+	`, neu.Vorname, neu.Nachname, neu.Email, neu.Rolle, neu.Anmeldeverfahren, neu.LDAPKennung).Scan(&kontoID, &leserID)
 	if err != nil {
 		return "", err
 	}
 
-	if ausweisnummer != nil && *ausweisnummer != "" {
-		tag, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`, *ausweisnummer, leserID)
+	if neu.Ausweisnummer != nil && *neu.Ausweisnummer != "" {
+		tag, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`, *neu.Ausweisnummer, leserID)
 		if err != nil {
 			return "", err
 		}
@@ -182,6 +217,10 @@ type KontoAenderung struct {
 	Email    *string
 	Rolle    *string
 	Aktiv    *bool
+	// Anmeldeverfahren und LDAPKennung: Wechselt das Konto zu IMAP, fällt die Kennung weg; ein
+	// LDAP-Konto ohne Kennung lehnt die Datenbank ab (benutzer_ldap_kennung_nur_bei_ldap).
+	Anmeldeverfahren *string
+	LDAPKennung      *string
 	// BarcodeGenannt: Die Änderung nennt die Ausweisnummer. Barcode nil oder leer heißt dann
 	// „kein Ausweis"; ohne BarcodeGenannt bleibt die Nummer der Leserzeile stehen.
 	BarcodeGenannt bool
@@ -190,9 +229,11 @@ type KontoAenderung struct {
 
 // KontoStand ist ein Konto nach dem Ändern: was der Protokolleintrag darüber festhält.
 type KontoStand struct {
-	Email string
-	Rolle string
-	Aktiv bool
+	Email            string
+	Rolle            string
+	Aktiv            bool
+	Anmeldeverfahren string
+	LDAPKennung      string
 }
 
 // ErrKontoNichtGefunden meldet eine unbekannte ID beim Ändern oder Löschen. Keine getroffene
@@ -225,10 +266,14 @@ func (a *KontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoSta
 		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
 		    -- wieder wie ein Antrag aussehen.
 		    zugang_beantragt_am = CASE WHEN $5 IS TRUE THEN NULL ELSE zugang_beantragt_am END,
+		    anmeldeverfahren = COALESCE($7, anmeldeverfahren),
+		    ldap_kennung = CASE WHEN COALESCE($7, anmeldeverfahren) = 'imap' THEN NULL
+		                        ELSE COALESCE(NULLIF($8, ''), ldap_kennung) END,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6
-		RETURNING leser_id::text, email, rolle::text, aktiv
-	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID).Scan(&leserID, &stand.Email, &stand.Rolle, &stand.Aktiv)
+		RETURNING leser_id::text, email, rolle::text, aktiv, anmeldeverfahren, coalesce(ldap_kennung, '')
+	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID, p.Anmeldeverfahren, p.LDAPKennung).Scan(
+		&leserID, &stand.Email, &stand.Rolle, &stand.Aktiv, &stand.Anmeldeverfahren, &stand.LDAPKennung)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return stand, ErrKontoNichtGefunden
 	}
@@ -278,4 +323,20 @@ func (a *KontoAbfragen) LadeRolle(ctx context.Context, id string) (string, error
 		return "", fmt.Errorf("konnte die Rolle des Benutzers nicht lesen: %w", err)
 	}
 	return rolle, nil
+}
+
+// IstLDAPKennungKollision erkennt die Ablehnung einer LDAP-Kennung, die schon ein anderes Konto
+// trägt (Index uniq_benutzer_ldap_kennung_lower).
+func IstLDAPKennungKollision(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "uniq_benutzer_ldap_kennung_lower"
+}
+
+// IstLDAPKennungFehlend erkennt die Ablehnung eines LDAP-Kontos ohne Kennung
+// (benutzer_ldap_kennung_nur_bei_ldap).
+func IstLDAPKennungFehlend(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23514" &&
+		pgErr.ConstraintName == "benutzer_ldap_kennung_nur_bei_ldap"
 }
