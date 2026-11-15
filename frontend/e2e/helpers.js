@@ -218,22 +218,15 @@ function entferne({ leser, titel }) {
  * Stellt her, dass die Bestellbedarfs-Liste gefüllt ist — Voraussetzung für jeden
  * Test, der im Bestell-Bildschirm auf „+ zur Bestellung hinzufügen" klickt.
  *
- * Warum das nötig ist: Die Liste hing an ZWEI Bedingungen, die beide außerhalb des
- * Tests lagen. `bestellbedarf_warnung_aktiv` ist ein Schalter in den Einstellungen —
- * steht er aus, liefert /api/bestellungen eine LEERE Liste, ganz gleich wie der
- * Bestand aussieht. Genau das war am 04.08.2026 der Fall: Zwei Specs waren rot, ohne
- * dass am Code etwas fehlte, und die Oberfläche meldete dabei „Kein Titel liegt unter
- * der Bestellbedarf-Schwelle" — was in die falsche Richtung zeigt.
+ * Die Liste hängt an zwei Bedingungen außerhalb des Tests: Steht der Schalter
+ * `bestellbedarf_warnung_aktiv` aus, liefert /api/bestellungen keine Zeilen, ganz gleich wie
+ * der Bestand aussieht; und ob ein Buch fehlt, hängt an Kindern und Ausleihen.
  *
- * Deshalb wird hier beides gesetzt: der Schalter an UND eigene Titel angelegt. Der
- * Bestand der Datenbank ist damit egal.
- *
- * Ein Titel zählt als Bedarf, wenn er LMF ist (`^lmf[ -]`, siehe pkg/lmf) und weniger
- * nicht ausgesonderte Exemplare hat als die Schwelle. Die angelegten Titel haben gar
- * keine — sie stehen damit zugleich ganz oben, weil die Liste nach Fehlbestand sortiert.
+ * Deshalb wird hier beides gesetzt: der Schalter an UND eigene Titel mit Fehlbestand
+ * angelegt (seedFehlbestand). Der Bestand der Datenbank ist damit egal.
  *
  * @param {number} [anzahl] wie viele Titel sicher in der Liste stehen sollen
- * @returns {() => void} Aufräumen: Titel weg, Schalter zurück auf den alten Wert
+ * @returns {() => void} Aufräumen: Titel und Kinder weg, Schalter zurück auf den alten Wert
  */
 export function seedBestellbedarf(anzahl = 8) {
 	const marke = `E2E-Bedarf-${uniqueSuffix()}`;
@@ -245,14 +238,19 @@ export function seedBestellbedarf(anzahl = 8) {
 		INSERT INTO system_einstellungen (schluessel, wert)
 		VALUES ('bestellbedarf_warnung_aktiv', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = 'true';
-
-		-- Lernmittel ist seit Migration 093 die SPALTE ist_lernmittel, nicht mehr das
-		-- Titelpräfix — ohne sie zählt der Bedarf nicht (CI rot am 02.09.2026).
-		INSERT INTO buecher_titel (titel, autor, meldebestand, ist_lernmittel)
-		SELECT 'LMF-${marke} ' || g, 'E2E', 30, true FROM generate_series(1, ${anzahl}) g;
 	`);
+	// Lernmittel ist die Spalte ist_lernmittel; je Titel ein Exemplar.
+	const exemplare = querySQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor, ist_lernmittel)
+			SELECT 'LMF-${marke} ' || g, 'E2E', true FROM generate_series(1, ${anzahl}) g RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id)
+		SELECT id, 'B-${marke}-' || row_number() OVER () FROM t RETURNING id`).split('\n');
+	const wegFehlbestand = seedFehlbestand(marke, exemplare, 1);
 
 	return () => {
+		wegFehlbestand();
 		seedSQL(`
 			DELETE FROM buecher_titel WHERE titel LIKE 'LMF-${marke} %';
 			${
@@ -263,6 +261,50 @@ export function seedBestellbedarf(anzahl = 8) {
 			}
 		`);
 	};
+}
+
+/**
+ * Lässt Schulbücher im Bestellbedarf fehlen. Der Bedarf rechnet nach der Zahl der Kinder
+ * (repository/bestellbedarf.go): Ein Kind der 3 hat die Exemplare für dieses Schuljahr
+ * ausgeliehen, und aus der 2 rücken so viele Kinder nach, dass jedes dieser Bücher im nächsten
+ * Schuljahr mehr braucht, als es hat. Die anderen Kinder der 3 in der Datenbank zählen mit;
+ * deshalb hängt die Zahl der Nachrückenden an ihnen.
+ *
+ * @param {string} marke Kennzeichen der angelegten Ausweise
+ * @param {string[]} exemplare Kennungen der Exemplare, die das Kind ausleiht
+ * @param {number} bestand der größte Bestand eines dieser Bücher
+ * @returns {() => void} Aufräumen: Ausleihen und Kinder weg; vor den Titeln aufrufen
+ */
+export function seedFehlbestand(marke, exemplare, bestand) {
+	const dritte = Number(
+		querySQL(`SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND NOT ist_abgaenger
+		          AND substring(klasse from '^0*([1-9]|1[0-3])(?:\\D|$)') = '3'`)
+	);
+	// Je Buch braucht das nächste Schuljahr Nachrückende geteilt durch die Kinder der 3; das
+	// übersteigt bestand, sobald (bestand + 1)-mal so viele nachrücken.
+	const nachruecken = (bestand + 1) * (dritte + 1);
+	const halter = querySQL(`
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		VALUES ('Halter', 'E2E', '03E2E', 'S-${marke}-h', 2036) RETURNING id`).split('\n')[0];
+	const kinder = querySQL(`
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		SELECT 'Kind', 'E2E', '02E2E', 'S-${marke}-' || g, 2037 FROM generate_series(1, ${nachruecken}) g
+		RETURNING id`).split('\n');
+	// Die Frist des laufenden Schuljahres: der 31. Juli vor dem nächsten 1. August.
+	seedSQL(`
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		SELECT e::uuid, '${halter}',
+		       (make_date(extract(year from now() AT TIME ZONE 'Europe/Berlin')::int
+		                  + CASE WHEN extract(month from now() AT TIME ZONE 'Europe/Berlin') >= 8 THEN 1 ELSE 0 END,
+		                  7, 31) + time '12:00') AT TIME ZONE 'Europe/Berlin'
+		FROM unnest(ARRAY[${exemplare.map((e) => `'${e}'`).join(', ')}]) e;
+	`);
+	const leser = [halter, ...kinder].map((id) => `'${id}'`).join(', ');
+	return () =>
+		seedSQL(`
+			DELETE FROM ausleihen WHERE schueler_id IN (${leser});
+			DELETE FROM leser WHERE id IN (${leser});
+		`);
 }
 
 /**

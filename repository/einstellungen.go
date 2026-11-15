@@ -36,10 +36,9 @@ type SystemEinstellungen struct {
 	// überfällig hat.
 	UeberfaelligKarenzTage     int `json:"max_overdue_days"`
 	UeberfaelligSperreAbMedien int `json:"max_overdue_items"`
-	// BestellbedarfWarnungAktiv schaltet die Warnung; BestellbedarfSchwelle nennt die Zahl der
-	// Exemplare, unter der ein Titel als Bestellbedarf gilt.
+	// BestellbedarfWarnungAktiv schaltet die Liste der Schulbücher, deren Bestand nicht für die
+	// Kinder im nächsten Schuljahr reicht (LadeBestellbedarf).
 	BestellbedarfWarnungAktiv bool `json:"bestellbedarf_warnung_aktiv"`
-	BestellbedarfSchwelle     int  `json:"bestellbedarf_schwelle"`
 	// BestelllinkGueltigkeitTage ist die Lebensdauer des Links zur Bestätigung, den der
 	// Hauptlieferant mit der Bestellmail bekommt (Vorgabe und Begründung in pkg/bestelllink).
 	// Sie gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.
@@ -158,9 +157,7 @@ func einstellungenVorgabe() *SystemEinstellungen {
 		FristMedienTage:            FristMedienTageVorgabe,
 		UeberfaelligKarenzTage:     14,
 		UeberfaelligSperreAbMedien: 1,
-		// Die Warnung ist an; die Schwelle 3 hält sie ruhig, bis die Schule sie einstellt.
 		BestellbedarfWarnungAktiv:  true,
-		BestellbedarfSchwelle:      3,
 		BestelllinkGueltigkeitTage: bestelllink.TageVorgabe,
 		// An: Wer Preise führt, soll sie nach einem Update nicht vermissen.
 		PreiseErfassen: true,
@@ -228,8 +225,6 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 		setzeInt(wert, &e.UeberfaelligSperreAbMedien)
 	case "bestellbedarf_warnung_aktiv":
 		e.BestellbedarfWarnungAktiv = wert != nil && *wert == "true"
-	case "bestellbedarf_schwelle":
-		setzeInt(wert, &e.BestellbedarfSchwelle)
 	case "bestelllink_gueltigkeit_tage":
 		setzeInt(wert, &e.BestelllinkGueltigkeitTage)
 	case "preise_erfassen":

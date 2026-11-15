@@ -694,8 +694,8 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 ## Bestellwesen
 
-Fünf Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
-den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
+Fünf Reiter: **Bestellbedarf** (Schulbücher, deren Bestand nicht für die Kinder im nächsten
+Schuljahr reicht — automatisch; das Plus legt die fehlende Menge in den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
 (Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
 sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
@@ -719,9 +719,19 @@ anderem Weg bestellt_ den Hinweis nach einer Rückfrage weg, ohne zu senden; dan
 die Bestellung nicht mehr aus dem Programm senden. Diesen Knopf gibt es nur an Bestellungen ohne
 Bestätigungs-Link; mit Link wird stattdessen die Zusage des Händlers nachgetragen. (§7)
 
+**Wie der Bestellbedarf rechnet:** Jede Zeile nennt _Bestand / Bedarf_. Bestand sind alle
+Exemplare, die nicht ausgesondert sind, auch die verliehenen und die schon bestellten. Bedarf
+sind die Kinder, die das Buch im nächsten Schuljahr brauchen: Das Programm sieht an den
+Ausleihen dieses Schuljahres, in welchem Jahrgang das Buch ist, und rechnet mit den Kindern, die
+in diesen Jahrgang nachrücken. Hat heute nur ein Zweig oder ein Wahlfach das Buch, zählt derselbe
+Anteil. Für Jahrgang 5 gilt die Zahl der heutigen 5er. Eine Reserve gibt es nicht. Über der
+Liste steht, mit den Schulbüchern von wie vielen Kindern gerechnet wurde; sind es deutlich
+weniger als alle, wurden Schulbücher nicht über das Programm ausgegeben, und der Bedarf ist zu
+niedrig. Ein neues Lehrwerk erscheint erst, wenn es einmal ausgegeben ist. (§7)
+
 **Auflagen im Bestellbedarf:** Sind Auflagen eines Schulbuchs in der
 Titel-Verwaltung zusammengefasst (siehe _Auflagen_ bei der Titel-Verwaltung), steht das Buch
-im Bestellbedarf einmal. Gezählt wird der Bestand aller Auflagen zusammen; die Zeile zeigt die
+im Bestellbedarf einmal. Gezählt werden Bestand und Kinder aller Auflagen zusammen; die Zeile zeigt die
 neueste Auflage — sie kommt in den Warenkorb —, und darunter steht, woraus die Zahl besteht
 („Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), 3. Aufl. · 2019 (0)"). Das Filterfeld findet
 die Zeile auch über die ISBN einer älteren Auflage. Die Bestellliste als PDF nennt die ISBN der
@@ -885,7 +895,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                                                                                                                                   |
 | Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                                                                                                                                                                                                                                                                                 |
 | Klassenleitungen        | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
-| Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                                                                                                                              |
+| Bestellwesen            | Bedarfswarnung, Preise erfassen                                                                                                                                                                                                                                                                                                                                                                |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
 | Schlagworte             | Wörter am Titel umbenennen und zusammenführen (alle Titel ändern sich mit), löschen — auch mehrere auf einmal: vorn markieren, unten „Löschen“ —, Verweise für andere Schreibweisen („Tierfantasy“ → „Fantasy“), Filter-Markierung fürs Portal. Die Suche oben findet jedes Wort und jeden Verweis; gezeigt werden höchstens 200 Treffer, und die Zeile darunter sagt, wie viele es sind                                                                                                                                                |
 | Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |

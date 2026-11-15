@@ -23,12 +23,10 @@
 	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
 	const geladen = {
 		bestellbedarf_warnung_aktiv: start.bestellbedarf_warnung_aktiv ?? true,
-		bestellbedarf_schwelle: start.bestellbedarf_schwelle ?? 3,
 		preise_erfassen: start.preise_erfassen ?? true,
 		bestelllink_gueltigkeit_tage: start.bestelllink_gueltigkeit_tage ?? 21
 	};
 	let warnungAktiv = $state(geladen.bestellbedarf_warnung_aktiv);
-	let schwelle = $state(geladen.bestellbedarf_schwelle);
 	let preiseErfassen = $state(geladen.preise_erfassen);
 	let linkTage = $state(geladen.bestelllink_gueltigkeit_tage);
 
@@ -39,16 +37,6 @@
 			preise_erfassen: preiseErfassen
 		},
 		zahlen: [
-			...(warnungAktiv
-				? [
-						{
-							schluessel: 'bestellbedarf_schwelle',
-							label: 'Warnen unter x Exemplaren',
-							wert: schwelle,
-							min: 1
-						}
-					]
-				: []),
 			{
 				schluessel: 'bestelllink_gueltigkeit_tage',
 				label: 'Bestätigungs-Link gültig (Tage)',
@@ -67,8 +55,9 @@
 >
 	{#snippet mehr()}
 		<p>
-			Die Bestellbedarf-Warnung meldet Schulbücher, deren eigener Bestand unter die Schwelle fällt.
-			Aus bedeutet: keine Bestellbedarf-Liste.
+			Die Bestellbedarf-Warnung meldet Schulbücher, deren Bestand nicht für die Kinder reicht, die
+			sie im nächsten Schuljahr brauchen. Wie viele das sind, zeigen die Ausleihen dieses
+			Schuljahres. Aus bedeutet: keine Bestellbedarf-Liste.
 		</p>
 		<p>
 			Preise an = Preisfeld im Warenkorb, Betragsspalten in der Historie, Berichte mit Summen. Aus =
@@ -82,23 +71,11 @@
 			<div class="flex flex-col gap-1">
 				<span class="text-sm font-medium text-on-surface">Bestellbedarf-Warnung</span>
 				<span class="text-sm text-on-surface-variant"
-					>Meldet Lernmittel, deren Bestand unter die Schwelle fällt.</span
+					>Meldet Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht.</span
 				>
 			</div>
 			<Switch bind:checked={warnungAktiv} etikett="Bestellbedarf-Warnung umschalten" />
 		</div>
-		{#if warnungAktiv}
-			<div class="max-w-xs">
-				<Feld
-					type="number"
-					bind:value={schwelle}
-					etikett="Warnen unter x Exemplaren"
-					min={1}
-					max={50}
-					hint="Gezählt werden eigene, nicht ausgesonderte Exemplare."
-				/>
-			</div>
-		{/if}
 
 		<div class="flex items-start justify-between gap-4 border-t border-outline-variant pt-6">
 			<div class="flex flex-col gap-1">

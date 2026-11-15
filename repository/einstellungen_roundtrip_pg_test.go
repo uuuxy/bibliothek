@@ -120,7 +120,6 @@ func TestEinstellungenRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing
 		UeberfaelligKarenzTage:     ptr(20),
 		UeberfaelligSperreAbMedien: ptr(3),
 		BestellbedarfWarnungAktiv:  ptr(true),
-		BestellbedarfSchwelle:      ptr(7),
 		BestelllinkGueltigkeitTage: ptr(45),
 		PreiseErfassen:             ptr(true),
 		SchuleName:                 ptr("Philipp-Reis-Schule"),
@@ -158,7 +157,6 @@ func TestEinstellungenRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing
 		{"frist_medien_tage", nachher.FristMedienTage, 10},
 		{"max_overdue_days", nachher.UeberfaelligKarenzTage, 20},
 		{"max_overdue_items", nachher.UeberfaelligSperreAbMedien, 3},
-		{"bestellbedarf_schwelle", nachher.BestellbedarfSchwelle, 7},
 		{"bestelllink_gueltigkeit_tage", nachher.BestelllinkGueltigkeitTage, 45},
 	} {
 		if f.ist != f.soll {

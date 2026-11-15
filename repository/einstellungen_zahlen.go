@@ -40,7 +40,6 @@ func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 		// Wert, der sie abschaltet, wäre ein Ausschalter und stünde als solcher in der
 		// Oberfläche.
 		{"max_overdue_items", p.UeberfaelligSperreAbMedien, 1, 100, "Max. überfällige Titel"},
-		{"bestellbedarf_schwelle", p.BestellbedarfSchwelle, 1, 1000, "Schwelle Bestellbedarf"},
 		{"bestelllink_gueltigkeit_tage", p.BestelllinkGueltigkeitTage, 1, 365, "Gültigkeit des Bestell-Links (Tage)"},
 		// Untergrenze 1 Tag: Mit 0 Tagen wäre der Bescheid am Tag des Drucks abgelaufen.
 		{"bescheid_frist_tage", p.BescheidFristTage, 1, 365, "Zahlungsfrist des Bescheids (Tage)"},

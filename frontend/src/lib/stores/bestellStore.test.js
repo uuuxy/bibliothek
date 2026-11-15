@@ -744,17 +744,19 @@ describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
 
 	// Dieselbe Regel für jede Liste des Bestellwesens: Der Bedarf lädt beim Öffnen und nach dem Bestellen.
 	it('gilt ebenso für den Bedarf und die Lieferanten', async () => {
-		/** @type {((liste: any[]) => void)[]} */
+		/** @type {((antwort: any) => void)[]} */
 		const antworten = [];
 		vi.mocked(apiGet).mockImplementation(() => new Promise((fertig) => antworten.push(fertig)));
 		try {
+			// Der Bedarf kommt als Zeilen mit der Grundlage der Rechnung (api/bestellung/bestellbedarf.go).
 			const bedarfAlt = bestellStore.loadRecommendations();
 			const bedarfJung = bestellStore.loadRecommendations();
-			antworten[1]([{ id: 'jung' }]);
+			antworten[1]({ zeilen: [{ id: 'jung' }], kinder: 600, kinder_mit_schulbuch: 540 });
 			await bedarfJung;
-			antworten[0]([{ id: 'alt' }]);
+			antworten[0]({ zeilen: [{ id: 'alt' }], kinder: 600, kinder_mit_schulbuch: 1 });
 			await bedarfAlt;
 			expect(bestellStore.recommendations.map((/** @type {any} */ r) => r.id)).toEqual(['jung']);
+			expect(bestellStore.bedarfGrundlage.kinder_mit_schulbuch).toBe(540);
 
 			const lieferantAlt = bestellStore.loadSuppliers();
 			const lieferantJung = bestellStore.loadSuppliers();
@@ -766,6 +768,7 @@ describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
 		} finally {
 			vi.mocked(apiGet).mockImplementation(async () => []);
 			bestellStore.recommendations = [];
+			bestellStore.bedarfGrundlage = { kinder: 0, kinder_mit_schulbuch: 0, ausgeschaltet: false };
 			bestellStore.suppliers = [];
 			bestellStore.nichtGeladen = {};
 		}

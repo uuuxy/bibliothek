@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 
 // Kommt eine Liste des Bestellwesens nicht, steht ihr Grund da statt eines Leerzustands:
-// „Bestände ausreichend", „Keine Positionen im Zulauf" und „Keine Lieferanten angelegt" wären
+// „Kein Schulbuch fehlt", „Keine Positionen im Zulauf" und „Keine Lieferanten angelegt" wären
 // falsche Auskünfte, während nur der Abruf scheiterte. apiGet zeigt den Grund außerdem als
 // Meldung, die nach Sekunden verschwindet.
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
@@ -27,6 +27,7 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 		vi.mocked(apiGet).mockResolvedValue([]);
 		bestellStore.nichtGeladen = {};
 		bestellStore.recommendations = [];
+		bestellStore.bedarfGrundlage = { kinder: 0, kinder_mit_schulbuch: 0, ausgeschaltet: false };
 		bestellStore.incomingShipments = [];
 		bestellStore.suppliers = [];
 	});
@@ -40,24 +41,24 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 		expect(bestellStore.nichtGeladen).toEqual({ bedarf: GRUND, zulauf: GRUND, lieferanten: GRUND });
 		expect(bestellStore.recommendations).toEqual([{ id: 't1' }]);
 
-		vi.mocked(apiGet).mockResolvedValue([{ id: 't2' }]);
+		vi.mocked(apiGet).mockResolvedValue({ zeilen: [{ id: 't2' }] });
 		expect(await bestellStore.loadRecommendations()).toBe(true);
 		expect(bestellStore.nichtGeladen.bedarf).toBe('');
 		expect(bestellStore.recommendations).toEqual([{ id: 't2' }]);
 	});
 
-	it('der Bestellbedarf zeigt den Grund statt „Bestände ausreichend" und lädt neu', async () => {
+	it('der Bestellbedarf zeigt den Grund statt „Kein Schulbuch fehlt" und lädt neu', async () => {
 		scheitert();
 		await bestellStore.loadRecommendations();
 		render(Bestellbedarf, { props: { vorschlaege: [], onAddToCart: vi.fn() } });
 
 		expect(screen.getByText('Bestellbedarf nicht geladen')).toBeTruthy();
 		expect(screen.getByText(GRUND)).toBeTruthy();
-		expect(screen.queryByText('Bestände ausreichend')).toBeNull();
+		expect(screen.queryByText('Kein Schulbuch fehlt')).toBeNull();
 
-		vi.mocked(apiGet).mockResolvedValue([]);
+		vi.mocked(apiGet).mockResolvedValue({ zeilen: [], kinder: 600, kinder_mit_schulbuch: 540 });
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
-		await vi.waitFor(() => expect(screen.getByText('Bestände ausreichend')).toBeTruthy());
+		await vi.waitFor(() => expect(screen.getByText('Kein Schulbuch fehlt')).toBeTruthy());
 	});
 
 	it('der Zulauf zeigt den Grund statt „Keine Positionen im Zulauf"', async () => {

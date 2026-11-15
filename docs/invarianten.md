@@ -161,7 +161,7 @@ Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
 | Position hängt an existierender Bestellung                                                                                     | 🟢 FK CASCADE                                                           | `bestellungen_positionen.bestellung_id`                                           |
 | Nur Positionen mit Menge > 0 werden bestellt                                                                                   | 🟡 Go-Guard                                                             | `internal/service/bestellung_anlegen.go` (`verarbeitePosition`)                |
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0`                                            | 🟢 4 CHECKs                                                             | `migrations/039`                                                                  |
-| Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test                                           | `api/bestellung/bestellbedarf.go`, `api/bestellung/bestellbedarf_test.go`                   |
+| Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Die Abfrage liest nur `ist_lernmittel` + PG-Test                     | `repository/bestellbedarf.go`, `repository/bestellbedarf_schuelerzahl_pg_test.go`           |
 | Bestätigung einer Bestellung gilt genau einmal                                                                                 | 🟢 `WHERE bestaetigt_am IS NULL` (409 statt Überschreiben)              | `api/bestellung/bestellbestaetigung.go` (`bestaetigeBestellung`)                     |
 | Eine Referenznummer wird **nie zweimal** vergeben (Bescheid)                                                                   | 🟢 UNIQUE + gesperrter Zähler (`UPDATE … RETURNING`) + PG-Test parallel | `uniq_bescheid_nummer`, `schadensersatz_nummern`, `api/schaden/bescheid_pg_test.go`       |
 | Eine Forderung steht auf **höchstens einem** Bescheid                                                                          | 🟡 WHERE-Bedingung der Zuordnung + PG-Test (409)                        | `repository/bescheid_anlegen.go` (`ordnePositionenZu`)                                    |
@@ -174,14 +174,11 @@ Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
 | Ein Bestätigungs-Token gehört zu genau einer Bestellung, gespeichert nur als Hash                                              | 🟢 Partieller Unique-Index auf `bestaetigungs_token_hash`               | `migrations/063`                                                                  |
 | Die Etikettenseite des Links zeigt nur Exemplare DIESER Bestellung mit Vorab-Barcode                                           | 🟡 SQL-Filter + PG-Test                                                 | `api/bestellung/bestellbestaetigung_etiketten.go`, `api/bestellung/bestellbestaetigung_ablauf_pg_test.go` |
 
-**Hinweis zum Bestellbedarf:** Der Auslöser ist die Einstellung `bestellbedarf_schwelle`
-(Vorgabe 3, in der Oberfläche änderbar, abschaltbar über `bestellbedarf_warnung_aktiv`),
-nicht der Meldebestand am Titel: Mit ihm bestünde die Liste zu ~99 % aus Titeln, die niemand
-nachbestellen will (gemessen: 12.079 von 12.707 Titeln), weil alle Titel die Vorgabe 5
-tragen, der Median aber bei 1 Exemplar liegt. `meldebestand` wird nur informativ
-mitgeliefert (`repository/bestellbedarf.go`). Die Liste zählt am Buch: Auflagen mit
-derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen die Schwelle
-(`TestLadeBestellbedarf_ZaehltAmBuch`).
+**Hinweis zum Bestellbedarf:** Ein Schulbuch steht auf der Liste, wenn sein Bestand nicht für
+die Kinder reicht, die es im nächsten Schuljahr brauchen (FACHKONZEPT §7,
+`repository/bestellbedarf.go`); eine feste Schwelle oder eine Reserve gibt es nicht. Die Liste
+zählt am Buch: Auflagen mit derselben `werk_id` (Migration 148) bilden eine Zeile, Kinder und
+Bestand beider zählen zusammen (`TestLadeBestellbedarf_ZaehltAmBuch`).
 
 ---
 

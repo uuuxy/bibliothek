@@ -106,6 +106,8 @@ class BestellStore {
 
 	/** @type {any[]} */
 	recommendations = $state([]);
+	/** Worauf der Bestellbedarf rechnet: Ohne das hieße eine leere Liste „es fehlt nichts". */
+	bedarfGrundlage = $state({ kinder: 0, kinder_mit_schulbuch: 0, ausgeschaltet: false });
 	/** @type {any[]} */
 	incomingShipments = $state([]);
 	/** Der Grund, wenn eine Liste nicht kam (lieferanten, zulauf, bedarf, konfiguration); die Seite
@@ -160,7 +162,7 @@ class BestellStore {
 	// Leerzustands zeigt die Seite dann ihn: „Keine Lieferanten" wäre eine falsche Auskunft. Es gilt
 	// die jüngste Anfrage je Liste: Eine späte Antwort brächte eben Eingebuchtes zurück, eine späte
 	// Absage nennte einen Fehler, obwohl die Liste kam.
-	/** @param {string} name @param {string} url @param {(liste: any[]) => void} uebernimm */
+	/** @param {string} name @param {string} url @param {(antwort: any) => void} uebernimm */
 	async #hole(name, url, uebernimm) {
 		const lauf = (this.#laeufe[name] = (this.#laeufe[name] ?? 0) + 1);
 		try {
@@ -233,7 +235,10 @@ class BestellStore {
 	}
 
 	async loadRecommendations() {
-		return this.#hole('bedarf', '/api/bestellungen', (l) => (this.recommendations = l));
+		return this.#hole('bedarf', '/api/bestellungen', ({ zeilen = [], ...grundlage }) => {
+			this.recommendations = zeilen;
+			this.bedarfGrundlage = { ...this.bedarfGrundlage, ...grundlage };
+		});
 	}
 
 	/**
@@ -344,15 +349,9 @@ class BestellStore {
 	}
 
 	/**
-	 * Ohne dritten Parameter folgt die Barcode-Wahl dem Schalter "Barcodes mitschicken"
-	 * im Warenkorb — der Vorgabewert war `false`, und das war der Grund, warum eine
-	 * Bestellung ohne Barcodebogen hinausging, obwohl der Schalter an war:
-	 *
-	 * Der Bestellbedarf (die tägliche Arbeitsfläche) ruft addToCart mit EINEM Argument
-	 * auf, die Position landete also immer mit generate_barcodes: false im Warenkorb.
-	 * Beim Absenden wird der Schalter nur als Sperre angewandt (`schalter ? wert : false`)
-	 * — er konnte damit abschalten, aber niemals einschalten. Wer über den Bestellbedarf
-	 * bestellte, bekam nie Barcodes, egal was der Schalter sagte.
+	 * Legt das Buch mit der Menge in den Warenkorb. Ohne dritten Parameter folgt die Barcode-Wahl
+	 * dem Schalter „Barcodes mitschicken": Beim Absenden wirkt er nur als Sperre
+	 * (`schalter ? wert : false`) und könnte eine Position nicht nachträglich einschalten.
 	 * @param {any} book
 	 * @param {number} menge
 	 * @param {boolean} withBarcodes

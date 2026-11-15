@@ -69,6 +69,7 @@ var lesepfadeGeprueft = map[string]struct {
 	// Auflagen eines Buchs.
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
 	"repository/buch_in_klasse.go":  {2, "Hinweis an der Theke, wenn sonst niemand in der KLASSE das Buch hat — Klassen haben nur Schüler; dieselbe Klassendefinition wie repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
+	"repository/bestellbedarf.go":   {1, "Bestellbedarf nach Jahrgängen — Schulbücher nach Jahrgang bekommen Kinder; eine Lehrkraft mit Schulbuch zählt nicht mit, belegt in repository/bestellbedarf_schuelerzahl_pg_test.go"},
 	// Prüfhilfe der Tests, kein Lesepfad des Programms.
 	"internal/testdaten/leser.go": {1, "LadeSchuelerStatus lädt den Stand eines Schülers für die Tests zu LUSD-Abgleich und Versetzung — beide kennen nur Schüler"},
 }

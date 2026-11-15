@@ -1,7 +1,7 @@
 <!-- @component BedarfZeile — eine Zeile des Bestellbedarfs. Gehört der Titel zu einem Buch
      mit mehreren Auflagen, ist die Zeile das Buch: Titel und ISBN der neuesten Auflage (sie
-     wird bestellt), die Zahlen sind die Summe, und die dritte Zeile nennt die Auflagen
-     einzeln. Material 3, Lists:
+     wird bestellt), die Zahlen gelten für das Buch, und die dritte Zeile nennt den Bestand je
+     Auflage. Material 3, Lists:
      „Limit supporting text to one to three lines". -->
 <script>
 	import { BookPlus, Plus } from '@lucide/svelte';
@@ -10,7 +10,7 @@
 	import Menue from '../ui/Menue.svelte';
 	import { auflagenAufschluesselung } from '../../utils/auflagenText.js';
 
-	/** @type {{ r: any, onAddToCart: (r: any) => void, onNeueAuflage?: (r: any) => void }} */
+	/** @type {{ r: any, onAddToCart: (r: any, menge: number) => void, onNeueAuflage?: (r: any) => void }} */
 	let { r, onAddToCart, onNeueAuflage } = $props();
 
 	// Material 3, Menus: „Use menus in situations that need extra actions, like: Overflow menus" —
@@ -42,30 +42,21 @@
 		{/if}
 	</div>
 
-	<!-- Durchgehend dieselbe Bestandsspalte statt eines Pills im Null-Fall. Das
-	     „Fehlt komplett"-Pill stand auf 252 von 334 Zeilen — ein Signal, das auf drei
-	     Vierteln der Liste steht, markiert den Normalzustand statt der Ausnahme.
-
-	     Dieselbe Ueberlegung gilt fuer die FARBE, und dort stand sie noch aus: Rot
-	     fuer gesamt_bestand === 0 traf 243 von 327 Zeilen. In M3 traegt die
-	     Error-Rolle Zustaende, die korrigiert werden muessen — in einer Liste, die
-	     ausschliesslich Bedarf enthaelt, ist Bedarf kein Fehler. Die Zugehoerigkeit
-	     zur Liste IST das Signal; innerhalb der Liste rangiert jetzt die BETONUNG
-	     (on-surface gegen on-surface-variant) statt einer zweiten Alarmfarbe. -->
+	<!-- Material 3, Lists: „Use trailing text for supplemental details, like a price, count, or
+	     date". Bestand gegen Bedarf; was fehlt, legt das Plus in den Warenkorb. -->
 	<div
-		class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums {r.gesamt_bestand === 0
-			? 'text-on-surface'
-			: 'text-on-surface-variant'}"
-		title="verfügbar / im Bestand"
+		class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums text-on-surface-variant"
+		title="Bestand / Bedarf im nächsten Schuljahr"
 	>
-		{r.verfuegbarer_bestand}<span class="text-on-surface-variant font-medium">/</span
-		>{r.gesamt_bestand}
+		{r.gesamt_bestand}<span class="font-medium">/</span>{r.bedarf}
 	</div>
 
 	<button
-		onclick={() => onAddToCart(r)}
-		aria-label="{r.titel} zur Bestellung hinzufügen"
-		data-tip="Zur Bestellung hinzufügen"
+		onclick={() => onAddToCart(r, r.fehlen)}
+		aria-label="{r.fehlen} {r.fehlen === 1
+			? 'Exemplar'
+			: 'Exemplare'} von {r.titel} zur Bestellung hinzufügen"
+		data-tip="{r.fehlen} zur Bestellung hinzufügen"
 		class="icon-btn shrink-0 w-9 h-9 border border-outline-variant text-on-surface-variant active:scale-90"
 	>
 		<Plus class="w-4 h-4" aria-hidden="true" />

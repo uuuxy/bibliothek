@@ -2,10 +2,11 @@ package bestellung
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
@@ -17,7 +18,7 @@ import (
 // bedarfSpalten spiegelt die Projektion aus LadeBestellbedarf.
 func bedarfSpalten() []string {
 	return []string{"id", "titel", "autor", "isbn", "verlag", "signatur",
-		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel", "auflagen"}
+		"erscheinungsjahr", "cover_url", "gesamt", "kinder", "ist_lernmittel", "auflagen"}
 }
 
 func TestBestellbedarfAbfrage(t *testing.T) {
@@ -29,15 +30,14 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
-	// Echter Fehlbestand: gesamt 3 < Meldebestand 5 (ein Titel hat Exemplare verloren).
-	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
-	// prüft der PG-Test; hier geht es um die Projektion beider Bestandszahlen.
+	// Wann ein Buch auf die Liste kommt, prüfen die Tests am Postgres; hier geht es um die
+	// Projektion: Bestand 3, Bedarf 5, also fehlen 2.
 	mock.ExpectQuery("WITH titel AS").
-		WithArgs(5).
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows(bedarfSpalten()).
-			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true, []byte(nil)))
+			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 3, 5, true, []byte(nil)))
 
-	results, err := repository.LadeBestellbedarf(context.Background(), server.DB.Pool, "", 5)
+	results, err := repository.LadeBestellbedarf(context.Background(), server.DB.Pool, time.Now())
 	if err != nil {
 		t.Fatalf("LadeBestellbedarf: unerwarteter Fehler: %v", err)
 	}
@@ -49,12 +49,8 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 	if got.Titel != "LMF-Mathe 7" {
 		t.Errorf("Titel = %q, erwartet 'LMF-Mathe 7'", got.Titel)
 	}
-	if got.VerfuegbarBestand != 1 {
-		t.Errorf("VerfuegbarBestand = %d, erwartet 1", got.VerfuegbarBestand)
-	}
-	// Beide Bestandszahlen müssen ankommen — der Gesamtbestand ist die Nachbestell-Schwelle.
-	if got.GesamtBestand != 3 {
-		t.Errorf("GesamtBestand = %d, erwartet 3", got.GesamtBestand)
+	if got.GesamtBestand != 3 || got.Bedarf != 5 || got.Fehlen != 2 {
+		t.Errorf("Bestand %d, Bedarf %d, fehlen %d; erwartet 3, 5 und 2", got.GesamtBestand, got.Bedarf, got.Fehlen)
 	}
 	// Das Lernmittel-Kennzeichen wird der Topf-Vorschlag im Warenkorb (Migration 109).
 	if !got.IstLernmittel {
@@ -65,82 +61,73 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 	}
 }
 
-// TestBestellbedarfFilterVorgabeIstLMF sichert die fachliche Vorauswahl ab: Nachbestellt
-// werden Lernmittel; der Freihandbestand besteht überwiegend aus bewussten
-// Einzelstücken (Prüf-/Leseexemplare). Ohne diese Vorgabe enthielte die Liste
-// praktisch den gesamten Katalog und wäre unbenutzbar.
-func TestBestellbedarfFilterVorgabeIstLMF(t *testing.T) {
-	faelle := []struct {
-		name, query, wantFragment string
-	}{
-		// Das Prädikat ist die Spalte buecher_titel.ist_lernmittel (Migration 093).
-		{"ohne Parameter", "", "AND t.ist_lernmittel"},
-		{"type=lmf", "?type=lmf", "AND t.ist_lernmittel"},
-		{"type=freihand", "?type=freihand", "AND NOT t.ist_lernmittel"},
-		{"type=alle", "?type=alle", ""},
-		{"unbekannter Wert", "?type=kaputt", ""},
+// rufeBestellbedarf ruft die Tür gegen den Mock und liefert die Antwort nach Feldern.
+func rufeBestellbedarf(t *testing.T, mock pgxmock.PgxPoolIface) map[string]json.RawMessage {
+	t.Helper()
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	rec := httptest.NewRecorder()
+	server.Bestellbedarf().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
-
-	for _, f := range faelle {
-		t.Run(f.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/api/bestellungen"+f.query, nil)
-			if got := bestellbedarfFilter(r); got != f.wantFragment {
-				t.Errorf("bestellbedarfFilter(r) = %q, erwartet %q", got, f.wantFragment)
-			}
-		})
+	var antwort map[string]json.RawMessage
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort ist kein Objekt: %v (%s)", err, rec.Body.String())
 	}
+	return antwort
 }
 
-// TestBestellbedarfLeereListeIstArray: wie bei der Schülerliste darf eine leere Liste
-// nicht als null herausgehen — das Frontend ruft .length darauf auf.
-func TestBestellbedarfLeereListeIstArray(t *testing.T) {
+// Eine leere Liste geht als [] hinaus, nicht als null, mit der Grundlage der Rechnung: Daran
+// unterscheidet die Seite „es fehlt nichts" von „noch kein Schulbuch ausgegeben".
+func TestBestellbedarf_LeereListeMitGrundlage(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("Mock-Pool konnte nicht erstellt werden: %v", err)
 	}
 	defer mock.Close()
 
-	// Die Tür liest zuerst die Einstellungen (Warnung aktiv? Schwelle?), dann den
-	// Bestellbedarf — beide Queries müssen der Reihe nach erwartet werden. Leere
-	// Zeilen der Einstellungen ⇒ Vorgaben (Warnung an, Schwelle 3).
+	// Leere Einstellungen heißen Vorgabe: Warnung an.
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("WITH titel AS").
-		WithArgs(3). // Vorgabe der Schwelle (leere Einstellungen ⇒ 3)
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows(bedarfSpalten()))
+	mock.ExpectQuery(`WITH\s+kinder AS`).
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"kinder", "mit_schulbuch"}).AddRow(600, 0))
 
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
-	rec := httptest.NewRecorder()
-	server.Bestellbedarf().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
-
-	if body := strings.TrimSpace(rec.Body.String()); body != "[]" {
-		t.Errorf("strings.TrimSpace(rec.Body.String()) = %s, erwartet []", body)
+	antwort := rufeBestellbedarf(t, mock)
+	for feld, want := range map[string]string{"zeilen": "[]", "kinder": "600", "kinder_mit_schulbuch": "0", "ausgeschaltet": "false"} {
+		if got := string(antwort[feld]); got != want {
+			t.Errorf("%s = %s, erwartet %s", feld, got, want)
+		}
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Mock-Erwartungen: %v", err)
 	}
 }
 
-// Die Nachbestellmenge steht auf einem Dokument, das an einen Händler geht, und wird von
-// niemandem gegengelesen. Rechnete sie mit dem Titel-Feld meldebestand, das niemand mehr pflegt
-// (Vorgabe 5), während die Auswahl der Titel der Schwelle folgt, stünde bei Schwelle 30 und 10
-// vorhandenen Exemplaren dort "-5".
-func TestNachbestellmenge(t *testing.T) {
-	faelle := map[string]struct {
-		schwelle, gesamt, want int
-	}{
-		"halber Klassensatz fehlt":      {30, 15, 15},
-		"nichts vorhanden":              {30, 0, 30},
-		"Soll genau erreicht":           {30, 30, 0},
-		"mehr als das Soll vorhanden":   {5, 12, 0},
-		"Schwelle 0 (Warnung aus/leer)": {0, 3, 0},
+// Ist die Warnung aus, sagt die Antwort das, statt eine leere Liste wie „es fehlt nichts"
+// aussehen zu lassen, und rechnet nichts.
+func TestBestellbedarf_AusgeschaltetSagtEsDazu(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("Mock-Pool konnte nicht erstellt werden: %v", err)
 	}
+	defer mock.Close()
 
-	for name, f := range faelle {
-		t.Run(name, func(t *testing.T) {
-			if got := nachbestellmenge(f.schwelle, f.gesamt); got != f.want {
-				t.Errorf("nachbestellmenge(%d, %d) = %d, erwartet %d", f.schwelle, f.gesamt, got, f.want)
-			}
-			if got := nachbestellmenge(f.schwelle, f.gesamt); got < 0 {
-				t.Errorf("negative Bestellmenge auf der Händler-Liste: %d", got)
-			}
-		})
+	aus := "false"
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("bestellbedarf_warnung_aktiv", &aus))
+
+	antwort := rufeBestellbedarf(t, mock)
+	if got := string(antwort["ausgeschaltet"]); got != "true" {
+		t.Errorf("ausgeschaltet = %s, erwartet true", got)
+	}
+	if got := string(antwort["zeilen"]); got != "[]" {
+		t.Errorf("zeilen = %s, erwartet []", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Mock-Erwartungen: %v", err)
 	}
 }

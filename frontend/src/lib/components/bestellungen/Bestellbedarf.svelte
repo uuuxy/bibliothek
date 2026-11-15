@@ -2,6 +2,7 @@
 	import { CircleCheck, Printer } from '@lucide/svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import BedarfZeile from './BedarfZeile.svelte';
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
@@ -9,22 +10,31 @@
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { resthoehe } from '../../actions/resthoehe.js';
 	let { vorschlaege, onAddToCart } = $props();
-	// Kam der Bedarf nicht, steht der Grund statt der leeren Liste da: „Bestände ausreichend" hieße,
+	// Kam der Bedarf nicht, steht der Grund statt der leeren Liste da: „Kein Schulbuch fehlt" hieße,
 	// es sei nichts zu bestellen. Scheitert nur das Auffrischen, bleibt die Liste von vorhin stehen.
 	const ladefehler = $derived(bestellStore.nichtGeladen.bedarf);
+	// Ohne Eintrag steht die erste Antwort noch aus; ein Leerzustand wäre dann geraten.
+	const laedt = $derived(ladefehler === undefined);
+	// Worauf die Rechnung fußt: Daran unterscheidet die leere Liste „nichts fehlt" von „noch kein
+	// Schulbuch ausgegeben" und „ausgeschaltet" (api/bestellung/bestellbedarf.go).
+	const grundlage = $derived(bestellStore.bedarfGrundlage);
+	const grundlageText = $derived(
+		`gerechnet mit den Schulbüchern von ${grundlage.kinder_mit_schulbuch} der ${grundlage.kinder} Kinder`
+	);
+	const fehlenSumme = $derived(
+		vorschlaege.reduce((/** @type {number} */ s, /** @type {any} */ r) => s + (r.fehlen || 0), 0)
+	);
 
 	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
 	/** @type {any | null} */
 	let neueAuflageFuer = $state(null);
 
-	// Nur die ersten Einträge ins DOM (Muster wie Bestandstabelle/Inventur-Startseite).
-	// Der Bestellbedarf umfasst schnell den halben Katalog — jeder Titel unter seinem
-	// Meldebestand landet hier. Alle zu rendern hiess: tausende DOM-Knoten und ebenso
-	// viele Cover-Requests. Das Scrollfenster wächst mit dem Viewport, damit man die
-	// dringenden Titel sieht statt drei Zeilen durch ein Guckloch.
+	// Nur die ersten Einträge ins DOM (Muster wie Bestandstabelle/Inventur-Startseite). Das
+	// Scrollfenster wächst mit dem Viewport, damit man die dringenden Titel sieht statt drei
+	// Zeilen durch ein Guckloch.
 	let maxVisible = $state(60);
 
-	// Schnellfilter: bei 335 Titeln ist Suchen schneller als Scrollen.
+	// Schnellfilter: In einer langen Liste ist Suchen schneller als Scrollen.
 	let filter = $state('');
 
 	let gefiltert = $derived(filtereBedarf(vorschlaege, filter));
@@ -40,22 +50,6 @@
 		void filter;
 		maxVisible = 60;
 	});
-
-	/**
-	 * Farbstufe einer Zeile. Die Liste ist bereits die Bestellbedarf-Liste (Backend:
-	 * gesamt < konfigurierbare Schwelle). Herausgehoben wird nur der echte Notfall:
-	 * 0 eigene Exemplare (Titel komplett weg) = kritisch, alles andere = knapp. Basis ist
-	 * der Gesamtbestand (Besitz), nicht der Verfügbarbestand — ein verliehener Klassensatz
-	 * (0 verfügbar, 30 vorhanden) taucht hier ohnehin nicht auf.
-	 * @param {any} r
-	 */
-	function stufe(r) {
-		return r.gesamt_bestand === 0 ? 'kritisch' : 'knapp';
-	}
-
-	let kritischeAnzahl = $derived(
-		vorschlaege.filter((/** @type {any} */ r) => stufe(r) === 'kritisch').length
-	);
 </script>
 
 <!-- Kein Kartenrahmen: Der Bestellbedarf ist die Arbeitsflaeche der Seite, kein Objekt
@@ -72,23 +66,11 @@
 					     und Symbole, nicht an eine Überschrift. -->
 					{#if vorschlaege.length}({vorschlaege.length}){/if}
 				</h2>
-				{#if kritischeAnzahl}
-					<!-- Eine Aussage, nicht zwei. Vorher stand hier „{'{n}'}× komplett fehlend · 0 Exemplare":
-					     Beides beschreibt DENSELBEN Zustand (gesamt_bestand === 0), las sich aber wie zwei
-					     verschiedene Kennzahlen — und die „0" war eine feste Null im Markup, kein Messwert.
-					     Der Bezug auf die Gesamtzahl sagt stattdessen etwas Neues: wie groß der Notfall
-					     innerhalb der Liste ist. -->
-					<!-- Bewusst NICHT in Fehlerrot. Bei einer Lernmittel-Bedarfsliste ist „kein
-					     Exemplar vorhanden" der Normalfall — 243 von 327 Titeln. Eine Zahl, die
-					     fast immer gilt, ist keine Fehlermeldung; sie in der Error-Rolle zu
-					     faerben erzieht das Auge dazu, Rot zu ueberlesen, und dann verschwindet
-					     der eine echte Fehler darin. In M3 traegt die Error-Rolle Zustaende, die
-					     korrigiert werden MUESSEN. Das hier ist eine Kennzahl. -->
+				{#if vorschlaege.length}
 					<p class="text-sm text-on-surface-variant mt-1">
-						{kritischeAnzahl} von {vorschlaege.length} Titeln ohne ein einziges Exemplar
+						{fehlenSumme}
+						{fehlenSumme === 1 ? 'Exemplar fehlt' : 'Exemplare fehlen'} für das nächste Schuljahr, {grundlageText}.
 					</p>
-				{:else if vorschlaege.length}
-					<p class="text-sm text-on-surface-variant mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
 				{/if}
 			</div>
 			<a
@@ -119,13 +101,28 @@
 			text={ladefehler}
 			onerneut={() => bestellStore.loadRecommendations()}
 		/>
+	{:else if laedt && !vorschlaege.length}
+		<div class="flex justify-center py-16">
+			<Ladekreis size="lg" etikett="Bestellbedarf lädt" />
+		</div>
 	{:else if !vorschlaege.length}
 		<div
 			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
 		>
-			<CircleCheck class="h-5 w-5" aria-hidden="true" />
-			<p class="text-sm font-semibold">Bestände ausreichend</p>
-			<p class="text-xs mt-1">Kein Titel liegt unter der Bestellbedarf-Schwelle.</p>
+			{#if grundlage.ausgeschaltet}
+				<p class="text-sm font-semibold">Bestellbedarf ausgeschaltet</p>
+				<p class="text-xs mt-1">Einschalten unter Einstellungen, Bestellwesen.</p>
+			{:else if !grundlage.kinder_mit_schulbuch}
+				<p class="text-sm font-semibold">Noch keine Grundlage</p>
+				<p class="text-xs mt-1">
+					In diesem Schuljahr wurde noch kein Schulbuch ausgegeben; der Bedarf ergibt sich aus den
+					Ausleihen.
+				</p>
+			{:else}
+				<CircleCheck class="h-5 w-5" aria-hidden="true" />
+				<p class="text-sm font-semibold">Kein Schulbuch fehlt</p>
+				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}.</p>
+			{/if}
 		</div>
 	{:else if !gefiltert.length}
 		<div class="text-center py-14 px-6 text-on-surface-variant">
@@ -152,7 +149,7 @@
 			>
 				<span class="w-8 shrink-0" aria-hidden="true"></span>
 				<span class="flex-1 min-w-0">Titel</span>
-				<span class="text-right">Verfügbar / Bestand</span>
+				<span class="text-right">Bestand / Bedarf</span>
 				<span class="w-9 shrink-0" aria-hidden="true"></span>
 			</div>
 		</div>
@@ -182,8 +179,9 @@
 		zeile={neueAuflageFuer}
 		onschliessen={() => (neueAuflageFuer = null)}
 		onbestellt={(titel) => {
+			const menge = neueAuflageFuer?.fehlen;
 			neueAuflageFuer = null;
-			onAddToCart(titel);
+			onAddToCart(titel, menge);
 			bestellStore.loadRecommendations();
 		}}
 	/>

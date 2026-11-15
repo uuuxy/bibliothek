@@ -33,7 +33,6 @@ type EinstellungenPatch struct {
 	UeberfaelligSperreAbMedien *int    `json:"max_overdue_items,omitempty"`
 
 	BestellbedarfWarnungAktiv  *bool `json:"bestellbedarf_warnung_aktiv,omitempty"`
-	BestellbedarfSchwelle      *int  `json:"bestellbedarf_schwelle,omitempty"`
 	BestelllinkGueltigkeitTage *int  `json:"bestelllink_gueltigkeit_tage,omitempty"`
 	PreiseErfassen             *bool `json:"preise_erfassen,omitempty"`
 

@@ -135,7 +135,7 @@
 					>
 						<Bestellbedarf
 							vorschlaege={bestellStore.recommendations}
-							onAddToCart={(book) => bestellStore.addToCart(book)}
+							onAddToCart={(book, menge) => bestellStore.addToCart(book, menge)}
 						/>
 					</div>
 

@@ -300,7 +300,7 @@ des Schulträgers (Schülerbücherei) beschafft wird.
   Nachlass. Das Anschreiben erzeugt `pdf/bestellanschreiben.go`.
 - **Händler führen für Lernmittel und Bibliothek oft getrennte Kundenkonten** (anderer
   Nachlass, andere Rechnungsstelle); deshalb kann ein Lieferant zwei Kundennummern tragen.
-- **Der Bestellbedarf ist Lernmittel** (`bestellbedarfFilter`: Vorgabe `lmf`), die Titelsuche
+- **Der Bestellbedarf ist Lernmittel** (`repository/bestellbedarf.go` liest nur `ist_lernmittel`), die Titelsuche
   liefert alles. Ein über die DNB-Suche neu angelegter Titel (`schreibeTitelAusMetadaten`)
   bekäme ohne Frage kein `ist_lernmittel` — ein neues Schulbuch entstünde als Bücherei-Titel
   und bliebe es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).

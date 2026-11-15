@@ -6,7 +6,7 @@ import { sammleQuelldateien, srcRoot, relPfad } from './hygiene-quellen.js';
 
 // Gate zur Bugklasse „Abschnitt leer statt gescheitert" (docs/sweeps.md, ARCHITEKTUR.md 5.3):
 // Eine Seite, deren Liste nicht geladen wurde, zeigt keinen Leerzustand. Er hieße „nichts da",
-// beim Bestellbedarf „Bestände ausreichend", im Etiketten-Nachdruck „Für alle Exemplare wurden
+// beim Bestellbedarf „Kein Schulbuch fehlt", im Etiketten-Nachdruck „Für alle Exemplare wurden
 // Etiketten gedruckt", während nur der Abruf scheiterte. Jeder Zweig des Markups, der nach einer
 // leeren Liste fragt, steht deshalb hinter einer Prüfung des Ladefehlers: in einem Zweig davor
 // derselben if-Kette, in seiner eigenen Bedingung oder in einem umgebenden if. Als Leerzustand

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix, seedFehlbestand } from './helpers.js';
 import { isbnFormen } from '../src/lib/utils/isbnFormen.js';
 
 // „Neue Auflage bestellen" über die andere Länge der ISBN (Migration 157): Die neue
@@ -13,10 +13,7 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel
 	const marke = `E2E-AndereForm-${uniqueSuffix()}`;
 	const einstellung = (/** @type {string} */ schluessel) =>
 		querySQL(`SELECT wert FROM system_einstellungen WHERE schluessel = '${schluessel}'`);
-	const vorher = {
-		bestellbedarf_warnung_aktiv: einstellung('bestellbedarf_warnung_aktiv'),
-		bestellbedarf_schwelle: einstellung('bestellbedarf_schwelle')
-	};
+	const vorher = { bestellbedarf_warnung_aktiv: einstellung('bestellbedarf_warnung_aktiv') };
 	const setze = (/** @type {string} */ schluessel, /** @type {string} */ wert) =>
 		seedSQL(`INSERT INTO system_einstellungen (schluessel, wert) VALUES ('${schluessel}', '${wert}')
 		         ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;`);
@@ -30,13 +27,13 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel
 		`INSERT INTO buecher_titel (titel, auflage, erscheinungsjahr, ist_lernmittel, isbn)
 		 VALUES ('${marke} Neubearbeitung', '4. Aufl.', 2024, false, '${zehn}') RETURNING id`
 	).split('\n')[0];
+	const exemplar = querySQL(
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ('${alt}', '${marke}-1') RETURNING id`
+	).split('\n')[0];
+	const wegFehlbestand = seedFehlbestand(marke, [exemplar], 1);
 
 	try {
-		seedSQL(
-			`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ('${alt}', '${marke}-1');`
-		);
 		setze('bestellbedarf_warnung_aktiv', 'true');
-		setze('bestellbedarf_schwelle', '5');
 
 		await uiLogin(page);
 		await gehZu(page, '/bestellungen');
@@ -76,6 +73,7 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel
 		);
 		expect(querySQL(`SELECT isbn FROM buecher_titel WHERE id = '${neu}'`)).toBe(ean);
 	} finally {
+		wegFehlbestand();
 		seedSQL(`
 			DELETE FROM werke WHERE id IN (
 				SELECT werk_id FROM buecher_titel WHERE id IN ('${alt}', '${neu}') AND werk_id IS NOT NULL);

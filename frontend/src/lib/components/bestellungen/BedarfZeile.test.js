@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import BedarfZeile from './BedarfZeile.svelte';
 import Bestellbedarf from './Bestellbedarf.svelte';
+import { bestellStore } from '../../stores/bestellStore.svelte.js';
 
 // Der Bestellbedarf zählt am Buch (docs/OFFEN.md 4.18, Stufe 3): Gehört ein Titel zu einem
 // Buch mit mehreren Auflagen, ist die Zeile das Buch — Titel und ISBN der neuesten Auflage,
@@ -13,15 +14,15 @@ const buch = {
 	titel: 'Lambacher Schweizer 7',
 	isbn: '9783120000026',
 	verlag: 'Klett',
-	verfuegbarer_bestand: 3,
 	gesamt_bestand: 3,
+	bedarf: 5,
+	fehlen: 2,
 	auflagen: [
 		{
 			id: 'neu',
 			auflage: '4. Aufl.',
 			isbn: '9783120000026',
 			erscheinungsjahr: 2023,
-			verfuegbarer_bestand: 1,
 			gesamt_bestand: 1
 		},
 		{
@@ -29,7 +30,6 @@ const buch = {
 			auflage: '3. Aufl.',
 			isbn: '9783120000019',
 			erscheinungsjahr: 2019,
-			verfuegbarer_bestand: 2,
 			gesamt_bestand: 2
 		}
 	]
@@ -38,8 +38,9 @@ const einzeln = {
 	id: 'p8',
 	titel: 'Physik 8',
 	isbn: '9783120000033',
-	verfuegbarer_bestand: 1,
-	gesamt_bestand: 1
+	gesamt_bestand: 1,
+	bedarf: 2,
+	fehlen: 1
 };
 
 describe('BedarfZeile', () => {
@@ -55,13 +56,18 @@ describe('BedarfZeile', () => {
 		expect(screen.queryByText(/Bestand aus/)).toBeNull();
 	});
 
-	it('legt die Zeile des Buchs in den Warenkorb — die neueste Auflage', async () => {
+	it('legt die Zeile des Buchs mit der fehlenden Menge in den Warenkorb — die neueste Auflage', async () => {
 		const onAddToCart = vi.fn();
 		const screen = render(BedarfZeile, { r: buch, onAddToCart });
-		await fireEvent.click(
-			screen.getByRole('button', { name: 'Lambacher Schweizer 7 zur Bestellung hinzufügen' })
+		expect(screen.getByTitle('Bestand / Bedarf im nächsten Schuljahr').textContent?.trim()).toBe(
+			'3/5'
 		);
-		expect(onAddToCart).toHaveBeenCalledWith(buch);
+		await fireEvent.click(
+			screen.getByRole('button', {
+				name: '2 Exemplare von Lambacher Schweizer 7 zur Bestellung hinzufügen'
+			})
+		);
+		expect(onAddToCart).toHaveBeenCalledWith(buch, 2);
 	});
 });
 
@@ -94,19 +100,55 @@ describe('BedarfZeile: Neue Auflage bestellen', () => {
 	});
 });
 
-// Im Kopf steht, wie viele Titel der Liste kein einziges Exemplar mehr haben. Ein Titel mit
-// Bestand unter der Schwelle zählt dort nicht mit.
-describe('Bestellbedarf: Titel ohne ein Exemplar', () => {
-	it('zählt nur die Titel ohne eigenes Exemplar', () => {
-		const screen = render(Bestellbedarf, {
-			vorschlaege: [
-				einzeln,
-				{ ...einzeln, id: 'leer1', titel: 'Chemie 9', gesamt_bestand: 0, verfuegbarer_bestand: 0 },
-				{ ...einzeln, id: 'leer2', titel: 'Biologie 9', gesamt_bestand: 0, verfuegbarer_bestand: 0 }
-			],
-			onAddToCart: vi.fn()
-		});
+// Im Kopf steht, wie viele Exemplare fehlen und worauf die Rechnung fußt. Ist die Liste leer,
+// sagt die Seite, warum: ausgeschaltet, noch kein Schulbuch ausgegeben, oder es fehlt nichts.
+describe('Bestellbedarf: Kopf und Leerzustand', () => {
+	beforeEach(() => {
+		bestellStore.nichtGeladen = { bedarf: '' };
+		bestellStore.bedarfGrundlage = { kinder: 600, kinder_mit_schulbuch: 540, ausgeschaltet: false };
+	});
 
-		expect(screen.getByText('2 von 3 Titeln ohne ein einziges Exemplar')).toBeTruthy();
+	it('zeigt vor der ersten Antwort den Ladekreis statt eines Leerzustands', () => {
+		bestellStore.nichtGeladen = {};
+		const screen = render(Bestellbedarf, { vorschlaege: [], onAddToCart: vi.fn() });
+		expect(screen.getByRole('progressbar', { name: 'Bestellbedarf lädt' })).toBeTruthy();
+		expect(screen.queryByText('Noch keine Grundlage')).toBeNull();
+	});
+
+	it('nennt die fehlenden Exemplare und die Grundlage', () => {
+		const screen = render(Bestellbedarf, { vorschlaege: [buch, einzeln], onAddToCart: vi.fn() });
+		expect(
+			screen.getByText(
+				'3 Exemplare fehlen für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder.'
+			)
+		).toBeTruthy();
+	});
+
+	it('sagt „1 Exemplar fehlt" in der Einzahl', () => {
+		const screen = render(Bestellbedarf, { vorschlaege: [einzeln], onAddToCart: vi.fn() });
+		expect(
+			screen.getByText(
+				'1 Exemplar fehlt für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder.'
+			)
+		).toBeTruthy();
+	});
+
+	it('sagt bei leerer Liste, dass nichts fehlt', () => {
+		const screen = render(Bestellbedarf, { vorschlaege: [], onAddToCart: vi.fn() });
+		expect(screen.getByText('Kein Schulbuch fehlt')).toBeTruthy();
+	});
+
+	it('behauptet ohne ausgegebene Schulbücher nicht, es fehle nichts', () => {
+		bestellStore.bedarfGrundlage = { kinder: 600, kinder_mit_schulbuch: 0, ausgeschaltet: false };
+		const screen = render(Bestellbedarf, { vorschlaege: [], onAddToCart: vi.fn() });
+		expect(screen.getByText('Noch keine Grundlage')).toBeTruthy();
+		expect(screen.queryByText('Kein Schulbuch fehlt')).toBeNull();
+	});
+
+	it('sagt, wenn der Bestellbedarf ausgeschaltet ist', () => {
+		bestellStore.bedarfGrundlage = { kinder: 0, kinder_mit_schulbuch: 0, ausgeschaltet: true };
+		const screen = render(Bestellbedarf, { vorschlaege: [], onAddToCart: vi.fn() });
+		expect(screen.getByText('Bestellbedarf ausgeschaltet')).toBeTruthy();
+		expect(screen.queryByText('Kein Schulbuch fehlt')).toBeNull();
 	});
 });

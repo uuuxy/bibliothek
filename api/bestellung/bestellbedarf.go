@@ -3,55 +3,59 @@ package bestellung
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// Bestellbedarf liefert den Bestellbedarf.
-//
-// Vorgabe ist der LMF-Bestand (Lernmittel): Nachbestellt werden praktisch nur
-// Lernmittel-Klassensätze; im Freihandbestand steht meist ein einzelnes Prüf- oder
-// Leseexemplar, das bewusst ein Einzelstück bleibt. Ohne diese Vorauswahl bestand die
-// Liste zu ~99% aus Titeln, die niemand nachbestellen will — bei realem Bestand
-// tausende Einträge, die die Ansicht unbenutzbar machten.
-//
-// ?type=freihand oder ?type=alle bleiben möglich; für Einzelfälle ausserhalb der
-// Lernmittel gibt es ausserdem die Titelsuche des Bestellwesens.
+// bestellbedarfAntwort ist die Antwort von GET /api/bestellungen: die Zeilen und die Grundlage
+// der Rechnung. Ohne die Grundlage hieße eine leere Liste „es fehlt nichts", auch wenn in diesem
+// Schuljahr noch kein Schulbuch ausgegeben ist oder die Warnung aus ist.
+type bestellbedarfAntwort struct {
+	Zeilen []repository.Bestellbedarf `json:"zeilen"`
+	// Kinder zählt die aktiven Kinder mit Jahrgang, KinderMitSchulbuch die davon, die in diesem
+	// Schuljahr ein Schulbuch bekommen haben.
+	Kinder             int  `json:"kinder"`
+	KinderMitSchulbuch int  `json:"kinder_mit_schulbuch"`
+	Ausgeschaltet      bool `json:"ausgeschaltet"`
+}
+
+// Bestellbedarf liefert die Schulbücher, deren Bestand nicht für die Kinder im nächsten
+// Schuljahr reicht (repository.LadeBestellbedarf), mit der Grundlage der Rechnung.
 func (t *Tueren) Bestellbedarf() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bedarf, err := t.bestellbedarfMitEinstellungen(r.Context(), r)
+		heute := schulzeit.Jetzt()
+		zeilen, ausgeschaltet, err := t.bestellbedarfMitEinstellungen(r.Context(), heute)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		tuer.AntworteJSON(w, http.StatusOK, bedarf)
+		antwort := bestellbedarfAntwort{Zeilen: zeilen, Ausgeschaltet: ausgeschaltet}
+		if !ausgeschaltet {
+			antwort.Kinder, antwort.KinderMitSchulbuch, err = repository.LadeBestellbedarfGrundlage(r.Context(), t.DB.Pool, heute)
+			if err != nil {
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 	}
 }
 
-// bestellbedarfMitEinstellungen liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
-// leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht und
-// PDF-Export, damit beide nie auseinanderlaufen.
-func (t *Tueren) bestellbedarfMitEinstellungen(ctx context.Context, r *http.Request) ([]repository.Bestellbedarf, error) {
+// bestellbedarfMitEinstellungen liefert den Bestellbedarf gemäß Einstellung: Ist die Warnung
+// aus, keine Zeilen und ausgeschaltet. Eine Quelle für Ansicht und PDF-Export, damit beide nie
+// auseinanderlaufen.
+func (t *Tueren) bestellbedarfMitEinstellungen(ctx context.Context, heute time.Time) (zeilen []repository.Bestellbedarf, ausgeschaltet bool, err error) {
 	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if !einstellungen.BestellbedarfWarnungAktiv {
-		return []repository.Bestellbedarf{}, nil
+		return []repository.Bestellbedarf{}, true, nil
 	}
-	return repository.LadeBestellbedarf(ctx, t.DB.Pool, bestellbedarfFilter(r), einstellungen.BestellbedarfSchwelle)
-}
-
-// bestellbedarfFilter liest ?type= und fällt auf den LMF-Bestand zurück (siehe
-// Bestellbedarf). Das SQL-Fragment ist serverkontrolliert, der Parameter wählt
-// nur zwischen festen Varianten.
-func bestellbedarfFilter(r *http.Request) string {
-	typ := r.URL.Query().Get("type")
-	if typ == "" {
-		typ = "lmf"
-	}
-	fragment, _ := repository.BestandsFilterBedingung(typ)
-	return fragment
+	zeilen, err = repository.LadeBestellbedarf(ctx, t.DB.Pool, heute)
+	return zeilen, false, err
 }
