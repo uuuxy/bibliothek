@@ -27,7 +27,7 @@ func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 	ctx := context.Background()
 
 	var titelID, ex1, ex2, ex3, schuelerID, lehrerID, fachbereichID string
-	titelID = testdaten.LegeTitelAn(t, pool, "Ausleiher-Titel", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Ausleiher-Titel")
 	ex1 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-1", true, "")
 	ex2 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-2", true, "")
 	ex3 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-3", true, "")

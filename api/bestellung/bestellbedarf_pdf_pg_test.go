@@ -60,12 +60,12 @@ func TestBestellbedarfPDF_ZeileNenntBedarfBestandUndMenge(t *testing.T) {
 			}
 		}
 	}
-	knapp := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7", 5)
+	knapp := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = 'Ada Autorin', isbn = '9783060000017' WHERE id = $1`, knapp); err != nil {
 		t.Fatalf("Titelangaben setzen: %v", err)
 	}
 	leiheAus(knapp, "BBL-M-", 3)
-	leiheAus(testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7", 5), "BBL-D-", 5)
+	leiheAus(testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7"), "BBL-D-", 5)
 
 	rec := httptest.NewRecorder()
 	srv.BestellbedarfPDF().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen/pdf", nil))

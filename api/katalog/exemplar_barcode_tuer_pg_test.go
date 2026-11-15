@@ -22,7 +22,7 @@ func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Tuer", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Tuer")
 	platzhalter := testdaten.LegeExemplarAn(t, pool, titel, "AUTO-TUER-1", true, "")
 	testdaten.LegeExemplarAn(t, pool, titel, "TUER-BELEGT", true, "")
 	barcodeVon := func(id string) string {

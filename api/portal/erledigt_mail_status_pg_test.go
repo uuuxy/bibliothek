@@ -170,7 +170,7 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 		RETURNING id`).Scan(&lehrerID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
-	titelID = testdaten.LegeTitelAn(t, pool, "Der Besuch der alten Dame", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Der Besuch der alten Dame")
 
 	// body nil: ein Browser mit altem Stand der Oberfläche schickt keinen Rumpf und muss
 	// weiter abschließen können.

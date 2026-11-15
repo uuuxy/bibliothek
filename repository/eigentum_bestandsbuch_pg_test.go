@@ -25,11 +25,11 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les")
 	traeger := testdaten.LegeBestellungAn(t, mitteltopf.Schultraeger)
 
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
@@ -83,7 +83,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les")
 	land := testdaten.LegeBestellungAn(t, mitteltopf.Land)
 
 	zugang := func(barcode string, bestellung *string, eigentum string) {

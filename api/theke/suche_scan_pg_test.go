@@ -22,7 +22,7 @@ func TestSuche_SuchtUnscharfUndBuchtNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := testdaten.LegeTitelAn(t, pool, "Sprungbuch", 1)
+	titelID := testdaten.LegeTitelAn(t, pool, "Sprungbuch")
 	exID := testdaten.LegeExemplarAn(t, pool, titelID, "B-SPRUNG-1", true, "")
 	testdaten.LegeSchuelerMitNamenAn(t, pool, "S-SPRUNG-1", "Greta", "Sprung", "07A", 2031)
 	s := &Tueren{Basis: &tuer.Basis{}}

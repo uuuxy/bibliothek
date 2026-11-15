@@ -89,7 +89,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Status in der Buchakte", func(t *testing.T) {
-		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Status", "Spu 1", 0)
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Status", "Spu 1")
 		ex := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-STATUS-1", true, "")
 		status := func(rumpf string) int {
 			return rufe(t, http.MethodPut, "/api/buecher/exemplare/"+ex+"/status", rumpf).Code
@@ -131,7 +131,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("kleinerer Bestand in Titel bearbeiten", func(t *testing.T) {
-		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Bestand", "Spu 2", 0)
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Bestand", "Spu 2")
 		for i := 1; i <= 3; i++ {
 			testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")
 		}
@@ -188,7 +188,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Abschluss einer Inventur", func(t *testing.T) {
-		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Inventur", "SpuInv 1", 0)
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Inventur", "SpuInv 1")
 		gezaehlt := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-INV-1", true, "")
 		fehlt := testdaten.LegeExemplarAn(t, pool, titelID, "SPUR-INV-2", true, "")
 		signatur := "SpuInv"
@@ -218,7 +218,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	// Die Ausleihe nennt, wer sie beendet hat, nur bis BearbeiterKennungTage nach der Rückgabe,
 	// und nach einer Rückgabe an der Theke nennt sie die Theke, nicht die Meldung.
 	t.Run("Verlust oder Schaden in der Leserakte", func(t *testing.T) {
-		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Schaden", "Spu 3", 0)
+		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Schaden", "Spu 3")
 		// melde verleiht ein neues Exemplar an den Leser und meldet den Schaden zweimal. vorher
 		// läuft vor der Meldung an der Ausleihe, etwa eine Rückgabe an einem anderen Platz.
 		melde := func(barcode, leserID string, vorher func(ausleiheID string)) (exemplarID, schadensID string) {

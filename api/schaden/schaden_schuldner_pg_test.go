@@ -37,7 +37,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 
 	ausleiher := testdaten.LegeSchuelerAn(t, pool, "S-SCHULD-A", "Anna", "07A")
 	unbeteiligt := testdaten.LegeSchuelerAn(t, pool, "S-SCHULD-B", "Ben", "07B")
-	ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Schuldnertitel", 1), "EX-SCHULD-1", true, "")
+	ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Schuldnertitel"), "EX-SCHULD-1", true, "")
 	var ausleihe string
 	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		VALUES ($1, $2, now() + interval '14 days') RETURNING id`, ex, ausleiher).Scan(&ausleihe); err != nil {
@@ -85,7 +85,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	router := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{}).Routes()
 
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-ZURUECK-A", "Zoe", "07A")
-	ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")
+	ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Zurücktitel"), "EX-ZURUECK-1", true, "")
 	var ausleihe string
 	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, now() + interval '14 days', now()) RETURNING id`, ex, kind).Scan(&ausleihe); err != nil {

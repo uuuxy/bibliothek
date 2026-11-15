@@ -25,7 +25,7 @@ func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 	for i, klasse := range []string{"07G1", "10R2", "ET1", "12T1", "13T2"} {
 		testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)
 	}
-	titel := testdaten.LegeTitelAn(t, pool, "Buch einer Klassenliste", 1)
+	titel := testdaten.LegeTitelAn(t, pool, "Buch einer Klassenliste")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO class_books (class_name, book_id) VALUES ('ET1', $1), ('09H9', $1)`, titel); err != nil {
 		t.Fatalf("Buchlisten anlegen: %v", err)

@@ -31,7 +31,7 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 			t.Errorf("Titel aufräumen: %v", err)
 		}
 	})
-	titelID = testdaten.LegeTitelAn(t, pool, "Bestand und Zulauf", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Bestand und Zulauf")
 	imBestand = testdaten.LegeExemplarAn(t, pool, titelID, "DB-BESTAND", true, "")
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)

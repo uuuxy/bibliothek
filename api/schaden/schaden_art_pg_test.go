@@ -31,7 +31,7 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 	melde := func(barcode, rumpfZusatz string) (*httptest.ResponseRecorder, string) {
 		t.Helper()
 		sid := testdaten.LegeSchuelerAn(t, pool, "S-ART-"+barcode, "Artkind"+barcode, "07A")
-		ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Arttitel-"+barcode, 1), "EX-ART-"+barcode, true, "")
+		ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Arttitel-"+barcode), "EX-ART-"+barcode, true, "")
 		var loan string
 		if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			VALUES ($1, $2, now() + interval '14 days') RETURNING id`, ex, sid).Scan(&loan); err != nil {

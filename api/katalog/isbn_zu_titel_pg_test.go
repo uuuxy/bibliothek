@@ -78,7 +78,7 @@ func TestFindeLokalenTitel_LiefertVorhandeneSignaturUnveraendert(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	testdaten.LegeTitelMitSignaturAn(t, pool, "Effi Briest", "Pg", 5)
+	testdaten.LegeTitelMitSignaturAn(t, pool, "Effi Briest", "Pg")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $1 WHERE titel = $2`, "9783150001", "Effi Briest"); err != nil {
 		t.Fatalf("ISBN nachtragen: %v", err)
 	}

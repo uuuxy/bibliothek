@@ -59,7 +59,7 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Frist", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Frist")
 	bestelle := func() *service.BestellErgebnis {
 		t.Helper()
 		res, err := svc.LegeAn(ctx, service.BestellAuftrag{

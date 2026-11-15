@@ -22,7 +22,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Zulauf", "Sta 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Zulauf", "Sta 1")
 	nie := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ST-ZULAUF")
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "ST-BESTAND", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET einkaufspreis = 20 WHERE id = ANY($1)`,
@@ -64,7 +64,7 @@ func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Bestand", "Sta 2", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Bestand", "Sta 2")
 	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "SB-ZULAUF")
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "SB-BESTAND", true, "")
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, imBestand, testdaten.LegeSchuelerAn(t, pool, "SB-LESER", "Statistik", "07A"))

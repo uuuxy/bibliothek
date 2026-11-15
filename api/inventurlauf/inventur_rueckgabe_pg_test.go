@@ -40,7 +40,7 @@ func legeVerliehenesImRegalAn(t *testing.T, pool *pgxpool.Pool) verliehenImRegal
 	}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	signatur := "RB " + suffix
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Rückbuch", signatur, 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Rückbuch", signatur)
 	testdaten.LegeExemplarAn(t, pool, titelID, "RB-DA-"+suffix, true, "")
 	verliehen := "RB-VERL-" + suffix
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, verliehen, true, "")

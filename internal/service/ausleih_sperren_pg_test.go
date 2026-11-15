@@ -117,7 +117,7 @@ func (th *sperrTheke) uebergangen(t *testing.T, leserID string) int {
 // bestand legt je ein Buch der Schülerbücherei und ein Schulbuch an, beide ausleihbar.
 func (th *sperrTheke) bestand(t *testing.T, praefix string) (buecherei, schulbuch string) {
 	t.Helper()
-	roman := testdaten.LegeTitelAn(t, th.pool, "Roman "+praefix, 1)
+	roman := testdaten.LegeTitelAn(t, th.pool, "Roman "+praefix)
 	var lmf string
 	if err := th.pool.QueryRow(context.Background(),
 		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ($1, true) RETURNING id`, "Mathe "+praefix).Scan(&lmf); err != nil {
@@ -235,7 +235,7 @@ func TestTheke_KollegeWirdNieGesperrt(t *testing.T) {
 		VALUES ('A-SPERRWEG-K', 'Kollege', 'Gesperrt', 'lehrkraft', true, 'Altlast') RETURNING id`).Scan(&kollege); err != nil {
 		t.Fatalf("Kollegen anlegen: %v", err)
 	}
-	altesBuch := testdaten.LegeTitelAn(t, th.pool, "Altes Buch KOL", 1)
+	altesBuch := testdaten.LegeTitelAn(t, th.pool, "Altes Buch KOL")
 	verloren := testdaten.LegeExemplarAn(t, th.pool, altesBuch, "B-KOL-ALT", false, "")
 	if _, err := th.pool.Exec(context.Background(), `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kollege); err != nil {
@@ -346,10 +346,10 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 
 	buecherei, _ := th.bestand(t, "LIM")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-5", "Limit", "08B")
-	erstes := testdaten.LegeTitelAn(t, th.pool, "Erstes Buch LIM", 1)
+	erstes := testdaten.LegeTitelAn(t, th.pool, "Erstes Buch LIM")
 	testdaten.LegeExemplarAn(t, th.pool, erstes, "B-LIM-1", true, "")
 	testweg.BucheAusleiheUeberDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
-	altes := testdaten.LegeTitelAn(t, th.pool, "Verlorenes Buch LIM", 1)
+	altes := testdaten.LegeTitelAn(t, th.pool, "Verlorenes Buch LIM")
 	verloren := testdaten.LegeExemplarAn(t, th.pool, altes, "B-LIM-ALT", false, "")
 	if _, err := th.pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 9.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {

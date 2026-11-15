@@ -113,7 +113,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Vergabe", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Vergabe")
 
 	// 1. Eine Bestellung mit Vorab-Barcodes bringt den Bestand auf Stand.
 	bestelleExemplare(t, pool, bookRepo, titel, 2)
@@ -142,7 +142,7 @@ func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Recycling", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Recycling")
 
 	vergeben := naechsteInterneNummer(t, srv)
 	id := testdaten.LegeExemplarAn(t, pool, titel, vergeben, true, "")
@@ -168,7 +168,7 @@ func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Drift", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Drift")
 
 	// Von Hand weit über den Stand der Sequenz hinaus vergeben.
 	var stand int64
@@ -199,7 +199,7 @@ func TestBarcodeVergabe_SechsstelligeNummerBleibtGanz(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Sechsstellig", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Sechsstellig")
 	var stand int64
 	if err := pool.QueryRow(ctx, `SELECT setval('barcode_seq', GREATEST(last_value, 99998)) FROM barcode_seq`).
 		Scan(&stand); err != nil {

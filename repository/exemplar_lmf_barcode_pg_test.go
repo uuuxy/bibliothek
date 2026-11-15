@@ -27,7 +27,7 @@ func TestAltesLMFEtikett_FuehrtZumExemplar(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Etikett-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Etikett-Titel")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFR-1", true, "")
 	if err := setzeLMFBarcode(t, pool, exemplarID, "LMF-9783060158423-801"); err != nil {
 		t.Fatalf("altes Etikett setzen: %v", err)
@@ -74,7 +74,7 @@ func TestLMFNummer_NieDieNummerEinesExemplars(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Regel-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Regel-Titel")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFR-21", true, "")
 	for _, nummer := range []string{"LMF-9783060158423-821", "lmf-9783060158423-822", "Lmf-9783060158423-823"} {
 		_, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, titelID, nummer)
@@ -92,7 +92,7 @@ func TestAltesLMFEtikett_NurLMFNummernJeEinmal(t *testing.T) {
 	pool := pgTestPool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Regel-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Regel-Titel")
 	eins := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFR-11", true, "")
 	zwei := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFR-12", true, "")
 

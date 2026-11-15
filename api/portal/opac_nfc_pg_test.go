@@ -26,9 +26,9 @@ func TestOPACSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 	ctx := context.Background()
 
 	const zusammengesetzt = "Der Herr der Ringe - Anhänge und Register"
-	ringe := testdaten.LegeTitelMitSignaturAn(t, pool, "Der Herr der Ringe - Anha\u0308nge und Register", "", 0)
+	ringe := testdaten.LegeTitelMitSignaturAn(t, pool, "Der Herr der Ringe - Anha\u0308nge und Register", "")
 	testdaten.LegeExemplarAn(t, pool, ringe, "B-NFC-1", true, "")
-	vogel := testdaten.LegeTitelMitSignaturAn(t, pool, "Vogelwelt", "", 0)
+	vogel := testdaten.LegeTitelMitSignaturAn(t, pool, "Vogelwelt", "")
 	testdaten.LegeExemplarAn(t, pool, vogel, "B-NFC-2", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = $2 WHERE id = $1`, vogel, "Mu\u0308ller, Gu\u0308nter"); err != nil {
 		t.Fatal(err)

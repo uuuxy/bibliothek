@@ -92,7 +92,7 @@ func TestInventurStarten_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ")
 	testdaten.LegeExemplarAn(t, pool, titelID, "IS-1", true, "")
 	testdaten.LegeExemplarAn(t, pool, titelID, "IS-2", true, "")
 	testdaten.LegeExemplarAn(t, pool, titelID, "IS-GESPERRT", false, "")

@@ -32,7 +32,7 @@ func TestLeserEndgueltigLoeschen_MeldungNenntDenGrund(t *testing.T) {
 				t.Fatalf("in den Papierkorb legen: %v", err)
 			}
 		}
-		titelID := testdaten.LegeTitelAn(t, pool, "Papierkorbtitel", 0)
+		titelID := testdaten.LegeTitelAn(t, pool, "Papierkorbtitel")
 		exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "B-ENDGUELTIG-1", true, "")
 		return leserID, exemplarID
 	}

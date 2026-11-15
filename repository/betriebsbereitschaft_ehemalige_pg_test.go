@@ -38,7 +38,7 @@ func TestZaehleEhemaligeMitOffenenVorgaengen(t *testing.T) {
 		bezahlt bool
 	}{{forderungOffen, "BC-W2", false}, {forderungBezahlt, "BC-W3", true}} {
 		// Eine Forderung hängt immer an einem Exemplar (check_damage_item).
-		eid := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Titel "+f.barcode, 1), f.barcode, true, "")
+		eid := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Titel "+f.barcode), f.barcode, true, "")
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 			VALUES ($1, $2, 'Verlust', 12.50, $3)`, eid, f.id, f.bezahlt); err != nil {

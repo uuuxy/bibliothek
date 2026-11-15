@@ -36,8 +36,8 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
-	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mit-Barcode", 0)
-	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Barcode", 0)
+	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mit-Barcode")
+	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Barcode")
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
@@ -122,7 +122,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Normalo", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Normal", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Normal")
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,

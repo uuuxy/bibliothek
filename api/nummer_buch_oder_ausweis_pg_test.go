@@ -27,7 +27,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RolleAdmin}
 
-	titelID := testdaten.LegeTitelAn(t, pool, "Nummernprobe 131", 5)
+	titelID := testdaten.LegeTitelAn(t, pool, "Nummernprobe 131")
 	exemplar := func(t *testing.T, barcode string) string {
 		t.Helper()
 		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")

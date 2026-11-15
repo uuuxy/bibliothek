@@ -23,7 +23,7 @@ func TestEtikettenbogen_DrucktDieFelderDesServers(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Seydlitz Geographie", "LMF-Deutsch 5", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Seydlitz Geographie", "LMF-Deutsch 5")
 	testdaten.LegeExemplarAn(t, pool, titelID, "B-ETI-1", true, "")
 	// Ein festes Zugangsjahr: Das Jahr des Testlaufs stünde auch dann da, wenn das Feld fehlte
 	// und der Erzeuger es selbst bildete.

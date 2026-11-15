@@ -17,7 +17,7 @@ func TestBestellmail_WareneingangNimmtDenVermerk(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "geliefert")
 	testdaten.SetzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Geliefert", true)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Geliefert", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Geliefert")
 
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)

@@ -48,7 +48,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Link", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Link", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Link")
 
 	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -92,7 +92,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneAdresse", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneAdresse", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneAdresse")
 
 	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -125,7 +125,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Zahlen", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen")
 
 	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
@@ -151,7 +151,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Topf", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf")
 
 	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
@@ -185,8 +185,8 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-OhneBarcode", false)
-	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-MitBarcode", 0)
-	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneBarcode", 0)
+	mitBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-MitBarcode")
+	ohneBarcode := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-OhneBarcode")
 
 	rumpf := fmt.Sprintf(`{"supplier_id":%q,"mittel":"land","items":[
 		{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true},
@@ -234,7 +234,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "IdemLieferant", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Idem", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Idem")
 	key := "33333333-3333-3333-3333-333333333333"
 
 	rec1 := bestelleMitSchluessel(t, srv, lieferant, titel, key)

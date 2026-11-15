@@ -25,7 +25,7 @@ func TestTitelHistorie_GetrennteAusleiheIstAnonymNichtLehrkraft(t *testing.T) {
 	ctx := context.Background()
 
 	var titelID, exemplarID, schuelerID, lehrerID string
-	titelID = testdaten.LegeTitelAn(t, pool, "Historie-Titel", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Historie-Titel")
 	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "B-HIST-1", true, "")
 	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-HIST", "Mia", "Muster", "7a", 2030)
 	lehrerID = testdaten.LegeKontoAn(t, pool, "Lena", "Lehr", "lehr-hist@example.org", "kollegium", true)

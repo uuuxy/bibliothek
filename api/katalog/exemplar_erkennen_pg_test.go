@@ -22,9 +22,9 @@ func TestExemplarErkennen_FindetExemplarUeberBarcodeUndEtikett(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	litteraTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Erkennen Littera-Band", "ERK 1", 1)
+	litteraTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Erkennen Littera-Band", "ERK 1")
 	litteraExemplar := testdaten.LegeExemplarAn(t, pool, litteraTitel, "101634", true, "")
-	lmfTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Erkennen Lernmittel", "ERK 2", 1)
+	lmfTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Erkennen Lernmittel", "ERK 2")
 	lmfExemplar := testdaten.LegeExemplarAn(t, pool, lmfTitel, "B-ERK-LMF", true, "")
 	if _, err := pool.Exec(t.Context(), `UPDATE buecher_exemplare SET lmf_barcode = 'LMF-9783060158423-001' WHERE id = $1`, lmfExemplar); err != nil {
 		t.Fatalf("altes Etikett setzen: %v", err)

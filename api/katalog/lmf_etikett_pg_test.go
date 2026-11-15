@@ -21,7 +21,7 @@ func TestAltesLMFEtikett_SucheUndExemplarliste(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Katalog-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Katalog-Titel")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFK-1", true, "")
 	testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFK-2", true, "")
 	if _, err := pool.Exec(context.Background(),

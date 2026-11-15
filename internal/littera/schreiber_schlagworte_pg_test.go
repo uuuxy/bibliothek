@@ -284,7 +284,7 @@ func TestSchreibeSchlagworte_AbgleichZaehltNurDiesenLauf(t *testing.T) {
 	s, _ := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	vorhanden := testdaten.LegeTitelAn(t, pool, "Schon im Katalog", 5)
+	vorhanden := testdaten.LegeTitelAn(t, pool, "Schon im Katalog")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Geschichte", "Lehrer"}); err != nil {
 		t.Fatal(err)
 	}

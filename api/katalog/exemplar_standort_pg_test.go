@@ -90,7 +90,7 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7", 0)
+	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7")
 	ohne := testdaten.LegeExemplarAn(t, pool, schulbuch, "ST-OHNE", true, "")
 	schrank := testdaten.LegeExemplarAn(t, pool, schulbuch, "ST-SCHRANK", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET standort = 'Lehrerschrank' WHERE id = $1`, schrank); err != nil {
@@ -200,9 +200,9 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7", 0)
-	roman := testdaten.LegeTitelMitSignaturAn(t, pool, "Tschick", "Ju Her", 0)
-	ohneStandort := testdaten.LegeTitelMitSignaturAn(t, pool, "Momo", "Ju End", 0)
+	schulbuch := testdaten.LegeTitelMitSignaturAn(t, pool, "Natura 2", "LMF Bio 7")
+	roman := testdaten.LegeTitelMitSignaturAn(t, pool, "Tschick", "Ju Her")
+	ohneStandort := testdaten.LegeTitelMitSignaturAn(t, pool, "Momo", "Ju End")
 	testdaten.LegeExemplarAn(t, pool, ohneStandort, "SL-MOMO", true, "")
 	setze := func(titelID, barcode, standort string) string {
 		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
@@ -284,7 +284,7 @@ func TestExemplarStandort_GleicheKennungZweimal(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe", 0)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe")
 	ex := testdaten.LegeExemplarAn(t, pool, titel, "ES-DOPPELT", true, "")
 
 	rec := standortSetzen(t, srv, pool, []string{ex, strings.ToUpper(ex)}, "Regal 3")

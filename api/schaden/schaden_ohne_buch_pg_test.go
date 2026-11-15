@@ -108,7 +108,7 @@ func TestSchadenMelden_GeraeteausleiheBuchtNichts(t *testing.T) {
 	w := baueSchadensWelt(t, "schaden-geraet@example.org")
 	kind := testdaten.LegeSchuelerAn(t, w.pool, "S-OHNEBUCH-A", "Gerda", "07A")
 	ausleihe := w.geraeteAusleihe(t, kind, "G-OHNEBUCH-1")
-	regalbuch := testdaten.LegeExemplarAn(t, w.pool, testdaten.LegeTitelAn(t, w.pool, "Regaltitel", 1), "EX-OHNEBUCH-1", true, "")
+	regalbuch := testdaten.LegeExemplarAn(t, w.pool, testdaten.LegeTitelAn(t, w.pool, "Regaltitel"), "EX-OHNEBUCH-1", true, "")
 
 	rec := w.sende(t, "/api/damage/report", fmt.Sprintf(
 		`{"loan_id":%q,"copy_id":%q,"beschreibung":"weg","art":"nicht_zurueckgegeben","betrag":1500}`, ausleihe, regalbuch))
@@ -157,7 +157,7 @@ func TestBescheid_GeraeteausleiheBuchtNichts(t *testing.T) {
 func TestSchadenMelden_ExemplarDerAnfrageZaehltNicht(t *testing.T) {
 	w := baueSchadensWelt(t, "schaden-exemplar@example.org")
 	ctx := context.Background()
-	titel := testdaten.LegeTitelAn(t, w.pool, "Exemplartitel", 1)
+	titel := testdaten.LegeTitelAn(t, w.pool, "Exemplartitel")
 	geliehen := testdaten.LegeExemplarAn(t, w.pool, titel, "EX-GELIEHEN-1", true, "")
 	imRegal := testdaten.LegeExemplarAn(t, w.pool, titel, "EX-IMREGAL-1", true, "")
 	kind := testdaten.LegeSchuelerAn(t, w.pool, "S-OHNEBUCH-C", "Finn", "08A")

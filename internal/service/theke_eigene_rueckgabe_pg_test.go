@@ -24,7 +24,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-SPERRE-1", "Gesperrt", "9H1")
-	testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
+	testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Titel Sperre"), "B-SPERRE-1", true, "")
 	testweg.BucheAusleiheUeberDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
 
 	if _, err := pool.Exec(ctx,
@@ -102,7 +102,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
-	titel := testdaten.LegeTitelAn(t, pool, "Titel Fremdrueckgabe", 3)
+	titel := testdaten.LegeTitelAn(t, pool, "Titel Fremdrueckgabe")
 	for _, bc := range []string{"B-FREMD-1", "B-FREMD-2", "B-FREMD-3"} {
 		testdaten.LegeExemplarAn(t, pool, titel, bc, true, "")
 	}
@@ -207,7 +207,7 @@ func TestTheke_EigeneRueckgabeStelltDemNaechstenBereit(t *testing.T) {
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-BEREIT-1", "Bringt", "9H1")
 	wartend := testdaten.LegeSchuelerAn(t, pool, "S-BEREIT-2", "Wartet", "9H1")
-	titel := testdaten.LegeTitelAn(t, pool, "Titel Bereit", 1)
+	titel := testdaten.LegeTitelAn(t, pool, "Titel Bereit")
 	testdaten.LegeExemplarAn(t, pool, titel, "B-BEREIT-1", true, "")
 
 	bookRepo := repository.NewKatalogAbfragen(pool)

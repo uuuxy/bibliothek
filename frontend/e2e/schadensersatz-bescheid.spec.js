@@ -41,8 +41,8 @@ test.describe('Schadensersatz-Bescheid', () => {
 				VALUES ('S-BESCH-${suffix}', 'Test', '${NACHNAME}', '08G2', 0, 'Musterweg', '12', '61381', 'Musterstadt')
 				RETURNING id
 			), t AS (
-				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, meldebestand)
-				VALUES ('LMF-Bescheidbuch ${suffix}', '978-3-1${suffix}', true, 1)
+				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel)
+				VALUES ('LMF-Bescheidbuch ${suffix}', '978-3-1${suffix}', true)
 				RETURNING id
 			), e AS (
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis, erworben_am)
@@ -63,8 +63,8 @@ test.describe('Schadensersatz-Bescheid', () => {
 				VALUES ('S-VERL-${suffix}', 'Test', '${VERLUSTKIND}', '08G2', 0, 'Musterweg', '14', '61381', 'Musterstadt')
 				RETURNING id
 			), t AS (
-				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, meldebestand)
-				VALUES ('LMF-Verlustbuch ${suffix}', '978-3-2${suffix}', true, 1)
+				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel)
+				VALUES ('LMF-Verlustbuch ${suffix}', '978-3-2${suffix}', true)
 				RETURNING id
 			), e AS (
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis, erworben_am)

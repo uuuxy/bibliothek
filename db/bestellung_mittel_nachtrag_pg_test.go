@@ -26,9 +26,9 @@ func TestNachtragMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lernmittel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7", 0)
-	lernmittel2 := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7", 0)
-	buecherei := testdaten.LegeTitelAn(t, pool, "Tribute von Panem", 0)
+	lernmittel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7")
+	lernmittel2 := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7")
+	buecherei := testdaten.LegeTitelAn(t, pool, "Tribute von Panem")
 
 	nurLernmittel := testdaten.LegeBestellungOhneTopfAn(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
 	nurBuecherei := testdaten.LegeBestellungOhneTopfAn(t, pool, "nur-buecherei", []string{buecherei})

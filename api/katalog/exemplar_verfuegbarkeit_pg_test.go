@@ -77,7 +77,7 @@ func TestTitelExemplare_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
-	titel := testdaten.LegeTitelAn(t, pool, "Verfuegbarkeit", 1)
+	titel := testdaten.LegeTitelAn(t, pool, "Verfuegbarkeit")
 	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VERF-1", "Verf", "7a")
 
 	testdaten.LegeExemplarAn(t, pool, titel, "BC-FREI", true, "") // nie verliehen
@@ -136,7 +136,7 @@ func TestTitelExemplare_TitelOhneExemplare(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titel := testdaten.LegeTitelAn(t, pool, "Ohne Exemplare", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Ohne Exemplare")
 
 	if zeilen := exemplarZeilen(t, srv, titel); len(zeilen) != 0 {
 		t.Errorf("len(zeilen) = %d Zeilen, erwartet leere Liste", len(zeilen))

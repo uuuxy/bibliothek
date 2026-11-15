@@ -29,7 +29,7 @@ func TestLegeTitelAusTrefferAn_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Erste Liebe"}); err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg"}); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Der Process", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Der Process", "")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Kafka <Franz>", "Krieg"}); err != nil {
 		t.Fatal(err)
 	}

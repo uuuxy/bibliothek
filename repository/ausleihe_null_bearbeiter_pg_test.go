@@ -23,7 +23,7 @@ func TestFindeOffene_NullBearbeiterKein500(t *testing.T) {
 	schuelerID := legeSchuelerAn(t, pool, "LOAN-NB", "Nulli", "7a")
 
 	var titelID, copyID string
-	titelID = testdaten.LegeTitelAn(t, pool, "NB-Titel", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "NB-Titel")
 	copyID = testdaten.LegeExemplarAn(t, pool, titelID, "NB-B-1", true, "")
 
 	// Eine Ausleihe ohne bearbeiter_id (NULL).

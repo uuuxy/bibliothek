@@ -36,7 +36,7 @@ func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 		RETURNING id`).Scan(&lehrkraftID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
-	titelID = testdaten.LegeTitelAn(t, pool, "Anliegen-Tür: vorhandener Titel", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Anliegen-Tür: vorhandener Titel")
 	t.Cleanup(func() {
 		aufraeumen := context.Background()
 		if _, err := pool.Exec(aufraeumen, `DELETE FROM lehrer_anliegen WHERE angefordert_von = $1`, lehrkraftID); err != nil {

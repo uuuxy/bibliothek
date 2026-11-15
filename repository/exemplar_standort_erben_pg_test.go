@@ -85,7 +85,7 @@ func TestExemplarStandort_NeuesExemplarErbt(t *testing.T) {
 	ctx := context.Background()
 
 	// Ein Nachbar mit eigenem Standort: Die Regel liest nur die Exemplare des eigenen Titels.
-	nachbar := testdaten.LegeTitelMitSignaturAn(t, pool, "Nachbar im Keller", "Ju Nac", 0)
+	nachbar := testdaten.LegeTitelMitSignaturAn(t, pool, "Nachbar im Keller", "Ju Nac")
 	for i := range 2 {
 		id := testdaten.LegeExemplarAn(t, pool, nachbar, fmt.Sprintf("ERB-NACHBAR-%d", i), true, "")
 		if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET standort = 'Keller' WHERE id = $1`, id); err != nil {

@@ -37,7 +37,7 @@ func newAussonderWelt(t *testing.T) *aussonderWelt {
 	w := &aussonderWelt{pool: pool, signatur: "AUSS" + suffix, barcode: "B-AUSS-" + suffix}
 	w.bearbeiter = testdaten.LegeBearbeiterAn(t, pool)
 	w.schueler = testdaten.LegeSchuelerAn(t, pool, "S-AUSS-"+suffix, "Nora", "07H1")
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Aussonder-Band", w.signatur, 0)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Aussonder-Band", w.signatur)
 	w.exemplarID = testdaten.LegeExemplarAn(t, pool, titel, w.barcode, true, "")
 	// Ein Exemplar, das nach dem Beginn des Laufs angelegt wurde, bucht der Abschluss nicht.
 	if _, err := pool.Exec(ctx, `SELECT pg_sleep(0.02)`); err != nil {

@@ -80,7 +80,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 		t.Fatalf("Titel mit Angaben: %v", err)
 	}
 	// … und einer, bei dem autor/verlag/cover_url NULL sind.
-	ohneAngaben := testdaten.LegeTitelAn(t, pool, "Titel ohne Angaben", 5)
+	ohneAngaben := testdaten.LegeTitelAn(t, pool, "Titel ohne Angaben")
 
 	for _, p := range []struct {
 		titelID string
@@ -183,8 +183,8 @@ func TestBestelldetail_GleicherTitelKommtJeKennungZusammen(t *testing.T) {
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Gleichnamig", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
-	buch := testdaten.LegeTitelAn(t, pool, "Green Line 3", 0)
-	heft := testdaten.LegeTitelAn(t, pool, "Green Line 3", 0)
+	buch := testdaten.LegeTitelAn(t, pool, "Green Line 3")
+	heft := testdaten.LegeTitelAn(t, pool, "Green Line 3")
 	exemplarAusBestellung(t, pool, buch, bestellung, "GL-0001", true)
 	exemplarAusBestellung(t, pool, heft, bestellung, "GL-0002", true)
 	exemplarAusBestellung(t, pool, buch, bestellung, "GL-0003", true)

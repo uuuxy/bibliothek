@@ -55,7 +55,7 @@ func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
 	})
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Einbuch-Titel", "Ein 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Einbuch-Titel", "Ein 1")
 
 	// einbuchen liefert Status, die gemeldete Zahl und den Rumpf für die Fehlermeldung.
 	einbuchen := func(t *testing.T, rumpf string) (int, int, string) {

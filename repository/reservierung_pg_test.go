@@ -19,7 +19,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 
 	// Ein Titel mit drei Exemplaren. legeSignaturMitExemplarenAn taugt hier nicht: Es legt je
 	// Exemplar einen eigenen Titel an, und die Verfügbarkeit wäre immer 1.
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSQ-Klassensatz", "KSQ", 5)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSQ-Klassensatz", "KSQ")
 	exemplare := make([]string, 3)
 	for i := range exemplare {
 		if err := pool.QueryRow(ctx,

@@ -47,7 +47,7 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "OhneTopf", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneTopf", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-OhneTopf")
 
 	for _, mittel := range []string{"", "kreis"} {
 		rec := bestelleMitTopf(t, srv, lieferant, titel, mittel)
@@ -73,7 +73,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Topf", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Topf")
 
 	// Händler mit zweiter Kundennummer für den Schulträger …
 	mitZweiter := testdaten.LegeLieferantAn(t, pool, "ZweiKonten", false)

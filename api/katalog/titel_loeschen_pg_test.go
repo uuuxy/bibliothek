@@ -25,7 +25,7 @@ func titelMitVerliehenemExemplar(t *testing.T) (pool *pgxpool.Pool, adminID, tit
 	p := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, p)
 	adminID = testdaten.LegeKollegiumskontoAn(t, p, "ada@titelloesch.invalid")
-	titelID = testdaten.LegeTitelAn(t, p, "Titel mit verliehenem Exemplar", 0)
+	titelID = testdaten.LegeTitelAn(t, p, "Titel mit verliehenem Exemplar")
 	verliehenID = testdaten.LegeExemplarAn(t, p, titelID, "B-TITELLOESCH-1", true, "")
 	testdaten.LegeExemplarAn(t, p, titelID, "B-TITELLOESCH-2", true, "")
 	schuelerID := testdaten.LegeSchuelerAn(t, p, "S-TITELLOESCH-1", "Lotte", "07A")

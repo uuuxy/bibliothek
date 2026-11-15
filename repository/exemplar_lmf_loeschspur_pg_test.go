@@ -20,9 +20,9 @@ func TestAltesLMFEtikett_GeloeschtesExemplarBleibtAuffindbar(t *testing.T) {
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "lmf-loeschspur@test.invalid")
 	marke := fmt.Sprintf("%d", time.Now().UnixNano()%1_000_000_000)
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Löschspur-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Löschspur-Titel")
 	mitTitel := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFL-1-"+marke, true, "")
-	verloren := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "LMF-Verlust-Titel", 0),
+	verloren := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "LMF-Verlust-Titel"),
 		"B-LMFL-2-"+marke, true, "")
 	alt := map[string]string{
 		mitTitel: "LMF-9783060158423-" + marke + "1",
@@ -70,7 +70,7 @@ func TestAltesLMFEtikett_NachdruckSucheFindetDasExemplar(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Nachdruck-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Nachdruck-Titel")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFN-1", true, "")
 	testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFN-2", true, "")
 	if err := setzeLMFBarcode(t, pool, exemplarID, "LMF-9783060158423-951"); err != nil {

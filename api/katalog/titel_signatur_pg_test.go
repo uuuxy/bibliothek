@@ -22,7 +22,7 @@ func TestTitelSignaturSetzen_SpeichertNeueSignatur(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Tribute von Panem", "BIB Jugendbuch")
 
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+titelID+"/signatur",
 		strings.NewReader(`{"signatur":"JF Panem"}`))

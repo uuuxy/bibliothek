@@ -22,8 +22,8 @@ func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Summen", false)
-	erster := testdaten.LegeTitelAn(t, pool, "LMF-Summe Eins", 0)
-	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Summe Zwei", 0)
+	erster := testdaten.LegeTitelAn(t, pool, "LMF-Summe Eins")
+	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Summe Zwei")
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, LieferantID: lieferant,
@@ -67,7 +67,7 @@ func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Ohne Topf", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Topf", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Ohne-Topf")
 
 	for _, mittel := range []string{"", "kreis"} {
 		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
@@ -98,8 +98,8 @@ func TestLegeBestellungAn_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Spalten", false)
-	erster := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Eins", 0)
-	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Zwei", 0)
+	erster := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Eins")
+	zweiter := testdaten.LegeTitelAn(t, pool, "LMF-Spalte Zwei")
 	for titel, isbn := range map[string]string{erster: "9783161484100", zweiter: "9780306406157"} {
 		if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $2 WHERE id = $1`, titel, isbn); err != nil {
 			t.Fatalf("ISBN setzen: %v", err)

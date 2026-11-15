@@ -116,7 +116,7 @@ func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 	for runde := 0; runde < 8; runde++ {
 		resetInventurDaten(t, pool)
 		bearbeiter := legeBearbeiterAn(t, pool)
-		titelID := testdaten.LegeTitelAn(t, pool, "KoordTitel", 5)
+		titelID := testdaten.LegeTitelAn(t, pool, "KoordTitel")
 		exID := testdaten.LegeExemplarAn(t, pool, titelID, "INV-KOORD", true, "")
 		var sessionID string
 		if err := pool.QueryRow(ctx,

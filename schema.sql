@@ -475,7 +475,6 @@ CREATE TABLE buecher_titel (
     isbn VARCHAR(20) UNIQUE,                          -- ISBN-10 or ISBN-13
     verlag VARCHAR(255),
     erscheinungsjahr INTEGER,
-    meldebestand INTEGER NOT NULL DEFAULT 5,          -- Reorder threshold point
     cover_url VARCHAR(512),                           -- Integrated cover URL
     cover_status VARCHAR(50) DEFAULT 'PENDING',       -- Added for async cover fetching
     signatur VARCHAR(255),                            -- Signature (e.g. from MAB 700)
@@ -1986,7 +1985,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('169_passwort_geprueft_am.sql'),
 ('170_ausweisnummer_nicht_am_buch.sql'),
 ('171_geloeschte_exemplare.sql'),
-('172_anmeldeverfahren_je_konto.sql')
+('172_anmeldeverfahren_je_konto.sql'),
+('173_bestellschwellen_entfallen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2208,9 +2208,6 @@ INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 -- Migration 039). Hier für Neuinstallationen; idempotent per DO-Guard.
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_meldebestand_nonneg') THEN
-        ALTER TABLE buecher_titel ADD CONSTRAINT chk_meldebestand_nonneg CHECK (meldebestand >= 0);
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_einkaufspreis_nonneg') THEN
         ALTER TABLE buecher_exemplare ADD CONSTRAINT chk_einkaufspreis_nonneg CHECK (einkaufspreis >= 0);
     END IF;

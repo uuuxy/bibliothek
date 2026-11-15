@@ -26,7 +26,7 @@ func TestExemplarStatus_AntwortNenntDenBestand(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	handler := srv.ExemplarStatusAendern(bookRepo, repository.NewBescheidAbfragen(pool))
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Status-Titel", "Sta 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Status-Titel", "Sta 1")
 
 	ausgesondert := func(barcode string) string {
 		t.Helper()

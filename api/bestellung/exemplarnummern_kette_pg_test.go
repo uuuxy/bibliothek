@@ -60,7 +60,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{Mail: post, DB: &db.Verbindung{Pool: pool}}}
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Kette", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Kette", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Kette")
 
 	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {

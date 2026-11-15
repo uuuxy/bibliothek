@@ -42,7 +42,7 @@ func leereInventur(t *testing.T, pool *pgxpool.Pool) {
 func verlustLage(t *testing.T, pool *pgxpool.Pool, barcodes ...string) map[string]string {
 	t.Helper()
 	ctx := context.Background()
-	titelID := testdaten.LegeTitelAn(t, pool, "Verlust-Titel", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "Verlust-Titel")
 	lage := make(map[string]string, len(barcodes))
 	for _, b := range barcodes {
 		lage[b] = testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
@@ -130,7 +130,7 @@ func TestVerlusteEndgueltigLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) 
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-1", "VLH-2")
-	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL", true, "")
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal"), "VLH-REGAL", true, "")
 
 	rec := verlusteLoeschen(t, srv, admin, verlustRumpf(t, lage["VLH-1"], imRegal, lage["VLH-2"]))
 	if rec.Code != http.StatusOK {
@@ -174,7 +174,7 @@ func TestVerlusteEndgueltigLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 	leereInventur(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal"), "VLH-REGAL-2", true, "")
 
 	rec := verlusteLoeschen(t, srv, admin, verlustRumpf(t, imRegal))
 	if rec.Code != http.StatusOK {
@@ -356,7 +356,7 @@ func TestFundMelden_OhneOffenenVerlustIst404(t *testing.T) {
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-2")["VGH-2"]
-	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal", 0), "VGH-REGAL", true, "")
+	imRegal := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Im Regal"), "VGH-REGAL", true, "")
 
 	if rec := verlustGefunden(t, srv, admin, "00000000-0000-0000-0000-000000000000"); rec.Code != http.StatusNotFound {
 		t.Errorf("unbekannte Kennung: Status %d, erwartet 404: %s", rec.Code, rec.Body.String())

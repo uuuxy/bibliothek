@@ -172,7 +172,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 	l := bestellmailLageAnlegen(t, "erneut")
 	testdaten.SetzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Erneut", true)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Erneut", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Erneut")
 
 	// 1. Der Mailserver ist nicht erreichbar: Die Bestellung ist gespeichert und trägt den Vermerk.
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
@@ -287,7 +287,7 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	l.srv.Mail = mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Ohne", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Ohne", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Ohne"))
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl kein Mailserver eingerichtet ist")
 	}
@@ -310,7 +310,7 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	post, sitzungen := tuertest.FangeMailAb(t)
 	l.srv.Mail = post
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Nur", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Nur", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Nur"))
 	smtptest.WarteAufMail(t, sitzungen)
 	if l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt einen Vermerk, obwohl die Mail rausging")
@@ -338,7 +338,7 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "bestaetigt")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-Bestaetigt", true)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Bestaetigt")
 
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -376,7 +376,7 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 func TestBestellmail_VermerkAuchWennDieAnfrageAbgebrochenIst(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "abbruch")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Abbruch", false)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abbruch", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abbruch")
 
 	// abgebrochen schickt die Anfrage und bricht sie ab, sobald der Versand begonnen hat.
 	abgebrochen := func(pfad, rumpf string) {
@@ -456,7 +456,7 @@ func TestBestellmail_ErneutOhneAdresseWarntUndHaengtDieBoegenAn(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-OhneAdresse", true)
 
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneAdresse", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneAdresse"))
 	post, sitzungen := tuertest.FangeMailAb(t)
 	l.srv.Mail = post
 
@@ -486,7 +486,7 @@ func TestBestellmail_ErneutGesendetStehtAuchNachAbbruchImProtokoll(t *testing.T)
 	l := bestellmailLageAnlegen(t, "abbruch-gesendet")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-AbbruchGesendet", false)
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-AbbruchGesendet", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-AbbruchGesendet"))
 	if _, err := l.pool.Exec(t.Context(),
 		`UPDATE lieferanten SET email = 'abbruch-berichtigt@example.invalid' WHERE id = $1`, lieferant); err != nil {
 		t.Fatalf("Adresse berichtigen: %v", err)

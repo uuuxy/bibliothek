@@ -99,7 +99,7 @@ func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	tid := testdaten.LegeTitelAn(t, pool, "Klassenlektuere", 0)
+	tid := testdaten.LegeTitelAn(t, pool, "Klassenlektuere")
 	for i := 0; i < 5; i++ {
 		testdaten.LegeExemplarAn(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
 	}
@@ -137,13 +137,13 @@ func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	altTid := testdaten.LegeTitelAn(t, pool, "Uralt nie ausgeliehen", 0)
+	altTid := testdaten.LegeTitelAn(t, pool, "Uralt nie ausgeliehen")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-OLD', true, now() - INTERVAL '3 years')`, altTid); err != nil {
 		t.Fatalf("altes Exemplar: %v", err)
 	}
-	neuTid := testdaten.LegeTitelAn(t, pool, "Frischer Neuzugang", 0)
+	neuTid := testdaten.LegeTitelAn(t, pool, "Frischer Neuzugang")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-NEW', true, now())`, neuTid); err != nil {

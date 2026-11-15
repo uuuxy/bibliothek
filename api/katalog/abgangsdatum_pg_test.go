@@ -50,7 +50,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel", "Abg 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel", "Abg 1")
 
 	// Tür 1: die Abfrage des Status-Editors, direkt (KatalogAbfragen.AendereExemplarStatus).
 	eins := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-1", true, "")
@@ -115,7 +115,7 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 2", "Abg 2", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 2", "Abg 2")
 	id := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-STABIL", true, "")
 	if err := bookRepo.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
@@ -157,7 +157,7 @@ func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
 	ctx := context.Background()
 	bookRepo := repository.NewKatalogAbfragen(pool)
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 3", "Abg 3", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 3", "Abg 3")
 	id := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-ZURUECK", true, "")
 	if err := bookRepo.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
@@ -183,7 +183,7 @@ func TestAbgangsdatum_KeinErfundenesDatumBeimEinfuegen(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 4", "Abg 4", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Abgangs-Titel 4", "Abg 4")
 	var id string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, ist_ausgesondert, aussonderung_grund)

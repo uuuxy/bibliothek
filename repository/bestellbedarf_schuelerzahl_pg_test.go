@@ -94,16 +94,16 @@ func TestLadeBestellbedarf_JahrgangRuecktNach(t *testing.T) {
 	siebte := kinderInKlasse(t, pool, "07a", 4)
 	kinderInKlasse(t, pool, "06a", 6)
 
-	mathe := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7", 5)
+	mathe := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = '9780000577092' WHERE id = $1`, mathe); err != nil {
 		t.Fatalf("ISBN setzen: %v", err)
 	}
 	leiheJedemEins(t, pool, exemplareVon(t, pool, mathe, "MA", 4), siebte, frist, false)
 
-	deutsch := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7", 5)
+	deutsch := testdaten.LegeTitelAn(t, pool, "LMF-Deutsch 7")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, deutsch, "DE", 6), siebte, frist, false)
 
-	englisch := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 7", 5)
+	englisch := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 7")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, englisch, "EN", 4), siebte, frist, false)
 	testdaten.LegeExemplarImZulaufAn(t, pool, englisch, "EN-Z1")
 	testdaten.LegeExemplarImZulaufAn(t, pool, englisch, "EN-Z2")
@@ -150,19 +150,19 @@ func TestLadeBestellbedarf_BuechertauschUndWasNichtZaehlt(t *testing.T) {
 	siebte := kinderInKlasse(t, pool, "07a", 4)
 	kinderInKlasse(t, pool, "06a", 6)
 
-	alt := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 7", 5)
+	alt := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 7")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, alt, "EA", 4), siebte, frist, true)
-	neu := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 8", 5)
+	neu := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 8")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, neu, "EB", 4), siebte, fristNaechstesJahr, false)
 
-	vorjahr := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 6", 5)
+	vorjahr := testdaten.LegeTitelAn(t, pool, "LMF-Englisch 6")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, vorjahr, "EC", 4), siebte, fristVorjahr, false)
 
 	abgaenger := testdaten.LegeAbgaengerAn(t, pool, "BB-ABG-1", "Abgang", "07a")
-	geschichte := testdaten.LegeTitelAn(t, pool, "LMF-Geschichte 7", 5)
+	geschichte := testdaten.LegeTitelAn(t, pool, "LMF-Geschichte 7")
 	leiheAus(t, pool, exemplareVon(t, pool, geschichte, "GE", 1)[0], abgaenger, frist, false)
 
-	roman := testdaten.LegeTitelAn(t, pool, "Roman für die 7", 5)
+	roman := testdaten.LegeTitelAn(t, pool, "Roman für die 7")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, roman, "RO", 4), siebte, frist, false)
 
 	lehrkraft := testdaten.LegeLeserAn(t, pool, "BB-L-1", "Lehr", "Kraft", "lehrkraft")
@@ -170,7 +170,7 @@ func TestLadeBestellbedarf_BuechertauschUndWasNichtZaehlt(t *testing.T) {
 		t.Fatalf("Klasse der Lehrkraft setzen: %v", err)
 	}
 	// Ohne Bestand stünde der Band da, sobald die Lehrkraft mitzählte.
-	lehrerband := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7 Lehrerband", 5)
+	lehrerband := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 7 Lehrerband")
 	band := exemplareVon(t, pool, lehrerband, "LB", 1)[0]
 	leiheAus(t, pool, band, lehrkraft, frist, false)
 	if _, err := pool.Exec(context.Background(), `UPDATE buecher_exemplare SET ist_ausgesondert = true,
@@ -199,17 +199,17 @@ func TestLadeBestellbedarf_AnteilAbschlussUndJahrgangFuenf(t *testing.T) {
 
 	siebte := kinderInKlasse(t, pool, "07a", 4)
 	kinderInKlasse(t, pool, "06a", 8)
-	franz := testdaten.LegeTitelAn(t, pool, "LMF-Französisch 7", 5)
+	franz := testdaten.LegeTitelAn(t, pool, "LMF-Französisch 7")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, franz, "FR", 2), siebte[:2], frist, false)
 
 	zehnte := kinderInKlasse(t, pool, "10R1", 2)
 	kinderInKlasse(t, pool, "09R1", 3)
 	kinderInKlasse(t, pool, "09H1", 5)
-	mathe10 := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 10 R", 5)
+	mathe10 := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 10 R")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, mathe10, "MZ", 2), zehnte, frist, false)
 
 	fuenfte := kinderInKlasse(t, pool, "05a", 3)
-	mathe5 := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 5", 5)
+	mathe5 := testdaten.LegeTitelAn(t, pool, "LMF-Mathe 5")
 	ex5 := exemplareVon(t, pool, mathe5, "MF", 3)
 	leiheJedemEins(t, pool, ex5[:2], fuenfte[:2], frist, false)
 	leiheAus(t, pool, ex5[2], fuenfte[2], frist, true)
@@ -241,7 +241,7 @@ func TestLadeBestellbedarf_MehrjahresBand(t *testing.T) {
 	sechste := kinderInKlasse(t, pool, "06a", 4)
 	siebte := kinderInKlasse(t, pool, "07a", 2)
 	achte := kinderInKlasse(t, pool, "08a", 2)
-	band := testdaten.LegeTitelAn(t, pool, "LMF-Atlas 7/8", 5)
+	band := testdaten.LegeTitelAn(t, pool, "LMF-Atlas 7/8")
 	if _, err := pool.Exec(context.Background(), `UPDATE buecher_titel
 		SET mehrjahresband = true, jahrgang_von = 7, jahrgang_bis = 8 WHERE id = $1`, band); err != nil {
 		t.Fatalf("Band einrichten: %v", err)
@@ -275,8 +275,8 @@ func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 	kinderInKlasse(t, pool, "06a", 5)
 	achte := kinderInKlasse(t, pool, "08a", 1)
 
-	alt := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7", 5)
-	neu := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)", 5)
+	alt := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7")
+	neu := testdaten.LegeTitelAn(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_titel
 		SET erscheinungsjahr = CASE WHEN id = $1::uuid THEN 2019 ELSE 2023 END,
@@ -290,7 +290,7 @@ func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 	if _, err := repository.FasseAuflagenZusammen(ctx, pool, alt, neu); err != nil {
 		t.Fatalf("zusammenfassen: %v", err)
 	}
-	einzeln := testdaten.LegeTitelAn(t, pool, "LMF-Physik 8", 5)
+	einzeln := testdaten.LegeTitelAn(t, pool, "LMF-Physik 8")
 	leiheJedemEins(t, pool, exemplareVon(t, pool, einzeln, "EIN", 1), achte, frist, false)
 
 	zeilen, err := repository.LadeBestellbedarf(ctx, pool, heute)

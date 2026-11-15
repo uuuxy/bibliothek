@@ -53,7 +53,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Fatalf("Probeschüler: %v", err)
 	}
 	lehrerID = testdaten.LegeKontoAn(t, pool, "Hanna", "Lehr", "lehr@example.org", "kollegium", true)
-	freihandTitel = testdaten.LegeTitelMitSignaturAn(t, pool, "Der Roman", "Ro Mus", 5)
+	freihandTitel = testdaten.LegeTitelMitSignaturAn(t, pool, "Der Roman", "Ro Mus")
 	// Lernmittel über ist_lernmittel am Titel: Ohne Eigentum am Exemplar und ohne Bestellung gilt
 	// diese Faustregel (repository.ExemplarTopfSQL).
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`).Scan(&lmfTitel); err != nil {

@@ -87,7 +87,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 		id := legeGesperrtenAbgaengerAn(t, pool, "OLD-2", "L-DEBT")
 
 		// Noch offene Ausleihe des Rückkehrers.
-		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch", 1)
+		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch")
 		exID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-DEBT", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
@@ -125,7 +125,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := legeGesperrtenAbgaengerAn(t, pool, "OLD-3", "L-DEBT3")
-		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch-3", 1)
+		titelID := testdaten.LegeTitelAn(t, pool, "Schuldbuch-3")
 		exID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-DEBT3", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)

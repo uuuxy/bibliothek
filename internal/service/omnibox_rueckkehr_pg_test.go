@@ -222,7 +222,7 @@ func TestScanHoltGesperrtesExemplarZurueck(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	mitarbeiterID := testdaten.LegeBearbeiterAn(t, pool)
-	titelID := testdaten.LegeTitelAn(t, pool, "Gesperrt-Testband", 1)
+	titelID := testdaten.LegeTitelAn(t, pool, "Gesperrt-Testband")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-GESPERRT-1", false, "")
 
 	studentRepo := repository.NewLeserAbfragen(pool)

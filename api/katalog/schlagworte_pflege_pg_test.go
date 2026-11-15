@@ -27,7 +27,7 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 	}
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	titelID := testdaten.LegeTitelAn(t, pool, "Tür-Probe", 5)
+	titelID := testdaten.LegeTitelAn(t, pool, "Tür-Probe")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, titelID, []string{"Tierfantasy", "Fantasy"}); err != nil {
 		t.Fatal(err)
 	}

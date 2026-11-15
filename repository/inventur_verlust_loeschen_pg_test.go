@@ -43,7 +43,7 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 
 	// Der Barcode ist wieder frei: buecher_exemplare.barcode_id ist ohne Teilindex eindeutig.
 	// Bliebe die Zeile stehen, wäre der Aufkleber für immer verbraucht.
-	titelID := testdaten.LegeTitelAn(t, pool, "Erdkundebuch 7 (neu)", 5)
+	titelID := testdaten.LegeTitelAn(t, pool, "Erdkundebuch 7 (neu)")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'VL-HIST')`, titelID); err != nil {
 		t.Errorf("Barcode wurde nicht freigegeben, Wiedereinpflegen unmöglich: %v", err)
@@ -152,7 +152,7 @@ func TestLoescheVerlusteEndgueltig_LaesstAndereAusleihenStehen(t *testing.T) {
 
 	exemplarID := legeVerlorenesExemplarAn(t, ctx, repo, "Erdkundebuch 7", "VL-GEWAEHLT", bearbeiter)
 	// Erst nach dem Abschluss angelegt, sonst buchte ihn derselbe Lauf mit als Verlust.
-	anderes := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Erdkundebuch 8", 5), "VL-ANDERES", true, "")
+	anderes := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Erdkundebuch 8"), "VL-ANDERES", true, "")
 	fremde := legeZurueckgegebeneAusleiheAn(t, ctx, pool, anderes, legeSchuelerFuerVerlustAn(t, ctx, pool, "VL-S3"))
 
 	if _, err := repo.LoescheVerlusteEndgueltig(ctx, []string{exemplarID}, bearbeiter); err != nil {

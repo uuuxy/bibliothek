@@ -59,7 +59,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndProtokoll(t *testing.T) {
 	}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Korrektur-Haendler", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Korrektur", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Korrektur")
 	rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d %s", rec.Code, rec.Body.String())
@@ -140,7 +140,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 	}
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Korrektur-Haendler-2", false)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Korrektur-2", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Korrektur-2")
 	if rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d", rec.Code)
 	}

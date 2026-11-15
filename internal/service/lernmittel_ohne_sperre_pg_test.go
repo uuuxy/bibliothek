@@ -27,7 +27,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-LMF-SPERRE-1", "Forderung", "9H1")
 
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
-	buecherei := testdaten.LegeTitelAn(t, pool, "Roman ohne Kennung", 1)
+	buecherei := testdaten.LegeTitelAn(t, pool, "Roman ohne Kennung")
 	verloren := testdaten.LegeExemplarAn(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
 	testweg.BucheAusleiheUeberDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
 	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)

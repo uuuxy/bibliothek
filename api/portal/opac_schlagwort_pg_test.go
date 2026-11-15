@@ -28,9 +28,9 @@ func TestOPACSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mondflug := testdaten.LegeTitelMitSignaturAn(t, pool, "Mondflug", "", 0)
+	mondflug := testdaten.LegeTitelMitSignaturAn(t, pool, "Mondflug", "")
 	testdaten.LegeExemplarAn(t, pool, mondflug, "B-OPAC-1", true, "")
-	physik := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Physik 9", "", 0) // Lernmittel: nie im öffentlichen Katalog
+	physik := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Physik 9", "") // Lernmittel: nie im öffentlichen Katalog
 	testdaten.LegeExemplarAn(t, pool, physik, "B-OPAC-2", true, "")
 	for _, id := range []string{mondflug, physik} {
 		if _, err := repository.SetzeSchlagworte(ctx, pool, id, []string{"Weltraum"}); err != nil {

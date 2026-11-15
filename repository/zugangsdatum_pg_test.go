@@ -42,7 +42,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	// Lauf in der CI wäre genau dann rot. Gleiche Lesart wie im
 	// Nachbartest (api/katalog/zugangsbuch_pg_test.go).
 	heute := time.Now().In(schulzeit.Zone())
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangsdatum-Titel", "Zdt 1")
 
 	// 1. Ein Exemplar im Zulauf hat kein Zugangsdatum. Es ist bestellt, nicht da.
 	imZulauf := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-ZULAUF")
@@ -93,7 +93,7 @@ func TestZugangsdatum_AnlageAusserhalbDerBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Altbestands-Titel", "Zdt 2", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Altbestands-Titel", "Zdt 2")
 
 	var alt string
 	if err := pool.QueryRow(ctx, `

@@ -61,7 +61,7 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, me
 	svc := service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
-	titel := testdaten.LegeTitelAn(t, pool, "LMF-Formatprobe", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Formatprobe")
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mittel,

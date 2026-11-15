@@ -27,7 +27,7 @@ func TestExemplarStatus_LehntAbWennEinAndererPlatzInzwischenAusgesondertHat(t *t
 	handler := srv.ExemplarStatusAendern(katalog, repository.NewBescheidAbfragen(pool))
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Veraltet-Titel", "Vea 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Veraltet-Titel", "Vea 1")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "VEA-1", true, "")
 	schuelerID := testdaten.LegeSchuelerAn(t, pool, "S-VEA-1", "Vea", "7a")
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, exemplarID, schuelerID)

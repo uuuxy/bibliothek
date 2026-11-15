@@ -45,7 +45,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {
 		t.Helper()
-		titelID = testdaten.LegeTitelAn(t, pool, "Stornotitel "+kennung, 1)
+		titelID = testdaten.LegeTitelAn(t, pool, "Stornotitel "+kennung)
 		exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-STORNO-"+kennung, true, "")
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)

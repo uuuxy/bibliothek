@@ -29,7 +29,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.LegeTitelMitSignaturAn(t, pool, "Die Welle", "")
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Fantasy"}); err != nil {
 		t.Fatal(err)
 	}

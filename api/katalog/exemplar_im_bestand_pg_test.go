@@ -24,7 +24,7 @@ func TestTitelExemplare_SagtWasZumBestandZaehlt(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	ctx := context.Background()
 
-	titel := testdaten.LegeTitelAn(t, pool, "Im Bestand", 1)
+	titel := testdaten.LegeTitelAn(t, pool, "Im Bestand")
 	testdaten.LegeExemplarAn(t, pool, titel, "BC-REGAL", true, "")
 	gesperrt := testdaten.LegeExemplarAn(t, pool, titel, "BC-GESPERRT", true, "")
 	ausgesondert := testdaten.LegeExemplarAn(t, pool, titel, "BC-AUSGESONDERT", true, "")

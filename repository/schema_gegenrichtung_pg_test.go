@@ -331,7 +331,7 @@ var checkBedingungenBestand = []string{
 	// einem Tippfehler bricht laut ab, statt einer Zeile, die keine Liste anzeigt.
 	"chk_nachbuch_ergebnis",
 	"chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
-	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
+	"chk_lmf_termine_art", "chk_lmf_termine_stunde",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
 	// Migration 123 — die drei Regeln der Lesertabelle:
 	//

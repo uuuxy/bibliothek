@@ -9,14 +9,14 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-// LegeTitelAn legt einen Titel mit Meldebestand an. Trägt der Titel die Kennung der
-// Lernmittel („LMF-Mathe 7“), entsteht er als Lernmittel.
-func LegeTitelAn(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand int) string {
+// LegeTitelAn legt einen Titel an. Trägt der Titel die Kennung der Lernmittel („LMF-Mathe 7“),
+// entsteht er als Lernmittel.
+func LegeTitelAn(t *testing.T, pool *pgxpool.Pool, titel string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO buecher_titel (titel, meldebestand, ist_lernmittel) VALUES ($1, $2, $3) RETURNING id`,
-		titel, meldebestand, lmf.HatKennung(titel)).Scan(&id); err != nil {
+		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ($1, $2) RETURNING id`,
+		titel, lmf.HatKennung(titel)).Scan(&id); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 	return id
@@ -24,12 +24,12 @@ func LegeTitelAn(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand in
 
 // LegeTitelMitSignaturAn legt einen Titel mit Signatur an; er entsteht als Lernmittel, wenn
 // Titel oder Signatur die Kennung der Lernmittel tragen.
-func LegeTitelMitSignaturAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
+func LegeTitelMitSignaturAn(t *testing.T, pool *pgxpool.Pool, titel, signatur string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO buecher_titel (titel, signatur, meldebestand, ist_lernmittel) VALUES ($1, $2, $3, $4) RETURNING id`,
-		titel, signatur, meldebestand, lmf.HatKennung(titel) || lmf.HatKennung(signatur)).Scan(&id); err != nil {
+		`INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ($1, $2, $3) RETURNING id`,
+		titel, signatur, lmf.HatKennung(titel) || lmf.HatKennung(signatur)).Scan(&id); err != nil {
 		t.Fatalf("Titel mit Signatur anlegen: %v", err)
 	}
 	return id
@@ -98,6 +98,6 @@ func LegeExemplarImZulaufAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode s
 // LegeAusleihbaresExemplarAn legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
 func LegeAusleihbaresExemplarAn(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
 	t.Helper()
-	titelID := LegeTitelAn(t, pool, titel, 0)
+	titelID := LegeTitelAn(t, pool, titel)
 	LegeExemplarAn(t, pool, titelID, barcode, true, "")
 }

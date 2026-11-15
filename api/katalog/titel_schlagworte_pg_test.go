@@ -29,7 +29,7 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 		t.Fatal(err)
 	}
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	id := testdaten.LegeTitelAn(t, pool, "Woodwalkers", 5)
+	id := testdaten.LegeTitelAn(t, pool, "Woodwalkers")
 
 	aufruf := func(methode, titelID, koerper string) (int, titelSchlagworteAntwort, string) {
 		t.Helper()

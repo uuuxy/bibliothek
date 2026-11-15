@@ -39,7 +39,7 @@ func TestAbgaengerLoeschung_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 	// Bearbeiter (Ziel der Fremdschlüssel von Ausleihe und Protokoll), Titel und Exemplar.
 	var bearbeiterID, titelID, exemplarID string
 	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Del", "Kraft", "del@example.org", "admin", true)
-	titelID = testdaten.LegeTitelAn(t, pool, "DSGVO-Buch", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "DSGVO-Buch")
 	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "DEL-EX-1", true, "")
 
 	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, nicht im Papierkorb und schon
@@ -146,7 +146,7 @@ func TestBearbeiterAnonymisierung_GegenEchtesPostgres(t *testing.T) {
 
 	var bearbeiterID, titelID, exemplarID, sid string
 	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Anon", "Kraft", "anl@example.org", "admin", true)
-	titelID = testdaten.LegeTitelAn(t, pool, "Anon-Buch", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Anon-Buch")
 	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "ANL-EX", true, "")
 	sid = testdaten.LegeSchuelerMitNamenAn(t, pool, "ANL-S", "A", "B", "7a", 2030)
 	// Abgeschlossene Ausleihe, vor 20 Tagen zurückgegeben, mit gesetzten Bearbeitern.

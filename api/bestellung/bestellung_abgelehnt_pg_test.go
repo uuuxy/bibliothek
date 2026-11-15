@@ -28,7 +28,7 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
 	})
-	titel := testdaten.LegeTitelAn(t, pool, "Titel im Warenkorb", 0)
+	titel := testdaten.LegeTitelAn(t, pool, "Titel im Warenkorb")
 
 	position := func(titelID string, menge int) string {
 		return fmt.Sprintf(`{"titel_id":%q,"menge":%d,"preis":9.5,"generate_barcodes":true}`, titelID, menge)

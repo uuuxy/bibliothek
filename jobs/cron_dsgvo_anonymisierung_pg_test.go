@@ -225,7 +225,7 @@ func TestSchuelerAnonymisierung_TilgtPersonendatenInAnderenTabellen(t *testing.T
 		t.Fatalf("audit_logs-Seed: %v", err)
 	}
 	// Vormerkung mit einer Notiz, die auf die Person schließen lässt.
-	titelID := testdaten.LegeTitelAn(t, pool, "Neben-Titel", 5)
+	titelID := testdaten.LegeTitelAn(t, pool, "Neben-Titel")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO vormerkungen (titel_id, schueler_id, notiz) VALUES ($1, $2, $3)`,
 		titelID, id, notizMarke); err != nil {

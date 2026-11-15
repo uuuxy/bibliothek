@@ -30,11 +30,11 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		return time.Date(2026, m, d, 12, 0, 0, 0, schulzeit.Zone())
 	}
 
-	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Mathebuch 7", "Mat 7")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
+	buecherei := testdaten.LegeTitelMitSignaturAn(t, pool, "Gregs Tagebuch", "Jug Gre")
 
 	abgang := func(titelID, barcode string, wann time.Time) {
 		t.Helper()

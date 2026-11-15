@@ -24,7 +24,7 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangs-Titel", "Zug 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zugangs-Titel", "Zug 1")
 
 	// Zwei Bestellungen, je ein Topf — der Topf des Zugangs steht an der Bestellung, nicht
 	// am Titel: Ein Titel darf im Warenkorb in den anderen Topf geschoben werden.
@@ -174,7 +174,7 @@ func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
 	loc := schulzeit.Zone()
 	heute := time.Now().In(loc)
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zulauf-Titel", "Zul 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Zulauf-Titel", "Zul 1")
 
 	var bestellID string
 	if err := pool.QueryRow(ctx, `
@@ -230,7 +230,7 @@ func TestZugangsbuch_GeloeschtesExemplarBleibtDrin(t *testing.T) {
 	loc := schulzeit.Zone()
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "zugang-geloescht@test.invalid")
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Geloeschter Zugang", "Gel 1", 0)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Geloeschter Zugang", "Gel 1")
 	var bestellID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)

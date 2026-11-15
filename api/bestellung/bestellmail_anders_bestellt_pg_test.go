@@ -52,7 +52,7 @@ func (l *bestellmailLage) mitBestaetigung(t *testing.T, bestellungID string) boo
 func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	l := andersBestelltLage(t, "anders")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Anders", false)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Anders", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Anders")
 
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -121,7 +121,7 @@ func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 	l.srv.Mail = mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-OhneServer", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneServer", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneServer"))
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusBadRequest {
 		t.Fatalf("Erneut senden ohne Mailserver: Status %d, erwartet 400", rec.Code)
 	}
@@ -142,7 +142,7 @@ func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 	l := andersBestelltLage(t, "mitlink")
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-MitLink", true)
-	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-MitLink", 0)
+	titel := testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-MitLink")
 
 	l.srv.Mail = mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -181,7 +181,7 @@ func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 	post, sitzungen := tuertest.FangeMailAb(t)
 	l.srv.Mail = post
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Abweisung", false)
-	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abweisung", 0))
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Abweisung"))
 	smtptest.WarteAufMail(t, sitzungen)
 
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {

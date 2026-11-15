@@ -38,9 +38,6 @@ var nichtVonAendereTitel = map[string]string{
 	"werk_id": "gehört repository/auflagen.go (FasseAuflagenZusammen, LoeseAuflage, Migration 148): " +
 		"Dort stehen die Regeln — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger " +
 		"als zwei Titeln fällt. AendereTitel schriebe den Wert ohne sie.",
-	"meldebestand": "Altbestand: Die Spalte wird NUR gelesen und von keinem Codepfad geschrieben. " +
-		"Die Bestellschwelle kommt seit dem Umbau aus den Einstellungen, der Wert wird laut " +
-		"api/bestellung/bestellbedarf.go nur noch informativ mitgeliefert.",
 }
 
 // spaltenAusSchema liest die Spalten einer Tabelle aus schema.sql — aus dem CREATE TABLE

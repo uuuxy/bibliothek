@@ -80,7 +80,7 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les", 0)
+	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les")
 	einfach := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-VORGABE", true, "")
 	ausLittera := testdaten.LegeExemplarAn(t, pool, lektuere, "EE-LITTERA", true, "")
 	if _, err := pool.Exec(ctx, `
@@ -186,7 +186,7 @@ func TestExemplarEigentum_GleicheKennungZweimal(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe", 0)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe")
 	ex := testdaten.LegeExemplarAn(t, pool, titel, "EE-DOPPELT", true, "")
 
 	rec := eigentumSetzen(t, srv, pool, []string{ex, strings.ToUpper(ex)}, mitteltopf.Land, "Beleg")

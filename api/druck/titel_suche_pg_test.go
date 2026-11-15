@@ -22,7 +22,7 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
-	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Türsuche Testband", "TUER 7", 1)
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Türsuche Testband", "TUER 7")
 	testdaten.LegeExemplarAn(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel
 	// Ein Schüler mit demselben Suchwort — er darf in der Antwort nicht auftauchen.
 	testdaten.LegeSchuelerMitNamenAn(t, pool, "S-TUER-1", "Tilda", "Türsuche", "07A", 2031)

@@ -29,7 +29,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Paritaet", true)
 	// Die Signatur ist gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch wenn eine
 	// der Abfragen das Feld nicht läse.
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Paritaet", "LMF-Deutsch 5", 0)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Paritaet", "LMF-Deutsch 5")
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,

@@ -123,7 +123,7 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	// Ein gewöhnliches, nicht ausgesondertes Exemplar dazwischen: Es wird nicht gelöscht, auch
 	// wenn seine ID mitgeschickt wird.
 	var titelID, normalID string
-	titelID = testdaten.LegeTitelAn(t, pool, "Reguläres Buch", 5)
+	titelID = testdaten.LegeTitelAn(t, pool, "Reguläres Buch")
 	normalID = testdaten.LegeExemplarAn(t, pool, titelID, "LOE-NORMAL", true, "")
 
 	geloescht, err := repo.LoescheVerlusteEndgueltig(ctx,

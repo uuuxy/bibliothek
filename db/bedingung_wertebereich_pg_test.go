@@ -14,13 +14,6 @@ func TestWertebereich(t *testing.T) {
 
 	// Einen Bestand als Spalte gibt es nicht; er wird über buecher_exemplare gezählt.
 
-	t.Run("meldebestand darf nicht negativ sein", func(t *testing.T) {
-		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteVerletzteBedingung(t, tx, "chk_meldebestand_nonneg",
-				`INSERT INTO buecher_titel (titel, meldebestand) VALUES ('X', -1)`)
-		})
-	})
-
 	t.Run("einkaufspreis darf nicht negativ sein", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			titelID := legeTitelAn(t, tx)

@@ -51,7 +51,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 			VALUES ($1, 'Offen', 'Vorgang', '9b', 2020, true, `+papierkorb+`) RETURNING id`, marke).Scan(&sid); err != nil {
 			t.Fatalf("Schüler: %v", err)
 		}
-		tid = testdaten.LegeTitelAn(t, pool, "Sperrbuch", 5)
+		tid = testdaten.LegeTitelAn(t, pool, "Sperrbuch")
 		eid = testdaten.LegeExemplarAn(t, pool, tid, "EX-"+marke, true, "")
 
 		switch vorgang {
@@ -148,7 +148,7 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 		VALUES ('SP-STORNO', 'Stor', 'No', '9b', 2020, true) RETURNING id`).Scan(&sid); err != nil {
 		t.Fatalf("Schüler: %v", err)
 	}
-	tid = testdaten.LegeTitelAn(t, pool, "Stornobuch", 5)
+	tid = testdaten.LegeTitelAn(t, pool, "Stornobuch")
 	eid = testdaten.LegeExemplarAn(t, pool, tid, "EX-STORNO", true, "")
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)

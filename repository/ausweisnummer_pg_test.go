@@ -79,7 +79,7 @@ func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 func TestAusweisnummer_UebergehtDieNummerEinesBuchs(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	titelID := testdaten.LegeTitelAn(t, pool, "Buch mit der Nummer eines Ausweises", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "Buch mit der Nummer eines Ausweises")
 	testdaten.LegeExemplarAn(t, pool, titelID, "A-10001", true, "")
 
 	if got := naechsteAusweisnummer(t, pool); got != 10002 {
@@ -259,7 +259,7 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	// Trägt ein Buch die nächste Nummer, zieht das Leeren die darauf: Der Kollege bekommt nie die
 	// Nummer eines Buchs. Eine von Hand eingetragene hält trg_leser_nummer_ist_kein_buch auf.
 	naechste := repository.AusweisNummer(naechsteAusweisnummer(t, pool))
-	testdaten.LegeTitelAn(t, pool, "Leeren: Nummernprobe", 5)
+	testdaten.LegeTitelAn(t, pool, "Leeren: Nummernprobe")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id)
 		VALUES ((SELECT id FROM buecher_titel WHERE titel = 'Leeren: Nummernprobe'), $1)`, naechste); err != nil {

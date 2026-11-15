@@ -94,7 +94,7 @@ func In28Tagen() string { return schulzeit.Jetzt().AddDate(0, 0, 28).Format("200
 // LegeOffenenSchadenAn hängt dem Schüler einen unbezahlten Schadensfall an.
 func LegeOffenenSchadenAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
 	t.Helper()
-	titelID := LegeTitelAn(t, pool, "SchadenTitel-"+barcodePraefix, 1)
+	titelID := LegeTitelAn(t, pool, "SchadenTitel-"+barcodePraefix)
 	exemplarID := LegeExemplarAn(t, pool, titelID, "SEX-"+barcodePraefix, true, "")
 	if _, err := pool.Exec(context.Background(),
 		`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt)

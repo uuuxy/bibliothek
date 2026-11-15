@@ -25,9 +25,9 @@ func TestMarkierteTitelLoeschen_NenntWerGeloeschtHat(t *testing.T) {
 	ctx := context.Background()
 	bearbeiter := bearbeiterFuerAussonderung(t, pool)
 
-	mitExemplar := testdaten.LegeTitelAn(t, pool, "Sammel mit Exemplar", 0)
+	mitExemplar := testdaten.LegeTitelAn(t, pool, "Sammel mit Exemplar")
 	exemplar := testdaten.LegeExemplarAn(t, pool, mitExemplar, "SAMMEL-SPUR-1", true, "")
-	ohneExemplar := testdaten.LegeTitelAn(t, pool, "Sammel ohne Exemplar", 0)
+	ohneExemplar := testdaten.LegeTitelAn(t, pool, "Sammel ohne Exemplar")
 
 	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	rumpf := fmt.Sprintf(`{"ids":[%q,%q],"grund":"AUSSORTIERT"}`, mitExemplar, ohneExemplar)

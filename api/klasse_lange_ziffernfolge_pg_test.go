@@ -41,7 +41,7 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	fuenfte := testdaten.LegeSchuelerAn(t, pool, "KLZ-S-1", "Fuenfte", "05F1")
 	neunte := testdaten.LegeSchuelerAn(t, pool, "KLZ-S-2", "Neunte", "09H1")
 	// Die Abgängerliste nennt nur, wer noch ein Buch hat.
-	titelID := testdaten.LegeTitelAn(t, pool, "Ziffernfolge Testband", 0)
+	titelID := testdaten.LegeTitelAn(t, pool, "Ziffernfolge Testband")
 	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "KLZ-B-1", false, "")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)

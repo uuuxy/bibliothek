@@ -16,7 +16,7 @@ func TestReservierungen_DatumIstDerTagDerSchule(t *testing.T) {
 	ctx := context.Background()
 	repo := NewReservierungsAbfragen(pool)
 
-	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSZ-Klassensatz", "KSZ", 5)
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSZ-Klassensatz", "KSZ")
 	bearbeiter := legeEigenenBearbeiterAn(t, pool, "KSZ-B")
 	id, _, err := repo.LegeAn(ctx, titel, "7c", 1, nil, bearbeiter, nil)
 	if err != nil {

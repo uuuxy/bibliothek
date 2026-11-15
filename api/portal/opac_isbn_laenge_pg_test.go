@@ -22,7 +22,7 @@ func TestOPACSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 
 	const titel = "Advanced Organic Chemistry"
-	id := testdaten.LegeTitelMitSignaturAn(t, pool, titel, "", 0)
+	id := testdaten.LegeTitelMitSignaturAn(t, pool, titel, "")
 	testdaten.LegeExemplarAn(t, pool, id, "B-ISBN-OPAC-1", true, "")
 	if _, err := pool.Exec(t.Context(), `UPDATE buecher_titel SET isbn = '0306406152' WHERE id = $1`, id); err != nil {
 		t.Fatal(err)

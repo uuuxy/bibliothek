@@ -15,7 +15,7 @@ import (
 func LegeAusleiheMitFristAn(t *testing.T, pool *pgxpool.Pool, schuelerID, titel string, frist time.Time) string {
 	t.Helper()
 	ctx := context.Background()
-	titelID := LegeTitelAn(t, pool, titel, 1)
+	titelID := LegeTitelAn(t, pool, titel)
 	exemplarID := LegeExemplarAn(t, pool, titelID, "BC-"+titel, true, "")
 	var ausleiheID string
 	if err := pool.QueryRow(ctx,
@@ -62,7 +62,7 @@ func LegeAusleiheVorZweiTagenAn(t *testing.T, pool *pgxpool.Pool, exemplarID, sc
 // Frist in 14 Tagen endet.
 func LegeOffeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
 	t.Helper()
-	titelID := LegeTitelAn(t, pool, "Titel-"+barcodePraefix, 1)
+	titelID := LegeTitelAn(t, pool, "Titel-"+barcodePraefix)
 	exemplarID := LegeExemplarAn(t, pool, titelID, "EX-"+barcodePraefix, true, "")
 	if _, err := pool.Exec(context.Background(),
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)

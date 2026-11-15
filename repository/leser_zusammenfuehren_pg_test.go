@@ -201,7 +201,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 			testdaten.LegeOffenenSchadenAn(t, pool, quelle, "ZFT")
 			zaehlungen = append(zaehlungen, zaehlung{"schadensfaelle", `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`})
 		case "vormerkungen":
-			titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFT", 1)
+			titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFT")
 			exec(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"vormerkungen", `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`})
 		case "schueler_fotos":
@@ -439,7 +439,7 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 	ctx := context.Background()
 	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Vormerk", Klasse: "07A", Barcode: "ZF-V1", Geburtsdatum: testdaten.Datum(2012, 11, 11)})
 	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Vormerk", Klasse: "07A", Barcode: "ZF-V2", Geburtsdatum: testdaten.Datum(2012, 11, 11)})
-	titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFV", 1)
+	titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFV")
 	exID := testdaten.LegeExemplarAn(t, pool, titelID, "EX-ZFV", true, "")
 	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status) VALUES ($1, $2, 'wartend')`, titelID, ziel); err != nil {
 		t.Fatal(err)
@@ -475,7 +475,7 @@ func TestZusammenfuehren_FreiesAbholfachGehtAnDenNaechsten(t *testing.T) {
 	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Abholfach", Klasse: "07A", Barcode: "ZF-A1", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
 	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Abholfach", Klasse: "07A", Barcode: "ZF-A2", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
 	dritte := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Dritte", Nachname: "Wartet", Klasse: "07B", Barcode: "ZF-A3", Geburtsdatum: testdaten.Datum(2012, 8, 8)})
-	titelID := testdaten.LegeTitelAn(t, pool, "Abholfach-ZFA", 1)
+	titelID := testdaten.LegeTitelAn(t, pool, "Abholfach-ZFA")
 	exZiel := testdaten.LegeExemplarAn(t, pool, titelID, "EX-ZFA-1", true, "")
 	exQuelle := testdaten.LegeExemplarAn(t, pool, titelID, "EX-ZFA-2", true, "")
 	for _, v := range []struct{ leser, status, exemplar, alter string }{
@@ -609,7 +609,7 @@ func TestZusammenfuehren_GleichAlteVormerkungBleibtEinmal(t *testing.T) {
 	ctx := context.Background()
 	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Gleichalt", Klasse: "07A", Barcode: "ZF-G1", Geburtsdatum: testdaten.Datum(2012, 10, 10)})
 	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Gleichalt", Klasse: "07A", Barcode: "ZF-G2", Geburtsdatum: testdaten.Datum(2012, 10, 10)})
-	titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFG", 1)
+	titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFG")
 	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, erstellt_am)
 		VALUES ($1, $2, '2026-05-04 10:00:00+00'), ($1, $3, '2026-05-04 10:00:00+00')`, titelID, ziel, quelle); err != nil {
 		t.Fatal(err)
