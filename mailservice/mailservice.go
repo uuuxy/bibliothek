@@ -133,14 +133,19 @@ func BeschreibeSMTPFehler(adresse string, err error) error {
 
 // SendeTestmail verschickt eine einfache Testmail, um die SMTP-Konfiguration zu prüfen. Die
 // Konfiguration kommt aus ladeSMTPKonfig, derselben Quelle, aus der jeder echte Versand liest;
-// sonst sagte der Knopf etwas über eine Konfiguration, die niemand benutzt.
-func SendeTestmail(ctx context.Context, pool db.Pool, an string) error {
+// sonst sagte der Knopf etwas über eine Konfiguration, die niemand benutzt. postfach wählt den
+// Absender, den der Versuch prüft.
+func SendeTestmail(ctx context.Context, pool db.Pool, an string, postfach Postfach) error {
 	konfig, err := ladeSMTPKonfig(ctx, pool)
 	if err != nil {
 		return err
 	}
 	if !konfig.istKonfiguriert() {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
+	}
+	konfig, err = konfig.fuer(postfach)
+	if err != nil {
+		return err
 	}
 
 	gelesenerAbsender, err := mail.ParseAddress(konfig.Absender)
@@ -157,6 +162,9 @@ func SendeTestmail(ctx context.Context, pool db.Pool, an string) error {
 
 	betreff := "Test-E-Mail der Schulbibliothek"
 	text := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
+	if postfach == PostfachPortal {
+		betreff = "Test-E-Mail der Schulbibliothek (Absender für Mein Portal)"
+	}
 
 	rohtext, err := baueTextNachricht(absender, an, betreff, text)
 	if err != nil {

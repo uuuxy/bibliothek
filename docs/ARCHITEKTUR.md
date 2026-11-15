@@ -2269,6 +2269,13 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   Postausgang ihrer Basis. Ohne Postausgang lehnt `Post()` jede Mail als nicht konfiguriert ab,
   wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),
   oder gibt der Basis eine Attrappe.
+- **Zwei Absender, ein Postausgang.** `Nachricht.Postfach` wählt den Absender: Ohne Angabe
+  (`PostfachAllgemein`) gilt der Postausgang der Einstellungen, auch für die Bestellmail an den
+  Händler. `PostfachPortal` setzen nur die Mails an Lehrkräfte aus Mein Portal (Anliegen erledigt,
+  Klassensatz bereit). Sie gehen unter `portal_absender_email` hinaus, mit eigenem Zugang, wenn
+  `portal_smtp_benutzer` gesetzt ist; leer gilt jeweils der Postausgang (`SMTPKonfig.fuer`).
+  Server und Port teilen sich beide. Ein unlesbares Passwort des Portal-Absenders hält nur dessen
+  Mails auf. Ein Speichern ohne das Feld `portal` lässt den Portal-Absender stehen.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`errSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
   Mahntexte mit Schülernamen. `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und

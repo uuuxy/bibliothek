@@ -73,3 +73,61 @@ describe('MailEinstellungen: Verbindung testen', () => {
 		expect(await screen.findByText('Test-E-Mail versendet')).toBeTruthy();
 	});
 });
+
+// Der Absender für Mein Portal: Die Maske lädt und speichert ihn mit dem Postausgang, und der
+// Testversand prüft ihn mit, sobald er gespeichert ist.
+describe('MailEinstellungen: Absender für Mein Portal', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	const mitPortal = {
+		smtp_host: 'mail.schule.example',
+		smtp_port: '587',
+		smtp_user: 'bibliothek',
+		sender_email: 'bibliothek@schule.example',
+		has_password: true,
+		portal: { sender_email: 'anliegen@schule.example', smtp_user: '', has_password: false }
+	};
+
+	it('speichert den Absender für Mein Portal mit dem Postausgang', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce(mitPortal);
+		vi.mocked(apiPut).mockResolvedValueOnce({ status: 'ok' });
+		const screen = render(MailEinstellungen);
+
+		const gruppe = await screen.findByRole('group', { name: 'Absender für Mein Portal' });
+		const adresse = /** @type {HTMLInputElement} */ (gruppe.querySelector('input[type="email"]'));
+		expect(adresse.value).toBe('anliegen@schule.example');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Postausgang speichern' }));
+
+		await waitFor(() =>
+			expect(apiPut).toHaveBeenCalledWith(
+				'/api/admin/settings/mail',
+				expect.objectContaining({
+					portal: { sender_email: 'anliegen@schule.example', smtp_user: '', smtp_password: '' }
+				})
+			)
+		);
+	});
+
+	it('prüft beim Testversand beide Absender und nennt jedes Ergebnis', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce(mitPortal);
+		vi.mocked(apiPost)
+			.mockResolvedValueOnce({ status: 'ok' })
+			.mockRejectedValueOnce(new Error('535 Anmeldung abgelehnt'));
+		const screen = render(MailEinstellungen);
+
+		await fireEvent.click(await screen.findByRole('button', { name: 'Test-E-Mail senden' }));
+
+		expect(
+			await screen.findByText('Absender für Mein Portal: Testversand fehlgeschlagen')
+		).toBeTruthy();
+		expect(screen.getByText('Postausgang: Test-E-Mail versendet')).toBeTruthy();
+		expect(screen.getByText('535 Anmeldung abgelehnt')).toBeTruthy();
+		expect(apiPost).toHaveBeenNthCalledWith(
+			2,
+			'/api/admin/settings/mail/test',
+			{ to: 'bibliothek@schule.example', postfach: 'portal' },
+			expect.anything()
+		);
+	});
+});

@@ -1,0 +1,75 @@
+package system
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
+	"bibliothek/internal/crypto"
+	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
+)
+
+// Der Absender der Mails aus Mein Portal über die Tür: Die Maske speichert und liest ihn, und ein
+// Rumpf ohne das Feld portal lässt ihn stehen. So löscht eine Seite, die vor dem Update geladen
+// wurde, beim Speichern nicht, was eine neuere eingetragen hat.
+func TestMailEinstellungen_PortalAbsenderUeberDieTuer(t *testing.T) {
+	t.Setenv(crypto.SchluesselVariable, "mail-test-schluessel-32-zeichen!")
+	pool := pgtest.Pool(t)
+	repo := repository.NewMailEinstellungsAbfragen(pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `UPDATE mail_settings_config
+			SET smtp_host = 'localhost', smtp_port = '1025', smtp_user = '',
+			    smtp_password_encrypted = NULL, sender_email = 'noreply@bibliothek-schule.de',
+			    portal_absender_email = '', portal_smtp_benutzer = '',
+			    portal_smtp_passwort_verschluesselt = NULL
+			WHERE id = 1`)
+	})
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	speichere := func(rumpf string) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		srv.MailEinstellungenSchreiben(repo)(rec,
+			httptest.NewRequest(http.MethodPut, "/api/admin/settings/mail", strings.NewReader(rumpf)))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Rumpf %s: Status %d — %s, erwartet 200", rumpf, rec.Code, rec.Body.String())
+		}
+	}
+	lies := func() mailEinstellungenAntwort {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		srv.MailEinstellungen(repo)(rec, httptest.NewRequest(http.MethodGet, "/api/admin/settings/mail", nil))
+		var antwort mailEinstellungenAntwort
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort kein JSON: %v — %s", err, rec.Body.String())
+		}
+		return antwort
+	}
+
+	speichere(`{"smtp_host":"smtp.schule.invalid","smtp_port":"587","smtp_user":"bibliothek","smtp_password":"",` +
+		`"sender_email":"bibliothek@schule.invalid",` +
+		`"portal":{"sender_email":" portal@schule.invalid ","smtp_user":" portal ","smtp_password":"Portal-1!"}}`)
+	gelesen := lies()
+	if gelesen.Portal.AbsenderEmail != "portal@schule.invalid" || gelesen.Portal.SMTPBenutzer != "portal" ||
+		!gelesen.Portal.HatPasswort {
+		t.Errorf("gelesen: %+v, erwartet portal@schule.invalid, portal, Passwort hinterlegt", gelesen.Portal)
+	}
+
+	// Ohne das Feld portal bleibt der Absender stehen.
+	speichere(`{"smtp_host":"smtp.schule.invalid","smtp_port":"587","smtp_user":"bibliothek","smtp_password":"",` +
+		`"sender_email":"bibliothek@schule.invalid"}`)
+	if danach := lies(); danach.Portal != gelesen.Portal {
+		t.Errorf("ohne portal im Rumpf: %+v, erwartet unverändert %+v", danach.Portal, gelesen.Portal)
+	}
+
+	// Eine leere Adresse schaltet den eigenen Absender ab: Die Mails gehen wieder über den Postausgang.
+	speichere(`{"smtp_host":"smtp.schule.invalid","smtp_port":"587","smtp_user":"bibliothek","smtp_password":"",` +
+		`"sender_email":"bibliothek@schule.invalid","portal":{"sender_email":"","smtp_user":"","smtp_password":""}}`)
+	if leer := lies(); leer.Portal.AbsenderEmail != "" {
+		t.Errorf("leere Adresse gespeichert als %q", leer.Portal.AbsenderEmail)
+	}
+}

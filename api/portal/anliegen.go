@@ -199,7 +199,8 @@ func (t *Tueren) sendeAnliegenErledigtMail(ctx context.Context, erledigt *reposi
 		text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
 	}
 	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
-	if err := t.Post().Sende(ctx, mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text}); err != nil {
+	nachricht := mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text, Postfach: mailservice.PostfachPortal}
+	if err := t.Post().Sende(ctx, nachricht); err != nil {
 		slog.Error("Anliegen-Mail fehlgeschlagen", "empfaenger", *erledigt.AnfragendeMail, "fehler", err)
 		return mailStatusFehlgeschlagen
 	}

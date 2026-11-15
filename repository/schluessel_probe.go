@@ -30,6 +30,7 @@ type VerschluesselteSpalte struct {
 var VerschluesselteSpalten = []VerschluesselteSpalte{
 	{"Schülerfotos", "schueler_fotos", "schueler_id", "foto_encrypted"},
 	{"SMTP-Passwort", "mail_settings_config", "id", "smtp_password_encrypted"},
+	{"SMTP-Passwort für Mein Portal", "mail_settings_config", "id", "portal_smtp_passwort_verschluesselt"},
 }
 
 // SchluesselProbe ist das Ergebnis der Frage: Passt APP_ENCRYPTION_KEY zum Bestand?

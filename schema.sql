@@ -1986,7 +1986,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('171_geloeschte_exemplare.sql'),
 ('172_anmeldeverfahren_je_konto.sql'),
 ('173_bestellschwellen_entfallen.sql'),
-('174_lmf_stichtag_entfaellt.sql')
+('174_lmf_stichtag_entfaellt.sql'),
+('175_absender_fuer_mein_portal.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2200,6 +2201,10 @@ CREATE TABLE IF NOT EXISTS mail_settings_config (
     smtp_user VARCHAR(255) NOT NULL DEFAULT '',
     smtp_password_encrypted BYTEA,
     sender_email VARCHAR(255) NOT NULL DEFAULT 'noreply@bibliothek-schule.de',
+    -- Migration 175: eigener Absender der Mails aus Mein Portal; leer gilt der Postausgang darüber.
+    portal_absender_email VARCHAR(255) NOT NULL DEFAULT '',
+    portal_smtp_benutzer VARCHAR(255) NOT NULL DEFAULT '',
+    portal_smtp_passwort_verschluesselt BYTEA,
     CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1)
 );
 INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;

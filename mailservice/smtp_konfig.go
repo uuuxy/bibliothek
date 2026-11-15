@@ -34,6 +34,38 @@ type SMTPKonfig struct {
 	Benutzer string
 	Passwort string
 	Absender string
+	// portal ersetzt für PostfachPortal Absender und Zugang; nil heißt, es gibt keinen eigenen.
+	portal *portalAbsender
+}
+
+// portalAbsender ist der Absender der Mails aus Mein Portal, wie die Einstellungen ihn nennen.
+type portalAbsender struct {
+	absender string
+	// benutzer und passwort sind leer, wenn der Zugang des Postausgangs auch für diese Adresse gilt.
+	benutzer string
+	passwort string
+	// fehler hält ein Passwort fest, das sich nicht entschlüsseln ließ. Es hält nur die Mails
+	// dieses Absenders auf; die Bestellmail an den Händler geht weiter über den Postausgang.
+	fehler error
+}
+
+// fuer liefert die Konfiguration, mit der eine Mail des Postfachs hinausgeht. Server und Port
+// gelten für beide Absender.
+func (k SMTPKonfig) fuer(postfach Postfach) (SMTPKonfig, error) {
+	if postfach != PostfachPortal || k.portal == nil {
+		return k, nil
+	}
+	if k.portal.fehler != nil {
+		return SMTPKonfig{}, k.portal.fehler
+	}
+	p := k
+	p.portal = nil
+	p.Absender = k.portal.absender
+	if k.portal.benutzer != "" {
+		p.Benutzer = k.portal.benutzer
+		p.Passwort = k.portal.passwort
+	}
+	return p, nil
 }
 
 // adresse liefert das host:port für net/smtp.
@@ -124,5 +156,26 @@ func ladeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
 	if strings.TrimSpace(k.Absender) == "" {
 		k.Absender = absenderVorgabe
 	}
+	k.portal = lesePortalAbsender(gespeichert)
 	return k, nil
+}
+
+// lesePortalAbsender liest den Absender der Mails aus Mein Portal aus der gespeicherten Zeile.
+// Ohne Adresse gibt es keinen, und diese Mails gehen über den Postausgang wie bisher.
+func lesePortalAbsender(gespeichert *repository.MailEinstellungen) *portalAbsender {
+	adresse := strings.TrimSpace(gespeichert.PortalAbsenderEmail)
+	if adresse == "" {
+		return nil
+	}
+	p := &portalAbsender{absender: adresse, benutzer: strings.TrimSpace(gespeichert.PortalSMTPBenutzer)}
+	if p.benutzer == "" || len(gespeichert.PortalSMTPPasswortVerschluesselt) == 0 {
+		return p
+	}
+	entschluesselt, err := crypto.Entschluessele(gespeichert.PortalSMTPPasswortVerschluesselt)
+	if err != nil {
+		p.fehler = fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts für Mein Portal: %w", err)
+		return p
+	}
+	p.passwort = string(entschluesselt)
+	return p
 }

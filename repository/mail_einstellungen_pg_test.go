@@ -23,7 +23,9 @@ func setzeMailZeileZurueck(t *testing.T, ctx context.Context, repo *MailEinstell
 	if _, err := repo.pool.Exec(ctx, `
 		UPDATE mail_settings_config
 		SET smtp_host = 'localhost', smtp_port = '1025', smtp_user = '',
-		    smtp_password_encrypted = NULL, sender_email = 'noreply@bibliothek-schule.de'
+		    smtp_password_encrypted = NULL, sender_email = 'noreply@bibliothek-schule.de',
+		    portal_absender_email = '', portal_smtp_benutzer = '',
+		    portal_smtp_passwort_verschluesselt = NULL
 		WHERE id = 1`); err != nil {
 		t.Fatalf("Mail-Zeile zurücksetzen: %v", err)
 	}

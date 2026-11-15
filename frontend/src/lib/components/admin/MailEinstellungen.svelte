@@ -2,10 +2,11 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { apiGet, apiPut, apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
+	import { apiGet, apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import MailTestversand from './MailTestversand.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	let laedt = $state(true);
@@ -13,7 +14,6 @@
 	// leerer Server und Benutzer zurück (ui/LadeFehler).
 	let ladeFehler = $state(false);
 	let speichert = $state(false);
-	let testing = $state(false);
 
 	let host = $state('');
 	let port = $state('');
@@ -22,21 +22,20 @@
 	let password = $state('');
 	let hasPassword = $state(false);
 
-	let testEmail = $state('');
+	// Der Absender der Mails aus Mein Portal; leer gehen sie über den Postausgang darüber.
+	let portalSender = $state('');
+	let portalBenutzername = $state('');
+	let portalPassword = $state('');
+	let portalHasPassword = $state(false);
+	// Gespeichert, nicht getippt: Der Testversand prüft die gespeicherten Zugangsdaten.
+	let portalGespeichert = $state(false);
 
-	/**
-	 * Ergebnis des letzten Testversands. Steht fest im Formular statt nur im Toast:
-	 * SMTP-Fehler sind lang (Zertifikats- und Auth-Meldungen) und in einem Toast, der
-	 * nach 5 Sekunden verschwindet, nicht lesbar.
-	 * @type {{ ok: boolean, message: string } | null}
-	 */
-	let testErgebnis = $state(null);
-
-	// Der Stand nach Laden und Speichern. Die Testadresse ist keine Einstellung; ein getipptes
-	// Passwort ist immer ungespeichert, denn das gespeicherte kommt nie zurück.
-	const stand = () => [host, port, benutzername, sender].map(String).join('\n');
+	// Der Stand nach Laden und Speichern. Ein getipptes Passwort ist immer ungespeichert, denn das
+	// gespeicherte kommt nie zurück.
+	const stand = () =>
+		[host, port, benutzername, sender, portalSender, portalBenutzername].map(String).join('\n');
 	let gespeichert = stand();
-	meldeFormular(() => password !== '' || stand() !== gespeichert);
+	meldeFormular(() => password !== '' || portalPassword !== '' || stand() !== gespeichert);
 
 	async function laden() {
 		laedt = true;
@@ -47,7 +46,10 @@
 			benutzername = daten.smtp_user || '';
 			sender = daten.sender_email || '';
 			hasPassword = daten.has_password || false;
-			testEmail = sender; // default
+			portalSender = daten.portal?.sender_email || '';
+			portalBenutzername = daten.portal?.smtp_user || '';
+			portalHasPassword = daten.portal?.has_password || false;
+			portalGespeichert = portalSender !== '';
 			gespeichert = stand();
 			ladeFehler = false;
 		} catch (e) {
@@ -68,41 +70,24 @@
 				smtp_port: port,
 				smtp_user: benutzername,
 				smtp_password: password,
-				sender_email: sender
+				sender_email: sender,
+				portal: {
+					sender_email: portalSender,
+					smtp_user: portalBenutzername,
+					smtp_password: portalPassword
+				}
 			});
 			snackbars.addToast('Mail-Konfiguration gespeichert', 'success');
 			if (password !== '') hasPassword = true;
+			if (portalPassword !== '') portalHasPassword = true;
 			password = '';
+			portalPassword = '';
+			portalGespeichert = portalSender.trim() !== '';
 			gespeichert = stand();
 		} catch {
 			/* apiPut meldet jeden Fehler selbst, mit dem Grund */
 		} finally {
 			speichert = false;
-		}
-	}
-
-	async function sendeTestmail() {
-		if (!testEmail) {
-			snackbars.addToast('Bitte eine Test-E-Mail-Adresse angeben', 'error');
-			return;
-		}
-		testing = true;
-		testErgebnis = null;
-		try {
-			// Der Testversand wartet auf den Mailserver; seine Diagnose kommt erst nach dessen Frist.
-			await apiPost(
-				'/api/admin/settings/mail/test',
-				{ to: testEmail },
-				{ timeoutMs: FRIST_MAILVERSAND_MS }
-			);
-			testErgebnis = { ok: true, message: `Test-E-Mail an ${testEmail} versendet.` };
-		} catch (e) {
-			testErgebnis = {
-				ok: false,
-				message: /** @type {Error} */ (e)?.message || 'Unbekannter Fehler beim Testversand.'
-			};
-		} finally {
-			testing = false;
 		}
 	}
 </script>
@@ -148,6 +133,45 @@
 				/>
 			</div>
 
+			<div
+				role="group"
+				aria-labelledby="mail-portal-absender"
+				class="flex flex-col gap-6 border-t border-outline-variant pt-6"
+			>
+				<div class="flex flex-col gap-1">
+					<span id="mail-portal-absender" class="text-sm font-medium text-on-surface"
+						>Absender für Mein Portal</span
+					>
+					<span class="text-sm text-on-surface-variant"
+						>Für die Mails an Lehrkräfte, wenn ihr Wunsch, ihre Meldung oder ihr Klassensatz
+						erledigt ist; leer gehen sie über den Postausgang darüber.</span
+					>
+				</div>
+				<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+					<Feld
+						bind:value={portalSender}
+						etikett="Absender-E-Mail"
+						type="email"
+						placeholder="anliegen@bibliothek-schule.de"
+					/>
+					<Feld
+						bind:value={portalBenutzername}
+						etikett="Benutzername"
+						type="text"
+						placeholder="Benutzername oder E-Mail"
+						hint="Leer lassen, um mit dem Zugang oben zu senden."
+					/>
+					<Feld
+						bind:value={portalPassword}
+						etikett="Passwort"
+						type="password"
+						placeholder={portalHasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
+						hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
+						class="md:col-span-2"
+					/>
+				</div>
+			</div>
+
 			<div class="flex justify-end">
 				<Button onclick={speichereEinstellungen} disabled={speichert}>
 					{speichert ? 'Wird gespeichert …' : 'Postausgang speichern'}
@@ -155,44 +179,6 @@
 			</div>
 		</div>
 
-		<div class="flex flex-col gap-6 border-t border-outline-variant pt-10">
-			<div class="flex flex-col gap-1">
-				<h3 class="text-base font-medium text-on-surface">Verbindung testen</h3>
-				<p class="text-sm text-on-surface-variant">
-					Verschickt eine Test-E-Mail mit den zuletzt <em>gespeicherten</em> Zugangsdaten — nicht mit
-					dem, was gerade in den Feldern steht.
-				</p>
-			</div>
-
-			<div class="flex flex-col gap-4 sm:flex-row sm:items-end">
-				<div class="w-full sm:w-72">
-					<Feld
-						bind:value={testEmail}
-						etikett="Test-Empfänger"
-						type="email"
-						placeholder="empfaenger@schule.de"
-					/>
-				</div>
-				<Button variant="secondary" onclick={sendeTestmail} disabled={testing || !testEmail}>
-					{testing ? 'Wird gesendet …' : 'Test-E-Mail senden'}
-				</Button>
-			</div>
-
-			{#if testErgebnis}
-				<div
-					role={testErgebnis.ok ? 'status' : 'alert'}
-					class="rounded-xl border px-4 py-3 text-sm {testErgebnis.ok
-						? 'border-outline-variant bg-secondary-container text-on-secondary-container'
-						: 'border-error bg-error-container text-on-error-container'}"
-				>
-					<p class="font-medium">
-						{testErgebnis.ok ? 'Test-E-Mail versendet' : 'Testversand fehlgeschlagen'}
-					</p>
-					{#if !testErgebnis.ok}
-						<p class="mt-1 wrap-break-word">{testErgebnis.message}</p>
-					{/if}
-				</div>
-			{/if}
-		</div>
+		<MailTestversand vorgabe={sender} mitPortal={portalGespeichert} />
 	</div>
 {/if}

@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -19,11 +20,27 @@ import (
 // Das Passwort verlässt den Server nie; stattdessen sagt HatPasswort nur, ob eines
 // hinterlegt ist.
 type mailEinstellungenAntwort struct {
-	SMTPHost      string `json:"smtp_host"`
-	SMTPPort      string `json:"smtp_port"`
-	SMTPBenutzer  string `json:"smtp_user"`
+	SMTPHost      string            `json:"smtp_host"`
+	SMTPPort      string            `json:"smtp_port"`
+	SMTPBenutzer  string            `json:"smtp_user"`
+	AbsenderEmail string            `json:"sender_email"`
+	HatPasswort   bool              `json:"has_password"`
+	Portal        mailPortalAntwort `json:"portal"`
+}
+
+// mailPortalAntwort ist der Absender der Mails aus Mein Portal, ohne Passwort wie oben.
+type mailPortalAntwort struct {
 	AbsenderEmail string `json:"sender_email"`
+	SMTPBenutzer  string `json:"smtp_user"`
 	HatPasswort   bool   `json:"has_password"`
+}
+
+// mailPortalAnfrage ist der eingehende Absender der Mails aus Mein Portal. Eine leere Adresse
+// heißt, sie gehen über den Postausgang; ein leerer Benutzer, mit dessen Zugang.
+type mailPortalAnfrage struct {
+	AbsenderEmail string `json:"sender_email"`
+	SMTPBenutzer  string `json:"smtp_user"`
+	SMTPPasswort  string `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
 }
 
 // mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPasswort
@@ -36,6 +53,9 @@ type mailEinstellungenAnfrage struct {
 	SMTPBenutzer  string `json:"smtp_user"`
 	SMTPPasswort  string `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
 	AbsenderEmail string `json:"sender_email"`
+	// Fehlt Portal, bleibt der gespeicherte Absender für Mein Portal unangetastet: Eine Seite,
+	// die vor dem Update geladen wurde, kennt das Feld nicht und löschte ihn sonst beim Speichern.
+	Portal *mailPortalAnfrage `json:"portal"`
 }
 
 // MailEinstellungen gibt die Mail-Konfiguration zurück
@@ -59,6 +79,11 @@ func (t *Tueren) MailEinstellungen(mailAbfragen *repository.MailEinstellungsAbfr
 			SMTPBenutzer:  konfig.SMTPBenutzer,
 			AbsenderEmail: konfig.AbsenderEmail,
 			HatPasswort:   len(konfig.SMTPPasswortVerschluesselt) > 0,
+			Portal: mailPortalAntwort{
+				AbsenderEmail: konfig.PortalAbsenderEmail,
+				SMTPBenutzer:  konfig.PortalSMTPBenutzer,
+				HatPasswort:   len(konfig.PortalSMTPPasswortVerschluesselt) > 0,
+			},
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, antwort)
@@ -95,6 +120,20 @@ func leseMailEinstellungen(w http.ResponseWriter, r *http.Request) (mailEinstell
 		}
 		req.AbsenderEmail = adresse.Address
 	}
+
+	if req.Portal != nil {
+		req.Portal.SMTPBenutzer = strings.TrimSpace(req.Portal.SMTPBenutzer)
+		if absender := strings.TrimSpace(req.Portal.AbsenderEmail); absender != "" {
+			adresse, err := mail.ParseAddress(absender)
+			if err != nil {
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Absenders für Mein Portal ist ungültig", err)
+				return req, false
+			}
+			req.Portal.AbsenderEmail = adresse.Address
+		} else {
+			req.Portal.AbsenderEmail = ""
+		}
+	}
 	return req, true
 }
 
@@ -106,31 +145,53 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 			return
 		}
 
-		ctx := r.Context()
-		err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail)
-		if err != nil {
+		if err := schreibeMailEinstellungen(r.Context(), mailAbfragen, req); err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-
-		// Protokoll der Verwaltung
-		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
-			details, merr := json.Marshal(map[string]any{
-				"smtp_host":        req.SMTPHost,
-				"smtp_port":        req.SMTPPort,
-				"smtp_user":        req.SMTPBenutzer,
-				"sender_email":     req.AbsenderEmail,
-				"password_changed": req.SMTPPasswort != "",
-			})
-			if merr != nil {
-				slog.Error("audit: Mail-Settings-Details konnten nicht serialisiert werden", "fehler", merr)
-			} else {
-				t.SchreibeAdminProtokoll(ctx, claims.KontoID, "UPDATE_MAIL_SETTINGS", "", string(details))
-			}
-		}
+		t.protokolliereMailEinstellungen(r.Context(), req)
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
+}
+
+// schreibeMailEinstellungen schreibt den Postausgang und, wenn die Anfrage ihn nennt, den
+// Absender für Mein Portal.
+func schreibeMailEinstellungen(ctx context.Context, mailAbfragen *repository.MailEinstellungsAbfragen, req mailEinstellungenAnfrage) error {
+	if err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail); err != nil {
+		return err
+	}
+	if req.Portal == nil {
+		return nil
+	}
+	return mailAbfragen.SchreibePortalAbsender(ctx, req.Portal.AbsenderEmail, req.Portal.SMTPBenutzer, req.Portal.SMTPPasswort)
+}
+
+// protokolliereMailEinstellungen schreibt das Speichern ins Protokoll der Verwaltung. Die
+// Passwörter stehen nicht darin, nur ob eines geändert wurde.
+func (t *Tueren) protokolliereMailEinstellungen(ctx context.Context, req mailEinstellungenAnfrage) {
+	claims, ok := auth.ClaimsAusKontext(ctx)
+	if !ok {
+		return
+	}
+	eintrag := map[string]any{
+		"smtp_host":        req.SMTPHost,
+		"smtp_port":        req.SMTPPort,
+		"smtp_user":        req.SMTPBenutzer,
+		"sender_email":     req.AbsenderEmail,
+		"password_changed": req.SMTPPasswort != "",
+	}
+	if req.Portal != nil {
+		eintrag["portal_sender_email"] = req.Portal.AbsenderEmail
+		eintrag["portal_smtp_user"] = req.Portal.SMTPBenutzer
+		eintrag["portal_password_changed"] = req.Portal.SMTPPasswort != ""
+	}
+	details, err := json.Marshal(eintrag)
+	if err != nil {
+		slog.Error("audit: Mail-Settings-Details konnten nicht serialisiert werden", "fehler", err)
+		return
+	}
+	t.SchreibeAdminProtokoll(ctx, claims.KontoID, "UPDATE_MAIL_SETTINGS", "", string(details))
 }
 
 // TestmailSenden sendet eine Test-E-Mail mit der aktuellen Konfiguration
@@ -138,8 +199,19 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			To string `json:"to"`
+			// "portal" prüft den Absender für Mein Portal; ohne Angabe gilt der Postausgang.
+			Postfach string `json:"postfach"`
 		}
 		if !tuer.LeseAnfrage(w, r, &req) {
+			return
+		}
+		postfach := mailservice.PostfachAllgemein
+		switch req.Postfach {
+		case "":
+		case "portal":
+			postfach = mailservice.PostfachPortal
+		default:
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Unbekannter Absender für den Testversand", nil)
 			return
 		}
 
@@ -160,7 +232,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		err = mailservice.SendeTestmail(ctx, t.DB.Pool, adresse.Address)
+		err = mailservice.SendeTestmail(ctx, t.DB.Pool, adresse.Address, postfach)
 		if err != nil {
 			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
 			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)

@@ -27,7 +27,21 @@ type Nachricht struct {
 	Betreff  string
 	Text     string
 	Anhaenge []Anhang
+	// Postfach nennt den Absender; ohne Angabe ist es der Postausgang der Einstellungen.
+	Postfach Postfach
 }
+
+// Postfach sagt, unter welchem Absender eine Mail hinausgeht.
+type Postfach int
+
+const (
+	// PostfachAllgemein ist der Postausgang der Einstellungen. Ihn nimmt jede Mail, die nichts
+	// anderes sagt, die Bestellmail an den Händler eingeschlossen.
+	PostfachAllgemein Postfach = iota
+	// PostfachPortal ist der Absender der Mails an Lehrkräfte aus Mein Portal. Ohne eigene
+	// Adresse in den Einstellungen gehen sie über den Postausgang wie alle anderen.
+	PostfachPortal
+)
 
 // Postausgang verschickt Mails über SMTP. Die Konfiguration liest er vor jedem Versand neu, damit
 // eine Änderung in der Oberfläche ohne Neustart gilt. Der Server legt einen an und gibt ihn den
@@ -82,6 +96,10 @@ func (p *Postausgang) Sende(ctx context.Context, nachricht Nachricht) error {
 	}
 	if !konfig.istKonfiguriert() {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
+	}
+	konfig, err = konfig.fuer(nachricht.Postfach)
+	if err != nil {
+		return err
 	}
 
 	absender := konfig.Absender
