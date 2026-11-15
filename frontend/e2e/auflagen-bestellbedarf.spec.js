@@ -37,9 +37,12 @@ test('Bestellbedarf: Auflagen eines Buchs stehen als eine Zeile mit ihrer Summe'
 		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ('E2E-Anker-${uniqueSuffix()}', true) RETURNING id`
 	).split('\n')[0];
 	// Alt 2, neu 1 Exemplar, der Anker 1: Das Buch hat zusammen 3.
-	const exemplare = querySQL(`INSERT INTO buecher_exemplare (titel_id, barcode_id)
+	const exemplare = querySQL(`WITH e AS (
+		INSERT INTO buecher_exemplare (titel_id, barcode_id)
 		VALUES ('${alt}', '${marke}-1'), ('${alt}', '${marke}-2'), ('${neu}', '${marke}-3'), ('${anker}', '${marke}-4')
-		RETURNING id`).split('\n');
+		RETURNING id) SELECT id FROM e`)
+		.split('\n')
+		.filter(Boolean);
 	const wegFehlbestand = seedFehlbestand(marke, exemplare, 3);
 
 	try {

@@ -239,14 +239,19 @@ export function seedBestellbedarf(anzahl = 8) {
 		VALUES ('bestellbedarf_warnung_aktiv', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = 'true';
 	`);
-	// Lernmittel ist die Spalte ist_lernmittel; je Titel ein Exemplar.
+	// Lernmittel ist die Spalte ist_lernmittel; je Titel ein Exemplar. Das SELECT am Ende liefert
+	// nur die Kennungen: Nach einem INSERT … RETURNING schriebe psql noch „INSERT 0 n" dazu.
 	const exemplare = querySQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel, autor, ist_lernmittel)
 			SELECT 'LMF-${marke} ' || g, 'E2E', true FROM generate_series(1, ${anzahl}) g RETURNING id
+		), e AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id)
+			SELECT id, 'B-${marke}-' || row_number() OVER () FROM t RETURNING id
 		)
-		INSERT INTO buecher_exemplare (titel_id, barcode_id)
-		SELECT id, 'B-${marke}-' || row_number() OVER () FROM t RETURNING id`).split('\n');
+		SELECT id FROM e`)
+		.split('\n')
+		.filter(Boolean);
 	const wegFehlbestand = seedFehlbestand(marke, exemplare, 1);
 
 	return () => {
@@ -287,9 +292,14 @@ export function seedFehlbestand(marke, exemplare, bestand) {
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
 		VALUES ('Halter', 'E2E', '03E2E', 'S-${marke}-h', 2036) RETURNING id`).split('\n')[0];
 	const kinder = querySQL(`
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		SELECT 'Kind', 'E2E', '02E2E', 'S-${marke}-' || g, 2037 FROM generate_series(1, ${nachruecken}) g
-		RETURNING id`).split('\n');
+		WITH k AS (
+			INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+			SELECT 'Kind', 'E2E', '02E2E', 'S-${marke}-' || g, 2037 FROM generate_series(1, ${nachruecken}) g
+			RETURNING id
+		)
+		SELECT id FROM k`)
+		.split('\n')
+		.filter(Boolean);
 	// Die Frist des laufenden Schuljahres: der 31. Juli vor dem nächsten 1. August.
 	seedSQL(`
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)

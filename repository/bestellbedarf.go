@@ -30,10 +30,8 @@ type Bestellbedarf struct {
 	Fehlen int `json:"fehlen"`
 	// IstLernmittel ist der Vorschlag für den Topf der Bestellung im Warenkorb.
 	IstLernmittel bool `json:"ist_lernmittel"`
-	// Auflagen: Gehört der Titel zu einem Buch mit mehreren Auflagen, ist die Zeile das Buch.
-	// Die Zahlen oben gelten für das Buch; Titel, ISBN und Kennung sind die der neuesten
-	// Auflage, denn die wird bestellt. Hier steht der Bestand je Auflage, die neueste zuerst.
-	// Ein Buch mit einer Auflage hat das Feld nicht.
+	// Auflagen trägt bei einem Buch mit mehreren Auflagen den Bestand je Auflage, die neueste
+	// zuerst; Titel, ISBN und Kennung der Zeile sind die der neuesten, denn die wird bestellt.
 	Auflagen []BestellbedarfAuflage `json:"auflagen,omitempty"`
 }
 
@@ -48,10 +46,9 @@ type BestellbedarfAuflage struct {
 	GesamtBestand    int    `json:"gesamt_bestand"`
 }
 
-// sqlBedarfKinder sind die aktiven Kinder mit Jahrgang und je Jahrgang die Zahl im nächsten
-// Schuljahr: die Kinder, die aus dem Jahrgang darunter nachrücken. Wer in einer Abschlussklasse
-// ist, rückt nicht nach (AbschlussklasseSQL, wie bei der Versetzung). Hat der Jahrgang darunter
-// kein Kind, wie Jahrgang 5, gilt die Zahl von heute.
+// sqlBedarfKinder zählt je Jahrgang die Kinder von heute und die des nächsten Schuljahres: wer aus
+// dem Jahrgang darunter nachrückt, ohne Abschlussklassen (AbschlussklasseSQL wie die Versetzung).
+// Ohne Kind im Jahrgang darunter, wie in Jahrgang 5, gilt die Zahl von heute.
 var sqlBedarfKinder = `
 	kinder AS (
 		SELECT s.id, ` + JahrgangSQL("s.klasse") + ` AS jahrgang, ` + AbschlussklasseSQL("s.klasse") + ` AS geht_ab
@@ -67,29 +64,20 @@ var sqlBedarfKinder = `
 		FROM jahrgaenge j LEFT JOIN jahrgaenge v ON v.jahrgang = j.jahrgang - 1
 	)`
 
-// sqlSchulbuchImSchuljahr wählt die Ausleihen (a) von Lernmitteln (t) an Kinder (k), die zum
-// Schuljahr [$1, $2) gehören, offen oder schon zurückgegeben. Das Schuljahr einer Ausleihe ist
-// das ihrer Frist (wie in buch_in_klasse.go): So zählt der Büchertausch im Juni die alten
-// Bücher weiter, und die neuen mit der Frist des nächsten Schuljahres nicht. Ein Band über
-// mehrere Jahrgänge zählt auch in den Jahren vor seiner Frist, solange das Kind in seiner
-// Spanne ist.
+// sqlSchulbuchImSchuljahr wählt die Schulbuch-Ausleihen (a, t) der Kinder (k) für das Schuljahr
+// [$1, $2), offen oder zurückgegeben, nach dem Schuljahr ihrer Frist wie buch_in_klasse.go; so
+// zählt der Büchertausch im Juni die neuen Bücher erst im nächsten Schuljahr, solange der
+// LMF-Stichtag zwischen Januar und Juli liegt (LMFStichtagImSchuljahr). Ein Band über mehrere
+// Jahrgänge zählt auch vor seiner Frist, solange das Kind in seiner Spanne ist.
 const sqlSchulbuchImSchuljahr = `t.ist_lernmittel AND (
 	(a.rueckgabe_frist >= $1 AND a.rueckgabe_frist < $2)
 	OR (t.mehrjahresband AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist >= $2
 	    AND k.jahrgang BETWEEN coalesce(t.jahrgang_von, 1) AND t.jahrgang_bis))`
 
 // LadeBestellbedarf liefert die Schulbücher, deren Bestand nicht für die Kinder reicht, die sie
-// im nächsten Schuljahr brauchen, den größten Fehlbestand zuerst; heute bestimmt das Schuljahr.
-//
-// Welche Kinder ein Buch brauchen, zeigen die Ausleihen dieses Schuljahres
-// (sqlSchulbuchImSchuljahr): Die Bücher bleiben beim Jahrgang, die Kinder rücken weiter. Je
-// Jahrgang gilt im nächsten Schuljahr derselbe Anteil wie heute, gerechnet auf die Kinder, die
-// nachrücken (sqlBedarfKinder). So zählt ein Buch für einen Zweig oder ein Wahlfach mit seinem
-// Anteil, ein Buch für alle mit dem ganzen Jahrgang.
-//
-// Gezählt wird am Buch: Auflagen mit derselben werk_id bilden eine Zeile, und gezeigt wird die
-// neueste Auflage (sqlNeuesteAuflageZuerst), denn die wird bestellt. Ein Titel ohne Werk ist
-// über COALESCE(werk_id, id) sein eigenes Buch.
+// im nächsten Schuljahr brauchen: je Jahrgang derselbe Anteil wie in den Ausleihen dieses
+// Schuljahres, gerechnet auf die nachrückenden Kinder, den größten Fehlbestand zuerst. Gezählt
+// wird am Buch (COALESCE(werk_id, id)), gezeigt die neueste Auflage, denn die wird bestellt.
 func LadeBestellbedarf(ctx context.Context, db Datenbank, heute time.Time) ([]Bestellbedarf, error) {
 	neueste := sqlNeuesteAuflageZuerst("t")
 	beginn := SchuljahrBeginn(heute)
