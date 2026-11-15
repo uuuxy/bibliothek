@@ -104,4 +104,19 @@ describe('AdressabgleichEinstellungen', () => {
 			})
 		);
 	});
+
+	it('lässt das Formular stehen, während es nach dem Speichern nachlädt', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce(zugang);
+		vi.mocked(apiGet).mockReturnValueOnce(new Promise(() => {}));
+		vi.mocked(apiPut).mockResolvedValueOnce({ status: 'ok' });
+		const screen = render(AdressabgleichEinstellungen);
+
+		await fireEvent.input(await screen.findByLabelText('Benutzername'), {
+			target: { value: 'neu@schule.example' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Zugang speichern' }));
+
+		await waitFor(() => expect(apiGet).toHaveBeenCalledTimes(2));
+		expect(screen.getByLabelText('Webmail-Adresse')).toBeTruthy();
+	});
 });

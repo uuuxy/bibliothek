@@ -14,6 +14,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { ergebnisZahlen, letzterLaufText } from './adressabgleichText.js';
 
+	// Nur das erste Laden zeigt den Hinweis; nach dem Speichern lädt die Maske still nach.
 	let laedt = $state(true);
 	let ladeFehler = $state(false);
 	let speichert = $state(false);
@@ -35,7 +36,6 @@
 	meldeFormular(() => ungespeichert);
 
 	async function laden() {
-		laedt = true;
 		try {
 			const daten = await apiGet('/api/admin/settings/adressabgleich');
 			adresse = daten.adresse || '';
