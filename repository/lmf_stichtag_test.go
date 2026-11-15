@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -17,80 +18,85 @@ func tagIn(jahr int, monat time.Month, tag int) time.Time {
 	return time.Date(jahr, monat, tag, 10, 0, 0, 0, schulzeit.Zone())
 }
 
-// Die Rechnung selbst — als Tabelle, damit der Fall, der die beiden Fassungen
-// auseinandergehen ließ (Stichtag ab August), nicht wieder nur „theoretisch" ist.
+// Sommerferien der Tabelle: 2027 ab Montag, 28.06., 2028 ab 03.07., 2029 ab 16.07.; die
+// Donnerstage davor sind der 24.06.2027, der 29.06.2028 und der 12.07.2029.
 func TestLMFStichtagImSchuljahr(t *testing.T) {
+	eigene := lmfplan.FerientabelleAus(`[{"jahr":2032,"von":"2032-06-28","bis":"2032-08-06"}]`)
+	imAugust := lmfplan.FerientabelleAus(`[{"jahr":2032,"von":"2032-08-16","bis":"2032-09-24"}]`)
 	faelle := []struct {
-		name     string
-		tag      time.Time
-		stichtag string
-		will     string
+		name   string
+		tag    time.Time
+		klasse string
+		ferien lmfplan.Ferientabelle
+		will   string
 	}{
-		{"Vorgabe, im September gefragt", tagIn(2026, time.September, 5), "07-31", "2027-07-31"},
-		{"Vorgabe, im Juni gefragt", tagIn(2027, time.June, 15), "07-31", "2027-07-31"},
-		{"Vorgabe, am 1. August gefragt", tagIn(2026, time.August, 1), "07-31", "2027-07-31"},
-		{"Vorgabe, am Stichtag selbst", tagIn(2027, time.July, 31), "07-31", "2027-07-31"},
-		// Der Fall, an dem die zwei alten Fassungen ein Jahr auseinanderlagen:
-		{"Stichtag im September, im September gefragt", tagIn(2026, time.September, 5), "09-30", "2026-09-30"},
-		{"Stichtag im September, im Juni gefragt", tagIn(2027, time.June, 15), "09-30", "2026-09-30"},
-		{"Stichtag im Dezember", tagIn(2026, time.September, 5), "12-24", "2026-12-24"},
-		{"Stichtag im Januar", tagIn(2026, time.September, 5), "01-15", "2027-01-15"},
-		{"unlesbarer Stichtag fällt auf die Vorgabe", tagIn(2026, time.September, 5), "Juli", "2027-07-31"},
-		{"Monat 13 fällt auf die Vorgabe", tagIn(2026, time.September, 5), "13-01", "2027-07-31"},
+		{"Klasse 5, im September gefragt", tagIn(2026, time.September, 5), "05G1", lmfplan.Hessen(), "2027-06-24"},
+		{"Klasse 10, im Juni gefragt", tagIn(2027, time.June, 15), "10R1", lmfplan.Hessen(), "2027-06-24"},
+		{"am 1. August gefragt", tagIn(2026, time.August, 1), "7H2", lmfplan.Hessen(), "2027-06-24"},
+		{"nach dem Donnerstag gefragt: derselbe Tag", tagIn(2027, time.July, 20), "9H1", lmfplan.Hessen(), "2027-06-24"},
+		{"Einführungsphase: Ende des Schuljahres", tagIn(2026, time.September, 5), "ET", lmfplan.Hessen(), "2027-07-31"},
+		{"Oberstufe mit Ziffer", tagIn(2026, time.September, 5), "12T", lmfplan.Hessen(), "2027-07-31"},
+		{"ohne Klasse", tagIn(2026, time.September, 5), "", lmfplan.Hessen(), "2027-07-31"},
+		{"Klasse ohne Jahrgang", tagIn(2026, time.September, 5), "ABG", lmfplan.Hessen(), "2027-07-31"},
+		{"Ferien nicht bekannt", tagIn(2031, time.September, 5), "05G1", lmfplan.Hessen(), "2032-07-31"},
+		{"Ferien von der Schule eingetragen", tagIn(2031, time.September, 5), "05G1", eigene, "2032-06-24"},
+		{"Ferien erst im August: Ende des Schuljahres", tagIn(2031, time.September, 5), "05G1", imAugust, "2032-07-31"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := LMFStichtagImSchuljahr(f.tag, f.stichtag).Format("2006-01-02")
+			got := LMFStichtagImSchuljahr(f.tag, f.klasse, f.ferien).Format(time.DateOnly)
 			if got != f.will {
-				t.Errorf("Stichtag %q am %s = %s, erwartet %s",
-					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
+				t.Errorf("Stichtag für %q am %s = %s, erwartet %s", f.klasse, f.tag.Format(time.DateOnly), got, f.will)
 			}
 		})
 	}
 }
 
-// Die zweite Frage: die Frist einer neuen Ausleihe darf nicht in der Vergangenheit
-// liegen — sonst mahnt das System das Buch am Tag der Ausgabe.
+// Die zweite Frage: Die Frist einer neuen Ausleihe darf nicht in der Vergangenheit liegen, sonst
+// mahnt das Programm das Buch am Tag der Ausgabe. Mit jedem Schuljahr rückt der Jahrgang vor.
 func TestLMFStichtagAbTag(t *testing.T) {
 	faelle := []struct {
-		name     string
-		tag      time.Time
-		stichtag string
-		will     string
+		name        string
+		tag         time.Time
+		klasse      string
+		zusatzJahre int
+		will        string
 	}{
-		{"Vorgabe: immer das Ende dieses Schuljahres", tagIn(2026, time.September, 5), "07-31", "2027-07-31"},
-		{"am Stichtag ausgeliehen: heute, nicht in einem Jahr", tagIn(2027, time.July, 31), "07-31", "2027-07-31"},
-		{"Stichtag im September, davor ausgeliehen", tagIn(2026, time.September, 5), "09-30", "2026-09-30"},
-		{"Stichtag im September, danach ausgeliehen: nächstes Schuljahr", tagIn(2026, time.October, 15), "09-30", "2027-09-30"},
+		{"Klasse 5 im September", tagIn(2026, time.September, 5), "05G1", 0, "2027-06-24"},
+		{"am Donnerstag ausgeliehen: heute, nicht in einem Jahr", tagIn(2027, time.June, 24), "05G1", 0, "2027-06-24"},
+		{"am Freitag danach: nächstes Schuljahr", tagIn(2027, time.June, 25), "05G1", 0, "2028-06-29"},
+		{"Oberstufe am Freitag: dieses Schuljahr", tagIn(2027, time.June, 25), "ET", 0, "2027-07-31"},
+		{"Klasse 10 am Freitag: nächstes Schuljahr in der Oberstufe", tagIn(2027, time.June, 25), "10G1", 0, "2028-07-31"},
+		{"Band bis Jahrgang 9 für Klasse 7", tagIn(2026, time.September, 5), "07G1", 2, "2029-07-12"},
+		{"derselbe Band nach dem Donnerstag", tagIn(2027, time.June, 25), "07G1", 2, "2029-07-12"},
+		{"Band der Oberstufe bis Jahrgang 13", tagIn(2026, time.September, 5), "ET", 2, "2029-07-31"},
+		{"Band aus Klasse 10 in die Oberstufe", tagIn(2026, time.September, 5), "10G1", 1, "2028-07-31"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := LMFStichtagAbTag(f.tag, f.stichtag).Format("2006-01-02")
+			got := LMFStichtagAbTag(f.tag, f.klasse, f.zusatzJahre, lmfplan.Hessen()).Format(time.DateOnly)
 			if got != f.will {
-				t.Errorf("Stichtag %q am %s = %s, erwartet %s",
-					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
+				t.Errorf("Stichtag für %q (+%d) am %s = %s, erwartet %s",
+					f.klasse, f.zusatzJahre, f.tag.Format(time.DateOnly), got, f.will)
 			}
 		})
 	}
 }
 
 // Paar-Gate: Solange der Stichtag des Schuljahres noch bevorsteht, müssen Ausleihe
-// (LMFStichtagAbTag) und Rückweg des Plans (LMFStichtagImSchuljahr) denselben Tag
-// nennen. Ohne diese Einigkeit bekäme dasselbe Buch je
-// nach Weg eine um ein Jahr verschiedene Frist.
+// (LMFStichtagAbTag) und Rückweg des Plans (LMFStichtagImSchuljahr) denselben Tag nennen. Ohne
+// diese Einigkeit bekäme dasselbe Buch je nach Weg eine um ein Jahr verschiedene Frist.
 func TestLMFStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
-	for _, stichtag := range []string{"07-31", "06-15", "09-30", "12-24", "01-15", "08-01"} {
-		for monat := time.January; monat <= time.December; monat++ {
-			tag := tagIn(2026, monat, 10)
-			imSchuljahr := LMFStichtagImSchuljahr(tag, stichtag)
+	ferien := lmfplan.Hessen()
+	for _, klasse := range []string{"05G1", "9H1", "10R1", "ET", "12T", "", "ABG"} {
+		for tag := tagIn(2026, time.August, 1); tag.Before(tagIn(2027, time.August, 1)); tag = tag.AddDate(0, 0, 1) {
+			imSchuljahr := LMFStichtagImSchuljahr(tag, klasse, ferien)
 			if imSchuljahr.Before(time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())) {
 				continue // vorbei — hier darf die Ausleihe bewusst weiterrücken
 			}
-			abTag := LMFStichtagAbTag(tag, stichtag)
-			if !imSchuljahr.Equal(abTag) {
-				t.Errorf("Stichtag %q am %s: Ausleihe sagt %s, Rückweg sagt %s",
-					stichtag, tag.Format("2006-01-02"),
-					abTag.Format("2006-01-02"), imSchuljahr.Format("2006-01-02"))
+			if abTag := LMFStichtagAbTag(tag, klasse, 0, ferien); !imSchuljahr.Equal(abTag) {
+				t.Errorf("%q am %s: Ausleihe sagt %s, Rückweg sagt %s", klasse, tag.Format(time.DateOnly),
+					abTag.Format(time.DateOnly), imSchuljahr.Format(time.DateOnly))
 			}
 		}
 	}
@@ -98,15 +104,17 @@ func TestLMFStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
 
 // --- Ratsche: die Rechnung darf nicht wieder ein zweites Mal entstehen ---
 
-// stichtagsVerstoesse findet in einer Go-Quelle die zwei Formen, in denen eine zweite
-// Fassung der Rechnung entsteht: das Vorgabe-Literal „07-31" und ein eigenes Zerlegen
-// eines Stichtag-Werts an „-". Gearbeitet wird am AST, nicht am Text — ein Kommentar,
-// der das Literal erklärt, ist kein Verstoß (Bugklasse „Lügende Ratsche durch
-// Kommentar"), ein echtes Literal dagegen schon.
-func stichtagsVerstoesse(t *testing.T, name, quelle string) []string {
+// lmfPlanAnker ist die zweite Stelle, die den Donnerstag vor den Ferien liest: der Rahmen, mit dem
+// ein neuer Rückgabe-Plan beginnt. Er ist ein Vorschlag im Planer, keine Frist.
+var lmfPlanAnker = filepath.Join("internal", "service", "lmf_plan_vorgabe.go")
+
+// stichtagsVerstoesse findet in einer Go-Quelle die zwei Formen, in denen eine zweite Fassung der
+// Rechnung entsteht: einen Stichtag als Text („07-31", wie die frühere Einstellung) und einen
+// eigenen Aufruf von lmfplan.DonnerstagVor. Gearbeitet wird am AST, nicht am Text: Ein Kommentar,
+// der das Literal erklärt, ist kein Verstoß.
+func stichtagsVerstoesse(t *testing.T, name, quelle string, donnerstagErlaubt bool) []string {
 	t.Helper()
-	fset := token.NewFileSet()
-	baum, err := parser.ParseFile(fset, name, quelle, 0)
+	baum, err := parser.ParseFile(token.NewFileSet(), name, quelle, 0)
 	if err != nil {
 		t.Fatalf("%s parsen: %v", name, err)
 	}
@@ -114,24 +122,13 @@ func stichtagsVerstoesse(t *testing.T, name, quelle string) []string {
 	ast.Inspect(baum, func(n ast.Node) bool {
 		switch k := n.(type) {
 		case *ast.BasicLit:
-			if k.Kind == token.STRING && k.Value == `"`+LMFStichtagVorgabe+`"` {
-				funde = append(funde, "Vorgabe-Literal "+k.Value)
+			if k.Kind == token.STRING && k.Value == `"07-31"` {
+				funde = append(funde, "Stichtag als Text "+k.Value)
 			}
-		case *ast.CallExpr:
-			ruf, ok := k.Fun.(*ast.SelectorExpr)
-			if !ok || len(k.Args) < 2 {
-				return true
-			}
-			paket, ok := ruf.X.(*ast.Ident)
-			if !ok || paket.Name != "strings" {
-				return true
-			}
-			if ruf.Sel.Name != "Split" && ruf.Sel.Name != "SplitN" {
-				return true
-			}
-			erstes := quelleVon(fset, k.Args[0])
-			if strings.Contains(strings.ToLower(erstes), "stichtag") {
-				funde = append(funde, "eigenes Zerlegen: strings."+ruf.Sel.Name+"("+erstes+", …)")
+		case *ast.SelectorExpr:
+			paket, ok := k.X.(*ast.Ident)
+			if ok && paket.Name == "lmfplan" && k.Sel.Name == "DonnerstagVor" && !donnerstagErlaubt {
+				funde = append(funde, "eigene Rechnung über lmfplan.DonnerstagVor")
 			}
 		}
 		return true
@@ -139,30 +136,18 @@ func stichtagsVerstoesse(t *testing.T, name, quelle string) []string {
 	return funde
 }
 
-func quelleVon(fset *token.FileSet, n ast.Node) string {
-	pos := fset.Position(n.Pos())
-	ende := fset.Position(n.End())
-	if pos.Filename != ende.Filename {
-		return ""
-	}
-	return quellAusschnitt[pos.Filename][pos.Offset:ende.Offset]
-}
-
-var quellAusschnitt = map[string]string{}
-
 func TestLMFStichtag_NurEineRechnung(t *testing.T) {
 	// Selbstprobe zuerst: Ein Muster, das nichts fasst, meldet ewig „alles gut".
 	probe := `package p
 
-import "strings"
+import "bibliothek/pkg/lmfplan"
 
-func f(einst struct{ LmfStichtag string }) {
+func f(beginn time.Time) {
 	_ = "07-31"
-	_ = strings.SplitN(einst.LmfStichtag, "-", 2)
+	_ = lmfplan.DonnerstagVor(beginn)
 }
 `
-	quellAusschnitt["probe.go"] = probe
-	if funde := stichtagsVerstoesse(t, "probe.go", probe); len(funde) != 2 {
+	if funde := stichtagsVerstoesse(t, "probe.go", probe, false); len(funde) != 2 {
 		t.Fatalf("Selbstprobe: der Detektor fasst die verbotenen Formen nicht (%d von 2): %v", len(funde), funde)
 	}
 
@@ -192,8 +177,7 @@ func f(einst struct{ LmfStichtag string }) {
 			return err
 		}
 		dateien++
-		quellAusschnitt[pfad] = string(inhalt)
-		for _, fund := range stichtagsVerstoesse(t, pfad, string(inhalt)) {
+		for _, fund := range stichtagsVerstoesse(t, pfad, string(inhalt), rel == lmfPlanAnker) {
 			verstoesse = append(verstoesse, rel+": "+fund)
 		}
 		return nil
@@ -206,9 +190,9 @@ func f(einst struct{ LmfStichtag string }) {
 	}
 	if len(verstoesse) > 0 {
 		t.Errorf("Zweite Fassung der Stichtags-Rechnung:\n  %s\n\n"+
-			"Der Stichtag wird an EINER Stelle gerechnet (repository/lmf_stichtag.go): "+
+			"Der Stichtag wird an einer Stelle gerechnet (repository/lmf_stichtag.go): "+
 			"LMFStichtagImSchuljahr für den Rückweg des Plans, LMFStichtagAbTag für eine neue "+
-			"Ausleihe, LMFStichtagVorgabe für die Vorgabe. Zwei Fassungen waren sich zuletzt "+
-			"nur bei der Vorgabe einig.", strings.Join(verstoesse, "\n  "))
+			"Ausleihe, LMFStichtagNachJahren für den Büchertausch. Mit zwei Fassungen bekäme "+
+			"dasselbe Schulbuch je nach Weg eine andere Frist.", strings.Join(verstoesse, "\n  "))
 	}
 }

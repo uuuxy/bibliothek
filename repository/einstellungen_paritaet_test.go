@@ -64,8 +64,6 @@ func probewert(schluessel string) string {
 			return "true"
 		}
 		return "false"
-	case schluessel == "lmf_stichtag":
-		return "01-02"
 	case schluessel == "ferien_leseclub_zieldatum":
 		return "2030-01-02"
 	case strings.HasPrefix(schluessel, "schule_"), strings.HasPrefix(schluessel, "etikett_eigentumsvermerk"),

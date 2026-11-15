@@ -164,7 +164,7 @@ func TestLMFPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	})
 	echt := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	stichtag := schulzeit.TagesEnde(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
+	stichtag := schulzeit.TagesEnde(time.Date(2027, time.June, 24, 0, 0, 0, 0, schulzeit.Zone()))
 	anna := testdaten.LegeSchuelerAn(t, pool, "TX-2", "Anna", "9H1")
 	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), stichtag)
 	emil := testdaten.LegeSchuelerAn(t, pool, "TX-3", "Emil", "8G1")

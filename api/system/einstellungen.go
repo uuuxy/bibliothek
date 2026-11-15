@@ -89,8 +89,7 @@ func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, e
 	return nil
 }
 
-// normalisiereLernmittelAngaben bringt Sommerferien, Eingangsjahrgänge und Stichtag in
-// Normalform. An ihnen hängt jede Lernmittel-Frist: Unlesbares wird nicht gespeichert, statt
+// normalisiereLernmittelAngaben bringt Sommerferien und Eingangsjahrgänge in Normalform. An ihnen hängt jede Lernmittel-Frist: Unlesbares wird nicht gespeichert, statt
 // beim Lesen still auf die Vorgabe zurückzufallen.
 func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 	if req.Sommerferien != nil {
@@ -106,13 +105,6 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 			return err
 		}
 		req.LMFEingangsjahrgaenge = &norm
-	}
-	if req.LMFStichtag != nil {
-		norm, err := repository.NormalisiereLMFStichtag(*req.LMFStichtag)
-		if err != nil {
-			return err
-		}
-		req.LMFStichtag = &norm
 	}
 	return nil
 }

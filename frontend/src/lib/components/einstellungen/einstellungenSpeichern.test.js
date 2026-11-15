@@ -10,14 +10,18 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
 vi.mock('../../apiFetch.js', () => ({ apiPut: vi.fn() }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
-const GELADEN = { lmf_stichtag: '07-31', ferien_leseclub_aktiv: false, frist_buch_tage: 21 };
+const GELADEN = {
+	lmf_eingangsjahrgaenge: '5, 7',
+	ferien_leseclub_aktiv: false,
+	frist_buch_tage: 21
+};
 /** @param {Record<string, unknown>} [anders] die Maske mit den genannten Abweichungen */
 const maske = (anders = {}) => {
 	const jetzt = { ...GELADEN, ...anders };
 	return {
 		geladen: GELADEN,
 		felder: {
-			lmf_stichtag: jetzt.lmf_stichtag,
+			lmf_eingangsjahrgaenge: jetzt.lmf_eingangsjahrgaenge,
 			ferien_leseclub_aktiv: jetzt.ferien_leseclub_aktiv
 		},
 		zahlen: [
@@ -40,11 +44,11 @@ describe('speichereKategorie', () => {
 	it('schickt einen abgewählten Schalter und einen geleerten Text ausdrücklich', async () => {
 		const geladen = { ...GELADEN, ferien_leseclub_aktiv: true };
 		await speichereKategorie({
-			...maske({ lmf_stichtag: '' }),
+			...maske({ lmf_eingangsjahrgaenge: '' }),
 			geladen
 		});
 		expect(apiPut).toHaveBeenCalledExactlyOnceWith('/api/einstellungen', {
-			lmf_stichtag: '',
+			lmf_eingangsjahrgaenge: '',
 			ferien_leseclub_aktiv: false
 		});
 	});
@@ -58,7 +62,7 @@ describe('speichereKategorie', () => {
 	});
 
 	it('prüft ein Zahlenfeld auch dann, wenn ein anderes Feld geändert wurde', async () => {
-		const eingabe = maske({ lmf_stichtag: '08-15', frist_buch_tage: '' });
+		const eingabe = maske({ lmf_eingangsjahrgaenge: '5, 6', frist_buch_tage: '' });
 		expect(await speichereKategorie(eingabe)).toBe(false);
 		expect(apiPut).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledExactlyOnceWith(
@@ -86,7 +90,7 @@ describe('hatAenderungen', () => {
 	});
 
 	it('sieht einen geänderten Text, Schalter und eine geänderte Zahl', () => {
-		expect(hatAenderungen(maske({ lmf_stichtag: '08-31' }))).toBe(true);
+		expect(hatAenderungen(maske({ lmf_eingangsjahrgaenge: '7' }))).toBe(true);
 		expect(hatAenderungen(maske({ ferien_leseclub_aktiv: true }))).toBe(true);
 		expect(hatAenderungen(maske({ frist_buch_tage: 28 }))).toBe(true);
 	});

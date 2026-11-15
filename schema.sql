@@ -73,7 +73,6 @@ CREATE TABLE system_einstellungen (
 INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('ferien_leseclub_aktiv', 'false'),
     ('ferien_leseclub_zieldatum', NULL),
-    ('lmf_stichtag', '07-31'),
     ('max_ausleihen_schueler', '5'),
     ('frist_buch_tage', '21'),
     ('frist_medien_tage', '7'),
@@ -1986,7 +1985,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('170_ausweisnummer_nicht_am_buch.sql'),
 ('171_geloeschte_exemplare.sql'),
 ('172_anmeldeverfahren_je_konto.sql'),
-('173_bestellschwellen_entfallen.sql')
+('173_bestellschwellen_entfallen.sql'),
+('174_lmf_stichtag_entfaellt.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

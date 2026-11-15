@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -236,14 +237,21 @@ func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Da
 // der Ausleihdienst beim Ausleihen über LMFTerminLage.TauschBegonnen anwendet. Sie zieht nach,
 // wenn der Plan erst während des Tauschs veröffentlicht wird oder sein Beginn nach vorn rückt.
 // Angefasst werden wie bei SetzeLernmittelFristFuerKlassen nur Schüler nach
-// sqlSchulbuchFristGehtMit mit einer Klasse und nur Fristen im Schuljahr [von, bis).
-func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex Datenbank, beginn, frist, von, bis time.Time) (int64, error) {
+// sqlSchulbuchFristGehtMit mit einer Klasse und nur Fristen im Schuljahr [von, bis). Welcher
+// Stichtag gilt, hängt wie bei LMFStichtagNachJahren am Jahrgang des Kindes im folgenden Schuljahr.
+func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex Datenbank, beginn time.Time, ferien lmfplan.Ferientabelle, von, bis time.Time) (int64, error) {
+	ende := SchuljahrBeginn(beginn).Year() + 2
+	mittelstufe := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, true, ferien))
+	sonst := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, false, ferien))
 	tag, err := ex.Exec(ctx, `
 		UPDATE ausleihen a
-		SET rueckgabe_frist = $1,
-		    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
-		    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
-		FROM schueler s, buecher_exemplare e, buecher_titel t
+		SET rueckgabe_frist = f.frist,
+		    mahnstufe = CASE WHEN f.frist > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+		    letztes_mahndatum = CASE WHEN f.frist > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
+		FROM schueler s
+		CROSS JOIN LATERAL (SELECT CASE WHEN `+lmfMittelstufeSQL("s.klasse", 1)+`
+		                    THEN $1::timestamptz ELSE $2::timestamptz END AS frist) f,
+		     buecher_exemplare e, buecher_titel t
 		WHERE a.schueler_id = s.id
 		  AND a.exemplar_id = e.id
 		  AND e.titel_id = t.id
@@ -251,9 +259,9 @@ func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex
 		  AND `+sqlSchulbuchFristGehtMit+`
 		  AND COALESCE(s.klasse, '') <> ''
 		  AND t.ist_lernmittel
-		  AND a.ausgeliehen_am >= $2
-		  AND a.rueckgabe_frist >= $3 AND a.rueckgabe_frist < $4`,
-		frist, beginn, von, bis)
+		  AND a.ausgeliehen_am >= $3
+		  AND a.rueckgabe_frist >= $4 AND a.rueckgabe_frist < $5`,
+		mittelstufe, sonst, beginn, von, bis)
 	if err != nil {
 		return 0, err
 	}

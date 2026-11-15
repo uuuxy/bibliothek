@@ -16,9 +16,10 @@ import (
 // wäre der Nullwert und damit eine Frist von 0 Tagen; parameter_strukturen_test.go verlangt
 // deshalb, dass jedes Literal jedes Feld setzt.
 type fristAngaben struct {
-	IstLernmittel   bool
-	Medientyp       string
-	LMFStichtag     string
+	IstLernmittel bool
+	Medientyp     string
+	// Klasse bestimmt den Stichtag eines Lernmittels (repository.LMFStichtagAbTag).
+	Klasse          string
 	FristBuchTage   int
 	FristMedienTage int
 	ZusatzJahre     int
@@ -35,15 +36,12 @@ func berechneFrist(jetzt time.Time, angaben fristAngaben) time.Time {
 	// Servers ab.
 	ortszeit := jetzt.In(schulzeit.Zone())
 
-	// Ein Lernmittel bleibt das Schuljahr über beim Kind, bis zum Stichtag (Vorgabe: 31. Juli).
+	// Ein Lernmittel bleibt das Schuljahr über beim Kind, bis zum Stichtag. Der Rückweg des
+	// LMF-Plans nimmt dieselbe Rechnung, damit beide für denselben Tag denselben Stichtag finden;
+	// ein Band über mehrere Jahrgänge läuft entsprechend viele Schuljahre weiter.
 	if angaben.IstLernmittel {
-		// Der nächste Stichtag ab heute; der Rückweg des LMF-Plans nimmt dieselbe Rechnung
-		// (repository.LMFStichtagAbTag), damit beide für denselben Tag denselben Stichtag
-		// finden.
-		stichtag := repository.LMFStichtagAbTag(ortszeit, angaben.LMFStichtag)
-		// Ein Band über mehrere Jahrgänge läuft entsprechend viele Stichtage weiter.
-		stichtag = stichtag.AddDate(angaben.ZusatzJahre, 0, 0)
-		return schulzeit.TagesEnde(stichtag)
+		ferien := lmfplan.FerientabelleAus(angaben.Sommerferien)
+		return schulzeit.TagesEnde(repository.LMFStichtagAbTag(ortszeit, angaben.Klasse, angaben.ZusatzJahre, ferien))
 	}
 
 	// CDs, DVDs und Hörbücher sind gefragter und haben die kürzere Frist FristMedienTage.
@@ -97,7 +95,7 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 		return berechneFrist(heute, fristAngaben{
 			IstLernmittel:   exemplar.IstLernmittel,
 			Medientyp:       exemplar.Medientyp,
-			LMFStichtag:     repository.LMFStichtagVorgabe,
+			Klasse:          klasse,
 			FristBuchTage:   repository.FristBuchTageVorgabe,
 			FristMedienTage: repository.FristMedienTageVorgabe,
 			ZusatzJahre:     zusatzJahre,
@@ -115,7 +113,7 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 	return berechneFrist(heute, fristAngaben{
 		IstLernmittel:   exemplar.IstLernmittel,
 		Medientyp:       exemplar.Medientyp,
-		LMFStichtag:     einst.LMFStichtag,
+		Klasse:          klasse,
 		FristBuchTage:   einst.FristBuchTage,
 		FristMedienTage: einst.FristMedienTage,
 		ZusatzJahre:     zusatzJahre,
@@ -149,16 +147,17 @@ func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
 //     die einjährige Ausleihe. Ein Band über mehrere Jahrgänge bleibt beim Kind und rechnet
 //     weiter über den Stichtag.
 //   - Beim Band über mehrere Jahrgänge steckt im Sprung ins nächste Schuljahr schon eines der
-//     verbleibenden Jahre, deshalb zusatzJahre-1: Ein Kind der 7 mit einem Band bis Jahrgang 9,
-//     ausgegeben im Büchertausch, gibt ihn am Ende der Klasse 9 zurück.
+//     verbleibenden Jahre, deshalb das größere von zusatzJahre und 1: Ein Kind der 7 mit einem
+//     Band bis Jahrgang 9, ausgegeben im Büchertausch, gibt ihn am Ende der Klasse 9 zurück.
 //
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
 func (d *AusleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time, einst *ausleihEinstellungen, zusatzJahre int) (time.Time, bool) {
 	if exemplar.IstLernmittel && klasse != "" {
 		lage, lageErr := repository.NewLMFAbfragen(d.pool).LadeRueckgabeTerminLage(ctx, klasse, heute)
 		if lageErr == nil && lage.TauschBegonnen {
-			stichtag := repository.LMFStichtagImFolgendenSchuljahr(heute, einst.LMFStichtag)
-			return schulzeit.TagesEnde(stichtag.AddDate(max(zusatzJahre-1, 0), 0, 0)), true
+			stichtag := repository.LMFStichtagNachJahren(heute, klasse, max(zusatzJahre, 1),
+				lmfplan.FerientabelleAus(einst.Sommerferien))
+			return schulzeit.TagesEnde(stichtag), true
 		}
 		if lageErr == nil && lage.Bevorstehend && zusatzJahre == 0 {
 			return schulzeit.TagesEnde(lage.Naechster), true

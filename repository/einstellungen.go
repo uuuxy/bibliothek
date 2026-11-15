@@ -18,7 +18,6 @@ import (
 type SystemEinstellungen struct {
 	FerienLeseclubAktiv     bool    `json:"ferien_leseclub_aktiv"`
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum"` // Kalendertag „JJJJ-MM-TT" oder nil
-	LMFStichtag             string  `json:"lmf_stichtag"`              // „MM-TT", etwa „07-31"
 	// LMFEingangsjahrgaenge nennt die Jahrgänge, die ihre Bücher erst nach den Sommerferien
 	// bekommen, weil ihre Klassen neu gebildet werden („5, 7"; EingangsjahrgaengeAus).
 	LMFEingangsjahrgaenge string `json:"lmf_eingangsjahrgaenge"`
@@ -149,7 +148,6 @@ const (
 // gespeichert ist.
 func einstellungenVorgabe() *SystemEinstellungen {
 	e := &SystemEinstellungen{
-		LMFStichtag:                LMFStichtagVorgabe,
 		LMFEingangsjahrgaenge:      lmfEingangsjahrgaengeVorgabe,
 		SommerferienProgramm:       lmfplan.ProgrammEintraege(),
 		MaxAusleihenSchueler:       5,
@@ -207,8 +205,6 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 			v := *wert
 			e.FerienLeseclubZieldatum = &v
 		}
-	case "lmf_stichtag":
-		setzeStringNichtLeer(wert, &e.LMFStichtag)
 	case "lmf_eingangsjahrgaenge":
 		setzeStringNichtLeer(wert, &e.LMFEingangsjahrgaenge)
 	case lmfplan.SommerferienSchluessel:

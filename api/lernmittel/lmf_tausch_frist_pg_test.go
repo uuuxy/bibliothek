@@ -39,7 +39,7 @@ func TestLMFPlan_VeroeffentlichenWaehrendDesTauschs_SchulbuecherAbBeginnGeltenDe
 		}
 		return schulzeit.TagesEnde(x)
 	}
-	laufend, folgend := ende("2027-07-31"), ende("2028-07-31")
+	laufend, folgend := ende("2027-06-24"), ende("2028-06-29") // Donnerstage vor den Sommerferien
 	ausleihe := func(schueler, titel, ausgegeben string, frist time.Time) string {
 		t.Helper()
 		id := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, titel, frist)
@@ -76,6 +76,8 @@ func TestLMFPlan_VeroeffentlichenWaehrendDesTauschs_SchulbuecherAbBeginnGeltenDe
 		t.Fatal(err)
 	}
 	gesaNeu := ausleihe(gesa, "LMF Chemie 9 Gesa", "2027-06-23 10:00", laufend)
+	hanna := testdaten.LegeSchuelerAn(t, pool, "T-8", "Hanna", "ET")
+	hannaNeu := ausleihe(hanna, "LMF Physik E Hanna", "2027-06-23 10:00", ende("2027-07-31"))
 
 	erwarte := func(schritt, was, id string, soll time.Time) {
 		t.Helper()
@@ -104,10 +106,10 @@ func TestLMFPlan_VeroeffentlichenWaehrendDesTauschs_SchulbuecherAbBeginnGeltenDe
 	if len(antwort.Zeilen) != 8 || antwort.Zeilen[0].Datum != "2027-06-23" || antwort.Zeilen[7].Datum != "2027-06-24" {
 		t.Fatalf("Aufbau: Zeilen des Plans %+v", antwort.Zeilen)
 	}
-	// Drei Bücher aus dem Tausch, dazu Annas altes und Friedas vor dem Tausch geholtes Buch
+	// Vier Bücher aus dem Tausch, dazu Annas altes und Friedas vor dem Tausch geholtes Buch
 	// auf den Termin der 9H1.
-	if antwort.FristenAngepasst != 5 {
-		t.Errorf("Veröffentlichen meldet %d angepasste Fristen, erwartet 5", antwort.FristenAngepasst)
+	if antwort.FristenAngepasst != 6 {
+		t.Errorf("Veröffentlichen meldet %d angepasste Fristen, erwartet 6", antwort.FristenAngepasst)
 	}
 	schritt := "veröffentlicht am zweiten Tag des Tauschs"
 	erwarte(schritt, "Annas neues Schulbuch (am Termintag geholt)", annaNeu, folgend)
@@ -120,6 +122,7 @@ func TestLMFPlan_VeroeffentlichenWaehrendDesTauschs_SchulbuecherAbBeginnGeltenDe
 	erwarte(schritt, "Emils Schulbuch (ohne Klasse)", emilNeu, laufend)
 	erwarte(schritt, "Friedas Schulbuch vom Tag vor dem Tausch", friedaVorher, ende("2027-06-23"))
 	erwarte(schritt, "Gesas Schulbuch (Lehrkraft mit Klasse)", gesaNeu, laufend)
+	erwarte(schritt, "Hannas neues Schulbuch (Oberstufe)", hannaNeu, ende("2028-07-31"))
 
 	// Der Beginn rückt nach vorn: Drei Zeilen vorn legen die erste auf Dienstag 22.06., 6. Stunde.
 	// Friedas Buch vom 22.06. gehört jetzt zum Tausch.

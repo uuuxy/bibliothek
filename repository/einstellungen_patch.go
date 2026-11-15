@@ -21,7 +21,6 @@ import (
 type EinstellungenPatch struct {
 	FerienLeseclubAktiv     *bool   `json:"ferien_leseclub_aktiv,omitempty"`
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum,omitempty"`
-	LMFStichtag             *string `json:"lmf_stichtag,omitempty"`
 	LMFEingangsjahrgaenge   *string `json:"lmf_eingangsjahrgaenge,omitempty"`
 	// Sommerferien ist die JSON-Liste eigener Jahre. Die Tür bringt sie vor dem Speichern in
 	// Normalform (lmfplan.NormalisiereSommerferien) und lehnt Unlesbares ab.
@@ -120,11 +119,6 @@ func paareAusPatch(p *EinstellungenPatch) [][2]string {
 
 	s.schalter("ferien_leseclub_aktiv", p.FerienLeseclubAktiv)
 	s.text("ferien_leseclub_zieldatum", p.FerienLeseclubZieldatum)
-	if p.LMFStichtag != nil && *p.LMFStichtag == "" {
-		s.paare = append(s.paare, [2]string{"lmf_stichtag", LMFStichtagVorgabe})
-	} else {
-		s.text("lmf_stichtag", p.LMFStichtag)
-	}
 	// Leer heißt Vorgabe, nie „niemand": Ohne Eingangsjahrgänge hätte der Ausgabe-Plan keine
 	// Klasse, und vor den Ferien gäbe niemand „nur zurück".
 	if p.LMFEingangsjahrgaenge != nil && strings.TrimSpace(*p.LMFEingangsjahrgaenge) == "" {

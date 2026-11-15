@@ -44,7 +44,7 @@ func TestLMFPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 		}
 		return schulzeit.TagesEnde(x)
 	}
-	stichtag := tag("2027-07-31")
+	stichtag := tag("2027-06-24") // Donnerstag vor den Sommerferien 2027
 
 	anna := testdaten.LegeSchuelerAn(t, pool, "F-1", "Anna", "9H1")
 	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), stichtag)
@@ -410,23 +410,16 @@ func klassenFolge(zeilen []repository.LMFPlanZeile) string {
 	return strings.Join(teile, ",")
 }
 
-// Verliert eine Klasse ihren Termin, kehrt die Frist zum eingestellten Stichtag zurück, nicht zur
-// Vorgabe des Programms. Die Kopplung liest die Einstellung in der Transaktion der Tür.
-func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
+// Verliert eine Klasse ihren Termin, kehrt die Frist zum Stichtag ihres Jahrgangs zurück: bis
+// Jahrgang 10 zum Donnerstag vor den Sommerferien, in der Oberstufe zum 31. Juli. Beide Klassen
+// teilen sich eine Zeile und verlieren ihren Termin zusammen, der Rückweg muss sie trotzdem
+// trennen.
+func TestLMFPlan_OhneTerminGiltDerStichtagDesJahrgangs(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	setzeStichtag := func(wert string) {
-		t.Helper()
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO system_einstellungen (schluessel, wert) VALUES ('lmf_stichtag', $1)
-			ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, wert); err != nil {
-			t.Fatalf("Stichtag setzen: %v", err)
-		}
-	}
 	t.Cleanup(func() {
-		setzeStichtag("07-31")
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
@@ -435,28 +428,34 @@ func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 		return schulzeit.TagesEnde(time.Date(jahr, monat, tag, 0, 0, 0, 0, schulzeit.Zone()))
 	}
 
-	setzeStichtag("06-30")
 	anna := testdaten.LegeSchuelerAn(t, pool, "ST-1", "Anna", "9H1")
-	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), tagesEnde(2027, time.June, 30))
+	annaLmf := testdaten.LegeAusleiheAmTagAn(t, pool, anna, "LMF Mathe 9 Anna", ausleihtagImSchuljahr(), tagesEnde(2027, time.June, 24))
+	zoe := testdaten.LegeSchuelerAn(t, pool, "ST-2", "Zoe", "12T")
+	zoeLmf := testdaten.LegeAusleiheAmTagAn(t, pool, zoe, "LMF Physik Q1 Zoe", ausleihtagImSchuljahr(), tagesEnde(2027, time.July, 31))
 
 	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
+		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1","12T"]}]}`); rec.Code != http.StatusOK {
 		t.Fatalf("Plan anlegen: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := lmfPlanAufruf(t, srv, http.MethodPost, "rueckgabe", ""); rec.Code != http.StatusOK {
 		t.Fatalf("veröffentlichen: %d %s", rec.Code, rec.Body.String())
 	}
-	if ist := testdaten.LadeFrist(t, pool, annaLmf); !ist.Equal(tagesEnde(2027, time.June, 21)) {
-		t.Fatalf("Aufbau: Annas Frist %v folgt dem Termin am 21.06.2027 nicht", ist.In(schulzeit.Zone()))
+	for _, id := range []string{annaLmf, zoeLmf} {
+		if ist := testdaten.LadeFrist(t, pool, id); !ist.Equal(tagesEnde(2027, time.June, 21)) {
+			t.Fatalf("Aufbau: Frist %v folgt dem Termin am 21.06.2027 nicht", ist.In(schulzeit.Zone()))
+		}
 	}
 
-	// 9H1 fällt aus dem Plan: zurück zum 30.06., dem eingestellten Stichtag dieses Schuljahres.
+	// Beide Klassen fallen aus dem Plan.
 	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"vermerk":"Bücher setzen"}]}`); rec.Code != http.StatusOK {
-		t.Fatalf("Klasse aus dem Plan nehmen: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("Klassen aus dem Plan nehmen: %d %s", rec.Code, rec.Body.String())
 	}
-	if ist, will := testdaten.LadeFrist(t, pool, annaLmf), tagesEnde(2027, time.June, 30); !ist.Equal(will) {
-		t.Errorf("Annas Frist ohne Termin: %v, erwartet den eingestellten Stichtag %v", ist.In(schulzeit.Zone()), will)
+	if ist, will := testdaten.LadeFrist(t, pool, annaLmf), tagesEnde(2027, time.June, 24); !ist.Equal(will) {
+		t.Errorf("Annas Frist ohne Termin: %v, erwartet den Donnerstag vor den Sommerferien %v", ist.In(schulzeit.Zone()), will)
+	}
+	if ist, will := testdaten.LadeFrist(t, pool, zoeLmf), tagesEnde(2027, time.July, 31); !ist.Equal(will) {
+		t.Errorf("Zoes Frist ohne Termin: %v, erwartet in der Oberstufe den %v", ist.In(schulzeit.Zone()), will)
 	}
 }
 

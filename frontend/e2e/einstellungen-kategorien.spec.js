@@ -41,7 +41,7 @@ function ausgangsstand() {
 			('bestelllink_gueltigkeit_tage', '30'),
 			('ferien_leseclub_aktiv', 'true'),
 			('preise_erfassen', 'true'),
-			('lmf_stichtag', '08-15'),
+			('lmf_eingangsjahrgaenge', '5, 6'),
 			('sperre_minuten', '15'),
 			('ersatzwert_immer_kaufpreis', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;
@@ -59,7 +59,7 @@ test.afterEach(() => {
 			('bestelllink_gueltigkeit_tage', '21'),
 			('ferien_leseclub_aktiv', 'false'),
 			('preise_erfassen', 'true'),
-			('lmf_stichtag', '07-31'),
+			('lmf_eingangsjahrgaenge', '5, 7'),
 			('sperre_minuten', '15'),
 			('ersatzwert_immer_kaufpreis', 'false')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;
@@ -91,7 +91,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 			bestelllink_gueltigkeit_tage: wert('bestelllink_gueltigkeit_tage'),
 			ferien_leseclub_aktiv: wert('ferien_leseclub_aktiv'),
 			preise_erfassen: wert('preise_erfassen'),
-			lmf_stichtag: wert('lmf_stichtag'),
+			lmf_eingangsjahrgaenge: wert('lmf_eingangsjahrgaenge'),
 			ersatzwert_immer_kaufpreis: wert('ersatzwert_immer_kaufpreis')
 		},
 		'Speichern in „Datenschutz & Sitzung" hat fremde Einstellungen überschrieben'
@@ -102,7 +102,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 		bestelllink_gueltigkeit_tage: '30',
 		ferien_leseclub_aktiv: 'true',
 		preise_erfassen: 'true',
-		lmf_stichtag: '08-15',
+		lmf_eingangsjahrgaenge: '5, 6',
 		ersatzwert_immer_kaufpreis: 'true'
 	});
 });
@@ -136,7 +136,7 @@ test('Ein Feld speichern lässt die anderen Felder derselben Kategorie unangetas
 	expect(wert('frist_buch_tage')).toBe('35');
 	expect(wert('frist_medien_tage'), 'das Feld des anderen Platzes').toBe('13');
 	expect(wert('max_ausleihen_schueler')).toBe('9');
-	expect(wert('lmf_stichtag')).toBe('08-15');
+	expect(wert('lmf_eingangsjahrgaenge')).toBe('5, 6');
 	// Die Maske zeigt danach den Stand des Servers, auch das Feld des anderen Platzes.
 	await expect(page.getByLabel('Tage / Medien')).toHaveValue('13');
 });

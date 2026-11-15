@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 13.11.2026
+Stand: 15.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -63,8 +63,6 @@ Nur, was kein Test leisten kann.
 - [x] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
 - [ ] Planer-Tabelle: Zellen ohne eigene Farben wie in jeder anderen Tabelle; die Ratsche sieht
   auch Zeilen-Bauteile. (5.180)
-- [ ] Verdacht: Ein LMF-Stichtag ab August gibt falsche Fristen; die Einstellung auf Januar bis
-  Juli begrenzen oder die Rechnung richten. (5.181)
 
 ### Termin
 
@@ -103,21 +101,6 @@ Zu entscheiden: den Planer angleichen (Wochentag und Stunde so hell wie das Datu
 Ratsche auf Bauteile ausdehnen, deren Wurzel `<tr>` oder `<td>` ist, und am heutigen Stand rot
 sehen; die Einfügelinie beim Ziehen (`border-primary` an der Zeile) ist Funktion und braucht eine
 benannte Ausnahme.
-
-### 5.181 LMF-Stichtag ab August
-
-Die Einstellung `lmf_stichtag` nimmt jedes „MM-TT" an (Feld mit `pattern`, keine Prüfung des
-Monats). `LMFStichtagImSchuljahr` legt einen Stichtag ab August in das erste Kalenderjahr des
-Schuljahres; `LMFStichtagAbTag` gibt einem Schulbuch dann eine Frist, die das Schuljahr nicht
-trennt. Probe am Code (`go test -overlay`): Mit 08-15 bekommen ein Buch aus der Ausgabe am 10.09.
-und eines aus dem Büchertausch am 20.06. beide den 15.08.; mit 09-30 ist ein am 10.09. ausgegebenes
-Buch am 30.09. fällig. Danach mahnt das Programm und sperrt nach der Karenz. Der Bestellbedarf
-und der Hinweis an der Theke (`buch_in_klasse.go`) lesen das Schuljahr an der Frist und setzen
-denselben Stichtag zwischen Januar und Juli voraus. Eingestellt ist am Testserver 07-31.
-
-Nächster Schritt: Entscheidung. Der kleinste Weg ist, die Einstellung auf Januar bis Juli zu
-begrenzen (Prüfung an der Tür, Test am alten Code rot); der Text der Einstellung sagt schon
-„bis zum Stichtag am Schuljahresende".
 
 ### 7.2 Frisches Littera-Backup
 

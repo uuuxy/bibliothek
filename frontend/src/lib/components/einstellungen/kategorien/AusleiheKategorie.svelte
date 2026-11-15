@@ -27,7 +27,6 @@
 		frist_buch_tage: start.frist_buch_tage ?? 21,
 		frist_medien_tage: start.frist_medien_tage ?? 7,
 		max_ausleihen_schueler: start.max_ausleihen_schueler ?? 5,
-		lmf_stichtag: start.lmf_stichtag ?? '07-31',
 		lmf_eingangsjahrgaenge: start.lmf_eingangsjahrgaenge ?? '5, 7',
 		ferien_leseclub_aktiv: start.ferien_leseclub_aktiv ?? false,
 		ferien_leseclub_zieldatum: start.ferien_leseclub_zieldatum ?? ''
@@ -35,7 +34,6 @@
 	let fristBuch = $state(geladen.frist_buch_tage);
 	let fristMedien = $state(geladen.frist_medien_tage);
 	let maxAusleihen = $state(geladen.max_ausleihen_schueler);
-	let lmfStichtag = $state(geladen.lmf_stichtag);
 	let lmfEingang = $state(geladen.lmf_eingangsjahrgaenge);
 	let leseclubAktiv = $state(geladen.ferien_leseclub_aktiv);
 	let leseclubZieldatum = $state(geladen.ferien_leseclub_zieldatum);
@@ -43,7 +41,6 @@
 	const eingabe = () => ({
 		geladen,
 		felder: {
-			lmf_stichtag: lmfStichtag,
 			lmf_eingangsjahrgaenge: lmfEingang,
 			ferien_leseclub_aktiv: leseclubAktiv,
 			ferien_leseclub_zieldatum: leseclubZieldatum
@@ -63,14 +60,15 @@
 
 <KategorieRahmen
 	titel="Ausleihe & Fristen"
-	kurz="Rückgabefristen, Ausleih-Obergrenze, Stichtag und Eingangsjahrgänge der Lernmittelfreiheit."
+	kurz="Rückgabefristen, Ausleih-Obergrenze und Eingangsjahrgänge der Lernmittelfreiheit."
 	{eingabe}
 	{onSaved}
 >
 	{#snippet mehr()}
 		<p>
 			Bücher und Medien haben getrennte Fristen, weil eine DVD schneller zurückkommt als ein
-			Lesebuch. Lernmittel (LMF) laufen nicht auf Tage, sondern bis zum Stichtag am Schuljahresende.
+			Lesebuch. Lernmittel (LMF) laufen nicht auf Tage, sondern bis zum Donnerstag vor den
+			Sommerferien, in der Oberstufe bis zum 31. Juli.
 		</p>
 		<p>
 			Die Eingangsjahrgänge sind die Klassen, die zum neuen Schuljahr neu gebildet werden (an dieser
@@ -88,14 +86,6 @@
 		<Feld type="number" bind:value={fristBuch} etikett="Tage / Buch" min={1} max={365} />
 		<Feld type="number" bind:value={fristMedien} etikett="Tage / Medien" min={1} max={365} />
 		<Feld type="number" bind:value={maxAusleihen} etikett="Max. Ausleihen" min={1} max={50} />
-		<Feld
-			bind:value={lmfStichtag}
-			etikett="LMF-Stichtag (MM-TT)"
-			type="text"
-			placeholder="07-31"
-			pattern={'\\d{2}-\\d{2}'}
-			maxlength={5}
-		/>
 		<Feld
 			bind:value={lmfEingang}
 			etikett="Eingangsjahrgänge"

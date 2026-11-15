@@ -24,8 +24,6 @@ func TestEinstellungenSchreiben_MeldungJePruefung(t *testing.T) {
 				"Max. überfällige Titel: 999999 liegt außerhalb von 1 bis 100."},
 		{"Eingangsjahrgang mit Schrägstrich", `{"lmf_eingangsjahrgaenge": "8/9"}`,
 			`Eingangsjahrgänge: "8/9" ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“`},
-		{"Stichtag mit Punkten", `{"lmf_stichtag": "30.06."}`,
-			`Lernmittel-Stichtag: "30.06." ist kein Kalendertag im Format MM-TT — erwartet wird etwa „07-31“ für den 31. Juli`},
 		{"Sommerferien unlesbar", `{"sommerferien": "kaputt"}`,
 			"Sommerferien: die Liste ist nicht lesbar"},
 		{"Sommerferien doppelt", sommerferienRumpf(`{"jahr":2027,"von":"2027-06-28","bis":"2027-08-06"},{"jahr":2027,"von":"2027-06-28","bis":"2027-08-06"}`),

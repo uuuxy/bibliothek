@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-08. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-15. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -49,7 +49,8 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status mit dem
    offenen Betrag, entliehene Bücher, Vormerkungen; Gebühren stehen im eigenen Reiter.
 2. **Buch scannen** → ausgeliehen. Frist wird automatisch berechnet (Lernmittel bis zum
-   Stichtag 31.07., andere Medien nach Tagen oder, bei eingeschaltetem Ferien-Leseclub, bis
+   Donnerstag vor den Sommerferien, in der Oberstufe bis zum 31.07.; andere Medien nach Tagen
+   oder, bei eingeschaltetem Ferien-Leseclub, bis
    zu dessen festem Rückgabedatum). Fällt eine Frist nach Tagen auf ein Wochenende, einen
    Feiertag oder in die Ferien, gilt der nächste Schultag. (§2)
 3. **Dasselbe Buch erneut scannen** → zurückgegeben. Ein Buch ohne geöffnete Theke scannen →
@@ -481,7 +482,8 @@ Plan; wird er erst während des Tauschs veröffentlicht oder rückt sein Beginn 
 bekommen die seitdem ausgegebenen Schulbücher die Frist nachträglich.
 
 Fällt eine Klasse aus dem Plan oder wird er verworfen, gehen die Fristen an den allgemeinen
-Stichtag zurück (_Einstellungen → Ausleihe_, Vorgabe 31.07.); Schulbücher aus dem Tausch
+Stichtag zurück (bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der
+31.07.); Schulbücher aus dem Tausch
 bleiben beim nächsten Schuljahr, und eine von Hand gesetzte Frist bleibt stehen. Nicht
 angefasst: gesperrte Schüler, mehrjährige Ausleihen und Ausgabe-Pläne. (§2.3)
 
@@ -892,7 +894,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Kategorie               | Wofür                                                                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Schule                  | Name, Anschrift, Eigentumsvermerk auf Etiketten                                                                                                                                                                                                                                                                                                                                               |
-| Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                                                                                                                                   |
+| Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, Eingangsjahrgänge, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                                                                                                                               |
 | Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                                                                                                                                                                                                                                                                                 |
 | Klassenleitungen        | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Preise erfassen                                                                                                                                                                                                                                                                                                                                                                |

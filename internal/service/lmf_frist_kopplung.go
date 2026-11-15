@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -104,10 +105,28 @@ func loeseLMFFristenVomTermin(ctx context.Context, lmfAbfragen *repository.LMFAb
 	// Der Stichtag des Schuljahres, in dem der Termin lag, nicht der nächste ab heute: Angefasst
 	// werden nur Fristen dieses Schuljahres, und sie gehen dorthin zurück, wo sie ohne Plan
 	// gestanden hätten. Und nur Fristen, die auf dem Termin lagen: Eine Frist von Hand bleibt.
-	stichtag := repository.LMFStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
+	// Der Stichtag hängt am Jahrgang, deshalb je Tag die Klassen, die dorthin zurückgehen.
+	ferien := lmfplan.FerientabelleAus(einstellungen.Sommerferien)
+	stichtage := map[string][]string{}
+	for _, klasse := range verlierer {
+		tag := repository.LMFStichtagImSchuljahr(altTag, klasse, ferien).Format(time.DateOnly)
+		stichtage[tag] = append(stichtage[tag], klasse)
+	}
 	von, bis := schuljahrGrenzen(altTag)
-	return lmfAbfragen.SetzeLernmittelFristFuerKlassen(ctx, q, verlierer,
-		schulzeit.TagesEnde(stichtag), von, bis, &altTag)
+	var gesamt int64
+	for _, tag := range sortierteSchluessel(stichtage) {
+		stichtag, err := schulzeit.Kalendertag(tag)
+		if err != nil {
+			return gesamt, err
+		}
+		n, err := lmfAbfragen.SetzeLernmittelFristFuerKlassen(ctx, q, stichtage[tag],
+			schulzeit.TagesEnde(stichtag), von, bis, &altTag)
+		if err != nil {
+			return gesamt, err
+		}
+		gesamt += n
+	}
+	return gesamt, nil
 }
 
 // setzeLMFFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
@@ -147,9 +166,9 @@ func setzeLMFFristenAbTauschbeginn(ctx context.Context, lmfAbfragen *repository.
 	if err != nil {
 		return 0, err
 	}
-	stichtag := repository.LMFStichtagImFolgendenSchuljahr(beginn, einstellungen.LMFStichtag)
 	von, bis := schuljahrGrenzen(beginn)
-	return lmfAbfragen.SetzeLernmittelFristAbTauschbeginn(ctx, q, beginn, schulzeit.TagesEnde(stichtag), von, bis)
+	return lmfAbfragen.SetzeLernmittelFristAbTauschbeginn(ctx, q, beginn,
+		lmfplan.FerientabelleAus(einstellungen.Sommerferien), von, bis)
 }
 
 // schuljahrGrenzen liefert [1. August des Schuljahres, 1. August des nächsten).

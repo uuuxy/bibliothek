@@ -83,29 +83,6 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 	return strings.Join(worte, ", "), nil
 }
 
-// tageImMonat eines Nicht-Schaltjahres: Ein Stichtag 29.02. gäbe es drei von vier Jahren nicht.
-var tageImMonat = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-
-// NormalisiereLMFStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag. Leer
-// heißt Vorgabe (das entscheidet der Patch-Pfad). Ohne die Prüfung würde „30.06." gespeichert
-// und angezeigt, gerechnet aber still mit 07-31 (lmfStichtagMonatTag), und „02-30" würde zum 2.
-// März.
-func NormalisiereLMFStichtag(text string) (string, error) {
-	s := strings.TrimSpace(text)
-	if s == "" {
-		return "", nil
-	}
-	if len(s) == 5 && s[2] == '-' {
-		m, err1 := strconv.Atoi(s[:2])
-		d, err2 := strconv.Atoi(s[3:])
-		if err1 == nil && err2 == nil && m >= 1 && m <= 12 && d >= 1 && d <= tageImMonat[m] {
-			return s, nil
-		}
-	}
-	return "", &EinstellungUngueltigFehler{Feld: "Lernmittel-Stichtag",
-		Grund: fmt.Sprintf("%q ist kein Kalendertag im Format MM-TT — erwartet wird etwa „07-31“ für den 31. Juli", text)}
-}
-
 // nurRueckgabeSQL ist das Prädikat „diese Klasse gibt vor den Ferien nur ab": Abschluss-
 // klasse (AbschlussklasseSQL, die eine Regel) oder ihr nächster Jahrgang ist ein
 // Eingangsjahrgang (die Klasse wird neu gebildet). eingang ist der Platzhalter eines

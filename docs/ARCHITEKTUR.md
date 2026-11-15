@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 12.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 15.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -107,7 +107,7 @@ Grund, nicht der Geschmack.
 | #  | Anforderung                                                                                                                                  | Fundstelle                                       |
 | -- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox.go`, FACHKONZEPT §1 |
-| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `pkg/lmf`, `pkg/lmfplan` |
+| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag (bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli) bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `pkg/lmf`, `pkg/lmfplan` |
 | F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `sse/`  |
 | F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen/mahnbriefe.go`                          |
 | F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
@@ -226,7 +226,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | -- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | O1 | **Ein Entwickler, ein Betreiber — dieselbe Person**                   | Alles, was nur durch Disziplin funktioniert, funktioniert nicht. Daher: Gates statt Checklisten, Selbstprüfung statt Runbook-Gedächtnis, `OFFEN.md` als **einzige** Liste.            |
 | O2 | **Der Betrieb läuft, während gebaut wird**                            | Migrationen müssen idempotent sein und beim Start von selbst laufen; ein Deploy darf offene SSE-Verbindungen nicht mit `os.Exit(1)` beenden (der Grund für den Broker-Umbau).         |
-| O3 | **Lernmittelfreiheit ist Landesrecht**                                | Der Stichtag 31. Juli, die Ersatzwert-Staffel und der Bescheid-Weg (Konto statt Bargeld) sind Vorgaben, keine Produktentscheidungen. Die Staffel ist bewusst ein **Vorschlag mit Herleitung**, weil der Betrag im Ermessen der Schule liegt. |
+| O3 | **Lernmittelfreiheit ist Landesrecht**                                | Das Ende des Schuljahres am 31. Juli, die Ersatzwert-Staffel und der Bescheid-Weg (Konto statt Bargeld) sind Vorgaben, keine Produktentscheidungen. Die Staffel ist bewusst ein **Vorschlag mit Herleitung**, weil der Betrag im Ermessen der Schule liegt. |
 | O4 | **~160 Lehrkräfte legt niemand von Hand an**                          | Selbstanmeldung über die Schuldomain ist Pflicht, die Freischaltung bleibt aber bei der Schule: IMAP beantwortet „wer bist du", nicht „darfst du rein".                               |
 | O5 | **Zwei Anforderungen aus dem Anforderungsprotokoll vom 16.09.2026** | Alte Aufdrucke bleiben lesbar (A14), und ein Lernmittel kann über mehrere Jahre beim selben Kind bleiben (Mehrjahresband am Titel, Spalte `mehrjahresband`). Beides ist gebaut. Wie die übrigen der zwölf Punkte behandelt sind, steht in den Commits vom 17. und 22.09.2026, die begründeten Abweichungen im Mahnwesen in [mittel_konzept.md](mittel_konzept.md), Abschnitt 3. |
 | O6 | **Kein Passwort-Selbstservice, kein Nutzerverzeichnis**                | Es gibt keinen „Passwort vergessen"-Pfad und keine Registrierung außer der Selbstanmeldung — beides liegt beim Schul-IT-Betrieb.                                                       |
@@ -2042,7 +2042,7 @@ ist beantwortbar, und verschiedene Fehler fallen nicht in eine unbrauchbare Meld
 | Welche Zeitzone rechnet Fristen? | `Europe/Berlin`, im Code gepinnt (`schulzeit.TagesEnde`). Eine zweite, rohe Berechnung gibt es bewusst nicht |
 | Welche Zeitzone fährt den Cron?  | **UTC**, genagelt über `cron.WithLocation(time.UTC)` — sonst verschluckt die Umstellnacht den 02:30-Job          |
 | Was ist „jetzt" für die Fachlogik? | `pkg/schulzeit`; in Tests über `Server.Uhr` gestellt, sonst bewiese derselbe Test im Oktober das Gegenteil von dem im Juni |
-| Wie wird der Lernmittel-Stichtag berechnet? | 31. Juli des laufenden bzw. kommenden Schuljahres — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
+| Wie wird der Lernmittel-Stichtag berechnet? | Bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli, je des laufenden bzw. kommenden Schuljahres (`repository/lmf_stichtag.go`) — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
 | Feiertage?                    | `pkg/lmfplan` rechnet Ostersonntag nach der Gauß'schen Osterformel (Fassung Lichtenberg) und leitet die beweglichen Feiertage ab |
 | Bestandsstichtage?            | 15.3. und 15.9. (`pkg/schulzeit`) — geprüft wird an den **Rändern**, weil dort entschieden wird, ob ein Abgang noch in den Nachweis gehört |
 | Und die Uhr des Kiosk-Rechners? | Wird beim Nachbuchen gemessen; der Versatz wird herausgerechnet und ab einer Schwelle protokolliert (siehe [6.5](#65-theke-ohne-netz--und-das-nachbuchen)) |
@@ -4010,7 +4010,7 @@ Einstieg.
 | **Leitung**                 | Rolle: Admin **minus** `manage_users` und `manage_settings` — abgeleitet, nicht abgeschrieben                                                                            | Migration 122, `db/rolle_leitung_test.go`                    |
 | **Littera**                 | Die Windows-Vorgängersoftware. Ihr Altbestand kommt über `mdb-export`-CSVs herein; ihre Barcodes dürfen nicht neu geklebt werden                                        | `internal/littera`, `cmd/littera-altbestand`                 |
 | **LiV**                     | Lehrkraft im Vorbereitungsdienst. Eigene Art, gleiche Rechte wie eine Lehrkraft als Entleiher                                                                            | `leser.art = 'liv'`                                         |
-| **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag 31. Juli) statt rollierender Frist                                          | `pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
+| **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag: Donnerstag vor den Sommerferien, Oberstufe 31. Juli) statt rollierender Frist                                          | `pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
 | **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `pkg/lmfplan`                  |
 | **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/leser/lusd*.go`, [LUSD.md](LUSD.md)                       |
 | **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |

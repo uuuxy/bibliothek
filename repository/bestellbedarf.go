@@ -66,8 +66,8 @@ var sqlBedarfKinder = `
 
 // sqlSchulbuchImSchuljahr wählt die Schulbuch-Ausleihen (a, t) der Kinder (k) für das Schuljahr
 // [$1, $2), offen oder zurückgegeben, nach dem Schuljahr ihrer Frist wie buch_in_klasse.go; so
-// zählt der Büchertausch im Juni die neuen Bücher erst im nächsten Schuljahr, solange der
-// LMF-Stichtag zwischen Januar und Juli liegt (LMFStichtagImSchuljahr). Ein Band über mehrere
+// zählt der Büchertausch im Juni die neuen Bücher erst im nächsten Schuljahr, denn der Stichtag
+// liegt immer im Schuljahr (LMFStichtagImSchuljahr). Ein Band über mehrere
 // Jahrgänge zählt auch vor seiner Frist, solange das Kind in seiner Spanne ist.
 const sqlSchulbuchImSchuljahr = `t.ist_lernmittel AND (
 	(a.rueckgabe_frist >= $1 AND a.rueckgabe_frist < $2)

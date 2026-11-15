@@ -1,87 +1,93 @@
 package repository
 
-// Der globale LMF-Stichtag („MM-TT", Vorgabe 31.07.): eine Rechnung für die Ausleihe und für
-// den Rückweg des Plans. Mit zwei Fassungen bekäme dasselbe Schulbuch je nach Weg eine andere
-// Frist: Die Rechnung `jahr := now.Year(); if now.Month() >= August { jahr++ }` stimmt nur,
-// solange der Stichtag in die zweite Hälfte des Schuljahres fällt (Januar bis Juli); ein
-// Stichtag im September ergäbe den 30.09. des folgenden Schuljahres, dreizehn Monate Frist.
+// Der Stichtag ist der letzte Rückgabetag der Schulbücher eines Schuljahres: eine Rechnung für
+// die Ausleihe, den Büchertausch und den Rückweg des Plans, sonst bekäme dasselbe Schulbuch je
+// nach Weg eine andere Frist.
 //
-// Zwei Fragen gehen an dieselbe Rechnung, weil die Pfade Verschiedenes wissen wollen; die eine
-// ist über die andere gebaut, nicht neben sie:
+// Bis Jahrgang 10 ist es der Donnerstag vor den Sommerferien, an dem der Büchertausch und der
+// Rückgabe-Plan enden (lmfplan.DonnerstagVor). Die Oberstufe organisiert Rückgabe und Ausgabe an
+// dieser Schule selbst und behält den 31. Juli, das Ende des Schuljahres; ebenso eine Klasse ohne
+// Jahrgang und ein Schuljahr, dessen Sommerferien nicht bekannt sind. Beide Tage liegen im
+// Schuljahr, denn an der Frist lesen Bestellbedarf, Theke und Plan-Kopplung das Schuljahr ab.
 //
-//   - LMFStichtagImSchuljahr: „Welcher Tag ist der Stichtag dieses Schuljahres?" Das ist
-//     die Frage des Rückwegs: Eine Klasse verliert ihren Termin, ihre Fristen gehen an
-//     den Stichtag des Schuljahres zurück, in dem der Termin lag.
-//   - LMFStichtagAbTag: „Welcher Stichtag liegt noch vor mir?" Das ist die Frage der
-//     Ausleihe: Eine Frist, die in der Vergangenheit liegt, ist keine Frist, sondern
-//     eine Mahnung am Tag der Ausgabe.
+// Zwei Fragen gehen an dieselbe Rechnung:
+//
+//   - LMFStichtagImSchuljahr: „Welcher Tag ist der Stichtag dieses Schuljahres?" Das fragt der
+//     Rückweg: Verliert eine Klasse ihren Termin, gehen ihre Fristen an den Stichtag des
+//     Schuljahres zurück, in dem der Termin lag.
+//   - LMFStichtagAbTag: „Welcher Stichtag liegt noch vor mir?" Das fragt die Ausleihe: Eine Frist
+//     in der Vergangenheit wäre eine Mahnung am Tag der Ausgabe.
 
 import (
-	"strconv"
-	"strings"
+	"fmt"
 	"time"
 
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 )
 
-// LMFStichtagVorgabe ist die Vorgabe: 31. Juli, das Ende des hessischen Schuljahres.
-// Einstellungen, ihr Zurücksetzen und die Notfallwerte der Ausleihe lesen sie hier, damit das
-// Literal an einer Stelle steht.
-const LMFStichtagVorgabe = "07-31"
+// lmfLetzterJahrgangMittelstufe ist der letzte Jahrgang vor der Oberstufe, wie im Rückgabe-Plan
+// (LadeKlassenMitSchuelern).
+const lmfLetzterJahrgangMittelstufe = 10
 
-// lmfStichtagMonatTag zerlegt „MM-TT". Unlesbares fällt auf die Vorgabe zurück: Der
-// Wert kommt aus einer Einstellung, und eine kaputte Einstellung darf keine Ausleihe
-// verhindern. Ein leeres Feld setzt die Einstellungs-Ebene ohnehin auf die Vorgabe.
-func lmfStichtagMonatTag(stichtag string) (time.Month, int) {
-	monat, tagImMonat := time.July, 31
-	teile := strings.SplitN(stichtag, "-", 2)
-	if len(teile) != 2 {
-		return monat, tagImMonat
-	}
-	m, err1 := strconv.Atoi(teile[0])
-	d, err2 := strconv.Atoi(teile[1])
-	if err1 == nil && err2 == nil && m >= 1 && m <= 12 && d >= 1 && d <= 31 {
-		monat, tagImMonat = time.Month(m), d
-	}
-	return monat, tagImMonat
+// LMFStichtagNachJahren liefert den Stichtag des Schuljahres, das jahre Schuljahre nach dem des
+// Tages liegt, für ein Kind, das heute in der Klasse klasse ist; sein Jahrgang rückt jedes
+// Schuljahr um eins vor. Die Uhrzeit ist 12:00 der Schulzeitzone, damit der Kalendertag bei keiner
+// Zeitumstellung kippt; zur Frist wird er erst über schulzeit.TagesEnde.
+func LMFStichtagNachJahren(tag time.Time, klasse string, jahre int, ferien lmfplan.Ferientabelle) time.Time {
+	ende := SchuljahrBeginn(tag).Year() + 1 + jahre
+	return lmfStichtagAmEnde(ende, lmfMittelstufe(klasse, jahre), ferien)
 }
 
-// LMFStichtagImSchuljahr legt den Stichtag in das Schuljahr eines Tages: die erste
-// Wiederkehr von „MM-TT" ab dem 1. August dieses Schuljahres. Für die Vorgabe 07-31 ist
-// das immer der letzte Tag des Schuljahres; für einen Stichtag ab August der Termin im
-// ersten Kalenderjahr des Schuljahres.
-//
-// Die Uhrzeit ist 12:00 der Schulzeitzone — ein Mittagswert, der bei keiner
-// Sommerzeitumstellung auf den Nachbartag kippt. Zur Frist wird daraus erst
-// schulzeit.TagesEnde (23:59:59); diese Funktion liefert einen Kalendertag,
-// keine Frist.
-func LMFStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
-	monat, tagImMonat := lmfStichtagMonatTag(stichtag)
-	beginn := SchuljahrBeginn(tag)
-	jahr := beginn.Year() + 1
-	if monat >= time.August {
-		jahr = beginn.Year()
-	}
-	return time.Date(jahr, monat, tagImMonat, 12, 0, 0, 0, schulzeit.Zone())
+// LMFStichtagImSchuljahr liefert den Stichtag des Schuljahres, in dem der Tag liegt.
+func LMFStichtagImSchuljahr(tag time.Time, klasse string, ferien lmfplan.Ferientabelle) time.Time {
+	return LMFStichtagNachJahren(tag, klasse, 0, ferien)
 }
 
-// LMFStichtagAbTag liefert den nächsten Stichtag, der nicht vor dem Tag liegt: den des
-// laufenden Schuljahres, und wenn der schon vorbei ist, den des nächsten. Verglichen
-// werden Kalendertage — wer AM Stichtag ausleiht, bekommt ihn noch (bis 23:59:59), nicht
-// erst in einem Jahr.
-func LMFStichtagAbTag(tag time.Time, stichtag string) time.Time {
+// LMFStichtagAbTag liefert den nächsten Stichtag, der nicht vor dem Tag liegt, für ein Schulbuch,
+// das zusatzJahre Schuljahre länger beim Kind bleibt (Band über mehrere Jahrgänge). Ist der
+// Stichtag des laufenden Schuljahres vorbei, gilt das Buch dem nächsten; die Jahre eines Bands
+// zählen schon ab dem laufenden, deshalb das größere von beiden. Verglichen werden Kalendertage:
+// Wer am Stichtag ausleiht, bekommt ihn noch (bis 23:59:59).
+func LMFStichtagAbTag(tag time.Time, klasse string, zusatzJahre int, ferien lmfplan.Ferientabelle) time.Time {
 	tag = tag.In(schulzeit.Zone())
-	imSchuljahr := LMFStichtagImSchuljahr(tag, stichtag)
 	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
-	if imSchuljahr.Before(heute) {
-		imSchuljahr = LMFStichtagImFolgendenSchuljahr(tag, stichtag)
+	vorbei := 0
+	if LMFStichtagImSchuljahr(tag, klasse, ferien).Before(heute) {
+		vorbei = 1
 	}
-	return imSchuljahr
+	return LMFStichtagNachJahren(tag, klasse, max(zusatzJahre, vorbei), ferien)
 }
 
-// LMFStichtagImFolgendenSchuljahr liefert den Stichtag des Schuljahres nach dem des Tages. Ein
-// Schulbuch aus dem Büchertausch bekommt ihn beim Ausleihen und beim Veröffentlichen des Plans
-// über dieselbe Rechnung.
-func LMFStichtagImFolgendenSchuljahr(tag time.Time, stichtag string) time.Time {
-	return LMFStichtagImSchuljahr(SchuljahrBeginn(tag).AddDate(1, 0, 0), stichtag)
+// lmfMittelstufe sagt, ob ein Kind der Klasse klasse in jahre Schuljahren höchstens im Jahrgang 10
+// ist. lmfMittelstufeSQL ist der Zwilling für den Büchertausch, den die Datenbank schreibt.
+func lmfMittelstufe(klasse string, jahre int) bool {
+	jahrgang, _, ok := AbschlussJahrgang(klasse)
+	return ok && jahrgang+jahre <= lmfLetzterJahrgangMittelstufe
+}
+
+// lmfMittelstufeSQL ist lmfMittelstufe für eine Spalte der Klasse. JahrgangSQL ist der Zwilling
+// von AbschlussJahrgang (repository/abgaenger_jahr_paar_pg_test.go).
+func lmfMittelstufeSQL(spalte string, jahre int) string {
+	return fmt.Sprintf(`COALESCE(%s + %d <= %d, false)`, JahrgangSQL(spalte), jahre, lmfLetzterJahrgangMittelstufe)
+}
+
+// lmfStichtagAmEnde liefert den Stichtag des Schuljahres, das im Sommer des Jahres ende endet.
+func lmfStichtagAmEnde(ende int, mittelstufe bool, ferien lmfplan.Ferientabelle) time.Time {
+	zone := schulzeit.Zone()
+	juli := time.Date(ende, time.July, 31, 12, 0, 0, 0, zone)
+	if !mittelstufe {
+		return juli
+	}
+	z, ok := ferien.Sommerferien(ende)
+	if !ok {
+		return juli
+	}
+	d := lmfplan.DonnerstagVor(z.Von)
+	donnerstag := time.Date(d.Year(), d.Month(), d.Day(), 12, 0, 0, 0, zone)
+	// Eingetragene Ferien, die erst im August beginnen, legten den Donnerstag ins nächste Schuljahr.
+	if donnerstag.After(juli) {
+		return juli
+	}
+	return donnerstag
 }

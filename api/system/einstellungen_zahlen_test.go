@@ -19,7 +19,7 @@ import (
 //   - `{"max_overdue_items": 999999}` würde unverändert übernommen. Damit wäre die
 //     Sperr-Automatik aus der Oberfläche abschaltbar, ohne dass irgendwo „aus" steht.
 //
-// Dieselbe Entscheidung wie beim LMF-Stichtag und den Sommerferien: Unlesbares wird
+// Dieselbe Entscheidung wie bei den Sommerferien und den Eingangsjahrgängen: Unlesbares wird
 // abgelehnt. Der Test steht an der Tür und nicht am Sammler, weil „gespeichert" die Antwort
 // des Servers ist, nicht die einer Funktion.
 func TestEinstellungenSchreiben_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.T) {

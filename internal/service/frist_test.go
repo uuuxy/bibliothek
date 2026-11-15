@@ -66,7 +66,7 @@ func TestLeseJahrgang(t *testing.T) {
 // nächsten Schultag (tagesfrist_test.go).
 func TestBerechneFrist_GewoehnlichesBuch(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
-	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
+	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: "Buch", Klasse: "05G1", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
 		t.Errorf("reguläres Buch = %v, erwartet %v", got, want)
@@ -76,7 +76,7 @@ func TestBerechneFrist_GewoehnlichesBuch(t *testing.T) {
 func TestBerechneFrist_Medien(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
-		got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: mt, LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
+		got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: mt, Klasse: "05G1", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schulzeit.Zone())
 		if !got.Equal(want) {
 			t.Errorf("Medium %q = %v, erwartet %v", mt, got, want)
@@ -84,34 +84,49 @@ func TestBerechneFrist_Medien(t *testing.T) {
 	}
 }
 
-func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
-	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
-		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
+// lmfFrist rechnet die Frist eines Schulbuchs am Dienstag, 01.09.2026, im Schuljahr 2026/27. Die
+// Sommerferien 2027 beginnen am Montag, 28.06.; der Donnerstag davor ist der 24.06.2027.
+func lmfFrist(klasse string, zusatzJahre int, sommerferien string) time.Time {
+	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone())
+	return berechneFrist(jetzt, fristAngaben{IstLernmittel: true, Medientyp: "Buch", Klasse: klasse, FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: zusatzJahre, Sommerferien: sommerferien})
+}
 
-		if got.Month() != time.July || got.Day() != 31 {
-			t.Errorf("berechneFrist(LMF %q) = %02d-%02d, erwartet den Stichtag 07-31", titel, got.Month(), got.Day())
+func TestBerechneFrist_LMF_DonnerstagVorDenSommerferien(t *testing.T) {
+	for _, klasse := range []string{"05G1", "9H1", "10R2"} {
+		got := lmfFrist(klasse, 0, "")
+		if want := time.Date(2027, time.June, 24, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+			t.Errorf("Schulbuch der %s = %v, erwartet das Ende des 24.06.2027", klasse, got)
 		}
-		if got.Hour() != 23 || got.Minute() != 59 || got.Second() != 59 {
-			t.Errorf("berechneFrist(LMF %q) = %v, erwartet das Ende um 23:59:59", titel, got)
-		}
-
-		// Jahr: laufendes Schuljahr, ab August rollt es ins nächste Kalenderjahr.
-		// In Schul-Zeitzone rechnen, konsistent mit berechneFrist (sonst flaky
-		// am Monatswechsel nahe Mitternacht).
-		now := time.Now().In(schulzeit.Zone())
-		wantYear := now.Year()
-		if now.Month() >= time.August {
-			wantYear++
-		}
-		if got.Year() != wantYear {
-			t.Errorf("LMF %q: Stichtagsjahr = %d, erwartet %d", titel, got.Year(), wantYear)
-		}
-
 		// Der Stichtag muss in der Schul-Zeitzone liegen, nicht in der Server-Zeitzone.
 		if got.Location().String() != schulzeit.Zone().String() {
-			t.Errorf("LMF %q: Stichtag soll in %s liegen, war in %s",
-				titel, schulzeit.Zone(), got.Location())
+			t.Errorf("Schulbuch der %s: Frist soll in %s liegen, war in %s", klasse, schulzeit.Zone(), got.Location())
 		}
+	}
+}
+
+// Die Oberstufe organisiert Rückgabe und Ausgabe selbst und behält das Ende des Schuljahres;
+// ebenso ein Leser ohne Klasse.
+func TestBerechneFrist_LMF_OberstufeBehaeltDen31Juli(t *testing.T) {
+	for _, klasse := range []string{"ET", "12T", "13T", ""} {
+		got := lmfFrist(klasse, 0, "")
+		if want := time.Date(2027, time.July, 31, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+			t.Errorf("Schulbuch der Klasse %q = %v, erwartet das Ende des 31.07.2027", klasse, got)
+		}
+	}
+}
+
+// Die Jahre nach der Tabelle des Programms trägt die Schule selbst ein; ohne Eintrag gilt der
+// 31. Juli.
+func TestBerechneFrist_LMF_FerienDerSchule(t *testing.T) {
+	jetzt := time.Date(2031, time.September, 2, 10, 0, 0, 0, schulzeit.Zone())
+	angaben := fristAngaben{IstLernmittel: true, Medientyp: "Buch", Klasse: "05G1", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0,
+		Sommerferien: `[{"jahr":2032,"von":"2032-06-28","bis":"2032-08-06"}]`}
+	if got, want := berechneFrist(jetzt, angaben), time.Date(2032, time.June, 24, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+		t.Errorf("mit eingetragenen Ferien = %v, erwartet %v", got, want)
+	}
+	angaben.Sommerferien = ""
+	if got, want := berechneFrist(jetzt, angaben), time.Date(2032, time.July, 31, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+		t.Errorf("ohne bekannte Ferien = %v, erwartet %v", got, want)
 	}
 }
 
@@ -119,38 +134,16 @@ func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 // „LMF" nur in der Signatur. Es entscheidet allein das Feld, Titel und Signatur dürfen beliebig
 // heißen; das Schulbuch bekommt den Stichtag, nicht die 21-Tage-Frist.
 func TestBerechneFrist_LMF_NurInSignatur(t *testing.T) {
-	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
-	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("berechneFrist(LMF nur in Signatur) = %02d-%02d, erwartet den Stichtag 07-31", got.Month(), got.Day())
+	if got := lmfFrist("7H2", 0, ""); got.Month() != time.June || got.Day() != 24 {
+		t.Errorf("berechneFrist(LMF nur in Signatur) = %02d-%02d, erwartet den Stichtag 06-24", got.Month(), got.Day())
 	}
 }
 
-func TestBerechneFrist_LMF_EigenerStichtag(t *testing.T) {
-	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
-	if got.Month() != time.June || got.Day() != 15 {
-		t.Errorf("berechneFrist(Stichtag 06-15) = %02d-%02d, erwartet 06-15", got.Month(), got.Day())
-	}
-}
-
-func TestBerechneFrist_LMF_UngueltigerStichtagGiltAls31Juli(t *testing.T) {
-	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
-		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
-		if got.Month() != time.July || got.Day() != 31 {
-			t.Errorf("berechneFrist(Stichtag %q) = %02d-%02d, erwartet den Rückfall auf 07-31", bad, got.Month(), got.Day())
-		}
-	}
-}
-
+// Ein Band bis Jahrgang 9 bleibt bei einem Kind der 7 zwei Schuljahre länger: Stichtag ist der
+// Donnerstag vor den Sommerferien 2029 (ab 16.07.), nicht derselbe Kalendertag zwei Jahre später.
 func TestBerechneFrist_LMF_ZusatzJahre(t *testing.T) {
-	base := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
-	plus2 := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 2, Sommerferien: ""})
-
-	if plus2.Year() != base.Year()+2 {
-		t.Errorf("berechneFrist(ZusatzJahre 2) = Jahr %d, erwartet %d + 2", plus2.Year(), base.Year())
-	}
-	// Monat/Tag bleiben unverändert.
-	if plus2.Month() != base.Month() || plus2.Day() != base.Day() {
-		t.Errorf("berechneFrist(ZusatzJahre 2) = %02d-%02d, erwartet unverändert %02d-%02d", plus2.Month(), plus2.Day(), base.Month(), base.Day())
+	if got, want := lmfFrist("07G1", 2, ""), time.Date(2029, time.July, 12, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+		t.Errorf("berechneFrist(ZusatzJahre 2) = %v, erwartet %v", got, want)
 	}
 }
 
@@ -173,7 +166,6 @@ func TestLadeEinstellungen_LiestWerteUndUebergehtUngueltige(t *testing.T) {
 		AddRow("frist_buch_tage", strPtr("30")).
 		AddRow("frist_medien_tage", strPtr("kaputt")). // ungültig → Default 7 bleibt
 		AddRow("max_ausleihen_schueler", strPtr("8")).
-		AddRow("lmf_stichtag", strPtr("06-30")).
 		AddRow("ferien_leseclub_aktiv", strPtr("true")).
 		AddRow("max_overdue_items", strPtr("3"))
 
@@ -193,9 +185,6 @@ func TestLadeEinstellungen_LiestWerteUndUebergehtUngueltige(t *testing.T) {
 	}
 	if got.MaxAusleihenSchueler != 8 {
 		t.Errorf("MaxAusleihenSchueler = %d, erwartet 8", got.MaxAusleihenSchueler)
-	}
-	if got.LMFStichtag != "06-30" {
-		t.Errorf("LMFStichtag = %q, erwartet 06-30", got.LMFStichtag)
 	}
 	if !got.FerienLeseclubAktiv {
 		t.Error("FerienLeseclubAktiv soll true sein")
@@ -220,7 +209,7 @@ func TestLadeEinstellungen_LeereTabelleBehaeltVorgaben(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.FristBuchTage != 21 || got.MaxAusleihenSchueler != 5 || got.LMFStichtag != "07-31" {
+	if got.FristBuchTage != 21 || got.MaxAusleihenSchueler != 5 {
 		t.Errorf("ladeEinstellungen(…) bei leerer Tabelle = %+v, erwartet die Vorgaben", got)
 	}
 }
@@ -325,14 +314,16 @@ func TestBestimmeFrist_LMFOhneLeseclub(t *testing.T) {
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"min", "tausch_begonnen"}).AddRow((*time.Time)(nil), false))
 
-	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
+	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum: im Schuljahr 2026/27
+	// dem Donnerstag vor den Sommerferien 2027.
+	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
 	exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.bestimmeFrist(context.Background(), exemplar, "9a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("bestimmeFrist(LMF) = %v, erwartet den Stichtag 31.07 statt des Leseclubs", got)
+	if want := time.Date(2027, time.June, 24, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+		t.Errorf("bestimmeFrist(LMF) = %v, erwartet den Stichtag %v statt des Leseclubs", got, want)
 	}
 }
 
@@ -342,6 +333,7 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
+	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
 	termin := time.Date(2027, time.June, 28, 0, 0, 0, 0, time.UTC)
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
@@ -368,8 +360,9 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("bestimmeFrist(Mehrjahresband) = %v, erwartet den Stichtag", got)
+	// Bis Jahrgang 10: der Donnerstag vor den Sommerferien 2028 (ab 03.07.).
+	if want := time.Date(2028, time.June, 29, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {
+		t.Errorf("bestimmeFrist(Mehrjahresband) = %v, erwartet den Stichtag %v", got, want)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("mehrjährig: unerwarteter Lookup? %v", err)
@@ -426,40 +419,36 @@ func TestLadeEinstellungen_LeererWertFaelltAufVorgabeZurueck(t *testing.T) {
 
 // Ab dem Beginn des Büchertauschs ist die Frist eines Schulbuchs der Stichtag des folgenden
 // Schuljahres, für jede Klasse. Wäre es der Termin der Klasse oder der Stichtag des laufenden
-// Schuljahres, ein Tag in den Ferien, stünde nach den Ferien das Kind überfällig da und wäre
-// nach 14 Tagen gesperrt. Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen
-// Fall hat (Bugklasse „Frist am Tag des Ereignisses"); die Lage kommt hier aus pgxmock, am echten
-// Postgres prüft sie lmf_frist_termintag_pg_test.go.
+// Schuljahres, stünde nach den Ferien das Kind überfällig da und wäre nach 14 Tagen gesperrt.
+// Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Bugklasse
+// „Frist am Tag des Ereignisses"); die Lage kommt hier aus pgxmock, am echten Postgres prüft sie
+// lmf_frist_termintag_pg_test.go. Der Tausch liegt in der Woche vor den Sommerferien 2027 (ab
+// Montag, 28.06.); Stichtage sind der 24.06.2027 und der 29.06.2028, in der Oberstufe der 31.07.
 func TestBestimmeFrist_AbBeginnDesBuechertauschsGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
-	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schulzeit.Zone())
+	termin := time.Date(2027, time.June, 22, 0, 0, 0, 0, schulzeit.Zone())
+	ende := func(jahr int, monat time.Month, tag int) time.Time {
+		return time.Date(jahr, monat, tag, 23, 59, 59, 0, schulzeit.Zone())
+	}
 	faelle := []struct {
 		name           string
 		heute          time.Time
+		klasse         string
 		bevorstehend   *time.Time
 		tauschBegonnen bool
-		stichtag       string
 		want           time.Time
 	}{
-		{"vor dem Büchertausch: der Termin ist die Frist", termin.AddDate(0, 0, -4), &termin, false, "07-31",
-			time.Date(2027, time.June, 29, 23, 59, 59, 0, schulzeit.Zone())},
-		{"Tausch läuft, Termin der Klasse steht noch an: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), &termin, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
-		{"Tausch läuft, Klasse steht nicht im Plan: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), nil, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
-		{"vor dem Büchertausch, Klasse steht nicht im Plan: Stichtag des laufenden Schuljahres", termin.AddDate(0, 0, -4), nil, false, "07-31",
-			time.Date(2027, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
-		{"am Termintag: Stichtag des folgenden Schuljahres", termin, nil, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
-		{"Tag danach: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
-		{"Tag danach, Stichtag im Herbst: der des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "09-30",
-			time.Date(2027, time.September, 30, 23, 59, 59, 0, schulzeit.Zone())},
+		{"vor dem Büchertausch: der Termin ist die Frist", termin.AddDate(0, 0, -4), "9H2", &termin, false, ende(2027, time.June, 22)},
+		{"Tausch läuft, Termin der Klasse steht noch an: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), "9H2", &termin, true, ende(2028, time.June, 29)},
+		{"Tausch läuft, Klasse steht nicht im Plan: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), "9H2", nil, true, ende(2028, time.June, 29)},
+		{"Tausch läuft, Oberstufe: ihr Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, -1), "ET", nil, true, ende(2028, time.July, 31)},
+		{"vor dem Büchertausch, Klasse steht nicht im Plan: Stichtag des laufenden Schuljahres", termin.AddDate(0, 0, -4), "9H2", nil, false, ende(2027, time.June, 24)},
+		{"am Termintag: Stichtag des folgenden Schuljahres", termin, "9H2", nil, true, ende(2028, time.June, 29)},
+		{"Tag danach: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, 1), "9H2", nil, true, ende(2028, time.June, 29)},
 		{"Nachzügler-Termin steht noch an, der erste ist vorbei: trotzdem das folgende Schuljahr",
-			termin, func() *time.Time { z := termin.AddDate(0, 0, 6); return &z }(), true, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
+			termin, "9H2", func() *time.Time { z := termin.AddDate(0, 0, 2); return &z }(), true, ende(2028, time.June, 29)},
+		{"ohne Plan nach dem Donnerstag: das folgende Schuljahr", time.Date(2027, time.June, 25, 10, 0, 0, 0, schulzeit.Zone()), "9H2", nil, false, ende(2028, time.June, 29)},
 		{"neues Schuljahr, kein Termin mehr: Stichtag des laufenden Schuljahres",
-			time.Date(2027, time.September, 6, 10, 0, 0, 0, schulzeit.Zone()), nil, false, "07-31",
-			time.Date(2028, time.July, 31, 23, 59, 59, 0, schulzeit.Zone())},
+			time.Date(2027, time.September, 6, 10, 0, 0, 0, schulzeit.Zone()), "9H2", nil, false, ende(2028, time.June, 29)},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
@@ -467,12 +456,12 @@ func TestBestimmeFrist_AbBeginnDesBuechertauschsGiltDerStichtagDesFolgendenSchul
 			defer mock.Close()
 			svc.jetzt = func() time.Time { return fall.heute }
 			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
-				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("lmf_stichtag", strPtr(fall.stichtag)))
+				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"min", "tausch_begonnen"}).AddRow(fall.bevorstehend, fall.tauschBegonnen))
 
 			exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-			got, err := svc.bestimmeFrist(context.Background(), exemplar, "9H2")
+			got, err := svc.bestimmeFrist(context.Background(), exemplar, fall.klasse)
 			if err != nil {
 				t.Fatalf("unerwarteter Fehler: %v", err)
 			}

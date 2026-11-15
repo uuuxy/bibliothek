@@ -36,7 +36,7 @@ func TestBerechneFrist_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 		{"eigene Sommerferien aus der Einstellung", am(2031, time.June, 23), "Buch", 21, eigene, ende(2031, time.August, 25)},
 		{"ohne Eintrag kennt 2031 keine Sommerferien", am(2031, time.June, 23), "Buch", 21, "", ende(2031, time.July, 14)},
 	} {
-		got := berechneFrist(c.jetzt, fristAngaben{IstLernmittel: false, Medientyp: c.medientyp, LMFStichtag: "07-31",
+		got := berechneFrist(c.jetzt, fristAngaben{IstLernmittel: false, Medientyp: c.medientyp, Klasse: "05G1",
 			FristBuchTage: c.buchTage, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: c.sommerferien})
 		if !got.Equal(c.soll) {
 			t.Errorf("%s: %s, erwartet %s", c.name, got.In(berlin), c.soll)
@@ -44,11 +44,11 @@ func TestBerechneFrist_FristRuecktAufDenNaechstenSchultag(t *testing.T) {
 	}
 }
 
-// Lernmittel behalten ihren Stichtag, auch wenn er in den Sommerferien liegt — sonst stünde
-// jedes Schulbuch am ersten Schultag danach, dem Tag der Bücherausgabe.
+// Lernmittel behalten ihren Stichtag, auch wenn er in den Sommerferien liegt wie der 31. Juli der
+// Oberstufe — sonst stünde das Schulbuch am ersten Schultag danach, dem Tag der Bücherausgabe.
 func TestBerechneFrist_LernmittelBleibtAmStichtag(t *testing.T) {
 	jetzt := time.Date(2026, time.September, 24, 10, 0, 0, 0, schulzeit.Zone())
-	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31",
+	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: true, Medientyp: "Buch", Klasse: "ET",
 		FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	// Samstag 31.07.2027, in den Sommerferien 28.06.–06.08.2027.
 	if want := time.Date(2027, time.July, 31, 23, 59, 59, 0, schulzeit.Zone()); !got.Equal(want) {

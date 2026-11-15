@@ -16,8 +16,6 @@ type ausleihEinstellungen struct {
 	// MaxAusleihenSchueler begrenzt die gleichzeitigen Ausleihen eines Schülers außer den
 	// Lernmitteln.
 	MaxAusleihenSchueler int
-	// LMFStichtag ist der jährliche Rückgabetag der Lernmittel als „MM-TT".
-	LMFStichtag string
 	// FerienLeseclubAktiv sagt, ob der Ferien-Leseclub läuft.
 	FerienLeseclubAktiv bool
 	// FerienLeseclubZieldatum ist das gemeinsame Rückgabedatum der Ausleihen im
@@ -57,7 +55,6 @@ func ausleihEinstellungenAus(e *repository.SystemEinstellungen) *ausleihEinstell
 		FristBuchTage:              e.FristBuchTage,
 		FristMedienTage:            e.FristMedienTage,
 		MaxAusleihenSchueler:       e.MaxAusleihenSchueler,
-		LMFStichtag:                e.LMFStichtag,
 		FerienLeseclubAktiv:        e.FerienLeseclubAktiv,
 		FerienLeseclubZieldatum:    e.FerienLeseclubZieldatum,
 		UeberfaelligKarenzTage:     e.UeberfaelligKarenzTage,

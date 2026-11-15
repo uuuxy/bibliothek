@@ -59,7 +59,7 @@ func TestEinstellungenSchreibe_PatchSchreibtNurMitgeschickteFelder(t *testing.T)
 	for _, k := range []string{
 		"ferien_leseclub_aktiv", "bestellbedarf_warnung_aktiv", "preise_erfassen",
 		"frist_buch_tage", "frist_medien_tage", "max_ausleihen_schueler",
-		"max_overdue_days", "max_overdue_items", "lmf_stichtag",
+		"max_overdue_days", "max_overdue_items", "lmf_eingangsjahrgaenge",
 		"schule_name", "schule_strasse", "schule_plz", "schule_ort",
 	} {
 		if enthaelt(schluessel.got, k) {

@@ -56,7 +56,7 @@ func TestEinstellungenRoundtrip_DatenschutzZeigerSemantik(t *testing.T) {
 	// Die Prüfung beginnt bei den Vorgaben; was andere Tests hier gespeichert haben, verdeckte sie.
 	entferne := func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = ANY($1)`,
-			[]string{"lesehistorie_tage", "lesehistorie_lernmittel_tage", "sperre_minuten", "lmf_stichtag"}); err != nil {
+			[]string{"lesehistorie_tage", "lesehistorie_lernmittel_tage", "sperre_minuten", "lmf_eingangsjahrgaenge"}); err != nil {
 			t.Fatalf("Einstellungen entfernen: %v", err)
 		}
 	}
@@ -87,7 +87,7 @@ func TestEinstellungenRoundtrip_DatenschutzZeigerSemantik(t *testing.T) {
 		t.Fatalf("sperre_minuten kam nicht zurück: %v", geladen.SperreMinuten)
 	}
 	// Eine andere Kategorie speichert ohne die Felder: Sie sind nil, die 0 bleibt stehen.
-	if err := repo.Schreibe(ctx, &EinstellungenPatch{LMFStichtag: ptr("07-31")}); err != nil {
+	if err := repo.Schreibe(ctx, &EinstellungenPatch{LMFEingangsjahrgaenge: ptr("5, 7")}); err != nil {
 		t.Fatalf("Schreibe (andere Kategorie): %v", err)
 	}
 	if geladen, err = repo.Lade(ctx); err != nil {
@@ -113,7 +113,7 @@ func TestEinstellungenRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing
 	if err := repo.Schreibe(ctx, &EinstellungenPatch{
 		FerienLeseclubAktiv:        ptr(true),
 		FerienLeseclubZieldatum:    ptr("2027-01-06"),
-		LMFStichtag:                ptr("08-15"),
+		LMFEingangsjahrgaenge:      ptr("5, 6"),
 		MaxAusleihenSchueler:       ptr(9),
 		FristBuchTage:              ptr(28),
 		FristMedienTage:            ptr(10),
@@ -163,8 +163,8 @@ func TestEinstellungenRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing
 			t.Errorf("%s wurde von einer fremden Kategorie zurückgesetzt: %d statt %d", f.name, f.ist, f.soll)
 		}
 	}
-	if nachher.LMFStichtag != "08-15" || nachher.SchuleName != "Philipp-Reis-Schule" {
-		t.Errorf("Text-Einstellungen überschrieben: Stichtag=%q Schule=%q", nachher.LMFStichtag, nachher.SchuleName)
+	if nachher.LMFEingangsjahrgaenge != "5, 6" || nachher.SchuleName != "Philipp-Reis-Schule" {
+		t.Errorf("Text-Einstellungen überschrieben: Eingangsjahrgänge=%q Schule=%q", nachher.LMFEingangsjahrgaenge, nachher.SchuleName)
 	}
 	if nachher.FerienLeseclubZieldatum == nil || *nachher.FerienLeseclubZieldatum != "2027-01-06" {
 		t.Errorf("Zieldatum des Leseclubs verloren: %v", nachher.FerienLeseclubZieldatum)

@@ -17,8 +17,8 @@ import (
 // dem Tausch ist der Termin der Klasse die Frist. Ab dem ersten Tag des Tauschs gibt jedes Kind
 // ein neu ausgegebenes Schulbuch erst im nächsten Schuljahr zurück, auch aus einer Klasse, die
 // nicht im Plan steht, und auch vor dem eigenen Termin. Wäre es der Termin selbst oder der
-// 31.07. des laufenden Schuljahres, ein Tag in den Ferien, stünde das Kind nach den Ferien
-// überfällig da und wäre nach 14 Tagen gesperrt.
+// Stichtag des laufenden Schuljahres, stünde das Kind nach den Ferien überfällig da und wäre
+// nach 14 Tagen gesperrt. Stichtage: 24.06.2027 und 29.06.2028, in der Oberstufe der 31.07.
 func TestLMFFrist_AbBeginnDesBuechertauschsGiltDasFolgendeSchuljahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -33,23 +33,24 @@ func TestLMFFrist_AbBeginnDesBuechertauschsGiltDasFolgendeSchuljahr(t *testing.T
 		}
 		return x.Add(10 * time.Hour)
 	}
-	laufend := schulzeit.TagesEnde(tag("2027-07-31"))
-	folgend := schulzeit.TagesEnde(tag("2028-07-31"))
+	laufend := schulzeit.TagesEnde(tag("2027-06-24"))
+	folgend := schulzeit.TagesEnde(tag("2028-06-29"))
 	faelle := []struct {
 		name   string
 		klasse string
 		heute  time.Time
 		want   time.Time
 	}{
-		{"Freitag vor dem Tausch: der Termin ist die Frist", "9H2", tag("2027-06-25"), schulzeit.TagesEnde(tag("2027-06-29"))},
-		{"Freitag vor dem Tausch, Klasse nicht im Plan: Stichtag des laufenden Schuljahres", "5F1", tag("2027-06-25"), laufend},
-		{"erster Tag des Tauschs, Termin der Klasse steht noch an: folgendes Schuljahr", "9H2", tag("2027-06-28"), folgend},
-		{"erster Tag des Tauschs, Klasse nicht im Plan: folgendes Schuljahr", "5F1", tag("2027-06-28"), folgend},
-		{"am Termintag: folgendes Schuljahr", "9H2", tag("2027-06-29"), folgend},
-		{"Tag danach: folgendes Schuljahr", "9H2", tag("2027-06-30"), folgend},
-		// 9H1 steht zweimal im Plan (28.06. und, hinter dem Wochenende, 05.07.).
-		{"Nachzügler-Termin steht noch an: folgendes Schuljahr", "9H1", tag("2027-06-28"), folgend},
-		{"nach der letzten Zeile, vor dem Stichtag: folgendes Schuljahr", "5F1", tag("2027-07-20"), folgend},
+		{"Freitag vor dem Tausch: der Termin ist die Frist", "9H2", tag("2027-06-11"), schulzeit.TagesEnde(tag("2027-06-15"))},
+		{"Freitag vor dem Tausch, Klasse nicht im Plan: Stichtag des laufenden Schuljahres", "5F1", tag("2027-06-11"), laufend},
+		{"erster Tag des Tauschs, Termin der Klasse steht noch an: folgendes Schuljahr", "9H2", tag("2027-06-14"), folgend},
+		{"erster Tag des Tauschs, Klasse nicht im Plan: folgendes Schuljahr", "5F1", tag("2027-06-14"), folgend},
+		{"erster Tag des Tauschs, Oberstufe: ihr Stichtag des folgenden Schuljahres", "ET", tag("2027-06-14"), schulzeit.TagesEnde(tag("2028-07-31"))},
+		{"am Termintag: folgendes Schuljahr", "9H2", tag("2027-06-15"), folgend},
+		{"Tag danach: folgendes Schuljahr", "9H2", tag("2027-06-16"), folgend},
+		// 9H1 steht zweimal im Plan (14.06. und, hinter dem Wochenende, 21.06.).
+		{"Nachzügler-Termin steht noch an: folgendes Schuljahr", "9H1", tag("2027-06-14"), folgend},
+		{"nach der letzten Zeile, vor dem Stichtag: folgendes Schuljahr", "5F1", tag("2027-06-22"), folgend},
 		{"nächstes Schuljahr ohne neuen Plan: Stichtag des laufenden", "9H2", tag("2027-09-06"), folgend},
 	}
 	for _, fall := range faelle {
@@ -67,8 +68,9 @@ func TestLMFFrist_AbBeginnDesBuechertauschsGiltDasFolgendeSchuljahr(t *testing.T
 	}
 }
 
-// rueckgabePlanJuni2027 veröffentlicht einen Rückgabe-Plan ab Montag, 28.06.2027, eine
-// Zeile je Tag: 9H2 ist am Dienstag dran, 9H1 zweimal (28.06. und als Nachzügler).
+// rueckgabePlanJuni2027 veröffentlicht einen Rückgabe-Plan ab Montag, 14.06.2027, zwei Wochen
+// vor den Sommerferien, eine Zeile je Tag: 9H2 ist am Dienstag dran, 9H1 zweimal (14.06. und als
+// Nachzügler am 21.06.).
 func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
@@ -78,12 +80,12 @@ func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	ersterTag := time.Date(2027, time.June, 28, 0, 0, 0, 0, schulzeit.Zone())
+	ersterTag := time.Date(2027, time.June, 14, 0, 0, 0, 0, schulzeit.Zone())
 	zeilen := []repository.LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
 		{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "Nachzügler"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: ersterTag, Startstunde: 1, StundenJeTag: 1},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	plan := repository.LMFPlan{Art: repository.LMFTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1,
+	plan := repository.LMFPlan{Art: repository.LMFTerminRueckgabe, ErsterTag: "2027-06-14", Startstunde: 1, StundenJeTag: 1,
 		LetzterTag: plaetze[len(plaetze)-1].Datum.Format("2006-01-02"), LetzteStunde: plaetze[len(plaetze)-1].Stunde}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -127,13 +129,13 @@ func TestLMFFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 		heute  time.Time
 		want   time.Time
 	}{
-		{"vor dem Tausch: der Termin zählt nicht, Stichtag plus zwei Jahre", "9H2", tag("2027-06-25"), schulzeit.TagesEnde(tag("2029-07-31"))},
-		{"erster Tag des Tauschs: folgendes Schuljahr plus das verbleibende Jahr", "9H2", tag("2027-06-28"), schulzeit.TagesEnde(tag("2029-07-31"))},
-		{"am Termintag: dasselbe", "9H2", tag("2027-06-29"), schulzeit.TagesEnde(tag("2029-07-31"))},
-		{"Tag danach: dasselbe", "9H2", tag("2027-06-30"), schulzeit.TagesEnde(tag("2029-07-31"))},
-		{"Kind der 11 vor dem Tausch: der letzte Jahrgang, ein Schuljahr wie bisher", "ET", tag("2027-06-25"), schulzeit.TagesEnde(tag("2027-07-31"))},
-		{"Kind der 11 im Tausch: das folgende Schuljahr", "ET", tag("2027-06-28"), schulzeit.TagesEnde(tag("2028-07-31"))},
-		{"Kind über der Spanne vor dem Tausch: ein Schuljahr", "12T", tag("2027-06-25"), schulzeit.TagesEnde(tag("2027-07-31"))},
+		{"vor dem Tausch: der Termin zählt nicht, Stichtag plus zwei Jahre", "9H2", tag("2027-06-11"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"erster Tag des Tauschs: folgendes Schuljahr plus das verbleibende Jahr", "9H2", tag("2027-06-14"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"am Termintag: dasselbe", "9H2", tag("2027-06-15"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"Tag danach: dasselbe", "9H2", tag("2027-06-16"), schulzeit.TagesEnde(tag("2029-07-31"))},
+		{"Kind der 11 vor dem Tausch: der letzte Jahrgang, ein Schuljahr wie bisher", "ET", tag("2027-06-11"), schulzeit.TagesEnde(tag("2027-07-31"))},
+		{"Kind der 11 im Tausch: das folgende Schuljahr", "ET", tag("2027-06-14"), schulzeit.TagesEnde(tag("2028-07-31"))},
+		{"Kind über der Spanne vor dem Tausch: ein Schuljahr", "12T", tag("2027-06-11"), schulzeit.TagesEnde(tag("2027-07-31"))},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
@@ -160,8 +162,8 @@ func TestLMFFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	rueckgabePlanJuni2027(t, pool)
 
 	// Freitag vor dem Büchertausch, der am Montag beginnt; der Termin der 9H2 ist der Dienstag.
-	heute := time.Date(2027, time.June, 25, 10, 0, 0, 0, schulzeit.Zone())
-	termin := schulzeit.TagesEnde(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
+	heute := time.Date(2027, time.June, 11, 10, 0, 0, 0, schulzeit.Zone())
+	termin := schulzeit.TagesEnde(time.Date(2027, time.June, 15, 10, 0, 0, 0, schulzeit.Zone()))
 	svc := &AusleihDienst{pool: pool, jetzt: func() time.Time { return heute }}
 
 	ohneKaestchen := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}

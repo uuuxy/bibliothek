@@ -6,7 +6,6 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/pkg/lmfplan"
-	"bibliothek/repository"
 )
 
 // Die Ausleihe liest ihre Einstellungen an der Datenbank: gesetzte Werte kommen an, eine Zeile
@@ -29,7 +28,6 @@ func TestLadeAusleihEinstellungen_AnDerDatenbank(t *testing.T) {
 		"frist_buch_tage":              strPtr("30"),
 		"frist_medien_tage":            strPtr(""),
 		"max_ausleihen_schueler":       strPtr("8"),
-		"lmf_stichtag":                 nil,
 		"ferien_leseclub_aktiv":        strPtr("true"),
 		"ferien_leseclub_zieldatum":    nil,
 		"max_overdue_days":             strPtr("10"),
@@ -51,7 +49,6 @@ func TestLadeAusleihEinstellungen_AnDerDatenbank(t *testing.T) {
 		FristBuchTage:              30,
 		FristMedienTage:            7,
 		MaxAusleihenSchueler:       8,
-		LMFStichtag:                repository.LMFStichtagVorgabe,
 		FerienLeseclubAktiv:        true,
 		UeberfaelligKarenzTage:     10,
 		UeberfaelligSperreAbMedien: 3,
