@@ -271,9 +271,9 @@ export function seedBestellbedarf(anzahl = 8) {
 /**
  * Lässt Schulbücher im Bestellbedarf fehlen. Der Bedarf rechnet nach der Zahl der Kinder
  * (repository/bestellbedarf.go): Ein Kind der 3 hat die Exemplare für dieses Schuljahr
- * ausgeliehen, und aus der 2 rücken so viele Kinder nach, dass jedes dieser Bücher im nächsten
- * Schuljahr mehr braucht, als es hat. Die anderen Kinder der 3 in der Datenbank zählen mit;
- * deshalb hängt die Zahl der Nachrückenden an ihnen.
+ * ausgeliehen, und aus der 2 rücken so viele Kinder nach, dass das nächste Schuljahr von jedem
+ * dieser Bücher genau bestand + 1 Stück braucht. Die anderen Kinder der 2 und der 3 in der
+ * Datenbank zählen mit; deshalb hängen die Zahlen der angelegten Kinder an ihnen.
  *
  * @param {string} marke Kennzeichen der angelegten Ausweise
  * @param {string[]} exemplare Kennungen der Exemplare, die das Kind ausleiht
@@ -281,23 +281,31 @@ export function seedBestellbedarf(anzahl = 8) {
  * @returns {() => void} Aufräumen: Ausleihen und Kinder weg; vor den Titeln aufrufen
  */
 export function seedFehlbestand(marke, exemplare, bestand) {
-	const dritte = Number(
-		querySQL(`SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND NOT ist_abgaenger
-		          AND substring(klasse from '^0*([1-9]|1[0-3])(?:\\D|$)') = '3'`)
-	);
-	// Je Buch braucht das nächste Schuljahr Nachrückende geteilt durch die Kinder der 3; das
-	// übersteigt bestand, sobald (bestand + 1)-mal so viele nachrücken.
-	const nachruecken = (bestand + 1) * (dritte + 1);
+	const [zweite, dritte] = querySQL(`
+		SELECT count(*) FILTER (WHERE j = '2'), count(*) FILTER (WHERE j = '3')
+		FROM (SELECT substring(klasse from '^0*([1-9]|1[0-3])(?:\\D|$)') AS j FROM schueler
+		      WHERE deleted_at IS NULL AND NOT ist_abgaenger) s`)
+		.split('|')
+		.map(Number);
+	// Je Buch braucht das nächste Schuljahr die Kinder der 2 geteilt durch die der 3, gerundet:
+	// genau bestand + 1, wenn die 2 (bestand + 1)-mal so viele Kinder hat. Hat sie schon mehr,
+	// kommen Kinder ohne Ausleihe in die 3.
+	const ohneAusleihe = Math.max(0, Math.ceil(zweite / (bestand + 1)) - (dritte + 1));
+	const nachruecken = (bestand + 1) * (dritte + 1 + ohneAusleihe) - zweite;
 	const halter = querySQL(`
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
 		VALUES ('Halter', 'E2E', '03E2E', 'S-${marke}-h', 2036) RETURNING id`).split('\n')[0];
 	const kinder = querySQL(`
-		WITH k AS (
+		WITH dritte AS (
+			INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+			SELECT 'Ohne', 'E2E', '03E2E', 'S-${marke}-o' || g, 2036 FROM generate_series(1, ${ohneAusleihe}) g
+			RETURNING id
+		), zweite AS (
 			INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
 			SELECT 'Kind', 'E2E', '02E2E', 'S-${marke}-' || g, 2037 FROM generate_series(1, ${nachruecken}) g
 			RETURNING id
 		)
-		SELECT id FROM k`)
+		SELECT id FROM dritte UNION ALL SELECT id FROM zweite`)
 		.split('\n')
 		.filter(Boolean);
 	// Die Frist des laufenden Schuljahres: der 31. Juli vor dem nächsten 1. August.
