@@ -63,6 +63,8 @@ Nur, was kein Test leisten kann.
 - [x] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
 - [ ] Planer-Tabelle: Zellen ohne eigene Farben wie in jeder anderen Tabelle; die Ratsche sieht
   auch Zeilen-Bauteile. (5.180)
+- [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
+  überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 
 ### Termin
 
@@ -101,6 +103,22 @@ Zu entscheiden: den Planer angleichen (Wochentag und Stunde so hell wie das Datu
 Ratsche auf Bauteile ausdehnen, deren Wurzel `<tr>` oder `<td>` ist, und am heutigen Stand rot
 sehen; die Einfügelinie beim Ziehen (`border-primary` an der Zeile) ist Funktion und braucht eine
 benannte Ausnahme.
+
+### 5.181 Oberstufe: der Übergang zum Schuljahresbeginn
+
+Aussage der Bibliothek: Die Oberstufe leiht ihre Schulbücher vor allem zu Beginn des neuen
+Schuljahres aus. Der Übergang soll für die Oberstufe entspannt sein: Nicht alle haben ihre Bücher
+dabei, und manche behalten ein Buch länger.
+
+Stand im Programm: Schulbücher der Oberstufe haben den 31. Juli als Frist (FACHKONZEPT 2.1,
+`repository/lmf_stichtag.go`). Ein Schulbuch hält nur eine Sperre von Hand auf (Entscheidung der
+Schule, FACHKONZEPT 2.2). Die Überfällig-Automatik zählt aber jede überfällige Ausleihe
+außer Handapparat und Gerät, also auch Schulbücher (`repository.ZaehleUeberfaelligeAusleihen`):
+Wer im September Bücher des Vorjahres noch hat, wird nach den Toleranztagen für Bücher der
+Bibliothek gesperrt, für Schulbücher nicht.
+
+Nächster Schritt: den Ablauf zum Schuljahresbeginn an der Theke durchgehen, dann entscheiden, ob
+die Frist der Oberstufe oder die Zählung der Automatik sich ändert.
 
 ### 7.2 Frisches Littera-Backup
 
