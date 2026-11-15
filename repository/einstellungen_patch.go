@@ -72,6 +72,8 @@ type EinstellungenPatch struct {
 	// ErsatzwertImmerKaufpreis: Nicht mitgeschickt heißt unangetastet, false heißt
 	// ausdrücklich „Listenpreis" (siehe SystemEinstellungen).
 	ErsatzwertImmerKaufpreis *bool `json:"ersatzwert_immer_kaufpreis,omitempty"`
+	// SicherungAn: Nicht mitgeschickt heißt unangetastet, false heißt „keine eigene Sicherung".
+	SicherungAn *bool `json:"sicherung_an,omitempty"`
 }
 
 // paarSammler sammelt die Paare aus Schlüssel und Wert, die ein Patch schreibt. Jedes Feld
@@ -151,6 +153,7 @@ func paareAusPatch(p *EinstellungenPatch) [][2]string {
 	s.text("oeffentliche_adresse", p.OeffentlicheAdresse)
 	s.text("alarm_empfaenger", p.AlarmEmpfaenger)
 	s.schalter("alarm_warnungen", p.AlarmWarnungen)
+	s.schalter("sicherung_an", p.SicherungAn)
 
 	// Alle Zahlen auf einmal, in der Reihenfolge von zahlenFelder.
 	s.zahlen(p)

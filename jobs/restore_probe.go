@@ -50,6 +50,11 @@ const (
 // Sicherung oder die DATABASE_URL, unterbleibt sie ohne Meldung; diesen Zustand meldet die
 // Betriebsbereitschaft schon über den Befund der Sicherung als kritisch.
 func (z *Zeitplan) fuehreRestoreProbeAus(ctx context.Context) {
+	// Ohne eigene Sicherung gibt es nichts zu proben; das letzte Ergebnis bleibt stehen.
+	if z.sicherungAbgeschaltet(ctx) {
+		slog.Info("Restore-Probe: übersprungen, die eigene Sicherung ist abgeschaltet")
+		return
+	}
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return

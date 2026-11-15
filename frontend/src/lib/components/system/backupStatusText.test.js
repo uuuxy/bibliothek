@@ -24,6 +24,18 @@ describe('backupMessage', () => {
 		expect(backupMessage(null)).toBe('');
 	});
 
+	// Abgeschaltet (Einstellungen → Sicherung) fehlt der Schlüssel mit Absicht; die Zeile in der
+	// Seitenleiste nennt den Zustand, und es gibt keinen Schritt zur Behebung.
+	it('nennt die abgeschaltete Sicherung statt des fehlenden Schlüssels', () => {
+		const aus = /** @type {const} */ ({
+			last_backup_at: null,
+			encryption_key_set: false,
+			status: 'aus'
+		});
+		expect(backupMessage(aus)).toBe('Eigene Sicherung aus');
+		expect(backupHint(aus)).toBe('');
+	});
+
 	it('nennt den fehlenden Schlüssel zuerst — ohne ihn läuft gar kein Backup', () => {
 		expect(
 			backupMessage({ last_backup_at: null, encryption_key_set: false, status: 'critical' })

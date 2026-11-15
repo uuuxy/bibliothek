@@ -34,6 +34,7 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 	z := &Zeitplan{pool: pool}
+	schalteSicherungEin(t, pool)
 
 	// Ein Name, den kein echter Lauf vergibt: Steht er nach dem Start noch da, lief keine Probe.
 	const marke = "frueherer-lauf.sql.gz.enc"

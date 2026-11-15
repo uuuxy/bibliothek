@@ -123,6 +123,10 @@ type Lage struct {
 	BackupSchluesselSchwach bool
 	LetztesBackup           *time.Time
 	Jetzt                   time.Time
+	// SicherungAus heißt, die Einstellung sicherung_an steht aus (die Vorgabe): Die Schule sichert
+	// nicht selbst, weil der Server gesichert wird. Backup, Auslagerung und Probe sind dann kein
+	// Befund.
+	SicherungAus bool
 
 	// FerientabelleBis ist das letzte Jahr, für das Sommerferien bekannt sind
 	// (pkg/lmfplan/sommerferien.go und die Einstellung „Sommerferien"). Danach belegt der

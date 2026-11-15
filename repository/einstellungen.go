@@ -109,6 +109,10 @@ type SystemEinstellungen struct {
 	// die Vorgabe ist: Ein nicht gesetzter Schlüssel liest sich als false, und false ist die
 	// Regel der Arbeitshilfe („80 % des Neupreises zum Zeitpunkt des Verlusts").
 	ErsatzwertImmerKaufpreis bool `json:"ersatzwert_immer_kaufpreis"`
+	// SicherungAn schaltet die eigene Nachtsicherung ein, für eine Schule, deren Server nicht
+	// selbst gesichert wird. Vorgabe aus, eine Entscheidung der Schule: Ein nicht gesetzter
+	// Schlüssel liest sich als false, und es entsteht keine eigene Sicherung.
+	SicherungAn bool `json:"sicherung_an"`
 }
 
 // AdresseFuerLinks liefert die öffentliche Adresse ohne Leerraum am Rand, "" wenn keine
@@ -192,14 +196,11 @@ func setzeStringRoh(wert *string, ziel *string) {
 // setzeEinstellung überträgt eine Zeile aus system_einstellungen in ihr Feld. Einen Schlüssel,
 // den hier niemand kennt, übergeht sie.
 func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
-	if setzeDatenschutzEinstellung(e, schluessel, wert) || setzeBescheidEinstellung(e, schluessel, wert) {
+	if setzeDatenschutzEinstellung(e, schluessel, wert) || setzeBescheidEinstellung(e, schluessel, wert) ||
+		setzeSchalterEinstellung(e, schluessel, wert) {
 		return
 	}
 	switch schluessel {
-	case "ersatzwert_immer_kaufpreis":
-		e.ErsatzwertImmerKaufpreis = wert != nil && *wert == "true"
-	case "ferien_leseclub_aktiv":
-		e.FerienLeseclubAktiv = wert != nil && *wert == "true"
 	case "ferien_leseclub_zieldatum":
 		if wert != nil && *wert != "" {
 			v := *wert
@@ -219,8 +220,6 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 		setzeInt(wert, &e.UeberfaelligKarenzTage)
 	case "max_overdue_items":
 		setzeInt(wert, &e.UeberfaelligSperreAbMedien)
-	case "bestellbedarf_warnung_aktiv":
-		e.BestellbedarfWarnungAktiv = wert != nil && *wert == "true"
 	case "bestelllink_gueltigkeit_tage":
 		setzeInt(wert, &e.BestelllinkGueltigkeitTage)
 	case "preise_erfassen":
@@ -244,14 +243,35 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 			v := *wert
 			e.AlarmEmpfaenger = &v
 		}
-	case "alarm_warnungen":
-		e.AlarmWarnungen = wert != nil && *wert == "true"
 	case "oeffentliche_adresse":
 		if wert != nil {
 			v := *wert
 			e.OeffentlicheAdresse = &v
 		}
 	}
+}
+
+// setzeSchalterEinstellung überträgt die Schalter, die nur der Text "true" einschaltet; ein
+// anderer Wert in der Zeile schaltet sie aus. Ohne Zeile bleibt die Vorgabe aus
+// einstellungenVorgabe.
+func setzeSchalterEinstellung(e *SystemEinstellungen, schluessel string, wert *string) bool {
+	var feld *bool
+	switch schluessel {
+	case "ersatzwert_immer_kaufpreis":
+		feld = &e.ErsatzwertImmerKaufpreis
+	case "ferien_leseclub_aktiv":
+		feld = &e.FerienLeseclubAktiv
+	case "bestellbedarf_warnung_aktiv":
+		feld = &e.BestellbedarfWarnungAktiv
+	case "alarm_warnungen":
+		feld = &e.AlarmWarnungen
+	case "sicherung_an":
+		feld = &e.SicherungAn
+	default:
+		return false
+	}
+	*feld = wert != nil && *wert == "true"
+	return true
 }
 
 // Lade liest die Einstellungen. Bei einem Lesefehler liefert es die Vorgaben des Programms

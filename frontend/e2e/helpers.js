@@ -105,6 +105,22 @@ export async function apiPut(page, url, data) {
 }
 
 /**
+ * Schaltet die eigene Nachtsicherung (Einstellungen → Sicherung) und liefert den Stand davor,
+ * damit der Test ihn zurückstellen kann. Vorgabe ist aus.
+ * @param {import('@playwright/test').Page} page
+ * @param {boolean} an
+ * @returns {Promise<boolean>} der Stand vor dem Schalten
+ */
+export async function schalteSicherung(page, an) {
+	const vorher = await page.request.get('/api/einstellungen');
+	if (!vorher.ok()) throw new Error(`Einstellungen nicht lesbar: ${vorher.status()}`);
+	const stand = (await vorher.json()).sicherung_an === true;
+	const res = await apiPut(page, '/api/einstellungen', { sicherung_an: an });
+	if (!res.ok()) throw new Error(`Sicherung nicht geschaltet: ${res.status()}`);
+	return stand;
+}
+
+/**
  * Seedet Testdaten direkt in die lokale Stack-DB (docker-compose.local.yml).
  * Nur für Entitäten ohne einfachen API-Weg (z. B. Buch-Exemplare).
  * @param {string} sql

@@ -10,7 +10,13 @@
 // nachweislich kein Auslagerungsziel für Backups, und genau das muss dastehen. Eine Seite,
 // die eine leere Liste zeigt, bestünde sonst jeden Test.
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBenutzer, einstellungsKategorie, menuepunkt } from './helpers.js';
+import {
+	uiLogin,
+	seedBenutzer,
+	einstellungsKategorie,
+	menuepunkt,
+	schalteSicherung
+} from './helpers.js';
 
 // Eigene Anmeldeadresse, nicht die von helfer-kiosk.spec.js.
 //
@@ -20,9 +26,39 @@ import { uiLogin, seedBenutzer, einstellungsKategorie, menuepunkt } from './help
 // Datenbank scheiterte die Anmeldung und der Test lief in den 30-Sekunden-Timeout.
 const HELFER = 'e2e-bb-helfer@test.local';
 
+// Die fehlende Auslagerung ist nur ein Mangel, wenn die eigene Sicherung eingeschaltet ist
+// (Einstellungen → Sicherung, Vorgabe aus); der Test schaltet sie für seine Dauer ein.
 test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async ({ page }) => {
 	await uiLogin(page);
+	const vorher = await schalteSicherung(page, true);
+	try {
+		await pruefeAuslagerungsMangel(page);
+	} finally {
+		await schalteSicherung(page, vorher);
+	}
+});
 
+// Ohne eingeschaltete Sicherung nennt die Seite die drei Bereiche der Sicherung „abgeschaltet",
+// ohne Mangel: Sonst ginge jeden Tag eine Alarm-Mail über eine Entscheidung der Schule hinaus.
+test('Betriebsbereitschaft meldet die abgeschaltete Sicherung ohne Mangel', async ({ page }) => {
+	await uiLogin(page);
+	const vorher = await schalteSicherung(page, false);
+	try {
+		const antwort = await page.request.get('/api/admin/system/betriebsbereitschaft');
+		expect(antwort.ok()).toBeTruthy();
+		const { befunde } = await antwort.json();
+		for (const bereich of ['Nächtliches Backup', 'Auslagerung der Backups', 'Restore-Probe']) {
+			const befund = befunde.find((/** @type {any} */ b) => b.bereich === bereich);
+			expect(befund?.stufe, bereich).toBe('ok');
+			expect(befund?.befund, bereich).toContain('abgeschaltet');
+		}
+	} finally {
+		await schalteSicherung(page, vorher);
+	}
+});
+
+/** @param {import('@playwright/test').Page} page */
+async function pruefeAuslagerungsMangel(page) {
 	// Über das MENÜ, nicht über die URL. Der erste Anlauf navigierte direkt — und war
 	// grün, obwohl der Menüeintrag fehlte: Die Seite war nur für den erreichbar, der den
 	// Pfad kennt. Ein Bildschirm, den niemand findet, ist so gut wie keiner.
@@ -53,7 +89,7 @@ test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async (
 
 	// Und sie sagt, wie viel offen ist — die Zahl ist das, was man beim Öffnen sucht.
 	await expect(page.getByText(/Punkt(e)? offen\./)).toBeVisible();
-});
+}
 
 test('Fehler im Log nennt den Stand des Zählers am Server', async ({ page }) => {
 	await uiLogin(page);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, schalteSicherung } from './helpers.js';
 
 // Smoke-Flow Backup-Wächter: Ist der Alert an den echten Endpunkt verdrahtet?
 //
@@ -15,9 +15,41 @@ import { uiLogin } from './helpers.js';
 // Status vom Server bis in den Alert? Deshalb wird der Zustand gelesen und die dazu
 // passende Meldung erwartet — der Test gilt in jeder Stack-Konfiguration und bleibt
 // trotzdem eine echte Behauptung.
+//
+// Die eigene Nachtsicherung ist von Haus aus aus (Einstellungen → Sicherung); dann warnt der
+// Wächter nicht. Dieser Fall schaltet sie für die Dauer des Tests ein.
 test('Backup-Wächter zeigt den echten Serverstatus an', async ({ page }) => {
 	await uiLogin(page);
+	const vorher = await schalteSicherung(page, true);
+	try {
+		await page.reload();
+		await pruefeWaechter(page);
+	} finally {
+		await schalteSicherung(page, vorher);
+	}
+});
 
+// Ohne eingeschaltete Sicherung meldet der Server "aus", und der Hinweis bleibt weg: Er stünde
+// sonst über jeder Seite, obwohl die Schule die Sicherung mit Absicht dem Server überlässt.
+test('Backup-Wächter schweigt, solange die eigene Sicherung aus ist', async ({ page }) => {
+	await uiLogin(page);
+	const vorher = await schalteSicherung(page, false);
+	try {
+		const res = await page.request.get('/api/admin/system/backup-status');
+		expect((await res.json()).status).toBe('aus');
+		await page.reload();
+		await expect(page.getByText('Eigene Sicherung aus')).toBeVisible();
+		await expect(page.getByRole('alert')).toBeHidden();
+	} finally {
+		await schalteSicherung(page, vorher);
+	}
+});
+
+/**
+ * Leitet die erwartete Meldung aus dem Stand des Servers ab und prüft den Hinweis.
+ * @param {import('@playwright/test').Page} page
+ */
+async function pruefeWaechter(page) {
 	const res = await page.request.get('/api/admin/system/backup-status');
 	expect(res.ok(), 'backup-status muss erreichbar sein').toBeTruthy();
 	const status = await res.json();
@@ -38,7 +70,7 @@ test('Backup-Wächter zeigt den echten Serverstatus an', async ({ page }) => {
 	} else {
 		await erwarteAlert(page, 'kein Backup');
 	}
-});
+}
 
 /**
  * Der Alert muss sichtbar sein, die Meldung tragen und einen Weg zur Behebung anbieten.

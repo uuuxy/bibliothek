@@ -72,12 +72,20 @@ func schreibeBackupNachS3(ctx context.Context, ziel s3Ziel, objektname string, v
 // rotiereBackups im Verzeichnis. Bricht die Liste ab, wird nichts gelöscht: Aus einer halben Liste
 // löschte zuLoeschen Stände, die bleiben sollen.
 func rotiereBackupsInS3(ctx context.Context, ziel s3Ziel, naechte, wochen int) {
+	loescheBackupsInS3(ctx, ziel, func(dateien []BackupDatei) []BackupDatei {
+		return zuLoeschen(dateien, naechte, wochen)
+	})
+}
+
+// loescheBackupsInS3 löscht am Speicher die Sicherungen, die waehle aus der zeitlich sortierten
+// Liste nennt.
+func loescheBackupsInS3(ctx context.Context, ziel s3Ziel, waehle func([]BackupDatei) []BackupDatei) {
 	dateien, err := leseS3Backups(ctx, ziel)
 	if err != nil {
 		slog.Warn("Backup rotation S3: Liste nicht lesbar, es wird nichts gelöscht", "bucket", ziel.bucket, "fehler", err)
 		return
 	}
-	for _, d := range zuLoeschen(dateien, naechte, wochen) {
+	for _, d := range waehle(dateien) {
 		// %q, weil die Namen setzt, wer Zugang zum Bucket hat; ein Zeilenumbruch darin fälschte das Log.
 		if err := ziel.client.RemoveObject(ctx, ziel.bucket, d.Name, minio.RemoveObjectOptions{}); err != nil {
 			slog.Warn("Backup rotation S3: failed to delete", "objekt", d.Name, "fehler", err)

@@ -10,7 +10,10 @@ import (
 	"time"
 
 	"bibliothek/api/tuer"
+	"bibliothek/db"
 	"bibliothek/internal/backupkrypto"
+
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // starkerTestSchluessel erfüllt jobs.MinBackupSchluesselLaenge. Die Tests standen
@@ -18,13 +21,40 @@ import (
 // das in jedem Fall "warning" gewesen und hätte die Alters-Schwellen verdeckt.
 const starkerTestSchluessel = "ein-hinreichend-langer-testschluessel-32+"
 
+// rufeBackupStand fragt den Stand mit eingeschalteter Sicherung.
 func rufeBackupStand(t *testing.T) *httptest.ResponseRecorder {
 	t.Helper()
-	s := &Tueren{Basis: &tuer.Basis{}}
+	an := "true" // wert ist in der Tabelle nullbar und wird als *string gelesen
+	return rufeBackupStandMit(t, pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sicherung_an", &an))
+}
+
+// rufeBackupStandMit fragt den Stand mit den gegebenen Zeilen der Einstellungen.
+func rufeBackupStandMit(t *testing.T, einstellungen *pgxmock.Rows) *httptest.ResponseRecorder {
+	t.Helper()
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	t.Cleanup(mock.Close)
+	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).WillReturnRows(einstellungen)
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/admin/system/backup-status", nil)
 	rec := httptest.NewRecorder()
 	s.BackupStand()(rec, req)
 	return rec
+}
+
+// Ohne eingeschaltete Sicherung (die Vorgabe) mahnt der Wächter nicht, auch ohne Schlüssel und
+// ohne jede Sicherung: Sonst stünde der Hinweis über jeder Seite, obwohl alles gewollt ist.
+func TestBackupStand_OhneEinschaltenIstAus(t *testing.T) {
+	t.Setenv("BACKUP_ENCRYPTION_KEY", "")
+	t.Setenv("BACKUP_DIR", t.TempDir())
+
+	rec := rufeBackupStandMit(t, pgxmock.NewRows([]string{"schluessel", "wert"}))
+
+	if !strings.Contains(rec.Body.String(), `"status":"aus"`) {
+		t.Errorf("Antwort = %s, erwartet status aus", rec.Body.String())
+	}
 }
 
 // sicherungsInhalt ist eine Sicherung im Format des Pakets backupkrypto; der Stand zählt nur

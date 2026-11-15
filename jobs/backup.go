@@ -160,10 +160,7 @@ func leseBackupUmgebung() (schluessel, dsn, verzeichnis string, ok bool) {
 		return "", "", "", false
 	}
 
-	verzeichnis = os.Getenv("BACKUP_DIR")
-	if verzeichnis == "" {
-		verzeichnis = "./backups"
-	}
+	verzeichnis = backupVerzeichnis()
 	if err := os.MkdirAll(verzeichnis, 0750); err != nil {
 		// #nosec G706
 		slog.Error("Backup: cannot create backup directory", "fehler", err)
@@ -294,6 +291,14 @@ func erzeugeGepacktenDump(ctx context.Context, dsn string) (gepackt []byte, ok b
 // Namen tragen den Zeitstempel, die Reihenfolge der Liste ist die zeitliche (backup_dateien.go).
 // Gelöscht wird über die Wurzel: Ein Symlink verschwindet als Link, sein Ziel bleibt.
 func rotiereBackups(verzeichnis string, naechte, wochen int) {
+	loescheBackups(verzeichnis, func(dateien []BackupDatei) []BackupDatei {
+		return zuLoeschen(dateien, naechte, wochen)
+	})
+}
+
+// loescheBackups löscht im Verzeichnis die Sicherungen, die waehle aus der zeitlich sortierten
+// Liste nennt, und räumt Reste abgebrochener Läufe weg.
+func loescheBackups(verzeichnis string, waehle func([]BackupDatei) []BackupDatei) {
 	wurzel, err := os.OpenRoot(verzeichnis)
 	if err != nil {
 		return
@@ -307,7 +312,7 @@ func rotiereBackups(verzeichnis string, naechte, wochen int) {
 		slog.Warn("Backup rotation: Verzeichnis nicht lesbar, es wird nichts rotiert", "verzeichnis", verzeichnis, "fehler", err)
 		return
 	}
-	for _, d := range zuLoeschen(dateien, naechte, wochen) {
+	for _, d := range waehle(dateien) {
 		if err := wurzel.Remove(d.Name); err != nil {
 			// #nosec G706
 			slog.Warn("Backup rotation: failed to delete", "datei", d.Name, "fehler", err)

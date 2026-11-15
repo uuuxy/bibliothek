@@ -4,7 +4,7 @@
  * bleiben die Date-Instanzen hier lokal und kurzlebig (im .svelte.js-Store würden sie
  * gegen svelte/prefer-svelte-reactivity laufen), und die Formatierung ist für sich testbar.
  *
- * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, encryption_key_weak?: boolean, status: 'ok'|'warning'|'critical' }} BackupStatus
+ * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, encryption_key_weak?: boolean, status: 'ok'|'warning'|'critical'|'aus' }} BackupStatus
  */
 
 /**
@@ -14,6 +14,8 @@
  */
 export function backupMessage(s) {
 	if (!s) return '';
+	// Abgeschaltet (Einstellungen → Sicherung): Ein fehlender Schlüssel ist dann gewollt.
+	if (s.status === 'aus') return 'Eigene Sicherung aus';
 	if (!s.encryption_key_set) return 'Backup-Verschlüsselungs-Key fehlt';
 	if (!s.last_backup_at) return 'Noch kein Backup vorhanden';
 	// Nur melden, wenn die Sicherungen ansonsten laufen — steht der Job still, ist das
@@ -48,7 +50,7 @@ export function backupMessage(s) {
  * @returns {string}
  */
 export function backupHint(s) {
-	if (!s) return '';
+	if (!s || s.status === 'aus') return '';
 	if (!s.encryption_key_set)
 		return 'Ohne Schlüssel überspringt der nächtliche Job jedes Backup. BACKUP_ENCRYPTION_KEY in der Datei .env auf dem Server setzen, mindestens 32 Zeichen.';
 	if (!s.last_backup_at)

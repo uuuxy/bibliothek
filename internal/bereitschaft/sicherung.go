@@ -8,8 +8,21 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
+// befundSicherungAus ist der Befund der drei Bereiche der Sicherung, solange die eigene Sicherung
+// abgeschaltet ist: kein Mangel, sondern eine Entscheidung der Schule, die sich zurücknehmen lässt.
+func befundSicherungAus(bereich, befund string) Befund {
+	return Befund{
+		Bereich: bereich,
+		Stufe:   StufeOK,
+		Befund:  befund + " Die eigene Sicherung ist abgeschaltet (Einstellungen → Sicherung); es gilt die Sicherung des Servers.",
+	}
+}
+
 func pruefeAuslagerung(l Lage) Befund {
 	b := Befund{Bereich: "Auslagerung der Backups"}
+	if l.SicherungAus {
+		return befundSicherungAus(b.Bereich, "Keine Kopie außer Haus.")
+	}
 	if l.S3Endpunkt != "" && l.S3Zugangsschluessel != "" && l.S3Geheimschluessel != "" && l.S3Bucket != "" {
 		b.Stufe = StufeOK
 		b.Befund = "Backups werden zusätzlich außer Haus abgelegt (" + l.S3Bucket + ")."
@@ -30,6 +43,8 @@ func pruefeAuslagerung(l Lage) Befund {
 func pruefeRestoreProbe(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Restore-Probe"}
 	switch {
+	case l.SicherungAus:
+		return befundSicherungAus(b.Bereich, "Keine Probe.")
 	case !echt:
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Keine Restore-Probe", l.Umgebung)
@@ -64,6 +79,9 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 // der Anwendung und der Alarm nicht auseinanderlaufen.
 func pruefeBackupAlter(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Nächtliches Backup"}
+	if l.SicherungAus {
+		return befundSicherungAus(b.Bereich, "Keine Nachtsicherung.")
+	}
 	if !echt {
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Kein Backup-Betrieb", l.Umgebung)

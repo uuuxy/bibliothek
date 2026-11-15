@@ -8,8 +8,10 @@ Es gibt **drei** Wege zu einer Sicherung: den nächtlichen Lauf des Programms (1
 Shell-Wege (1b). Maßgeblich für die Wiederherstellung ist, welches Format vorliegt.
 
 ### 1a. Automatisches verschlüsseltes Backup (Primär, Produktion)
-Der eingebaute Zeitplan (`jobs.BackupLauf`) läuft täglich um **02:30 UTC** und erzeugt
-**AES-256-GCM-verschlüsselte**, gzip-komprimierte `pg_dump`-Dateien:
+Der eingebaute Zeitplan (`jobs.BackupLauf`) läuft täglich um **02:30 UTC**, wenn unter
+Einstellungen → Sicherung „Jede Nacht selbst sichern“ eingeschaltet ist (Vorgabe aus, weil der
+Server der Schule selbst gesichert wird), und erzeugt **AES-256-GCM-verschlüsselte**,
+gzip-komprimierte `pg_dump`-Dateien:
 
 ```
 /app/backups/backup_<ZEITSTEMPEL>.sql.gz.enc

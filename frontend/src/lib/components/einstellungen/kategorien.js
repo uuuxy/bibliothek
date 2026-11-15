@@ -16,6 +16,7 @@ import {
 	CalendarClock,
 	Clock,
 	Database,
+	DatabaseBackup,
 	FileExclamationPoint,
 	Globe,
 	GraduationCap,
@@ -130,6 +131,12 @@ export const KATEGORIEN = [
 		// LUSD → import_students, Versetzung → manage_students_admin, Sommerferien →
 		// manage_settings; eines genügt.
 		rechte: ['import_students', 'manage_students_admin', 'manage_settings']
+	},
+	{
+		id: 'sicherung',
+		titel: 'Sicherung',
+		kurz: 'Nächtliche Sicherung an oder aus',
+		icon: DatabaseBackup
 	},
 	{
 		id: 'betrieb',

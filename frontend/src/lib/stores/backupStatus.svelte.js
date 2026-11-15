@@ -19,8 +19,7 @@ export const backupStatus = new (class {
 		if (this.data || this.#loading) return;
 		this.#loading = true;
 		try {
-			const res = await apiFetch('/api/admin/system/backup-status');
-			if (res.ok) this.data = await res.json();
+			await this.#hole();
 		} catch {
 			/* Netzfehler: kein Badge statt falscher Entwarnung */
 		} finally {
@@ -28,9 +27,24 @@ export const backupStatus = new (class {
 		}
 	}
 
+	/** Lädt neu, nachdem die Sicherung in den Einstellungen umgeschaltet wurde. */
+	async aktualisiere() {
+		try {
+			await this.#hole();
+		} catch {
+			/* Netzfehler: Der bisherige Stand bleibt stehen */
+		}
+	}
+
+	async #hole() {
+		const res = await apiFetch('/api/admin/system/backup-status');
+		if (res.ok) this.data = await res.json();
+	}
+
 	/** Handlungsbedarf — der Alert erscheint nur dafür. */
 	get needsAction() {
-		return !!this.data && this.data.status !== 'ok';
+		// "aus": Die Schule hat die eigene Sicherung abgeschaltet (Einstellungen → Sicherung).
+		return !!this.data && this.data.status !== 'ok' && this.data.status !== 'aus';
 	}
 
 	get message() {

@@ -44,6 +44,7 @@ func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 	z := &Zeitplan{pool: pool}
+	schalteSicherungEin(t, pool)
 
 	t.Run("echtes Backup wird wiederhergestellt", func(t *testing.T) {
 		z.fuehreRestoreProbeAus(ctx)

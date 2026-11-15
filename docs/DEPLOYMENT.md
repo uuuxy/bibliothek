@@ -136,9 +136,11 @@ SMTP_FROM=bibliothek@schule.de
 vorgegeben. Es steht nur für die Erstbefüllung in der `.env`: Ab dem ersten Start ist die
 Einstellung in der Oberfläche maßgeblich (`mail_settings_config`).
 
-> **`BACKUP_ENCRYPTION_KEY` nicht vergessen** — ohne ihn werden **keine** Backups erstellt;
-> der nächtliche Job überspringt sich mit einer Logzeile (`jobs/backup.go`). Das fällt
-> sonst erst auf, wenn man ein Backup braucht. Mindestens 32 Zeichen: Die Ableitung läuft
+> **`BACKUP_ENCRYPTION_KEY` nicht vergessen** — die Vorab-Sicherung vor jedem Update und die
+> Sicherung von Hand verschlüsseln damit, und die Nachtsicherung braucht ihn, sobald sie unter
+> Einstellungen → Sicherung eingeschaltet ist; ohne ihn überspringt sie sich mit einer Logzeile
+> (`jobs/backup.go`). Das fällt sonst erst auf, wenn man ein Backup braucht. Mindestens 32
+> Zeichen: Die Ableitung läuft
 > per **scrypt** (speicherhart, gesalzen) — das erschwert den Offline-Rateangriff auf eine
 > entwendete Backup-Datei erheblich, ersetzt aber keine Passphrase-Entropie; eine kurze
 > bleibt kurz.
@@ -450,8 +452,12 @@ im Client-Installationsschritt).
 
 ## 6. Backup & Recovery
 
-Das Programm sichert die Datenbank jede Nacht um **02:30 UTC** (03:30 Uhr im Winter, 04:30 Uhr im
-Sommer) verschlüsselt in das Volume `bibliothek_backups`; dazu kommen die Vorab-Sicherung von
+Ist unter Einstellungen → Sicherung „Jede Nacht selbst sichern“ eingeschaltet (Vorgabe aus, weil
+der Server der Schule selbst gesichert wird), sichert das Programm die Datenbank jede Nacht um
+**02:30 UTC** (03:30 Uhr im Winter, 04:30 Uhr im Sommer) verschlüsselt in das Volume
+`bibliothek_backups`. Steht der Schalter auf aus, entsteht keine Nachtsicherung, die Restore-Probe
+ruht, und ältere Stände werden gelöscht, sobald sie älter sind als die Aufbewahrung (14 Nächte
+und 12 Wochen). Unabhängig vom Schalter kommen die Vorab-Sicherung von
 `./update.sh` und Sicherungen von Hand mit `./scripts/backup.sh`. Wie die drei Wege arbeiten, wie
 lange eine Sicherung bleibt, was mit einem Klartext-Rest geschieht und wie man zurückholt, steht in
 [resilience_and_recovery.md](resilience_and_recovery.md). Hier stehen die Uhr, die beim Einrichten

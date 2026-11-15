@@ -12,6 +12,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/jobs"
+	"bibliothek/repository"
 )
 
 // backupStandAntwort beschreibt den Zustand der nächtlichen Datenbank-Backups.
@@ -19,7 +20,9 @@ type backupStandAntwort struct {
 	LetztesBackup     *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
 	SchluesselGesetzt bool       `json:"encryption_key_set"`
 	SchluesselSchwach bool       `json:"encryption_key_weak"` // gesetzt, aber zu kurz (unter MinBackupSchluesselLaenge)
-	Status            string     `json:"status"`              // "ok" | "warning" | "critical"
+	// "ok" | "warning" | "critical", oder "aus", wenn die Schule die eigene Sicherung abgeschaltet
+	// hat (Einstellungen → Sicherung): Dann gibt es nichts anzumahnen.
+	Status string `json:"status"`
 }
 
 // juengstesBackup liefert den Zeitpunkt der jüngsten Sicherung (jobs.BackupDatei.SicherungsZeit)
@@ -59,11 +62,17 @@ func (t *Tueren) BackupStand() http.HandlerFunc {
 		}
 		letztes := juengstesBackup(verzeichnis)
 
+		status := jobs.BackupStatus(gesetzt, schwach, letztes, time.Now())
+		// Nicht lesbar zählt wie eingeschaltet: lieber einmal zu viel gemahnt als eine fehlende
+		// Sicherung verschwiegen.
+		if einst, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(r.Context()); err == nil && !einst.SicherungAn {
+			status = "aus"
+		}
 		tuer.AntworteJSON(w, http.StatusOK, backupStandAntwort{
 			LetztesBackup:     letztes,
 			SchluesselGesetzt: gesetzt,
 			SchluesselSchwach: schwach,
-			Status:            jobs.BackupStatus(gesetzt, schwach, letztes, time.Now()),
+			Status:            status,
 		})
 	}
 }

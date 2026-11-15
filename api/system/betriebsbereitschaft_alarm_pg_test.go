@@ -52,6 +52,14 @@ func TestBereitschaftsAlarm_WiederholtUnveraendertesErstNachEinemTag(t *testing.
 	}
 	loescheEintrag()
 	t.Cleanup(loescheEintrag)
+	// Die fehlende Auslagerung ist nur mit eingeschalteter Sicherung ein Befund (Vorgabe aus).
+	an := true
+	if err := repository.NewEinstellungsAbfragen(pool).Schreibe(t.Context(), &repository.EinstellungenPatch{SicherungAn: &an}); err != nil {
+		t.Fatalf("Sicherung einschalten: %v", err)
+	}
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = 'sicherung_an'`)
+	})
 	testdaten.LegeAdminKontoAn(t, pool, "alarm-wiederholung@schule.example", "Alarm", "Probe")
 
 	post := &alarmPost{}

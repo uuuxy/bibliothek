@@ -100,17 +100,18 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	// Das ist der gefährlichste Zustand des Programms: Alles läuft normal, und erst wenn jemand
 	// eine Sicherung braucht, stellt sich heraus, dass es nie eine gab. Der Wächter der
 	// Verwaltung (api/system/backup_stand.go) meldet den Fall als "critical", dafür muss aber
-	// jemand hinsehen. Diese Zeile steht im Log des Starts.
-	if os.Getenv("BACKUP_ENCRYPTION_KEY") == "" {
+	// jemand hinsehen. Diese Zeile steht im Log des Starts. Ist die eigene Sicherung abgeschaltet
+	// (Einstellungen → Sicherung), fehlt der Schlüssel mit Absicht.
+	switch {
+	case z.sicherungAbgeschaltet(ctx):
+		slog.Info("Die eigene Sicherung ist abgeschaltet (Einstellungen → Sicherung); es gilt die Sicherung des Servers.")
+	case os.Getenv("BACKUP_ENCRYPTION_KEY") == "":
 		slog.Error("BACKUP_ENCRYPTION_KEY ist nicht gesetzt — es werden KEINE Datenbank-Backups erstellt. Der nächtliche Job überspringt sich. Variable in der .env setzen und den Stack neu starten.")
-	} else if IstSchluesselSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
+	case IstSchluesselSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")):
 		slog.Warn("BACKUP_ENCRYPTION_KEY ist zu kurz. Auch scrypt rettet eine kurze Passphrase nicht — sie ist an einer entwendeten Backup-Datei offline durchprobierbar.", "mindestlaenge", minBackupSchluesselLaenge)
 	}
 
-	if _, err := z.cron.AddFunc(zeitSicherung, func() {
-		slog.Info("Scheduler Backup: starting scheduled daily database backup...")
-		backup.FuehreAus(ctx)
-	}); err != nil {
+	if _, err := z.cron.AddFunc(zeitSicherung, func() { z.fuehreNachtsicherungAus(ctx, backup) }); err != nil {
 		slog.Error("Scheduler: Failed to register backup job", "fehler", err)
 	}
 

@@ -62,6 +62,7 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	}
 	t.Cleanup(pool.Close)
 	z := &Zeitplan{pool: pool}
+	schalteSicherungEin(t, pool)
 
 	t.Run("vor der ersten neuen Sicherung scheitert die Probe am Schlüssel", func(t *testing.T) {
 		z.fuehreRestoreProbeAus(t.Context())

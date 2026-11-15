@@ -26,6 +26,7 @@
 	import DatenschutzKategorie from './kategorien/DatenschutzKategorie.svelte';
 	import ErreichbarkeitKategorie from './kategorien/ErreichbarkeitKategorie.svelte';
 	import MailKategorie from './kategorien/MailKategorie.svelte';
+	import SicherungKategorie from './kategorien/SicherungKategorie.svelte';
 
 	/** @type {{ aktiv: string, sichtbar: Set<string>, daten: Record<string, any>, onSaved: () => Promise<void> }} */
 	let { aktiv, sichtbar, daten, onSaved } = $props();
@@ -84,6 +85,8 @@
 		>
 			<SchuljahreswechselBereich {daten} {onSaved} />
 		</KategorieRahmen>
+	{:else if aktiv === 'sicherung'}
+		<SicherungKategorie {daten} {onSaved} />
 	{:else if aktiv === 'betrieb'}
 		<KategorieRahmen
 			titel="Betriebsbereitschaft"

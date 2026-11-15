@@ -1717,6 +1717,15 @@ wöchentlich So 03:30  Restore-Probe in eine Wegwerf-Datenbank  →  Befund der 
 Aufbewahrung  die jüngsten 14 Nächte, dazu 12 Wochenstände; Vorabsicherungen 30 Tage
 ```
 
+**Die Nachtsicherung hängt an einem Schalter** (Einstellungen → Sicherung, `sicherung_an`,
+Vorgabe aus): Der Server der Schule wird selbst gesichert. Aus heißt: Um 02:30 entsteht keine
+Sicherung, die Probe ruht, und `raeumeAbgelaufeneSicherungenAuf` löscht im Volume und außer Haus,
+was älter ist als die Aufbewahrung (`Aufbewahrungsdauer`, 98 Tage). Ohne neue Sicherung löschte die
+Aufbewahrung nach Anzahl nichts mehr, und die Datenschutz-Auskunft nennt etwa drei Monate.
+Selbstprüfung, Backup-Abzeichen und Startmeldung nennen den Zustand, ohne ihn als Mangel zu melden
+(`jobs/sicherung_aus.go`, `internal/bereitschaft/sicherung.go`). Die Vorabsicherung vor jedem
+Update bleibt.
+
 **Gesichert wird nur die Datenbank** — eine bewusste Entscheidung vom 11.07.2026. Cover
 unter `/app/uploads` sind aus ISBN und Quelle reproduzierbar; Schülerfotos liegen
 verschlüsselt **in** der Datenbank und sind damit im Dump enthalten.
@@ -3120,7 +3129,9 @@ eingespielt wurde, ist eine Hoffnung.
 daran denken, nachzusehen. Die beiden Shell-Wege verschlüsseln über
 dieselbe Ableitung wie der Job, ohne den Schlüssel je an den Host zu reichen. Das Passwort
 erreicht `pg_dump` über eine temporäre `.pgpass`, **nicht** über `PGPASSWORD`. Ohne
-`BACKUP_ENCRYPTION_KEY` überspringt sich der Job — und sagt das.
+`BACKUP_ENCRYPTION_KEY` überspringt sich der Job — und sagt das. Die Nachtsicherung ist ein
+Schalter, vorgegeben aus, weil der Server der Schule selbst gesichert und gespiegelt wird
+(7.7).
 
 **Fundstelle.** `jobs/backup.go`, `internal/backupkrypto`, `jobs/restore_probe.go`,
 [resilience_and_recovery.md](resilience_and_recovery.md).
