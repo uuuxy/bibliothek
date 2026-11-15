@@ -1987,7 +1987,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('172_anmeldeverfahren_je_konto.sql'),
 ('173_bestellschwellen_entfallen.sql'),
 ('174_lmf_stichtag_entfaellt.sql'),
-('175_absender_fuer_mein_portal.sql')
+('175_absender_fuer_mein_portal.sql'),
+('176_webmail_fuer_adressabgleich.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2205,6 +2206,10 @@ CREATE TABLE IF NOT EXISTS mail_settings_config (
     portal_absender_email VARCHAR(255) NOT NULL DEFAULT '',
     portal_smtp_benutzer VARCHAR(255) NOT NULL DEFAULT '',
     portal_smtp_passwort_verschluesselt BYTEA,
+    -- Migration 176: Zugang zum Webmail für den Adressabgleich; leer gibt es keinen Abgleich.
+    webmail_adresse VARCHAR(255) NOT NULL DEFAULT '',
+    webmail_benutzer VARCHAR(255) NOT NULL DEFAULT '',
+    webmail_passwort_verschluesselt BYTEA,
     CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1)
 );
 INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;

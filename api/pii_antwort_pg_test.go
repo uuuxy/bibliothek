@@ -394,6 +394,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/einstellungen/sitzung":             {URL: "/api/einstellungen/sitzung"},
 		"GET /api/ausweis-layout":                    {URL: "/api/ausweis-layout"},
 		"GET /api/admin/settings/mail":               {URL: "/api/admin/settings/mail"},
+		"GET /api/admin/settings/adressabgleich":     {URL: "/api/admin/settings/adressabgleich"},
 		"GET /api/admin/permissions":                 {URL: "/api/admin/permissions"},
 		"GET /api/admin/system/backup-status":        {URL: "/api/admin/system/backup-status"},
 		"GET /api/admin/system/betriebsbereitschaft": {URL: "/api/admin/system/betriebsbereitschaft"},

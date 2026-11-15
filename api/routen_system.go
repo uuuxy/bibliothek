@@ -32,6 +32,10 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	mux.Handle("GET /api/admin/settings/mail", s.verlangeRecht("manage_settings")(s.system().MailEinstellungen(mailEinstellungsAbfragen)))
 	mux.Handle("PUT /api/admin/settings/mail", s.verlangeRecht("manage_settings")(s.system().MailEinstellungenSchreiben(mailEinstellungsAbfragen)))
 	mux.Handle("POST /api/admin/settings/mail/test", s.verlangeRecht("manage_settings")(s.system().TestmailSenden()))
+	// Abgleich der Adressen mit dem globalen Adressbuch des Webmails (api/system/adressabgleich.go).
+	mux.Handle("GET /api/admin/settings/adressabgleich", s.verlangeRecht("manage_settings")(s.system().AdressabgleichZugang(mailEinstellungsAbfragen)))
+	mux.Handle("PUT /api/admin/settings/adressabgleich", s.verlangeRecht("manage_settings")(s.system().AdressabgleichZugangSchreiben(mailEinstellungsAbfragen)))
+	mux.Handle("POST /api/admin/settings/adressabgleich/lauf", s.verlangeRecht("manage_settings")(s.system().AdressabgleichLauf()))
 
 	// Rechte
 	mux.Handle("GET /api/admin/permissions", s.verlangeRecht("manage_users")(s.benutzer().RechteMatrix()))

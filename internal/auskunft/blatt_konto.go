@@ -197,8 +197,8 @@ func dsgvoAnfrageArt(art string) string {
 }
 
 // dsgvoKontoAktion schreibt die Aktion eines Kontoereignisses aus (Schreiber:
-// api/benutzer/konto_anlegen_aendern.go, auth/selbstanmeldung.go, api/leser/leser_aendern.go). Ein
-// unbekannter Wert bleibt stehen.
+// api/benutzer/konto_anlegen_aendern.go, auth/selbstanmeldung.go, api/leser/leser_aendern.go,
+// api/system/adressabgleich_lauf.go). Ein unbekannter Wert bleibt stehen.
 func dsgvoKontoAktion(aktion string) string {
 	switch aktion {
 	case "USER_CREATE":
@@ -209,6 +209,8 @@ func dsgvoKontoAktion(aktion string) string {
 		return "Zugang über die eigene Anmeldung beantragt"
 	case "KOLLEGIUMSKONTO_NACHGETRAGEN":
 		return "Konto angelegt: Schul-E-Mail in der Leserakte nachgetragen"
+	case "ADRESSE_AUS_WEBMAIL":
+		return "Adresse der Schule aus dem Webmail übernommen"
 	}
 	return aktion
 }

@@ -354,6 +354,7 @@ func main() {
 	serverKonfig.Fehlerstand = fehlerstand
 	server := api.NewServer(verbindung, anmeldung, broker, serverKonfig)
 	starteBereitschaftsWaechter(ctx, server)
+	zeitplan.PlaneAdressabgleich(ctx, server.AdressabgleichNachZeitplan)
 	httpServer := starteServer(port, server)
 	// Erst mit laufendem Server gilt der Lauf als begonnen: Ein Ausstieg beim Start, etwa weil die
 	// Datenbank noch nicht bereit ist, ist kein Absturz.

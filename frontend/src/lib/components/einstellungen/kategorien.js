@@ -98,7 +98,12 @@ export const KATEGORIEN = [
 		kurz: 'Öffentliche Adresse, Alarm-Mails',
 		icon: Globe
 	},
-	{ id: 'mail', titel: 'Mail', kurz: 'Postausgang und Vorlagen', icon: Mail },
+	{
+		id: 'mail',
+		titel: 'Mail',
+		kurz: 'Postausgang, Vorlagen, Adressen aus dem Webmail',
+		icon: Mail
+	},
 	{
 		// Bei den anderen seltenen Eingriffen, kein eigener Menüpunkt: Das Werkzeug wird fast
 		// nie gebraucht.

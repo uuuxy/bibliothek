@@ -73,7 +73,18 @@ const (
 	zeitSicherung             = "30 2 * * *"
 	zeitProtokollAufbewahrung = "0 3 * * *"
 	zeitRestoreProbe          = "30 3 * * 0"
+	// zeitAdressabgleich: am Ersten jedes Monats, nach den Läufen der Nacht.
+	zeitAdressabgleich = "30 4 1 * *"
 )
+
+// PlaneAdressabgleich meldet den monatlichen Abgleich der Adressen mit dem Webmail an. Er steht
+// bei den Türen der Systempflege (api/system/adressabgleich_lauf.go), die erst nach dem Zeitplan
+// entstehen; deshalb kommt er nach dem Start dazu.
+func (z *Zeitplan) PlaneAdressabgleich(ctx context.Context, lauf func(context.Context)) {
+	if _, err := z.cron.AddFunc(zeitAdressabgleich, func() { lauf(ctx) }); err != nil {
+		slog.Error("Scheduler: Failed to register address sync job", "fehler", err)
+	}
+}
 
 // Starte meldet alle Läufe beim Cron an und startet ihn. Die Läufe bekommen ctx, den Kontext
 // des Servers: Fährt er herunter, brechen sie ab. Den Abgleich der Cover teilt er mit dem Start

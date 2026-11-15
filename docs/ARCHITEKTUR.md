@@ -2285,6 +2285,25 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   `portal_smtp_benutzer` gesetzt ist; leer gilt jeweils der Postausgang (`SMTPKonfig.fuer`).
   Server und Port teilen sich beide. Ein unlesbares Passwort des Portal-Absenders hält nur dessen
   Mails auf. Ein Speichern ohne das Feld `portal` lässt den Portal-Absender stehen.
+- **Adressen aus dem Webmail.** Der Adressabgleich (`internal/adressabgleich`,
+  `api/system/adressabgleich.go`) meldet sich mit dem Zugang aus `mail_settings_config`
+  (`webmail_*`, Passwort verschlüsselt, Migration 176) am Roundcube der Schule an wie ein Browser
+  (Formular-Token, Sitzungs-Keks, Anfrage-Token) und lädt das globale Adressbuch (Kennung
+  `global`) als vCard; im Webmail liest er nur, und nur über https (auf dem eigenen Rechner auch
+  http). Er trägt aktiven Konten mit Platzhalter (`repository.PlatzhalterDomain`) die Adresse der
+  Schule ein (Domain aus `SELBSTANMELDUNG_DOMAIN`); eine echte Adresse ändert er nie, denn bei
+  IMAP ist sie der Anmeldename. Die Treffer suchen der Reihe nach das Kürzel (fünfter Teil von
+  `N`) gegen die LDAP-Kennung, dann den Namen genau, tolerant (Umlaute, Akzente, Bindestriche,
+  Titel, nur der erste Vorname) und als Teil eines Doppelnamens. Jeder Treffer muss in beide
+  Richtungen eindeutig sein, die Adresse darf kein anderes Konto tragen und im Adressbuch nur bei
+  einem Eintrag stehen. Geschrieben wird über `KontoAbfragen.Aendere` mit `EmailBisher`: Hat
+  jemand die Adresse inzwischen von Hand gesetzt, bleibt sie stehen. Jede Übernahme steht als
+  `ADRESSE_AUS_WEBMAIL` mit `ziel_id` im Protokoll der Verwaltung, wo die Tilgung der Konten sie
+  findet; der Stand des letzten Laufs (`adressabgleich_stand`) trägt nur Zahlen. Der Lauf kommt
+  am Ersten jedes Monats (`zeitAdressabgleich`, 04:30 UTC) und auf Knopfdruck; der Probelauf
+  rechnet nur. Hat ein Lauf nach Zeitplan etwas eingetragen oder ist er gescheitert, geht eine
+  Mail an die Empfänger der Alarme, nur mit Zahlen. Entschieden: automatisch, ohne Bestätigung je
+  Konto, ein fester Takt statt einer Einstellung.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`errSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
   Mahntexte mit Schülernamen. `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und

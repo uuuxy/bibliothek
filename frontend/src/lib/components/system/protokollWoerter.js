@@ -24,6 +24,7 @@ export const BEREICHE = {
 /** @type {Record<string, string>} */
 export const VERWALTUNG_AKTIONEN = {
 	ABGAENGER_KONTOAUSZUG_MAIL: 'Kontoauszug an Abgänger verschickt',
+	ADRESSE_AUS_WEBMAIL: 'Adresse aus dem Webmail übernommen',
 	BESTAND_IMPORT: 'Bestand importiert',
 	BESTELLMAIL_ERNEUT_GESENDET: 'Bestellmail erneut gesendet',
 	BESTELLMAIL_VERMERK_ENTFERNT: 'Vermerk über gescheiterten Versand entfernt',
@@ -62,6 +63,7 @@ export const VERWALTUNG_AKTIONEN = {
 	TITEL_ZUSAMMENGEFUEHRT: 'Titel zusammengeführt',
 	TRESEN_AUSKUNFT: 'Theken-Auskunft abgefragt',
 	UPDATE_MAIL_SETTINGS: 'Mail-Einstellungen geändert',
+	UPDATE_WEBMAIL_ZUGANG: 'Zugang zum Webmail geändert',
 	UPDATE_SETTINGS: 'Einstellungen geändert',
 	USER_CREATE: 'Benutzer angelegt',
 	USER_UPDATE: 'Benutzer geändert'

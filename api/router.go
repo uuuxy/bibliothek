@@ -147,6 +147,12 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 	s.system().BereitschaftsAlarm(ctx)
 }
 
+// AdressabgleichNachZeitplan gleicht am Ersten jedes Monats die Adressen mit dem Webmail ab
+// (jobs.Zeitplan.PlaneAdressabgleich); der Knopf unter Einstellungen → Mail ruft denselben Lauf.
+func (s *Server) AdressabgleichNachZeitplan(ctx context.Context) {
+	s.system().AdressabgleichNachZeitplan(ctx)
+}
+
 // mahnwesen ist der Zugang zu den Türen des Mahnwesens und der Abgänger.
 func (s *Server) mahnwesen() *mahnwesen.Tueren {
 	return &mahnwesen.Tueren{Basis: &s.Basis}

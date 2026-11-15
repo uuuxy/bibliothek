@@ -40,6 +40,27 @@ func TestZeitplan_SicherungVorAufbewahrungVorProbe(t *testing.T) {
 	}
 }
 
+// Der Abgleich der Adressen läuft am Ersten jedes Monats und erst nach den Läufen der Nacht, die
+// an einem Ersten auch die Restore-Probe sein kann.
+func TestZeitplan_AdressabgleichAmErstenNachDerNacht(t *testing.T) {
+	plan, err := cron.ParseStandard(zeitAdressabgleich)
+	if err != nil {
+		t.Fatalf("%q ist kein gültiger Cron-Ausdruck: %v", zeitAdressabgleich, err)
+	}
+	probe, err := cron.ParseStandard(zeitRestoreProbe)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Der 1. November 2026 ist ein Sonntag: Probe und Abgleich am selben Tag.
+	abgleich := plan.Next(time.Date(2026, time.October, 20, 0, 0, 0, 0, time.UTC))
+	if abgleich.Day() != 1 || abgleich.Month() != time.November {
+		t.Errorf("nächster Abgleich nach dem 20.10. = %s, erwartet den 1. November", abgleich)
+	}
+	if p := probe.Next(time.Date(2026, time.November, 1, 0, 0, 0, 0, time.UTC)); !p.Before(abgleich) {
+		t.Errorf("Restore-Probe %s läuft nicht vor dem Abgleich %s", p, abgleich)
+	}
+}
+
 // Der Zeitplan rechnet in UTC: In der Ortszeit gibt es 02:30 Uhr in der Nacht der Umstellung
 // auf Sommerzeit nicht, und die Sicherung fiele aus.
 func TestZeitplan_RechnetInUTC(t *testing.T) {

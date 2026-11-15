@@ -1,15 +1,16 @@
 <script>
 	/**
 	 * @component MailKategorie
-	 * Alles zum Mailversand an einem Ort: der Server, über den verschickt wird, und die
-	 * Vorlagen, die verschickt werden.
+	 * Alles zum Mailversand an einem Ort: der Server, über den verschickt wird, der Abgleich der
+	 * Adressen mit dem Webmail und die Vorlagen, die verschickt werden.
 	 *
-	 * Beide Teile speichern selbst, deshalb trägt die Kategorie keinen eigenen Knopf. Die
-	 * Zugangsdaten des Servers sieht nur ein Admin; die Vorlagen darf bearbeiten, wer die
-	 * Einstellungen überhaupt öffnen kann.
+	 * Jeder Teil speichert selbst, deshalb trägt die Kategorie keinen eigenen Knopf. Die
+	 * Zugangsdaten von Server und Webmail sieht nur ein Admin; die Vorlagen darf bearbeiten, wer
+	 * die Einstellungen überhaupt öffnen kann.
 	 */
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import MailEinstellungen from '../../admin/MailEinstellungen.svelte';
+	import AdressabgleichEinstellungen from '../../admin/AdressabgleichEinstellungen.svelte';
 	import MailVorlagen from '../MailVorlagen.svelte';
 </script>
 
@@ -23,6 +24,7 @@
 
 	<div class="flex flex-col gap-10">
 		<MailEinstellungen />
+		<AdressabgleichEinstellungen />
 		<div class="flex flex-col gap-6">
 			<div class="flex flex-col gap-1">
 				<h3 class="text-base font-medium text-on-surface">Mail-Vorlagen</h3>

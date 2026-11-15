@@ -225,6 +225,10 @@ type KontoAenderung struct {
 	// „kein Ausweis"; ohne BarcodeGenannt bleibt die Nummer der Leserzeile stehen.
 	BarcodeGenannt bool
 	Barcode        *string
+	// EmailBisher: Geändert wird nur, wenn das Konto noch diese Adresse trägt; sonst
+	// ErrKontoNichtGefunden. Der Adressabgleich überschreibt so keine Adresse, die inzwischen
+	// jemand von Hand eingetragen hat.
+	EmailBisher *string
 }
 
 // KontoStand ist ein Konto nach dem Ändern: was der Protokolleintrag darüber festhält.
@@ -270,9 +274,9 @@ func (a *KontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoSta
 		    ldap_kennung = CASE WHEN COALESCE($7, anmeldeverfahren) = 'imap' THEN NULL
 		                        ELSE COALESCE(NULLIF($8, ''), ldap_kennung) END,
 		    aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $6
+		WHERE id = $6 AND ($9::text IS NULL OR email = $9)
 		RETURNING leser_id::text, email, rolle::text, aktiv, anmeldeverfahren, coalesce(ldap_kennung, '')
-	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID, p.Anmeldeverfahren, p.LDAPKennung).Scan(
+	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID, p.Anmeldeverfahren, p.LDAPKennung, p.EmailBisher).Scan(
 		&leserID, &stand.Email, &stand.Rolle, &stand.Aktiv, &stand.Anmeldeverfahren, &stand.LDAPKennung)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return stand, ErrKontoNichtGefunden

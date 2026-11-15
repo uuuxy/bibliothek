@@ -22,6 +22,10 @@ type MailEinstellungen struct {
 	PortalAbsenderEmail              string
 	PortalSMTPBenutzer               string
 	PortalSMTPPasswortVerschluesselt []byte
+	// Der Zugang zum Webmail für den Adressabgleich; eine leere Adresse heißt, es gibt keinen.
+	WebmailAdresse                string
+	WebmailBenutzer               string
+	WebmailPasswortVerschluesselt []byte
 }
 
 // MailEinstellungsAbfragen liest und schreibt die Mail-Einstellungen.
@@ -39,7 +43,8 @@ func (a *MailEinstellungsAbfragen) Lade(ctx context.Context) (*MailEinstellungen
 	var e MailEinstellungen
 	err := a.pool.QueryRow(ctx, `
 		SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email,
-		       portal_absender_email, portal_smtp_benutzer, portal_smtp_passwort_verschluesselt
+		       portal_absender_email, portal_smtp_benutzer, portal_smtp_passwort_verschluesselt,
+		       webmail_adresse, webmail_benutzer, webmail_passwort_verschluesselt
 		FROM mail_settings_config
 		WHERE id = 1
 	`).Scan(
@@ -51,6 +56,9 @@ func (a *MailEinstellungsAbfragen) Lade(ctx context.Context) (*MailEinstellungen
 		&e.PortalAbsenderEmail,
 		&e.PortalSMTPBenutzer,
 		&e.PortalSMTPPasswortVerschluesselt,
+		&e.WebmailAdresse,
+		&e.WebmailBenutzer,
+		&e.WebmailPasswortVerschluesselt,
 	)
 
 	if err != nil {
@@ -120,6 +128,35 @@ func (a *MailEinstellungsAbfragen) SchreibePortalAbsender(ctx context.Context, a
 	}
 	if tag.RowsAffected() != 1 {
 		return fmt.Errorf("absender für Mein Portal nicht gespeichert: Die Zeile der Mail-Einstellungen fehlt")
+	}
+	return nil
+}
+
+// SchreibeWebmailZugang schreibt den Zugang zum Webmail für den Adressabgleich. Ein leeres
+// Passwort lässt das gespeicherte stehen, wie bei Schreibe; eine leere Adresse schaltet den
+// Abgleich ab und nimmt das Passwort mit.
+func (a *MailEinstellungsAbfragen) SchreibeWebmailZugang(ctx context.Context, adresse, benutzer, passwort string) error {
+	var verschluesselt []byte // nil wird NULL, und COALESCE behält das gespeicherte Passwort
+	if passwort != "" {
+		var err error
+		verschluesselt, err = crypto.Verschluessele([]byte(passwort))
+		if err != nil {
+			return fmt.Errorf("fehler beim Verschlüsseln des Passworts: %w", err)
+		}
+	}
+	tag, err := a.pool.Exec(ctx, `
+		UPDATE mail_settings_config SET
+			webmail_adresse = $1::text,
+			webmail_benutzer = $2,
+			webmail_passwort_verschluesselt = CASE WHEN $1::text = '' THEN NULL
+				ELSE COALESCE($3, webmail_passwort_verschluesselt) END
+		WHERE id = 1
+	`, adresse, benutzer, verschluesselt)
+	if err != nil {
+		return fmt.Errorf("fehler beim Speichern des Webmail-Zugangs: %w", err)
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("webmail-Zugang nicht gespeichert: Die Zeile der Mail-Einstellungen fehlt")
 	}
 	return nil
 }

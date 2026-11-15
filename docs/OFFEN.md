@@ -65,6 +65,10 @@ Nur, was kein Test leisten kann.
   auch Zeilen-Bauteile. (5.180)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
+- [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
+  Treffer ansehen. (5.182)
+- [ ] Anmeldung über PaedNet ohne Konto: Zugangsanfrage mit Name und Adresse aus dem globalen
+  Adressbuch. (5.183)
 
 ### Termin
 
@@ -119,6 +123,27 @@ Bibliothek gesperrt, für Schulbücher nicht.
 
 Nächster Schritt: den Ablauf zum Schuljahresbeginn an der Theke durchgehen, dann entscheiden, ob
 die Frist der Oberstufe oder die Zählung der Automatik sich ändert.
+
+### 5.182 Adressabgleich mit dem Webmail einrichten
+
+Konten aus Littera tragen eine Platzhalter-Adresse (`…@littera.invalid`); die Mails aus Mein
+Portal an sie kommen nie an. Der Abgleich (ARCHITEKTUR 8.10, Einstellungen → Mail) trägt die
+Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den Namen.
+
+Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
+Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
+kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.183 Anmeldung über PaedNet ohne Konto
+
+Über PaedNet meldet sich heute nur an, wessen Konto ein Admin auf LDAP gestellt hat; ohne Konto
+fragt die Selbstanmeldung nur den Mailserver (`auth/selbstanmeldung.go`), und das Passwort des
+Webmails kennen die wenigsten. Das globale Adressbuch nennt zu 217 von 223 Einträgen das Kürzel
+und die Adresse der Schule (gezählt am 15.11.2026).
+
+Offen ist, ob die PaedNet-Kennung das Kürzel ist. Wenn ja: Eine Anmeldung über PaedNet ohne
+Konto legt eine Zugangsanfrage an wie die Selbstanmeldung, mit Name und Adresse aus dem
+Adressbuch; freigeschaltet wird wie bisher von Hand.
 
 ### 7.2 Frisches Littera-Backup
 

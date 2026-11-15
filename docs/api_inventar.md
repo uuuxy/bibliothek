@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-11-06. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-11-15. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (226)
+## Alle registrierten Routen (229)
 
 - `/`
 - `/favicon.ico`
@@ -42,6 +42,7 @@
 - `GET /api/admin/books/external-covers`
 - `GET /api/admin/class-books`
 - `GET /api/admin/permissions`
+- `GET /api/admin/settings/adressabgleich`
 - `GET /api/admin/settings/mail`
 - `GET /api/admin/system/backup-status`
 - `GET /api/admin/system/betriebsbereitschaft`
@@ -159,6 +160,7 @@
 - `POST /api/admin/class-books/add`
 - `POST /api/admin/import-bestand`
 - `POST /api/admin/mahnungen/bulk-print`
+- `POST /api/admin/settings/adressabgleich/lauf`
 - `POST /api/admin/settings/mail/test`
 - `POST /api/admin/sync-covers`
 - `POST /api/anliegen`
@@ -218,6 +220,7 @@
 - `POST /api/vormerkungen`
 - `POST /login`
 - `PUT /api/admin/permissions`
+- `PUT /api/admin/settings/adressabgleich`
 - `PUT /api/admin/settings/mail`
 - `PUT /api/anliegen/{id}/erledigen`
 - `PUT /api/ausweis-layout`
