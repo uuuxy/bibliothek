@@ -462,7 +462,7 @@ CREATE TABLE werke (
 
 COMMENT ON TABLE werke IS
     'Ein Buch über seinen Auflagen (Migration 148): Titel mit derselben werk_id sind '
-    'Auflagen desselben Buchs. Geschrieben nur über internal/repository/auflagen.go.';
+    'Auflagen desselben Buchs. Geschrieben nur über repository/auflagen.go.';
 
 -- Table: buecher_titel (Master book catalog metadata)
 -- Under the strict rule: metadata is separated from physical copies
