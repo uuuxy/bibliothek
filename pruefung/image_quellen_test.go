@@ -11,7 +11,7 @@ import (
 )
 
 // Das Image bekommt jede Quelle, die seine Bauschritte brauchen, und keine, die es nicht gibt.
-// Der Dockerfile kopiert die Ordner des Programms einzeln. Fehlt ein Ordner im Baum, bricht der
+// Der Dockerfile kopiert die Ordner des Programms einzeln, internal/ und cmd/. Fehlt ein Ordner im Baum, bricht der
 // Bau ab („"/inventur": not found"); fehlt einer in der Liste, findet go build sein Paket nicht.
 // Beides merken go build ./..., die Tests und die Hooks nicht, weil sie im ganzen Baum bauen: Erst
 // der Bau des Images in der CI scheitert, und aus main lässt sich kein Image bauen.
@@ -37,7 +37,7 @@ func TestImageKopiertWasDerBauBraucht(t *testing.T) {
 		}
 	}
 	ziele := regexp.MustCompile(`(?m)^RUN .*\bgo build\b.* (\./cmd/[a-z0-9-]+)\s*$`).FindAllStringSubmatch(stufe, -1)
-	if len(kopiert) < 10 || len(ziele) < 4 {
+	if len(kopiert) < 2 || len(ziele) < 4 {
 		t.Fatalf("nur %d Quellen und %d Bauziele im Dockerfile gefunden — der Leser greift nicht mehr", len(kopiert), len(ziele))
 	}
 
@@ -69,8 +69,8 @@ func TestImageKopiertWasDerBauBraucht(t *testing.T) {
 		oben, _, _ := strings.Cut(filepath.ToSlash(rel), "/")
 		gebraucht[oben] = true
 	}
-	if len(gebraucht) < 10 {
-		t.Fatalf("nur %d Ordner des Baums in den Abhängigkeiten — der Leser greift nicht mehr", len(gebraucht))
+	if !gebraucht["internal"] || !gebraucht["cmd"] {
+		t.Fatalf("internal/ und cmd/ fehlen in den Abhängigkeiten (%v) — der Leser greift nicht mehr", gebraucht)
 	}
 	var fehlen []string
 	for oben := range gebraucht {

@@ -1,0 +1,214 @@
+package mahnwesen_test
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"bibliothek/internal/api"
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/sse"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+)
+
+// Ein Ehemaliger im Mahnwesen, am Router des Betriebs. Meldet die LUSD ein Kind mit offenen
+// Büchern nicht mehr, wird es Ehemaliger und behält seine Klasse; die Versetzung fasst es
+// danach nicht mehr an. Im Jahr darauf trägt ein anderer Jahrgang den Klassennamen. Die Liste
+// an dessen Klassenleitung nennt den Ehemaligen nicht: Er steht in der Mahnliste als eigene
+// Gruppe, und diese Gruppe geht an keine Klassenleitung.
+func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := t.Context()
+
+	authenticator, err := auth.NewAnmeldung(
+		"mahnwesen-ehemalige-testgeheimnis-32-bytes!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("NewAnmeldung: %v", err)
+	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Mara", "Mahnliste", "mahnwesen-ehemalige@example.org", "admin", true)
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
+	if err != nil {
+		t.Fatalf("Sitzung: %v", err)
+	}
+	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
+	router := srv.Routes()
+	rufe := func(req *http.Request) *httptest.ResponseRecorder {
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		return rec
+	}
+
+	abgelaufen := time.Now().AddDate(0, 0, -30)
+
+	// Erik ging mitten im Jahr aus der 08H3 und hat sein Buch noch. So markiert ihn der
+	// Abgleich mit der LUSD: Ehemaliger, die Klasse bleibt stehen.
+	erik := testdaten.LegeSchuelerAn(t, pool, "EHM-S-1", "Erik", "08H3")
+	testdaten.LegeAusleiheMitFristAn(t, pool, erik, "Atlas Alt", abgelaufen)
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Transaktion: %v", err)
+	}
+	if err := repository.SperreAbgaenger(ctx, tx, erik, "Abgänger laut LUSD"); err != nil {
+		t.Fatalf("Erik als Ehemaligen markieren: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	// Nora ist in der 07H3 und wird versetzt; ihre Klassenleitung zieht mit.
+	nora := testdaten.LegeSchuelerAn(t, pool, "EHM-S-2", "Nora", "07H3")
+	testdaten.LegeAusleiheMitFristAn(t, pool, nora, "Atlas Neu", abgelaufen)
+	testdaten.SetzeKlassenleitung(t, pool, "07H3", "leitung-nora@schule.invalid")
+
+	if rec := rufe(tuertest.JSONPost("/api/students/promote", `{"confirm":true}`)); rec.Code != http.StatusOK {
+		t.Fatalf("Versetzung: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	var klasseErik, klasseNora, leitung string
+	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE id = $1`, erik).Scan(&klasseErik); err != nil {
+		t.Fatalf("Klasse von Erik lesen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE id = $1`, nora).Scan(&klasseNora); err != nil {
+		t.Fatalf("Klasse von Nora lesen: %v", err)
+	}
+	if err := pool.QueryRow(ctx,
+		`SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = '08H3'`).Scan(&leitung); err != nil {
+		t.Fatalf("Klassenleitung der 08H3 lesen: %v", err)
+	}
+	if klasseErik != "08H3" || klasseNora != "08H3" || leitung != "leitung-nora@schule.invalid" {
+		t.Fatalf("die Ausgangslage steht nicht: Erik in %q, Nora in %q, Klassenleitung der 08H3 %q — "+
+			"erwartet beide in 08H3 und die Klassenleitung von Nora", klasseErik, klasseNora, leitung)
+	}
+	// Eine Zuordnung unter dem Namen der Gruppe macht aus ihr keine Klasse.
+	testdaten.SetzeKlassenleitung(t, pool, "Ehemalige", "niemand@schule.invalid")
+
+	t.Run("die Mahnliste führt den Ehemaligen als eigene Gruppe ohne Klassenleitung", func(t *testing.T) {
+		rec := rufe(httptest.NewRequest(http.MethodGet, "/api/mahnwesen", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Mahnliste: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		var liste struct {
+			Klassen []struct {
+				Klasse      string `json:"klasse"`
+				Ehemalige   bool   `json:"ehemalige"`
+				LehrerEmail string `json:"lehrer_email"`
+				Schueler    []struct {
+					Name   string `json:"name"`
+					Klasse string `json:"klasse"`
+				} `json:"schueler"`
+			} `json:"klassen"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
+			t.Fatalf("Mahnliste lesen: %v — %s", err, pdftest.ErsteBytes(rec.Body.Bytes(), 200))
+		}
+		gefunden := map[string]bool{}
+		for _, g := range liste.Klassen {
+			for _, s := range g.Schueler {
+				gefunden[s.Name] = true
+				switch s.Name {
+				case "Erik Test":
+					if !g.Ehemalige || g.LehrerEmail != "" {
+						t.Errorf("Erik steht in der Gruppe %q (Ehemalige: %v, Klassenleitung %q) — "+
+							"erwartet die Gruppe der Ehemaligen ohne Klassenleitung", g.Klasse, g.Ehemalige, g.LehrerEmail)
+					}
+					// Der Klassenfilter der Liste und ihr Ausdruck wählen nach der Klasse am
+					// Kind. Trüge Erik dort die 08H3, stünde er auf dem Blatt dieser Klasse.
+					if s.Klasse != "Ehemalige" {
+						t.Errorf("Erik trägt in der Mahnliste die Klasse %q — erwartet den Namen seiner Gruppe", s.Klasse)
+					}
+				case "Nora Test":
+					if g.Ehemalige || g.Klasse != "08H3" || g.LehrerEmail != "leitung-nora@schule.invalid" {
+						t.Errorf("Nora steht in der Gruppe %q (Ehemalige: %v, Klassenleitung %q) — "+
+							"erwartet die 08H3 mit ihrer Klassenleitung", g.Klasse, g.Ehemalige, g.LehrerEmail)
+					}
+				}
+			}
+		}
+		if !gefunden["Erik Test"] || !gefunden["Nora Test"] {
+			t.Errorf("in der Mahnliste fehlt ein Kind mit überfälligem Buch: %v", gefunden)
+		}
+	})
+
+	t.Run("ohne Auswahl geht keine Mail hinaus", func(t *testing.T) {
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
+		for _, rumpf := range []string{"", `{}`, `{"klasse":["08H3"]}`} {
+			if rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", rumpf)); rec.Code != http.StatusBadRequest {
+				t.Errorf("Mahnlauf mit Rumpf %q: Status %d — %s, erwartet 400", rumpf, rec.Code, rec.Body.String())
+			}
+		}
+		select {
+		case <-sitzungen:
+			t.Error("ohne Auswahl ging eine Mahnliste hinaus")
+		default:
+		}
+	})
+
+	t.Run("die Mail an die Klassenleitung nennt den Ehemaligen nicht", func(t *testing.T) {
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
+		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", `{"klassen":["08H3"]}`))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Versendet      int `json:"sent_count"`
+			Uebersprungen  int `json:"skipped_count"`
+			Fehlgeschlagen int `json:"failed_count"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
+		}
+		// Der Testserver nimmt eine Sitzung an; eine zweite Mail stünde hier als übersprungen
+		// oder fehlgeschlagen.
+		if antwort.Versendet != 1 || antwort.Uebersprungen != 0 || antwort.Fehlgeschlagen != 0 {
+			t.Errorf("Mahnlauf: %d verschickt, %d übersprungen, %d fehlgeschlagen — erwartet genau die Mail der 08H3",
+				antwort.Versendet, antwort.Uebersprungen, antwort.Fehlgeschlagen)
+		}
+		nachricht := smtptest.WarteAufMail(t, sitzungen)
+		if !strings.Contains(nachricht, "leitung-nora@schule.invalid") {
+			t.Fatalf("die Mail ging nicht an die Klassenleitung der 08H3:\n%s", smtptest.Kopf(nachricht))
+		}
+		liste := strings.Join(pdftest.Texte(t, smtptest.PDFAusMail(t, nachricht)), "\n")
+		if !strings.Contains(liste, "Nora") {
+			t.Fatalf("Nora fehlt in der Liste an ihre Klassenleitung:\n%s", liste)
+		}
+		if strings.Contains(liste, "Erik") {
+			t.Errorf("der Ehemalige steht in der Liste an die Klassenleitung eines anderen Jahrgangs:\n%s", liste)
+		}
+	})
+
+	t.Run("auch ausdrücklich gewählt geht die Gruppe der Ehemaligen an niemanden", func(t *testing.T) {
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
+		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue",
+			`{"klassen":["Ehemalige"],"override_email":"vertretung@schule.invalid"}`))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Versendet int `json:"sent_count"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
+		}
+		if antwort.Versendet != 0 {
+			t.Errorf("Mahnlauf für die Gruppe der Ehemaligen: %d Mail verschickt, erwartet keine", antwort.Versendet)
+		}
+		select {
+		case s := <-sitzungen:
+			t.Errorf("für die Ehemaligen ging eine Mail hinaus:\n%s", smtptest.Kopf(s.Nachricht))
+		default:
+		}
+	})
+}

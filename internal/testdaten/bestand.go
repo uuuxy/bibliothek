@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 )
 
 // LegeTitelAn legt einen Titel an. Trägt der Titel die Kennung der Lernmittel („LMF-Mathe 7“),

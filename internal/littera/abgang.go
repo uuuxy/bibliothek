@@ -8,7 +8,7 @@ import (
 
 // klassenMuster zerlegt eine Littera-Klassenbezeichnung: führende Ziffern = Jahrgang,
 // Rest = Zweig und Zug ("07H1" → 7, "H1"; "12T3" → 12, "T3"). Dieselbe Auslegung wie im
-// Versetzungslauf (repository/schuljahreswechsel.go: substring(klasse from '^\d+')).
+// Versetzungslauf (internal/repository/schuljahreswechsel.go: substring(klasse from '^\d+')).
 var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 
 // abschlussJahrgang liefert den Jahrgang, nach dem ein Zweig die Schule verlässt. Die Regel ist

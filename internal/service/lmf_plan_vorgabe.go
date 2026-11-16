@@ -3,15 +3,15 @@ package service
 import (
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Womit ein neuer LMF-Plan beginnt. Der Büchertausch vor den Sommerferien endet immer am selben
 // Tag, dem Donnerstag vor den Ferien zur vierten Stunde; sein Anker liegt deshalb am Ende. Die
 // Ausgabe nach den Ferien beginnt am ersten Schultag danach. Die Ferien kommen aus der
-// Ferientabelle (pkg/lmfplan); kennt sie das Jahr nicht, sagt die Antwort es, und der Planer
+// Ferientabelle (internal/pkg/lmfplan); kennt sie das Jahr nicht, sagt die Antwort es, und der Planer
 // bittet um den Tag.
 
 // Die Pläne der Schule: Der Tausch endet in der 4. Stunde; die Ausgabe beginnt in der 2. Stunde,

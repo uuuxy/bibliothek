@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/code39"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/code39"
+	"bibliothek/internal/repository"
 )
 
 // OmniboxErgebnis ist die Antwort der Omnibox auf einen Scan oder eine Suche.

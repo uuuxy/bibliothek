@@ -1,5 +1,5 @@
 {
-	"hinweis": "Gemeinsame Prüffälle für das Code-39-Prüfzeichen, das bis zum 17.09.2026 auf jedem Ausweis und Buchetikett stand. Gelesen von pkg/code39/zwilling_test.go (Server) und frontend/src/lib/utils/code39Pruefzeichen.test.js (Theke ohne Netz). kern null heißt: kein abtrennbares Prüfzeichen, der Scan bleibt wie er ist.",
+	"hinweis": "Gemeinsame Prüffälle für das Code-39-Prüfzeichen, das bis zum 17.09.2026 auf jedem Ausweis und Buchetikett stand. Gelesen von internal/pkg/code39/zwilling_test.go (Server) und frontend/src/lib/utils/code39Pruefzeichen.test.js (Theke ohne Netz). kern null heißt: kein abtrennbares Prüfzeichen, der Scan bleibt wie er ist.",
 	"faelle": [
 		{
 			"scan": "B-100016",

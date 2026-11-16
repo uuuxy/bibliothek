@@ -748,7 +748,7 @@ describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
 		const antworten = [];
 		vi.mocked(apiGet).mockImplementation(() => new Promise((fertig) => antworten.push(fertig)));
 		try {
-			// Der Bedarf kommt als Zeilen mit der Grundlage der Rechnung (api/bestellung/bestellbedarf.go).
+			// Der Bedarf kommt als Zeilen mit der Grundlage der Rechnung (internal/api/bestellung/bestellbedarf.go).
 			const bedarfAlt = bestellStore.loadRecommendations();
 			const bedarfJung = bestellStore.loadRecommendations();
 			antworten[1]({ zeilen: [{ id: 'jung' }], kinder: 600, kinder_mit_schulbuch: 540 });

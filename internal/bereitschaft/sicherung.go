@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"bibliothek/jobs"
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/jobs"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // befundSicherungAus ist der Befund der drei Bereiche der Sicherung, solange die eigene Sicherung
@@ -37,7 +37,7 @@ func pruefeAuslagerung(l Lage) Befund {
 	return b
 }
 
-// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Probe (jobs/restore_probe.go).
+// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Probe (internal/jobs/restore_probe.go).
 // Ein Backup, das sich nicht einspielen lässt, ist so viel wert wie keins, und ohne die
 // Probe erfährt man es im schlechtesten Moment.
 func pruefeRestoreProbe(l Lage, echt bool) Befund {

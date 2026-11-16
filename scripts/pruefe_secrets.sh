@@ -111,7 +111,7 @@ echo "── Backups ───────────────────�
 backup_key="$(lies BACKUP_ENCRYPTION_KEY)"
 if [ -z "$backup_key" ]; then
 	kritisch "BACKUP_ENCRYPTION_KEY ist nicht gesetzt" \
-		"Der nächtliche Job überspringt sich STILL (jobs/backup.go). Es gibt keine Backups."
+		"Der nächtliche Job überspringt sich STILL (internal/jobs/backup.go). Es gibt keine Backups."
 elif [ "${#backup_key}" -lt 32 ]; then
 	warnung "BACKUP_ENCRYPTION_KEY ist nur ${#backup_key} Zeichen lang" \
 		"Der Schlüssel wird per scrypt aus dieser Passphrase abgeleitet; eine kurze Passphrase bleibt an einer entwendeten Backup-Datei ratbar. Empfohlen: >= 32."

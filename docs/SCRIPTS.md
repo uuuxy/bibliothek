@@ -218,7 +218,7 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
 - **Lernmittel ist ein Feld** (`ist_lernmittel`): gesetzt, wenn die Signatur oder das
   Standortfeld MAB 108a die LMF-Kennung trägt. Der Import setzt es nur, löscht es nie.
 - **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
-  `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
+  `internal/pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
   Fach nennen) und den Zielgruppen (MAB 070b, Litteras Interessenkreise, alle Werte eines
   Eintrags: Sek I → 5–10, Sek II → 11–13, beide → 5–13). Das Fach füllt nur eine
   Leerstelle; die Jahrgangsspanne folgt der Quelle, außer an einem Mehrjahresband.
@@ -309,14 +309,14 @@ Schlagwort zusammen), 2.767 Wörter, Abgleich stimmt. Das Fach bleibt bei 258 un
 
 ---
 
-## 2. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
+## 2. Datenbank-Backup (`internal/jobs/backup.go` / `scripts/backup.sh`)
 
 Es gibt **drei Wege**; alle drei verschlüsseln über dieselbe Ableitung
 (`internal/backupkrypto`, scrypt + AES-256-GCM).
 
-|               | Automatisch (`jobs/backup.go`)                            | Manuell (`scripts/backup.sh`)              | Vor jedem Deploy (`./update.sh`)               |
+|               | Automatisch (`internal/jobs/backup.go`)                            | Manuell (`scripts/backup.sh`)              | Vor jedem Deploy (`./update.sh`)               |
 | ------------- | --------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
-| Auslöser      | Täglich 02:30 via `jobs/cron.go`                          | `./scripts/backup.sh`                      | Schritt 1 von `./update.sh`                    |
+| Auslöser      | Täglich 02:30 via `internal/jobs/cron.go`                          | `./scripts/backup.sh`                      | Schritt 1 von `./update.sh`                    |
 | Pipeline      | `pg_dump → gzip → AES-GCM`                                | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5         |
 | Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)                          | **ja**                                     | **ja, nach gesundem Deploy**                   |
 | Dateirechte   | 0600                                                      | 0600                                       | 0600                                           |
@@ -391,9 +391,9 @@ docker exec bibliothek-backend-local printenv GIT_COMMIT
 
 ---
 
-## 4. Paket-Utilities (`pkg/`)
+## 4. Paket-Utilities (`internal/pkg/`)
 
-### `pkg/csvutil`
+### `internal/pkg/csvutil`
 
 CSV-Formel-Injection-Schutz (OWASP CWE-1236):
 
@@ -405,7 +405,7 @@ safeRow := csvutil.EntschaerfeZeile([]string{titel, autor, ...})
 
 Setzt Apostroph-Präfix bei Zellen die mit `= + - @ \t \r \n` beginnen.
 
-### `pkg/imageutil`
+### `internal/pkg/imageutil`
 
 Decompression-Bomb-Guard:
 
@@ -451,8 +451,8 @@ Gemessen am 04.10.2026 an derselben Codebasis, nur der Go-Teil (Anweisungen):
 | ------------------------------------------------------ | ---------- |
 | alle Pakete, ohne Datenbank                            | **42,8 %** |
 | alle Pakete, mit `TEST_DATABASE_URL`                   | **84,9 %** |
-| `repository/` allein mit den Tests des eigenen Pakets  | **57,4 %** |
-| `repository/` mit den Tests aller Pakete (`-coverpkg`) | **85,1 %** |
+| `internal/repository/` allein mit den Tests des eigenen Pakets  | **57,4 %** |
+| `internal/repository/` mit den Tests aller Pakete (`-coverpkg`) | **85,1 %** |
 
 Drei Messfehler, kein Codefehler:
 
@@ -463,8 +463,8 @@ Drei Messfehler, kein Codefehler:
    `node_modules` nicht als Sonderfall. 115 ungedeckte Zeilen im Profil.
    `sonar_scan.sh` filtert sie über `go list | grep -v node_modules`.
 3. **Ohne `-coverpkg` rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.** Die
-   Tests der Türen liegen in `api/` und den Ordnern der Themen darunter und führen den Code
-   in `repository/` über den Router aus;
+   Tests der Türen liegen in `internal/api/` und den Ordnern der Themen darunter und führen den Code
+   in `internal/repository/` über den Router aus;
    eine neue Abfrage zählte so als ungetestet, obwohl ihr Test sie ausführt. `sonar_scan.sh`
    misst mit `-coverpkg` über alle Pakete. Im Profil steht ein Block
    dann je Testprogramm einmal; gedeckt ist er, sobald ein Eintrag ihn zählt.

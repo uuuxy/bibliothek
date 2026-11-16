@@ -9,7 +9,7 @@ import (
 
 	"bibliothek/internal/littera"
 	"bibliothek/internal/pgtest"
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Der Befehl legt das Ergebnis des schreibenden Laufs so ab, wie die Selbstprüfung es liest

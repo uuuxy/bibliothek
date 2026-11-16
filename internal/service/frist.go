@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // fristAngaben sind die Angaben, aus denen berechneFrist die Frist rechnet. Ein fehlendes Feld

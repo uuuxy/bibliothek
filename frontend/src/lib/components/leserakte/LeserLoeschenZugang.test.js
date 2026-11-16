@@ -15,7 +15,7 @@ import { authStore } from '../../stores/authStore.svelte.js';
 // zu „Mein Portal" erlischt. Praktikum und Fachbereich haben nie einen (Migration 153), eine aus
 // Littera übernommene Lehrkraft nur ein Konto mit Ersatzadresse, eine Lehrkraft keinen mehr, wenn
 // die Benutzerverwaltung ihr Konto gelöscht hat. Bei ihnen wäre der Satz falsch. Ob es einen
-// gibt, sagt die Akte in `hat_zugang` (api/leser/leserakte.go), nicht die Adresse am Konto.
+// gibt, sagt die Akte in `hat_zugang` (internal/api/leser/leserakte.go), nicht die Adresse am Konto.
 
 const lehrkraft = {
 	vorname: 'Lena',
@@ -136,7 +136,7 @@ describe('Löschen in der Akte: vom Zugang nur, wenn es einen gibt', () => {
 });
 
 // Einen Zugang löscht nur, wer auch Konten verwaltet (manage_users), wie in der
-// Benutzerverwaltung; der Server lehnt sonst ab (api/leser_loeschen_zugang_pg_test.go). Die Zone
+// Benutzerverwaltung; der Server lehnt sonst ab (internal/api/leser_loeschen_zugang_pg_test.go). Die Zone
 // zeigt den Knopf abgeschaltet und den Grund, statt ihn bis zur Ablehnung anzubieten.
 describe('Löschen in der Akte: einen Zugang löscht nur, wer Konten verwaltet', () => {
 	/** @param {any} profile */

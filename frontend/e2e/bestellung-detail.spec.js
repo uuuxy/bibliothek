@@ -6,7 +6,7 @@
 // waren bis Migration 063 gar nicht zuzuordnen (buecher_exemplare.bestellung_id).
 //
 // Warum E2E: Der Zugewinn hängt an einer Kette aus vier Gliedern — bestellen → Exemplare
-// mit bestellung_id → Endpunkt → Ansicht. api/bestellung/bestelldetail_pg_test.go beweist
+// mit bestellung_id → Endpunkt → Ansicht. internal/api/bestellung/bestelldetail_pg_test.go beweist
 // Glied 3, aber
 // nicht, dass die Nummer beim Benutzer ankommt, und schon gar nicht, dass der ECHTE
 // Bestellweg die Verknüpfung überhaupt schreibt. Genau diese Lücke hat dieses Projekt
@@ -14,7 +14,7 @@
 //
 // Der Bestellweg verschickt nach dem Speichern die Bestellmail, und der lokale Stack trägt
 // den Mailserver aus der .env. Der Lieferant hat hier deshalb eine Adresse, die keine ist:
-// Der Versand scheitert an ihr, bevor eine Verbindung entsteht (mailservice/mail_sender.go,
+// Der Versand scheitert an ihr, bevor eine Verbindung entsteht (internal/mailservice/mail_sender.go,
 // TestSende_UngueltigerEmpfaenger), und der Handler antwortet trotzdem mit 200.
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, seedSQL, querySQL, uniqueSuffix } from './helpers.js';

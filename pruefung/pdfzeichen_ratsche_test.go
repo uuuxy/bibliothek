@@ -269,7 +269,7 @@ var marotoTextPakete = map[string]bool{
 }
 
 // marotoTextTuer ist die eine Datei, die sie einbinden darf (pdf.marotoText).
-const marotoTextTuer = "pdf/maroto_text.go"
+const marotoTextTuer = "internal/pdf/maroto_text.go"
 
 // Ratsche: Jeder Text, den ein Erzeuger mit maroto druckt, geht durch pdf.marotoText.
 //

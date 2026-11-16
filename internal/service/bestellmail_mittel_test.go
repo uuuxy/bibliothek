@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/mitteltopf"
+	"bibliothek/internal/pkg/mitteltopf"
 )
 
 // Der Topf steht in der Händler-Mail — auch dann, wenn die frei editierbare Vorlage den

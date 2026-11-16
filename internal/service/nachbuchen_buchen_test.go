@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/google/go-cmp/cmp"
 )

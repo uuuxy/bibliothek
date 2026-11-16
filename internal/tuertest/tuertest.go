@@ -17,8 +17,8 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/api/tuer"
-	"bibliothek/auth"
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
 )
 
 // MitCSRF trägt den Nachweis ein, den der Router bei ändernden Methoden verlangt: Cookie und

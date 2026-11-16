@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
-	"bibliothek/pkg/isbnutil"
+	"bibliothek/internal/pkg/isbnutil"
 )
 
 // Die Hülle des Imports eines Katalogisats; sie läuft einmal gegen den echten Bestand. Der

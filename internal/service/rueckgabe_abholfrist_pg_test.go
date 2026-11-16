@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Kommt ein vorgemerktes Buch zurück, liegt es drei Tage bereit; fällt das Ende auf ein

@@ -66,11 +66,11 @@ Thumbs.db
 !migrations/*.sql
 # Eingefrorene historische Baseline für den Schema-Paritätstest — reines DDL
 # (das schema.sql von Commit e5740b95), keine Daten. Bewusst nur diese EINE Datei.
-!db/testdata/schema_baseline_e5740b95.sql
+!internal/db/testdata/schema_baseline_e5740b95.sql
 backups/
 # Logs ersetzter Container, abgelegt von update.sh
 logs/
-# Laufvermerk des Servers (pkg/laufvermerk), wenn er außerhalb von Docker läuft
+# Laufvermerk des Servers (internal/pkg/laufvermerk), wenn er außerhalb von Docker läuft
 /laufvermerk/
 *.sql.gz
 *.sql.gz.enc

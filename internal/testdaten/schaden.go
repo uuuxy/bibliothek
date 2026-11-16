@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

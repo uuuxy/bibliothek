@@ -8,7 +8,7 @@ import { leseSperrzustand } from './sperreAmServer.js';
 const antwort = (/** @type {number} */ status, /** @type {any} */ rumpf) =>
 	/** @type {any} */ ({ ok: status < 300, status, json: async () => rumpf });
 
-// Der Sperrbildschirm nennt den Grund, den der Server für die Sperre angibt (auth/anmelden.go,
+// Der Sperrbildschirm nennt den Grund, den der Server für die Sperre angibt (internal/auth/anmelden.go,
 // AngemeldetesKonto): Wer zehn Stunden nach der Passworteingabe gerade gearbeitet hat, liest
 // nicht „wegen Inaktivität".
 describe('leseSperrzustand', () => {

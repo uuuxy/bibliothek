@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	"bibliothek/pkg/isbnutil"
+	"bibliothek/internal/pkg/isbnutil"
 )
 
 var keinISBNZeichen = regexp.MustCompile(`[^0-9Xx]`)

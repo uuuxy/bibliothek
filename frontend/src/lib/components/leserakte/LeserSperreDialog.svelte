@@ -17,7 +17,7 @@
 	let reason = $state('');
 
 	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
-	// nimmt beide weg (api/leser/leser_sperre.go). Dasselbe Prädikat wie der
+	// nimmt beide weg (internal/api/leser/leser_sperre.go). Dasselbe Prädikat wie der
 	// Knopf, der dieses Fenster öffnet (LeserKontoStatus).
 	let gesperrt = $derived(ausleiheGesperrt(leser));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem

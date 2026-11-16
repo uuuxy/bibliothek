@@ -1,0 +1,123 @@
+package bestellung
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+)
+
+// Der Hauptlieferant lässt sich nicht nebenbei wegklicken.
+//
+// Der Fremdschlüssel `bestellungen_verlauf.lieferant_id -> lieferanten` ist die harmlose
+// Hälfte: ON DELETE SET NULL, und die Bestellung hält Name und E-Mail des Händlers als eigene
+// Abschrift; die Historie überlebt das Löschen unbeschadet.
+//
+// Gefährlich wäre der Löschweg daneben. „Löschen" in der Lieferantenverwaltung fragt nicht
+// nach (ein Klick, kein Dialog), und getroffen werden könnte auch der eine Händler, an dem der
+// ganze Bestellweg hängt: Bestellmail, Bestätigungs-Link und die Etiketten-Entscheidung „der
+// Händler beklebt selbst". Danach hätte die Schule keinen Hauptlieferanten mehr, ohne Meldung
+// und ohne Spur; die Liste zeigte nur einen Händler weniger. Dieselbe Klasse wie „Feature
+// hängt an ungesetzter Einstellung", nur dass hier jemand den Schalter aktiv umlegt, ohne es
+// zu merken.
+//
+// Die Regel sitzt in der Tür, nicht im Formular: Die Verwaltung ist nicht die einzige
+// Tür, und ein Hinweis, den nur ein Bildschirm kennt, ist keine Regel.
+func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	anlegen := func(name string, haupt bool) string {
+		t.Helper()
+		rumpf := `{"name":"` + name + `","email":"` + name + `@test.invalid","customerNumber":"K-` + name +
+			`","ist_hauptlieferant":` + map[bool]string{true: "true", false: "false"}[haupt] + `}`
+		rec := httptest.NewRecorder()
+		srv.LieferantAnlegen()(rec,
+			httptest.NewRequest(http.MethodPost, "/api/lieferanten", strings.NewReader(rumpf)))
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("Lieferant %s anlegen: Status %d — %s", name, rec.Code, rec.Body.String())
+		}
+		var antwort lieferantAntwort
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v", err)
+		}
+		return antwort.ID
+	}
+
+	loeschen := func(id string) *httptest.ResponseRecorder {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, "/api/lieferanten/"+id, nil)
+		r.SetPathValue("id", id)
+		srv.LieferantLoeschen()(rec, r)
+		return rec
+	}
+
+	haupt := anlegen("HauptLoesch", true)
+	neben := anlegen("NebenLoesch", false)
+
+	// 1. Der Hauptlieferant bleibt stehen — und die Meldung sagt, was zu tun ist.
+	rec := loeschen(haupt)
+	if rec.Code != http.StatusConflict {
+		t.Errorf("Hauptlieferant gelöscht: Status %d, erwartet 409 — der Bestellweg hinge danach an nichts", rec.Code)
+	}
+	const erwartet = "Dieser Händler ist der Hauptlieferant, über ihn läuft die Bestellung. " +
+		"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("Hauptlieferant löschen: Meldung %q, erwartet %q", got, erwartet)
+	}
+	var nochDa bool
+	if err := pool.QueryRow(t.Context(),
+		`SELECT EXISTS (SELECT 1 FROM lieferanten WHERE id = $1)`, haupt).Scan(&nochDa); err != nil {
+		t.Fatal(err)
+	}
+	if !nochDa {
+		t.Error("der Hauptlieferant ist trotz 409 aus der Tabelle verschwunden")
+	}
+
+	// 1b. Die Anweisung selbst löscht keinen Hauptlieferanten: Wird ein Händler zwischen der
+	//     Frage der Tür und dem Löschen zum Hauptlieferanten, bleibt er stehen.
+	if geloescht, err := repository.LoescheLieferant(t.Context(), pool, haupt); err != nil || geloescht != 0 {
+		t.Errorf("LoescheLieferant(Hauptlieferant) = %d, %v, erwartet 0 ohne Fehler", geloescht, err)
+	}
+	//     Die Tür sagt dann, warum: Hauptlieferant (409) oder nicht mehr da (404).
+	nichtGeloescht := func(id string) int {
+		rec := httptest.NewRecorder()
+		srv.antworteLieferantNichtGeloescht(t.Context(), rec, id)
+		return rec.Code
+	}
+	if code := nichtGeloescht(haupt); code != http.StatusConflict {
+		t.Errorf("antworteLieferantNichtGeloescht(Hauptlieferant) = %d, erwartet %d", code, http.StatusConflict)
+	}
+	if code := nichtGeloescht("00000000-0000-0000-0000-000000000000"); code != http.StatusNotFound {
+		t.Errorf("antworteLieferantNichtGeloescht(unbekannt) = %d, erwartet %d", code, http.StatusNotFound)
+	}
+
+	// 2. Gegenprobe: Ein gewöhnlicher Händler lässt sich weiterhin löschen. Ohne diese
+	//    Hälfte wäre nicht zu unterscheiden, ob die Regel greift oder das Löschen kaputt ist.
+	if rec := loeschen(neben); rec.Code != http.StatusNoContent {
+		t.Errorf("gewöhnlicher Händler nicht löschbar: Status %d — %s", rec.Code, rec.Body.String())
+	}
+
+	// 3. Der Weg bleibt offen: Schalter abwählen, dann löschen.
+	rumpf := `{"name":"HauptLoesch","email":"h@test.invalid","customerNumber":"K-1","ist_hauptlieferant":false}`
+	up := httptest.NewRequest(http.MethodPut, "/api/lieferanten/"+haupt, strings.NewReader(rumpf))
+	up.SetPathValue("id", haupt)
+	upRec := httptest.NewRecorder()
+	srv.LieferantAendern()(upRec, up)
+	if upRec.Code != http.StatusOK {
+		t.Fatalf("Schalter abwählen: Status %d — %s", upRec.Code, upRec.Body.String())
+	}
+	if rec := loeschen(haupt); rec.Code != http.StatusNoContent {
+		t.Errorf("nach dem Abwählen immer noch nicht löschbar: Status %d — %s", rec.Code, rec.Body.String())
+	}
+}

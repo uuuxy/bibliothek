@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

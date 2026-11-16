@@ -1,7 +1,7 @@
 <!-- @component TitelZusammenfuehrenDialog — zwei Titel, ein Buch, etwa einer aus einer Liste
      ohne ISBN und einer aus dem Bestands-Import: suchen, antippen, eine Zeile Vorschau,
      bestätigen. Der Titel mit ISBN bleibt; was wandert und welche Felder kommen, rechnet der
-     Server (repository/titel_zusammenfuehren.go). Material 3, Dialogs: höchstens zwei Aktionen,
+     Server (internal/repository/titel_zusammenfuehren.go). Material 3, Dialogs: höchstens zwei Aktionen,
      die bestätigende erst nach der Wahl bedienbar; Lists: „A list item can include supporting
      text below the label text." -->
 <script>

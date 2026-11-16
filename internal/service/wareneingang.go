@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 )
 
 // EingebuchtesExemplar ist ein Exemplar, das der Wareneingang eingebucht hat. EtikettGedruckt

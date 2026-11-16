@@ -155,7 +155,7 @@ Wer eine übergebene Funktion in einem Rahmen ausführt, heißt nach dem Rahmen:
 
 Groß geschrieben ist, was ein anderes Paket beim Namen nennt, auch in seinen Tests, und der
 Typ, den eine solche Funktion annimmt oder zurückgibt: Wer das Ergebnis in der Hand hält, muss
-seinen Typ nachschlagen können. Alles andere ist klein. In einem Thema unter `api/` sind öffentlich der
+seinen Typ nachschlagen können. Alles andere ist klein. In einem Thema unter `internal/api/` sind öffentlich der
 Typ `Tueren` und seine Türen. Der Grund steht in Best Practices: „Every exported type increases
 the cognitive load for the reader."
 
@@ -275,14 +275,14 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut
   das für den Rumpf jeder Anfrage (`apierrors.MeldungAnfrageUnlesbar`, `tuer.Pruefmeldung`). Die
   eine Ausnahme ist die Diagnose des Mailservers (502): Ihr Text ist für das Formular der
-  Testmail gebaut und geht mit Absicht hinaus (`api/system/mail_einstellungen.go`).
+  Testmail gebaut und geht mit Absicht hinaus (`internal/api/system/mail_einstellungen.go`).
 - Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
   und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
   there is extra information in the error that the caller needs programmatically, it should
   ideally be presented structurally" (Best Practices, „Error structure").
 - Erklärt eine Prüfung ihre Regel selbst, steht der Grund als Feld neben der Regel
   (`lmfplan.SommerferienFehler.Grund`); die Tür setzt den Namen der Einstellung davor. In
-  `repository/` baut `regelVerletzt` einen `regelFehler` aus dem benannten Fehler und dem Grund
+  `internal/repository/` baut `regelVerletzt` einen `regelFehler` aus dem benannten Fehler und dem Grund
   in Worten der Bibliothek („höchstens 60 Zeichen"); die Tür erkennt den Fehler mit `errors.Is`
   und setzt den Grund mit `repository.MitGrund` hinter ihren Satz („Standort nicht geändert:
   höchstens 60 Zeichen"). Die
@@ -364,7 +364,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Englisch bleibt, was Svelte, das Web oder eine Bibliothek vorgibt: Runen (`$state`),
   Ereignisse (`onclick`), die Ordner `stores`, `actions`, `utils`, `layout`, `ui`, Wörter wie
   `route` und `fetch`, und die Vorsilbe `use` eines Moduls mit Zustand (`useLeserakte`).
-- Ein Ordner mit Fachbezug heißt deutsch wie sein Thema unter `api/` (`leser`, `etiketten`,
+- Ein Ordner mit Fachbezug heißt deutsch wie sein Thema unter `internal/api/` (`leser`, `etiketten`,
   `einstellungen`, `statistik`).
 - Jede Komponente und jedes Modul liegt im Ordner seines Themas unter `components/`, die Teile
   einer Ansicht bei ihr (`components/leserakte/`); ein Werkzeug ohne Thema liegt in `utils/`,
@@ -393,7 +393,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   methods they actually use". Bekommt eine Tür eine Attrappe als Parameter, erklärt das Paket der
   Tür die Schnittstelle; tauschen die Tests eines Dienstes ein Feld aus, erklärt der Dienst sie.
 - Sie heißt nach dem Vorgang, für den der Nutzer sie braucht, und ist klein geschrieben, weil nur
-  ihr Paket sie nennt (`leserLoeschung` in `jobs`, `kontoPflege` in `api/benutzer`): „Focus on
+  ihr Paket sie nennt (`leserLoeschung` in `jobs`, `kontoPflege` in `internal/api/benutzer`): „Focus on
   the required behavior rather than just abstract named patterns like “service” or
   “repository”" und „Keep interface types unexported if they are only used internally within a
   package" (Decisions, „Interfaces"). Jede Methode trägt einen Kommentar mit dem, worauf sich der

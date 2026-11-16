@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pkg/closeutil"
 	"bibliothek/internal/smtptest"
-	"bibliothek/pkg/closeutil"
 )
 
 // lies, schreibe und waehle sprechen den Server auf der Ebene des Protokolls an, wo net/smtp

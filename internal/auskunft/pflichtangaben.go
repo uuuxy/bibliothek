@@ -3,9 +3,9 @@ package auskunft
 import (
 	"fmt"
 
-	"bibliothek/jobs"
-	"bibliothek/pkg/leserart"
-	"bibliothek/repository"
+	"bibliothek/internal/jobs"
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/repository"
 )
 
 // dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für einen

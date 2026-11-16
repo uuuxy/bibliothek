@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
-	"bibliothek/repository"
 )
 
 func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {

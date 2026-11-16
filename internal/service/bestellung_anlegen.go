@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/bestelllink"
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/bestelllink"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 )

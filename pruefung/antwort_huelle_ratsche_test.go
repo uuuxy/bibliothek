@@ -17,8 +17,8 @@ import (
 // dass ein Fehler erschien: Die Leserakte zeigte so keinen Bescheid (docs/sweeps.md, „Lesestelle
 // erwartet die Antwortform des Nachbarpakets").
 //
-// Die Regel: Unter api/ trägt kein Map-Literal den Schlüssel "data", und im ganzen Baum trägt kein
-// Feld den JSON-Namen data. Felder zählen überall, weil auch ein Typ aus repository/ oder
+// Die Regel: Unter internal/api/ trägt kein Map-Literal den Schlüssel "data", und im ganzen Baum trägt kein
+// Feld den JSON-Namen data. Felder zählen überall, weil auch ein Typ aus internal/repository/ oder
 // internal/ als Antwort hinausgeht.
 //
 // Blindheit: Ein Schlüssel, der erst zur Laufzeit entsteht, und eine Hülle unter anderem Namen
@@ -50,7 +50,7 @@ func TestAntwortOhneHuelle(t *testing.T) {
 		}
 		pfad = filepath.ToSlash(pfad)
 		gelesen++
-		istTuer := strings.HasPrefix(pfad, "api/")
+		istTuer := strings.HasPrefix(pfad, "internal/api/")
 		if istTuer {
 			unterAPI++
 		}
@@ -63,7 +63,7 @@ func TestAntwortOhneHuelle(t *testing.T) {
 		t.Fatalf("Baum nicht lesbar: %v", err)
 	}
 	if gelesen < 300 || unterAPI < 100 {
-		t.Fatalf("nur %d Dateien gelesen, %d davon unter api/ — die Prüfung misst nichts", gelesen, unterAPI)
+		t.Fatalf("nur %d Dateien gelesen, %d davon unter internal/api/ — die Prüfung misst nichts", gelesen, unterAPI)
 	}
 	for _, v := range verstoesse {
 		t.Errorf("%s — eine Tür antwortet mit dem Wert selbst, ohne Hülle {\"data\": …} "+
@@ -106,7 +106,7 @@ func TestHuellenIn_ErkenntDieFormen(t *testing.T) {
 		funde            int
 	}{
 		{"Schlüssel in einer Tür", `package p; var a = map[string]any{"data": 1}`, true, 1},
-		{"Schlüssel außerhalb von api/", `package p; var a = map[string]any{"data": 1}`, false, 0},
+		{"Schlüssel außerhalb von internal/api/", `package p; var a = map[string]any{"data": 1}`, false, 0},
 		{"anderer Schlüssel", `package p; var a = map[string]any{"daten": 1, "meldung": "x"}`, true, 0},
 		{"Feld mit Tag", "package p; type T struct { Inhalt []int `json:\"data\"` }", false, 1},
 		{"Feld mit Tag und Option", "package p; type T struct { Inhalt []int `json:\"data,omitempty\"` }", false, 1},

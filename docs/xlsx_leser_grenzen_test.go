@@ -16,17 +16,17 @@ import (
 // schützt den gewöhnlichen Weg gegen negative Zeichenketten-Indizes, den Weg über die
 // Auslagerung aber nicht. Erreichbar wird der nur, wenn die XML-Grenze kleiner ist als die
 // Gesamtgrenze, und genau das verhindert Optionen(), indem es beide gleich setzt
-// (pkg/xlsxgrenze/negativer_sharedstring_test.go misst es). Ein direkter Aufruf von
+// (internal/pkg/xlsxgrenze/negativer_sharedstring_test.go misst es). Ein direkter Aufruf von
 // OpenReader ginge an allem vorbei; eine weitere Lesestelle ist deshalb eine Frage.
 var xlsxLeserBestand = map[string]string{
-	"api/system/littera_import.go": "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
-	"internal/lusd/quelle.go":      "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",
-	"api/katalog/listenimport.go":  "Listenimport des Bestands",
+	"internal/api/system/littera_import.go": "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
+	"internal/lusd/quelle.go":               "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",
+	"internal/api/katalog/listenimport.go":  "Listenimport des Bestands",
 }
 
 // einzigerOpenReader ist die eine Datei, die excelize.OpenReader rufen darf; dass die
 // Zeile dort die Optionen mit den Grenzen trägt, prüft dieser Test gleich mit.
-const einzigerOpenReader = "pkg/xlsxgrenze/xlsxgrenze.go"
+const einzigerOpenReader = "internal/pkg/xlsxgrenze/xlsxgrenze.go"
 
 var (
 	musterOpenReader = regexp.MustCompile(`excelize\.OpenReader\(`)

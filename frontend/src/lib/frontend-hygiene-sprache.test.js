@@ -12,7 +12,7 @@ import {
 // Ratsche: Datei- und Ordnernamen der Oberfläche sind deutsch (docs/STIL.md, Abschnitt 13).
 //
 // Dieselbe Sache heißt im Go-Code und in der Oberfläche gleich: Wer in der Leserakte einen
-// Fehler sucht, findet die Tür in api/leser und soll die Komponente nicht unter Student suchen.
+// Fehler sucht, findet die Tür in internal/api/leser und soll die Komponente nicht unter Student suchen.
 // Gezählt werden die Wörter eines Pfads unter src/, zerlegt an Großbuchstaben, Unterstrichen und
 // Bindestrichen, gegen eine feste Liste englischer Wörter. Lehnwörter (Barcode, Cover, Scan,
 // Import, Upload), die Bauteile von M3 ohne deutschen Namen (Button, Chip, Dialog, Snackbar,

@@ -16,7 +16,7 @@
 	// braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet wird
 	// gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit, und das stellt
 	// die Schulleitung fest, nicht die Bücherei. Gebucht wird trotzdem, was den Bestand
-	// angeht. Entschieden wird es am Server (repository/schaden_melden.go); hier steht nur,
+	// angeht. Entschieden wird es am Server (internal/repository/schaden_melden.go); hier steht nur,
 	// was der Dialog zeigt und fragt.
 	/** @type {{ ausleihe: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
 	let { ausleihe, onCancel, onSubmit, isSubmitting } = $props();

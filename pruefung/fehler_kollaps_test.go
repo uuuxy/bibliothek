@@ -30,17 +30,17 @@ import (
 // im ersten verschachtelten if ein; die gilt als sauber.
 //
 // Reparatur bei Rot: `errors.Is(err, pgx.ErrNoRows)` bzw. den Sentinel prüfen und den Rest als
-// 500 (oder eingepackt) weiterreichen, wie repository/titel_metadaten.go.
+// 500 (oder eingepackt) weiterreichen, wie internal/repository/titel_metadaten.go.
 var kollapsBestand = map[string]string{
 	// „datei:funktion": Einordnung. Die Stellen hier sind vertretbar; der Fehler ist dort die
 	// negative Antwort.
-	"api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
+	"internal/api/csrf.go:csrfMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
 	// Die drei Stellen mit dem Token lesen über PruefeToken die Datenbank (Sperrliste, Kontostatus).
 	// Die Zeile davor ordnet ErrPruefungGestoert als 503 ein; die verbleibende 401 ist ein Fehler
 	// beim Lesen oder an der Signatur, ein widerrufenes Token oder ein deaktiviertes Konto.
-	"api/tuer/sitzung.go:PruefeSitzung":   "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
-	"auth/anmelden.go:leseSitzung":        "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
-	"auth/anmelden.go:SitzungVerlaengern": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"internal/api/tuer/sitzung.go:PruefeSitzung":   "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"internal/auth/anmelden.go:leseSitzung":        "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"internal/auth/anmelden.go:SitzungVerlaengern": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	// Die drei Kataloge (DNB, Google, OpenLibrary) stehen nicht hier, sie ordnen ein: Netzausfall =
 	// 502 (katalogdienste.ErrKatalogdiensteNichtErreichbar), erreichbar ohne Treffer = 404.
 }

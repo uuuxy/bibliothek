@@ -95,7 +95,7 @@ func TestFuehreAus_OhneSchluessel(t *testing.T) {
 }
 
 // Der Aufrufer ist ein Skript des Deploys. Ein Abbruch nähme ihm die Sicherung ganz; deshalb
-// warnen, nicht verweigern (wie jobs/backup.go).
+// warnen, nicht verweigern (wie internal/jobs/backup.go).
 func TestFuehreAus_KurzerSchluesselWarntUndArbeitet(t *testing.T) {
 	var aus, fehler bytes.Buffer
 	err := fuehreAus(nil, bytes.NewReader(gzipDaten(t, []byte("x"))), &aus, &fehler,

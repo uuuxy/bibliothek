@@ -7,7 +7,7 @@
 	 * Schule hier selbst ein; die Warnung unter Betriebsbereitschaft zeigt hierher, nicht
 	 * auf ein Programm-Update. Ein eigener Eintrag für ein Programmjahr gilt vor dem
 	 * Programm (der Landesbeschluss kann sich ändern). Gespeichert wird eine JSON-Liste
-	 * unter „sommerferien"; geprüft wird sie im Server (pkg/lmfplan/ferien_einstellung.go).
+	 * unter „sommerferien"; geprüft wird sie im Server (internal/pkg/lmfplan/ferien_einstellung.go).
 	 * Teil der Kategorie „LUSD & Versetzung" (SchuljahreswechselBereich).
 	 */
 	import { untrack } from 'svelte';

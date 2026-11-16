@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 )
 
 // ErgebnisSchluessel ist der Schlüssel des Ergebnisses in system_einstellungen.

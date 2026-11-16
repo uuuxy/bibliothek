@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 )
 
-// Die Bestandsdaten und ihre Schlüssel liegen in repository/lusd_bestand.go, weil das SQL
+// Die Bestandsdaten und ihre Schlüssel liegen in internal/repository/lusd_bestand.go, weil das SQL
 // in der Datenbankschicht steht. Hier stehen nur die Nachschlagekarten des Imports.
 
 type bestandsSchueler = repository.LUSDBestandsSchueler

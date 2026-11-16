@@ -1,5 +1,5 @@
 // Welche Aktionen die Schüler-Ansichten anbieten, entscheidet das Recht — dasselbe,
-// das der Server an der jeweiligen Route verlangt (api/routen_leser.go).
+// das der Server an der jeweiligen Route verlangt (internal/api/routen_leser.go).
 //
 // Ein Schalter auf der Berechtigungsseite wirkt nur, wenn die Oberfläche ihn liest, statt
 // `role === 'admin'` zu fragen. Die Zuordnung steht einmal hier, damit Profil und
@@ -21,7 +21,7 @@ export function schuelerRechte(user) {
 		// Papierkorb: DELETE /api/schueler/{id}, GET …/deleted, POST …/restore
 		loeschen: hatRecht(user, 'delete_students'),
 		// Hängt am Leser ein Zugang (`hat_zugang`), verlangt das Löschen zusätzlich manage_users:
-		// Mit ihm fällt das Konto (api/leser/leser_aendern.go, kontoregel).
+		// Mit ihm fällt das Konto (internal/api/leser/leser_aendern.go, kontoregel).
 		loeschenMitZugang: hatRecht(user, 'manage_users'),
 		// DELETE /api/schueler/deleted/{id} — sofortiges endgültiges Löschen aus dem
 		// Papierkorb (Art.-17-Löschverlangen), nicht dasselbe Recht wie der Soft-Delete
@@ -31,7 +31,7 @@ export function schuelerRechte(user) {
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// Zeigt auf den Leser ein Zugangskonto, verlangt der Server zusätzlich manage_users: Die
 		// Auskunft nennt dann Konto, Kontoereignisse und selbst bearbeitete Vorgänge mit
-		// IP-Adresse (api/leser/dsgvo_auskunft.go, dsgvoKontoRecht).
+		// IP-Adresse (internal/api/leser/dsgvo_auskunft.go, dsgvoKontoRecht).
 		auskunftMitKonto: hatRecht(user, 'manage_users'),
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
@@ -46,7 +46,7 @@ export function schuelerRechte(user) {
 
 /**
  * Bietet die Akte DIESES Lesers die DSGVO-Auskunft an? `profil.email` ist die Adresse am
- * Zugangskonto (api/leser/leserakte.go); leer heißt: kein Konto.
+ * Zugangskonto (internal/api/leser/leserakte.go); leer heißt: kein Konto.
  * @param {ReturnType<typeof schuelerRechte>} rechte
  * @param {{ email?: string } | null | undefined} profil
  * @returns {boolean}

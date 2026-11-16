@@ -29,14 +29,14 @@ import (
 // datenbankschicht nennt die Pakete, die Anweisungen formulieren, und warum. Ein Eintrag mit
 // Schrägstrich am Ende gilt für alle Pakete darunter.
 var datenbankschicht = map[string]string{
-	"repository":         "Abfragen und Schreibpfade der Anwendung",
-	"db":                 "Pool, Migrationen, Rechte-Seed und Übernahmen beim Start; repository/ bindet db/ ein",
-	"internal/littera":   "Schreiber der einmaligen Übernahme aus Littera",
-	"internal/pgtest":    "Prüfhilfe, legt das Schema der Testdatenbank an",
-	"internal/testdaten": "Prüfhilfe, legt Zeilen in der Testdatenbank an und leert sie",
-	"internal/testweg":   "Prüfhilfe, legt Zeilen an und liest sie, wo sie Pakete des Programms braucht",
-	"scripts":            "Einmal-Skripte außerhalb des Programms",
-	"cmd/":               "Einmal-Werkzeuge mit eigener Verbindung",
+	"internal/repository": "Abfragen und Schreibpfade der Anwendung",
+	"internal/db":         "Pool, Migrationen, Rechte-Seed und Übernahmen beim Start; internal/repository/ bindet internal/db/ ein",
+	"internal/littera":    "Schreiber der einmaligen Übernahme aus Littera",
+	"internal/pgtest":     "Prüfhilfe, legt das Schema der Testdatenbank an",
+	"internal/testdaten":  "Prüfhilfe, legt Zeilen in der Testdatenbank an und leert sie",
+	"internal/testweg":    "Prüfhilfe, legt Zeilen an und liest sie, wo sie Pakete des Programms braucht",
+	"scripts":             "Einmal-Skripte außerhalb des Programms",
+	"cmd/":                "Einmal-Werkzeuge mit eigener Verbindung",
 }
 
 // sqlFunde zählt je Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken.
@@ -48,8 +48,8 @@ var sqlBestand = map[string]sqlFunde{
 	// Die Restore-Probe legt auf dem Server eine Wegwerf-Datenbank an, entfernt sie und zählt
 	// darin über eine eigene Verbindung die Tabellen. Keine der Anweisungen trifft eine Tabelle
 	// der Anwendung; sie bleiben bei der Probe.
-	"jobs/restore_probe.go":        {texte: 0, aufrufe: 3},
-	"jobs/restore_probe_hilfen.go": {texte: 1, aufrufe: 1},
+	"internal/jobs/restore_probe.go":        {texte: 0, aufrufe: 3},
+	"internal/jobs/restore_probe_hilfen.go": {texte: 1, aufrufe: 1},
 }
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
@@ -184,11 +184,11 @@ func TestSchichtung_SQLNurInDerDatenbankschicht(t *testing.T) {
 		switch {
 		case !imBestand:
 			meldungen = append(meldungen, fmt.Sprintf("%s formuliert oder schickt SQL (%d Texte, %d Aufrufe). "+
-				"Die Anweisung gehört nach repository/, als Funktion über repository.Datenbank; das Paket ruft sie "+
+				"Die Anweisung gehört nach internal/repository/, als Funktion über repository.Datenbank; das Paket ruft sie "+
 				"auf (ARCHITEKTUR 5.2.2).", pfad, ist.texte, ist.aufrufe))
 		case ist.texte > soll.texte || ist.aufrufe > soll.aufrufe:
 			meldungen = append(meldungen, fmt.Sprintf("%s trägt mehr SQL als im Bestand: %d Texte und %d Aufrufe "+
-				"statt %d und %d. Die neue Anweisung gehört nach repository/.",
+				"statt %d und %d. Die neue Anweisung gehört nach internal/repository/.",
 				pfad, ist.texte, ist.aufrufe, soll.texte, soll.aufrufe))
 		case ist != soll:
 			meldungen = append(meldungen, fmt.Sprintf("%s trägt weniger SQL als im Bestand — bitte sqlBestand "+
@@ -207,10 +207,10 @@ func TestSchichtung_SQLNurInDerDatenbankschicht(t *testing.T) {
 		}
 	}
 
-	// Nicht-leer-Garantie: Fänden die Detektoren in repository/ kaum etwas, wäre „kein SQL
+	// Nicht-leer-Garantie: Fänden die Detektoren in internal/repository/ kaum etwas, wäre „kein SQL
 	// außerhalb" keine Aussage.
-	if r := jeEintrag["repository"]; dateien < 300 || r.texte < 300 || r.aufrufe < 300 {
-		t.Fatalf("%d Dateien gelesen, in repository/ %d Texte und %d Aufrufe gezählt — die Detektoren "+
+	if r := jeEintrag["internal/repository"]; dateien < 300 || r.texte < 300 || r.aufrufe < 300 {
+		t.Fatalf("%d Dateien gelesen, in internal/repository/ %d Texte und %d Aufrufe gezählt — die Detektoren "+
 			"messen offenbar nichts mehr", dateien, r.texte, r.aufrufe)
 	}
 	sort.Strings(meldungen)
@@ -327,15 +327,15 @@ func TestDatenbankAufrufe_ErkenntJedeForm(t *testing.T) {
 }
 
 // Ein Eintrag mit Schrägstrich gilt für die Pakete darunter, ein Eintrag ohne nur für sich:
-// „db" darf kein Paket „db_export" freistellen.
+// „internal/db" darf kein Paket „internal/db_export" freistellen.
 func TestInDatenbankschicht_GrenztPaketeAb(t *testing.T) {
-	drin := []string{"repository", "db", "internal/littera", "internal/testdaten", "cmd/littera-import"}
+	drin := []string{"internal/repository", "internal/db", "internal/littera", "internal/testdaten", "cmd/littera-import"}
 	for _, p := range drin {
 		if _, ok := inDatenbankschicht(p); !ok {
 			t.Errorf("%s gilt nicht als Datenbankschicht", p)
 		}
 	}
-	draussen := []string{"api", "jobs", "auth", "internal/service", "internal/katalogdienste", "internal", "repository_alt", "db_export", "cmd", "internal/littera/neu", "."}
+	draussen := []string{"internal/api", "internal/jobs", "internal/auth", "internal/service", "internal/katalogdienste", "internal", "internal/repository_alt", "internal/db_export", "cmd", "internal/littera/neu", "."}
 	for _, p := range draussen {
 		if eintrag, ok := inDatenbankschicht(p); ok {
 			t.Errorf("%s gilt als Datenbankschicht (Eintrag %q)", p, eintrag)

@@ -21,11 +21,11 @@ import (
 // Die Liste steht absichtlich hier im Test, nicht in einer Sammeldatei: Eine ausgelagerte Liste
 // des Bestands versteckt sich vor der Prüfung.
 var eingetragenePrivilegFelder = map[string]string{
-	"api/theke/eingabe_anfrage_antwort.go:override_block": "Gate an der HTTP-Grenze: nur mit HatRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
-	"api/mahnwesen/mahnlisten_versand.go:override_email":  "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
-	"internal/lusd/lauf.go:skipped_no_id":                 "Antwort-Zähler, kein Request-Feld",
-	"api/mahnwesen/mahnlisten_versand.go:skipped_count":   "Antwort-Zähler, kein Request-Feld",
-	"api/mahnwesen/mahnlisten_versand.go:skipped":         "Antwort-Zähler, kein Request-Feld",
+	"internal/api/theke/eingabe_anfrage_antwort.go:override_block": "Gate an der HTTP-Grenze: nur mit HatRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
+	"internal/api/mahnwesen/mahnlisten_versand.go:override_email":  "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
+	"internal/lusd/lauf.go:skipped_no_id":                          "Antwort-Zähler, kein Request-Feld",
+	"internal/api/mahnwesen/mahnlisten_versand.go:skipped_count":   "Antwort-Zähler, kein Request-Feld",
+	"internal/api/mahnwesen/mahnlisten_versand.go:skipped":         "Antwort-Zähler, kein Request-Feld",
 }
 
 var (

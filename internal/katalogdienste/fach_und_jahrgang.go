@@ -1,7 +1,7 @@
 package katalogdienste
 
 import (
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,7 +40,7 @@ var (
 // automatischeKategorisierung liest aus Titel und Untertitel eines Buches das Fach und die
 // Schulstufe als Spanne „von … bis", als Vorschlag der ISBN-Abfrage für die Maske.
 //
-// Das Fach kommt aus der einen Stichwortliste in pkg/lmf.
+// Das Fach kommt aus der einen Stichwortliste in internal/pkg/lmf.
 func automatischeKategorisierung(titel, untertitel string) (fach string, stufeVon, stufeBis int) {
 	text := strings.ToLower(strings.TrimSpace(titel + " " + untertitel))
 	stufeVon, stufeBis = stufenAusText(text)

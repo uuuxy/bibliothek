@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"bibliothek/db"
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/pkg/lmf"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/pkg/lmf"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 )

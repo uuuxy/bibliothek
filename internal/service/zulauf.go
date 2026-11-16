@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Zulaufgruppe ist eine Gruppe der Liste im Zulauf: die Titel einer Bestellung, beim Altbestand

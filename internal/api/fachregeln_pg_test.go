@@ -1,0 +1,206 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func mahnstufeVon(t *testing.T, pool *pgxpool.Pool, ausleiheID string) int {
+	t.Helper()
+	var m int
+	if err := pool.QueryRow(context.Background(),
+		`SELECT mahnstufe FROM ausleihen WHERE id = $1`, ausleiheID).Scan(&m); err != nil {
+		t.Fatalf("mahnstufe lesen: %v", err)
+	}
+	return m
+}
+
+// markiereGemahntUndUeberfaellig setzt eine Ausleihe auf Mahnstufe `stufe` und eine bereits
+// abgelaufene Frist — der Ausgangszustand für die Eskalations-Tests.
+func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID string, stufe int, frist time.Time) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE ausleihen SET mahnstufe = $2, letztes_mahndatum = now(), rueckgabe_frist = $3 WHERE id = $1`,
+		ausleiheID, stufe, frist); err != nil {
+		t.Fatalf("mahnstufe/frist setzen: %v", err)
+	}
+}
+
+// TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck: Schiebt eine Verlängerung die
+// Frist wieder in die Zukunft, wird die Mahn-Eskalation zurückgesetzt (mahnstufe = 0). Sonst
+// übersprang ein nach der 1. Mahnung verlängertes und erneut überzogenes Buch die 1. Stufe und
+// eskalierte sofort zur Rechnung. Bleibt die Frist trotz "Verlängerung" in der Vergangenheit,
+// bleibt die Mahnstufe erhalten (Eskalation berechtigt).
+func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+
+	vergangenheit := time.Now().AddDate(0, 0, -60)
+
+	// Klasse 9z: wird in die Zukunft verlängert -> Reset erwartet.
+	sidZ := testdaten.LegeSchuelerAn(t, pool, "S-MST-Z", "Mona", "9z")
+	loanReset := testdaten.LegeAusleiheMitFristAn(t, pool, sidZ, "LMF-Mathe 9", vergangenheit)
+	markiereGemahntUndUeberfaellig(t, pool, loanReset, 2, vergangenheit)
+
+	// Klasse 9y: "Verlängerung" auf ein vergangenes Datum -> Mahnstufe bleibt.
+	sidY := testdaten.LegeSchuelerAn(t, pool, "S-MST-Y", "Bodo", "9y")
+	loanKeep := testdaten.LegeAusleiheMitFristAn(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
+	markiereGemahntUndUeberfaellig(t, pool, loanKeep, 2, vergangenheit)
+
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	// (a) Zukunft -> Reset.
+	zukunft := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
+	if rec := verlaengereLernmittelDerKlasse(t, srv, "9z", zukunft); rec.Code != http.StatusOK {
+		t.Fatalf("Extend Zukunft = %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if m := mahnstufeVon(t, pool, loanReset); m != 0 {
+		t.Errorf("Verlängerung in die Zukunft: Mahnstufe = %d, erwartet 0 (Eskalations-Falle)", m)
+	}
+
+	// (b) Vergangenheit -> Mahnstufe bleibt erhalten.
+	vergangen := time.Now().AddDate(0, 0, -5).Format("2006-01-02")
+	if rec := verlaengereLernmittelDerKlasse(t, srv, "9y", vergangen); rec.Code != http.StatusOK {
+		t.Fatalf("Extend Vergangenheit = %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if m := mahnstufeVon(t, pool, loanKeep); m != 2 {
+		t.Errorf("weiterhin überfällig: Mahnstufe = %d, erwartet 2 (unverändert)", m)
+	}
+}
+
+func verlaengereLernmittelDerKlasse(t *testing.T, srv *Server, klasse, datum string) *httptest.ResponseRecorder {
+	t.Helper()
+	body := fmt.Sprintf(`{"klasse":%q,"neues_rueckgabe_datum":%q}`, klasse, datum)
+	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.lernmittel().LernmittelDerKlasseVerlaengern()(rec, req)
+	return rec
+}
+
+// TestKlassensatzReservierung_Bestandsdeckelung: Es dürfen nicht mehr Exemplare reserviert
+// werden, als die Bibliothek besitzt; sonst bleibt die Reservierung als unlösbare Aufgabe
+// stehen.
+func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+
+	tid := testdaten.LegeTitelAn(t, pool, "Klassenlektuere")
+	for i := 0; i < 5; i++ {
+		testdaten.LegeExemplarAn(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
+	}
+	uid := testdaten.LegeKontoAn(t, pool, "Res", "Kraft", "res@example.org", "mitarbeiter", true)
+
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	// 150 Exemplare bei 5 im Bestand -> 400 (Überbuchung abgewiesen).
+	if rec := reservierung(t, srv, uid, tid, 150); rec.Code != http.StatusBadRequest {
+		t.Fatalf("Überbuchung (150 von 5) = %d, erwartet 400: %s", rec.Code, rec.Body.String())
+	}
+	// 5 Exemplare -> 201 (erfüllbar).
+	if rec := reservierung(t, srv, uid, tid, 5); rec.Code != http.StatusCreated {
+		t.Fatalf("gültige Reservierung (5 von 5) = %d, erwartet 201: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int) *httptest.ResponseRecorder {
+	t.Helper()
+	body := fmt.Sprintf(`{"titel_id":%q,"klasse":"5a","anzahl":%d}`, titelID, anzahl)
+	req := httptest.NewRequest(http.MethodPost, "/api/reservierungen/klassensatz", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: userID, Rolle: auth.RolleMitarbeiter}))
+	rec := httptest.NewRecorder()
+	srv.portal().KlassensatzReservierungAnlegen()(rec, req)
+	return rec
+}
+
+// TestLadenhueter_NeuzugangIstKeiner: Ein frisch gekaufter, noch nie ausgeliehener Titel darf
+// nicht sofort als Ladenhüter und Kandidat zum Aussondern gelten. Nur ein alter (über 2 Jahre im
+// Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
+func TestLadenhueter_NeuzugangIstKeiner(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	altTid := testdaten.LegeTitelAn(t, pool, "Uralt nie ausgeliehen")
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
+		 VALUES ($1, 'BC-OLD', true, now() - INTERVAL '3 years')`, altTid); err != nil {
+		t.Fatalf("altes Exemplar: %v", err)
+	}
+	neuTid := testdaten.LegeTitelAn(t, pool, "Frischer Neuzugang")
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
+		 VALUES ($1, 'BC-NEW', true, now())`, neuTid); err != nil {
+		t.Fatalf("neues Exemplar: %v", err)
+	}
+
+	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	warmers, err := repository.LadeLadenhueter(ctx, srv.DB.Pool, "", 100)
+	if err != nil {
+		t.Fatalf("LadeLadenhueter: %v", err)
+	}
+
+	titel := map[string]bool{}
+	for _, w := range warmers {
+		titel[w.Titel] = true
+	}
+	if !titel["Uralt nie ausgeliehen"] {
+		t.Error("alter, nie ausgeliehener Titel fehlt in der Ladenhüter-Liste")
+	}
+	if titel["Frischer Neuzugang"] {
+		t.Error("frischer Neuzugang landet fälschlich auf der Ladenhüter/Aussonderungs-Liste")
+	}
+}
+
+// TestMahnwesen_KeineMahnungFuerGeloeschte: Für einen in den Papierkorb gelöschten Schüler
+// dürfen keine Mahndaten mehr verarbeitet werden; sonst gingen Mahnungen über ihn an die frühere
+// Klassenleitung, ein Verstoß gegen die DSGVO.
+func TestMahnwesen_KeineMahnungFuerGeloeschte(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	pastFrist := time.Now().AddDate(0, 0, -10)
+	aktiv := testdaten.LegeSchuelerAn(t, pool, "MZ-1", "Nils", "7a")
+	testdaten.LegeAusleiheMitFristAn(t, pool, aktiv, "Mahnbuch A", pastFrist)
+	geloescht := testdaten.LegeSchuelerAn(t, pool, "MZ-2", "Greta", "7a")
+	testdaten.LegeAusleiheMitFristAn(t, pool, geloescht, "Mahnbuch B", pastFrist)
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() WHERE id = $1`, geloescht); err != nil {
+		t.Fatalf("Schüler löschen: %v", err)
+	}
+
+	repo := repository.NewMahnwesenAbfragen(pool)
+	klassen, err := repo.LadeUeberfaelligeNachKlasse(ctx, "")
+	if err != nil {
+		t.Fatalf("LadeUeberfaelligeNachKlasse: %v", err)
+	}
+
+	ids := map[string]bool{}
+	for _, k := range klassen {
+		for _, sch := range k.Schueler {
+			ids[sch.SchuelerID] = true
+		}
+	}
+	if !ids[aktiv] {
+		t.Error("aktiver überfälliger Schüler fehlt in der Mahnliste")
+	}
+	if ids[geloescht] {
+		t.Error("gelöschter Schüler erscheint in der Mahnliste (Zombie-Mahnung / DSGVO-Verstoß)")
+	}
+}

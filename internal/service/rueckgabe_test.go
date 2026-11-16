@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"

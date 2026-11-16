@@ -1,0 +1,46 @@
+package leser
+
+import (
+	"errors"
+	"net/http"
+	"strings"
+
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/crypto"
+	"bibliothek/internal/repository"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// Foto lädt das verschlüsselte Foto eines Schülers aus der
+// Datenbank, entschlüsselt es im Arbeitsspeicher und liefert es an die Oberfläche aus.
+func (t *Tueren) Foto() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// {barcode_id}, nicht {id}: siehe Routen-Registrierung in internal/api/routen_leser.go —
+		// unter dem Namen "id" hätte die UUID-Prüfung jeden Barcode abgewiesen.
+		barcodeID := strings.TrimSpace(r.PathValue("barcode_id"))
+		if barcodeID == "" {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Lesers fehlt", nil)
+			return
+		}
+
+		verschluesselt, err := repository.LadeFotoZurAusweisnummer(ctx, t.DB.Pool, barcodeID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Foto gefunden", nil)
+			return
+		}
+		if err != nil {
+			// Ein Fehler der Datenbank ist kein „kein Foto": 500 statt 404.
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Im Arbeitsspeicher entschlüsseln und mit den Sicherheits-Köpfen ausliefern.
+		if err := crypto.SchreibeEntschluesselt(w, verschluesselt, "image/webp"); err != nil {
+			// SchreibeEntschluesselt hat dann schon mit einem Fehler geantwortet.
+			return
+		}
+	}
+}

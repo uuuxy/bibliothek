@@ -3,7 +3,7 @@ package katalogdienste
 import (
 	"testing"
 
-	"bibliothek/pkg/betrag"
+	"bibliothek/internal/pkg/betrag"
 )
 
 // Die Vorlagen stammen aus echten DNB-Antworten zu Titeln aus dem Bestand dieser

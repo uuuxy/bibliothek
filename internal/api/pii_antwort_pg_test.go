@@ -1,0 +1,831 @@
+package api
+
+// Die Antworten halten sich an die Stufen der PII-Matrix. Die Prüfung der Matrix
+// (pii_matrix_test.go) vergleicht Route, Recht und Zeile, aber nicht, ob die Antwort sich an ihre
+// Stufe hält; ohne diesen Test bliebe die Stufe eine Zusage, die nur ein Dokument behauptet.
+// Dieser Test schließt die Lücke für die GET-Routen:
+//
+//  1. Er sät eine Welt mit Kanarienwerten je PII-Stufe, Namen (Stufe 1),
+//     Sperrgrund/LUSD/Geburtsdatum/Schadenstext (Stufe 2), Adresse/Eltern-Mail (Stufe 3),
+//     samt überfälliger Ausleihe, Schadensfall, Vormerkung und Eintrag im Protokoll, damit die
+//     Antworten die Daten auch wirklich führen können.
+//  2. Er ruft jede GET-Route der Matrix über den echten Router auf (Routes() samt Middleware),
+//     und zwar mit genau dem Recht ihrer Matrix-Zeile, nicht als Admin: Die Stufe bemisst sich
+//     an dem, was das Recht der Zeile allein öffnet (Kopf der Matrix), und Zusatzinhalte hinter
+//     view_students (Sperrgrund, Name des Ausleihers eines Geräts) dürfen hier gerade nicht
+//     auftauchen.
+//  3. Er prüft: Kein Kanarienwert einer Stufe oberhalb der dokumentierten darf in der Antwort
+//     stehen (PDF-Ströme werden dafür entpackt, pdftest.Suchtext).
+//  4. Gegen das Loch der leeren Antwort („nichts drin, also trivial grün") tragen
+//     Schlüsselrouten eine Positiv-Kontrolle: Dort muss der erlaubte Kanarienwert erscheinen,
+//     sonst misst der Test nichts.
+//
+// Vollständigkeit ist erzwungen: Jede GET-Zeile der Matrix braucht einen Aufruf oder einen
+// begründeten Ausschluss; eine neue GET-Route ohne Einordnung wird rot.
+//
+// Dazu misst der Test die lesenden POST-Routen, deren Antwort Schülerdaten trägt, obwohl der
+// Aufruf nebenwirkungsarm ist: den Theken-Scan (POST /api/action, Stufe 1) samt Batch-Form und
+// die LUSD-Vorschau (POST /api/lusd/preview, Stufe 2; apply=false schreibt nichts). Sie laufen
+// durch denselben Apparat (Kanarienwelt, genau ein Recht, echter Router samt CSRF). Die übrigen
+// Zeilen ohne GET bleiben hier außerhalb: Das sind Schreibpfade, deren Aufruf die Welt
+// verändert; ihre Stufe sichert weiterhin die Handarbeit an der Matrix. Ihr Recht misst
+// rechte_schreibwege_pg_test.go: alle Schreibrouten am echten Router, mit einer Rolle ohne das
+// geforderte Recht, Erwartung 403 mit der Begründung des Rechte-Wächters. Diese Richtung ist
+// ungefährlich: Die Anfrage stirbt vor der Tür, es wird nichts geschrieben oder verschickt.
+//
+// Der Test prüft auch den Kopf der Antwort: Ab Stufe 1 muss sie Cache-Control: no-store tragen,
+// sonst legt der Browser sie ab (pruefeKeinAblegen; dazu adresseTraegtPersonendaten für Routen
+// der Stufe 0 mit einer Personenkennung in der Adresse).
+
+import (
+	"context"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/sse"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+	"bibliothek/internal/xlsxtest"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// ── Kanarienwerte ────────────────────────────────────────────────────────────
+// Frei erfundene, kollisionssichere Werte. Buchdaten (Titel, Buch-Barcodes,
+// Klassennamen) sind bewusst keine Kanarien: Sie sind Stufe-0-Inhalt und dürfen
+// überall stehen.
+var kanarienJeStufe = map[int][]string{
+	1: {"Pruefkanari", "Zugvogel", "Vogelbeere", "SBK-KANARI-1", "SBK-KANARI-2"},
+	2: {"Kanarigrund", "LUSD-KANARI-7", "Kanarischaden", "2013-07-19", "19.07.2013"},
+	3: {"Kanariweg", "Kanaristadt", "kanari-eltern@example.org"},
+}
+
+// verboteneKanarien liefert alle Werte oberhalb der dokumentierten Stufe.
+func verboteneKanarien(stufe int) []string {
+	var out []string
+	for s := stufe + 1; s <= 3; s++ {
+		out = append(out, kanarienJeStufe[s]...)
+	}
+	return out
+}
+
+// ── Die gesäte Welt ──────────────────────────────────────────────────────────
+
+type kanarienWelt struct {
+	mitarbeiterID, anmeldeToken string
+	schuelerID, abgaengerID     string
+	titelID, exemplarID         string
+	zweitTitelID                string
+	buchBarcode                 string
+	schadensfallID              string
+	bescheidID                  string
+}
+
+func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanarienWelt {
+	t.Helper()
+	ctx := context.Background()
+	w := kanarienWelt{buchBarcode: "BUCHBC-GATE-1"}
+
+	// Personal-Konto (Mitarbeiter-Rolle: bekommt je Route genau ein Recht).
+	// Name bewusst ohne Kanarienbezug — Personalnamen sind keine Schülerdaten.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Greta', 'Gatewart', 'gate-ma@example.org', 'mitarbeiter', true)
+		RETURNING id`).Scan(&w.mitarbeiterID); err != nil {
+		t.Fatalf("Mitarbeiter anlegen: %v", err)
+	}
+	token, err := a.ErzeugeToken(w.mitarbeiterID, auth.RolleMitarbeiter, "")
+	if err != nil {
+		t.Fatalf("Session-Token: %v", err)
+	}
+	w.anmeldeToken = token
+
+	// Aktiver Schüler mit allen Stufen: Name/Barcode (1), Geburtsdatum, LUSD-ID
+	// und Sperrgrund (2), Adresse und Eltern-Mail (3).
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr,
+		                      geburtsdatum, lusd_id, is_manually_blocked, block_reason,
+		                      strasse, hausnummer, plz, ort, eltern_email)
+		VALUES ('SBK-KANARI-1', 'Pruefkanari', 'Vogelbeere', '05A', 2031,
+		        '2013-07-19', 'LUSD-KANARI-7', true, 'Kanarigrund Zahlung offen',
+		        'Kanariweg', '7', '61169', 'Kanaristadt', 'kanari-eltern@example.org')
+		RETURNING id`).Scan(&w.schuelerID); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	// Schüler einer Abschlussklasse mit offener Ausleihe; sonst bleibt die Abgängerliste
+	// (Abschlussklassen, noch an der Schule) leer, und ihre Zeile der Stufe 2 wäre trivial
+	// grün. Der Router läuft dafür mit der Uhr in der Saison (Mai–Juli), siehe unten.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('SBK-KANARI-2', 'Zugvogel', 'Vogelbeere', '09H1', 2026)
+		RETURNING id`).Scan(&w.abgaengerID); err != nil {
+		t.Fatalf("Abgänger anlegen: %v", err)
+	}
+
+	// Ein LMF-Termin, damit GET /api/lmf-termine/pdf etwas zu rendern hat (leer = 404).
+	// Stufe 0: Datum, Stunde, Art, Vermerk — bewusst kanarienfrei.
+	var planID string
+	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, veroeffentlicht_am, letzter_tag, letzte_stunde)
+	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6, CURRENT_TIMESTAMP, DATE '2099-06-28', 3) RETURNING id`).Scan(&planID); err != nil {
+		t.Fatalf("Gate-Plan: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
+	     VALUES ($1, 1, DATE '2099-06-28', 3, 'rueckgabe', 'Gate-Termin')`, planID); err != nil {
+		t.Fatalf("Gate-Termin: %v", err)
+	}
+
+	// Titel + Exemplar. Titeldaten sind Stufe 0 und absichtlich kanarienfrei.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO buecher_titel (titel, autor, medientyp, signatur)
+		VALUES ('Antwortgate Testband', 'Verlagshaus', 'Buch', 'GATE 1')
+		RETURNING id`).Scan(&w.titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+		VALUES ($1, $2, false) RETURNING id`, w.titelID, w.buchBarcode).Scan(&w.exemplarID); err != nil {
+		t.Fatalf("Exemplar anlegen: %v", err)
+	}
+
+	// Überfällige offene Ausleihe (Mahnwesen, Ausleiher-Listen) für den Schüler.
+	var ausleiheID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)
+		VALUES ($1, $2, now() - interval '60 days', now() - interval '30 days', $3)
+		RETURNING id`, w.exemplarID, w.schuelerID, w.mitarbeiterID).Scan(&ausleiheID); err != nil {
+		t.Fatalf("Ausleihe anlegen: %v", err)
+	}
+	// Zweites Exemplar als offenes Buch des Abgängers — die Abgängerliste joint
+	// auf rueckgabe_am IS NULL; ohne offenes Buch bliebe sie leer und ihre
+	// Stufe-2-Zeile trivial grün.
+	abgaengerExemplarID := testdaten.LegeExemplarAn(t, pool, w.titelID, "BUCHBC-GATE-2", false, "")
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)
+		VALUES ($1, $2, now() - interval '200 days', now() - interval '100 days', $3)`,
+		abgaengerExemplarID, w.abgaengerID, w.mitarbeiterID); err != nil {
+		t.Fatalf("Abgänger-Ausleihe anlegen: %v", err)
+	}
+
+	// Schadensfall (Gebührenliste, Rechnung) — mit ausleihe_id:
+	// die Rechnung joint über den Ausleihvorgang.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schadensfaelle (exemplar_id, schueler_id, ausleihe_id, beschreibung, betrag)
+		VALUES ($1, $2, $3, 'Kanarischaden Wasserschaden Seite 12', 12.50)
+		RETURNING id`, w.exemplarID, w.schuelerID, ausleiheID).Scan(&w.schadensfallID); err != nil {
+		t.Fatalf("Schadensfall anlegen: %v", err)
+	}
+
+	// Schadensersatz-Bescheid: Der Brief trägt Anrede, Name und Anschrift als Snapshot;
+	// er ist Stufe 3 wie die beiden anderen Briefe fürs Fensterkuvert. Die Positionen des
+	// Briefs sind Forderungen; hier genügt der Kopf mit Snapshot, weil der Test die Antwort
+	// prüft und nicht den Weg der Erstellung.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schadensersatz_bescheide
+			(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
+			 gesamtbetrag, empfaenger_snapshot)
+		VALUES ($1, 'land', 2026, (random() * 900000)::int + 1000,
+			'5830 2026 1234 ' || ((random() * 900000)::int + 1000)::text, CURRENT_DATE + 28, 12.50,
+			jsonb_build_object('anrede', 'Sehr geehrte Erziehungsberechtigte,',
+				'name', 'Vogelbeere Kanari', 'strasse', 'Kanariweg 7',
+				'plz', '12345', 'ort', 'Kanaristadt'))
+		RETURNING id`, w.schuelerID).Scan(&w.bescheidID); err != nil {
+		t.Fatalf("Bescheid anlegen: %v", err)
+	}
+
+	// Vormerkung (Warteliste nennt Name + Klasse).
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`,
+		w.titelID, w.schuelerID); err != nil {
+		t.Fatalf("Vormerkung anlegen: %v", err)
+	}
+	// Ein zweiter Titel desselben Buchs, ebenfalls vom Schüler vorgemerkt: Die Vorschau des
+	// Zusammenführens zählt die Vormerkungen und darf die Person nicht nennen.
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Antwortgate Zweitband') RETURNING id`).
+		Scan(&w.zweitTitelID); err != nil {
+		t.Fatalf("zweiten Titel anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`,
+		w.zweitTitelID, w.schuelerID); err != nil {
+		t.Fatalf("Vormerkung am zweiten Titel anlegen: %v", err)
+	}
+
+	// Eintrag im Protokoll über den echten Schreiber: /api/audit darf ihn nicht ausbreiten,
+	// die Theken-Auskunft muss ihn (Stufe 2) zeigen.
+	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
+		return repository.NewProtokollAbfragen(pool).
+			ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
+	})
+
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM vormerkungen WHERE titel_id IN ($1, $2)`, w.titelID, w.zweitTitelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.zweitTitelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
+		// Die Rechte der Rolle MITARBEITER auf die Vorgabe zurückstellen: Dieser Test hat
+		// sie je Route auf genau ein Recht verengt, und spätere Tests im selben Binary sollen
+		// wieder den Normalzustand sehen.
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
+		for _, e := range db.RechteVorgabe {
+			if e.Rolle == "MITARBEITER" {
+				pgtest.RaeumeAuf(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
+					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Rolle, e.Recht, e.Erlaubt)
+			}
+		}
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
+	})
+	return w
+}
+
+// ── Aufruf-Verzeichnis ───────────────────────────────────────────────────────
+
+// piiAufruf beschreibt, wie eine Matrix-Zeile aufgerufen wird. Positiv nennt Kanarienwerte,
+// die in der Antwort stehen müssen: die Gegenprobe gegen leere Antworten, ohne die dieser Test
+// nichts misst.
+type piiAufruf struct {
+	URL     string
+	Positiv []string
+}
+
+// bauePIIAufrufe füllt Pfad-Parameter mit den gesäten Objekten. Schlüssel ist
+// die Route exakt wie in der Matrix.
+func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
+	return map[string]piiAufruf{
+		// routen_leser.go
+		"GET /api/schueler":                     {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
+		"GET /api/schueler/{id}":                {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
+		"GET /api/schueler/{id}/dsgvo-auskunft": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
+		// Kandidatensuche fürs Zusammenführen: sucht über alle Schüler außer {id} selbst.
+		// Aufruf vom Abgänger Zugvogel aus, damit der Kanarienvogel mit Adresse/Grund/
+		// Geburtsdatum (Pruefkanari) im Treffer liegt — von seiner eigenen Akte aus wäre er
+		// ausgeschlossen, und Stufe 2/3 könnte nie rot werden.
+		"GET /api/schueler/{id}/zusammenfuehren-kandidaten": {URL: "/api/schueler/" + w.abgaengerID + "/zusammenfuehren-kandidaten?q=Vogelbeere", Positiv: []string{"Pruefkanari"}},
+		"GET /api/schueler/{id}/dsgvo-auskunft/pdf":         {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft/pdf"},
+		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
+		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
+		"GET /api/klassen":                                  {URL: "/api/klassen"},
+		// Die besetzten Jahrgänge: Stufe 0, die Antwort ist eine Liste von Zahlen. Keine
+		// Positiv-Kontrolle mit einem Kanarienwert möglich, es gibt in dieser Antwort keinen
+		// Text. Der Test prüft hier also nur, dass nichts Personenbezogenes durchfällt; dass die
+		// Zahlen stimmen, steht in internal/api/leser/schueler_jahrgang_filter_pg_test.go.
+		"GET /api/jahrgaenge":                   {URL: "/api/jahrgaenge"},
+		"GET /api/lmf-termine":                  {URL: "/api/lmf-termine"},
+		"GET /api/lmf-termine/pdf":              {URL: "/api/lmf-termine/pdf"},
+		"GET /api/lmf-termine/entwurf/pdf":      {URL: "/api/lmf-termine/entwurf/pdf"},
+		"GET /api/lmf-plan/{art}":               {URL: "/api/lmf-plan/rueckgabe"},
+		"GET /api/klassen-mapping":              {URL: "/api/klassen-mapping"},
+		"GET /api/abgaenger":                    {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
+		"GET /api/abgaenger/pdf":                {URL: "/api/abgaenger/pdf"},
+		"GET /api/schueler/{id}/schadensfaelle": {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
+		// Schadensersatz-Bescheide. Der Vorschlag und die Akten-Liste
+		// nennen das Kind, die Arbeitsliste ebenso; das PDF trägt zusätzlich die
+		// Anschrift — deshalb stehen dort dieselben Positiv-Kontrollen wie beim
+		// Brief print/rechnung. Ohne einen erstellten Bescheid im
+		// Wächter-Bestand liefern die drei Listen leer, und das ist hier richtig: Der
+		// Test prüft, dass nichts Unerwartetes durchfällt, nicht dass etwas da ist.
+		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},
+		"GET /api/schueler/{id}/bescheide":          {URL: "/api/schueler/" + w.schuelerID + "/bescheide"},
+		// Betragsvorschlag des Melde-Dialogs: Stufe 0, die Antwort kennt nur Betrag, Herleitung
+		// und ist_lernmittel, also Zahlen zu einem Exemplar. Kein Name, keine Klasse, nicht
+		// einmal der Titel. Genau das prüft der Eintrag: dass an dieser Tür nichts
+		// Personenbezogenes herausfällt.
+		//
+		// Positiv-Kontrolle auf den Satz für den leeren Fall: Das Exemplar der Kanarienwelt ist
+		// ohne Einkaufspreis angelegt, und sein Titel ist kein Lernmittel; der Vorschlag ist
+		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich geantwortet
+		// hat (ohne Positiv-Kontrolle misst dieser Test nichts). Dass die Rechnung stimmt, steht
+		// woanders: internal/repository/ersatzwert_groessen_pg_test.go und
+		// internal/service/ersatzwert_vorschlag_test.go.
+		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"kein Preis hinterlegt"}},
+		"GET /api/bescheide": {URL: "/api/bescheide"},
+		// Nachbuch-Meldungen: Stufe 1 hinter view_students; die Liste
+		// nennt Ausleiher und Vorbesitzer mit Namen; der Zähler fürs Band ist Stufe 0.
+		"GET /api/action/nachbuch-meldungen": {URL: "/api/action/nachbuch-meldungen"},
+		// Nur Buchnummern, keine Personendaten: Stufe 0.
+		"GET /api/action/buchbarcodes":              {URL: "/api/action/buchbarcodes", Positiv: []string{w.buchBarcode}},
+		"GET /api/action/nachbuch-meldungen/anzahl": {URL: "/api/action/nachbuch-meldungen/anzahl"},
+		// Forderungen ohne Brief je Kind: Der Kanarienvogel hat einen
+		// offenen Schadensfall ohne bescheid_id und steht deshalb mit Namen darin.
+		"GET /api/bescheide/ausstehend": {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
+		"GET /api/bescheide/{id}/pdf":   {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/mahnwesen":            {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
+
+		// routen_katalog.go
+		"GET /api/buecher/titel/{id}/exemplare": {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
+		"GET /api/buecher/titel/suche":          {URL: "/api/buecher/titel/suche?q=Antwortgate", Positiv: []string{"Antwortgate Testband"}},
+		// Das Exemplar ist ausgeliehen; die Antwort nennt es, nicht den Leser.
+		"GET /api/buecher/exemplare/erkennen":   {URL: "/api/buecher/exemplare/erkennen?code=" + w.buchBarcode, Positiv: []string{w.exemplarID}},
+		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
+		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
+		// Vorschau des Löschdialogs: das verliehene Exemplar mit Name und Klasse des Lesers, Stufe 1.
+		"GET /api/buecher/titel/loeschfolgen": {URL: "/api/buecher/titel/loeschfolgen?ids=" + w.titelID, Positiv: []string{"Vogelbeere"}},
+		// Vorschau des Zusammenführens: zählt die Vormerkung des Schülers, nennt ihn nicht.
+		"GET /api/buecher/titel/{id}/zusammenfuehren": {URL: "/api/buecher/titel/" + w.titelID + "/zusammenfuehren?quelle_id=" + w.zweitTitelID,
+			Positiv: []string{"Antwortgate Zweitband"}},
+		// Schlagworte: Stufe 0, Wörter über den Titel, keine Person.
+		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
+		// Auflagen eines Schulbuchs: Stufe 0, Titel und Bestandszahlen. Der
+		// Titel der Kanarienwelt ist verliehen; wer ihn hat, darf hier nicht auftauchen.
+		"GET /api/buecher/titel/{id}/auflagen": {URL: "/api/buecher/titel/" + w.titelID + "/auflagen"},
+		// Zugangs- und Abgangsbuch: Stufe 0. Sie nennen Exemplare, keine Leser, auch nicht beim
+		// Grund „Verlust", obwohl dort ein Schüler dahintersteht. Ohne Zeitraum gilt das laufende
+		// Halbjahr, in dem die Exemplare der Kanarienwelt angelegt werden.
+		"GET /api/bestand/abgangsbuch":                       {URL: "/api/bestand/abgangsbuch"},
+		"GET /api/bestand/abgangsbuch/pdf":                   {URL: "/api/bestand/abgangsbuch/pdf"},
+		"GET /api/bestand/zugangsbuch":                       {URL: "/api/bestand/zugangsbuch"},
+		"GET /api/bestand/zugangsbuch/pdf":                   {URL: "/api/bestand/zugangsbuch/pdf"},
+		"GET /api/exemplare/etiketten-offen":                 {URL: "/api/exemplare/etiketten-offen"},
+		"GET /api/exemplare/etiketten-offen/anzahl":          {URL: "/api/exemplare/etiketten-offen/anzahl"},
+		"GET /api/exemplare/standorte":                       {URL: "/api/exemplare/standorte"},
+		"GET /api/vormerkungen":                              {URL: "/api/vormerkungen?titel_id=" + w.titelID, Positiv: []string{"Pruefkanari"}},
+		"GET /api/reservierungen/klassensatz":                {URL: "/api/reservierungen/klassensatz"},
+		"GET /api/reservierungen/klassensatz/anzahl":         {URL: "/api/reservierungen/klassensatz/anzahl"},
+		"GET /api/reservierungen/klassensatz/offen":          {URL: "/api/reservierungen/klassensatz/offen"},
+		"GET /api/reservierungen/klassensatz/eigene":         {URL: "/api/reservierungen/klassensatz/eigene"},
+		"GET /api/reservierungen/klassensatz/katalog":        {URL: "/api/reservierungen/klassensatz/katalog?q=Antwortgate"},
+		"GET /api/reservierungen/klassensatz/katalog/filter": {URL: "/api/reservierungen/klassensatz/katalog/filter"},
+		"GET /api/geraete":                                   {URL: "/api/geraete"},
+		"GET /api/anliegen/eigene":                           {URL: "/api/anliegen/eigene"},
+		"GET /api/anliegen/offen":                            {URL: "/api/anliegen/offen"},
+		"GET /api/anliegen/anzahl":                           {URL: "/api/anliegen/anzahl"},
+
+		// routen_oeffentlich.go und routen_theke.go
+		"GET /api/public/opac/suche":                             {URL: "/api/public/opac/suche?q=Antwortgate"},
+		"GET /api/monitor/slides":                                {URL: "/api/monitor/slides"},
+		"GET /api/public/bestellung/{token}":                     {URL: "/api/public/bestellung/gate-dummy-token"},
+		"GET /api/public/bestellung/{token}/etiketten/{groesse}": {URL: "/api/public/bestellung/gate-dummy-token/etiketten/klein"},
+		"GET /api/search":                                        {URL: "/api/search?q=Vogelbeere", Positiv: []string{"Pruefkanari"}},
+		"GET /api/inventur/sessions":                             {URL: "/api/inventur/sessions"},
+		"GET /api/inventur/abgeschlossen":                        {URL: "/api/inventur/abgeschlossen"},
+		"GET /api/inventur/fehlbestand":                          {URL: "/api/inventur/fehlbestand"},
+
+		// routen_bestellung.go
+		"GET /api/bestellungen/konfiguration": {URL: "/api/bestellungen/konfiguration"},
+		"GET /api/bestellungen":               {URL: "/api/bestellungen"},
+		"GET /api/bestellungen/pdf":           {URL: "/api/bestellungen/pdf"},
+		"GET /api/bestellhistorie":            {URL: "/api/bestellhistorie"},
+		"GET /api/bestellhistorie/uebersicht": {URL: "/api/bestellhistorie/uebersicht"},
+		"GET /api/bestellhistorie/bericht":    {URL: "/api/bestellhistorie/bericht?von=2026-01-01&bis=2026-12-31"},
+		"GET /api/bestellhistorie/{id}":       {URL: "/api/bestellhistorie/00000000-0000-0000-0000-000000000000"},
+		"GET /api/lieferanten":                {URL: "/api/lieferanten"},
+		"GET /api/bestellungen/zulauf":        {URL: "/api/bestellungen/zulauf"},
+
+		// routen_system.go
+		"GET /api/benutzer":                          {URL: "/api/benutzer"},
+		"GET /api/einstellungen":                     {URL: "/api/einstellungen"},
+		"GET /api/einstellungen/sitzung":             {URL: "/api/einstellungen/sitzung"},
+		"GET /api/ausweis-layout":                    {URL: "/api/ausweis-layout"},
+		"GET /api/admin/settings/mail":               {URL: "/api/admin/settings/mail"},
+		"GET /api/admin/settings/adressabgleich":     {URL: "/api/admin/settings/adressabgleich"},
+		"GET /api/admin/permissions":                 {URL: "/api/admin/permissions"},
+		"GET /api/admin/system/backup-status":        {URL: "/api/admin/system/backup-status"},
+		"GET /api/admin/system/betriebsbereitschaft": {URL: "/api/admin/system/betriebsbereitschaft"},
+		"GET /api/admin/system/fehler-im-log":        {URL: "/api/admin/system/fehler-im-log"},
+		"GET /api/audit":                             {URL: "/api/audit"},
+		"GET /api/audit/tresen-auskunft":             {URL: "/api/audit/tresen-auskunft?barcode=" + w.buchBarcode, Positiv: []string{"Vogelbeere"}},
+		"GET /api/mail-templates":                    {URL: "/api/mail-templates"},
+		// Anschrift als Positiv-Kontrolle: Der Brief geht ins Fensterkuvert; verliert er
+		// die Anschrift, ist er für den Postversand unbrauchbar. Für den Mahnbrief prüft
+		// das der Test am Druck aus der Auswahl (internal/api/mahnwesen/mahnbriefe_frist_pg_test.go), die
+		// Tür ist ein POST.
+		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/print/kontoauszug/{schueler_id}": {URL: "/api/print/kontoauszug/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},
+		"GET /api/dashboard/summary":               {URL: "/api/dashboard/summary"},
+		"GET /api/statistiken":                     {URL: "/api/statistiken"},
+		"GET /api/systematics":                     {URL: "/api/systematics"},
+		"GET /api/faecher":                         {URL: "/api/faecher"},
+		"GET /api/admin/auditlog":                  {URL: "/api/admin/auditlog"},
+		"GET /api/barcode/next":                    {URL: "/api/barcode/next"},
+		"GET /api/barcode":                         {URL: "/api/barcode?content=BUCHBC-GATE-1"},
+		"GET /api/signaturen":                      {URL: "/api/signaturen"},
+		"GET /api/signaturen/buecher":              {URL: "/api/signaturen/buecher?signatur=GATE"},
+		"GET /api/schlagworte":                     {URL: "/api/schlagworte"},
+		"GET /api/schlagworte/pflege":              {URL: "/api/schlagworte/pflege"},
+
+		// router.go
+		"GET /api/images/cover": {URL: "/api/images/cover"},
+		"GET /api/csrf-token":   {URL: "/api/csrf-token"},
+		"GET /api/auth/me":      {URL: "/api/auth/me"},
+		"GET /api/auth/domain":  {URL: "/api/auth/domain"},
+		"GET /health":           {URL: "/health"},
+
+		// routen_katalog.go und router.go: der Medienkatalog
+		"GET /uploads/":                        {URL: "/uploads/"},
+		"GET /api/books":                       {URL: "/api/books"},
+		"GET /api/books/{id}":                  {URL: "/api/books/" + w.titelID},
+		"GET /api/books/vorhanden":             {URL: "/api/books/vorhanden?isbn=9780306406157"},
+		"GET /api/class-books":                 {URL: "/api/class-books"},
+		"GET /api/portal/klassensaetze":        {URL: "/api/portal/klassensaetze"},
+		"GET /api/portal/lernmittel":           {URL: "/api/portal/lernmittel"},
+		"GET /api/portal/lernmittel/export":    {URL: "/api/portal/lernmittel/export"},
+		"GET /api/admin/class-books":           {URL: "/api/admin/class-books"},
+		"GET /api/admin/books/external-covers": {URL: "/api/admin/books/external-covers"},
+		"GET /api/admin/books/export":          {URL: "/api/admin/books/export"},
+	}
+}
+
+// erwarteterFehlstatus: Aufrufe, deren ehrliches Ergebnis kein 200 ist — mit dem
+// exakt erwarteten Status. Alle anderen Aufrufe müssen < 400 antworten: Sonst
+// liefe ein Tippfehler im Verzeichnis still ins SPA-Fallback (404) und die Route
+// wäre für immer trivial grün.
+var erwarteterFehlstatus = map[string]int{
+	"GET /api/schueler/{barcode_id}/photo":                   404, // kein Foto gesät — Fotos liegen AES-verschlüsselt in der DB, eigener Prüfpfad
+	"GET /api/bestellhistorie/{id}":                          404, // bewusst die Nullen-UUID: nur der Fehlerpfad ist ohne Bestellwelt erreichbar
+	"GET /api/public/bestellung/{token}":                     404, // Dummy-Token — ein echter entstünde nur über den Bestell-Schreibpfad
+	"GET /api/public/bestellung/{token}/etiketten/{groesse}": 404, // dito
+	"GET /uploads/":                 404, // FileServer auf leerem Cover-Verzeichnis, kein Index; im Lauf dieses Tests liegen dort keine Dateien
+	"GET /api/inventur/fehlbestand": 400, // verlangt session_id einer echten Inventur; ohne Inventur-Welt ist der Parameter-Fehlerpfad die ehrliche Antwort
+}
+
+// bewusstAusgelassen: GET-Zeilen der Matrix, die dieser Test mit Begründung
+// nicht aufruft. Jede Begründung muss den Verzicht tragen — „zu aufwendig"
+// stünde hier zu Recht schlecht.
+var bewusstAusgelassen = map[string]string{
+	"GET /events": "SSE-Stream ohne Ende — ein Lese-Gate würde hängen; der Stream trägt laut " +
+		"eigener Registrierung nur operative Events (UUIDs, Buchdaten) und hat ein eigenes Gate (sse-Paket).",
+	"GET /api/lookup/{isbn}": "Proxy für EXTERNE ISBN-Metadaten — ein Aufruf mit echter ISBN ginge ins Internet; " +
+		"die Antwort sind fremde Titeldaten ohne jeden Schülerbezug (Stufe 0 per Konstruktion).",
+	"GET /api/schlagworte/dnb-vorschlag": "fragt die DNB — ein Aufruf mit echter ISBN ginge ins Internet; die Antwort " +
+		"sind Schlagworte der eigenen Liste und der Normdatei zu einem Satz der DNB, ohne Schülerbezug (Stufe 0). " +
+		"Verhalten mit nachgestellter DNB: internal/api/katalog/schlagworte_dnb_pg_test.go.",
+}
+
+// ── Der Aufruf-Apparat ───────────────────────────────────────────────────────
+
+// rechtFuerZeile übersetzt die Rechte-Spalte der Matrix in (Fachrecht, Cookie?).
+func rechtFuerZeile(recht string) (permission string, mitSitzung bool) {
+	switch recht {
+	case "öffentlich", "Token":
+		return "", false
+	case "Sitzung", "selbst-prüfend":
+		return "", true
+	default:
+		return recht, true
+	}
+}
+
+// antwortText liest den Rumpf; PDF-Ströme werden entpackt (pdftest.Suchtext, dieselbe
+// Technik wie die Tests der Etiketten), damit „im PDF steht die Adresse" nicht
+// hinter FlateDecode unsichtbar bleibt.
+func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
+	t.Helper()
+	roh, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	if bytesIndex := strings.Index(string(roh), "%PDF"); bytesIndex >= 0 {
+		return pdftest.Suchtext(t, roh)
+	}
+	return string(roh)
+}
+
+// ── Ablage im Browser ────────────────────────────────────────────────────────
+
+// adresseTraegtPersonendaten: Zeilen der Stufe 0, deren Antwort nichts über eine Person
+// verrät, deren Adresse aber eine Kennung tragen kann. Der Browser legt mit der Antwort
+// auch ihre Adresse ab — für sie gilt deshalb dieselbe Regel wie ab Stufe 1.
+var adresseTraegtPersonendaten = map[string]string{
+	"GET /api/barcode": "content= trägt beim Ausweis die Ausweisnummer (frontend/src/lib/designer/Kartenseite.svelte); " +
+		"bis zum 30.09.2026 legte der Browser das Bild samt Adresse ein Jahr lang ab.",
+}
+
+// pruefeKeinAblegen: Eine Antwort mit Personendaten trägt Cache-Control: no-store (OWASP ASVS
+// 5.0, 14.3.2). Die Vorgabe setzt internal/middleware/sicherheitskopfzeilen.go für jede Antwort
+// unter /api/; rot wird es, wenn eine Tür sie mit einem eigenen Kopf aufweicht oder die
+// Middleware aus der Kette fällt.
+func pruefeKeinAblegen(t *testing.T, route, fall string, stufe int, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	if stufe == 0 && adresseTraegtPersonendaten[route] == "" {
+		return
+	}
+	werte := rec.Header().Values("Cache-Control")
+	if traegtNoStore(werte) {
+		return
+	}
+	t.Errorf("%s%s (Stufe %d): Cache-Control %q — eine Antwort mit Personendaten muss no-store tragen, "+
+		"sonst legt der Browser sie auf der Festplatte ab, über das Abmelden hinaus.\n"+
+		"→ Die Vorgabe setzt internal/middleware/sicherheitskopfzeilen.go für /api/. Setzt der Handler einen eigenen "+
+		"Cache-Control-Kopf, diesen entfernen oder auf no-store setzen.",
+		route, fall, stufe, strings.Join(werte, ", "))
+}
+
+// traegtNoStore: Steht no-store als Direktive in einem der Cache-Control-Werte? Groß- und
+// Kleinschreibung zählen nicht (RFC 9111, 5.2).
+func traegtNoStore(werte []string) bool {
+	for _, wert := range werte {
+		for _, direktive := range strings.Split(wert, ",") {
+			if strings.EqualFold(strings.TrimSpace(direktive), "no-store") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
+	pool := pgtest.Pool(t)
+
+	// Die Bremse hochdrehen: Viele Anfragen fallen hier in dieselbe Sekunde, und die Vorgabe
+	// des Betriebs (50 je Sekunde und Adresse) wäre ein falsches Rot.
+	t.Setenv("RATE_LIMIT", "100000")
+
+	// role_permissions entsteht im echten Betrieb durch SchreibeRechteVorgabe (internal/db/rechte_vorgabe.go),
+	// nicht durch schema.sql; derselbe Weg hier, damit der Test den Aufbau des Betriebs fährt.
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
+	}
+
+	authenticator, err := auth.NewAnmeldung(
+		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("NewAnmeldung: %v", err)
+	}
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
+	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
+	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	srv.Uhr = testdaten.SaisonUhr
+	router := srv.Routes()
+
+	welt := baueKanarienWelt(t, pool, authenticator)
+	aufrufe := bauePIIAufrufe(welt)
+	matrix := leseMatrix(t)
+
+	// Vollständigkeit in beide Richtungen: jede GET-Zeile eingeordnet, kein
+	// Eintrag ohne Matrix-Zeile (sonst veraltet das Verzeichnis lautlos).
+	getZeilen := map[string]matrixZeile{}
+	for route, z := range matrix {
+		if strings.HasPrefix(route, "GET ") {
+			getZeilen[route] = z
+		}
+	}
+	for route := range aufrufe {
+		if _, ok := getZeilen[route]; !ok {
+			t.Errorf("Aufruf-Verzeichnis führt %q, die Matrix kennt diese GET-Zeile nicht (mehr) — Eintrag entfernen oder Pfad korrigieren.", route)
+		}
+	}
+	for route, grund := range bewusstAusgelassen {
+		if _, ok := getZeilen[route]; !ok {
+			t.Errorf("Ausschluss-Liste führt %q ohne Matrix-Zeile — Eintrag entfernen.", route)
+		}
+		if strings.TrimSpace(grund) == "" {
+			t.Errorf("Ausschluss %q ohne Begründung.", route)
+		}
+	}
+	for route, grund := range adresseTraegtPersonendaten {
+		if _, ok := getZeilen[route]; !ok {
+			t.Errorf("adresseTraegtPersonendaten führt %q ohne Matrix-Zeile — Eintrag entfernen.", route)
+		}
+		if _, ok := aufrufe[route]; !ok {
+			t.Errorf("adresseTraegtPersonendaten führt %q, das Gate ruft die Route aber nicht auf — so prüfte es dort nichts.", route)
+		}
+		if strings.TrimSpace(grund) == "" {
+			t.Errorf("adresseTraegtPersonendaten %q ohne Begründung.", route)
+		}
+	}
+
+	routen := make([]string, 0, len(getZeilen))
+	for route := range getZeilen {
+		routen = append(routen, route)
+	}
+	sort.Strings(routen)
+
+	for _, route := range routen {
+		zeile := getZeilen[route]
+		if _, ok := bewusstAusgelassen[route]; ok {
+			continue
+		}
+		aufruf, ok := aufrufe[route]
+		if !ok {
+			t.Errorf("GET-Route %q ist im PII-Antwort-Gate nicht eingeordnet.\n"+
+				"→ Aufruf in bauePIIAufrufe ergänzen (Pfad-Parameter aus der Kanarienwelt) "+
+				"oder mit Begründung in bewusstAusgelassen aufnehmen.", route)
+			continue
+		}
+
+		stufe := int(zeile.Stufe[0] - '0')
+		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, permission)
+
+		req := httptest.NewRequest(http.MethodGet, aufruf.URL, nil)
+		if mitSitzung {
+			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
+		}
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		text := antwortText(t, rec)
+
+		// Kern des Tests: nichts oberhalb der dokumentierten Stufe.
+		for _, kanarie := range verboteneKanarien(stufe) {
+			if strings.Contains(text, kanarie) {
+				t.Errorf("%s (Stufe %d, Recht %s): Antwort enthält %q — Daten OBERHALB der dokumentierten Stufe.\n"+
+					"→ Entweder blendet der Handler zu wenig aus, oder die Matrix-Stufe ist falsch. Status %d.",
+					route, stufe, zeile.Recht, kanarie, rec.Code)
+			}
+		}
+
+		pruefeKeinAblegen(t, route, "", stufe, rec)
+
+		// Positiv-Kontrolle: Diese Routen müssen ihre erlaubten Daten zeigen,
+		// sonst prüfte der Test leere Antworten und meldete ewig grün.
+		for _, kanarie := range aufruf.Positiv {
+			if !strings.Contains(text, kanarie) {
+				t.Errorf("%s: Positiv-Kontrolle %q fehlt in der Antwort (Status %d) — die Kanarienwelt erreicht diese Route nicht (mehr); Seed oder Aufruf reparieren, sonst misst das Gate hier nichts.\nAntwort-Anfang: %.200s",
+					route, kanarie, rec.Code, text)
+			}
+		}
+		// Status-Härtung gegen still ins Leere laufende Aufrufe (SPA-404, 403
+		// wegen falsch übersetztem Recht, 500 wegen kaputter Vorgabe der Rechte).
+		if erwartet, ok := erwarteterFehlstatus[route]; ok {
+			if rec.Code != erwartet {
+				t.Errorf("%s = %d, erwartet Status %d (siehe erwarteterFehlstatus)", route, rec.Code, erwartet)
+			}
+		} else if rec.Code >= 400 {
+			t.Errorf("%s: Status %d — der Aufruf erreicht die Route nicht (Tippfehler im Verzeichnis, fehlendes Recht oder kaputter Seed); Antwort-Anfang: %.200s", route, rec.Code, text)
+		}
+	}
+}
+
+// ── Lesende POST-Routen ──────────────────────────────────────────────────────
+
+// piiPostFall ist ein nebenwirkungsarmer POST-Aufruf einer Matrix-Zeile. Positiv wie bei den
+// GETs: Werte, die in der Antwort stehen müssen; mindestens ein Fall je Route trägt welche,
+// sonst prüfte der Test leere Antworten.
+type piiPostFall struct {
+	Name    string
+	Anfrage func(t *testing.T) *http.Request
+	Positiv []string
+}
+
+// bauePIIPostAufrufe: Schlüssel ist die Route exakt wie in der Matrix. Nur
+// nebenwirkungsarme, lesende Aufrufe — die Begründung je Route steht am Fall.
+func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
+	lusdVorschau := func(t *testing.T) *http.Request {
+		t.Helper()
+		// Klassenwechsel des Kanari-Schülers (05A → 06A), Zuordnung über
+		// Name+Geburtsdatum — die Vorschau (apply=false) schreibt nichts.
+		xlsx := xlsxtest.Baue(t, map[string][][]any{
+			"Klassenliste": {
+				{"Klassenliste — Schuljahr 2026/27"},
+				{"Nachname", "Vorname", "Klasse", "Geburtsdatum"},
+				{"Vogelbeere", "Pruefkanari", "06A", time.Date(2013, 7, 19, 0, 0, 0, 0, time.UTC)},
+			},
+		})
+		var body strings.Builder
+		mw := multipart.NewWriter(&body)
+		teil, err := mw.CreateFormFile("csvFile", "lusd_export.xlsx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := teil.Write(xlsx); err != nil {
+			t.Fatal(err)
+		}
+		if err := mw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/lusd/preview", strings.NewReader(body.String()))
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		return tuertest.MitCSRF(req)
+	}
+
+	return map[string][]piiPostFall{
+		// Theken-Scan: liest den Schüler zum Ausweis-Barcode, bucht nichts.
+		// Der gesperrte Kanari-Schüler ist der Kernfall: Sein Sperrgrund-Freitext
+		// (Stufe 2) darf mit perform_actions allein nirgends in der Antwort stehen.
+		"POST /api/action": {
+			{Name: "Scan freier Schüler", Anfrage: func(t *testing.T) *http.Request {
+				return tuertest.JSONPost("/api/action", `{"query":"SBK-KANARI-2"}`)
+			}, Positiv: []string{"Zugvogel"}},
+			{Name: "Scan gesperrter Schüler", Anfrage: func(t *testing.T) *http.Request {
+				return tuertest.JSONPost("/api/action", `{"query":"SBK-KANARI-1"}`)
+			}, Positiv: []string{"Pruefkanari"}},
+		},
+		"POST /api/lusd/preview": {
+			{Name: "Vorschau Klassenwechsel", Anfrage: lusdVorschau, Positiv: []string{"Pruefkanari"}},
+		},
+	}
+}
+
+// TestPIIAntwortenHaltenIhreStufe_LesendePosts ist derselbe Apparat wie der Test der
+// GET-Routen, für die nebenwirkungsarmen POST-Routen (Begründung im Kopf der Datei).
+func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
+	pool := pgtest.Pool(t)
+	t.Setenv("RATE_LIMIT", "100000")
+
+	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
+		t.Fatalf("SchreibeRechteVorgabe: %v", err)
+	}
+	authenticator, err := auth.NewAnmeldung(
+		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("NewAnmeldung: %v", err)
+	}
+	srv := NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), ServerKonfig{})
+	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
+	// der Test mäße dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	srv.Uhr = testdaten.SaisonUhr
+	router := srv.Routes()
+
+	welt := baueKanarienWelt(t, pool, authenticator)
+	aufrufe := bauePIIPostAufrufe(welt)
+	matrix := leseMatrix(t)
+
+	routen := make([]string, 0, len(aufrufe))
+	for route := range aufrufe {
+		routen = append(routen, route)
+	}
+	sort.Strings(routen)
+
+	for _, route := range routen {
+		zeile, ok := matrix[route]
+		if !ok {
+			t.Errorf("POST-Verzeichnis führt %q, die Matrix kennt diese Zeile nicht (mehr) — Eintrag entfernen oder Pfad korrigieren.", route)
+			continue
+		}
+		stufe := int(zeile.Stufe[0] - '0')
+		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
+		tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, permission)
+
+		for _, fall := range aufrufe[route] {
+			req := fall.Anfrage(t)
+			if mitSitzung {
+				req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.anmeldeToken})
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			text := antwortText(t, rec)
+
+			for _, kanarie := range verboteneKanarien(stufe) {
+				if strings.Contains(text, kanarie) {
+					t.Errorf("%s [%s] (Stufe %d, Recht %s): Antwort enthält %q — Daten OBERHALB der dokumentierten Stufe.\n"+
+						"→ Entweder blendet der Handler zu wenig aus, oder die Matrix-Stufe ist falsch. Status %d.",
+						route, fall.Name, stufe, zeile.Recht, kanarie, rec.Code)
+				}
+			}
+			pruefeKeinAblegen(t, route, " ["+fall.Name+"]", stufe, rec)
+			for _, kanarie := range fall.Positiv {
+				if !strings.Contains(text, kanarie) {
+					t.Errorf("%s [%s]: Positiv-Kontrolle %q fehlt (Status %d) — der Aufruf erreicht die Route nicht (mehr); sonst misst das Gate hier nichts.\nAntwort-Anfang: %.200s",
+						route, fall.Name, kanarie, rec.Code, text)
+				}
+			}
+			if rec.Code >= 400 {
+				t.Errorf("%s [%s]: Status %d — der Aufruf läuft ins Leere (CSRF, Recht oder Body kaputt); Antwort-Anfang: %.200s",
+					route, fall.Name, rec.Code, text)
+			}
+		}
+	}
+}
+
+// TestPIIAntwortPruefungErkenntVerstoss ist die Gegenprobe am Detektor: Ein Test, dessen
+// Kanarien nie anschlagen können, meldet ewig „alles gut". Er stellt die Verletzung nach, die
+// er fangen soll: Eine Route der Stufe 0, deren Antwort einen Wert der Stufe 3 trüge, muss den
+// Vergleich reißen.
+func TestPIIAntwortPruefungErkenntVerstoss(t *testing.T) {
+	for _, verboten := range verboteneKanarien(0) {
+		if !strings.Contains((`{"schueler":[{"strasse":"Kanariweg","ort":"Kanaristadt","eltern":"kanari-eltern@example.org","grund":"Kanarigrund","lusd":"LUSD-KANARI-7","geb":"2013-07-19","gebDe":"19.07.2013","schaden":"Kanarischaden","name":"Pruefkanari Zugvogel Vogelbeere","bc":"SBK-KANARI-1 SBK-KANARI-2"}]}`), verboten) {
+			t.Errorf("Kanarie %q würde in einer JSON-Antwort nicht erkannt — Suchlogik prüfen", verboten)
+		}
+	}
+	if len(verboteneKanarien(3)) != 0 {
+		t.Error("Stufe 3 darf alles — verboteneKanarien(3) muss leer sein")
+	}
+	// Dieselbe Gegenprobe für die Ablage im Browser: Nur no-store als Direktive zählt.
+	for _, f := range []struct {
+		werte []string
+		ja    bool
+	}{
+		{nil, false},
+		{[]string{"public, max-age=31536000"}, false},
+		{[]string{"no-cache"}, false},
+		{[]string{"no-storex"}, false},
+		{[]string{"no-store"}, true},
+		{[]string{"No-Store"}, true},
+		{[]string{"private, no-cache, no-store, must-revalidate"}, true},
+		{[]string{"private", "no-store"}, true},
+	} {
+		if got := traegtNoStore(f.werte); got != f.ja {
+			t.Errorf("traegtNoStore(%q) = %v, erwartet %v", f.werte, got, f.ja)
+		}
+	}
+	if len(verboteneKanarien(0)) != len(kanarienJeStufe[1])+len(kanarienJeStufe[2])+len(kanarienJeStufe[3]) {
+		t.Error("verboteneKanarien(0) muss ALLE Kanarien umfassen")
+	}
+}

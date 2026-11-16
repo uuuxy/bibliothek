@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ohnePruefzeichen, pruefzeichen } from './code39Pruefzeichen.js';
 import pruefung from './code39.faelle.json';
 
-// Die JavaScript-Seite der geteilten Prüffälle (pkg/code39/zwilling_test.go prüft die
+// Die JavaScript-Seite der geteilten Prüffälle (internal/pkg/code39/zwilling_test.go prüft die
 // Go-Seite). Rechnen beide verschieden, gilt ein altes Etikett offline als unklar, das
 // online gebucht wird — oder umgekehrt.
 describe('Code-39-Prüfzeichen, geteilte Prüffälle', () => {

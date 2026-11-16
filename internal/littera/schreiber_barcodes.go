@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"bibliothek/internal/repository"
 	"bibliothek/internal/uebernahme"
-	"bibliothek/repository"
 )
 
 // klaereBarcodes bestimmt für jedes Exemplar den Barcode, mit dem es geschrieben wird.

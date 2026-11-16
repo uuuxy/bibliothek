@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 )
 
 // Der Katalog-Import liest einen Wert wie die Übernahme (littera.leseTitel): erst die

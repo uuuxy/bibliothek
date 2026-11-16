@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Attrappen für die Weiche ohne Vorsilbe: Buch → Ausweis → Volltextsuche. Alle nicht

@@ -31,7 +31,7 @@ Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im 
   schlüsselt vorhandene Sicherungen nicht um; sie öffnet weiter nur der alte
   ([SECURITY.md](SECURITY.md#backup_encryption_key-wechseln)).
 - Rotation: die jüngsten **14** Nachtsicherungen bleiben, dazu von den älteren je Kalenderwoche
-  eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
+  eine für **12** Wochen — zusammen etwa drei Monate (`internal/jobs/backup_aufbewahrung.go`). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
   von davor.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind; dort gilt dieselbe Rotation.
 - Die Datei entsteht als `backup_<ZEITSTEMPEL>.sql.gz.enc.teil`, wird auf die Platte gebracht und
@@ -107,7 +107,7 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 (4) Anwendung neu starten. Das Einspielen unterscheidet sich je nach Backup-Format.
 
 > Der Backup-Restore-Round-Trip (Verschlüsselung ↔ Entschlüsselung) ist durch automatisierte Tests
-> abgesichert: `go test ./jobs/ -run TestBackupRestore`. Vor einem produktiven Go-Live sollte zusätzlich
+> abgesichert: `go test ./internal/jobs/ -run TestBackupRestore`. Vor einem produktiven Go-Live sollte zusätzlich
 > **einmal** ein echtes Restore in eine Wegwerf-Datenbank durchgespielt werden (siehe 2e).
 
 > **Kein Platzhalter in den Befehlen.** Dateiname und Schlüssel stehen in Shell-Variablen.
@@ -323,7 +323,7 @@ shred -u wiederherstellung.sql vor-restore.sql 2>/dev/null \
 
 Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup.
 
-> **Automatisch läuft das bereits wöchentlich** (`jobs/restore_probe.go`, So 03:30 UTC):
+> **Automatisch läuft das bereits wöchentlich** (`internal/jobs/restore_probe.go`, So 03:30 UTC):
 > Der Job entschlüsselt das jüngste Backup (nach dem Zeitstempel im Namen, nicht nach der
 > Änderungszeit der Datei), spielt es in eine Wegwerf-Datenbank
 > (`bibliothek_restore_probe_wegwerf`) ein, zählt die Tabellen und meldet das Ergebnis

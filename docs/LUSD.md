@@ -2,8 +2,8 @@
 
 Stand: 2026-10-31. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
-Zuordnung repariert. Der Code steht in `api/leser/lusd.go` und
-`repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
+Zuordnung repariert. Der Code steht in `internal/api/leser/lusd.go` und
+`internal/repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
 die Bedienung im [Handbuch](HANDBUCH.md), die Abnahme in der
 [Abnahme-Checkliste §1](abnahme_checkliste.md). Was eine Simulation in Schulgröße ergab
 (1.890 Schüler, drei Schuljahre), steht in §9.
@@ -139,7 +139,7 @@ verschoben bei weiteren Läufen, geräumt bei Rückkehr) und `letzter_vorgang_am
 137: letzte Rückgabe oder letzter Schadensabschluss). Den zweiten stempeln Trigger am Leser;
 aus den Ausleihen gerechnet, ginge er verloren, sobald die Lesehistorie-Befristung eine
 Ausleihe vom Leser trennt, und die Karenz würde kürzer als eingestellt. Import, nächtlicher Job
-(`jobs/cron_dsgvo.go`) und Selbstprüfung lesen **denselben** Schlüssel und rechnen mit
+(`internal/jobs/cron_dsgvo.go`) und Selbstprüfung lesen **denselben** Schlüssel und rechnen mit
 **demselben** Prädikat (`repository.PraedikatAnonymisierung`).
 
 Warum 90 und nicht länger: Die endgültige Löschung (`FuehreAbgaengerLoeschungAus`, 30. Januar
@@ -153,7 +153,7 @@ Fällt eine Dublette erst später auf — das Kind steht mit dem alten Ausweis a
 gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Leser zusammenführen" — einzeln delegierbar) beide
 Datensätze zusammen: **Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
 
-Regeln (`repository/leser_zusammenfuehren.go`):
+Regeln (`internal/repository/leser_zusammenfuehren.go`):
 
 - Das **Ziel bleibt** (UUID, Ausweis-Barcode). Faustregel: Es bleibt der Datensatz, dessen
   Ausweis das Kind in der Hand hat.
@@ -212,25 +212,25 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_pg_test.go`).
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Kopfzeilen, Aliase, Pflichtspalten                                   | `internal/lusd/spalten.go`                                                                                                                                  |
 | Parsen, Modus-Erkennung, Dubletten in der Datei                      | `internal/lusd/datei.go`, `internal/lusd/quelle.go`                                                                                                        |
-| Bestandsindex je Modus                                               | `internal/lusd/bestand.go`, `repository/lusd_bestand.go`                                                                                                    |
+| Bestandsindex je Modus                                               | `internal/lusd/bestand.go`, `internal/repository/lusd_bestand.go`                                                                                                    |
 | Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `internal/lusd/klassifizierung.go`                                                                                                                          |
 | Umbenennungs-Paare                                                   | `internal/lusd/paarung.go`                                                                                                                                  |
-| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `repository/lusd_import.go` (die Anweisungen)                                                            |
+| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `internal/repository/lusd_import.go` (die Anweisungen)                                                            |
 | Lauf, Bremse des Massenabgangs                                       | `internal/lusd/lauf.go`                                                                                                                                |
-| Tür: Upload, Wahl des Admins, Audit                                  | `api/leser/lusd.go`                                                                                                                                          |
-| Zusammenführen                                                       | `repository/leser_zusammenfuehren.go`, `api/leser/leser_zusammenfuehren.go`                                                                             |
-| Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
+| Tür: Upload, Wahl des Admins, Audit                                  | `internal/api/leser/lusd.go`                                                                                                                                          |
+| Zusammenführen                                                       | `internal/repository/leser_zusammenfuehren.go`, `internal/api/leser/leser_zusammenfuehren.go`                                                                             |
+| Karenz-Prädikat, Job, Wächter                                        | `internal/repository/loeschfristen.go`, `internal/jobs/cron_dsgvo.go`, `internal/repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/leser/LusdImport.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
-| Tests, die den Jahreszyklus spielen                                  | `api/leser/lusd_namensmodus_pg_test.go`, `api/leser/lusd_umbenennung_pg_test.go`, `repository/leser_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
+| Tests, die den Jahreszyklus spielen                                  | `internal/api/leser/lusd_namensmodus_pg_test.go`, `internal/api/leser/lusd_umbenennung_pg_test.go`, `internal/repository/leser_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
 
 Zwei Tests halten fest, was ein Umbau des Schreibens nicht verlieren darf.
-`api/leser/lusd_klassenwechsel_pg_test.go` prüft die Paarung: Jeder Schüler bekommt die Klasse, die
+`internal/api/leser/lusd_klassenwechsel_pg_test.go` prüft die Paarung: Jeder Schüler bekommt die Klasse, die
 für ihn im Export steht, auch wenn viele in einem Lauf wechseln. Ein Test auf „die Klasse hat
 sich geändert" bliebe grün, wenn jeder die Klasse seines Nachbarn bekäme.
-`api/leser/lusd_dublette_pg_test.go` schickt dieselbe ID zweimal in einer Datei: Der Schutz liegt
+`internal/api/leser/lusd_dublette_pg_test.go` schickt dieselbe ID zweimal in einer Datei: Der Schutz liegt
 darin, dass jeder Neuzugang sofort geschrieben wird und die zweite Zeile ihn in derselben
 Transaktion sieht; wer das Einfügen ans Ende der Schleife verschiebt, bricht den ganzen Import
-ab. Die Stufe „nur Name" spielt `api/leser/lusd_nurname_pg_test.go` durch.
+ab. Die Stufe „nur Name" spielt `internal/api/leser/lusd_nurname_pg_test.go` durch.
 
 Grenzen, die bleiben: Ohne Schüler-ID sind zwei Zeilen mit gleichem Namen **und** gleichem
 Geburtsdatum in einer Datei eine Person (zusammengelegt, nicht „mehrdeutig"). Eine

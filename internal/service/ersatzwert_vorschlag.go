@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"bibliothek/db"
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/ersatzwert"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/ersatzwert"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 )
 
 // Der Vorschlag eines Betrags für den Dialog „Verlust/Schaden melden". Eine feste Zahl hätte

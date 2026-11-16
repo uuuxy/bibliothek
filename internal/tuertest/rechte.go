@@ -3,7 +3,7 @@ package tuertest
 import (
 	"testing"
 
-	"bibliothek/api/tuer"
+	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"

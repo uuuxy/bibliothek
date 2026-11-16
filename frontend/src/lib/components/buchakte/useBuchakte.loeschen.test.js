@@ -69,7 +69,7 @@ describe('useBuchakte.loescheTitel', () => {
 	});
 
 	// Die Rückfrage nennt den Titel („‚Titel A' löschen?“). GET /api/books/{id} trägt ihn als
-	// title (repository/katalog_titel.go); unter titel stand nichts, und sie hieß „Titel löschen?“.
+	// title (internal/repository/katalog_titel.go); unter titel stand nichts, und sie hieß „Titel löschen?“.
 	it('gibt der Rückfrage den Namen des Titels', async () => {
 		const { akte } = await akteVonA();
 		vi.mocked(loescheTitelMitRueckfrage).mockResolvedValue(null);

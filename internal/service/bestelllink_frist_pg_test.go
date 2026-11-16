@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
-	"bibliothek/pkg/bestelllink"
+	"bibliothek/internal/pkg/bestelllink"
 )
 
 // Die Frist eines neuen Bestätigungs-Links am echten Postgres: Die Einstellung gilt, und wo sie

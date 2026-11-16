@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Umbenennung ohne Schüler-ID.

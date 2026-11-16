@@ -16,7 +16,7 @@
 	// Ohne Eintrag steht die erste Antwort noch aus; ein Leerzustand wäre dann geraten.
 	const laedt = $derived(ladefehler === undefined);
 	// Worauf die Rechnung fußt: Daran unterscheidet die leere Liste „nichts fehlt" von „noch kein
-	// Schulbuch ausgegeben" und „ausgeschaltet" (api/bestellung/bestellbedarf.go).
+	// Schulbuch ausgegeben" und „ausgeschaltet" (internal/api/bestellung/bestellbedarf.go).
 	const grundlage = $derived(bestellStore.bedarfGrundlage);
 	const grundlageText = $derived(
 		`gerechnet mit den Schulbüchern von ${grundlage.kinder_mit_schulbuch} der ${grundlage.kinder} Kinder`

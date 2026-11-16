@@ -3,7 +3,7 @@ package bereitschaft
 import (
 	"strings"
 
-	"bibliothek/pkg/clientip"
+	"bibliothek/internal/pkg/clientip"
 )
 
 // pruefeVertrauteProxys nennt die Einträge in TRUSTED_PROXIES, die der Server übergeht, weil

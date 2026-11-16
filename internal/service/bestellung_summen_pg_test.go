@@ -5,12 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
 )
 
 // Ein Warenkorb mit zwei Positionen: Betrag und Menge der Bestellung sind die Summe über

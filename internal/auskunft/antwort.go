@@ -1,14 +1,14 @@
 // Package auskunft ist die Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort,
 // die Pflichtangaben aus den eingestellten Fristen und das Blatt, das aus derselben Antwort
-// gedruckt wird. Die Zeilen liest repository/dsgvo_*.go; gesammelt und ausgeliefert wird in
-// api/leser/dsgvo_auskunft.go und api/leser/dsgvo_pdf.go.
+// gedruckt wird. Die Zeilen liest internal/repository/dsgvo_*.go; gesammelt und ausgeliefert wird in
+// internal/api/leser/dsgvo_auskunft.go und internal/api/leser/dsgvo_pdf.go.
 package auskunft
 
 import (
 	"encoding/json"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Stammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des

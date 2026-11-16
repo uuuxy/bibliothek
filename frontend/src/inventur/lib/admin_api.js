@@ -43,7 +43,7 @@ export async function holeBuchDetail(id) {
  * schluessel benennt den Lauf (UUID je Dateiauswahl): Der Import ist additiv, und nach
  * einer verlorenen Antwort würde der zweite Klick den Bestand verdoppeln. Mit demselben
  * Schlüssel liefert der Server das Ergebnis des ersten Laufs — oder 409, solange er noch
- * läuft (api/katalog/listenimport_schluessel.go).
+ * läuft (internal/api/katalog/listenimport_schluessel.go).
  * @param {File} datei
  * @param {string} schluessel
  * @returns {Promise<{ imported: number, failed: number, message: string }>}

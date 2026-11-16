@@ -85,7 +85,7 @@
 			{kollege ? leserArtText(leser.art) : `Klasse ${leser.klasse}`}
 		</p>
 
-		<!-- Die Antwort der Theke trägt das Abgangsjahr nicht (api/theke/theken_leser.go). -->
+		<!-- Die Antwort der Theke trägt das Abgangsjahr nicht (internal/api/theke/theken_leser.go). -->
 		{#if !kollege && leser.abgaenger_jahr !== undefined}
 			<AbgangsjahrFeld bind:leser darfBearbeiten={rechte.bearbeiten} />
 		{/if}

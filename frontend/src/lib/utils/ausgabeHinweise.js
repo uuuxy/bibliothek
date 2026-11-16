@@ -1,7 +1,7 @@
 /**
  * Die Hinweise zu einem eben ausgegebenen Schulbuch an der Theke: ein Buch, das das Kind schon
  * hat, ein Buch, das sonst niemand in der Klasse hat, und eine andere Auflage als in der Klasse.
- * Der Server prüft es nach der Buchung (repository/buch_in_klasse.go, auflagen_klasse.go); die
+ * Der Server prüft es nach der Buchung (internal/repository/buch_in_klasse.go, auflagen_klasse.go); die
  * Ausleihe ist gebucht. Die Zeilen stehen über dem Konto, bis die Theke einen anderen Leser lädt
  * (stores/omnibox.svelte.js); kommt das Buch zurück, fallen seine Zeilen weg.
  *

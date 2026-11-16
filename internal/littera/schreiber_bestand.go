@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/internal/pkg/lmf"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/uebernahme"
-	"bibliothek/pkg/lmf"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -50,7 +50,7 @@ type BestandBericht struct {
 }
 
 // ist_lernmittel, subject, jahrgang_von/bis: aus der Littera-Signatur „LMF Deu 7 / Bie"
-// gelesen (pkg/lmf.Zerlege). Ohne Jahrgang bleibt die Spanne leer, also unbekannt.
+// gelesen (internal/pkg/lmf.Zerlege). Ohne Jahrgang bleibt die Spanne leer, also unbekannt.
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
@@ -61,7 +61,7 @@ const sqlTitelEinfuegen = `
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand trägt seine Littera-Etiketten physisch —
-// siehe gleiche Begründung am Bestands-Import (repository/bestandsimport.go). Ausnahme ist
+// siehe gleiche Begründung am Bestands-Import (internal/repository/bestandsimport.go). Ausnahme ist
 // eine neu vergebene Nummer (klaereBarcodes, ohneEtikett): Die trägt kein Etikett.
 //
 // eigentum ($8): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).

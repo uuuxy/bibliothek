@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/ersatzwert"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/ersatzwert"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 )
 
 // Prüfung für die zwei Regeln des Betragsvorschlags.
@@ -139,7 +139,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 // nachrechnet.
 //
 // Prüfung für die zweite Hälfte derselben Lücke: Dass die Zahl den Abschlag enthält, prüft
-// pkg/ersatzwert, hier geht es um den Satz. Ein Betrag, der unerklärt um ein Fünftel kleiner
+// internal/pkg/ersatzwert, hier geht es um den Satz. Ein Betrag, der unerklärt um ein Fünftel kleiner
 // ist als die Staffel, ist im Gespräch mit Eltern schlimmer als gar keine Begründung.
 func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	// 60 % von 41,50 € = 24,90 €, abzüglich 20 % für den Zustand = 19,92 €.

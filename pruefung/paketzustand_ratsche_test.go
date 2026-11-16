@@ -247,13 +247,13 @@ func TestPaketzustand_ProgrammcodeHaeltKeinenZustand(t *testing.T) {
 // paketwerteOhneZustand sind Werte der Paketebene, die ein Aufruf baut und danach niemand mehr
 // ändert, je mit dem Grund.
 var paketwerteOhneZustand = map[string]string{
-	"api/katalog/cover.go: coverHTTPClient": "ein http.Client, den alle Aufrufe lesen; er ist für " +
+	"internal/api/katalog/cover.go: coverHTTPClient": "ein http.Client, den alle Aufrufe lesen; er ist für " +
 		"gleichzeitige Aufrufe gebaut",
-	"api/tuer/eingabe.go: Pruefer": "der Prüfer der validate-Tags; seine Regeln stehen nach dem " +
+	"internal/api/tuer/eingabe.go: Pruefer": "der Prüfer der validate-Tags; seine Regeln stehen nach dem " +
 		"Anlegen fest",
-	"db/rechte_vorgabe.go: RechteOptional":        "Tabelle, beim Start gebaut",
-	"internal/littera/barcode.go: barcodeZiffern": "Tabelle, beim Start gebaut",
-	"internal/lusd/spalten.go: spalteZuKopf":      "Tabelle, beim Start gebaut",
+	"internal/db/rechte_vorgabe.go: RechteOptional": "Tabelle, beim Start gebaut",
+	"internal/littera/barcode.go: barcodeZiffern":   "Tabelle, beim Start gebaut",
+	"internal/lusd/spalten.go: spalteZuKopf":        "Tabelle, beim Start gebaut",
 	"internal/pgtest/pgtest.go: fehler": "eine Verbindung zur Testdatenbank je Testlauf; nur Tests " +
 		"binden das Paket ein",
 	"internal/pgtest/pgtest.go: grund": "der Zustand nach dem Einspielen des Schemas, einmal je " +
@@ -264,16 +264,16 @@ var paketwerteOhneZustand = map[string]string{
 		"binden das Paket ein",
 	"internal/pgtest/pgtest.go: sperrVerbindung": "eine Verbindung zur Testdatenbank je Testlauf; " +
 		"nur Tests binden das Paket ein",
-	"api/katalog/listenimport_schluessel.go: importLaeuftMarker":        "Antwort aus Literalen, einmal kodiert",
-	"repository/titel_aendern.go: sqlTitelAendern":                      "SQL aus der Liste der Felder, beim Start gebaut",
-	"pdf/etikett_schueler.go: MusterSchuelerEtikett":                    "Beispiel für die Vorschau, nur gelesen",
-	"pkg/lmfplan/sommerferien.go: sommerferienHessen":                   "Ferientabelle aus Literalen, beim Start gebaut",
-	"pkg/lmfplan/uebrige_ferien.go: uebrigeFerienHessen":                "Ferientabelle aus Literalen, beim Start gebaut",
-	"pkg/schulzeit/schulzeit.go: zone":                                  "die Zeitzone der Schule, beim ersten Gebrauch geladen",
-	"pkg/schulzeit/schulzeit.go: zoneOnce":                              "die Zeitzone der Schule, beim ersten Gebrauch geladen",
-	"repository/protokoll_auskunft.go: protokollAngabeJeSchluessel":     "Tabelle, beim Start gebaut",
-	"repository/protokoll_auskunft.go: protokollOhneAngabeJeSchluessel": "Tabelle, beim Start gebaut",
-	"repository/spur_tilgung.go: spurTilgungen": "Tabelle der Tilgungen; drei SQL-Texte bauen " +
+	"internal/api/katalog/listenimport_schluessel.go: importLaeuftMarker":        "Antwort aus Literalen, einmal kodiert",
+	"internal/repository/titel_aendern.go: sqlTitelAendern":                      "SQL aus der Liste der Felder, beim Start gebaut",
+	"internal/pdf/etikett_schueler.go: MusterSchuelerEtikett":                    "Beispiel für die Vorschau, nur gelesen",
+	"internal/pkg/lmfplan/sommerferien.go: sommerferienHessen":                   "Ferientabelle aus Literalen, beim Start gebaut",
+	"internal/pkg/lmfplan/uebrige_ferien.go: uebrigeFerienHessen":                "Ferientabelle aus Literalen, beim Start gebaut",
+	"internal/pkg/schulzeit/schulzeit.go: zone":                                  "die Zeitzone der Schule, beim ersten Gebrauch geladen",
+	"internal/pkg/schulzeit/schulzeit.go: zoneOnce":                              "die Zeitzone der Schule, beim ersten Gebrauch geladen",
+	"internal/repository/protokoll_auskunft.go: protokollAngabeJeSchluessel":     "Tabelle, beim Start gebaut",
+	"internal/repository/protokoll_auskunft.go: protokollOhneAngabeJeSchluessel": "Tabelle, beim Start gebaut",
+	"internal/repository/spur_tilgung.go: spurTilgungen": "Tabelle der Tilgungen; drei SQL-Texte bauen " +
 		"Hilfsfunktionen beim Start",
 }
 
@@ -287,8 +287,8 @@ import (
 	"strings"
 	"sync"
 
-	"bibliothek/apierrors"
-	"bibliothek/pkg/ratelimit"
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/pkg/ratelimit"
 )
 
 var ErrX = errors.New("x")

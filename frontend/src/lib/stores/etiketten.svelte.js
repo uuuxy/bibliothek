@@ -24,7 +24,7 @@ function erzeugeEtikettenStore() {
 	let barcodeArt = $state('code39'); // "code39" | "qr"
 	let startFeld = $state(1); // 1 to 21
 
-	// Vorgabe = die des Servers (pdf/etikett_formate.go EtikettFormatVorgabe): das Papier des
+	// Vorgabe = die des Servers (internal/pdf/etikett_formate.go EtikettFormatVorgabe): das Papier des
 	// Lieferantenwegs, eine Vorgabe für beide.
 	let formatId = $state('zweckform_l4760');
 	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette, die eine weitere

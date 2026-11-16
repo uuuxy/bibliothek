@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone sichert #4 ab: Die Geräte-Leihfrist muss —

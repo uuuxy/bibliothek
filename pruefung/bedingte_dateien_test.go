@@ -23,7 +23,7 @@ func TestBedingteDateien_LassenSichUebersetzen(t *testing.T) {
 	skripte, tags := bedingteDateien(t)
 
 	// Gegenprobe am Detektor: Die zwei Skripte und das Tag raster muss er finden.
-	if len(skripte) < 2 || !tags["raster"]["repository"] {
+	if len(skripte) < 2 || !tags["raster"][filepath.Join("internal", "repository")] {
 		t.Fatalf("%d Skripte und die Tags %v gefunden: Der Detektor liest den falschen Baum", len(skripte), tags)
 	}
 	for _, skript := range skripte {

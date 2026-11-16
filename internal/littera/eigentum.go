@@ -3,7 +3,7 @@ package littera
 import (
 	"strings"
 
-	"bibliothek/pkg/mitteltopf"
+	"bibliothek/internal/pkg/mitteltopf"
 )
 
 // Der Eigentumsvermerk aus Littera.

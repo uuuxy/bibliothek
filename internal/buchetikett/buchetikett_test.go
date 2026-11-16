@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"bibliothek/pdf"
-	"bibliothek/pkg/mitteltopf"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/pkg/mitteltopf"
 )
 
-// Die Erzeuger in pdf/ drucken, was PDFEtiketten ihnen reicht. Ein Feld, das hier fehlt,
+// Die Erzeuger in internal/pdf/ drucken, was PDFEtiketten ihnen reicht. Ein Feld, das hier fehlt,
 // fehlt auf dem Etikett aller Druckwege, und weder Status noch Dateigröße zeigen es.
 
 // Jedes Feld der Eingabe kommt aus seiner Quelle; die Werte sind je Feld verschieden, damit

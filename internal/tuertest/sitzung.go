@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/auth"
+	"bibliothek/internal/auth"
 	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"

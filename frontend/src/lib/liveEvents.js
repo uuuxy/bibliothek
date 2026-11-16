@@ -20,7 +20,7 @@ const MAX_WARTEZEIT_MS = 30000;
 
 /**
  * Scheitert das Holen nach einem Signal, kommt kein zweites Signal. Der nächste Versuch läuft beim
- * nächsten Lebenszeichen der Leitung (alle 15 s, sse/sse.go), danach im doppelten Abstand bis zu
+ * nächsten Lebenszeichen der Leitung (alle 15 s, internal/sse/sse.go), danach im doppelten Abstand bis zu
  * dieser Zahl von Lebenszeichen: Ein Abruf, der gerade nicht geht, soll nicht alle 15 s melden.
  */
 const MAX_LEBENSZEICHEN_BIS_ZUM_VERSUCH = 16;

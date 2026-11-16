@@ -14,7 +14,7 @@
 	import { hatRecht } from '../../../menue.js';
 
 	// Die Kategorie öffnet mit create_orders, das Pflegen verlangt es. Die Liste steht hinter
-	// view_orders (api/routen_bestellung.go); ohne sie gäbe es nichts zu pflegen.
+	// view_orders (internal/api/routen_bestellung.go); ohne sie gäbe es nichts zu pflegen.
 	const darfLesen = $derived(hatRecht(authStore.currentUser, 'view_orders'));
 
 	// Der Store ist derselbe wie im Bestellungs-Workspace: Ein hier angelegter

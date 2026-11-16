@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 import OpacSuche from './OpacSuche.svelte';
 import { programmstand } from '../../stores/programmstand.svelte.js';
 
-// Der öffentliche Katalog zeigt höchstens 50 Titel (api/portal/opac.go). Bis zum 23.09.2026 stand
+// Der öffentliche Katalog zeigt höchstens 50 Titel (internal/api/portal/opac.go). Bis zum 23.09.2026 stand
 // über der Liste dann „50 Treffer" — die Kappung des Servers, nicht die Zahl der Bücher.
 // Seitdem nennt der Server alle im Kopf X-Treffer-Gesamt.
 

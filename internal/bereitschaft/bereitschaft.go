@@ -7,15 +7,15 @@
 //
 // Die Prüfungen sind eine reine Funktion über eine Lage: Sie lassen sich ganz testen, ohne
 // Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen. Die Lage trägt die Tür
-// zusammen (api/system/betriebsbereitschaft.go).
+// zusammen (internal/api/system/betriebsbereitschaft.go).
 package bereitschaft
 
 import (
 	"time"
 
+	"bibliothek/internal/jobs"
 	"bibliothek/internal/littera"
-	"bibliothek/jobs"
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Stufen eines Befundes. Es sind drei, weil eine feinere Skala niemand liest.
@@ -72,16 +72,16 @@ type Lage struct {
 	// heißt, es gibt keinen. Ob die übrigen LDAP-Angaben stimmen, prüft schon der Start.
 	LDAPURL string
 	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN, die Domain der Schule. Leer heißt, das
-	// Kollegium muss von Hand angelegt werden (auth/selbstanmeldung.go).
+	// Kollegium muss von Hand angelegt werden (internal/auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 	// VertrauteProxys sind die Einträge aus TRUSTED_PROXIES, wie der Server sie bekommen hat;
 	// einen unlesbaren übergeht er (clientip.NewErmittler).
 	VertrauteProxys []string
 
-	// Aus den Einstellungen in der Datenbank, nicht aus der .env (api/system/mail_einstellungen.go)
+	// Aus den Einstellungen in der Datenbank, nicht aus der .env (internal/api/system/mail_einstellungen.go)
 	OeffentlicheAdresse string
 	SMTPHost            string
-	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), je „steht auf
+	// Die beiden Ausnahmeschalter des Mailversands (internal/mailservice/versand.go), je „steht auf
 	// true".
 	SMTPUnsicheresTLSErlaubt bool
 	SMTPKlartextErlaubt      bool
@@ -116,7 +116,7 @@ type Lage struct {
 
 	// Das nächtliche Backup überspringt sich ohne Schlüssel und steht still, wenn der
 	// Zeitplan stirbt. Die tägliche Alarm-Mail speist sich aus den Befunden, deshalb steht
-	// hier, was auch das Abzeichen im Rahmen der Anwendung misst (api/system/backup_stand.go).
+	// hier, was auch das Abzeichen im Rahmen der Anwendung misst (internal/api/system/backup_stand.go).
 	// LetztesBackup nil: noch nie gelaufen. Jetzt wird übergeben, damit sich die
 	// Altersrechnung testen lässt.
 	BackupSchluesselGesetzt bool
@@ -129,17 +129,17 @@ type Lage struct {
 	SicherungAus bool
 
 	// FerientabelleBis ist das letzte Jahr, für das Sommerferien bekannt sind
-	// (pkg/lmfplan/sommerferien.go und die Einstellung „Sommerferien"). Danach belegt der
+	// (internal/pkg/lmfplan/sommerferien.go und die Einstellung „Sommerferien"). Danach belegt der
 	// LMF-Planer den letzten Tag des Büchertauschs nicht mehr vor.
 	FerientabelleBis int
 
 	// UebrigeFerienBis ist das Jahr, in dem die letzten bekannten Herbst-, Weihnachts- und
-	// Osterferien enden (pkg/lmfplan/uebrige_ferien.go). Danach rückt eine Leihfrist nur
+	// Osterferien enden (internal/pkg/lmfplan/uebrige_ferien.go). Danach rückt eine Leihfrist nur
 	// noch über Wochenende, Feiertag und Sommerferien; eine Einstellung dafür gibt es nicht.
 	UebrigeFerienBis int
 
 	// RestoreProbe ist das Ergebnis der wöchentlichen Probe, ob sich das jüngste Backup
-	// einspielen lässt (jobs/restore_probe.go). nil: noch nie gelaufen oder nicht lesbar.
+	// einspielen lässt (internal/jobs/restore_probe.go). nil: noch nie gelaufen oder nicht lesbar.
 	RestoreProbe *jobs.RestoreProbeErgebnis
 
 	// LoeschRueckstand nennt je Löschroutine die Datensätze, die seit mindestens einem Tag

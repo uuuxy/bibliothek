@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // So beschreibt die Arbeitshilfe das Zugangsbuch: „jede Lieferung mit Eingangsdatum,

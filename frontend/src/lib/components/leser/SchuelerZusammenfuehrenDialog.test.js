@@ -70,7 +70,7 @@ afterEach(() => {
 
 // Die Akte eines Abgängers lieferte ist_abgaenger nicht; am offenen Datensatz fehlte die Marke,
 // die der Treffer der Suche trägt. Dass die Akte das Feld liefert, belegt
-// api/leser/leserakte_abgaenger_pg_test.go.
+// internal/api/leser/leserakte_abgaenger_pg_test.go.
 describe('SchuelerZusammenfuehrenDialog: der offene Datensatz', () => {
 	it('nennt einen Abgänger', () => {
 		const screen = render(SchuelerZusammenfuehrenDialog, {

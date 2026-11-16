@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 )

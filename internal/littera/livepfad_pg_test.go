@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // TestUebernommeneDatenUeberDenLivePfad liest die geschriebenen Zeilen mit dem Code der

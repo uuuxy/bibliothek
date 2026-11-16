@@ -20,7 +20,7 @@ const KATEGORIE_DIR = join(srcRoot, 'lib/components/einstellungen/kategorien');
 // Die Zuordnung Kategorie → Bauteil steht seit dem 23.09.2026 in KategorieDetail.svelte.
 const SHELL = join(srcRoot, 'lib/components/einstellungen/KategorieDetail.svelte');
 
-// Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/einstellungen_patch.go,
+// Das Vokabular der Einstellungs-Schlüssel — GELESEN aus internal/repository/einstellungen_patch.go,
 // nicht danebengeschrieben.
 //
 // Bis zum 23.08.2026 stand hier eine handgepflegte Kopie der 23 Schlüssel. Sie war

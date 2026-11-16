@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
 )

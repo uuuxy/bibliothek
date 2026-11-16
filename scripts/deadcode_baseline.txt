@@ -13,14 +13,14 @@ internal/pgtest/grundzustand.go: unreachable func: leseGrundzustand
 internal/pgtest/grundzustand.go: unreachable func: grundzustand.setzeZurueck
 internal/pgtest/grundzustand.go: unreachable func: grundzustand.leereBelegte
 internal/pgtest/grundzustand.go: unreachable func: grundzustand.schreibeZeilenZurueck
-# Dazu Anweisungen an die Testdatenbank (vorher Helfer in Testdateien von api/; die Tests der
+# Dazu Anweisungen an die Testdatenbank (vorher Helfer in Testdateien von internal/api/; die Tests der
 # Türen stehen in mehr als einem Paket, docs/OFFEN.md 5.65).
 internal/pgtest/anweisungen.go: unreachable func: InTx
 internal/pgtest/anweisungen.go: unreachable func: ZaehleZeilen
 internal/pgtest/anweisungen.go: unreachable func: RaeumeAuf
 
 # Testinfrastruktur per Paket-Design: der Leser für gedruckte PDF-Textstücke
-# (vorher Helfer in api/druck/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
+# (vorher Helfer in internal/api/druck/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
 # Schulbuch-Export gebraucht). Wird ausschließlich von *_test.go importiert.
 internal/pdftest/pdftest.go: unreachable func: IstPDF
 internal/pdftest/pdftest.go: unreachable func: Texte
@@ -33,19 +33,19 @@ internal/pdftest/pdftest.go: unreachable func: InhaltJeSeite
 internal/pdftest/pdftest.go: unreachable func: stroemeAus
 internal/pdftest/pdftest.go: unreachable func: TexteInReihenfolge
 internal/pdftest/pdftest.go: unreachable func: texteInReihenfolge
-# Dazu Seitenzahl und Seitenmaß eines PDFs (vorher Helfer in api/etiketten_layout_test.go; seit
-# die Erzeuger der Etiketten in pdf/ stehen, brauchen ihn die Tests beider Pakete).
+# Dazu Seitenzahl und Seitenmaß eines PDFs (vorher Helfer in internal/api/etiketten_layout_test.go; seit
+# die Erzeuger der Etiketten in internal/pdf/ stehen, brauchen ihn die Tests beider Pakete).
 internal/pdftest/seiten.go: unreachable func: Seiten
-# Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in pdf/).
+# Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in internal/pdf/).
 internal/pdftest/spalte.go: unreachable func: InSpalte
 internal/pdftest/spalte.go: unreachable func: InSpalteFett
 internal/pdftest/spalte.go: unreachable func: inSpalte
 internal/pdftest/spalte.go: unreachable func: Breite
 # Dazu die Schriftgröße, in der ein Text gedruckt ist: für Zeilen, die ihre Schrift verkleinern,
-# statt gekürzt zu werden (Tests in pdf/).
+# statt gekürzt zu werden (Tests in internal/pdf/).
 internal/pdftest/schrift.go: unreachable func: Schriftgroesse
 # Dazu das PDF als durchsuchbarer Text und der Anfang einer Antwort für eine Fehlermeldung
-# (vorher Helfer in Testdateien von api/).
+# (vorher Helfer in Testdateien von internal/api/).
 internal/pdftest/suchtext.go: unreachable func: Suchtext
 internal/pdftest/suchtext.go: unreachable func: ErsteBytes
 internal/pdftest/suchtext.go: unreachable func: Aufdruck
@@ -59,10 +59,10 @@ internal/smtptest/server.go: unreachable func: bediene
 internal/smtptest/server.go: unreachable func: leseNachricht
 internal/smtptest/server.go: unreachable func: adresseAus
 # Dazu das Warten auf die abgefangene Nachricht und ihr gekürzter Text für eine Fehlermeldung
-# (vorher Helfer in Testdateien von api/).
+# (vorher Helfer in Testdateien von internal/api/).
 internal/smtptest/warten.go: unreachable func: WarteAufMail
 internal/smtptest/warten.go: unreachable func: Kopf
-# Dazu ein Anhang aus der abgefangenen Nachricht (vorher Helfer in Testdateien von api/, die
+# Dazu ein Anhang aus der abgefangenen Nachricht (vorher Helfer in Testdateien von internal/api/, die
 # Tests mehrerer Themen brauchen).
 internal/smtptest/anhang.go: unreachable func: DateiAusMail
 internal/smtptest/anhang.go: unreachable func: PDFAusMail
@@ -86,7 +86,7 @@ internal/littera/leser.go: unreachable func: nurArt
 internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leere
 
 # Testinfrastruktur per Paket-Design: die Test-Arbeitsmappe für die Excel-Leser (vorher
-# Helfer in api/lusd_quelle_test.go, seit dem 09.10.2026 von internal/lusd und api
+# Helfer in internal/api/lusd_quelle_test.go, seit dem 09.10.2026 von internal/lusd und api
 # gebraucht). Wird ausschließlich von *_test.go importiert.
 internal/xlsxtest/xlsxtest.go: unreachable func: Baue
 internal/xlsxtest/xlsxtest.go: unreachable func: BaueInReihenfolge
@@ -94,7 +94,7 @@ internal/xlsxtest/xlsxtest.go: unreachable func: legeBlattAn
 internal/xlsxtest/xlsxtest.go: unreachable func: fuelleBlatt
 
 # Testinfrastruktur per Paket-Design: Zeilen in der Testdatenbank anlegen und leeren (vorher
-# Helfer in Testdateien von api/, die Tests mehrerer Themen brauchen; docs/OFFEN.md 5.65).
+# Helfer in Testdateien von internal/api/, die Tests mehrerer Themen brauchen; docs/OFFEN.md 5.65).
 # Wird ausschließlich von *_test.go importiert.
 internal/testdaten/testdaten.go: unreachable func: LeereBestandsdaten
 internal/testdaten/testdaten.go: unreachable func: Datum
@@ -147,7 +147,7 @@ internal/testweg/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
 # dazu die Attrappe der DNB und einen Transport aus einer Funktion (vorher Helfer in Testdateien
-# von api/ und inventur/, die Tests mehrerer Pakete brauchen) und Konto mit Sitzung für Tests
+# von internal/api/ und inventur/, die Tests mehrerer Pakete brauchen) und Konto mit Sitzung für Tests
 # über den ganzen Router, die im Ordner eines Themas stehen (docs/OFFEN.md 5.65). Wird
 # ausschließlich von *_test.go importiert.
 internal/tuertest/leitung.go: unreachable func: BeobachteLeitung
@@ -174,7 +174,7 @@ internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 
 # Testinfrastruktur per Paket-Design: der ganze Router mit einem angemeldeten Admin-Konto, für
 # Tests über den Router, die als eigenes Testpaket im Ordner eines Themas stehen
-# (docs/OFFEN.md 5.65). Das Paket bindet api/ ein und wird ausschließlich von *_test.go
+# (docs/OFFEN.md 5.65). Das Paket bindet internal/api/ ein und wird ausschließlich von *_test.go
 # importiert.
 internal/routertest/routertest.go: unreachable func: MitSitzung
 internal/routertest/routertest.go: unreachable func: MitSitzungUeber
@@ -182,8 +182,8 @@ internal/routertest/routertest.go: unreachable func: MitAufruf
 
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Ein Test ohne Tabelle der
 # Rechte legt die Entscheidung, was eine Rolle darf, in den Cache seines eigenen Servers.
-api/tuer/rechte.go: unreachable func: RechteCache.MerkeFuerTest
+internal/api/tuer/rechte.go: unreachable func: RechteCache.MerkeFuerTest
 
-# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Die Tests in api/katalog,
+# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Die Tests in internal/api/katalog,
 # internal/service und internal/katalogdienste kappen mit ihr den Weg ins Netz.
 internal/katalogdienste/katalogdienste.go: unreachable func: MetadatenClient.SetzeHTTPClientFuerTest

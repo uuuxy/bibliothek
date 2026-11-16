@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/logger"
+	"bibliothek/internal/pkg/logger"
 )
 
 // Was als Punkt zählt, entscheidet, ob die Mail wieder hinausgeht. Zählten Zahlen oder Uhrzeiten

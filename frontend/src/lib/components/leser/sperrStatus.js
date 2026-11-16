@@ -5,7 +5,7 @@
 //
 // ist_gesperrt ist die Sperre, die das Programm setzt (Ehemalige, Papierkorb,
 // Anonymisierung); is_manually_blocked die von Hand. Der Knopf in der Akte hebt beide auf
-// (api/leser/leser_sperre.go) und richtet sich deshalb nach diesem Prädikat. Eine alte Sperre
+// (internal/api/leser/leser_sperre.go) und richtet sich deshalb nach diesem Prädikat. Eine alte Sperre
 // am Konto eines Kollegen zeigt die Anzeige nicht an, weil die Theke sie nicht prüft.
 import { istKollegium } from './leserArt.js';
 

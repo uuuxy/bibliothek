@@ -1,0 +1,107 @@
+package katalog
+
+import (
+	"net/http"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/bestandsbuch"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
+)
+
+// Das Abgangsbuch: zwei Türen auf dieselbe Abfrage, eine für den Bildschirm (JSON) und eine
+// für das Blatt (PDF). Den Zeitraum bestimmt eine Stelle, bestandsbuchZeitraum: Belegte die
+// Oberfläche ihn selbst vor, gäbe es zwei Auslegungen von „laufendes Halbjahr", und der
+// Ausdruck deckte einen anderen Zeitraum ab als die Liste, aus der er entstand.
+
+// abgangsbuchAntwort ist das Abgangsbuch, wie Bildschirm und Blatt es lesen: fertig in
+// Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert nicht selbst,
+// sonst stünden auf dem Blatt und auf dem Bildschirm zwei Wörter für denselben Topf.
+type abgangsbuchAntwort struct {
+	Von           time.Time                            `json:"von"`
+	Bis           time.Time                            `json:"bis"`
+	Abschnitte    []topfAbschnitt[bestandsbuch.Abgang] `json:"abschnitte"`
+	Gesamt        int                                  `json:"gesamt"`
+	OhneZeitpunkt int                                  `json:"ohne_zeitpunkt"`
+	// AusKatalogGeloescht zählt die im Zeitraum gelöschten Exemplare ohne Zeile in den
+	// Bestandsbüchern, also aus der Zeit vor Migration 171. Sie stehen in keinem Abschnitt, denn
+	// mit dem Exemplar ist auch sein Titel gegangen (internal/repository/abgangsbuch.go).
+	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
+}
+
+func abgangsbuchAntwortAus(buch repository.Abgangsbuch) abgangsbuchAntwort {
+	return abgangsbuchAntwort{
+		Von: buch.Von,
+		Bis: buch.Bis,
+		Abschnitte: abschnitteAus(bestandsbuch.Abgaenge(buch.Zeilen),
+			func(z bestandsbuch.Abgang) string { return z.Topf }, func(z bestandsbuch.Abgang) int { return z.Anzahl }),
+		Gesamt:        len(buch.Zeilen),
+		OhneZeitpunkt: buch.OhneZeitpunkt,
+
+		AusKatalogGeloescht: buch.AusKatalogGeloescht,
+	}
+}
+
+// abgangsbuchBlatt füllt die Eingabe des Blatts aus der Antwort für den Bildschirm: Das Blatt
+// trägt dieselben Abschnitte, Überschriften und Zahlen wie die Liste, aus der es entsteht.
+func abgangsbuchBlatt(antwort abgangsbuchAntwort) pdf.Abgangsbuch {
+	blatt := pdf.Abgangsbuch{
+		Von:                 antwort.Von,
+		Bis:                 antwort.Bis,
+		Abschnitte:          make([]pdf.AbgangsAbschnitt, 0, len(antwort.Abschnitte)),
+		Gesamt:              antwort.Gesamt,
+		OhneZeitpunkt:       antwort.OhneZeitpunkt,
+		AusKatalogGeloescht: antwort.AusKatalogGeloescht,
+	}
+	for _, abschnitt := range antwort.Abschnitte {
+		zeilen := make([]pdf.AbgangsZeile, 0, len(abschnitt.Zeilen))
+		for _, z := range abschnitt.Zeilen {
+			zeilen = append(zeilen, pdf.AbgangsZeile{
+				Datum: z.Datum, Titel: z.Titel, Signatur: z.Signatur, GrundText: z.GrundText,
+				Anzahl: z.Anzahl, Barcodes: z.Barcodes,
+			})
+		}
+		blatt.Abschnitte = append(blatt.Abschnitte,
+			pdf.AbgangsAbschnitt{Titel: abschnitt.Titel, Exemplare: abschnitt.Exemplare, Zeilen: zeilen})
+	}
+	return blatt
+}
+
+// Abgangsbuch liefert die Abgänge eines Zeitraums für den Bildschirm.
+// GET /api/bestand/abgangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
+func (t *Tueren) Abgangsbuch() http.HandlerFunc {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
+		von, bis, err := bestandsbuchZeitraum(r, schulzeit.Halbjahr)
+		if err != nil {
+			return err
+		}
+		buch, err := repository.LadeAbgangsbuch(r.Context(), t.DB.Pool, von, bis)
+		if err != nil {
+			return apierrors.Internal("Abgangsbuch konnte nicht gelesen werden", err)
+		}
+		tuer.AntworteJSON(w, http.StatusOK, abgangsbuchAntwortAus(buch))
+		return nil
+	})
+}
+
+// AbgangsbuchPDF druckt dasselbe als Blatt zum Abheften.
+// GET /api/bestand/abgangsbuch/pdf?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
+func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
+		von, bis, err := bestandsbuchZeitraum(r, schulzeit.Halbjahr)
+		if err != nil {
+			return err
+		}
+		buch, err := repository.LadeAbgangsbuch(r.Context(), t.DB.Pool, von, bis)
+		if err != nil {
+			return apierrors.Internal("Abgangsbuch konnte nicht gelesen werden", err)
+		}
+		return t.antworteBestandsbuchBlatt(r.Context(), w, "Abgangsbuch", buch.Von, buch.Bis,
+			func(schule pdf.SchuleInfo) ([]byte, error) {
+				return pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
+			})
+	})
+}

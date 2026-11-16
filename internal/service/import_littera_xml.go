@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"bibliothek/internal/littera"
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/pkg/lmf"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/pkg/lmf"
+	"bibliothek/internal/repository"
 
 	"golang.org/x/net/html/charset"
 )

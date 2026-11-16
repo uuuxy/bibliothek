@@ -286,7 +286,7 @@ export function seedBestellbedarf(anzahl = 8) {
 
 /**
  * Lässt Schulbücher im Bestellbedarf fehlen. Der Bedarf rechnet nach der Zahl der Kinder
- * (repository/bestellbedarf.go): Ein Kind der 3 hat die Exemplare für dieses Schuljahr
+ * (internal/repository/bestellbedarf.go): Ein Kind der 3 hat die Exemplare für dieses Schuljahr
  * ausgeliehen, und aus der 2 rücken so viele Kinder nach, dass das nächste Schuljahr von jedem
  * dieser Bücher genau bestand + 1 Stück braucht. Die anderen Kinder der 2 und der 3 in der
  * Datenbank zählen mit; deshalb hängen die Zahlen der angelegten Kinder an ihnen.

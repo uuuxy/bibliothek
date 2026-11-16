@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 

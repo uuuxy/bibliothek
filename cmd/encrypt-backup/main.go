@@ -44,7 +44,7 @@ func fuehreAus(argumente []string, stdin io.Reader, stdout, stderr io.Writer, um
 	if schluessel == "" {
 		return fmt.Errorf("BACKUP_ENCRYPTION_KEY nicht gesetzt — ohne Schlüssel kann nicht verschlüsselt werden")
 	}
-	// Warnen, nicht abbrechen: dieselbe Abwägung wie im nächtlichen Lauf (jobs/backup.go). Eine
+	// Warnen, nicht abbrechen: dieselbe Abwägung wie im nächtlichen Lauf (internal/jobs/backup.go). Eine
 	// Sicherung mit kurzer Passphrase ist viel besser als gar keine, und der Aufrufer ist hier
 	// ein Skript des Deploys, dem der Abbruch die Sicherung nähme.
 	if len(schluessel) < mindestLaenge {

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 )
 
 // Standorte stehen in Littera an zwei Stellen, und beide kommen ans Exemplar

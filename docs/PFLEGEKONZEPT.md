@@ -182,10 +182,10 @@ einmal allein, nur mit diesen Seiten.
 | PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | bringt das Image eine neue ICU-Fassung, steht im Log der Datenbank `collation "deutsch" has version mismatch`                                    | `update.sh` holt das Datenbank-Image bei jedem Update neu (Schritt 3); eine Nebenversion braucht weder Sicherung noch Neuaufbau, und die Datenbank sortiert ohne Sprachregeln (`datlocprovider` = c), ein neues Alpine ändert also keine Indizes. Nach der Warnung einmal `ALTER COLLATION deutsch REFRESH VERSION`; kein Index benutzt die Kollation, neu aufzubauen ist nichts (Migration 165) |
 | Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | `update.sh` baut mit `--pull` und leert danach den Build-Cache: Das nächste Update holt die Basis-Images neu und baut die Schicht mit `apk upgrade` neu                        |
 | Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; es holt dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
-| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/sommerferien.go`, `uebrige_ferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                 |
+| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`internal/pkg/lmfplan/sommerferien.go`, `uebrige_ferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                 |
 | Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                                                                  |
 
-Feiertage rechnet das Programm selbst aus (`pkg/lmfplan/feiertage.go`); sie brauchen keine
+Feiertage rechnet das Programm selbst aus (`internal/pkg/lmfplan/feiertage.go`); sie brauchen keine
 Pflege. Die beweglichen Ferientage legt jede Schule selbst; sie stehen nicht im Programm.
 
 Die Alarm-Mails gehen an die Adressen unter Einstellungen → Erreichbarkeit & Alarme, ist das
@@ -237,8 +237,8 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   kleines Programm, einmal mit jedem Stand gebaut, das je Blatt die Zahl der Zeilen und Zellen
   und eine Prüfsumme über die Werte ausgibt, roh und formatiert. Trifft eine Meldung einen
   Aufruf des Programms (`OpenReader`, `GetRows`), kommt ein Test dazu, der am alten Stand rot
-  ist (`pkg/xlsxgrenze/`); den alten Stand nimmt
-  `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Auf die veröffentlichte
+  ist (`internal/pkg/xlsxgrenze/`); den alten Stand nimmt
+  `GOWORK=off go test -modfile=<altes go.mod> ./internal/pkg/xlsxgrenze/`. Auf die veröffentlichte
   Fassung hebt der Vorschlag von Dependabot, sobald es sie gibt.
 - **Der Push bricht an der Schwachstellen-Prüfung ab, am Stand hat sich nichts geändert
   (Go-Standardbibliothek).** govulncheck meldet Schwachstellen in der Standardbibliothek, die
@@ -265,12 +265,12 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Schlüssel in der Liste, sperrte das Update die Anmeldung aus. Vom Arbeitsplatz aus verfälscht
   ein Virenschutz, der TLS aufbricht, die Probe.
 - **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat.** Zieht eine
-  Abfrage aus einer Tür nach `repository/`, kommt die Zeile als Rückgabe einer Funktion, die
+  Abfrage aus einer Tür nach `internal/repository/`, kommt die Zeile als Rückgabe einer Funktion, die
   die Kennung aus der Anfrage als Argument bekommt, und die Analyse wertet die Rückgabe als von
-  der Anfrage abhängig. Ebenso, wenn der Erzeuger eines PDFs aus `api/` in ein anderes Paket
+  der Anfrage abhängig. Ebenso, wenn der Erzeuger eines PDFs aus `internal/api/` in ein anderes Paket
   zieht: Die Tür schreibt dann die Rückgabe einer fremden Funktion in die Antwort. Der Job
   „Go – gosec static analysis" meldet dort die Regel G705 (XSS über Taint-Analyse), so am
-  Bescheid in `api/schaden/` beim Schreiben des PDFs in die Antwort. Ist der Körper wie dort
+  Bescheid in `internal/api/schaden/` beim Schreiben des PDFs in die Antwort. Ist der Körper wie dort
   das erzeugte PDF, ausgeliefert als `application/pdf`, als Anhang und mit `nosniff`, kommt
   der Vermerk `#nosec G705` mit Grund an die Stelle. Der Hook vor dem Push fährt gosec über
   dasselbe Skript wie der Prüflauf (`scripts/gosec-gate.sh`); nach einem solchen Umzug das
@@ -293,7 +293,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   betroffen: erst am Quelltext der benutzten Fassung nachsehen, welcher Zweig ungeschützt ist
   und ob die eigenen Aufrufe ihn erreichen; die Antwort als Test ins Repository, dann die
   Ausnahme nach Abschnitt 4. Ein Beispiel ist GO-2026-6452 mit den Tests in
-  `pkg/xlsxgrenze/negativer_sharedstring_test.go` ([SECURITY.md](SECURITY.md), „Automatische
+  `internal/pkg/xlsxgrenze/negativer_sharedstring_test.go` ([SECURITY.md](SECURITY.md), „Automatische
   Sicherheitsprüfungen").
 - **CodeQL meldet eine Stelle, die mit der Quelle nichts zu tun hat.** Geht ein Aufruf gegen
   eine Schnittstelle (`io.Writer`), nimmt CodeQL jede Methode dieser Form im Programm als
@@ -380,7 +380,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   (Schritt 7).
 - **Nach einem abgebrochenen `rundgang-rechte.spec.js` sind viele Browser-Tests rot.** Der Test stellt
   die Rolle Mitarbeiter nacheinander auf einzelne Rechte und erst am Ende zurück. Bricht der Lauf ab,
-  bleibt sie auf einem Recht stehen, und ein Neubau ändert das nicht: Die Vorgabe (`db/rechte_vorgabe.go`)
+  bleibt sie auf einem Recht stehen, und ein Neubau ändert das nicht: Die Vorgabe (`internal/db/rechte_vorgabe.go`)
   ergänzt nur fehlende Zeilen. Abhilfe: die Haken der Rolle unter Benutzer & Rechte nach der Vorgabe
   setzen. Ab Werk hält sie 18 von 24 Rechten.
 - **Das Seitenbild eines roten Browser-Tests zeigt eine Seite, die der Test nie geöffnet hat.**
@@ -434,7 +434,7 @@ Gemessen am 31.10.2026 am Go-Code ohne Tests: 612 Dateien, 2.770 Funktionen.
   behalten ihre Namen, deutsche wie englische ([STIL.md](STIL.md), Abschnitt 9).
 - Die Datenbankschicht ist ein Ordner mit 185 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
-- Die größte Datei hat 635 Zeilen (`repository/leser_zusammenfuehren.go`).
+- Die größte Datei hat 635 Zeilen (`internal/repository/leser_zusammenfuehren.go`).
 - Um den Code: über 4.000 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
   [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)), ein Architektur-Dokument von
   rund 3.900 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).

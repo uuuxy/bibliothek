@@ -60,7 +60,7 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	// Die Spalte war nicht neu (sie stand dort seit dem 10.08.2026, als die Rolle
 	// „lehrer" in „kollegium" umbenannt wurde, 15d2806e), aber sie widersprach dem
 	// Modell: Kollegium ist der Grundzustand jeder Lehrkraft, keine Rolle neben Leitung
-	// und Mitarbeiter. Seine Rechte stehen fest in db/rechte_vorgabe.go und sind eine
+	// und Mitarbeiter. Seine Rechte stehen fest in internal/db/rechte_vorgabe.go und sind eine
 	// Produktentscheidung, kein Schalter je Schule.
 	//
 	// ohneKommentare ist hier Pflicht und keine Sorgfalt: In RechteMatrix.svelte
@@ -91,7 +91,7 @@ describe('Login-Weiche', () => {
 		authStore.handleLogout();
 	});
 
-	// Die Rechte kommen im Login mit (auth/anmelden.go lädt sie aus role_permissions) —
+	// Die Rechte kommen im Login mit (internal/auth/anmelden.go lädt sie aus role_permissions) —
 	// ohne sie prüfte der Test eine Weiche, die es so nie sieht.
 	async function meldeAn(rolle, permissions) {
 		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
@@ -118,7 +118,7 @@ describe('Login-Weiche', () => {
 	});
 
 	it('das Kollegium bekommt weiter nur sein Portal', async () => {
-		// Rechte des Kollegiums ab Werk: nur create_reservations (db/rechte_vorgabe.go).
+		// Rechte des Kollegiums ab Werk: nur create_reservations (internal/db/rechte_vorgabe.go).
 		await meldeAn('kollegium', ['create_reservations']);
 		expect(appState.adminAuthenticated).toBe(false);
 	});

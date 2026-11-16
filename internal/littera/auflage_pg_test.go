@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // TestAuflageKommtMit geht den Weg von der Zeile des Exports bis in die Tabelle und liest mit

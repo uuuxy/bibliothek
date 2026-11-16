@@ -22,9 +22,9 @@ function readCsrfToken() {
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 // Fristen für Aufrufe, hinter denen der Server in der Anfrage Mail verschickt. Der Versand hat
-// eigene Fristen (mailservice/versand.go: 10 s Verbindung, 60 s Sitzung). Gäbe die Oberfläche
+// eigene Fristen (internal/mailservice/versand.go: 10 s Verbindung, 60 s Sitzung). Gäbe die Oberfläche
 // vorher auf, sähe niemand die Antwort, und der zweite Versuch träfe eine Arbeit, die schon
-// geschehen ist. Welche Aufrufe eine der beiden tragen müssen, hält api/mail_routen_frist_test.go.
+// geschehen ist. Welche Aufrufe eine der beiden tragen müssen, hält internal/api/mail_routen_frist_test.go.
 export const FRIST_MAILVERSAND_MS = 90000;
 // Der Sammelversand öffnet je Klasse eine Sitzung: die Frist der Uploads.
 export const FRIST_SAMMELVERSAND_MS = 300000;

@@ -3,7 +3,7 @@
      bestätigen. Material 3, Dialogs: „Dialogs should contain a maximum of two actions" — eine
      bestätigende und eine abbrechende; „Disable confirming actions until a choice is made.
      Dismissive actions are never disabled." Die Regeln stehen im Server
-     (repository/auflagen.go); der Dialog bietet nur an, was dort durchgeht. -->
+     (internal/repository/auflagen.go); der Dialog bietet nur an, was dort durchgeht. -->
 <script>
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';

@@ -9,7 +9,7 @@ import (
 )
 
 // Ein Geldbetrag steht überall in derselben Schreibweise: zwei Nachkommastellen mit Komma, aus
-// pkg/betrag. Eine Stelle, die den Betrag selbst formatiert, schreibt leicht einen Dezimalpunkt
+// internal/pkg/betrag. Eine Stelle, die den Betrag selbst formatiert, schreibt leicht einen Dezimalpunkt
 // („Forderung über 12.50 € storniert", „12.50 EUR" im Brief). Dieselbe Bugklasse wie in der
 // Oberfläche (docs/sweeps.md, „Schreibweise neben ihrem Helfer").
 //
@@ -43,7 +43,7 @@ func TestBetraege_KommenAusDemHelfer(t *testing.T) {
 				continue
 			}
 			if fund := vonHand.FindString(zeile); fund != "" {
-				t.Errorf("%s:%d schreibt einen Betrag von Hand (%s) — betrag.Euro oder betrag.Text aus pkg/betrag nehmen: %s",
+				t.Errorf("%s:%d schreibt einen Betrag von Hand (%s) — betrag.Euro oder betrag.Text aus internal/pkg/betrag nehmen: %s",
 					filepath.ToSlash(pfad), i+1, fund, strings.TrimSpace(zeile))
 			}
 		}

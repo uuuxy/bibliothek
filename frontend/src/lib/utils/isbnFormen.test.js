@@ -49,7 +49,7 @@ describe('isbnFormen', () => {
 	});
 });
 
-// Die JavaScript-Seite der geteilten Prüffälle (pkg/isbnutil/normalform_test.go prüft die
+// Die JavaScript-Seite der geteilten Prüffälle (internal/pkg/isbnutil/normalform_test.go prüft die
 // Go-Seite): Die Datenbank führt eine ISBN in der Normalform, die Katalogsuche sucht hiermit.
 describe('isbnFormen, geteilte Prüffälle mit isbnutil.Normalform', () => {
 	const faelle = pruefung.faelle;

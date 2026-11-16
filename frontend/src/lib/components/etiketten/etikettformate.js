@@ -1,13 +1,13 @@
 /**
  * Die Etikettenbögen, die das Programm bedrucken kann: eine Liste für das ganze Frontend.
  *
- * Maßgeblich bleibt `pdf/etikett_formate.go`; `etikettformate-konsistenz.test.js` hält
+ * Maßgeblich bleibt `internal/pdf/etikett_formate.go`; `etikettformate-konsistenz.test.js` hält
  * diese Datei dagegen. Mehrere Oberflächen bieten dieselben Bögen an (Buch- und
  * Schüler-Etiketten, Ausweis-Werkzeugleiste), und jede eigene Kopie liefe auseinander.
  *
  * Kein Abruf vom Server: Dafür bräuchte es einen neuen Endpunkt und einen Ladezustand in
  * drei Verbrauchern des täglich benutzten Druck-Bildschirms. Diese Datei ist die eine
- * Kopie, die der Test gegen pdf/etikett_formate.go hält.
+ * Kopie, die der Test gegen internal/pdf/etikett_formate.go hält.
  */
 
 /**

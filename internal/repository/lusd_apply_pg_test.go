@@ -1,0 +1,266 @@
+package repository_test
+
+import (
+	"context"
+	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// TestAnonymisiereAbgaenger_LoeschtFoto sichert die DSGVO-Datensparsamkeit ab: Beim
+// Anonymisieren eines Abgängers muss das verschlüsselte Passfoto sofort verschwinden — nicht
+// erst beim späteren Hard-Purge. Sonst überlebt das personenbezogenste Datum die
+// Namens-/Adress-Löschung.
+func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var id string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+		 VALUES ('F-1', 'Max', 'Muster', '7a', 2025, 'L-F') RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, '\x0102'::bytea)`, id); err != nil {
+		t.Fatalf("Foto anlegen: %v", err)
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("repository.AnonymisiereAbgaenger: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var fotos int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`, id).Scan(&fotos); err != nil {
+		t.Fatal(err)
+	}
+	if fotos != 0 {
+		t.Error("verschlüsseltes Foto wurde bei der Anonymisierung nicht gelöscht")
+	}
+	if _, abgaenger, _, vorname := testdaten.LadeSchuelerStatus(t, pool, id); !abgaenger || vorname != "Abgänger" {
+		t.Errorf("Datensatz nicht korrekt anonymisiert: vorname=%q abgaenger=%v", vorname, abgaenger)
+	}
+}
+
+// Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur gesperrt (nicht
+// anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
+// dauerhaft. repository.AendereLUSDBestand muss beim Rückkehrer prüfen, ob noch Vorgänge offen
+// sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
+// nur ein echter DB-Test (nicht pgxmock) prüft sie.
+
+// legeGesperrtenAbgaengerAn legt einen als Abgänger gesperrten Schüler an und liefert die ID.
+func legeGesperrtenAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, klasse, sperrgrund string) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO schueler
+		   (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, ist_gesperrt, block_reason)
+		 VALUES ($1, $2, $3, $4, 2025, true, true, $5)
+		 RETURNING id`,
+		barcode, vorname, nachname, klasse, sperrgrund).Scan(&id); err != nil {
+		t.Fatalf("gesperrten Abgänger %q anlegen: %v", barcode, err)
+	}
+	return id
+}
+
+// fuehreAktualisierungAus führt repository.AendereLUSDBestand für einen Schüler in einer echten
+// Transaktion aus. Das Verpacken in Scheiben mit einem Element ist Gerüst des Tests und steht
+// deshalb hier und nicht als zweiter Einstieg im Programmcode.
+func fuehreAktualisierungAus(t *testing.T, pool *pgxpool.Pool, zeile repository.LUSDAktualisierung, id string) {
+	t.Helper()
+	ctx := context.Background()
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach Commit ist no-op
+	zeile.SchuelerID = id
+	if err := repository.AendereLUSDBestand(ctx, tx, []repository.LUSDAktualisierung{zeile}); err != nil {
+		t.Fatalf("AendereLUSDBestand: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+}
+
+func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
+	pool := pgtest.Pool(t)
+
+	t.Run("gesperrter Abgänger ohne offene Vorgänge wird entsperrt", func(t *testing.T) {
+		testdaten.LeereBestandsdaten(t, pool)
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-A", "Max", "Muster", "ABG",
+			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
+
+		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
+		if gesperrt {
+			t.Error("Rückkehrer ohne offene Vorgänge muss entsperrt sein (Permanent Ghost-Block)")
+		}
+		if abgaenger {
+			t.Error("ist_abgaenger muss beim Rückkehrer zurückgesetzt sein")
+		}
+		if reason != nil {
+			t.Errorf("block_reason muss geräumt sein, war %q", *reason)
+		}
+	})
+
+	t.Run("gesperrter Abgänger mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
+		testdaten.LeereBestandsdaten(t, pool)
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-B", "Lea", "Klein", "ABG",
+			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+		testdaten.LegeOffeneAusleiheAn(t, pool, id, "B")
+
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
+
+		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
+		if !gesperrt {
+			t.Error("mit offener Ausleihe muss die Sperre bestehen bleiben")
+		}
+		if abgaenger {
+			t.Error("ist_abgaenger muss trotzdem zurückgesetzt sein (er ist wieder aktiv)")
+		}
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
+			t.Errorf("irreführender Abgänger-Grund muss umbenannt werden, war %v", reason)
+		}
+	})
+
+	t.Run("gesperrter Abgänger mit unbezahltem Schaden bleibt gesperrt", func(t *testing.T) {
+		testdaten.LeereBestandsdaten(t, pool)
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-C", "Tom", "Groß", "ABG",
+			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+		testdaten.LegeOffenenSchadenAn(t, pool, id, "C")
+
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
+
+		gesperrt, _, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
+		if !gesperrt {
+			t.Error("mit unbezahltem Schaden muss die Sperre bestehen bleiben")
+		}
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
+			t.Errorf("Grund muss umbenannt werden, war %v", reason)
+		}
+	})
+
+	t.Run("manuelle Sperre bleibt unangetastet", func(t *testing.T) {
+		testdaten.LeereBestandsdaten(t, pool)
+		const manuell = "Manuell gesperrt: wiederholter Vandalismus"
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-D", "Nia", "Wolf", "ABG", manuell)
+
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
+
+		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)
+		if !gesperrt {
+			t.Error("manuelle Sperre darf nicht automatisch aufgehoben werden")
+		}
+		if abgaenger {
+			t.Error("ist_abgaenger muss dennoch zurückgesetzt sein")
+		}
+		if reason == nil || *reason != manuell {
+			t.Errorf("manueller Grund muss erhalten bleiben, war %v", reason)
+		}
+	})
+
+	t.Run("anonymisierter Abgänger wird entsperrt und umbenannt", func(t *testing.T) {
+		testdaten.LeereBestandsdaten(t, pool)
+		// Anonymisierte tragen 'Abgänger' / 'Anonymisiert-…' und den festen Grund.
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
+			"Abgänger anonymisiert")
+
+		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
+
+		gesperrt, abgaenger, reason, vorname := testdaten.LadeSchuelerStatus(t, pool, id)
+		if gesperrt {
+			t.Error("anonymisierter Rückkehrer muss entsperrt werden")
+		}
+		if abgaenger {
+			t.Error("ist_abgaenger muss zurückgesetzt sein")
+		}
+		if reason != nil {
+			t.Errorf("block_reason muss geräumt sein, war %q", *reason)
+		}
+		if vorname != "Sophie" {
+			t.Errorf("echter Name aus dem Export muss übernommen werden, war %q", vorname)
+		}
+	})
+}
+
+// Anonymisiert der LUSD-Pfad einen Schüler, ohne anonymized_at zu setzen, sieht die nächtliche
+// Tilgung der Neben-Tabellen (Kriterium anonymized_at IS NOT NULL) ihn nie, und der Purge am
+// 30. Januar kommt ihr zuvor und räumt audit_logs nicht: Die staatliche LUSD-ID
+// (LUSD_ID_NACHGETRAGEN) überlebte 24 Monate im Protokoll. Deshalb: Marker gesetzt, Barcode
+// anonym, Spuren in derselben Transaktion weg.
+func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var id, titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+		 VALUES ('F-2', 'Lena', 'Spur', '9a', 2025, 'L-SPUR-42') RETURNING id`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Spur-Titel")
+	seed := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatalf("%s: %v", sql, err)
+		}
+	}
+	seed(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', 'L-SPUR-42'))`, id)
+	seed(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details) VALUES ('schueler', 'UPDATE', $1, 'USER', jsonb_build_object('vorname', 'Lena', 'nachname', 'Spur'))`, id)
+	seed(`INSERT INTO vormerkungen (titel_id, schueler_id, notiz) VALUES ($1, $2, 'Lena bitte anrufen')`, titelID, id)
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("repository.AnonymisiereAbgaenger: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var anonymisiert bool
+	var barcode string
+	if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL, barcode_id FROM schueler WHERE id=$1`, id).Scan(&anonymisiert, &barcode); err != nil {
+		t.Fatal(err)
+	}
+	if !anonymisiert || barcode != "ANON-"+id {
+		t.Errorf("Marker/Barcode fehlen: anonymized=%v barcode=%q", anonymisiert, barcode)
+	}
+	zaehleSQL := func(sql string, args ...any) int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM audit_logs WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, id); n != 0 {
+		t.Errorf("LUSD-ID lebt in audit_logs weiter (%d Zeilen)", n)
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM audit_log WHERE tabelle='schueler' AND datensatz_id=$1 AND details::text LIKE '%Lena%'`, id); n != 0 {
+		t.Errorf("Klarname lebt in audit_log weiter (%d Zeilen)", n)
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM vormerkungen WHERE schueler_id=$1`, id); n != 0 {
+		t.Errorf("Vormerkung mit Notiz lebt weiter (%d)", n)
+	}
+}

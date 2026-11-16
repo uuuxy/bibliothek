@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, seedSQL, seedBenutzer, querySQL, uniqueSuffix } from './helpers.js';
 
 // Den Designer öffnet, wer Ausweise druckt; das Design ändern darf nur, wer die Einstellungen
-// verwaltet (api/routen_system.go). Das Öffnen schickte das unveränderte Design an den Server:
+// verwaltet (internal/api/routen_system.go). Das Öffnen schickte das unveränderte Design an den Server:
 // Mitarbeiter und Leitung lasen danach „Speichern fehlgeschlagen: Keine Berechtigung".
 
 /** @param {import('@playwright/test').Page} page */

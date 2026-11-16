@@ -13,7 +13,7 @@ import (
 // Anonymisierung rechnet mit abgaenger_seit. Ein Weg mit anderem Präfix („Automatische" statt
 // „Automatisierte") oder ohne Stempel der Uhr erzeugt eine Sperre, die diese Pfade nicht erkennen.
 // Zwei Regeln, mechanisch:
-//  1. Das Präfix steht als Literal nur in repository/abgaenger_sperre.go.
+//  1. Das Präfix steht als Literal nur in internal/repository/abgaenger_sperre.go.
 //  2. Jedes SQL, das ist_abgaenger auf true setzt, stempelt im selben Statement abgaenger_seit.
 func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 	wechsleInDieWurzel(t)
@@ -40,7 +40,7 @@ func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 			return err
 		}
 		pfad = filepath.ToSlash(pfad)
-		if praefix.Match(inhalt) && pfad != "repository/abgaenger_sperre.go" {
+		if praefix.Match(inhalt) && pfad != "internal/repository/abgaenger_sperre.go" {
 			verstoesse = append(verstoesse, pfad+": Sperrgrund-Präfix als Literal — repository.AbgaengerSperrPraefix nutzen")
 		}
 		// Ein SQL, das eine Go-Konstante einbettet (` + repository.X + `), ist eine einzige Anweisung.

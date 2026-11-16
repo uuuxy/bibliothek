@@ -3,7 +3,7 @@ package katalogdienste
 import (
 	"regexp"
 
-	"bibliothek/pkg/betrag"
+	"bibliothek/internal/pkg/betrag"
 )
 
 // MARC21 020 $c ("Terms of availability") enthält bei DNB-Datensätzen den Ladenpreis.

@@ -21,7 +21,7 @@
 	);
 
 	// Eine Aussage, zwei Darstellungen — der Text steht deshalb nur einmal hier.
-	// Was jobs/cron_dsgvo.go (FuehreBearbeiterAnonymisierungAus) jede Nacht tut.
+	// Was internal/jobs/cron_dsgvo.go (FuehreBearbeiterAnonymisierungAus) jede Nacht tut.
 	const DSGVO_HINWEIS =
 		'Wer an der Theke ausgeliehen oder zurückgenommen hat, steht 14 Tage nach der Rückgabe nicht mehr an der Ausleihe';
 </script>

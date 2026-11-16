@@ -60,8 +60,8 @@ var ddlAnweisung = regexp.MustCompile(`(?i)\b(CREATE|ALTER|DROP)\s+(SEQUENCE|TAB
 
 // ddlAusnahmen nennt die Dateien, die Struktur zur Laufzeit anlegen dürfen, mit dem Grund.
 var ddlAusnahmen = map[string]string{
-	"db/migrationen.go":         "der Runner der Migrationen: Die Tabelle schema_migrations muss es vor der ersten Migration geben",
-	"internal/pgtest/pgtest.go": "die Harness der Datenbank-Tests leert das Schema der Testdatenbank, bevor sie schema.sql lädt",
+	"internal/db/migrationen.go": "der Runner der Migrationen: Die Tabelle schema_migrations muss es vor der ersten Migration geben",
+	"internal/pgtest/pgtest.go":  "die Harness der Datenbank-Tests leert das Schema der Testdatenbank, bevor sie schema.sql lädt",
 }
 
 // ddlOhneQuelltext nennt Ordner, die keinen Go-Code des Programms tragen.
@@ -115,24 +115,24 @@ func ddlImBaum(wurzel string) (funde []ddlFund, gelesen int, err error) {
 	return funde, gelesen, err
 }
 
-// Der Sammler sieht eine Datei in jedem Ordner des Baums, auch in einem Unterordner von api/,
+// Der Sammler sieht eine Datei in jedem Ordner des Baums, auch in einem Unterordner von internal/api/,
 // und lässt aus, was kein Quelltext des Programms ist.
 func TestDDLImBaum_Selbstprobe(t *testing.T) {
 	wurzel := t.TempDir()
 	anweisung := "package x\n\nconst a = `CREATE SEQUENCE IF NOT EXISTS probe_seq`\n"
 	for pfad, inhalt := range map[string]string{
-		"api/tuer.go":                 anweisung,
-		"api/thema/regel.go":          "package thema\n\nconst a = `alter table probe add column b int`\n",
-		"mailservice/versand.go":      "package mailservice\n\nvar a = \"DROP INDEX probe_idx\"\n",
-		"repository/sauber.go":        "package repository\n\n// CREATE TABLE steht hier nur im Kommentar.\nconst a = `SELECT 1`\n",
-		"repository/zeile_test.go":    anweisung,
-		"cmd/werkzeug/main.go":        anweisung,
-		"internal/cmd/regel.go":       anweisung,
-		"frontend/node_modules/x.go":  anweisung,
-		"api/thema/testdata/datei.go": anweisung,
-		".arbeitskopie/api/tuer.go":   anweisung,
-		"uploads/abgelegt.go":         anweisung,
-		"api/uploads/abgelegt.go":     anweisung,
+		"internal/api/tuer.go":                 anweisung,
+		"internal/api/thema/regel.go":          "package thema\n\nconst a = `alter table probe add column b int`\n",
+		"internal/mailservice/versand.go":      "package mailservice\n\nvar a = \"DROP INDEX probe_idx\"\n",
+		"internal/repository/sauber.go":        "package repository\n\n// CREATE TABLE steht hier nur im Kommentar.\nconst a = `SELECT 1`\n",
+		"internal/repository/zeile_test.go":    anweisung,
+		"cmd/werkzeug/main.go":                 anweisung,
+		"internal/cmd/regel.go":                anweisung,
+		"frontend/node_modules/x.go":           anweisung,
+		"internal/api/thema/testdata/datei.go": anweisung,
+		".arbeitskopie/api/tuer.go":            anweisung,
+		"uploads/abgelegt.go":                  anweisung,
+		"internal/api/uploads/abgelegt.go":     anweisung,
 	} {
 		ziel := filepath.Join(wurzel, filepath.FromSlash(pfad))
 		if err := os.MkdirAll(filepath.Dir(ziel), 0o750); err != nil {
@@ -151,11 +151,11 @@ func TestDDLImBaum_Selbstprobe(t *testing.T) {
 		stellen = append(stellen, fund.datei+":"+strconv.Itoa(fund.zeile))
 	}
 	slices.Sort(stellen)
-	erwartet := []string{"api/thema/regel.go:3", "api/tuer.go:3", "internal/cmd/regel.go:3", "mailservice/versand.go:3"}
+	erwartet := []string{"internal/api/thema/regel.go:3", "internal/api/tuer.go:3", "internal/cmd/regel.go:3", "internal/mailservice/versand.go:3"}
 	if !slices.Equal(stellen, erwartet) {
 		t.Errorf("gefunden %v, erwartet %v", stellen, erwartet)
 	}
 	if gelesen != 5 {
-		t.Errorf("%d Dateien gelesen, erwartet 5 (die vier mit Fund und repository/sauber.go)", gelesen)
+		t.Errorf("%d Dateien gelesen, erwartet 5 (die vier mit Fund und internal/repository/sauber.go)", gelesen)
 	}
 }

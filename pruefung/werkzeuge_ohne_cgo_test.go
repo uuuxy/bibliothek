@@ -9,7 +9,7 @@ import (
 )
 
 // Der Dockerfile baut drei Werkzeuge mit CGO_ENABLED=0. Zieht eines davon über seine Importe
-// ein Paket mit cgo mit (die WebP-Bibliothek hinter pkg/imageutil), scheitert erst der Bau
+// ein Paket mit cgo mit (die WebP-Bibliothek hinter internal/pkg/imageutil), scheitert erst der Bau
 // des Images: `go build ./...`, die Tests und die Hooks laufen mit cgo und merken nichts.
 // Der Weg dorthin ist kurz — ein neuer Import in repository genügt.
 func TestWerkzeugeOhneCgo_BindenKeinCgoPaketEin(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 )

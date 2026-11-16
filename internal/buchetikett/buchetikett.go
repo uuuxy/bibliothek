@@ -12,14 +12,14 @@ import (
 	"context"
 	"log/slog"
 
-	"bibliothek/db"
-	"bibliothek/pdf"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 )
 
 // Etikett ist ein Buchetikett auf der Seite der Tür: der Eintrag eines Druckauftrags
-// aus dem Browser und die Zeile eines Exemplars aus der Datenbank. Die Erzeuger in pdf/
+// aus dem Browser und die Zeile eines Exemplars aus der Datenbank. Die Erzeuger in internal/pdf/
 // bekommen daraus pdf.BuchEtikett (PDFEtiketten).
 type Etikett struct {
 	BarcodeID string

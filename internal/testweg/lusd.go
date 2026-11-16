@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // LUSDSchuelerNeu sind die Angaben für LegeLUSDSchuelerAn. Ein Abgänger entsteht gesperrt, mit

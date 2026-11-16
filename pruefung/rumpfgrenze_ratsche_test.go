@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// Quelltext-Ratsche: Eine Tür liest ihren JSON-Rumpf über api/tuer (LeseAnfrage,
+// Quelltext-Ratsche: Eine Tür liest ihren JSON-Rumpf über internal/api/tuer (LeseAnfrage,
 // LeseAnfrageStreng, DekodiereRumpf), die ihn auf maxRumpfJSON begrenzen. Ein eigener
 // Decoder am Rumpf hätte nur die Grenze aller Anfragen von 100 MB, und der Decoder hält den Rumpf
 // im Speicher. Erlaubt ist ein Decoder über Daten, die schon im Speicher liegen.
@@ -21,9 +21,9 @@ func TestRumpfgrenze_KeineTuerLiestOhneGrenze(t *testing.T) {
 	wechsleInDieWurzel(t)
 	var fundstellen []string
 	ueberTuer := 0
-	err := filepath.Walk("api", func(pfad string, info os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.Join("internal", "api"), func(pfad string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") ||
-			strings.HasPrefix(pfad, filepath.Join("api", "tuer")+string(filepath.Separator)) {
+			strings.HasPrefix(pfad, filepath.Join("internal", "api", "tuer")+string(filepath.Separator)) {
 			return err
 		}
 		dateisatz := token.NewFileSet()
@@ -55,14 +55,14 @@ func TestRumpfgrenze_KeineTuerLiestOhneGrenze(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Quellbaum lesen: %v", err)
 	}
-	// Über 60 Türen lesen ihren Rumpf über api/tuer. Sieht der Lauf weniger, erreicht er sie nicht
+	// Über 60 Türen lesen ihren Rumpf über internal/api/tuer. Sieht der Lauf weniger, erreicht er sie nicht
 	// und fände dort auch keinen eigenen Decoder.
 	if ueberTuer < 60 {
-		t.Fatalf("nur %d Aufrufe von LeseAnfrage, LeseAnfrageStreng und DekodiereRumpf unter api/: "+
+		t.Fatalf("nur %d Aufrufe von LeseAnfrage, LeseAnfrageStreng und DekodiereRumpf unter internal/api/: "+
 			"Der Lauf erreicht die Türen nicht", ueberTuer)
 	}
 	if len(fundstellen) > 0 {
-		t.Errorf("Rumpf ohne die Grenze aus api/tuer gelesen, bitte tuer.DekodiereRumpf nehmen:\n%s",
+		t.Errorf("Rumpf ohne die Grenze aus internal/api/tuer gelesen, bitte tuer.DekodiereRumpf nehmen:\n%s",
 			strings.Join(fundstellen, "\n"))
 	}
 }

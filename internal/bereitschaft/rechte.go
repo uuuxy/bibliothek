@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 )
 
 // pruefeAdminKonten zeigt, wer Vollzugriff hat und die Alarm-Mails erhält, damit ein

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
-	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

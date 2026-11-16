@@ -10,7 +10,7 @@ import (
 // jemand liest, aber er hinterlässt Zeilen, die seit mehr als einem Tag weg sein müssten.
 //
 // Die Zahlen kommen aus BetriebszustandAbfragen.ZaehleLoeschRueckstand mit denselben
-// SQL-Ausdrücken wie die Jobs (repository/loeschfristen.go), damit der Wächter nicht
+// SQL-Ausdrücken wie die Jobs (internal/repository/loeschfristen.go), damit der Wächter nicht
 // beruhigt, während der Job schläft.
 func pruefeLoeschroutinen(l Lage) Befund {
 	b := Befund{Bereich: "DSGVO-Löschroutinen"}

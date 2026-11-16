@@ -4,7 +4,7 @@ import { oeffneTheke } from './ohne-netz.js';
 import { beobachteDatenanfragen } from './messhilfe.js';
 
 // Die Live-Leitung endet, sobald die Anmeldung am Server nicht mehr gilt (IstSitzungGueltig in
-// api/tuer/sitzung.go). Die Theke zeigt dann ohne Bedienung, was am Server gilt: den
+// internal/api/tuer/sitzung.go). Die Theke zeigt dann ohne Bedienung, was am Server gilt: den
 // Sperrbildschirm oder die Anmeldung, nicht nach 25 Sekunden „Keine Verbindung“. Die Leitung
 // prüft vor jedem Lebenszeichen, also spätestens nach 15 Sekunden.
 

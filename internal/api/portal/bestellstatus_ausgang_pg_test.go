@@ -1,0 +1,100 @@
+package portal
+
+import (
+	"context"
+	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
+)
+
+// bestellstatus heißt „dieses Exemplar ist bestellt und noch nicht da" (Migration 071).
+// Gesetzt wird er beim Bestellen, geräumt beim Wareneingang. Jeder andere Ausgang aus dem
+// Zulauf muss ihn ebenfalls räumen, sonst filtern alle Leser, die `bestellstatus IS NULL`
+// voraussetzen (OPAC, Inventur, Lernmittel-Übersicht, Katalog und Monitor), das Exemplar für
+// immer weg.
+//
+// Die zwei anderen Ausgänge:
+//   - der Status-Editor der Buchakte (KatalogAbfragen.AendereExemplarStatus): ein
+//     angekommenes Buch auf „verfügbar" gestellt statt über den Wareneingang; es muss
+//     ausleihbar und gezählt sein;
+//   - das Aussondern (KatalogAbfragen.SondereExemplarAus): ein Buch, das der Händler nicht
+//     liefert; es darf nicht im Wareneingang bleiben, und „alle einbuchen" darf das
+//     ausgesonderte Exemplar nicht wieder ausleihbar machen.
+func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	testdaten.LeereBestandsdaten(t, pool)
+	books := repository.NewKatalogAbfragen(pool)
+
+	zulauf := func(titel, barcode string) string {
+		t.Helper()
+		var titelID, id string
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp)
+			VALUES ($1, 'Zulauf', 'Buch') RETURNING id`, titel).Scan(&titelID); err != nil {
+			t.Fatal(err)
+		}
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, bestellstatus)
+			VALUES ($1, $2, 'Im Zulauf - Testverlag', false, 'im_zulauf') RETURNING id`, titelID, barcode).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	bestellstatus := func(id string) *string {
+		t.Helper()
+		var s *string
+		if err := pool.QueryRow(ctx, `SELECT bestellstatus FROM buecher_exemplare WHERE id = $1`, id).Scan(&s); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	// 1. Status-Editor: auf „verfügbar" gestellt → kein Zulauf mehr, im OPAC gezählt.
+	frei := zulauf("Zulauf-Editor-Titel", "ZL-EDIT")
+	if err := books.AendereExemplarStatus(ctx, frei, nil, repository.ExemplarStatusStand{IstAusleihbar: true}, "", nil, ""); err != nil {
+		t.Fatalf("AendereExemplarStatus: %v", err)
+	}
+	if s := bestellstatus(frei); s != nil {
+		t.Errorf("Status-Editor ließ bestellstatus=%q stehen", *s)
+	}
+	if n := opacGesamt(t, pool, "Zulauf-Editor-Titel"); n != 1 {
+		t.Errorf("freigegebenes Exemplar zählt im OPAC nicht (gesamt=%d)", n)
+	}
+
+	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
+	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
+	if err := books.AendereExemplarStatus(ctx, weg, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+		t.Fatalf("DecommissionCopy: %v", err)
+	}
+	if s := bestellstatus(weg); s != nil {
+		t.Errorf("Aussondern ließ bestellstatus=%q stehen", *s)
+	}
+	gruppen, err := service.LadeZulauf(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range gruppen {
+		for _, it := range g.Posten {
+			for _, id := range it.ExemplarIDs {
+				if id == weg {
+					t.Errorf("ausgesondertes Exemplar steht im Wareneingang")
+				}
+			}
+		}
+	}
+	if _, err := service.BucheWareneingang(ctx, pool, repository.NewProtokollAbfragen(pool), service.WareneingangAngaben{
+		ExemplarIDs: []string{weg}, BearbeiterID: testdaten.LegeBearbeiterAn(t, pool), IPAdresse: "",
+	}); err != nil {
+		t.Logf("Wareneingang meldet: %v", err)
+	}
+	var ausleihbar, ausgesondert bool
+	if err := pool.QueryRow(ctx, `SELECT ist_ausleihbar, ist_ausgesondert FROM buecher_exemplare WHERE id = $1`, weg).
+		Scan(&ausleihbar, &ausgesondert); err != nil {
+		t.Fatal(err)
+	}
+	if ausleihbar || !ausgesondert {
+		t.Errorf("Wareneingang belebte ein ausgesondertes Exemplar: ausleihbar=%v ausgesondert=%v", ausleihbar, ausgesondert)
+	}
+}

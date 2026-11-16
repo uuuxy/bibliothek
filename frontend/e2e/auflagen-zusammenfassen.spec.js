@@ -5,7 +5,7 @@ import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 // Bibliothekskraft nimmt — Medienkatalog, Stift an der alten Auflage, Abschnitt „Auflagen",
 // „Andere Auflage zuordnen", suchen, wählen, zuordnen — und wieder lösen. Geprüft wird am
 // Bildschirm UND in der Datenbank: Beide Titel hängen danach am selben Werk, nach dem Lösen
-// an keinem mehr, denn ein Buch mit einer Auflage ist keine Gruppe (repository/auflagen.go).
+// an keinem mehr, denn ein Buch mit einer Auflage ist keine Gruppe (internal/repository/auflagen.go).
 test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) => {
 	const marke = `E2E-Auflage-${uniqueSuffix()}`;
 	const anlegen = (/** @type {string} */ auflage, /** @type {number} */ jahr) =>

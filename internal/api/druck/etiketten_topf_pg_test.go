@@ -1,0 +1,122 @@
+package druck
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/testdaten"
+)
+
+// Der Eigentumsvermerk folgt dem Topf des Exemplars, an allen drei Wegen, die Etikettendaten
+// bauen, geprüft am fertigen PDF. Hier steht der Weg des Hauses, das Druck-Center; die zwei
+// Wege zum Händler prüft internal/api/bestellung/bestellung_etiketten_topf_pg_test.go.
+//
+// Die Regel (repository.ExemplarTopfSQL): zuerst das Eigentum am Exemplar, dann die Zuordnung
+// der Bestellung, sonst ist_lernmittel am Titel. So trägt das Buch der Schülerbücherei, das der
+// Schulträger bezahlt hat, nicht den Vermerk des Landes.
+
+// etikettenUeberDruckCenter druckt über POST /api/print/labels
+// (buchetikett.ErgaenzeServerfelder). Die Nutzlast trägt zusätzlich ein Feld „Topf" mit dem
+// falschen Wert: Der Topf kommt vom Server, und ein Druckauftrag aus dem Browser darf ihn nicht
+// mitbringen können.
+func etikettenUeberDruckCenter(t *testing.T, srv *Tueren, barcode, untergeschobenerTopf string) string {
+	t.Helper()
+	payload := `{"formatId": "` + testdaten.EtikettFormatMitVermerk + `", "startPosition": 1, "isQR": false,
+		"items": [{"BarcodeID": "` + barcode + `", "Titel": "Probe", "Autor": "", "Topf": "` + untergeschobenerTopf + `"}]}`
+	rec := httptest.NewRecorder()
+	srv.Etikettenbogen()(rec, httptest.NewRequest(http.MethodPost, "/api/print/labels", strings.NewReader(payload)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Druck-Center-Weg: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	return pdftest.Suchtext(t, rec.Body.Bytes())
+}
+
+// Die Regel am Weg des Hauses — alle sieben Formen, die ein Exemplar haben kann.
+func TestEigentumsvermerkFolgtDemTopf_DruckCenter(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	faelle := []struct {
+		name string
+		// bestellt: Hängt das Exemplar an einer Bestellung? mittel "" heißt dann NULL
+		// (Alt-Bestellung ohne Zuordnung).
+		bestellt      bool
+		mittel        string
+		istLernmittel bool
+		// eigentum: am Exemplar ausdrücklich gesetzt (Migration 150), "" heißt NULL.
+		eigentum    string
+		want, nicht string
+	}{
+		{"Altbestand, Lernmittel", false, "", true, "", testdaten.VermerkLand, testdaten.VermerkStadt},
+		{"Altbestand, kein Lernmittel", false, "", false, "", testdaten.VermerkStadt, testdaten.VermerkLand},
+		// Die Bestellung schlägt den Titel — das Eigentum folgt dem Geld.
+		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, mitteltopf.Schultraeger, true, "", testdaten.VermerkStadt, testdaten.VermerkLand},
+		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, mitteltopf.Land, false, "", testdaten.VermerkLand, testdaten.VermerkStadt},
+		{"Alt-Bestellung ohne Zuordnung, Lernmittel", true, "", true, "", testdaten.VermerkLand, testdaten.VermerkStadt},
+		// Das Eigentum am Exemplar schlägt beides: die Lektüre aus LMF-Mitteln, die
+		// Littera dem Land zuschreibt, und ein ausdrücklich umgesetztes Exemplar einer Bestellung.
+		{"Altbestand, kein Lernmittel, Eigentum Land", false, "", false, mitteltopf.Land, testdaten.VermerkLand, testdaten.VermerkStadt},
+		{"Bestellung Lernmittelfreiheit, Eigentum Schulträger", true, mitteltopf.Land, true, mitteltopf.Schultraeger, testdaten.VermerkStadt, testdaten.VermerkLand},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			testdaten.LeereBestandsdaten(t, pool)
+			testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
+
+			var titelID string
+			if err := pool.QueryRow(ctx,
+				`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ('Topfprobe', $1) RETURNING id`,
+				f.istLernmittel).Scan(&titelID); err != nil {
+				t.Fatalf("Titel anlegen: %v", err)
+			}
+			var bestellungID *string
+			if f.bestellt {
+				lieferant := testdaten.LegeLieferantAn(t, pool, "Topf-Händler", false)
+				var id string
+				if err := pool.QueryRow(ctx, `
+					INSERT INTO bestellungen_verlauf
+						(lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare, mittel)
+					VALUES ($1, 'Topf-Händler', 'topf@example.invalid', 'K-1', 1, NULLIF($2, ''))
+					RETURNING id`, lieferant, f.mittel).Scan(&id); err != nil {
+					t.Fatalf("Bestellung anlegen: %v", err)
+				}
+				bestellungID = &id
+			}
+			if _, err := pool.Exec(ctx,
+				`INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum, eigentum_quelle)
+				 VALUES ($1, 'B-TOPF-1', $2, NULLIF($3, ''), CASE WHEN $3 = '' THEN NULL ELSE 'hand' END)`,
+				titelID, bestellungID, f.eigentum); err != nil {
+				t.Fatalf("Exemplar anlegen: %v", err)
+			}
+
+			// Dem Druck-Center wird der jeweils andere Topf untergeschoben.
+			falsch := mitteltopf.Schultraeger
+			if f.want == testdaten.VermerkStadt {
+				falsch = mitteltopf.Land
+			}
+			pdftest.Aufdruck(t, "Druck-Center", etikettenUeberDruckCenter(t, srv, "B-TOPF-1", falsch), f.want, f.nicht)
+		})
+	}
+}
+
+// Der Topf kommt vom Server (json:"-" an buchetikett.Etikett.Topf). Bei einem Barcode, den die
+// Datenbank nicht kennt, trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
+// vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
+func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", mitteltopf.Schultraeger)
+	pdftest.Aufdruck(t, "Druck-Center, unbekannter Barcode", text, testdaten.VermerkLand, testdaten.VermerkStadt)
+}

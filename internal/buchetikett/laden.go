@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // LadeDerBestellung lädt die Etiketten der Exemplare einer Bestellung, beschränkt auf die

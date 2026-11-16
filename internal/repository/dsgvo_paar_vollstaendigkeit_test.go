@@ -1,0 +1,102 @@
+package repository_test
+
+import (
+	"io/fs"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/testdaten"
+)
+
+// dsgvoAuskunftAbfragen ist die Datei, in der die Abfragen der Auskunft am Leser stehen.
+const dsgvoAuskunftAbfragen = "../repository/dsgvo_auskunft.go"
+
+// TestDSGVOAuskunftLiestJedeSchuelerQuelle prüft die Auskunfts-Hälfte des Paars am
+// Quelltext: Jede Tabelle mit Schülerbezug muss in internal/repository/dsgvo_auskunft.go in einem
+// FROM/JOIN stehen.
+func TestDSGVOAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
+	quelltext, err := os.ReadFile(dsgvoAuskunftAbfragen)
+	if err != nil {
+		t.Fatalf("%s lesen: %v", dsgvoAuskunftAbfragen, err)
+	}
+
+	for _, q := range testdaten.DSGVOLeserQuellen {
+		muster := regexp.MustCompile(`(?i)(FROM|JOIN)\s+` + q.Tabelle + `\b`)
+		if !muster.Match(quelltext) {
+			t.Errorf("die Art.-15-Auskunft liest %s nicht (Bezug: %s) — %s braucht eine "+
+				"Abfrage über diese Tabelle, und sammleDSGVODaten muss sie aufrufen, sonst ist die "+
+				"Auskunft unvollständig.", q.Tabelle, q.Bezug, dsgvoAuskunftAbfragen)
+		}
+	}
+}
+
+// TestProtokollDetails_EinSchluesselFuerDenSchueler friert das Vokabular der Schlüssel ein: Der
+// Verweis auf einen Schüler in den Details eines Protokolleintrags heißt `schueler_id`,
+// überall. Schriebe eine Stelle denselben Wert als `student_id`, sähe jede Abfrage über
+// details->>'schueler_id', die Auskunft ebenso wie die Tilgung, diese Einträge nicht. Zwei
+// Namen für denselben Wert sind zwei Wahrheitsquellen; Migration 091 hat die Altzeilen
+// umgeschlüsselt.
+func TestProtokollDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
+	var verstoesse []string
+	schuelerIDForm := 0
+
+	err := filepath.WalkDir(filepath.Join("..", ".."), func(pfad string, eintrag fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if eintrag.IsDir() {
+			name := eintrag.Name()
+			if name == "node_modules" || name == "frontend" || name == "testdata" || name == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+			return nil
+		}
+		inhalt, err := os.ReadFile(pfad)
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(inhalt), `{"student_id"`) {
+			verstoesse = append(verstoesse, pfad)
+		}
+		schuelerIDForm += strings.Count(string(inhalt), `{"schueler_id"`)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Quelltext durchlaufen: %v", err)
+	}
+
+	for _, pfad := range verstoesse {
+		t.Errorf("%s schreibt den Audit-Detail-Schlüssel `student_id` — das Vokabular ist "+
+			"`schueler_id` (Auskunft und Tilgung fragen genau diesen Schlüssel ab).", pfad)
+	}
+	// Liveness: Verschwindet die Inline-JSON-Form ganz (Refactoring auf Maps o. Ä.),
+	// prüft der student_id-Scan womöglich eine Form, die es nicht mehr gibt — dann
+	// gehört dieses Gate nachgezogen statt still grün.
+	if schuelerIDForm < 3 {
+		t.Fatalf("nur %d Inline-Schreibstellen mit `{\"schueler_id\"` gefunden (erwartet >= 3) — "+
+			"die Schreibform hat sich geändert, Detektor nachziehen.", schuelerIDForm)
+	}
+}
+
+// Eine Quelle ohne Fremdschlüssel findet keine Abfrage am Schema. Fällt sie aus der Liste,
+// prüfen Auskunft und Tilgung diese Tabelle nicht mehr, und die übrigen Prüfungen bleiben grün.
+func TestDSGVOQuellenOhneFremdschluessel_BleibenInDerListe(t *testing.T) {
+	ohneFremdschluessel := map[string]bool{}
+	for _, q := range testdaten.DSGVOLeserQuellen {
+		if !q.MitFremdschluessel {
+			ohneFremdschluessel[q.Tabelle] = true
+		}
+	}
+	for _, tabelle := range []string{"leser", "audit_log", "audit_logs"} {
+		if !ohneFremdschluessel[tabelle] {
+			t.Errorf("testdaten.DSGVOLeserQuellen führt %s nicht mehr als Quelle ohne Fremdschlüssel: "+
+				"Auskunft und Tilgung prüft an dieser Tabelle dann nichts mehr", tabelle)
+		}
+	}
+}

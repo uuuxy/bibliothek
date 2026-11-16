@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Zusicherung des Planers: je Zeile ein Platz. Die Datenbank kann sie nicht halten, sie ist eine

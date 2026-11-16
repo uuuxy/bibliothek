@@ -14,7 +14,7 @@ import {
  * Derselbe Scan kann den Server mehrmals erreichen: zwei Theken-Tabs, ein doppelter Scan, ein
  * Nachbuchen, das einen abgebrochenen Online-Versand wiederholt. Der Schlüssel des Scans macht
  * daraus eine Buchung: Die erste Anfrage reserviert ihn, jede weitere wartet auf ihre Antwort
- * oder meldet, dass er gerade gebucht wird (api/theke/eingabe.go). Ohne das läge das Buch nach
+ * oder meldet, dass er gerade gebucht wird (internal/api/theke/eingabe.go). Ohne das läge das Buch nach
  * der ersten Anfrage beim Kind, und die nächste nähme es als Rückgabe zurück.
  */
 test('Fünf gleichzeitige Anfragen mit einem Schlüssel buchen eine Ausleihe', async ({ page }) => {

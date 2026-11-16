@@ -13,7 +13,7 @@ import (
 // Text, und Text prüft sonst niemand.
 //
 // Das nächtliche Backup liegt im benannten Volume (/app/backups im Container,
-// jobs/backup.go); in ./backups auf dem Host liegt nur die Vorab-Sicherung von update.sh.
+// internal/jobs/backup.go); in ./backups auf dem Host liegt nur die Vorab-Sicherung von update.sh.
 // Wählt die Restore-Anleitung nach einem Muster auf dem Host, spielt sie die letzte
 // Deploy-Sicherung ein, und alles seit dem letzten Deploy ist still weg. Die Bugklasse heißt
 // „Zwei Ablagen, ein Dateiname": Zwei Erzeuger legen gleich benannte Artefakte an
@@ -32,9 +32,9 @@ func TestRueckweg_RestoreNimmtDasNachtbackup(t *testing.T) {
 		t.Error("update.sh benennt seine Vorab-Sicherung nach dem Muster des Nachtbackups (backup_<Zeit>) — " +
 			"zwei Ablagen, ein Dateiname; die Vorab-Sicherung braucht ein eigenes Präfix")
 	}
-	nacht := lies(t, "../jobs/backup.go")
+	nacht := lies(t, "../internal/jobs/backup.go")
 	if !strings.Contains(nacht, `"backup_%s.sql.gz.enc"`) {
-		t.Fatal("jobs/backup.go schreibt das Nachtbackup nicht mehr unter dem Muster backup_<Zeit>.sql.gz.enc — Gate nachziehen")
+		t.Fatal("internal/jobs/backup.go schreibt das Nachtbackup nicht mehr unter dem Muster backup_<Zeit>.sql.gz.enc — Gate nachziehen")
 	}
 }
 

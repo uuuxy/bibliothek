@@ -1,0 +1,564 @@
+package schaden
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// Der Schreibpfad des Schadensersatz-Bescheids am echten Postgres.
+//
+// Die zentrale Zusicherung ist die Referenznummer: Sie wird je Brief vergeben und NIE
+// zweimal — sonst lässt sich eine eingehende Zahlung nicht zuordnen. Alles andere hängt
+// daran: Wird ein Brief abgewiesen, darf auch keine Nummer verbraucht sein.
+
+// bescheidErstellenUeberTuer ruft POST /api/schueler/{id}/bescheide.
+func bescheidErstellenUeberTuer(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID, rumpf string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+schuelerID+"/bescheide", strings.NewReader(rumpf))
+	req.SetPathValue("id", schuelerID)
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+		&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
+	rec := httptest.NewRecorder()
+	srv.BescheidErstellen(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
+	return rec
+}
+
+// Ein Bescheid trägt den Wortlaut der Lernmittelfreiheit („Eigentum des Landes …") und
+// die Bankverbindung des Landes. Der Topf „schultraeger" hat noch keinen eigenen Brief
+// (Konzept 4.7). Nähme der Server ihn an, bekämen die Eltern für ein Buch der Schülerbücherei
+// einen Landes-Bescheid mit Landeskonto. Ebenso wenig darf ein Nicht-Lernmittel auf einen
+// Landes-Bescheid. Beides wird abgewiesen, ohne eine Nummer zu verbrauchen.
+func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-TOPF", "Topfkind", "08G2")
+	roman := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman der Buecherei", "Autor", true, 0)
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, roman, "BESCH-TOPF-1", true, ""), "beschaedigt", "Roman beschädigt")
+
+	for _, mittel := range []string{"land", "schultraeger"} {
+		rumpf := fmt.Sprintf(`{"mittel":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
+			mittel, testdaten.In28Tagen(), f)
+		rec := bescheidErstellenUeberTuer(t, srv, pool, sid, rumpf)
+		if rec.Code != http.StatusConflict {
+			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, erwartet 409: %s", mittel, rec.Code, rec.Body.String())
+		}
+	}
+	var briefe, nummern int
+	if err := pool.QueryRow(context.Background(), `SELECT (SELECT count(*) FROM schadensersatz_bescheide),
+		(SELECT count(*) FROM schadensersatz_nummern)`).Scan(&briefe, &nummern); err != nil {
+		t.Fatal(err)
+	}
+	if briefe != 0 || nummern != 0 {
+		t.Errorf("abgewiesen, aber %d Brief(e) und %d Nummernzeile(n) angelegt", briefe, nummern)
+	}
+}
+
+func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-1", "Bescheidkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Mathematik 7")
+	ex1 := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-1", true, "")
+	ex2 := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-2", true, "")
+	f1 := testdaten.LegeForderungAn(t, pool, sid, ex1, "nicht_zurueckgegeben", "Mathematik 7 nicht zurück")
+	f2 := testdaten.LegeForderungAn(t, pool, sid, ex2, "beschaedigt", "Mathematik 7 beschädigt")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f1: 24.90, f2: 12.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. Die Referenznummer hat die Form des Musterschreibens: vier vierstellige Blöcke.
+	if !strings.HasPrefix(b.Referenznummer, "5830 ") || !strings.HasSuffix(b.Referenznummer, " 1234 0001") {
+		t.Errorf("Referenznummer = %q, erwartet „5830 <Jahr> 1234 0001\"", b.Referenznummer)
+	}
+	// 2. Die Summe ist die der Positionen, nicht die der Forderungsbeträge von vorher (0).
+	if b.Gesamtbetrag != 3690 {
+		t.Errorf("Gesamtbetrag = %s, erwartet 36,90", b.Gesamtbetrag.Text())
+	}
+	if b.AnzahlPositionen != 2 {
+		t.Errorf("AnzahlPositionen = %d, erwartet 2", b.AnzahlPositionen)
+	}
+	// 3. Die Forderungen tragen den festgesetzten Betrag UND den Brief.
+	for id, want := range map[string]float64{f1: 24.90, f2: 12.00} {
+		var betrag float64
+		var bescheidID *string
+		if err := pool.QueryRow(ctx,
+			`SELECT betrag::float8, bescheid_id::text FROM schadensfaelle WHERE id = $1`, id).Scan(&betrag, &bescheidID); err != nil {
+			t.Fatal(err)
+		}
+		if betrag != want {
+			t.Errorf("Forderung %s: Betrag %.2f, erwartet %.2f", id, betrag, want)
+		}
+		if bescheidID == nil || *bescheidID != b.ID {
+			t.Errorf("Forderung %s hängt nicht am Bescheid", id)
+		}
+	}
+	// 4. Der Empfänger-Snapshot trägt Anrede und Name (Grundlage des Nachdrucks).
+	var snapshot string
+	if err := pool.QueryRow(ctx,
+		`SELECT empfaenger_snapshot::text FROM schadensersatz_bescheide WHERE id = $1`, b.ID).Scan(&snapshot); err != nil {
+		t.Fatal(err)
+	}
+	for _, erwartet := range []string{"Erziehungsberechtigte", "Bescheidkind"} {
+		if !strings.Contains(snapshot, erwartet) {
+			t.Errorf("Snapshot ohne %q: %s", erwartet, snapshot)
+		}
+	}
+	// 5. Das Audit kennt Nummer und Betrag.
+	var details string
+	if err := pool.QueryRow(ctx,
+		`SELECT details::text FROM audit_logs WHERE aktion = $1 ORDER BY zeitstempel DESC LIMIT 1`,
+		aktionBescheidErstellt).Scan(&details); err != nil {
+		t.Fatalf("Audit-Eintrag fehlt: %v", err)
+	}
+	if !strings.Contains(details, b.Referenznummer) {
+		t.Errorf("Audit ohne Referenznummer: %s", details)
+	}
+}
+
+// Eine Forderung darf nie auf zwei Briefen stehen — sonst gäbe es zwei Nummern für
+// dieselbe Forderung, und die Zahlung wäre nicht zuordenbar.
+func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-2", "Zweitkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Deutsch 8")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-3", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
+
+	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50})); rec.Code != http.StatusCreated {
+		t.Fatalf("erster Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50}))
+	if rec.Code != http.StatusConflict {
+		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	// Die Antwort trägt den Satz, an dem das Sekretariat abliest, was zu prüfen ist.
+	const erwartet = "Es konnten 1 von 1 Forderungen nicht zugeordnet werden. " +
+		"Gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
+	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
+		t.Errorf("BescheidErstellen: Meldung %q, erwartet %q", got, erwartet)
+	}
+
+	// Und die Nummer des abgewiesenen Briefs ist nicht verbraucht: Die Transaktion ist
+	// zurückgerollt, der Zähler steht auf 1.
+	var letzte int
+	if err := pool.QueryRow(context.Background(),
+		`SELECT letzte_nr FROM schadensersatz_nummern WHERE mittel = 'land' AND kassenjahr = $1`,
+		time.Now().AddDate(0, 0, 28).Year()).Scan(&letzte); err != nil {
+		t.Fatal(err)
+	}
+	if letzte != 1 {
+		t.Errorf("letzte_nr = %d, erwartet 1 — der abgewiesene Brief hat eine Nummer verbraucht", letzte)
+	}
+}
+
+// Ohne die Pflichtangaben entsteht kein Bescheid — und keine Nummer.
+func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	// Bewusst ohne testdaten.SetzeBescheidAngaben; Reste aus anderen Tests räumen.
+	for _, k := range []string{"bescheid_bereich_nr", "bescheid_schulnummer", "bescheid_aufsicht", "bescheid_schulleitung"} {
+		if _, err := pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = $1`, k); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-3", "Ohneangaben", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Englisch 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-4", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 9 nicht zurück")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 20.00}))
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	// Die Meldung nennt, WAS fehlt — sonst sucht das Sekretariat.
+	for _, erwartet := range []string{"Schulamtsbereichs", "Schulnummer", "Aufsichtsbehörde", "Einstellungen"} {
+		if !strings.Contains(rec.Body.String(), erwartet) {
+			t.Errorf("die Meldung nennt %q nicht: %s", erwartet, rec.Body.String())
+		}
+	}
+	var briefe, nummern int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM schadensersatz_bescheide WHERE schueler_id = $1`, sid).Scan(&briefe); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM schadensersatz_nummern`).Scan(&nummern); err != nil {
+		t.Fatal(err)
+	}
+	if briefe != 0 {
+		t.Errorf("%d Bescheid(e) trotz fehlender Angaben", briefe)
+	}
+	if nummern != 0 {
+		t.Errorf("%d Nummernkreis-Zeile(n) angelegt, obwohl kein Brief entstand", nummern)
+	}
+}
+
+// Der Nummernkreis unter gleichzeitigem Zugriff: Jede Nummer genau einmal, keine Lücke.
+//
+// Der Grund für diesen Test ist die Bugklasse „Zwei Generatoren, ein Nummernkreis":
+// Ein MAX+1 hätte hier zwei gleichen Briefen dieselbe Nummer gegeben. Das UPDATE …
+// RETURNING sperrt die Zeile des Generators, die Nebenläufigen warten.
+func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	const anzahl = 8
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Parallelbuch")
+	type auftrag struct{ sid, forderung string }
+	auftraege := make([]auftrag, 0, anzahl)
+	for i := 0; i < anzahl; i++ {
+		sid := testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("S-PARALLEL-%d", i), fmt.Sprintf("Parallelkind%d", i), "08G2")
+		ex := testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("PARALLEL-EX-%d", i), true, "")
+		auftraege = append(auftraege, auftrag{sid, testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Parallelbuch")})
+	}
+
+	frist := testdaten.In28Tagen()
+	var wg sync.WaitGroup
+	nummern := make([]string, anzahl)
+	codes := make([]int, anzahl)
+	for i, a := range auftraege {
+		wg.Add(1)
+		go func(i int, a auftrag) {
+			defer wg.Done()
+			rec := bescheidErstellenUeberTuer(t, srv, pool, a.sid,
+				testdaten.BescheidRumpf(frist, map[string]float64{a.forderung: 10.00}))
+			codes[i] = rec.Code
+			var b repository.Bescheid
+			if err := json.Unmarshal(rec.Body.Bytes(), &b); err == nil {
+				nummern[i] = b.Referenznummer
+			}
+		}(i, a)
+	}
+	wg.Wait()
+
+	gesehen := map[string]int{}
+	for i, nr := range nummern {
+		if codes[i] != http.StatusCreated {
+			t.Errorf("Brief %d: Status %d", i, codes[i])
+			continue
+		}
+		gesehen[nr]++
+	}
+	for nr, n := range gesehen {
+		if n > 1 {
+			t.Errorf("Referenznummer %q wurde %d mal vergeben — eine Zahlung darauf ist nicht zuordenbar", nr, n)
+		}
+	}
+	if len(gesehen) != anzahl {
+		t.Errorf("%d verschiedene Nummern bei %d Briefen", len(gesehen), anzahl)
+	}
+	var letzte int
+	if err := pool.QueryRow(ctx,
+		`SELECT letzte_nr FROM schadensersatz_nummern WHERE mittel = 'land' AND kassenjahr = $1`,
+		time.Now().AddDate(0, 0, 28).Year()).Scan(&letzte); err != nil {
+		t.Fatal(err)
+	}
+	if letzte != anzahl {
+		t.Errorf("letzte_nr = %d, erwartet %d — der Zähler hat Lücken oder Doppelungen", letzte, anzahl)
+	}
+}
+
+// Die Übergabe geht erst nach Fristablauf und nur einmal.
+func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	repo := repository.NewBescheidAbfragen(pool)
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Physik 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-5", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Physik 9 nicht zurück")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 22.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. Die Frist läuft noch: Übergabe abgewiesen.
+	uebergeben := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/bescheide/"+b.ID+"/uebergeben", nil)
+		req.SetPathValue("id", b.ID)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: testdaten.LegeBearbeiterAn(t, pool), Rolle: auth.RolleAdmin}))
+		rec := httptest.NewRecorder()
+		srv.BescheidUebergeben(repo, repository.NewProtokollAbfragen(pool))(rec, req)
+		return rec
+	}
+	if rec := uebergeben(); rec.Code != http.StatusConflict {
+		t.Errorf("Übergabe vor Fristablauf: %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+
+	// 2. Frist vorbei: Übergabe geht.
+	if _, err := pool.Exec(ctx,
+		`UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {
+		t.Fatal(err)
+	}
+	if rec := uebergeben(); rec.Code != http.StatusOK {
+		t.Fatalf("Übergabe nach Fristablauf: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// 3. Ein zweites Mal nicht — der Zeitpunkt der Übergabe darf nicht überschrieben werden.
+	if rec := uebergeben(); rec.Code != http.StatusConflict {
+		t.Errorf("zweite Übergabe: %d, erwartet 409", rec.Code)
+	}
+
+	var status string
+	var uebergebenAm *time.Time
+	if err := pool.QueryRow(ctx,
+		`SELECT status, uebergeben_am FROM schadensersatz_bescheide WHERE id = $1`, b.ID).Scan(&status, &uebergebenAm); err != nil {
+		t.Fatal(err)
+	}
+	if status != "uebergeben" || uebergebenAm == nil {
+		t.Errorf("Status %q, uebergeben_am %v", status, uebergebenAm)
+	}
+}
+
+// Ein Bescheid, dessen Forderungen bezahlt oder storniert sind, ist erledigt (Konzept 4.3:
+// „abgeleitet"). Sonst stünde der Brief einer Familie, die fristgerecht zahlte, nach 28 Tagen
+// ganz oben als „Frist abgelaufen", die Zahl am Reiter stiege, und die Übergabe an die
+// Schulaufsicht ginge mit einem Klick durch: ein bezahlter Fall zur Vollstreckung.
+func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	repo := repository.NewBescheidAbfragen(pool)
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Biologie 8")
+	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-BEZ-1", true, ""), "nicht_zurueckgegeben", "Biologie 8 nicht zurück")
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid, testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+	// Bezahlt über den echten Pfad, danach ist die Frist vorbei.
+	if err := repository.NewSchadensAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+		t.Fatalf("Bezahlt: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	gelesen, err := repo.Lade(ctx, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gelesen.Status != "erledigt" || gelesen.FristAbgelaufen {
+		t.Errorf("bezahlter Bescheid: Status %q, frist_abgelaufen %v — erwartet erledigt/false", gelesen.Status, gelesen.FristAbgelaufen)
+	}
+	if err := repo.Uebergebe(ctx, b.ID); !errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("Übergabe eines bezahlten Bescheids: err = %v, erwartet pgx.ErrNoRows (409)", err)
+	}
+	offen, err := repo.LadeListe(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range offen {
+		if o.ID == b.ID {
+			t.Errorf("bezahlter Bescheid steht in der Liste der offenen")
+		}
+	}
+}
+
+// Der Nachdruck ist derselbe Brief: gleiche Nummer, gleicher Betrag, gleiche Anschrift —
+// auch wenn der Schüler inzwischen umgezogen ist. Dafür ist der Snapshot da.
+func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	repo := repository.NewBescheidAbfragen(pool)
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-5", "Umzugskind", "08G2")
+	if _, err := pool.Exec(ctx,
+		`UPDATE schueler SET strasse = 'Altweg', hausnummer = '1', plz = '11111', ort = 'Altstadt' WHERE id = $1`, sid); err != nil {
+		t.Fatal(err)
+	}
+	titelID := testdaten.LegeLernmittelAn(t, pool, "Chemie 9")
+	ex := testdaten.LegeExemplarAn(t, pool, titelID, "BESCH-EX-6", true, "")
+	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Chemie 9 nicht zurück")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.90}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+
+	// Umzug nach dem Brief.
+	if _, err := pool.Exec(ctx,
+		`UPDATE schueler SET strasse = 'Neuweg', ort = 'Neustadt' WHERE id = $1`, sid); err != nil {
+		t.Fatal(err)
+	}
+
+	pdfAbrufen := func() string {
+		req := httptest.NewRequest(http.MethodGet, "/api/bescheide/"+b.ID+"/pdf", nil)
+		req.SetPathValue("id", b.ID)
+		rec := httptest.NewRecorder()
+		srv.BescheidPDF(repo)(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("PDF: %d %s", rec.Code, rec.Body.String())
+		}
+		// Die Oberfläche öffnet den Bescheid über seine Adresse in einem Tab. Als Anhang landete
+		// er mit Namen und Anschrift im Download-Ordner des Arbeitsplatzes.
+		if ablage := rec.Header().Get("Content-Disposition"); !strings.HasPrefix(ablage, "inline;") {
+			t.Errorf("Content-Disposition %q, erwartet inline", ablage)
+		}
+		return pdftest.Suchtext(t, rec.Body.Bytes())
+	}
+
+	text := pdfAbrufen()
+	var gedruckt bool
+	if err := pool.QueryRow(ctx, `SELECT letzter_druck_am IS NOT NULL FROM schadensersatz_bescheide WHERE id = $1`, b.ID).Scan(&gedruckt); err != nil {
+		t.Fatal(err)
+	}
+	if !gedruckt {
+		t.Error("der Druck steht nicht am Bescheid")
+	}
+	// Der Vermerk unterscheidet die Kennung, die es gibt, von der, die es nicht gibt; ein falscher
+	// Fehler stünde bei jedem Druck als ERROR im Log.
+	if err := repo.VermerkeDruck(ctx, b.ID); err != nil {
+		t.Errorf("VermerkeDruck(vorhandener Bescheid) = %v", err)
+	}
+	if err := repo.VermerkeDruck(ctx, "00000000-0000-0000-0000-000000000000"); !errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("VermerkeDruck(unbekannte Kennung) = %v, erwartet ErrNoRows", err)
+	}
+	for _, erwartet := range []string{b.Referenznummer, "19,90", "Altweg", "Altstadt", "Umzugskind", "Chemie 9"} {
+		if !strings.Contains(text, erwartet) {
+			t.Errorf("der Brief nennt %q nicht", erwartet)
+		}
+	}
+	if strings.Contains(text, "Neuweg") {
+		t.Error("der Nachdruck nimmt die NEUE Anschrift — dann ist es nicht mehr derselbe Bescheid")
+	}
+
+	// Zweiter Abruf: unverändert, und die Nummer wurde nicht neu gezogen.
+	if zweiter := pdfAbrufen(); !strings.Contains(zweiter, b.Referenznummer) {
+		t.Error("der Nachdruck trägt eine andere Nummer")
+	}
+	var letzte int
+	if err := pool.QueryRow(ctx,
+		`SELECT letzte_nr FROM schadensersatz_nummern WHERE mittel = 'land' AND kassenjahr = $1`,
+		time.Now().AddDate(0, 0, 28).Year()).Scan(&letzte); err != nil {
+		t.Fatal(err)
+	}
+	if letzte != 1 {
+		t.Errorf("letzte_nr = %d, erwartet 1 — ein Nachdruck hat eine Nummer verbraucht", letzte)
+	}
+}
+
+// Der Brief führt verlorene und beschädigte Bücher in zwei Abschnitten, und der Wortlaut darüber
+// nennt den Grund der Forderung. Stünde ein Verlust unter „beschädigt", wäre die Begründung falsch.
+func TestBescheidBrief_TrenntVerlustUndSchaden(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-ART", "Artkind", "08G2")
+	if _, err := pool.Exec(ctx,
+		`UPDATE schueler SET strasse = 'Altweg', hausnummer = '1', plz = '11111', ort = 'Altstadt' WHERE id = $1`, sid); err != nil {
+		t.Fatal(err)
+	}
+	forderung := func(titel, barcode, art string) string {
+		t.Helper()
+		ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeLernmittelAn(t, pool, titel), barcode, true, "")
+		return testdaten.LegeForderungAn(t, pool, sid, ex, art, titel)
+	}
+	verloren := forderung("Chemie 9", "BESCH-ART-1", "nicht_zurueckgegeben")
+	kaputt := forderung("Physik 9", "BESCH-ART-2", "beschaedigt")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{verloren: 19.90, kaputt: 5.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+
+	brief, _, err := srv.bescheidBrief(ctx, repository.NewBescheidAbfragen(pool), b.ID)
+	if err != nil {
+		t.Fatalf("bescheidBrief: %v", err)
+	}
+	if len(brief.NichtZurueckgegeben) != 1 || brief.NichtZurueckgegeben[0].Titel != "Chemie 9" {
+		t.Errorf("Abschnitt nicht zurückgegeben: %+v", brief.NichtZurueckgegeben)
+	}
+	if len(brief.Beschaedigt) != 1 || brief.Beschaedigt[0].Titel != "Physik 9" {
+		t.Errorf("Abschnitt beschädigt: %+v", brief.Beschaedigt)
+	}
+}

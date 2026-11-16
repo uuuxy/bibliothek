@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pdf"
-	"bibliothek/pkg/leserart"
-	"bibliothek/pkg/pdfzeichen"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/pkg/pdfzeichen"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 
 	"github.com/phpdave11/gofpdf"
 )

@@ -25,7 +25,7 @@
 	let speicherZeitgeber = null;
 
 	// Ansehen und testdrucken darf, wer Ausweise druckt. Das Design gilt für alle Arbeitsplätze;
-	// ändern darf es nur, wer die Einstellungen verwaltet (api/routen_system.go).
+	// ändern darf es nur, wer die Einstellungen verwaltet (internal/api/routen_system.go).
 	const gesperrt = $derived(!hatRecht(authStore.currentUser, 'manage_settings'));
 
 	// Hier entsteht das Design, wer wessen Karte druckt, entscheidet die Schülerdatei. Die Leinwand

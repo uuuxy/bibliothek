@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/uebernahme"
-	"bibliothek/pkg/leserart"
-	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -61,7 +61,7 @@ const sqlSchuelerEinfuegen = `
 //
 // Diese Adresse ist auch der Grund, warum importierte Lehrkräfte trotzdem aktiv=true
 // bekommen dürfen: Die Anmeldung läuft ausschließlich über IMAP gegen den Schul-
-// Mailserver (auth/imap.go), und littera-4908@littera.invalid gibt es dort nicht.
+// Mailserver (internal/auth/imap.go), und littera-4908@littera.invalid gibt es dort nicht.
 // Login und Ausweis sind damit über das richtige Feld getrennt — nicht über aktiv, das
 // die Omnibox für die Ausweis-Suche braucht.
 const platzhalterDomain = "@littera.invalid"

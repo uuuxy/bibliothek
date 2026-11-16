@@ -19,7 +19,7 @@ import (
 // die mit ihr beginnt. Nicht gelesen werden Go und Markdown (eigene Prüfungen), frontend/src
 // (die Prüfung der Oberfläche), Tests (ein Datum ist dort meist ein Testwert), die Migrationen
 // (jede ist die Aufzeichnung einer Änderung und wird nach ihrem Lauf nicht mehr bearbeitet) und
-// die eingefrorenen Kopien unter db/testdata.
+// die eingefrorenen Kopien unter internal/db/testdata.
 //
 // Sieht nicht: ein Datum ohne Jahr, Vorgeschichte ohne Datum („bis dahin", „vorher"), einen
 // Kommentar hinter Code auf derselben Zeile und eine Datei ohne bekannte Form. Ob ein Kommentar
@@ -60,7 +60,7 @@ func TestKommentare_NennenKeinDatum(t *testing.T) {
 // liest die Datei nicht.
 func kommentarFormen(datei, ersteZeile string) []string {
 	name := path.Base(datei)
-	for _, aus := range []string{"frontend/src/", "frontend/e2e/", "frontend/e2e-proben/", "migrations/", "db/testdata/"} {
+	for _, aus := range []string{"frontend/src/", "frontend/e2e/", "frontend/e2e-proben/", "migrations/", "internal/db/testdata/"} {
 		if strings.HasPrefix(datei, aus) {
 			return nil
 		}

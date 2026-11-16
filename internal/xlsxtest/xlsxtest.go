@@ -1,5 +1,5 @@
 // Package xlsxtest baut Excel-Arbeitsmappen für Tests. Die Tests des LUSD-Lesers
-// (internal/lusd) und die Tests der Türen in api/ brauchen dieselbe Mappe; nur Testdateien
+// (internal/lusd) und die Tests der Türen in internal/api/ brauchen dieselbe Mappe; nur Testdateien
 // binden das Paket ein.
 package xlsxtest
 

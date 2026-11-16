@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"bibliothek/pkg/leserart"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/repository"
 )
 
 // Die Sperren einer neuen Ausleihe: ein Prüfweg für Buch, Gerät und Nachbuchen, damit alle drei
@@ -18,7 +18,7 @@ import (
 //     Ausleihe muss jedoch die Sperre zunächst in den Leserstammdaten aufgehoben werden!"
 //   - Eine offene Forderung und die Überfällig-Automatik sind Hinweise des Programms. Wer
 //     Schülerdaten ändern darf, übergeht sie (override_block wirkt nur mit edit_students,
-//     api/theke/eingabe.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung,
+//     internal/api/theke/eingabe.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung,
 //     gleich aus welchem Topf: ein Konto je Leser wie in Littera.
 //   - Beim Lernmittel gilt nur die Sperre von Hand, die Entscheidung eines Menschen. Die
 //     Schule verlangt: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung' geben,
@@ -52,7 +52,7 @@ func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *re
 }
 
 // PruefeSperreAmLeser ist der Teil der Regel, den auch die Verlängerung fragt
-// (Einzelverlängerung und Frist von Hand, api/theke/ausleihe.go): Hält eine Sperre am Leser
+// (Einzelverlängerung und Frist von Hand, internal/api/theke/ausleihe.go): Hält eine Sperre am Leser
 // diese Ausleihe an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte
 // Datensatz bekommt nichts. Der Satz der Schule zum Lernmittel gilt auch für die Ehemaligen und
 // bei der Verlängerung; die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
@@ -72,10 +72,10 @@ func istKollegium(leser *repository.Leser) bool {
 // pruefeSperrschalter prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der
 // Theke, dass sie nichts übergehen, sondern die Sperre aufheben lässt. Der Grund steht im
 // SperrgrundFehler; wer view_students nicht hat, bekommt ihn nicht (ohneSperrgrund in
-// api/theke/eingabe.go).
+// internal/api/theke/eingabe.go).
 func pruefeSperrschalter(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
-		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/leser_sperre.go lehnt ab).
+		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (internal/api/leser/leser_sperre.go lehnt ab).
 		return Sperre("der Datensatz ist anonymisiert")
 	}
 	if leser.IstVonHandGesperrt {

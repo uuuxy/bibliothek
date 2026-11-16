@@ -1,0 +1,149 @@
+package druck_test
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/druck"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+
+	"github.com/google/uuid"
+)
+
+// POST /api/print/schueler-etiketten liefert den Klebebogen mit Name, Klasse und Barcode
+// markierter Schüler. Den Erzeuger des PDFs prüft internal/pdf/etikett_schueler_test.go; hier steht
+// die Tür davor.
+//
+// Ihre Zusagen, je mit Gegenprobe: Der Bogen trägt, was in der Datenbank steht — die
+// Anfrage nennt nur Kennungen, keine Namen. Ein unbekanntes Format wird abgewiesen statt
+// still auf die Vorgabe gedreht (sonst merkt man es erst am verdruckten Bogen). Startposition,
+// leere Auswahl, zu große Auswahl und gelöschte Schüler sind Auskünfte, kein Serverfehler.
+
+func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
+
+	bogen := func(t *testing.T, rumpf any) *httptest.ResponseRecorder {
+		t.Helper()
+		roh, err := json.Marshal(rumpf)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return rufe(t, http.MethodPost, "/api/print/schueler-etiketten", string(roh))
+	}
+	erwarte400 := func(t *testing.T, rec *httptest.ResponseRecorder, steckt string) {
+		t.Helper()
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), steckt) {
+			t.Errorf("die Meldung nennt %q nicht: %s", steckt, rec.Body.String())
+		}
+	}
+
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-ETI-001", "Lea", "7b")
+
+	t.Run("der Bogen trägt Name, Klasse und Barcode aus der Datenbank", func(t *testing.T) {
+		rec := bogen(t, map[string]any{"schuelerIds": []string{schueler}})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		if typ := rec.Header().Get("Content-Type"); !strings.Contains(typ, "application/pdf") {
+			t.Errorf("Content-Type %q, erwartet ein PDF", typ)
+		}
+		text := pdftest.Suchtext(t, rec.Body.Bytes())
+		// Erwartet wird, was in der Zeile steht, nicht was der Test angelegt hat: Die Klasse
+		// „7b" speichert der Trigger trg_schueler_klasse_vokabular in der Form der Schule.
+		var nachname, vorname, klasse string
+		if err := pool.QueryRow(t.Context(),
+			`SELECT nachname, vorname, klasse FROM leser WHERE id = $1`, schueler).
+			Scan(&nachname, &vorname, &klasse); err != nil {
+			t.Fatal(err)
+		}
+		for _, erwartet := range []string{nachname + ", " + vorname, klasse, "S-ETI-001"} {
+			if !strings.Contains(text, erwartet) {
+				t.Errorf("%q steht nicht auf dem Bogen", erwartet)
+			}
+		}
+	})
+
+	// Der Testdruck des Ausweis-Designers: ein Beispiel-Etikett, kein echter Schüler.
+	t.Run("Muster druckt das Beispiel, keinen Schüler", func(t *testing.T) {
+		rec := bogen(t, map[string]any{"muster": true})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		text := pdftest.Suchtext(t, rec.Body.Bytes())
+		if !strings.Contains(text, pdf.MusterSchuelerEtikett.BarcodeID) {
+			t.Errorf("das Muster-Etikett fehlt auf dem Bogen")
+		}
+		if strings.Contains(text, "S-ETI-001") {
+			t.Error("der Musterdruck trägt einen echten Schüler")
+		}
+	})
+
+	t.Run("unbekanntes Format: 400 statt der Vorgabe", func(t *testing.T) {
+		erwarte400(t, bogen(t, map[string]any{"formatId": "erfunden_9999", "schuelerIds": []string{schueler}}),
+			"erfunden_9999")
+	})
+
+	t.Run("Startposition außerhalb des Bogens: 400", func(t *testing.T) {
+		rec := bogen(t, map[string]any{"startPosition": 9999, "schuelerIds": []string{schueler}})
+		erwarte400(t, rec, "Startposition")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Startposition 9999 liegt außerhalb des Bogens (1 bis 21)"; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
+	})
+
+	t.Run("markierte Schüler gibt es nicht mehr: 400", func(t *testing.T) {
+		rec := bogen(t, map[string]any{"schuelerIds": []string{"00000000-0000-4000-8000-0000000000e1"}})
+		erwarte400(t, rec, "keine Daten")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Zu den markierten Schülern gibt es keine Daten mehr. Wurden sie inzwischen gelöscht?"; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
+	})
+
+	t.Run("nichts markiert: 400", func(t *testing.T) {
+		erwarte400(t, bogen(t, map[string]any{}), "Keine Schüler markiert")
+	})
+
+	t.Run("mehr als die Grenze je Auftrag: 400", func(t *testing.T) {
+		ids := make([]string, druck.MaxSchuelerEtiketten+1)
+		for i := range ids {
+			ids[i] = uuid.NewString()
+		}
+		erwarte400(t, bogen(t, map[string]any{"schuelerIds": ids}),
+			fmt.Sprintf("Höchstens %d", druck.MaxSchuelerEtiketten))
+	})
+
+	t.Run("gelöschte Schüler: 400 mit Hinweis", func(t *testing.T) {
+		erwarte400(t, bogen(t, map[string]any{"schuelerIds": []string{uuid.NewString()}}),
+			"inzwischen gelöscht")
+	})
+
+	// Ohne Nummer gäbe es kein Strichcodebild; das Etikett trüge nur Name und Klasse.
+	t.Run("ein Leser ohne Ausweisnummer: 400 mit seinem Namen", func(t *testing.T) {
+		var ohneNummer string
+		if err := pool.QueryRow(t.Context(), `
+			INSERT INTO leser (art, vorname, nachname) VALUES ('lehrkraft', 'Katrin', 'Ohnenummer')
+			RETURNING id`).Scan(&ohneNummer); err != nil {
+			t.Fatal(err)
+		}
+		rec := bogen(t, map[string]any{"schuelerIds": []string{schueler, ohneNummer}})
+		erwarte400(t, rec, "Katrin Ohnenummer")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Ohne Ausweisnummer gibt es kein Etikett: Katrin Ohnenummer. "+
+			"Die Nummer wird in der Akte unter „Stammdaten & Adresse“ eingetragen."; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
+	})
+}

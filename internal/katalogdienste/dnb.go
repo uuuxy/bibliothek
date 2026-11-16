@@ -10,9 +10,9 @@ import (
 	"regexp"
 	"strings"
 
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/repository"
 
 	"golang.org/x/text/unicode/norm"
 )

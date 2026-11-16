@@ -3,7 +3,7 @@ package littera
 import (
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Die Platzhalter-Domäne steht an zwei Stellen — hier und in repository.

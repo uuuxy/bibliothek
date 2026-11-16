@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/lmf"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmf"
+	"bibliothek/internal/repository"
 )
 
 func TestHatLMFKennung(t *testing.T) {

@@ -8,7 +8,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { ETIKETT_FORMATE } from './etikettformate.js';
 	const BARCODE_AUSGABE = [
-		// Der Wert heißt 'code39', gedruckt wird Code 128 (pkg/strichcode). Der gespeicherte
+		// Der Wert heißt 'code39', gedruckt wird Code 128 (internal/pkg/strichcode). Der gespeicherte
 		// Wert bleibt, weil er in den Ausweis-Layouts steht; die Beschriftung sagt, was
 		// tatsächlich herauskommt.
 		{ value: 'code39', label: 'Strichcode (Code 128)' },

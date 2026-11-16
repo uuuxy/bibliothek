@@ -1,6 +1,6 @@
 /**
  * Das Prüfzeichen der älteren Ausweise und Buchetiketten in Code 39: der Zwilling von
- * pkg/code39/pruefzeichen.go für die Theke ohne Netz.
+ * internal/pkg/code39/pruefzeichen.go für die Theke ohne Netz.
  *
  * Das Mod-43-Prüfzeichen steht in den Strichcode-Daten: Unter der Karte steht „A-10003",
  * das Lesegerät liefert „A-100037". Gedruckt wird heute Code 128 ohne Prüfzeichen; die

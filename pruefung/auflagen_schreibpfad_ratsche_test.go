@@ -17,21 +17,21 @@ import (
 // Auflagen eines Schulbuchs: ein Schreibpfad.
 //
 // Die Regeln der Auflagen (nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger als zwei
-// Titeln fällt) stehen an einer Stelle, repository/auflagen.go. Eine Tür, die daran vorbei
+// Titeln fällt) stehen an einer Stelle, internal/repository/auflagen.go. Eine Tür, die daran vorbei
 // schreibt, kennt sie nicht: So ließen die beiden Löschwege eines Titels die dritte Regel aus.
 // Zwei Regeln, mechanisch:
 //  1. SQL, das werk_id schreibt (SET-Klausel, Spaltenliste eines INSERT) oder die Tabelle
-//     werke ändert, steht nur in repository/auflagen.go.
+//     werke ändert, steht nur in internal/repository/auflagen.go.
 //  2. Jede Funktion mit DELETE FROM buecher_titel ruft ladeWerkeDerTitel und raeumeWerkeAuf.
 //
 // Blindheit: Liest Zeichenketten-Literale einzeln; SQL, das erst aus Variablen oder
 // Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Migrationen
 // liest sie nicht; die Skripte hält TestAuflagen_SkripteHaltenDieWerke. Ob raeumeWerkeAuf nach
-// dem DELETE und in derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
-// repository/titel_loeschen_samt_ausleihen_auflagen_pg_test.go.
+// dem DELETE und in derselben Transaktion läuft, prüft sie nicht; das messen internal/repository/ und
+// internal/repository/titel_loeschen_samt_ausleihen_auflagen_pg_test.go.
 func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	wechsleInDieWurzel(t)
-	const tuer = "repository/auflagen.go"
+	const tuer = "internal/repository/auflagen.go"
 	var verstoesse []string
 	schreiberInTuer, loescher := 0, 0
 
@@ -188,7 +188,7 @@ func ruft(n ast.Node, name string) bool {
 // Skript läuft als psql < datei im Container und kann keinen gemeinsamen Baustein einbinden;
 // deshalb steht der Block in jedem Skript, und hier wird er gehalten.
 //
-// Blindheit: prüft den Text (die Sperre mit dem Schlüssel aus repository/auflagen.go, die beiden
+// Blindheit: prüft den Text (die Sperre mit dem Schlüssel aus internal/repository/auflagen.go, die beiden
 // Anweisungen und ihre Reihenfolge zum letzten Löschen), nicht die Wirkung. Ein Skript, das Titel
 // über dynamisches SQL löscht, sieht sie nicht.
 func TestAuflagen_SkripteHaltenDieWerke(t *testing.T) {
@@ -213,7 +213,7 @@ func TestAuflagen_SkripteHaltenDieWerke(t *testing.T) {
 		loeschende++
 		erstes, letztes := titel[0][0], titel[len(titel)-1][1]
 		if s := sperre.FindStringIndex(sql); s == nil || s[0] > erstes {
-			t.Errorf("%s: löscht Titel ohne vorher die Sperre der Auflagen zu nehmen (pg_advisory_xact_lock wie repository/auflagen.go)", pfad)
+			t.Errorf("%s: löscht Titel ohne vorher die Sperre der Auflagen zu nehmen (pg_advisory_xact_lock wie internal/repository/auflagen.go)", pfad)
 		}
 		loesen, loeschen := letzterTreffer(werkLoesen, sql), letzterTreffer(werkeAendern, sql)
 		if loesen < letztes || loeschen < letztes {
@@ -240,11 +240,11 @@ func letzterTreffer(muster *regexp.Regexp, text string) int {
 	return treffer[len(treffer)-1][0]
 }
 
-// auflagenSperrschluessel liest den Schlüssel der Sperre aus repository/auflagen.go, damit Skripte
+// auflagenSperrschluessel liest den Schlüssel der Sperre aus internal/repository/auflagen.go, damit Skripte
 // und Programm dieselbe Sperre nehmen.
 func auflagenSperrschluessel(t *testing.T) string {
 	t.Helper()
-	datei, err := parser.ParseFile(token.NewFileSet(), "repository/auflagen.go", nil, 0)
+	datei, err := parser.ParseFile(token.NewFileSet(), "internal/repository/auflagen.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,6 +265,6 @@ func auflagenSperrschluessel(t *testing.T) string {
 			}
 		}
 	}
-	t.Fatal("repository/auflagen.go: Konstante auflagenSperre nicht gefunden")
+	t.Fatal("internal/repository/auflagen.go: Konstante auflagenSperre nicht gefunden")
 	return ""
 }

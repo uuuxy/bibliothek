@@ -10,7 +10,7 @@ import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
  * entweder die Titel mit Exemplaren oder mit `bestand=ohne` die ohne. Beide Hälften gehören
  * hierher — eine alte Auflage hat oft kein Exemplar mehr und steht trotzdem in der
  * Nachbestell-Liste. Für die Auflagen werden nur Lernmittel angeboten (die Vorgabe von passt);
- * zusammengefasst werden nur Auflagen eines Schulbuchs (repository/auflagen.go), und alles
+ * zusammengefasst werden nur Auflagen eines Schulbuchs (internal/repository/auflagen.go), und alles
  * andere wiese der Server ab. Zusammenführen lassen sich alle Titel.
  *
  * @param {() => string[]} bekannte — IDs, die schon zu diesem Buch gehören (der Titel

@@ -107,14 +107,14 @@ Grund, nicht der Geschmack.
 | #  | Anforderung                                                                                                                                  | Fundstelle                                       |
 | -- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox.go`, FACHKONZEPT §1 |
-| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag (bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli) bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `pkg/lmf`, `pkg/lmfplan` |
-| F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `sse/`  |
-| F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen/mahnbriefe.go`                          |
-| F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
-| F6 | **Öffentliche Seiten ohne Anmeldung** (Katalog `/katalog`, Monitor `/monitor`) — Titeldaten ja, Personendaten nie.                            | `api/portal/opac.go`, `api/portal/monitor.go`, FACHKONZEPT §16 |
-| F7 | **Kollegiums-Portal** mit Selbstanmeldung über das Schulpostfach, Klassensatz-Reservierung und Meldungen.                                     | `auth/selbstanmeldung.go`, `frontend/src/lib/components/portal/KollegiumPortal.svelte` |
+| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag (bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli) bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/frist.go`, `internal/pkg/lmf`, `internal/pkg/lmfplan` |
+| F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `internal/sse/`  |
+| F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `internal/api/mahnwesen/mahnbriefe.go`                          |
+| F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `internal/jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
+| F6 | **Öffentliche Seiten ohne Anmeldung** (Katalog `/katalog`, Monitor `/monitor`) — Titeldaten ja, Personendaten nie.                            | `internal/api/portal/opac.go`, `internal/api/portal/monitor.go`, FACHKONZEPT §16 |
+| F7 | **Kollegiums-Portal** mit Selbstanmeldung über das Schulpostfach, Klassensatz-Reservierung und Meldungen.                                     | `internal/auth/selbstanmeldung.go`, `frontend/src/lib/components/portal/KollegiumPortal.svelte` |
 | F8 | **Altbestandsübernahme aus Littera**: Titel, Exemplare, Personen, offene Ausleihen — verlustfrei und nachweisbar.                             | `internal/littera`, `internal/uebernahme`, `cmd/littera-altbestand` |
-| F9 | **Bestellwesen** bis zum Wareneingang, inklusive Bestätigungslink für Händler, die selbst etikettieren.                                       | `api/bestellung/bestellbestaetigung*.go`                   |
+| F9 | **Bestellwesen** bis zum Wareneingang, inklusive Bestätigungslink für Händler, die selbst etikettieren.                                       | `internal/api/bestellung/bestellbestaetigung*.go`                   |
 | F10| **Der Betrieb muss merken, wenn eine Funktion still nichts tut** (fehlende Einstellung, fehlendes Geheimnis, fehlgeschlagene Restore-Probe).  | `internal/bereitschaft/bereitschaft.go`, FACHKONZEPT §15   |
 
 ---
@@ -129,7 +129,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Prio | Qualitätsziel                          | Was damit konkret gemeint ist                                                                                                                                     | Wie es nachgewiesen wird                                                                                     |
 | ---- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Q1   | **Korrektheit unter Nebenläufigkeit**  | Acht Stationen scannen gleichzeitig. Kein Exemplar hat zwei aktive Ausleihen, kein Doppelscan erzeugt eine zweite Buchung, kein Fehler wird als Erfolg quittiert. | Partielle Unique-Indizes (DB-Ebene), Idempotenz-Keys, `*_pg_test.go` gegen echtes Postgres, `phantom_erfolg_test.go` |
-| Q2   | **Datenschutz-Konformität**            | Schülerdaten werden fristgerecht getilgt, Fotos verschlüsselt, öffentliche Seiten tragen keine Personendaten, jede Route ist nach PII-Stufe eingeordnet.          | `api/pii_matrix_test.go` hält [PII_MATRIX.de.md](PII_MATRIX.de.md) deckungsgleich mit dem Code; DSGVO-Cronjobs mit PG-Tests |
+| Q2   | **Datenschutz-Konformität**            | Schülerdaten werden fristgerecht getilgt, Fotos verschlüsselt, öffentliche Seiten tragen keine Personendaten, jede Route ist nach PII-Stufe eingeordnet.          | `internal/api/pii_matrix_test.go` hält [PII_MATRIX.de.md](PII_MATRIX.de.md) deckungsgleich mit dem Code; DSGVO-Cronjobs mit PG-Tests |
 | Q3   | **Betriebstransparenz**                | Eine eingerichtete, aber nicht in Betrieb befindliche Funktion muss sich melden — nicht schweigen.                                                                 | Selbstprüfung der Betriebsbereitschaft + Bereitschafts-Wächter (täglich per Mail), `/health`                 |
 | Q4   | **Bedienbarkeit an der Theke**            | Ein Scan, eine Reaktion, ohne Maus. Der Ausfall des Netzes darf den Betrieb nicht anhalten.                                                                        | Offline-Warteschlange (IndexedDB) + Nachbuch-Tür, Tastaturbedienung, WCAG 2.1 AA mit axe-Gate                |
 | Q5   | **Änderbarkeit ohne Rückfall**         | Ein behobener Fehler bleibt behoben. Jede Bugklasse bekommt einen Detektor (eine „Ratsche"), nicht nur einen Fix.                                                  | [sweeps.md](sweeps.md), Drift-Gates (Migrationen, Compose-Variablen), Deadcode-Gate                       |
@@ -145,7 +145,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 - **Mandantenfähigkeit.** Eine Schule, eine Datenbank, ein Stack. Es gibt keine
   Schul-ID und keinen Mandanten-Schlüssel.
 - **Konfigurierbarkeit als Produktmerkmal.** Was das Kollegium darf, steht fest in
-  `db/rechte_vorgabe.go` und ist kein Schalter je Schule (Entscheidung vom 16.09.2026).
+  `internal/db/rechte_vorgabe.go` und ist kein Schalter je Schule (Entscheidung vom 16.09.2026).
 - **Skalierung über einen Host hinaus.** Der Entwurf zielt auf ~1.900 Leser und acht
   gleichzeitige Arbeitsplätze, nicht auf horizontale Skalierung. Der Prozess hält
   In-Memory-Zustand (SSE-Broker, Rechte-Cache, Rate-Limit-Zähler); mehrere Instanzen
@@ -168,7 +168,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | **Datenschutzbeauftragte(r)**        | Nachweisbare Fristen, Rechtsgrundlagen, Verarbeitungsverzeichnis, Auskunft                                                          | PII-Matrix je Route als Gate, automatische Löschroutinen, VVT- und Art.-13-Entwürfe unter `docs/datenschutz/`         |
 | **Schulträger**                      | Nachweispflichten (Zugangs-/Abgangsbuch, Bestandsnachweis zum Stichtag), getrennte Töpfe Land/Träger                                | Bestandsbücher als eigene Reiter mit Druckblatt; Mittelherkunft an der Bestellung ([mittel_konzept.md](mittel_konzept.md)) |
 | **Betreiber/Entwickler** (eine Person) | Ein Deploy darf nichts still zerstören; ein Fehler muss sich selbst melden; die Doku muss die Entscheidung tragen, nicht nur das Ergebnis | Gates, Drift-Tests, Selbstprüfung, Bereitschafts-Wächter, `OFFEN.md` als einzige Liste, Commit-Historie als Doku      |
-| **Land (Lernmittelfreiheit)**         | Leihbücher nach Erlass behandeln: Fristen, Ersatzwert-Staffel, Bescheid statt Barzahlung                                            | `pkg/ersatzwert` (Staffel als Vorschlag mit Herleitung), `api/schaden/bescheid_*.go`, Gate `docs/ersatzwert_staffel_test.go`  |
+| **Land (Lernmittelfreiheit)**         | Leihbücher nach Erlass behandeln: Fristen, Ersatzwert-Staffel, Bescheid statt Barzahlung                                            | `internal/pkg/ersatzwert` (Staffel als Vorschlag mit Herleitung), `internal/api/schaden/bescheid_*.go`, Gate `docs/ersatzwert_staffel_test.go`  |
 
 ---
 
@@ -206,13 +206,13 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | #  | Randbedingung                                                                 | Hintergrund und Konsequenz                                                                                                                                                                               |
 | -- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1 | **Go 1.27.4**, Version identisch in `go.mod` und `Dockerfile`                 | Zwei Versionen wären zwei Verhalten. Genutzt werden ausdrücklich neuere Fähigkeiten: Methoden-Routing im `net/http`-Mux (`GET /api/...`), `os.OpenRoot` gegen Path-Traversal, `slog` als Standard-Logger. |
-| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/rechte.go`, `api/tuer/sitzung.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`geschuetzte_routen_test.go`). |
+| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`internal/api/router.go`, `internal/api/middleware.go`, `internal/api/tuer/rechte.go`, `internal/api/tuer/sitzung.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`geschuetzte_routen_test.go`). |
 | T3 | **PostgreSQL 18** über `pgx/v5` (Pool), keine ORM-Schicht                     | SQL steht im Repository-Paket sichtbar da. Constraints sind ein Entwurfsmittel, nicht eine Absicherung „unten" — siehe [invarianten.md](invarianten.md).                                                |
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
 | T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
 | T6 | **Ein Host, ein Prozess**                                                      | Der Prozess hält Zustand im Speicher: SSE-Abonnenten, Rechte-Cache, Rate-Limit-Zähler, Idempotenz-Warteschleife. Eine zweite Instanz hinter einem Load Balancer wäre **nicht** nur Konfiguration.         |
 | T7 | **Anmeldung gegen den Schul-Mailserver (IMAP) oder den Verzeichnisdienst (LDAP), je Konto** | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Welcher Server prüft, nennt das Konto (Migration 172, A30). Folge: Die E-Mail **ist** die Identität, bei einem LDAP-Konto auch die LDAP-Kennung; `benutzer.email` oder `benutzer.ldap_kennung` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
-| T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`pkg/code39`).           |
+| T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`internal/pkg/code39`).           |
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Server** (`/root/caddy/Caddyfile`). Am Testserver schreibt sie `update_caddy.sh`, am Schulserver wird der Abschnitt „Bibliothek" daraus übernommen ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3). |
 | T10| **Der Betrieb läuft nur über HTTPS**                                           | Die Cookies von Sitzung und CSRF tragen fest `Secure`; einen Schalter für den Betrieb über HTTP gibt es nicht. Ohne TLS gingen Sitzung, das Mail-Passwort jeder Anmeldung und die Schülerdaten offen durchs Schulnetz. Auch ein Server, den die Schule nur über eine IP-Adresse erreicht, braucht deshalb ein Zertifikat. Lokal genügt `http://localhost`: Dort nehmen Browser Cookies mit `Secure` an (MDN, Set-Cookie). |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
@@ -231,7 +231,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | O5 | **Zwei Anforderungen aus dem Anforderungsprotokoll vom 16.09.2026** | Alte Aufdrucke bleiben lesbar (A14), und ein Lernmittel kann über mehrere Jahre beim selben Kind bleiben (Mehrjahresband am Titel, Spalte `mehrjahresband`). Beides ist gebaut. Wie die übrigen der zwölf Punkte behandelt sind, steht in den Commits vom 17. und 22.09.2026, die begründeten Abweichungen im Mahnwesen in [mittel_konzept.md](mittel_konzept.md), Abschnitt 3. |
 | O6 | **Kein Passwort-Selbstservice, kein Nutzerverzeichnis**                | Es gibt keinen „Passwort vergessen"-Pfad und keine Registrierung außer der Selbstanmeldung — beides liegt beim Schul-IT-Betrieb.                                                       |
 | O7 | **Altbestand aus Littera muss verlustfrei übernommen werden**          | Übernahme als eigenes Kommando gegen dieselbe Datenbank, mit Savepoint **je Datensatz** und Abgleich gegen den tatsächlichen Zeilenzuwachs — ein abgebrochener Batch darf nicht alles mitnehmen. |
-| O8 | **Datenschutz ist nachweispflichtig, nicht nur einzuhalten**            | Die PII-Einstufung je Route ist ein Dokument **mit Gate** (`api/pii_matrix_test.go`), nicht eine Zusage.                                                                              |
+| O8 | **Datenschutz ist nachweispflichtig, nicht nur einzuhalten**            | Die PII-Einstufung je Route ist ein Dokument **mit Gate** (`internal/api/pii_matrix_test.go`), nicht eine Zusage.                                                                              |
 
 ---
 
@@ -240,13 +240,13 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | Konvention                                        | Regel                                                                                                                                                                                                              | Durchsetzung                                                        |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | **Namen, Sichtbarkeit, Kommentare**               | Eine Sache hat ein Wort, und das Fachwort ist deutsch; Verben, Kürzel, Türen, was öffentlich ist und was ein Kommentar sagt, regelt [STIL.md](STIL.md) nach Googles Regelwerk für Go. | `stil_ratsche_test.go` (Bestand je Paket, sinkt nur); `golangci-lint` (revive, Regel `exported`) |
-| **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `db/migrationen_drift_test.go`, `db/migrationen_nummern_test.go`, `db/migrationen_schema_paritaet_pg_test.go` |
+| **Migrationen**                                   | `NNN_beschreibung.sql`, idempotent (`IF NOT EXISTS` / `DO $$ … EXCEPTION`), dedupliziert über `schema_migrations`; die Seed-Liste in `schema.sql` muss exakt den Dateien entsprechen.                               | `internal/db/migrationen_drift_test.go`, `internal/db/migrationen_nummern_test.go`, `internal/db/migrationen_schema_paritaet_pg_test.go` |
 | **Rows-Iteration**                                | Jede `rows.Next()`-Schleife endet mit `rows.Err()`. Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als Erfolg — die Liste wäre still unvollständig.                                                   | `golangci-lint`, Review                                              |
 | **Paketkommentar**                                | Jedes Go-Paket trägt genau einen Kommentar unmittelbar über der `package`-Zeile; er sagt in ein bis drei Sätzen, wofür das Paket da ist. So verlangt es Googles Regelwerk für Go, Abschnitt [Package comments](https://google.github.io/styleguide/go/decisions#package-comments). Ein Kommando beginnt mit `Command <Name>`. | `golangci-lint` (revive, Regel `package-comments`) |
 | **Empfängername**                                 | Ein Typ nennt seinen Empfänger in jeder Methode gleich, kurz und nie `this` oder `self` (Googles Regelwerk für Go, [Receiver names](https://google.github.io/styleguide/go/decisions#receiver-names)). Die Türen eines Themas nennen ihn `t` ([STIL.md](STIL.md), Abschnitt 4). | `empfaenger_ratsche_test.go` (über alle Dateien eines Pakets), `golangci-lint` (revive, Regel `receiver-naming`, je Datei) |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** Komponente und je neuem JS-Modul; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `darfSehen()` in `frontend/src/lib/menue.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
-| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `api/geschuetzte_routen_test.go`                                  |
+| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `verlangeRecht(...)` oder, wo jede Sitzung genügt, `VerlangeAnmeldung()`; öffentliche Routen stehen in einer Allowlist.                        | `internal/api/geschuetzte_routen_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
 | **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (jede `.md` unter `docs/`)              |
 | **Keine Changelog-Datei**                         | Die Commit-Historie ist Teil der Dokumentation; Erledigtes wird aus `OFFEN.md` gelöscht, nicht archiviert.                                                                                                          | Entscheidung vom 15.09.2026                                          |
@@ -322,7 +322,7 @@ graph TB
 | **Bibliothekspersonal**     | Barcode-Scans, Stammdatenpflege, Mahnlauf, Inventurzählung, Wareneingang                                     | Bildschirm-Rückmeldung je Scan, PDFs (Mahnungen, Etiketten, Ausweise, Bescheide, Listen)                              | Bedienung ist auf **Tastatur und Scanner** ausgelegt; die Maus ist optional                                     |
 | **Kollegium**               | Selbstanmeldung mit dem Schulpostfach, Reservierungen, Meldungen                                              | Portal-Ansichten (Klassensätze, LMF-Plan, Schulbücher als PDF), Terminbestätigungen                                    | Zugang entsteht **inaktiv** und wird von der Bibliothek freigeschaltet                                          |
 | **Sekretariat**             | LUSD-Bericht als `.xlsx` **oder** Semikolon-CSV (LANIS-Klassenliste, UTF-8 mit BOM)                           | Abgleichbericht: neu, geändert, Umbenennung, Abgänger                                                                  | Die Kopfzeile wird **gesucht, nicht vorausgesetzt** — LUSD-Berichte tragen Titelzeilen darüber                  |
-| **Schüler und Eltern**      | Suchanfragen im öffentlichen Katalog                                                                         | Titel, Cover, Verfügbarkeit                                                                                            | **Nie** Ausleiherdaten — PII-Stufe 0, im Gate `api/pii_matrix_test.go` festgehalten                              |
+| **Schüler und Eltern**      | Suchanfragen im öffentlichen Katalog                                                                         | Titel, Cover, Verfügbarkeit                                                                                            | **Nie** Ausleiherdaten — PII-Stufe 0, im Gate `internal/api/pii_matrix_test.go` festgehalten                              |
 | **Buchhändler**             | Bestätigung über einen Token-Link, ohne Konto                                                                 | Bestellmail mit Positionsliste und Barcodebogen                                                                        | Der Token steht **im Pfad** und wird im Log maskiert (`maskiereToken`); gespeichert wird nur sein Hash           |
 | **Schulträger**             | Nachweispflichten                                                                                             | Zugangs-/Abgangsbuch je Halbjahr, getrennt nach Land und Träger; Bestandsnachweis zum Stichtag (15.3./15.9.)           | Bücher ohne hinterlegte Bestellung erscheinen ausdrücklich „ohne Zuordnung" — die ehrliche Lücke statt einer Erfindung |
 | **Datenschutzbeauftragte**  | Prüffragen                                                                                                    | DSGVO-Auskunft als PDF, PII-Matrix, VVT-Entwurf, Nachweis der Löschläufe im Audit-Trail                                | Die Audit-Tilgung ist die **bewusste Ausnahme** von der Append-only-Konvention                                  |
@@ -355,7 +355,7 @@ graph TB
      └────────────┘  └────────┘  └────────┘  └──────────────────────┘
             │                                        ▲
             │ pg_dump → gzip → AES-256-GCM           │ nur öffentliche IPs
-            ▼                                        │ (pkg/safehttp)
+            ▼                                        │ (internal/pkg/safehttp)
      ┌────────────────────┐   optional   ┌────────────────────────┐
      │ Volume /app/backups│ ───────────► │ S3-kompatibler Speicher│
      └────────────────────┘              └────────────────────────┘
@@ -372,7 +372,7 @@ graph TB
 | **Backend → PostgreSQL**         | Postgres-Wire über `pgx/v5`-Pool                | ausgehend       | Netz nur intern; Passwort aus `.env`; `pg_dump` erhält es über eine temporäre `.pgpass`, nicht über `PGPASSWORD`                    |
 | **Backend → IMAP**               | IMAP über implizites TLS, Port 993, min. TLS 1.2 | ausgehend       | Feste Cipher-Auswahl; `IMAP_HOST=mock` akzeptiert in Entwicklung/Test jedes Passwort und wird beim Start laut protokolliert         |
 | **Backend → SMTP**               | SMTP mit **erzwungenem** STARTTLS und Zertifikatsprüfung | ausgehend | Bietet der Server kein STARTTLS, bricht der Versand ab (`errSMTPKlartext`); nur ein ausdrückliches `SMTP_ALLOW_PLAINTEXT=true` erlaubt es. Kopfzeilen werden gegen CR/LF-Einschmuggelung geprüft |
-| **Backend → Metadaten/Cover**    | HTTPS GET an eine **Host-Allowlist**             | ausgehend       | `pkg/coverquelle` baut die URL aus geprüften Teilen **neu** auf (Schema fest HTTPS, Host aus der Konstante); `pkg/safehttp` lehnt Verbindungen zu nicht-öffentlichen IPs ab (SSRF) |
+| **Backend → Metadaten/Cover**    | HTTPS GET an eine **Host-Allowlist**             | ausgehend       | `internal/pkg/coverquelle` baut die URL aus geprüften Teilen **neu** auf (Schema fest HTTPS, Host aus der Konstante); `internal/pkg/safehttp` lehnt Verbindungen zu nicht-öffentlichen IPs ab (SSRF) |
 | **Backend → S3 (optional)**      | S3-API über `minio-go`                           | ausgehend       | Nur aktiv, wenn `S3_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET` vollständig gesetzt sind; sonst überspringt der Job den Offsite-Upload und sagt das |
 | **Littera-Altbestand**           | CSV aus `mdb-export` (einmalig, CLI)             | eingehend       | Kein HTTP-Weg: eigenes Kommando `cmd/littera-altbestand` gegen dieselbe Datenbank, Savepoint je Datensatz; am Server über `scripts/littera_uebernahme.sh` im Container des Programms |
 | **Bestellbestätigung Händler**   | `GET/POST /bestellung/<token>` ohne Anmeldung     | eingehend       | Token einmalig, Hash gespeichert, im Log maskiert; die Bestätigung ist über `WHERE bestaetigt_am IS NULL` atomar                    |
@@ -452,7 +452,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 04.11.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 16.11.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -499,7 +499,7 @@ Stand: 04.11.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-na
 HTTP-Anfrage
    │
    ├─ Log ────────────────────── jede Anfrage: Methode und Pfad, Token maskiert, ohne IP
-   ├─ 0 Adresse ──────────────── Client-IP hinter dem Proxy (pkg/clientip), gelesen von Bremse und Türen
+   ├─ 0 Adresse ──────────────── Client-IP hinter dem Proxy (internal/pkg/clientip), gelesen von Bremse und Türen
    ├─ 1 PanicRecovery ────────── fängt Panics, 500 statt Prozess-Ende
    ├─ 2 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
    ├─ 3 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
@@ -508,7 +508,7 @@ HTTP-Anfrage
    ├─ 6 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
    ├─ 7 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts; JSON an der Tür 5 MB
    ├─ 8 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
-   ├─ 9 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
+   ├─ 9 RateLimit ────────────── je Client-IP (internal/pkg/clientip: genau ein Proxy-Hop)
    ├─10 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
    ├─11 Null-Zeichen ─────────── U+0000 in Pfad, Abfrage oder JSON-Rumpf: 400, bevor eine Tür läuft
    ├─12 Kompression ──────────── gzip für JSON, den CSV-Export und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
@@ -519,14 +519,14 @@ HTTP-Anfrage
    ├─ verlangeRecht("…")
    │     └─ UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
    │        → Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
-   ├─ VerlangeAnmeldung() — nur Routen ohne UUID im Pfad (api/uuid_pfadparameter_test.go)
+   ├─ VerlangeAnmeldung() — nur Routen ohne UUID im Pfad (internal/api/uuid_pfadparameter_test.go)
    │     └─ Cookie → JWT prüfen → Kontostatus in der DB
    ▼
-  Handler (api/<Thema>/, auth/)
+  Handler (internal/api/<Thema>/, internal/auth/)
    ▼
   Service (internal/service/) — Regeln, Orchestrierung, Transaktionsklammer
    ▼
-  Repository (repository/) — SQL, pgx, Mapping
+  Repository (internal/repository/) — SQL, pgx, Mapping
    ▼
   PostgreSQL
    │
@@ -544,55 +544,62 @@ HTTP-Anfrage
 Was ein Paket tut, sagt sein Kommentar (`go doc ./<paket>`); die Tabelle ordnet die Pakete
 ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selbst-nachmessen).
 
+Die Pakete stehen unter `internal/`, die Programme unter `cmd/`, wie es die Anleitung des
+Go-Teams für ein Server-Projekt vorsieht ([go.dev/doc/modules/layout](https://go.dev/doc/modules/layout),
+„Server project“: „it's recommended to keep the Go packages implementing the server's logic in
+the internal directory“). Ein neues Paket kommt unter `internal/`. Daneben stehen oben nur die
+Prüfungen über den ganzen Baum (`pruefung/`), die Gates der Dokumente (`docs/`) und die Skripte
+(`scripts/`). Der Dockerfile kopiert für den Bau nur `internal/` und `cmd/`.
+
 | Paket                   | Verantwortung                                                                                                                                                                   |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cmd/server/main.go`    | Konfiguration lesen **und hart prüfen** (DSN, Länge der Schlüssel, IMAP, Secret-Guard), Pool, Migrationen, Rechte ab Werk, erster Admin, Übernahme der SMTP-Konfiguration, Broker, Zeitplan, Server, geordnetes Herunterfahren |
-| `api/`                  | Router mit den Routenlisten (`routen_*.go`) und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen, die Abmeldung                          |
-| `api/tuer/`             | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, Sitzung, Rechteprüfung mit Zwischenspeicher (5.4.3), Protokoll der Verwaltung, Uhr, Kopf der Briefe. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
-| `api/<Thema>/`          | Die Türen je Menüpunkt (A26): `lernmittel`, `inventurlauf`, `benutzer`, `portal`, `system`, `mahnwesen`, `schaden`, `katalog`, `druck`, `bestellung`, `leser`, `theke`        |
+| `internal/api/`                  | Router mit den Routenlisten (`routen_*.go`) und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen, die Abmeldung                          |
+| `internal/api/tuer/`             | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, Sitzung, Rechteprüfung mit Zwischenspeicher (5.4.3), Protokoll der Verwaltung, Uhr, Kopf der Briefe. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
+| `internal/api/<Thema>/`          | Die Türen je Menüpunkt (A26): `lernmittel`, `inventurlauf`, `benutzer`, `portal`, `system`, `mahnwesen`, `schaden`, `katalog`, `druck`, `bestellung`, `leser`, `theke`        |
 | `internal/service/`     | Fachlogik mit Transaktionsklammer: Ausleihe und Rückgabe (5.4.1), Omnibox (5.4.2), Nachbuchen, Geräte, Cover, Passbilder, Ersatzwert, Bestellungen, LMF-Plan und seine Fristen, Importe, Littera-Etiketten |
-| `repository/`           | Die Datenbankschicht (A25): Abfragen, Schreibpfade, Zeilensperren, Bewegungsstempel, Protokoll, Einstellungen, die Anweisungen der Nachtläufe, der Anmeldung und der Theke     |
-| `auth/`                 | Anmeldung gegen IMAP, Token, Sperrliste widerrufener Token, Sperre nach Inaktivität mit Prüfwert des Passworts, Selbstanmeldung des Kollegiums                                 |
-| `jobs/`                 | Zeitplan (UTC) und Nachtläufe: DSGVO-Kette, Protokoll-Aufbewahrung, Backup, Idempotenz-TTL, Vormerkungs-Verfall, Cover-Abgleich, Restore-Probe (5.4.5)                        |
+| `internal/repository/`           | Die Datenbankschicht (A25): Abfragen, Schreibpfade, Zeilensperren, Bewegungsstempel, Protokoll, Einstellungen, die Anweisungen der Nachtläufe, der Anmeldung und der Theke     |
+| `internal/auth/`                 | Anmeldung gegen IMAP, Token, Sperrliste widerrufener Token, Sperre nach Inaktivität mit Prüfwert des Passworts, Selbstanmeldung des Kollegiums                                 |
+| `internal/jobs/`                 | Zeitplan (UTC) und Nachtläufe: DSGVO-Kette, Protokoll-Aufbewahrung, Backup, Idempotenz-TTL, Vormerkungs-Verfall, Cover-Abgleich, Restore-Probe (5.4.5)                        |
 | `internal/lusd/`        | Abgleich mit dem Export der LUSD: Datei lesen, Zeilen zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion ([LUSD.md](LUSD.md))                              |
-| `internal/bereitschaft/` | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, je Bereich ein Befund mit Folge und Abhilfe; die Lage sammelt `api/system`                         |
+| `internal/bereitschaft/` | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, je Bereich ein Befund mit Folge und Abhilfe; die Lage sammelt `internal/api/system`                         |
 | `internal/auskunft/`    | Auskunft nach Art. 15 DSGVO: Typen der Antwort, Pflichtangaben, das Blatt aus derselben Antwort                                                                                |
 | `internal/bestandsbuch/` | Die Zeilen von Zugangs- und Abgangsbuch: je Tag und Titel eine, mit Anzahl und Barcodes; Bildschirm und Blatt lesen dieselben |
 | `internal/buchetikett/` | Die Eingabe der Buchetiketten, die Druck-Center und Bestellung drucken (8.9)                                                                                                    |
 | `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.3)                                                                                                                   |
 | `internal/crypto/`, `internal/backupkrypto/`, `internal/ausweis/`, `internal/middleware/` | AES-256-GCM; scrypt und Dateiformat der Backups; Gültigkeit eines Ausweises; Security-Header                                    |
 | `internal/pgtest/`, `smtptest/`, `pdftest/`, `xlsxtest/`, `testdaten/`, `testweg/`, `tuertest/`, `routertest/` | Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden                                                                   |
-| `pdf/`                  | Erzeugte Dokumente: Briefe, Listen, Bescheid, Rechnung, Etiketten mit ihren Bogenformaten, Bestandsbücher (8.9)                                                                 |
-| `mailservice/`          | Aufbau und Versand einer Mail, erzwungenes STARTTLS, Kopfzeilen-Härtung, die Konfiguration, mit der verschickt wird (8.10)                                                     |
-| `sse/`                  | Broker und Tür für Server-Sent Events (5.4.4)                                                                                                                                   |
-| `apierrors/`            | Einheitliche Fehlerantworten und ihre Abbildung auf HTTP-Status (8.6)                                                                                                          |
-| `db/`                   | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                           |
-| `pkg/`                  | Regeln und Hilfen ohne Abhängigkeit zu den Schichten darüber (Tabelle unten)                                                                                                    |
+| `internal/pdf/`                  | Erzeugte Dokumente: Briefe, Listen, Bescheid, Rechnung, Etiketten mit ihren Bogenformaten, Bestandsbücher (8.9)                                                                 |
+| `internal/mailservice/`          | Aufbau und Versand einer Mail, erzwungenes STARTTLS, Kopfzeilen-Härtung, die Konfiguration, mit der verschickt wird (8.10)                                                     |
+| `internal/sse/`                  | Broker und Tür für Server-Sent Events (5.4.4)                                                                                                                                   |
+| `internal/apierrors/`            | Einheitliche Fehlerantworten und ihre Abbildung auf HTTP-Status (8.6)                                                                                                          |
+| `internal/db/`                   | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                           |
+| `internal/pkg/`                  | Regeln und Hilfen ohne Abhängigkeit zu den Schichten darüber (Tabelle unten)                                                                                                    |
 | `cmd/`                  | Sechs Kommandos neben dem Server (5.2.3)                                                                                                                                        |
 | `migrations/`           | Nummerierte, idempotente Schritte des Schemas; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | Die Gates der Dokumente, nur Testdateien                                                                                                                                         |
 
-##### Themen unter `api/`
+##### Themen unter `internal/api/`
 
 - Ein Thema trägt seine Türen als Methoden am Typ `Tueren`. Er bettet einen Zeiger auf die
   `tuer.Basis` des Servers ein: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es einmal, und
   was am Server gestellt wird (etwa die Uhr in einem Test), gilt für jedes Thema. Typ und
-  Paketkommentar stehen in der Datei, die wie das Paket heißt (`api/lernmittel/lernmittel.go`).
+  Paketkommentar stehen in der Datei, die wie das Paket heißt (`internal/api/lernmittel/lernmittel.go`).
 - Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft, nicht der Name
   ihrer Datei: der Menüpunkt, in den Einstellungen die Kategorie. Rufen Stellen mehrerer Themen
   eine Tür, steht sie bei dem Thema, dessen Daten sie liest.
-- Adresse und Recht jeder Tür stehen in den Routenlisten in `api/` (`routen_*.go`). Sie
+- Adresse und Recht jeder Tür stehen in den Routenlisten in `internal/api/` (`routen_*.go`). Sie
   erreichen ein Thema über einen klein geschriebenen Zugang des Servers
   (`s.lernmittel().LMFPlanSchreiben()`), der die Basis als Zeiger weiterreicht;
-  `api/zugaenge_basis_test.go` hält das je Zugang. Außerhalb von `api/` erreicht niemand die
+  `internal/api/zugaenge_basis_test.go` hält das je Zugang. Außerhalb von `internal/api/` erreicht niemand die
   Türen eines Themas.
 - Eine Tür ist eine Fabrik: `func (t *Tueren) LMFPlanSchreiben() http.HandlerFunc`. Ein langer
   Rumpf steht als klein geschriebene Methode daneben, die die Fabrik zurückgibt
   (`return t.schliesseInventurAb`), weil eine Closure für `komplexitaet_ratsche_test.go` als
-  eigene Ebene zählt. `api/themen_ratsche_test.go` weist eine exportierte Methode ab, die selbst
+  eigene Ebene zählt. `internal/api/themen_ratsche_test.go` weist eine exportierte Methode ab, die selbst
   Antwort und Anfrage nimmt.
-- Kein Thema bindet ein anderes oder `api/` ein (`api/themen_ratsche_test.go`). Was zwei Themen
-  brauchen, steht in `api/tuer` oder einer Schicht darunter: der Eintrag zur Konto-Anlage
+- Kein Thema bindet ein anderes oder `internal/api/` ein (`internal/api/themen_ratsche_test.go`). Was zwei Themen
+  brauchen, steht in `internal/api/tuer` oder einer Schicht darunter: der Eintrag zur Konto-Anlage
   (`tuer.Basis.ProtokolliereKontoAnlage`), der Ersatzwert (`internal/service/ersatzwert_vorschlag.go`),
   die Buchetiketten (`internal/buchetikett`).
 - Die Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst
@@ -603,9 +610,9 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 ##### Wo ein Test steht
 
 - Bei dem Paket, dessen Regel er prüft: ein Test an der Datenbank für eine Abfrage in
-  `repository/`, auch wenn er sie über eine Tür oder einen Dienst erreicht; ein Test des
+  `internal/repository/`, auch wenn er sie über eine Tür oder einen Dienst erreicht; ein Test des
   Ausleih-Dienstes in `internal/service`; ein Paar aus Go und SQL bei der Go-Seite; der Lauf
-  einer Migration in `db/`.
+  einer Migration in `internal/db/`.
 - Braucht er eine Prüfhilfe, die sein Paket einbindet (`internal/testweg`,
   `internal/routertest`), steht er als Testpaket daneben (`package repository_test`), wie es
   Googles Regelwerk für diesen Fall vorsieht
@@ -614,7 +621,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   `internal/testdaten` an. Eigenes SQL schreibt er nur, wo kein Helfer genau dieselbe Zeile
   anlegt: mehrere Tupel, `ON CONFLICT`, Ausdrücke wie `NOW()`, andere Spalten. `testdaten`
   bindet kein Paket des Programms ein, jeder Test kann es nutzen.
-- In `api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über alle
+- In `internal/api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über alle
   Routen (Schutz, Rechte, Personendaten, Grenzen der Listen), die Schichtung und jeder Test, der
   Türen zweier Themen prüft.
 - Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht in `pruefung/`;
@@ -623,18 +630,18 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   Blindheit steht im Kopf der Datei und in der Landkarte von [sweeps.md](sweeps.md) (Regel 7,
   gehalten von `docs/landkarte_ratschen_test.go`). Gehört die Regel einem Paket, steht die
   Prüfung dort, auch wenn sie dafür den Baum durchläuft
-  (`repository/einstellungen_gelesene_schluessel_test.go`). Tests, die `main.go` brauchen,
+  (`internal/repository/einstellungen_gelesene_schluessel_test.go`). Tests, die `main.go` brauchen,
   stehen daneben (`main_test.go`, `bildformate_test.go`).
 
-##### `repository/` bleibt ein Paket
+##### `internal/repository/` bleibt ein Paket
 
 Die Datenbankschicht wird nicht nach den Themen geteilt (A25): Protokoll, Einstellungen, Titel
 und Leser brauchen mehrere Themen, und die Schreiber jeder Tabelle stehen in einem Paket.
-Gefunden wird über den Namen der Datei, der wie ihre Sache heißt (`repository/auflagen.go`).
+Gefunden wird über den Namen der Datei, der wie ihre Sache heißt (`internal/repository/auflagen.go`).
 
 ##### Tür und Abfrage
 
-Für `api/`, `internal/service` und `repository/` gilt:
+Für `internal/api/`, `internal/service` und `internal/repository/` gilt:
 
 - **Die Tür** prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
   Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Neben ihr in ihrer Datei
@@ -648,43 +655,43 @@ Für `api/`, `internal/service` und `repository/` gilt:
   Mit beiden als Nachbar-Argumenten ließe sie sich am Pool rufen, und kein Compiler merkte es.
   Eine Funktion, die Zeilen sperrt, nimmt `pgx.Tx`; am Pool endete die Sperre mit der
   Anweisung.
-- **Die Abfrage** steht in `repository/` als Funktion über `repository.Datenbank` (Pool oder
+- **Die Abfrage** steht in `internal/repository/` als Funktion über `repository.Datenbank` (Pool oder
   Transaktion) und liefert ihren eigenen Zeilentyp. Die Typen der Schnittstellenbeschreibung
   bleiben an der Tür; bei gleichen Feldern genügt die Typumwandlung (`SignaturGruppe(zeile)`).
   Was mehrere Abfragen teilen, steht einmal: eine Bedingung (`coverNichtLokal`,
   `sqlCoverOderDNB`, die Wartenden in `vormerkung_nachruecken.go`), das Lesen der
   Einstellungen (`repository.LadeEinstellungen`), der Eintrag ins Protokoll
   (`repository.SchreibeAdminProtokoll`). Hängt die SET-Liste einer Änderung von den genannten
-  Feldern ab, nennt `repository/` die Spalten in einem Typ der Änderung (`LeserAenderung`). Ein
+  Feldern ab, nennt `internal/repository/` die Spalten in einem Typ der Änderung (`LeserAenderung`). Ein
   Fehler beim Lesen der Zeilen trägt `repository.ErrZeileUnlesbar`.
-- **`repository/` und `pdf/` kennen einander nicht.** Die Tür füllt die Eingabe der Erzeuger aus
-  den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, reicht sie ihn
+- **`internal/repository/` und `internal/pdf/` kennen einander nicht.** Die Tür füllt die Eingabe der Erzeuger aus
+  den Zeilen. Hängt ein gedruckter Text an einer Regel, die `internal/pdf/` nicht kennt, reicht sie ihn
   fertig: den Eigentumsvermerk nach dem Topf des Exemplars, Betreff und Vermerk einer
   Bestellung. Ein Blatt entsteht aus derselben Antwort wie die Ansicht am Bildschirm
   (`abgangsbuchBlatt`, `auskunft.Antwort`), und ein Test hält jedes Feld einer Füll-Funktion
-  gegen seine Quelle (`api/bestellung/bestellung_fuellen_test.go`,
+  gegen seine Quelle (`internal/api/bestellung/bestellung_fuellen_test.go`,
   `internal/buchetikett/buchetikett_test.go`).
-- **Eine Regel, die auch `repository/` oder `internal/service` brauchen,** steht in `pkg/` und
-  nicht in `api/`, das die beiden nicht einbinden können: `pkg/leserart` (Schüler oder
-  Kollegium), `pkg/mitteltopf` (die zwei Töpfe einer Bestellung), `pkg/lmfplan` (Fristen nach
+- **Eine Regel, die auch `internal/repository/` oder `internal/service` brauchen,** steht in `internal/pkg/` und
+  nicht in `internal/api/`, das die beiden nicht einbinden können: `internal/pkg/leserart` (Schüler oder
+  Kollegium), `internal/pkg/mitteltopf` (die zwei Töpfe einer Bestellung), `internal/pkg/lmfplan` (Fristen nach
   Schultagen).
-- **Die Nachtläufe** teilen sich ebenso: `jobs/` bestimmt Zeitpunkt, Einstellungen, Protokoll
-  und Abbruch, die Anweisungen stehen in `repository/nachtlauf.go`. Wo eine Frist gilt, setzt die
-  Funktion die Bedingung aus `repository/loeschfristen.go` selbst ein; der Aufrufer reicht nur
-  die Frist. `repository/nachtlauf_ratsche_test.go` hält das.
-- **`auth/` formuliert kein SQL.** Es behält, was eine fehlende Zeile bedeutet (nicht gesperrt,
+- **Die Nachtläufe** teilen sich ebenso: `internal/jobs/` bestimmt Zeitpunkt, Einstellungen, Protokoll
+  und Abbruch, die Anweisungen stehen in `internal/repository/nachtlauf.go`. Wo eine Frist gilt, setzt die
+  Funktion die Bedingung aus `internal/repository/loeschfristen.go` selbst ein; der Aufrufer reicht nur
+  die Frist. `internal/repository/nachtlauf_ratsche_test.go` hält das.
+- **`internal/auth/` formuliert kein SQL.** Es behält, was eine fehlende Zeile bedeutet (nicht gesperrt,
   keine Sitzung, Selbstanmeldung), den Prüfwert des Passworts und die Antworten.
 
 Zwei Ratschen halten die Schichtung. `schichtung_ratsche_test.go` liest jede Produktivdatei:
-Anweisungen formuliert und schickt nur die Datenbankschicht (`repository/`, `db/`, der Schreiber
+Anweisungen formuliert und schickt nur die Datenbankschicht (`internal/repository/`, `internal/db/`, der Schreiber
 der Littera-Übernahme, die Einmal-Werkzeuge; der Grund je Paket steht in der Datei). Sie erkennt
 eine Anweisung an ihrem Text und am Aufruf, der sie abschickt (`Exec`, `Query`, `QueryRow`,
 `SendBatch`, `CopyFrom`), auch wenn der Text erst aus Variablen entsteht; was außerhalb noch
-Anweisungen trägt (die Restore-Probe in `jobs/`), führt sie als Bestand, der nur sinken kann.
-`api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner werden
+Anweisungen trägt (die Restore-Probe in `internal/jobs/`), führt sie als Bestand, der nur sinken kann.
+`internal/api/schichtung_test.go` führt die Dateien von `internal/api/` ohne Tür als Bestand, der nur kleiner werden
 kann.
 
-##### Die `pkg/`-Pakete im Einzelnen
+##### Die `internal/pkg/`-Pakete im Einzelnen
 
 | Paket              | Zweck                                                                                                                             |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -737,20 +744,20 @@ gemessen über die Importe des Produktivcodes:
 
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
-| `golang-jwt/jwt/v5`                                            | `auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
-| `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
-| `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
-| `chai2010/webp`                                                | `main.go`, `pkg/imageutil`                                       | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
-| `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `pdf`, `api`, `internal/auskunft`, `pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
-| `boombuler/barcode`                                            | `pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `pkg/code39`              |
-| `xuri/excelize/v2`                                             | `api`, `internal/lusd`, `pkg/xlsxgrenze`                         | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
-| `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
-| `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
-| `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
-| `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
-| `golang.org/x/crypto`                                          | `auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
-| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `api`, `internal/katalogdienste`, `internal/service`, `pkg/imageutil`, `repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
+| `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`internal/repository`, `internal/db`, `internal/api`, `internal/auth`, `internal/jobs`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
+| `golang-jwt/jwt/v5`                                            | `internal/auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`internal/auth/token.go`)                   |
+| `emersion/go-imap`                                             | `internal/auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
+| `go-playground/validator/v10`                                  | `internal/api`                                                            | Strukturprüfung von Request-Körpern                                                     |
+| `chai2010/webp`                                                | `main.go`, `internal/pkg/imageutil`                                       | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
+| `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `internal/pdf`, `internal/api`, `internal/auskunft`, `internal/pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
+| `boombuler/barcode`                                            | `internal/pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `internal/pkg/code39`              |
+| `xuri/excelize/v2`                                             | `internal/api`, `internal/lusd`, `internal/pkg/xlsxgrenze`                         | Excel lesen (`OpenReader`), nur über `internal/pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
+| `robfig/cron/v3`                                               | `internal/jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
+| `minio/minio-go/v7`                                            | `internal/jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
+| `google/uuid`                                                  | `internal/api`, `internal/repository`                                              | Kennungen erzeugen                                                                      |
+| `klauspost/compress`                                           | `internal/api`                                                            | gzip der Antworten (`internal/api/kompression.go`)                                    |
+| `golang.org/x/crypto`                                          | `internal/auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`internal/auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
+| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `internal/api`, `internal/katalogdienste`, `internal/service`, `internal/pkg/imageutil`, `internal/repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
 | `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`, `golang.org/x/tools` | nur `*_test.go`                     | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go`, x/tools lädt die Pakete mit Typen für `sichtbarkeit_ratsche_test.go` |
 
 Nachmessen: `awk '/^require \(/{f=1;next} /^\)/{f=0} f&&!/indirect/{print $1}' go.mod` und je
@@ -785,7 +792,7 @@ frontend/src
 | `stores/offlineSync` | IndexedDB-Warteschlange; entfernt einen Eintrag **nur** bei einem endgültigen Serverurteil                         |
 | `stores/authStore`   | Sitzungszustand, Rechte-Map für die Blende, Abmeldung                                                              |
 | `stores/druckWarteschlange`  | Sammelt Etiketten/Ausweise für den Stapeldruck                                                                     |
-| `inventur/`          | Katalogpflege, Import, Cover; die Türen dazu stehen in `api/katalog`                                               |
+| `inventur/`          | Katalogpflege, Import, Cover; die Türen dazu stehen in `internal/api/katalog`                                               |
 
 **Regeln, die im Frontend architektonisch tragen:**
 
@@ -1040,7 +1047,7 @@ Ein Fehler, der **kein** `ErrNichtGefunden` ist (Datenbank weg, Sperre, Gerät o
 gilt ausdrücklich nicht als „ohne Treffer": Ihn ein zweites Mal auszulösen hieße, eine
 Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
 
-#### 5.4.3 `api/tuer/rechte.go` — Rechteprüfung mit Epoche
+#### 5.4.3 `internal/api/tuer/rechte.go` — Rechteprüfung mit Epoche
 
 Der Rechte-Cache (60 s) hat einen Zähler, nicht nur einen Inhalt:
 
@@ -1055,13 +1062,13 @@ Stand **nach** der Invalidierung zurückschreiben — und er wirkte bis zu 60 s 
 
 Die Datei trägt die Prüfung für eine Route (`PruefeRecht`) und die in einer Tür (`HatRecht`);
 beide lesen denselben Zwischenspeicher. Eine Route, der jede Sitzung genügt, prüft
-`VerlangeAnmeldung` in `api/tuer/sitzung.go`.
-`verlangeRecht` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
+`VerlangeAnmeldung` in `internal/api/tuer/sitzung.go`.
+`verlangeRecht` steht beim Router (`internal/api/middleware.go`): Es setzt die Prüfung der
 Pfadparameter davor, und deren Liste gehört zu den Routen. Der Cache ist ein Feld der Basis
 (`Basis.Rechte`, Typ `RechteCache`, der Nullwert ist leer); alle Themen teilen ihn über die eine
 Basis des Servers.
 
-#### 5.4.4 `sse/sse.go` — Broker ohne Event-Loop
+#### 5.4.4 `internal/sse/sse.go` — Broker ohne Event-Loop
 
 | Eigenschaft            | Ausführung                                                                                           |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -1076,7 +1083,7 @@ Basis des Servers.
 > **Wer hier einen „zentralen Event-Loop" wiederherstellt, baut einen Betriebsfehler
 > zurück ein:** Mit Register-Kanälen endete jeder Deploy mit `os.Exit(1)` (A6).
 
-#### 5.4.5 `jobs/` — der Zeitplan
+#### 5.4.5 `internal/jobs/` — der Zeitplan
 
 | Job                              | Zeitplan (UTC)                  | Inhalt                                                                                                     |
 | -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -1110,7 +1117,7 @@ Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 | `ausweisnummern_ausgeschieden` | Jede `A-`-Nummer, die eine Leserzeile verlassen hat — nur die Zahl, ohne Person; der Generator zählt über sie hinweg (Migration 146) |
 | `schueler` (**Sicht**)         | `WHERE art = 'schueler'` + `WITH CHECK OPTION` — trägt die alte Bedeutung „wirklich Schüler" weiter               |
 | `benutzer`                     | Anmeldekonten; `UNIQUE lower(email)`; **keine** Passwortspalte                                                    |
-| `role_permissions`             | Die konfigurierbare Rechtematrix; Vorgabe kommt aus `db/rechte_vorgabe.go`                                                  |
+| `role_permissions`             | Die konfigurierbare Rechtematrix; Vorgabe kommt aus `internal/db/rechte_vorgabe.go`                                                  |
 | `vormerkungen`                 | Einzel-Vormerkungen inkl. Abholfach und Abholfrist                                                                |
 | `klassensatz_reservierungen`   | Reservierungen des Kollegiums                                                                                     |
 | `lmf_plaene`, `lmf_termine`, `lmf_termin_klassen`, `lmf_plan_freie_tage`, `lmf_plan_ausgelassen` | Büchertausch und -ausgabe je Klasse                            |
@@ -1149,7 +1156,7 @@ find frontend/src \( -name '*.svelte' -o -name '*.js' \) -not -path '*/node_modu
 ls frontend/e2e | wc -l
 
 # Routen — ohne Testdateien, die für sich Routen anmelden
-grep -rhoE '\.(Handle|HandleFunc)\(' api --include='*.go' --exclude='*_test.go' | wc -l
+grep -rhoE '\.(Handle|HandleFunc)\(' internal/api --include='*.go' --exclude='*_test.go' | wc -l
 
 # Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -c '^CREATE TABLE' schema.sql
@@ -1188,7 +1195,7 @@ nichts.
 ```mermaid
 sequenceDiagram
     participant B as Browser
-    participant A as api/auth
+    participant A as internal/api/auth
     participant DB as PostgreSQL
     participant S as Schul-IMAP oder LDAP
 
@@ -1239,7 +1246,7 @@ Arbeitsplatz abmelden, obwohl die Sitzung gültig ist. Aus demselben Grund ist �
 ```mermaid
 sequenceDiagram
     participant K as Kiosk (Omnibox)
-    participant H as api/action
+    participant H as internal/api/action
     participant S as internal/service
     participant DB as PostgreSQL
     participant SSE as SSE-Broker
@@ -1327,24 +1334,24 @@ Welcher Pfad welche Zeile sperrt:
 
 | Pfad                       | gesperrte Zeile                                                            | Fundstelle                                                     |
 | -------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Scan eines Exemplars       | die **aktive Ausleihe** (`ausleihen`)                                      | `AusleihAbfragen.SperreOffene` (`repository/ausleihe.go`)               |
-| Ausleihe an einen Schüler  | die **Leser**-Zeile                                                        | `SperreLeserzeile` (`repository/ausleihe_zeilensperren.go`)    |
-| Rückgabe mit Vormerkung, Nachrücken | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt: Sie könnte sich mit der Ausleih-Logik verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe, dessen Zeile eine Ausleihe gerade hält. Dass eine Sperre über einen Verbund ihre Tabelle nennt, hält `zeilensperre_verbund_ratsche_test.go` | `SperreNaechsteWartendeVormerkung` (`repository/vormerkung_theke.go`), `bedieneNaechstenWartenden` (`repository/vormerkung_nachruecken.go`) |
-| Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`repository/geraete_ausleihe.go`) |
-| Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
-| Verlust oder Schaden melden | die **Ausleihe**-Zeile — Schuldner und Exemplar werden aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
+| Scan eines Exemplars       | die **aktive Ausleihe** (`ausleihen`)                                      | `AusleihAbfragen.SperreOffene` (`internal/repository/ausleihe.go`)               |
+| Ausleihe an einen Schüler  | die **Leser**-Zeile                                                        | `SperreLeserzeile` (`internal/repository/ausleihe_zeilensperren.go`)    |
+| Rückgabe mit Vormerkung, Nachrücken | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt: Sie könnte sich mit der Ausleih-Logik verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe, dessen Zeile eine Ausleihe gerade hält. Dass eine Sperre über einen Verbund ihre Tabelle nennt, hält `zeilensperre_verbund_ratsche_test.go` | `SperreNaechsteWartendeVormerkung` (`internal/repository/vormerkung_theke.go`), `bedieneNaechstenWartenden` (`internal/repository/vormerkung_nachruecken.go`) |
+| Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`internal/repository/geraete_ausleihe.go`) |
+| Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`internal/repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
+| Verlust oder Schaden melden | die **Ausleihe**-Zeile — Schuldner und Exemplar werden aus ihr gelesen, nicht aus dem Request | `internal/repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
-| Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
-| Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`api/leser/leser_sperre.go`)                         |
-| Endgültig löschen, von Hand und im Nachtlauf | die **Leser**-Zeile, schon bei der Frage, ob sie löschbar ist: Ein Wiederherstellen dazwischen träfe sonst das Löschen des aktiven Lesers | `LoescheLeserEndgueltig`, `LoescheKollegenAusDemPapierkorb` (`repository/leser_loeschen.go`) |
-| Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
-| LMF-Plan speichern         | erst die Advisory-Sperre der Pläne, dann die Zeile des neuesten **Plans** der Art. Die Zeile allein hielte ein zweites Speichern nicht auf, solange es keinen Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt | `SperreNeuestenPlan` (`repository/lmf_plan.go`) |
-| Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
-| Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `leser_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
+| Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`internal/api/theke/ausleihe.go`)                      |
+| Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`internal/api/leser/leser_sperre.go`)                         |
+| Endgültig löschen, von Hand und im Nachtlauf | die **Leser**-Zeile, schon bei der Frage, ob sie löschbar ist: Ein Wiederherstellen dazwischen träfe sonst das Löschen des aktiven Lesers | `LoescheLeserEndgueltig`, `LoescheKollegenAusDemPapierkorb` (`internal/repository/leser_loeschen.go`) |
+| Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`internal/repository/auflagen.go`)   |
+| LMF-Plan speichern         | erst die Advisory-Sperre der Pläne, dann die Zeile des neuesten **Plans** der Art. Die Zeile allein hielte ein zweites Speichern nicht auf, solange es keinen Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt | `SperreNeuestenPlan` (`internal/repository/lmf_plan.go`) |
+| Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`internal/repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`internal/repository/schlagworte_pflege.go`) |
+| Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `internal/repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `leser_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
 
 > **Warum hier die Ausleihe-Zeile steht:** „Verlust oder Schaden melden" sperrt die
 > **Ausleihe**-Zeile, nicht das Exemplar (`FOR UPDATE OF a` an `ausleihen` in
-> `repository/schaden_melden.go`) — und zwar mit Absicht: Zwei Klicks zugleich würden sonst
+> `internal/repository/schaden_melden.go`) — und zwar mit Absicht: Zwei Klicks zugleich würden sonst
 > beide den Prüfschritt passieren und je einen Schadensfall anlegen; der Schüler würde für
 > dasselbe Buch doppelt belastet.
 
@@ -1443,7 +1450,7 @@ Details: [LUSD.md](LUSD.md).
 Überfällige ermitteln  →  Mahnliste je Klasse
         │
         ├─ Mail an die Klassenleitung        → Mahnstufe bleibt unverändert
-        └─ PDF-Druck (api/mahnwesen/mahnbriefe.go) → Mahnstufe steigt, genau hier
+        └─ PDF-Druck (internal/api/mahnwesen/mahnbriefe.go) → Mahnstufe steigt, genau hier
 ```
 
 Die Mahnstufe steigt **nur** beim PDF-Druck, weil der Druck der physische Verwaltungsakt
@@ -1504,10 +1511,10 @@ Bestellung abschicken
 Der Händler druckt über denselben Link seine Etiketten und bestätigt die Bestellung selbst.
 Das ist der einzige schreibende Pfad ohne Anmeldung — und er steht als solcher in der
 Allowlist von `geschuetzte_routen_test.go`. Wie Token, Hash, Adresse und Frist des Links
-entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
+entstehen, steht in `internal/pkg/bestelllink`; die eingestellte Frist liest
 `service.LadeBestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
 Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`
-(`repository/einstellungen.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
+(`internal/repository/einstellungen.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
 erneute Versand, die Bestellmail und die Selbstprüfung. Ein Feld aus lauter Leerzeichen ist
 keine Adresse.
 
@@ -1726,7 +1733,7 @@ Sicherung, die Probe ruht, und `raeumeAbgelaufeneSicherungenAuf` löscht im Volu
 was älter ist als die Aufbewahrung (`Aufbewahrungsdauer`, 98 Tage). Ohne neue Sicherung löschte die
 Aufbewahrung nach Anzahl nichts mehr, und die Datenschutz-Auskunft nennt etwa drei Monate.
 Selbstprüfung, Backup-Abzeichen und Startmeldung nennen den Zustand, ohne ihn als Mangel zu melden
-(`jobs/sicherung_aus.go`, `internal/bereitschaft/sicherung.go`). Die Vorabsicherung vor jedem
+(`internal/jobs/sicherung_aus.go`, `internal/bereitschaft/sicherung.go`). Die Vorabsicherung vor jedem
 Update bleibt.
 
 **Gesichert wird nur die Datenbank** — eine bewusste Entscheidung vom 11.07.2026. Cover
@@ -1783,7 +1790,7 @@ sagen kann — und warum ein Titel ohne Exemplar ausdrücklich „Keine Exemplar
 nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel ohne Werk ist sein eigenes. An
 der Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in den
 Seitenzahlen unterscheiden; am Werk zählen Bedarf und Nachbestellung
-(`repository/bestellbedarf.go`). Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Die
+(`internal/repository/bestellbedarf.go`). Geschrieben wird `werk_id` nur in `internal/repository/auflagen.go`. Die
 zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer: Die Datenbank führt sie
 dreizehnstellig (`isbn_normalform`), und jede Tür findet den Titel über beide Längen, statt einen
 zweiten anzulegen.
@@ -1825,16 +1832,16 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Security-Header**       | CSP `default-src 'self'` mit `script-src 'self'`, `img-src 'self' data: blob:`, `frame-ancestors 'none'`, `object-src 'none'`; HSTS 1 Jahr inkl. Subdomains; `X-Frame-Options: DENY`; `Referrer-Policy: strict-origin-when-cross-origin`; `Permissions-Policy: geolocation=(), microphone=(), camera=(self)` (Kamera: Barcode-Scan und Passbild); `Cache-Control: no-store` für jede Antwort unter `/api/` — der Browser legt keine Personendaten ab (OWASP ASVS 5.0, 14.3.2); eigene Köpfe nur an Buchcover und Buchnummern der Theke ([SECURITY.md](SECURITY.md)) |
 | **CORS**                  | Nur die konfigurierte Schuldomain (`ALLOWED_ORIGIN`)                                                                                               |
-| **Body-Limit**            | 100 MB global über `http.MaxBytesReader` — begrenzt nur, **wie viel ein Handler lesen darf**, puffert nichts. Bewusst großzügig, weil Littera-, Bestands- und Excel-Import durch denselben Wert laufen. Ein JSON-Rumpf ist an der Tür auf 5 MB begrenzt (`maxRumpfJSON` in `api/tuer/eingabe.go`, darüber 413 an jeder Tür, `api/rumpfgrenze_tueren_test.go`): Der Decoder hält ihn im Speicher, eine Anfrage von 100 MB belegte über 300 MB. Jede Tür liest JSON über `tuer.LeseAnfrage`, `LeseAnfrageStreng` oder `DekodiereRumpf` (`rumpfgrenze_ratsche_test.go`). Für `/login` gilt zusätzlich eine eigene, enge Grenze (16 KB): Es ist der einzige unangemeldete Endpunkt, der JSON liest |
+| **Body-Limit**            | 100 MB global über `http.MaxBytesReader` — begrenzt nur, **wie viel ein Handler lesen darf**, puffert nichts. Bewusst großzügig, weil Littera-, Bestands- und Excel-Import durch denselben Wert laufen. Ein JSON-Rumpf ist an der Tür auf 5 MB begrenzt (`maxRumpfJSON` in `internal/api/tuer/eingabe.go`, darüber 413 an jeder Tür, `internal/api/rumpfgrenze_tueren_test.go`): Der Decoder hält ihn im Speicher, eine Anfrage von 100 MB belegte über 300 MB. Jede Tür liest JSON über `tuer.LeseAnfrage`, `LeseAnfrageStreng` oder `DekodiereRumpf` (`rumpfgrenze_ratsche_test.go`). Für `/login` gilt zusätzlich eine eigene, enge Grenze (16 KB): Es ist der einzige unangemeldete Endpunkt, der JSON liest |
 | **Fristen (Slowloris)**   | `ReadHeaderTimeout` 5 s, `ReadTimeout` als Lesefrist, `IdleTimeout` 120 s, kein `WriteTimeout` (SSE) — siehe [7.1](#fristen-müssen-zueinander-passen) |
-| **Rate-Limit**            | 50 Anfragen/s/IP (Map + Mutex, kein externer Cache). Ausgenommen sind Auslieferungspfade (`/api/images/cover`, `/uploads/`, `/api/barcode`) — ein Seitenaufruf lädt dutzende Bilder. Der Aufbau der Live-Leitung (`/events`) zählt mit; offen hält ein Konto höchstens 20 Ströme, alle zusammen höchstens 1000 (`sse/sse.go`, darüber 429), weil jeder Strom alle 15 s die Anmeldung in der Datenbank prüft. Der **teure** Zweig des Cover-Proxys hat eine eigene Bremse |
+| **Rate-Limit**            | 50 Anfragen/s/IP (Map + Mutex, kein externer Cache). Ausgenommen sind Auslieferungspfade (`/api/images/cover`, `/uploads/`, `/api/barcode`) — ein Seitenaufruf lädt dutzende Bilder. Der Aufbau der Live-Leitung (`/events`) zählt mit; offen hält ein Konto höchstens 20 Ströme, alle zusammen höchstens 1000 (`internal/sse/sse.go`, darüber 429), weil jeder Strom alle 15 s die Anmeldung in der Datenbank prüft. Der **teure** Zweig des Cover-Proxys hat eine eigene Bremse |
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
 | **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort gespeichert, es geht bei jeder Anmeldung über den Server (A2) |
-| **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
+| **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`internal/api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
 | **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` + `Secure` (T10); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
-| **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt. Dieselbe Regel gilt beim Löschen in der Leserdatei, denn mit der Leserzeile eines Kollegen fällt sein Konto (`kontoregel` in `api/leser/leser_aendern.go`) |
+| **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`internal/api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt. Dieselbe Regel gilt beim Löschen in der Leserdatei, denn mit der Leserzeile eines Kollegen fällt sein Konto (`kontoregel` in `internal/api/leser/leser_aendern.go`) |
 | **Secret-Guard**          | Außerhalb von `local/development/test` verweigert der Server den Start bei bekannten Beispiel-Geheimnissen. Die Liste steht **einmal** (`bereitschaft.IstBeispielGeheimnis`) und wird von der Selbstprüfung mitbenutzt — zwei Listen würden „alles gut" melden, während der Server aus demselben Grund nicht startet |
 
 #### Injection und Datenausgänge
@@ -1843,22 +1850,22 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **SQL-Injection**             | Ausschließlich parametrisierte Abfragen über `pgx`; kein String-Zusammenbau von Werten                                                                                          |
 | **XSS**                       | Svelte escapet von selbst. Die **eine Naht**, an der das nicht mehr gilt, ist der Druckpfad (erzeugtes HTML für den Etiketten-/Ausweisdruck) — dort wird ausdrücklich kodiert   |
-| **CSV-/Formel-Injection**     | `pkg/csvutil.EntschaerfeZeile` (CWE-1236): Eine Zelle, die mit `=`, `+`, `-` oder `@` beginnt, ist für Tabellenkalkulationen eine Formel                                             |
-| **SSRF**                      | `pkg/safehttp` lehnt Verbindungen zu **nicht-öffentlichen** IP-Adressen ab; `pkg/coverquelle` hält die Host-Allowlist                                                           |
+| **CSV-/Formel-Injection**     | `internal/pkg/csvutil.EntschaerfeZeile` (CWE-1236): Eine Zelle, die mit `=`, `+`, `-` oder `@` beginnt, ist für Tabellenkalkulationen eine Formel                                             |
+| **SSRF**                      | `internal/pkg/safehttp` lehnt Verbindungen zu **nicht-öffentlichen** IP-Adressen ab; `internal/pkg/coverquelle` hält die Host-Allowlist                                                           |
 | **Parsing-Differential**      | Die Cover-/Metadaten-URL wird aus geprüften Teilen **neu gebaut** (Schema fest HTTPS, Host aus der Konstante, nur Pfad und Query vom Aufrufer). Geprüft wurde bisher mit `url.Parse`, angefragt der rohe String — verschiedene Parser sind sich über `\`, `@`, `#`, `?` nicht einig |
 | **Path-Traversal**            | `os.OpenRoot` bindet Dateizugriffe **OS-seitig** an ein Verzeichnis (SPA-Auslieferung, Cover-Einbettung ins PDF). Manuelle `filepath.Clean`+`HasPrefix`-Logik ist fehleranfällig und war als Existenz-Orakel außerhalb des Verzeichnisses nutzbar |
 | **Log-Injection**             | `slog.SetDefault` mit JSON-Handler: Ein Zeilenumbruch aus einer Anfrage wird zu `\n` **innerhalb** des JSON-Strings und kann keinen zweiten Eintrag erzeugen. Am laufenden Server nachgemessen. Wer diese Zeile entfernt oder `log.SetOutput` dahinter setzt, hebt beides auf |
 | **SMTP-Header-Injection**     | `mailservice.kopfzeilenWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
 | **Dekompressionsbombe**       | Bild-Uploads werden gegen aufgeblähte Pixelmaße geprüft, bevor dekodiert wird                                                                                                   |
 | **Token im Pfad**             | Der Bestätigungslink des Händlers trägt sein Geheimnis im Pfad; `maskiereToken` hält es aus der Logzeile (sonst wäre die Hash-Speicherung in der Datenbank entwertet)             |
-| **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit. Der Zeitplan fängt jeden Lauf (`cron.WithChain`), eine Schleife je Lauf (`safego.FuehreAus`). Eine Goroutine, auf deren Ergebnis jemand wartet, fängt keins, der Wartende bliebe hängen: Der Prozess endet, und der nächste Start meldet den Abbruch |
+| **Panics**                    | `panikMiddleware` für HTTP-Handler, `internal/pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit. Der Zeitplan fängt jeden Lauf (`cron.WithChain`), eine Schleife je Lauf (`safego.FuehreAus`). Eine Goroutine, auf deren Ergebnis jemand wartet, fängt keins, der Wartende bliebe hängen: Der Prozess endet, und der nächste Start meldet den Abbruch |
 
 #### Endpunkte ohne Anmeldung (bewusst)
 
 `/katalog` und `/monitor` (Titeldaten), `GET /api/images/cover` und `/uploads/` (Cover),
 `POST /login`, `GET /api/csrf-token`, `GET /health`, der Bestätigungspfad
 `/bestellung/<token>`. Jeder davon steht in der Allowlist von
-`api/geschuetzte_routen_test.go`: Eine neue ungeschützte Route ohne Eintrag macht das
+`internal/api/geschuetzte_routen_test.go`: Eine neue ungeschützte Route ohne Eintrag macht das
 Gate rot.
 
 ---
@@ -1870,13 +1877,13 @@ Gate rot.
 [PII_MATRIX.de.md](PII_MATRIX.de.md) stuft **jede** Route nach Schülerdaten ein
 (Stufe 0–3). Drei Gates halten die Matrix ehrlich:
 
-- `api/pii_matrix_test.go` — eine Route ohne Zeile wird rot, eine Zeile ohne Route ebenso,
+- `internal/api/pii_matrix_test.go` — eine Route ohne Zeile wird rot, eine Zeile ohne Route ebenso,
   und das dokumentierte Recht wird gegen die Registrierung geprüft.
-- `api/pii_antwort_pg_test.go` — ruft jede GET-Route (und die lesenden POST-Routen:
+- `internal/api/pii_antwort_pg_test.go` — ruft jede GET-Route (und die lesenden POST-Routen:
   Theken-Scan und LUSD-Vorschau) über den **echten** Router mit genau dem Recht ihrer Zeile
   auf und prüft die Antwort — inklusive entpackter PDF-Ströme — gegen Kanarienwerte je
   Stufe. Schlüsselrouten tragen Positiv-Kontrollen gegen leere Antworten.
-- `api/rechte_schreibwege_pg_test.go` — fährt jede Schreibroute mit Fachrecht (am 08.10.2026
+- `internal/api/rechte_schreibwege_pg_test.go` — fährt jede Schreibroute mit Fachrecht (am 08.10.2026
   sind es 101) mit einer Rolle, die das Recht **nicht** hat, und verlangt 403 mit der
   Begründung des Rechte-Wächters. Damit ist auch der Fall abgedeckt, den ein Textvergleich
   nie sieht: ein Recht, das im Seed ohnehin jede Rolle hält.
@@ -1931,7 +1938,7 @@ nicht mehr zustellen.
 - **Einträge der Verwaltung nennen den Gegenstand, keine Adresse.** Die Zuordnung der
   Klassenleitungen, die Mail-Vorlagen, die Lieferanten und die Verlängerung der Lernmittel
   einer Klasse schreiben Bearbeiter, Zeit, Gegenstand und die Namen der geänderten Felder
-  (`api/tuer/verwaltung_protokoll.go`). Die Mailadresse steht nicht im Eintrag: Sie bliebe bis zur
+  (`internal/api/tuer/verwaltung_protokoll.go`). Die Mailadresse steht nicht im Eintrag: Sie bliebe bis zur
   Aufbewahrungsfrist des Protokolls, und die Tilgung findet nur Einträge mit der Kennung eines
   Lesers. Ein Speichern, das nichts ändert, schreibt keinen Eintrag.
 - **Keine IP-Adressen in der Anfrage-Logzeile.**
@@ -2032,7 +2039,7 @@ höchstens Serverzeit).
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
 | **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei, auch wenn zusätzlich gefiltert wurde. Antwortet die Tür mit einer Liste, nennt sie die Grenze im Kopf `X-Grenze` (`tuer.AntworteListe`); die Oberfläche führt keine eigene Zahl (`utils/listenGrenze.js`) |
 | **Fehlt einer Liste eine Quelle, sagt sie es**                  | Antwortet die DNB in der Bestellsuche nicht, bleibt es bei 200 mit den Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall. Ist ein fremder Dienst die einzige Quelle, antwortet die Tür mit 502 |
-| **Ein Lesefehler ist keine Vorgabe**                           | Das Lesen der Einstellungen liefert bei einem Fehler die Vorgaben samt Fehler. Eine Tür, die daraus ein Blatt oder eine Mail füllt, verweigert dann die Antwort, statt ohne Kopf der Schule oder mit der Bankverbindung der Vorgabe zu drucken (`repository/einstellungen_lesefehler_ratsche_test.go`) |
+| **Ein Lesefehler ist keine Vorgabe**                           | Das Lesen der Einstellungen liefert bei einem Fehler die Vorgaben samt Fehler. Eine Tür, die daraus ein Blatt oder eine Mail füllt, verweigert dann die Antwort, statt ohne Kopf der Schule oder mit der Bankverbindung der Vorgabe zu drucken (`internal/repository/einstellungen_lesefehler_ratsche_test.go`) |
 | **Ein Fehler wird an seinem Namen erkannt**                     | `errors.Is`, ein eigener Fehlertyp mit `errors.As` oder bei Datenbankfehlern der SQLSTATE mit dem Namen der Bedingung (`pgconn.PgError`). Ein Vergleich am Text bricht still, sobald jemand die Meldung umformuliert (`fehler_am_wortlaut_test.go`) |
 | **Fehlertext und Meldung sind getrennt**                        | Ein Fehlertext beginnt klein und endet ohne Satzzeichen; den Satz für die Oberfläche nennt die Tür als Meldung, Einzelheiten trägt der Fehler als Felder ([STIL.md](STIL.md), Abschnitt 11). Eine Sperre trägt ihren Grund als Feld (`service.Sperre`, `sperre_ratsche_test.go`) |
 | **Keine Antwort verrät den Server**                             | `apierrors.AntworteFehler` schickt die Meldung eines `apierrors.Fehler` in der Kette, sonst einen neutralen Satz, nie den Text des Fehlers. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose, die jemand lesen soll, braucht 400, 409 oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`) |
@@ -2040,7 +2047,7 @@ höchstens Serverzeit).
 | **Eine Ablehnung nennt den Grund des Servers**                  | Im Zweig einer abgelehnten Antwort entsteht die Meldung aus `leseApiFehler(res, satz)`; der eigene Satz ist nur die Vorgabe für einen leeren Rumpf, etwa ein 502 vom Proxy. Ein Satz wie „Fehler beim Laden" verdeckte „Keine Berechtigung für diese Aktion" (`frontend/src/lib/frontend-hygiene-fehlerantwort.test.js`) |
 | **Ein gescheitertes Laden ist kein Leerzustand**                | Kam eine Liste nicht, steht `ui/LadeFehler` mit dem Grund und „Erneut versuchen" an ihrer Stelle, nicht „Keine …" oder „Kein Schulbuch fehlt". Scheitert nur das Auffrischen, bleibt die Liste von vorhin stehen (`frontend/src/lib/frontend-hygiene-leerzustand.test.js`) |
 | **Ein Fehler der Kamera heißt deutsch**                         | Der Browser nennt den Grund am Namen der Ausnahme, sein Text dazu ist englisch und je Browser anders; `utils/kamerafehler.js` setzt den Satz (`frontend/src/lib/frontend-hygiene-kamerafehler.test.js`) |
-| **Ein Panic beendet nicht den Prozess**                         | `panikMiddleware` für Handler, `pkg/safego` für Goroutinen; über den ganzen Router geprüft in `api/panik_ueber_den_router_pg_test.go`            |
+| **Ein Panic beendet nicht den Prozess**                         | `panikMiddleware` für Handler, `internal/pkg/safego` für Goroutinen; über den ganzen Router geprüft in `internal/api/panik_ueber_den_router_pg_test.go`            |
 
 `phantom_erfolg_test.go` und `fehler_kollaps_test.go` halten zwei Zusagen: „Hat es geklappt?"
 ist beantwortbar, und verschiedene Fehler fallen nicht in eine unbrauchbare Meldung zusammen.
@@ -2053,16 +2060,16 @@ ist beantwortbar, und verschiedene Fehler fallen nicht in eine unbrauchbare Meld
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Welche Zeitzone rechnet Fristen? | `Europe/Berlin`, im Code gepinnt (`schulzeit.TagesEnde`). Eine zweite, rohe Berechnung gibt es bewusst nicht |
 | Welche Zeitzone fährt den Cron?  | **UTC**, genagelt über `cron.WithLocation(time.UTC)` — sonst verschluckt die Umstellnacht den 02:30-Job          |
-| Was ist „jetzt" für die Fachlogik? | `pkg/schulzeit`; in Tests über `Server.Uhr` gestellt, sonst bewiese derselbe Test im Oktober das Gegenteil von dem im Juni |
-| Wie wird der Lernmittel-Stichtag berechnet? | Bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli, je des laufenden bzw. kommenden Schuljahres (`repository/lmf_stichtag.go`) — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
-| Feiertage?                    | `pkg/lmfplan` rechnet Ostersonntag nach der Gauß'schen Osterformel (Fassung Lichtenberg) und leitet die beweglichen Feiertage ab |
-| Bestandsstichtage?            | 15.3. und 15.9. (`pkg/schulzeit`) — geprüft wird an den **Rändern**, weil dort entschieden wird, ob ein Abgang noch in den Nachweis gehört |
+| Was ist „jetzt" für die Fachlogik? | `internal/pkg/schulzeit`; in Tests über `Server.Uhr` gestellt, sonst bewiese derselbe Test im Oktober das Gegenteil von dem im Juni |
+| Wie wird der Lernmittel-Stichtag berechnet? | Bis Jahrgang 10 der Donnerstag vor den Sommerferien, in der Oberstufe der 31. Juli, je des laufenden bzw. kommenden Schuljahres (`internal/repository/lmf_stichtag.go`) — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
+| Feiertage?                    | `internal/pkg/lmfplan` rechnet Ostersonntag nach der Gauß'schen Osterformel (Fassung Lichtenberg) und leitet die beweglichen Feiertage ab |
+| Bestandsstichtage?            | 15.3. und 15.9. (`internal/pkg/schulzeit`) — geprüft wird an den **Rändern**, weil dort entschieden wird, ob ein Abgang noch in den Nachweis gehört |
 | Und die Uhr des Kiosk-Rechners? | Wird beim Nachbuchen gemessen; der Versatz wird herausgerechnet und ab einer Schwelle protokolliert (siehe [6.5](#65-theke-ohne-netz--und-das-nachbuchen)) |
 
 **Ferien:** Eine Frist nach Tagen — Buch, Medium, Gerät, Verlängerung, Abholfrist einer
 Vormerkung — endet an einem Schultag; fällt sie auf ein Wochenende, einen Feiertag Hessens oder
 in die Ferien, gilt der nächste (`lmfplan.Ferientabelle.Tagesfrist`, A19). Die Ferien stehen als Tabelle im
-Programm (`pkg/lmfplan/sommerferien.go`, `pkg/lmfplan/uebrige_ferien.go`). Stichtage rücken nicht. Das
+Programm (`internal/pkg/lmfplan/sommerferien.go`, `internal/pkg/lmfplan/uebrige_ferien.go`). Stichtage rücken nicht. Das
 Werkzeug für „Bücher über die Sommerferien mitnehmen" bleibt der Ferien-Leseclub (aktiv +
 Zieldatum ⇒ feste Rückgabefrist für Ausleihen von Schülern außer Lernmitteln, bis das Datum
 vorbei ist); das Mahnwesen wird nur von Hand bedient.
@@ -2148,20 +2155,20 @@ Das Nachladen läuft, während jemand arbeitet. Daraus folgen sechs Regeln:
 
 | Dokument                                  | Erzeuger                               | Besonderheit                                                                                         |
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite; der Versand zählt keine Mahnung        |
-| Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe (A18). Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule |
-| Bestellanschreiben                        | `pdf/bestellanschreiben.go`            | Anhang der Bestellmail; Betreff und Vermerk nennen den Topf, ein Satz den Weg zu den Etiketten       |
-| Kontoauszug                               | `pdf/kontoauszug.go`                   | Kopf der Schule wie Bestandsbuch und Bestellbericht. Eine abgelaufene Frist trägt das Wort „überfällig" in fetter Schrift, keine Farbe: Die Schule druckt schwarz-weiß. Der Satz unter der Liste nennt dann die Zahl |
-| Rechnung, Schadensfall, LMF-Plan          | `pdf/` (gofpdf/maroto)                 | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
-| Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
-| Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
-| Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
+| Mahnliste                                 | `internal/pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite; der Versand zählt keine Mahnung        |
+| Mahnbrief                                 | `internal/pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe (A18). Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule |
+| Bestellanschreiben                        | `internal/pdf/bestellanschreiben.go`            | Anhang der Bestellmail; Betreff und Vermerk nennen den Topf, ein Satz den Weg zu den Etiketten       |
+| Kontoauszug                               | `internal/pdf/kontoauszug.go`                   | Kopf der Schule wie Bestandsbuch und Bestellbericht. Eine abgelaufene Frist trägt das Wort „überfällig" in fetter Schrift, keine Farbe: Die Schule druckt schwarz-weiß. Der Satz unter der Liste nennt dann die Zahl |
+| Rechnung, Schadensfall, LMF-Plan          | `internal/pdf/` (gofpdf/maroto)                 | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`internal/pdf/zahlungsweg.go`)                       |
+| Bescheid (Landes-Lernmittel)              | `internal/pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
+| Etiketten und Ausweise                    | `internal/pdf/etikett_*.go`, `internal/pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
+| Zugangs-/Abgangsbuch                      | `internal/pdf/abgangsbuch.go`, `internal/pdf/zugangsbuch.go`; Gliederung nach Topf in `internal/api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `internal/auskunft/blatt*.go`          | Gedruckt aus derselben Antwort wie die abgerufene Auskunft                                           |
-| Barcodebogen für den Händler              | `api/bestellung/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                      |
+| Barcodebogen für den Händler              | `internal/api/bestellung/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                      |
 
 **Strichcodes** druckt das Programm als Code 128 ohne Prüfzeichen; alte Aufdrucke in Code 39
-tragen eines, und `pkg/code39` rechnet es heraus (A14). **Cover** werden für die PDFs aus WebP
-umgewandelt (`pkg/coverdatei`), weder `gofpdf` noch `maroto` kennen WebP; in ein
+tragen eines, und `internal/pkg/code39` rechnet es heraus (A14). **Cover** werden für die PDFs aus WebP
+umgewandelt (`internal/pkg/coverdatei`), weder `gofpdf` noch `maroto` kennen WebP; in ein
 gofpdf-Dokument setzt sie eine Stelle, `coverdatei.BindeEin`, im Seitenverhältnis des Bilds.
 `npm run test:druck` prüft die Drucksektionen am gebauten Frontend.
 
@@ -2175,10 +2182,10 @@ Mahnliste und Mahnbrief nennen, wem sie gehören („Fortsetzung: …"), weil si
 ausgeteilt oder kuvertiert werden. Text in einer Zelle wird auf ihre gedruckte Breite gekürzt
 (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von Zeichen: gofpdf druckt Überlanges über
 die Nachbarzelle. Buch- und Lernmittel-Etikett kürzen auf ihre Obergrenze in Zeichen und auf
-die Breite ihrer Zelle (`kuerzeAufEtikett` in `pdf/etikett_buch.go`).
+die Breite ihrer Zelle (`kuerzeAufEtikett` in `internal/pdf/etikett_buch.go`).
 
 **Was auf ein Blatt gehört, wird am fertigen PDF gemessen.** Der LMF-Plan hängt als ein Blatt
-aus; `pdf/lmfplan_satz.go` wählt vor dem Setzen den größten Schriftgrad, mit dem alles auf eine
+aus; `internal/pdf/lmfplan_satz.go` wählt vor dem Setzen den größten Schriftgrad, mit dem alles auf eine
 Seite geht, erst in einer Spalte, dann in zweien.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
@@ -2198,7 +2205,7 @@ Etikett) und Bogenformat: Alle Arbeitsplätze drucken dasselbe. Vor dem Design t
 `schule`, Name und Anschrift aus den Einstellungen: Wer druckt, darf sie oft nicht lesen, und auf
 jedem Weg ersetzt `applyDesign` damit den Platzhalter „Musterstadt“. Steht nur `schule` in der
 Antwort, ist noch keines gespeichert; ein gescheitertes Lesen beantwortet der Server deshalb mit
-einem Fehler (`api/druck/ausweis_layout_tuer_pg_test.go`). Gespeichert wird nur eine Änderung: Den
+einem Fehler (`internal/api/druck/ausweis_layout_tuer_pg_test.go`). Gespeichert wird nur eine Änderung: Den
 Designer zu öffnen, schreibt nichts. Und gespeichert wird nur auf dem Stand, den der Designer
 geladen hat: Die Antwort trägt neben `schule` den Änderungsstand `stand`, das Speichern schickt ihn
 als `?stand=` zurück (leer: noch keines gespeichert) und bekommt den neuen. Hat ein anderer Platz
@@ -2221,7 +2228,7 @@ ist, verkleinert eine größere auf höchstens 1200 Pixel Kantenlänge (rund 350
 der Karte) und weist mit dem Namen der Datei ab, was danach über 1 MB liegt. Der Server nimmt für
 das ganze Design 5 MiB an. Es steht als Zeile `ausweis_layout` in `system_einstellungen`;
 `repository.LadeEinstellungen` liest diese Zeile nicht mit, weil jede Ausleihe die Einstellungen
-liest (`repository/einstellungen_ohne_design_pg_test.go`).
+liest (`internal/repository/einstellungen_ohne_design_pg_test.go`).
 
 **Etiketten: zwei Wege zum selben Blatt.** Ein Buch-Etikett entsteht im Druck-Center und für den
 Händler (Seite und Mailanhang). Ins Druck-Center führen der Etikett-Knopf der Exemplarkarte,
@@ -2230,13 +2237,13 @@ Endpunkt für die Etiketten eines Titels oder eines Exemplars gibt es nicht. Die
 `internal/buchetikett` (`ErgaenzeServerfelder`, `LadeDerBestellung`), und
 `buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger (`pdf.BuchEtikett`) für beide. Ein
 neues Feld gehört an beide Wege; `buchetikett.TestEtikettenDatenSindAufBeidenWegenGleich`
-vergleicht sie, und `api/druck/etikettenbogen_serverfelder_pg_test.go` prüft den gedruckten Text
+vergleicht sie, und `internal/api/druck/etikettenbogen_serverfelder_pg_test.go` prüft den gedruckten Text
 des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben. Eine
 LMF-Nummer kommt auf kein Etikett: Als Nummer eines Exemplars lehnt die Datenbank sie ab
 (`chk_exemplar_barcode_keine_lmf_nummer`, Migration 168), die Nummer eines alten LMF-Etiketts
 steht in `lmf_barcode`.
 
-**Strichcode und QR-Code tragen dieselben Zeilen** (`zeichneEtikett` in `pdf/etikett_buch.go`);
+**Strichcode und QR-Code tragen dieselben Zeilen** (`zeichneEtikett` in `internal/pdf/etikett_buch.go`);
 auf dem kleinen Format steht die Nummer neben dem QR-Code, weil unter ihm kein Platz ist. Dass
 nichts über die Kante eines Etiketts reicht und nichts übereinanderliegt, prüft
 `TestBuchEtikett_NichtsReichtUeberSeineKante` an den Koordinaten im Inhaltsstrom: Eine Nummer auf
@@ -2264,7 +2271,7 @@ behalten den Namen, den der Server nennt. Als Datei kommen nur Dokumente ohne Pe
 die Sicherung der Offline-Scans. Den Kopf setzt jede Tür über `tuer.AntworteDatei` oder
 `tuer.SetzeDateiKopf`, mit `tuer.Zeigen` für den Tab und `tuer.Speichern` für die Datei; den
 Namen kodiert `mime.FormatMediaType` nach RFC 6266. Gates:
-`frontend/src/lib/frontend-hygiene-downloads.test.js` und `api/anhang_ratsche_test.go`; dass das PDF im Tab ankommt, prüfen `e2e/mahnwesen.spec.js`
+`frontend/src/lib/frontend-hygiene-downloads.test.js` und `internal/api/anhang_ratsche_test.go`; dass das PDF im Tab ankommt, prüfen `e2e/mahnwesen.spec.js`
 und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
 
 ---
@@ -2277,7 +2284,7 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   solange in der Datenbank noch die Vorgabe des Schemas steht, und meldet nur, wenn wirklich
   übernommen wurde. Ein leerer Server in der Zeile heißt dagegen „Umgebung“ (`ladeSMTPKonfig`);
   deshalb weist das Speichern einen Rumpf ohne Server ab. Ein leerer Port heißt 587.
-- **Aufbau und Versand stehen in `mailservice/`**; eine Tür ruft `t.Post().Sende`, den
+- **Aufbau und Versand stehen in `internal/mailservice/`**; eine Tür ruft `t.Post().Sende`, den
   Postausgang ihrer Basis. Ohne Postausgang lehnt `Post()` jede Mail als nicht konfiguriert ab,
   wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),
   oder gibt der Basis eine Attrappe.
@@ -2295,7 +2302,7 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   Feld `portal` lässt den zweiten Absender stehen, eines ohne `fuer` seine Arten. Seine Spalten
   heißen `portal_*`.
 - **Adressen aus dem Webmail.** Der Adressabgleich (`internal/adressabgleich`,
-  `api/system/adressabgleich.go`) meldet sich mit dem Zugang aus `mail_settings_config`
+  `internal/api/system/adressabgleich.go`) meldet sich mit dem Zugang aus `mail_settings_config`
   (`webmail_*`, Passwort verschlüsselt, Migration 176) am Roundcube der Schule an wie ein Browser
   (Formular-Token, Sitzungs-Keks, Anfrage-Token) und lädt das globale Adressbuch (Kennung
   `global`) als vCard; im Webmail liest er nur, und nur über https (auf dem eigenen Rechner auch
@@ -2319,7 +2326,7 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   protokolliert die Folgen.
 - **Kopfzeilen-Härtung** direkt an der Schreibstelle (Betreff, Absender, Empfänger).
 - **Jede Verbindung hat eine Frist:** 10 Sekunden für den Aufbau, 60 Sekunden für die ganze
-  Sitzung (`mailservice/versand.go`). Ohne sie hinge ein Versand an einem Server, der die
+  Sitzung (`internal/mailservice/versand.go`). Ohne sie hinge ein Versand an einem Server, der die
   Verbindung annimmt und schweigt, für immer, auch die Alarm-Mail des Wächters.
 - **Eine Mail nach dem Speichern meldet ihr Ergebnis.** „Klassensatz liegt bereit" und „Meldung
   erledigt" gehen nach dem Commit hinaus; das Feld `mail` der Antwort nennt, ob sie versendet
@@ -2363,7 +2370,7 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |
 | Bereitschafts-Wächter        | Meldet kritische Befunde per Mail an die Admins: 3 Minuten nach dem Start, danach täglich. Auf Spielwiesen schweigt er von selbst |
-| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update. Endete der vorige Lauf nicht geordnet, meldet `pkg/laufvermerk` beim Start, wie: abgestürzt (Stelle und erste Zeile der Meldung, die Go über `debug.SetCrashOutput` in eine Datei schreibt), hart beendet oder Ausfall des Rechners (neue Startkennung von Linux). Der Vermerk ist eine Datei im Container, keine Zeile in der Datenbank: Hält Docker selbst an, endet die Datenbank im selben Augenblick wie der Server. Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
+| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update. Endete der vorige Lauf nicht geordnet, meldet `internal/pkg/laufvermerk` beim Start, wie: abgestürzt (Stelle und erste Zeile der Meldung, die Go über `debug.SetCrashOutput` in eine Datei schreibt), hart beendet oder Ausfall des Rechners (neue Startkennung von Linux). Der Vermerk ist eine Datei im Container, keine Zeile in der Datenbank: Hält Docker selbst an, endet die Datenbank im selben Augenblick wie der Server. Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
 | `GIT_COMMIT` im Image        | „Gesund" heißt nicht „aktuell" — `update.sh` vergleicht nach dem Deploy                                              |
 | Stand der Oberfläche         | Jede Antwort nennt ihn im Kopf `X-Oberflaechenstand`: den Namen der Programmdatei aus `index.html`, der mit jeder geänderten Oberfläche wechselt und ohnehin in der Startseite steht (der Commit verriete, welcher Stand des öffentlichen Repositorys läuft). Weicht er vom Stand eines offenen Fensters ab, steht dort „Neu laden" |
 
@@ -2383,7 +2390,7 @@ an den Cookies ist gar kein Schalter (T10). Fehlt
 `BACKUP_ENCRYPTION_KEY`, überspringt sich der Backup-Job — und die Selbstprüfung macht
 genau das sichtbar, statt dass es unbemerkt bleibt.
 
-Was das Kollegium darf, steht **fest** in `db/rechte_vorgabe.go` und ist bewusst **kein** Schalter je
+Was das Kollegium darf, steht **fest** in `internal/db/rechte_vorgabe.go` und ist bewusst **kein** Schalter je
 Schule. Die Rechte der Leitung werden aus den Admin-Rechten **abgeleitet** (Admin minus
 `manage_users` und `manage_settings`) — eine abgeschriebene Liste wäre eine zweite Wahrheit
 und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
@@ -2442,7 +2449,7 @@ sieht.
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF: Was die Registrierung
   davorhängt (Recht, `uuidPfadMiddleware`), gehört zum Verhalten. Muster:
   `routertest.MitSitzung`, `tuertest.SetzeGenauEinRecht`, `tuertest.MitCSRF`,
-  `api/lernmittel/lmf_plan_tuer_pg_test.go`.
+  `internal/api/lernmittel/lmf_plan_tuer_pg_test.go`.
 - **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war, mit seiner
   erwarteten Meldung, nicht nur mit dem Exit-Code (ein Rückbau, der nicht übersetzt, endet auch
   mit 1). Ohne den Arbeitsstand anzufassen: `go test -overlay probe.json -run <Test> ./<paket>/`,
@@ -2452,10 +2459,10 @@ sieht.
   Nachbarwert dazu ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
 - **Fuzz-Tests prüfen eine Eigenschaft, nicht nur „kein Panic".** Wo eine Normalform in Go und in
   SQL steht und die Eingabe einen Aufbau hat (Ränder, Trenner, Länge), prüft ein Fuzz-Test
-  „zweimal ist einmal" oder „Go liefert dasselbe wie SQL" (`pkg/isbnutil/normalform_test.go`,
-  `repository/isbn_normalform_pg_test.go`, `internal/lusd/klassen_schluessel_test.go`,
-  `internal/lusd/klassen_schluessel_pg_test.go`). Ein Panic fangen die Middleware, `pkg/safego`
-  und `pkg/xlsxgrenze` ab; eine Suche nur danach findet hier wenig. Ohne `-fuzz` laufen die
+  „zweimal ist einmal" oder „Go liefert dasselbe wie SQL" (`internal/pkg/isbnutil/normalform_test.go`,
+  `internal/repository/isbn_normalform_pg_test.go`, `internal/lusd/klassen_schluessel_test.go`,
+  `internal/lusd/klassen_schluessel_pg_test.go`). Ein Panic fangen die Middleware, `internal/pkg/safego`
+  und `internal/pkg/xlsxgrenze` ab; eine Suche nur danach findet hier wenig. Ohne `-fuzz` laufen die
   Startwerte und die Funde unter `testdata/fuzz` des Pakets. Gesucht wird je Ziel mit
   `go test -run '^$' -fuzz '^FuzzName$' -fuzztime 10m ./<paket>/`, nachts je Ziel 15 Minuten in
   `.github/workflows/fuzz.yml`. Ein Fund landet als Datei unter `testdata/fuzz` (in der CI nennt
@@ -2469,19 +2476,19 @@ sieht.
 - **Eine Migration, die Daten ändert, wird mit ihrer echten Datei geprüft:** aus `migrations/`
   lesen, an der Testdatenbank ausführen, ein zweites Mal ausführen (ändert nichts). Verbietet eine
   spätere Regel die Daten, die sie umstellt, läuft der Test in einer Transaktion, die die Regel
-  herausnimmt und am Ende zurückrollt (`db/lmf_kurze_nummer_migration_pg_test.go`).
+  herausnimmt und am Ende zurückrollt (`internal/db/lmf_kurze_nummer_migration_pg_test.go`).
 - **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle Pakete
   des Moduls. Eine Datei unter 50 % (ohne `cmd/`, `main.go` und sehr kleine Dateien) bekommt
   einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung.
 - **Eine neue Tabelle oder Route macht Register rot, die ein gezielter Testlauf nicht sieht.**
   Deshalb nach der ersten grünen Probe die ganze Suite fahren. Erwartet wird je ein Eintrag: in
   `phantom_erfolg_test.go` für jeden `Exec` mit verworfenem Ergebnis; in
-  `docs/PII_MATRIX.de.md` je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe` je GET-Route
-  (`api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die neue Migration
-  (`db/migrationen_drift_test.go`); in `repository/schema_gegenrichtung_pg_test.go` und
-  `repository/schema_gegenrichtung_sperren_pg_test.go` jede neue Lösch-Folge, Bedingung,
+  `docs/PII_MATRIX.de.md` je Route (`internal/api/pii_matrix_test.go`); in `bauePIIAufrufe` je GET-Route
+  (`internal/api/pii_antwort_pg_test.go`); am Ende von `schema.sql` die neue Migration
+  (`internal/db/migrationen_drift_test.go`); in `internal/repository/schema_gegenrichtung_pg_test.go` und
+  `internal/repository/schema_gegenrichtung_sperren_pg_test.go` jede neue Lösch-Folge, Bedingung,
   Fremdschlüssel und Eindeutigkeit mit der Antwort, wer sie behandelt; in `listenGrenze` je Liste
-  einer GET-Route, was sie begrenzt (`api/listen_grenze_pg_test.go`). Dazu
+  einer GET-Route, was sie begrenzt (`internal/api/listen_grenze_pg_test.go`). Dazu
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag ist
   eine Antwort, keine hochgesetzte Zahl.
 - **Code zieht um** (eine Anweisung in eine andere Schicht, ein Name oder eine Datei in ein
@@ -2509,13 +2516,13 @@ sieht.
   baut auch die Tests und meldet sie), Dateien hinter einem Build-Tag und Skripte mit
   `//go:build ignore` (`bedingte_dateien_test.go` übersetzt sie), das Feld des Zwillings, wenn
   ein Paket die Zeile eines anderen in seinen eigenen Typ umwandelt (`AbgaengerZeile(z)` in
-  `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), und Kommentare im Text einer Abfrage
+  `internal/api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), und Kommentare im Text einer Abfrage
   (`-- …`); die folgen als eigener Commit, weil sich der Text der Abfrage ändert. Namen als Text
   in Dokumenten, in Zeichenketten der Tests und in `scripts/deadcode_baseline.txt` meldet der
   Compiler nicht: den alten Namen im Ordner des Pakets und
   als `paket.Name` im ganzen Repository suchen und im selben Commit nachziehen. Eine
   Prüfung, die einen Aufruf an seinem Namen erkennt, bekommt vorher ein Merkmal, das den Namen
-  überlebt (`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des
+  überlebt (`internal/repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des
   Ergebnisses). `gopls rename` ergänzt nebenbei `go.work.sum`; das gehört nicht in den Commit.
 
   Was dabei nicht von selbst rot wird: `gofmt -r` schreibt Kommentare nicht um und verliert einen
@@ -2733,7 +2740,7 @@ sieht.
   kennt (`security/vuln-ausnahmen.json`) — nicht ein globales Abschalten. Ein Befund, der
   begründet keiner ist, wird am Code nachgemessen und dokumentiert (Beispiel: die
   Schwachstelle im Excel-Leser, die diesen Code nicht erreicht;
-  `pkg/xlsxgrenze` hält Grenze und Schranke fest).
+  `internal/pkg/xlsxgrenze` hält Grenze und Schranke fest).
 - **Dependabot** (`.github/dependabot.yml`) gruppiert Updates; die Gates entscheiden, ob
   sie durchgehen. Achtung: Dependabot hebt bei einem Go-Bump nur `go.mod` — die
   `Dockerfile`-Zeile muss mitziehen, und genau das erzwingt
@@ -2788,8 +2795,8 @@ veralten.
 | A21 | Offline-Sync über die Nachbuch-Tür statt über die Stapel-Tür                    | 16.09.2026    | gültig   |
 | A22 | Kein TypeScript; JSDoc + `svelte-check`                                        | von Anfang an | gültig   |
 | A24 | Keine Changelog-Datei; `OFFEN.md` ist die einzige Liste                        | 15.09.2026    | gültig   |
-| A25 | `repository/` bleibt ein Paket                                                 | 13.10.2026    | gültig   |
-| A26 | Die Türen stehen je Menüpunkt in einem Paket unter `api/`                      | 12.10.2026    | gültig   |
+| A25 | `internal/repository/` bleibt ein Paket                                                 | 13.10.2026    | gültig   |
+| A26 | Die Türen stehen je Menüpunkt in einem Paket unter `internal/api/`                      | 12.10.2026    | gültig   |
 | A27 | Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis                | 20.10.2026    | gültig   |
 | A28 | Keine erzeugten Typen für die Antworten des Servers                            | 25.10.2026    | gültig   |
 | A29 | Von außen nur die Bestellseite; die Grenze zieht Caddy                         | 28.09.2026    | gültig   |
@@ -2809,7 +2816,7 @@ einer Transaktion über `leser`, `ausleihen` und `buecher_exemplare`.
 aber Handarbeit und braucht Gates (`geschuetzte_routen_test.go`). Ein Schnitt in
 Dienste würde die Transaktionsklammer zerreißen, die heute Q1 trägt.
 
-**Fundstelle.** `api/router.go`, `api/middleware.go`.
+**Fundstelle.** `internal/api/router.go`, `internal/api/middleware.go`.
 
 ---
 
@@ -2844,8 +2851,8 @@ nicht. Der Server braucht deshalb denselben Schutz wie der Mailserver.
 Welcher Server das Passwort prüft, nennt seit Migration 172 jedes Konto; LDAP ist der zweite
 Weg neben IMAP (A30).
 
-**Fundstelle.** `auth/anmelden.go` (`pruefeZugang`), Migration 012;
-`auth/pruefwert.go`, `auth/sperre.go`, Migration 155.
+**Fundstelle.** `internal/auth/anmelden.go` (`pruefeZugang`), Migration 012;
+`internal/auth/pruefwert.go`, `internal/auth/sperre.go`, Migration 155.
 
 ---
 
@@ -2863,8 +2870,8 @@ konnte im BenutzerUndRechte gewährte Rechte nicht nutzen.
 Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die bewusst
 öffentlichen Routen.
 
-**Fundstelle.** `api/tuer/rechte.go`, `api/tuer/sitzung.go`, `api/middleware.go` (`verlangeRecht`),
-`api/geschuetzte_routen_test.go`.
+**Fundstelle.** `internal/api/tuer/rechte.go`, `internal/api/tuer/sitzung.go`, `internal/api/middleware.go` (`verlangeRecht`),
+`internal/api/geschuetzte_routen_test.go`.
 
 ---
 
@@ -2877,13 +2884,13 @@ Middleware um den Mux.
 `r.PathValue("id")`, bevor die Route aufgelöst war. Der Wert ist dort **immer leer** — die
 Prüfung lief also nie.
 
-**Folge.** Ungültige UUIDs werden abgewiesen, bevor sie Postgres erreichen (`pkg/kennung`
+**Folge.** Ungültige UUIDs werden abgewiesen, bevor sie Postgres erreichen (`internal/pkg/kennung`
 prüft genau die Schreibweise, die Postgres annimmt — **nicht** `uuid.Parse`, das auch
 `urn:uuid:…` akzeptiert, was Postgres abweist).
 
-**Fundstelle.** `api/middleware.go` (Kommentar an `uuidPfadMiddleware`),
-`pkg/kennung`. Dass jede Route mit UUID im Pfad durch die Prüfung geht, hält
-`api/uuid_pfadparameter_test.go` am ganzen Router.
+**Fundstelle.** `internal/api/middleware.go` (Kommentar an `uuidPfadMiddleware`),
+`internal/pkg/kennung`. Dass jede Route mit UUID im Pfad durch die Prüfung geht, hält
+`internal/api/uuid_pfadparameter_test.go` am ganzen Router.
 
 ---
 
@@ -2926,7 +2933,7 @@ Kanal würde den Prozess abbrechen). Rückstau wird übersprungen (Puffer 10, `s
 
 ⚠️ **Wer den „zentralen Event-Loop" wiederherstellt, baut den Deploy-Abbruch zurück ein.**
 
-**Fundstelle.** `sse/sse.go`.
+**Fundstelle.** `internal/sse/sse.go`.
 
 ---
 
@@ -2946,8 +2953,8 @@ Am 24.09.2026 entschieden, das so zu lassen; Abhilfe und Anlass stehen unter den
 Grenzen (11.5).
 
 **Fundstelle.** Die Folge der Aufrufe in `internal/service/ausleihe_am_leser.go` und
-`nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/ausleihe.go`
-(`AusleihAbfragen.SperreOffene`), der Stempel in `repository/bewegungsstempel.go`; [invarianten.md](invarianten.md) Abschnitt 1.
+`nachbuchen.go`; die Sperren in `internal/repository/ausleihe_zeilensperren.go` und `internal/repository/ausleihe.go`
+(`AusleihAbfragen.SperreOffene`), der Stempel in `internal/repository/bewegungsstempel.go`; [invarianten.md](invarianten.md) Abschnitt 1.
 
 ---
 
@@ -2962,9 +2969,9 @@ oder eine zweite Sperrmeldung wäre falsch.
 **Folge.** 5xx wird **nicht** gecacht (Retry bleibt möglich). Eine parallele Anfrage
 desselben Schlüssels wartet begrenzt. Aufbewahrung 24 h, TTL-Lauf **stündlich**.
 
-**Fundstelle.** `repository/idempotenz.go`, `jobs/cron.go` (`17 * * * *`). Offline ist der
+**Fundstelle.** `internal/repository/idempotenz.go`, `internal/jobs/cron.go` (`17 * * * *`). Offline ist der
 Schlüssel die `item.id` des Warteschlangen-Eintrags (`frontend/src/lib/stores/offlineSync.svelte.js`);
-sie wandert beim Nachbuchen als `schluessel` mit (`api/theke/nachbuchen_schluessel.go`) — eine
+sie wandert beim Nachbuchen als `schluessel` mit (`internal/api/theke/nachbuchen_schluessel.go`) — eine
 zweimal eingespielte Sicherung führt deshalb nichts doppelt aus.
 
 ---
@@ -2982,7 +2989,7 @@ startete, schrieb den alten Stand **nach** der Invalidierung zurück — und er 
 Schreiber vergleicht. 60 s Cache bleiben als Obergrenze für die Wirksamkeit einer
 Rechteänderung.
 
-**Fundstelle.** `api/tuer/rechte.go`.
+**Fundstelle.** `internal/api/tuer/rechte.go`.
 
 ---
 
@@ -3005,9 +3012,9 @@ verhindert, dass ein Schüler seine Art wechselt; innerhalb des Kollegiums läss
 ([FACHKONZEPT.md §12.3](FACHKONZEPT.md)).
 
 **Fundstelle.** Migrationen 123–125, `docs/schreibpfade_gegen_sicht_test.go`,
-`db/sicht_schueler_vollstaendig_pg_test.go`. Den Umweg über die Klasse `lehrer` schließt
-Migration 072; `api/leser/leser_klasse_regel.go` weist `lehrer` als Klassennamen an beiden Türen
-ab (`api/leser/leser_anlegen.go`, `api/leser/leser_aendern.go`).
+`internal/db/sicht_schueler_vollstaendig_pg_test.go`. Den Umweg über die Klasse `lehrer` schließt
+Migration 072; `internal/api/leser/leser_klasse_regel.go` weist `lehrer` als Klassennamen an beiden Türen
+ab (`internal/api/leser/leser_anlegen.go`, `internal/api/leser/leser_aendern.go`).
 
 ---
 
@@ -3015,7 +3022,7 @@ ab (`api/leser/leser_anlegen.go`, `api/leser/leser_aendern.go`).
 
 **Entscheidung.** Der Admin vergibt **vier** Rollen (Admin, Leitung, Mitarbeiter, Helfer).
 `kollegium` ist technisch derselbe Enum-Wert, fachlich aber der Grundzustand jeder
-Lehrkraft. Was das Kollegium darf, steht **fest** in `db/rechte_vorgabe.go`.
+Lehrkraft. Was das Kollegium darf, steht **fest** in `internal/db/rechte_vorgabe.go`.
 
 **Anlass.** Als Spalte der Rechte-Matrix sähe Kollegium aus wie eine Stufe in einer
 Rangfolge. Es ist keine: Jede Lehrkraft meldet sich
@@ -3029,7 +3036,7 @@ Portal ebenfalls.
 **Was man wissen muss:** Die Tabelle der Rechte steuert das Menü und die Prüfung an der
 Route (`verlangeRecht`); ein Recht zu viel ist keine Frage der Anzeige.
 
-**Fundstelle.** `db/rechte_vorgabe.go`, `auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
+**Fundstelle.** `internal/db/rechte_vorgabe.go`, `internal/auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
 das Enum), 069 (`lehrer` → `kollegium`, weil das Wort doppelt belegt war), 070 (Rechte des
 Kollegiums auf das Portal zurückgenommen), 121 (`leitung`).
 
@@ -3041,17 +3048,17 @@ Kollegiums auf das Portal zurückgenommen), 121 (`leitung`).
 `manage_settings`. Migration 122 **erzeugt** die Zeilen aus den Admin-Zeilen und setzt genau
 die zwei Ausnahmen auf `false`.
 
-**Anlass.** Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `db/rechte_vorgabe.go`
+**Anlass.** Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `internal/db/rechte_vorgabe.go`
 und liefe beim nächsten neuen Recht auseinander — die Leitung bekäme es nicht, und niemand
 merkte es.
 
-**Folge.** Das Gate `db/rolle_leitung_test.go` leitet dasselbe aus der Vorgabe ab.
+**Folge.** Das Gate `internal/db/rolle_leitung_test.go` leitet dasselbe aus der Vorgabe ab.
 `manage_users` fehlt **deshalb**, weil man mit dem Recht die E-Mail eines Kontos ändert und
 die Anmeldung eine Person allein an ihrer E-Mail erkennt (A2): Die Rechtevergabe wäre der
 Weg in jedes Konto. Ein Admin-**Konto** bleibt der Leitung auch mit dem Recht verschlossen.
 
-**Fundstelle.** Migrationen 121/122, `db/rolle_leitung_test.go`,
-`api/benutzer/admin_schutz.go`.
+**Fundstelle.** Migrationen 121/122, `internal/db/rolle_leitung_test.go`,
+`internal/api/benutzer/admin_schutz.go`.
 
 ---
 
@@ -3099,7 +3106,7 @@ Treffer".
 **Dauerhaft so:** Alle Ausweise und Etiketten, die in Code 39 gedruckt sind, bleiben über
 diesen Weg nutzbar; neu drucken muss die Schule nichts (entschieden am 17.09.2026).
 
-**Fundstelle.** `pkg/code39`, `internal/service/omnibox.go`,
+**Fundstelle.** `internal/pkg/code39`, `internal/service/omnibox.go`,
 `frontend/e2e/barcode-lesbar.spec.js`.
 
 ---
@@ -3132,14 +3139,14 @@ während der Server aus demselben Grund den Start verweigert.
 `30 2 * * *` verschluckt: 02:30 existiert dann nicht.
 
 **Folge.** Der Container läuft in UTC; `docker-compose.yml` reicht kein `TZ` durch. Die
-**fachliche** Zeitrechnung steht bei `Europe/Berlin` im Code (`pkg/schulzeit`, `ZonenName`),
+**fachliche** Zeitrechnung steht bei `Europe/Berlin` im Code (`internal/pkg/schulzeit`, `ZonenName`),
 und ein Zeitpunkt aus der Datenbank wird erst an der Ausgabe in diese Zone umgerechnet: pgx
 liest ihn in `time.Local`. Für SQL heißt das: Der Kalendertag der Schule ist
 `schulzeit.SQLHeute`, nie `CURRENT_DATE` — die Datenbank-Sitzung läuft in UTC, und zwischen
 Mitternacht in Berlin und Mitternacht UTC wäre es der Vortag. Den Bestand hält die Ratsche
 `docs/kalendertag_bestand_test.go` ([sweeps.md](sweeps.md), „Tag in der falschen Zeitzone").
 
-**Fundstelle.** `jobs/cron.go`, `pkg/schulzeit/schulzeit.go`.
+**Fundstelle.** `internal/jobs/cron.go`, `internal/pkg/schulzeit/schulzeit.go`.
 
 ---
 
@@ -3161,7 +3168,7 @@ erreicht `pg_dump` über eine temporäre `.pgpass`, **nicht** über `PGPASSWORD`
 Schalter, vorgegeben aus, weil der Server der Schule selbst gesichert und gespiegelt wird
 (7.7).
 
-**Fundstelle.** `jobs/backup.go`, `internal/backupkrypto`, `jobs/restore_probe.go`,
+**Fundstelle.** `internal/jobs/backup.go`, `internal/backupkrypto`, `internal/jobs/restore_probe.go`,
 [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ---
@@ -3178,7 +3185,7 @@ gemahnt.
 nur in `ErhoeheMahnstufe`; eine neue Frist, die in der Zukunft liegt, setzt sie auf 0.
 Mahnlisten gehen an die Klassenleitung, nie an Schüler.
 
-**Fundstelle.** `api/mahnwesen/mahnbriefe.go`, [invarianten.md](invarianten.md).
+**Fundstelle.** `internal/api/mahnwesen/mahnbriefe.go`, [invarianten.md](invarianten.md).
 
 ---
 
@@ -3201,11 +3208,11 @@ beweglichen Ferientage der Schule kennt die Tabelle nicht.
 
 Dieselbe Regel gilt für die Abholfrist einer Vormerkung (entschieden am 28.09.2026): drei
 Tage, das Ende auf dem nächsten Schultag, keine Einstellung. Gesetzt wird sie auch in
-`repository` (Nachrücken in der Warteschlange); deshalb liegt die Rechnung in `pkg/lmfplan`.
+`repository` (Nachrücken in der Warteschlange); deshalb liegt die Rechnung in `internal/pkg/lmfplan`.
 
-**Fundstelle.** `lmfplan.Ferientabelle.Tagesfrist` (`pkg/lmfplan/tagesfrist.go`),
-`repository.BestimmeAbholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/uebrige_ferien.go`,
-`pkg/lmfplan/sommerferien.go`, [FACHKONZEPT.md §2.1](FACHKONZEPT.md).
+**Fundstelle.** `lmfplan.Ferientabelle.Tagesfrist` (`internal/pkg/lmfplan/tagesfrist.go`),
+`repository.BestimmeAbholfrist` (`internal/repository/vormerkung_abholfrist.go`), `internal/pkg/lmfplan/uebrige_ferien.go`,
+`internal/pkg/lmfplan/sommerferien.go`, [FACHKONZEPT.md §2.1](FACHKONZEPT.md).
 
 ---
 
@@ -3223,9 +3230,9 @@ und wären vollständig aufzählbar.
 keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand angelegter;
 auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
-**Fundstelle.** `api/katalog/uploads.go` (`neuteredFileSystem`), `Dockerfile`,
-`api/router.go` (`registriereUploads`), `internal/crypto`.
-Gates: `api/katalog/uploads_test.go`, `api/uploads_auslieferung_pg_test.go`.
+**Fundstelle.** `internal/api/katalog/uploads.go` (`neuteredFileSystem`), `Dockerfile`,
+`internal/api/router.go` (`registriereUploads`), `internal/crypto`.
+Gates: `internal/api/katalog/uploads_test.go`, `internal/api/uploads_auslieferung_pg_test.go`.
 
 ---
 
@@ -3245,7 +3252,7 @@ bleibt liegen. Die Uhr des Kiosk-Rechners
 wird über `performance.now()` gegen die Wanduhr gehalten, weil sie oft genau dann gestellt
 wird, wenn das Netz zurückkommt. Die Stapel-Tür ist entfernt.
 
-**Fundstelle.** `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`,
+**Fundstelle.** `internal/api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`,
 `frontend/src/lib/stores/offlineSync.svelte.js`.
 
 ---
@@ -3281,7 +3288,7 @@ eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf
 
 ---
 
-### A25 — `repository/` bleibt ein Paket
+### A25 — `internal/repository/` bleibt ein Paket
 
 **Entscheidung (13.10.2026).** Die Datenbankschicht wird nicht nach den Themen der Türen geteilt.
 
@@ -3297,15 +3304,15 @@ related types whose implementation is tightly coupled, placing them in the same 
 you achieve this coupling without polluting the public API with these details." Gebaut ist für
 die Entscheidung nichts; sie lässt sich ändern, ohne etwas zurückzunehmen.
 
-**Fundstelle.** `repository/`, 5.2.2 („`repository/` bleibt ein Paket").
+**Fundstelle.** `internal/repository/`, 5.2.2 („`internal/repository/` bleibt ein Paket").
 
 ---
 
-### A26 — Die Türen stehen je Menüpunkt in einem Paket unter `api/`
+### A26 — Die Türen stehen je Menüpunkt in einem Paket unter `internal/api/`
 
 **Entscheidung (12.10.2026).** Geteilt wird die Schicht der Türen: je Menüpunkt der Oberfläche
-ein Paket unter `api/` mit einem Typ `Tueren`. Router, Routenlisten und Middleware bleiben in
-`api/`, was jede Tür braucht, steht in `api/tuer`, die Abfragen bleiben in einer
+ein Paket unter `internal/api/` mit einem Typ `Tueren`. Router, Routenlisten und Middleware bleiben in
+`internal/api/`, was jede Tür braucht, steht in `internal/api/tuer`, die Abfragen bleiben in einer
 Datenbankschicht (A25).
 
 **Anlass.** Alle Türen waren Methoden des einen Typs `Server` (349 Methoden), und rund 200
@@ -3315,12 +3322,12 @@ size: „When something is conceptually distinct, giving it its own small packag
 easier to use."
 
 **Folge.** Eine Änderung an einem Thema berührt die Dateien der anderen nicht, und kein Thema
-bindet ein anderes ein (`api/themen_ratsche_test.go`). Was zwei Themen brauchen, steht in
-`api/tuer` oder einer Schicht darunter. Das gilt ohne Ausnahme: Auch die Türen des Medienkatalogs
-stehen in `api/katalog`, ihre Routen in `api/routen_katalog.go` und ihre Abfragen in
-`repository/`.
+bindet ein anderes ein (`internal/api/themen_ratsche_test.go`). Was zwei Themen brauchen, steht in
+`internal/api/tuer` oder einer Schicht darunter. Das gilt ohne Ausnahme: Auch die Türen des Medienkatalogs
+stehen in `internal/api/katalog`, ihre Routen in `internal/api/routen_katalog.go` und ihre Abfragen in
+`internal/repository/`.
 
-**Fundstelle.** `api/router.go` (die Zugänge), `api/<Thema>/<Thema>.go`, 5.2.2.
+**Fundstelle.** `internal/api/router.go` (die Zugänge), `internal/api/<Thema>/<Thema>.go`, 5.2.2.
 
 ---
 
@@ -3368,7 +3375,7 @@ Liste (`httpresp`). Die übrige Form, ein Feld, das der Server nicht schickt, ka
 `httpresp.alsListe`. Eine Liste in einem Feld einer Struktur, die `nil` bleibt, kommt weiter als
 `null` an.
 
-**Fundstelle.** `api/tuer/antwort.go`, `pkg/httpresp/httpresp.go`, `frontend/src/lib/apiFetch.js`.
+**Fundstelle.** `internal/api/tuer/antwort.go`, `internal/pkg/httpresp/httpresp.go`, `frontend/src/lib/apiFetch.js`.
 
 ---
 
@@ -3389,7 +3396,7 @@ der Schule die Absenderadresse stehen lässt, zeigt ohnehin nur die Probe an der
 Seite für ihn unter `/bestellung/`; sonst sperrt Caddy sie von außen. Katalog, Monitor und Cover
 sind von außen gesperrt. Einrichtung und Probe: DEPLOYMENT.md 3.
 
-**Fundstelle.** `update_caddy.sh`, `api/routen_oeffentlich.go`.
+**Fundstelle.** `update_caddy.sh`, `internal/api/routen_oeffentlich.go`.
 
 ### A30 — LDAP neben IMAP, je Konto; erst das Konto, dann der Server
 
@@ -3411,7 +3418,7 @@ Bibliothek Namen durchprobiert.
 **Folge.**
 
 - Die LDAP-Kennung öffnet ein Konto wie die E-Mail. Sie geht durch dieselbe Tür wie die E-Mail:
-  Recht `manage_users`, Schutz der Admin-Konten (`api/benutzer/admin_schutz.go`), Eintrag in
+  Recht `manage_users`, Schutz der Admin-Konten (`internal/api/benutzer/admin_schutz.go`), Eintrag in
   USER_CREATE und USER_UPDATE mit Verfahren und Kennung. Das eigene Verfahren und die eigene
   Kennung ändert niemand selbst (`pruefeSelbstschutz`): Ein Tippfehler sperrte bei der nächsten
   Anmeldung aus.
@@ -3437,11 +3444,11 @@ Bibliothek Namen durchprobiert.
 - Erster Start ohne Mailserver: `INITIAL_ADMIN_LDAP_KENNUNG` legt den ersten Admin als LDAP-Konto
   an; ohne sie und ohne `IMAP_HOST` bricht der Start ab.
 
-**Fundstelle.** `auth/ldap.go`, `auth/anmelden.go` (`pruefeZugang`), `auth/sperre.go`,
-`api/benutzer/konto_pruefungen.go` (`pruefeAnmeldeverfahren`), Migration 172. Gates:
-`auth/ldap_test.go`, `auth/anmelden_verfahren_test.go`, `auth/sperre_pg_test.go`
-(`TestSperre_LDAPKontoSchliesstAmVerzeichnisdienstAuf`), `repository/anmeldeverfahren_pg_test.go`,
-`api/benutzer/anmeldeverfahren_test.go`, jedes am Rückbau rot gesehen.
+**Fundstelle.** `internal/auth/ldap.go`, `internal/auth/anmelden.go` (`pruefeZugang`), `internal/auth/sperre.go`,
+`internal/api/benutzer/konto_pruefungen.go` (`pruefeAnmeldeverfahren`), Migration 172. Gates:
+`internal/auth/ldap_test.go`, `internal/auth/anmelden_verfahren_test.go`, `internal/auth/sperre_pg_test.go`
+(`TestSperre_LDAPKontoSchliesstAmVerzeichnisdienstAuf`), `internal/repository/anmeldeverfahren_pg_test.go`,
+`internal/api/benutzer/anmeldeverfahren_test.go`, jedes am Rückbau rot gesehen.
 
 ---
 
@@ -3493,29 +3500,29 @@ vermerkt.
 
 | ID  | Auslöser / Situation                                                                                 | Erwartete Reaktion                                                                                                 | Nachweis                                                                                            |
 | --- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| S1  | Zwei Stationen scannen **dasselbe Exemplar** für **zwei verschiedene** Leser, im selben Moment        | Eine Buchung gelingt, die andere endet mit **409 Conflict** — nie zwei aktive Ausleihen                             | `uniq_ausleihen_aktiv_exemplar` (DB) + `repository/ausleihe_konflikt_pg_test.go`, `schaden_melden_ausleihe_pg_test.go` |
-| S2  | Derselbe Scan kommt zweimal an (Netz, Doppeldruck, Nachbuchen)                                        | Die gespeicherte Antwort wird zurückgegeben; **kein** zweiter Schreibvorgang, **keine** zweite Sperrmeldung          | `repository/idempotenz_uebernahme_pg_test.go`, `api/idempotenz_fristen_test.go`                     |
+| S1  | Zwei Stationen scannen **dasselbe Exemplar** für **zwei verschiedene** Leser, im selben Moment        | Eine Buchung gelingt, die andere endet mit **409 Conflict** — nie zwei aktive Ausleihen                             | `uniq_ausleihen_aktiv_exemplar` (DB) + `internal/repository/ausleihe_konflikt_pg_test.go`, `schaden_melden_ausleihe_pg_test.go` |
+| S2  | Derselbe Scan kommt zweimal an (Netz, Doppeldruck, Nachbuchen)                                        | Die gespeicherte Antwort wird zurückgegeben; **kein** zweiter Schreibvorgang, **keine** zweite Sperrmeldung          | `internal/repository/idempotenz_uebernahme_pg_test.go`, `internal/api/idempotenz_fristen_test.go`                     |
 | S3  | Ein `UPDATE` trifft null Zeilen (Sicht, falsche ID, Wettlauf)                                          | Fehler oder 404 — **niemals** „erfolgreich"                                                                         | `phantom_erfolg_test.go`, `docs/schreibpfade_gegen_sicht_test.go`                                   |
-| S4  | Ein Lernmittel wird nach dem Rückgabetermin der Klasse ausgeliehen                                     | Frist ist der Stichtag des **folgenden** Schuljahres, nicht ein vergangener Termin                                  | `internal/service/frist_test.go`, `repository/lmf_termine_frist_pg_test.go`                    |
-| S5  | Das jüngste verschlüsselte Backup soll wiederhergestellt werden                                         | Wöchentliche Probe spielt es in eine Wegwerf-Datenbank ein; Fehlschlag wird **Befund der Selbstprüfung**             | `jobs/restore_probe_pg_test.go`, `jobs/backup_drill_pg_test.go`, `docs/rueckweg_anleitungen_test.go` |
+| S4  | Ein Lernmittel wird nach dem Rückgabetermin der Klasse ausgeliehen                                     | Frist ist der Stichtag des **folgenden** Schuljahres, nicht ein vergangener Termin                                  | `internal/service/frist_test.go`, `internal/repository/lmf_termine_frist_pg_test.go`                    |
+| S5  | Das jüngste verschlüsselte Backup soll wiederhergestellt werden                                         | Wöchentliche Probe spielt es in eine Wegwerf-Datenbank ein; Fehlschlag wird **Befund der Selbstprüfung**             | `internal/jobs/restore_probe_pg_test.go`, `internal/jobs/backup_drill_pg_test.go`, `docs/rueckweg_anleitungen_test.go` |
 | S24 | Eine Verbindung bricht mitten in einer Ergebnisliste ab                                                 | Fehler — die Liste darf **nicht** still gekürzt zurückkommen                                                        | `rows.Err()`-Konvention + `golangci-lint`; **kein** eigenes Gate                                     |
 
 #### Q2 Datenschutz
 
 | ID  | Auslöser / Situation                                                                                   | Erwartete Reaktion                                                                                     | Nachweis                                                                       |
 | --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `api/pii_matrix_test.go` + `api/pii_antwort_pg_test.go` (Kanarienwerte je Stufe) |
-| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `api/geschuetzte_routen_test.go` |
-| S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
+| S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `internal/api/pii_matrix_test.go` + `internal/api/pii_antwort_pg_test.go` (Kanarienwerte je Stufe) |
+| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `internal/api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `internal/api/geschuetzte_routen_test.go` |
+| S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `internal/jobs/cron_dsgvo_karenz_pg_test.go`, `internal/jobs/cron_dsgvo_abgaenger_pg_test.go`, `internal/repository/nachtlauf_ratsche_test.go` |
 | S9  | Der Server startet mit einem Beispiel-Geheimnis aus dem Repository                                       | **Start verweigert** (außerhalb local/development/test); nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` lässt ihn los, mit Warnung | `internal/bereitschaft/geheimnisse.go` + Selbstprüfung (**eine** gemeinsame Liste), `scripts/pruefe_secrets.sh` |
-| S19 | Ein Mailserver bietet kein STARTTLS an (oder ein Angreifer streicht es aus der EHLO-Antwort)              | **Versand abgebrochen** — Mahntexte mit Schülernamen gehen nicht im Klartext über das Netz               | `mailservice/versand_test.go`, `internal/smtptest`                             |
+| S19 | Ein Mailserver bietet kein STARTTLS an (oder ein Angreifer streicht es aus der EHLO-Antwort)              | **Versand abgebrochen** — Mahntexte mit Schülernamen gehen nicht im Klartext über das Netz               | `internal/mailservice/versand_test.go`, `internal/smtptest`                             |
 | S20 | Ein Wert aus einer Anfrage enthält einen Zeilenumbruch und landet im Log                                  | Ein einziger JSON-Eintrag mit `\n` **innerhalb** des Strings — kein zweiter, gefälschter Eintrag         | am laufenden Server nachgemessen (11.08.2026); `slog`-JSON-Handler als Standard |
 
 #### Q3 Betriebstransparenz
 
 | ID  | Auslöser / Situation                                                                            | Erwartete Reaktion                                                                                               | Nachweis                                                     |
 | --- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| S10 | Eine fertige Funktion tut still nichts, weil eine Einstellung fehlt (SMTP, Selbstanmeldung, Backup-Schlüssel) | Selbstprüfung führt sie als Befund; kritische Befunde gehen **per Mail** an die Admins — 3 Minuten nach dem Start und danach täglich | `api/system/betriebsbereitschaft*.go`, `frontend/e2e/betriebsbereitschaft.spec.js` |
+| S10 | Eine fertige Funktion tut still nichts, weil eine Einstellung fehlt (SMTP, Selbstanmeldung, Backup-Schlüssel) | Selbstprüfung führt sie als Befund; kritische Befunde gehen **per Mail** an die Admins — 3 Minuten nach dem Start und danach täglich | `internal/api/system/betriebsbereitschaft*.go`, `frontend/e2e/betriebsbereitschaft.spec.js` |
 | S11 | Nach einem Deploy: läuft der Container aus dem aktuellen Commit?                                 | `update.sh` vergleicht `GIT_COMMIT` im Image mit `git rev-parse HEAD`; „gesund" genügt **nicht** als Antwort       | `update.sh` Schritt 4b                                       |
 | S21 | Ein Testlauf überspringt die DB-Integrationstests (kein `TEST_DATABASE_URL`)                      | Der Lauf **sagt es** (Skip-Bilanz), statt grün auszusehen                                                         | `scripts/git-hooks/pre-push`, CI-Schritt „Skip-Bilanz"        |
 
@@ -3524,9 +3531,9 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                       | Erwartete Reaktion                                                                                                         | Nachweis                                                                 |
 | --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | S12 | Gescannt wird ein Ausweis mit dem **alten** Aufdruck (Prüfzeichen im Strichcode)            | Der Scan trifft — über den zweiten Versuch ohne Prüfzeichen. Ein unbekannter Scan darf nicht wie „Scanner tot" aussehen     | `internal/service/omnibox_altes_etikett_pg_test.go`, `frontend/e2e/barcode-lesbar.spec.js` |
-| S13 | Das Netz fällt während des Ausleihbetriebs aus                                              | Scans laufen weiter in die lokale Warteschlange; nach Rückkehr bucht die Nachbuch-Tür die Wirklichkeit, Abweichungen bleiben als Meldung stehen | `frontend/src/lib/stores/offlineSync.test.js`, `api/theke/nachbuchen_*_pg_test.go` |
+| S13 | Das Netz fällt während des Ausleihbetriebs aus                                              | Scans laufen weiter in die lokale Warteschlange; nach Rückkehr bucht die Nachbuch-Tür die Wirklichkeit, Abweichungen bleiben als Meldung stehen | `frontend/src/lib/stores/offlineSync.test.js`, `internal/api/theke/nachbuchen_*_pg_test.go` |
 | S14 | Eine Hauptansicht wird mit Tastatur und Screenreader bedient                                 | Keine axe-Verstöße im Anfangszustand; keine Fokusfalle; Tabellen semantisch korrekt                                        | `frontend/e2e/barrierefreiheit-axe.spec.js`, `…-dialog.spec.js`           |
-| S15 | Der Thekenrechner bleibt unbedient stehen                                                    | Nach 5 min ist der geladene Leser weg, nach 15 min der Sperrbildschirm; der Server beantwortet die Anmeldung bis zum Passwort mit 423, auch nach dem Neuladen; bei totem Mailserver schließt das Passwort gegen den Prüfwert auf | `auth/sperre_pg_test.go`, `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, am Rückbau rot gesehen), `frontend/e2e/sperrbildschirm.spec.js` |
+| S15 | Der Thekenrechner bleibt unbedient stehen                                                    | Nach 5 min ist der geladene Leser weg, nach 15 min der Sperrbildschirm; der Server beantwortet die Anmeldung bis zum Passwort mit 423, auch nach dem Neuladen; bei totem Mailserver schließt das Passwort gegen den Prüfwert auf | `internal/auth/sperre_pg_test.go`, `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, am Rückbau rot gesehen), `frontend/e2e/sperrbildschirm.spec.js` |
 | S22 | Ein Menüpunkt ist für eine Rolle sichtbar                                                    | Der Klick führt **irgendwohin** — nicht wortlos zurück an die Theke                                                        | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js` (Helfer, Mitarbeiter, Lehrkraft) |
 
 #### Q5 Änderbarkeit
@@ -3534,10 +3541,10 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                              | Erwartete Reaktion                                                                                     | Nachweis                                                                    |
 | --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | S16 | Eine bereits behobene Bugklasse kehrt in neuem Code zurück                                         | Die zuständige Ratsche wird rot — **und** ihre bekannte Blindheit steht in der Landkarte                | [sweeps.md](sweeps.md) samt „Landkarte der Ratschen"                     |
-| S17 | Zwei Orte behaupten dasselbe (Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
-| S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `sse/sse_test.go`, `main_test.go`                                           |
+| S17 | Zwei Orte behaupten dasselbe (Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `internal/db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
+| S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `internal/sse/sse_test.go`, `main_test.go`                                           |
 | S23 | Toter Code bleibt liegen (eine geschriebene, getestete und nie gerufene Funktion)                   | Deadcode-Gate wird rot                                                                                 | `scripts/deadcode_gate.sh` + Baseline                                       |
-| S25 | Nach einem Update ist an einem Arbeitsplatz noch das alte Programm offen                            | Über dem Inhalt steht „Neu laden"; von selbst lädt nur ein Fenster neu, in dem noch niemand etwas bedient hat | `api/oberflaechenstand_test.go`, `frontend/src/lib/stores/programmstand.test.js`, `frontend/e2e/neue-fassung.spec.js` |
+| S25 | Nach einem Update ist an einem Arbeitsplatz noch das alte Programm offen                            | Über dem Inhalt steht „Neu laden"; von selbst lädt nur ein Fenster neu, in dem noch niemand etwas bedient hat | `internal/api/oberflaechenstand_test.go`, `frontend/src/lib/stores/programmstand.test.js`, `frontend/e2e/neue-fassung.spec.js` |
 
 ---
 
@@ -3554,7 +3561,7 @@ gemessenes Limit:
 | Globales Rate-Limit                 | 50 Anfragen/s/IP, Auslieferungspfade ausgenommen                                          |
 | Nachbuch-Portion                    | 1–50 Einträge je Aufruf (mehr wäre eine zu lange offene Transaktion)                      |
 | Cover-Sync                          | Worker-Pool 8, alle 6 Stunden und auf Anforderung                                         |
-| Lastprüfung                         | Lasttest mit k6 außerhalb des Repositorys (Aufbau in 8.14), zuletzt am Stand b8080659: zehn Theken über sechs Stunden mit 1.398 Besuchen, Fehlerantworten nur während eines Neustarts mit 20 s Pause in der Stoßstunde, danach keine verlorene oder doppelte Buchung; Scan p95 16 ms, Speicher des Backends ohne Wachstum (22–42 MiB nach den Anmeldungen). 25 Theken eine Stunde lang: 103.076 Anfragen ohne Fehler, Scan p95 4 ms, daneben 56 Katalogsuchen je Sekunde und die Nachtsicherung. Gleichzeitige Scans prüfen dazu Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
+| Lastprüfung                         | Lasttest mit k6 außerhalb des Repositorys (Aufbau in 8.14), zuletzt am Stand b8080659: zehn Theken über sechs Stunden mit 1.398 Besuchen, Fehlerantworten nur während eines Neustarts mit 20 s Pause in der Stoßstunde, danach keine verlorene oder doppelte Buchung; Scan p95 16 ms, Speicher des Backends ohne Wachstum (22–42 MiB nach den Anmeldungen). 25 Theken eine Stunde lang: 103.076 Anfragen ohne Fehler, Scan p95 4 ms, daneben 56 Katalogsuchen je Sekunde und die Nachtsicherung. Gleichzeitige Scans prüfen dazu Tests an der Datenbank (`internal/repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
 
 **Nicht Teil der Zusage:** horizontale Skalierung, Mehrmandantenfähigkeit, Hochverfügbarkeit
 ohne Wartungsfenster. Ein Deploy ist ein kurzer, geordneter Abriss der Verbindungen
@@ -3646,8 +3653,8 @@ generischen Helfern sieht er nicht.
 | **Auswirkung** | gering: Eine Änderung an einem Thema berührt die Dateien der anderen nicht |
 | **Sichtbarkeit** | hoch |
 
-`repository/` ist das größte Paket und bleibt eines (A25); gefunden wird dort über den Namen der
-Datei. Die Türen stehen in zwölf Themenpaketen (A26), das größte ist `api/katalog`. Die Größen
+`internal/repository/` ist das größte Paket und bleibt eines (A25); gefunden wird dort über den Namen der
+Datei. Die Türen stehen in zwölf Themenpaketen (A26), das größte ist `internal/api/katalog`. Die Größen
 misst der [Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen), die Komplexität jeder
 Funktion begrenzt `komplexitaet_ratsche_test.go`. Dass kein Thema ein anderes einbindet und keine
 Datei außerhalb der Datenbankschicht SQL formuliert, halten die Ratschen aus 5.2.2.
@@ -3661,7 +3668,7 @@ Datei außerhalb der Datenbankschicht SQL formuliert, halten die Ratschen aus 5.
 
 `role_permissions` entscheidet in `verlangeRecht`. Eine Fehlkonfiguration ist damit
 keine Anzeigefrage, sondern eine echte Rechteerweiterung. Gegenmittel: Die Vorgabe
-steht in `db/rechte_vorgabe.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
+steht in `internal/db/rechte_vorgabe.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
 spätere Handvergabe wird **nicht** zurückgedreht). Die Betriebsbereitschaft vergleicht die
 Matrix mit der Vorgabe und nennt jede Abweichung (`pruefeRechteVorgabe`, Bereich
 „Rechte-Vorgabe") — als Warnung, weil eine Abweichung eine Entscheidung des Admins sein kann.
@@ -3712,7 +3719,7 @@ Betriebsbereitschaft führt es unter „Auslagerung der Backups" als kritisch
 (`pruefeAuslagerung`); im echten Betrieb geht ein kritischer Befund täglich per Mail an die
 Admins. Ein Host-Verlust ohne Offsite ist trotzdem ein Datenverlust. Ist ein Speicher
 eingerichtet, gilt dort dieselbe Aufbewahrung wie im Volume (`jobs.AufbewahrteNaechte`,
-`jobs.AufbewahrteWochen`, `jobs/backup_auslagerung.go`): gelöscht wird nach jedem gelungenen
+`jobs.AufbewahrteWochen`, `internal/jobs/backup_auslagerung.go`): gelöscht wird nach jedem gelungenen
 Hochladen und nur aus einer vollständig gelesenen Liste. Das Einrichten steht in
 [OFFEN.md](OFFEN.md) 7.3.
 
@@ -3802,7 +3809,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 - **Eine Forderung für ein Gerät lässt sich nicht anlegen.** Die Datenbank sieht sie vor
   (`check_damage_item`), die Rechnung an die Eltern könnte sie drucken, aber der einzige
-  Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar. Beim Bau
+  Schreiber `meldeSchaden` (`internal/repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar. Beim Bau
   mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne Exemplar mit dem Satz für Bücher der
   Schülerbücherei und „kein Preis hinterlegt" (`BescheidPositionen.svelte`).
 - **Klassensätze aus den Ausleihen.** Die Übersicht zählt nur Ausleihen auf die Ausweise der
@@ -3829,7 +3836,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   ```
 - **Das Feld „Auflage" trägt aus Littera auch Heftnummern und eigene Nummern** („34 / 2010",
   „D-Ga-066"; im Katalog-Export vom Juni 2026 neben 5.033 Auflagen 955 Heftnummern, 69 eigene
-  Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`repository/titel_suche.go`, `repository/titel_liste.go`). Anlass: Die
+  Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`internal/repository/titel_suche.go`, `internal/repository/titel_liste.go`). Anlass: Die
   Bücherei sucht nach einer dieser Angaben.
 - **Der Katalogisat-Import legt Einträge über den Titeltext zusammen;** ein zweiter Lauf schreibt
   die Angaben des zuletzt passenden Eintrags darüber (`SchreibeTitel`). Am Export vom Juni 2026
@@ -3845,12 +3852,12 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Karte eines Schülers, der zurückkommt. Die Maske sagt dabei nicht, dass die Nummer schon
   vergeben war; nur Generator und Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass:
   eine alte Karte, die so an eine andere Person gerät.
-- **Anmeldungen stehen nicht im Protokoll** (`Anmelden` in `auth/anmelden.go`, nur die
+- **Anmeldungen stehen nicht im Protokoll** (`Anmelden` in `internal/auth/anmelden.go`, nur die
   Selbstanmeldung schreibt). Ein Protokoll wären neue Personendaten des Personals mit eigener
   Frist; der Datenschutz-Nachweis sagt das so. Anlass: ein Vorfall oder eine Frage des
   Datenschutzbeauftragten.
 - **Ausleihe und Rückgabe stempeln den Beginn ihrer Transaktion** (`CURRENT_TIMESTAMP` in
-  `sqlAusleihe` und `BucheRueckgabeZum`, `repository/ausleihe.go`). Beginnt eine Ausleihe vor
+  `sqlAusleihe` und `BucheRueckgabeZum`, `internal/repository/ausleihe.go`). Beginnt eine Ausleihe vor
   der Rückgabe desselben Exemplars und wartet an dessen Zeilensperre, liegt ihr `ausgeliehen_am`
   vor dem `rueckgabe_am` der vorigen Ausleihe. Im Lasttest am Stand b8080659 (dasselbe Buch an
   20 Theken zugleich) überlappten so 4 Paare von Ausleihen an 3 Exemplaren um 1 bis 19 ms; zwei
@@ -3897,7 +3904,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 - **Der Medienkatalog lädt die ganze Titelliste** (`GET /api/books`, gekappt bei 50.000), am
   lokalen Stack 9.738 Titel mit 4,87 MB, gepackt 0,43 MB. Anlass: Der Katalog öffnet am Server
   spürbar verzögert; dann antwortet der Server mit 304 wie bei den Buchnummern der Theke
-  (`api/theke/buchbarcodes.go`).
+  (`internal/api/theke/buchbarcodes.go`).
 - **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in
   `uploads/` zurück. Ohne gespeichertes Cover zeigt ein Titel, was Google Books oder OpenLibrary
   liefern, für Schulbücher wenig; die DNB fragt nur der Cover-Abgleich. Der Abgleich fragt eine
@@ -3981,13 +3988,13 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `auflagenSuche`, `schuelerSuche`, `portalSuche` und andere); die Prüfung danach hält
   `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
   fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
-  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
+  (`internal/api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
   Bestands-, Listen- und Littera-Import bauen die Dateiwahl je selbst
   (`frontend/src/lib/components/admin/`). Anlass: ein Fehler in einer der Kopien.
 - **Zwei Ordner der Oberfläche heißen nicht nach ihrem Thema.** `frontend/src/inventur/` hält die
   Oberfläche des Medienkatalogs (5.3); „Inventur" heißt sonst der Inventurlauf, und `$lib` zeigt
   dort hinein (`frontend/vite.config.js`, `frontend/jsconfig.json`), nicht auf `src/lib`.
-  `frontend/src/lib/components/admin/` hält Teile der Einstellungen, deren Türen in `api/system`
+  `frontend/src/lib/components/admin/` hält Teile der Einstellungen, deren Türen in `internal/api/system`
   stehen; STIL.md 13 verlangt den Namen des Themas. Anlass: ein Umzug in Stufen wie der von
   `components/students` nach `components/leser`, mit Bau-Vergleich.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
@@ -4028,52 +4035,52 @@ Einstieg.
 
 | Begriff                     | Bedeutung                                                                                                                                                              | Im Code / in der DB                                        |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| **Abgänger**                | Schüler, der bestätigt in der LUSD war und im neuen Export fehlt. Löst Sperre, Karenz und später Löschung aus                                                          | `abgaenger_seit`, `jobs/cron_dsgvo_abgaenger.go`           |
-| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `api/katalog/abgangsbuch.go`, `pdf/abgangsbuch.go`         |
-| **Abholfach**               | Ort, an dem ein für eine Vormerkung reserviertes Exemplar auf Abholung wartet; Hinweis an der Theke trägt Titel und Frist, bewusst ohne IDs                             | `repository/vormerkung_abholfach_pg_test.go`               |
-| **Abwertung**               | Minderung des Ersatzwerts nach Alter und Zustand des Exemplars                                                                                                          | `pkg/ersatzwert`, `repository/ersatzwert_groessen.go`       |
-| **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
+| **Abgänger**                | Schüler, der bestätigt in der LUSD war und im neuen Export fehlt. Löst Sperre, Karenz und später Löschung aus                                                          | `abgaenger_seit`, `internal/jobs/cron_dsgvo_abgaenger.go`           |
+| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `internal/api/katalog/abgangsbuch.go`, `internal/pdf/abgangsbuch.go`         |
+| **Abholfach**               | Ort, an dem ein für eine Vormerkung reserviertes Exemplar auf Abholung wartet; Hinweis an der Theke trägt Titel und Frist, bewusst ohne IDs                             | `internal/repository/vormerkung_abholfach_pg_test.go`               |
+| **Abwertung**               | Minderung des Ersatzwerts nach Alter und Zustand des Exemplars                                                                                                          | `internal/pkg/ersatzwert`, `internal/repository/ersatzwert_groessen.go`       |
+| **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `internal/repository/auflagen.go` |
 | **Art** (des Lesers)        | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus` oder `fachbereich` (Migration 153). Sagt, **wer an der Theke Bücher bekommt** — entscheidet **keine** Rechte | `leser.art`                                                |
-| **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Alter Bestand, Beschädigt, Verlust, Falsch angelegt)                                                                                       | `repository/aussonderung_paritaet_test.go`                  |
-| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**. Die Nummer heißt in der Oberfläche „Ausweisnummer“ (`leser.barcode_id`)                                                             | `internal/ausweis`, `api/druck/ausweis_layout.go`                 |
-| **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
+| **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Alter Bestand, Beschädigt, Verlust, Falsch angelegt)                                                                                       | `internal/repository/aussonderung_paritaet_test.go`                  |
+| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**. Die Nummer heißt in der Oberfläche „Ausweisnummer“ (`leser.barcode_id`)                                                             | `internal/ausweis`, `internal/api/druck/ausweis_layout.go`                 |
+| **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `internal/pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `ladeVorgang` (`internal/service/ausleih_vorgang.go`) |
-| **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/katalog/bestandsbuch.go`                                      |
-| **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/system/betriebsbereitschaft*.go`                              |
+| **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `internal/api/katalog/bestandsbuch.go`                                      |
+| **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `internal/api/system/betriebsbereitschaft*.go`                              |
 | **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode; so heißt die Nummer in der Oberfläche, auch in Zugangs- und Abgangsbuch, wo er die Inventarnummer der Arbeitshilfe ist (mittel_konzept 7.1)                                                                                                                       | `buecher_exemplare`                                        |
-| **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `pkg/ersatzwert`                                            |
+| **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `internal/pkg/ersatzwert`                                            |
 | **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/frist.go`                            |
 | **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/geraet.go`             |
-| **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben; in der Oberfläche „Inventur“, im Code auch Inventurlauf                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
+| **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben; in der Oberfläche „Inventur“, im Code auch Inventurlauf                                                                                            | `inventur_sessions`, `internal/repository/inventurlauf.go`   |
 | **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
 | **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**. In der Oberfläche „Titel“ („Titel anlegen“, „Titel bearbeiten“), nicht „Buch“: Der Katalog führt auch CDs, DVDs und Hörbücher                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
-| **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/rechte_vorgabe.go`            |
+| **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `internal/db/rechte_vorgabe.go`            |
 | **Leser**                   | Jeder Entleiher — Schüler und Kollegium, jeweils mit seiner Art. Eine Tabelle, ein Ausweis-Nummernkreis                                                                 | `leser`                                                    |
 | **Leserdatei**              | Die Liste aller Leser in der Oberfläche                                                                                                                                 | `frontend/src/lib/components/leser/Schuelerdatei.svelte`                  |
-| **Leitung**                 | Rolle: Admin **minus** `manage_users` und `manage_settings` — abgeleitet, nicht abgeschrieben                                                                            | Migration 122, `db/rolle_leitung_test.go`                    |
+| **Leitung**                 | Rolle: Admin **minus** `manage_users` und `manage_settings` — abgeleitet, nicht abgeschrieben                                                                            | Migration 122, `internal/db/rolle_leitung_test.go`                    |
 | **Littera**                 | Die Windows-Vorgängersoftware. Ihr Altbestand kommt über `mdb-export`-CSVs herein; ihre Barcodes dürfen nicht neu geklebt werden                                        | `internal/littera`, `cmd/littera-altbestand`                 |
 | **LiV**                     | Lehrkraft im Vorbereitungsdienst. Eigene Art, gleiche Rechte wie eine Lehrkraft als Entleiher                                                                            | `leser.art = 'liv'`                                         |
-| **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag: Donnerstag vor den Sommerferien, Oberstufe 31. Juli) statt rollierender Frist                                          | `pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
-| **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `pkg/lmfplan`                  |
-| **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/leser/lusd*.go`, [LUSD.md](LUSD.md)                       |
-| **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |
+| **LMF / Lernmittelfreiheit**| Schulbücher, die die Schule dem Schüler für ein Schuljahr leiht. Feste Jahresfrist (Stichtag: Donnerstag vor den Sommerferien, Oberstufe 31. Juli) statt rollierender Frist                                          | `internal/pkg/lmf`, `buecher_titel.ist_lernmittel`                    |
+| **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `internal/pkg/lmfplan`                  |
+| **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `internal/api/leser/lusd*.go`, [LUSD.md](LUSD.md)                       |
+| **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `internal/api/mahnwesen/mahnbriefe.go`                                     |
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
-| **Meldung**                 | Was eine Lehrkraft im Portal meldet; die Liste der Bibliothek heißt „Meldungen“. Im Code heißt sie **Anliegen**, ebenso die Löschfrist „Erledigte Anliegen aufbewahren“, die auch erledigte Klassensatz-Reservierungen löscht | `lehrer_anliegen`, `api/portal/anliegen.go` |
-| **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
-| **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`         |
+| **Meldung**                 | Was eine Lehrkraft im Portal meldet; die Liste der Bibliothek heißt „Meldungen“. Im Code heißt sie **Anliegen**, ebenso die Löschfrist „Erledigte Anliegen aufbewahren“, die auch erledigte Klassensatz-Reservierungen löscht | `lehrer_anliegen`, `internal/api/portal/anliegen.go` |
+| **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `internal/repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
+| **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `internal/api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`         |
 | **Omnibox**                 | Das **eine** Eingabefeld der Theke für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/components/omnibox/Omnibox.svelte` |
-| **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/portal/opac.go`                                               |
-| **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`repository/signatur_praefix.go`) |
+| **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `internal/api/portal/opac.go`                                               |
+| **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`internal/repository/signatur_praefix.go`) |
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |
 | **Schnellrückgabe**         | Modus der Theke für einen Stapel vom Rückgabetisch: Jeder Scan nimmt nur zurück und leiht nie aus; ein gescannter Ausweis beendet ihn | `stores/omnibox.svelte.js`, `OmniboxSchnellrueckgabe.svelte` |
-| **Signatur / Systematik**   | Ordnungsbegriff im Regal. Der Teil vor „ / " ist die **Regaladresse**; wo ein einzelnes Stück abweichend steht, sagt der **Standort** | `systematik_kategorien`, `repository/signatur_praefix.go` |
-| **Standort**                | Wo ein Exemplar steht, wenn nicht an seinem Platz nach der Signatur (etwa „Bibliothek, Regal 3B"). Kommt aus Littera mit; ein neues Exemplar erbt ihn, wenn alle übrigen des Titels denselben tragen | `buecher_exemplare.standort`, `repository/exemplar_standort.go` |
+| **Signatur / Systematik**   | Ordnungsbegriff im Regal. Der Teil vor „ / " ist die **Regaladresse**; wo ein einzelnes Stück abweichend steht, sagt der **Standort** | `systematik_kategorien`, `internal/repository/signatur_praefix.go` |
+| **Standort**                | Wo ein Exemplar steht, wenn nicht an seinem Platz nach der Signatur (etwa „Bibliothek, Regal 3B"). Kommt aus Littera mit; ein neues Exemplar erbt ihn, wenn alle übrigen des Titels denselben tragen | `buecher_exemplare.standort`, `internal/repository/exemplar_standort.go` |
 | **Theke**                   | Der Arbeitsplatz mit Scanner; „Kiosk" meint dasselbe aus Sicht der Bauform                                                                                               | `frontend/src/lib/components/omnibox/Omnibox.svelte`, `stores/thekeLeeren.js`    |
 | **Verweis**                 | Schreibweise, die auf ein Schlagwort umleitet („Tierfantasy“ → „Fantasy“): am Titel und in der Suche gilt das Ziel. Trägt selbst keine Titel                           | `schlagworte.verweis_auf` (Migration 143)                  |
-| **Vormerkung**              | Reservierung eines Exemplars durch einen Leser; rückt bei Rückgabe nach und wird „abholbereit"                                                                           | `vormerkungen`, `repository/vormerkung_nachruecken.go`        |
+| **Vormerkung**              | Reservierung eines Exemplars durch einen Leser; rückt bei Rückgabe nach und wird „abholbereit"                                                                           | `vormerkungen`, `internal/repository/vormerkung_nachruecken.go`        |
 | **Werk**                    | Das Buch über seinen **Auflagen**: Titel mit derselben `werk_id` sind Auflagen desselben Buchs; Exemplar, Etikett und Ausleihe bleiben an der Auflage. Ein Titel ohne Werk ist sein eigenes | `werke`, `buecher_titel.werk_id` (Migration 148), gelesen über `COALESCE(werk_id, id)` |
 
 ---
@@ -4104,7 +4111,7 @@ Einstieg.
 | **Omnibox-Vorsilbe**         | `B-` Buch, `A-` Ausweis (neu), `S-`/`L-` Ausweis (historisch, wird gelesen), `G-` Gerät. Offline die **einzige** Unterscheidung                                  |
 | **PII-Stufe**                | Einordnung einer Route nach Schülerdaten (0–3) in [PII_MATRIX.de.md](PII_MATRIX.de.md), von drei Gates gehalten                                              |
 | **Übernahme**                | Einmaliger Import eines Altbestands mit Savepoint je Datensatz und Abgleich gegen den tatsächlichen Zeilenzuwachs                                               |
-| **Schulzeit**                | „Jetzt" aus Sicht der Schule: Schuljahr, Stichtage, Kalendertag (`pkg/schulzeit`)                                                                               |
+| **Schulzeit**                | „Jetzt" aus Sicht der Schule: Schuljahr, Stichtage, Kalendertag (`internal/pkg/schulzeit`)                                                                               |
 
 ---
 

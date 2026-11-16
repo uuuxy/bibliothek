@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// TestMeldungZeigtNurDieMeldung: Die Theke zeigt MeldungAus(err) (api/theke/eingabe.go). Stünde
+// TestMeldungZeigtNurDieMeldung: Die Theke zeigt MeldungAus(err) (internal/api/theke/eingabe.go). Stünde
 // dort die Bezeichnung der Fehlerart vor der Meldung („Fehler: conflict: dieses Exemplar wurde
 // soeben bereits ausgeliehen"), wäre es kein Satz für den Bildschirm (M3, Word choice: „UI text
 // should be understandable by anyone, anywhere"). Der Text des Fehlers beginnt dagegen mit der

@@ -1,0 +1,298 @@
+// Package apierrors schreibt die Fehlerantworten der API in einer Form und ordnet einem Fehler
+// seinen HTTP-Status zu. Ein 500 trägt nie den Text des Fehlers; der steht im Protokoll des
+// Servers.
+package apierrors
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log/slog"
+	"net/http"
+	"strings"
+)
+
+// MeldungAnfrageUnlesbar ist die Meldung zu einem Rumpf oder Cookie, der sich nicht in die
+// erwartete Form lesen lässt. Die Oberfläche schickt so etwas nur mit einem Fehler im Programm;
+// die Einzelheit steht im Log. Sie steht hier, weil auth und die Türen unter internal/api/ sie teilen.
+const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
+
+// meldungInternerFehler ist die Meldung eines 500, der nichts aus dem Server nennt: Vorgabe von
+// Internal und Satz von AntworteFehler bei jedem 500.
+const meldungInternerFehler = "Ein interner Serverfehler ist aufgetreten"
+
+// meldungOhneSatz ist die Meldung eines Fehlerstatus außer 500, zu dem kein Satz kommt: eine
+// Ursache ohne Meldung oder gar keine. Der Text eines Fehlers ist für das Log geschrieben, klein
+// und oft englisch (docs/STIL.md, Abschnitt 11); er geht deshalb nie hinaus.
+const meldungOhneSatz = "Die Anfrage ließ sich nicht ausführen"
+
+// Fehler ist die Antwort einer Tür, die scheitert: Status und Meldung gehen an die Oberfläche,
+// die Ursache bleibt im Server.
+type Fehler struct {
+	Status  int    `json:"-"`
+	Meldung string `json:"error"`
+	Ursache error  `json:"-"`
+}
+
+// Error nennt Meldung und Ursache, wie sie das Log des Servers schreibt.
+func (e *Fehler) Error() string {
+	if e.Ursache != nil {
+		return e.Meldung + ": " + e.Ursache.Error()
+	}
+	return e.Meldung
+}
+
+// Unwrap gibt die Ursache frei, damit errors.Is und errors.As sie finden.
+func (e *Fehler) Unwrap() error {
+	return e.Ursache
+}
+
+// New baut einen Fehler aus Status, Meldung und Ursache.
+func New(status int, meldung string, ursache error) *Fehler {
+	return &Fehler{
+		Status:  status,
+		Meldung: meldung,
+		Ursache: ursache,
+	}
+}
+
+// NotFound baut einen 404; ohne eigene Meldung gilt die Vorgabe. Die Ursache bleibt am Fehler
+// und geht nicht an die Oberfläche.
+func NotFound(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Ressource nicht gefunden"
+	}
+	return New(http.StatusNotFound, meldung, ursache)
+}
+
+// BadRequest baut einen 400 für einen Bedienfehler, den die Person selbst beheben kann.
+func BadRequest(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Ungültige Anfrage"
+	}
+	return New(http.StatusBadRequest, meldung, ursache)
+}
+
+// Internal baut einen 500. Über MitFehlerantwort geht die Meldung so hinaus, wie sie hier steht,
+// die Ursache nur ins Log; anders als AntworteFehler ersetzt dieser Weg die Meldung eines 500
+// nicht durch eine neutrale. Die Meldung nennt deshalb nichts aus dem Server.
+func Internal(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = meldungInternerFehler
+	}
+	return New(http.StatusInternalServerError, meldung, ursache)
+}
+
+// Unauthorized baut einen 401 für eine fehlende oder abgelaufene Anmeldung. „Angemeldet, aber
+// ohne Recht" ist ein 403, den die Prüfung der Rechte selbst schreibt.
+func Unauthorized(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Nicht autorisiert"
+	}
+	return New(http.StatusUnauthorized, meldung, ursache)
+}
+
+// Conflict baut einen 409: Die Anfrage war gültig, aber der Stand hat sich inzwischen geändert,
+// etwa weil das Exemplar gerade ausgeliehen wurde. Die Oberfläche lädt neu, statt zu
+// wiederholen.
+func Conflict(meldung string, ursache error) *Fehler {
+	if meldung == "" {
+		meldung = "Konflikt mit dem aktuellen Stand"
+	}
+	return New(http.StatusConflict, meldung, ursache)
+}
+
+// TuerMitFehler ist eine Tür, die ihren Fehler zurückgibt, statt die Antwort selbst zu
+// schreiben.
+type TuerMitFehler func(w http.ResponseWriter, r *http.Request) error
+
+// statusAbgebrochen ist der Status 499 aus nginx: Der Browser hat die Verbindung aufgegeben,
+// bevor die Antwort fertig war. Das ist kein Fehler des Servers; er steht nicht auf der
+// Fehlerstufe im Log und zählt in keinem Alarm.
+const statusAbgebrochen = 499
+
+// istAbbruch erkennt einen Fehler aus einem abgebrochenen Kontext der Anfrage; pgx und
+// net/http reichen context.Canceled eingewickelt weiter, errors.Is findet es.
+func istAbbruch(err error) bool {
+	return err != nil && errors.Is(err, context.Canceled)
+}
+
+func antworteAbbruch(w http.ResponseWriter) {
+	schreibeFehlerJSON(w, statusAbgebrochen, "Anfrage vom Client abgebrochen")
+}
+
+// MitFehlerantwort macht aus einer TuerMitFehler eine gewöhnliche Tür. Ein Fehler vom Typ
+// Fehler geht mit seinem Status und seiner Meldung hinaus, jeder andere als neutraler 500.
+func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := tuer(w, r)
+		if err != nil {
+			// Der Kontext der Anfrage ist die sicherste Quelle: Auch ein Fehler, der
+			// context.Canceled nicht einwickelt, ist nach einem Abbruch kein Serverfehler.
+			if istAbbruch(err) || errors.Is(r.Context().Err(), context.Canceled) {
+				antworteAbbruch(w)
+				return
+			}
+			var fehler *Fehler
+			if errors.As(err, &fehler) {
+				if zeile, ok := logZeile(fehler.Meldung, fehler.Ursache); ok && fehler.Status >= 500 {
+					schreibeLogzeile(w, fehler.Status, zeile, fehler.Ursache)
+				}
+				schreibeFehlerJSON(w, fehler.Status, fehler.Meldung)
+			} else {
+				AntworteFehler(w, http.StatusInternalServerError, err)
+			}
+		}
+	}
+}
+
+// AntworteFehler schreibt den Fehler ins Log und antwortet mit einer Meldung, die keine
+// Einzelheit des Servers verrät. Außer bei 500 ist die Meldung eines Fehlers vom Typ Fehler in
+// der Kette die Meldung, sonst meldungOhneSatz; den Satz für einen anderen Fehler nennt der Rufer
+// mit AntworteFehlerMitMeldung.
+func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
+	AntworteFehlerMitMeldung(w, status, "", ursache)
+}
+
+// AntworteFehlerMitMeldung trennt, was die Oberfläche liest, von dem, was ins Log geht: Die
+// Meldung geht hinaus, die Ursache ganz ins Log. Der Rufer nennt den Satz, weil eine Ursache wie
+// ein Verbindungsabriss weder SQL noch eine Bedingung nennt und am Filter vorbeiginge.
+//
+// Eine leere Meldung nimmt die Meldung eines Fehlers vom Typ Fehler in der Kette, wie
+// MitFehlerantwort, sonst meldungOhneSatz. Ohne Ursache steht die Meldung im Log, wie sonst die
+// Ursache. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose braucht 400, 409 oder 502.
+func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string, ursache error) {
+	if istAbbruch(ursache) {
+		antworteAbbruch(w)
+		return
+	}
+	if zeile, ok := logZeile(meldung, ursache); ok {
+		schreibeLogzeile(w, status, zeile, ursache)
+	}
+
+	text := meldungOhneSatz
+	if status != http.StatusInternalServerError {
+		var fehler *Fehler
+		switch {
+		case meldung != "":
+			text = meldung
+		case errors.As(ursache, &fehler):
+			text = fehler.Meldung
+		}
+	}
+
+	// Geprüft wird der Text, der hinausgeht: Auch eine Meldung kann aus Versehen den Text einer
+	// Abfrage tragen.
+	ausDerDatenbank := istDatenbankFehler(strings.ToLower(text))
+
+	if status == http.StatusInternalServerError || ausDerDatenbank {
+		text = neutraleMeldung(ursache)
+	}
+
+	schreibeFehlerJSON(w, status, text)
+}
+
+// ursachenMerker nimmt die Ursache einer Antwort mit 5xx auf. Wer ihn in die Kette der Writer
+// stellt, schreibt die eine Zeile zur Anfrage selbst, mit Route, Pfad und Status
+// (api.logMiddleware): So steht ein Serverfehler einmal im Log und zählt einmal.
+type ursachenMerker interface {
+	MerkeUrsache(ursache string)
+}
+
+// schreibeLogzeile schreibt die Zeile zu einer Fehlerantwort. Die Ursache eines 5xx geht an den
+// ursachenMerker in der Kette des Writers; nur ohne ihn steht hier eine Zeile der Stufe ERROR.
+func schreibeLogzeile(w http.ResponseWriter, status int, zeile string, ursache error) {
+	if status >= http.StatusInternalServerError && merkeUrsache(w, zeile) {
+		return
+	}
+	if stufeDerFehlerantwort(status, ursache) == slog.LevelError {
+		slog.Error("Fehlerantwort", "status", status, "fehler", zeile)
+		return
+	}
+	slog.Info("Fehlerantwort", "status", status, "fehler", zeile)
+}
+
+// merkeUrsache gibt die Ursache an den ursachenMerker in der Kette des Writers und sagt, ob es
+// einen gab. Jede Hülle reicht mit Unwrap weiter, wie es http.ResponseController verlangt.
+func merkeUrsache(w http.ResponseWriter, zeile string) bool {
+	for {
+		if merker, ok := w.(ursachenMerker); ok {
+			merker.MerkeUrsache(zeile)
+			return true
+		}
+		huelle, ok := w.(interface{ Unwrap() http.ResponseWriter })
+		if !ok {
+			return false
+		}
+		w = huelle.Unwrap()
+	}
+}
+
+// stufeDerFehlerantwort ist die Stufe der Zeile zu einer Fehlerantwort ohne ursachenMerker. Ein 4xx
+// ist eine abgelehnte Eingabe und kein Fehler des Servers; als ERROR zählte jeder falsche Scan an
+// der Theke mit. Ein 5xx ohne Ursache steht als INFO: Den Fehler zählt die Zeile zum Status, die
+// logMiddleware schreibt (internal/api/middleware.go), und die nennt einen Abbruch des Browsers nicht als
+// Fehler. Als ERROR zählte er doppelt, und ein Abbruch bliebe einer.
+func stufeDerFehlerantwort(status int, ursache error) slog.Level {
+	if status >= http.StatusInternalServerError && ursache != nil {
+		return slog.LevelError
+	}
+	return slog.LevelInfo
+}
+
+// logZeile ist der Text im Feld "fehler" zu einer Fehlerantwort: die Ursache, ohne sie die
+// Meldung. Ohne beides gibt es keinen Eintrag.
+func logZeile(meldung string, ursache error) (string, bool) {
+	switch {
+	case ursache != nil:
+		return ursache.Error(), true
+	case meldung != "":
+		return meldung, true
+	}
+	return "", false
+}
+
+// schreibeFehlerJSON legt fest, wie jede Fehlerantwort aussieht: {"error": meldung} mit Status
+// und Content-Type. AntworteFehler und MitFehlerantwort schreiben beide hierüber, damit sich die
+// Oberfläche auf eine Form verlassen kann.
+func schreibeFehlerJSON(w http.ResponseWriter, status int, meldung string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": meldung}) //nolint:errcheck
+}
+
+// istDatenbankFehler erkennt einen Text aus der Datenbank (SQL, Bedingungen, Meldungen des
+// Treibers), der nie ungefiltert an die Oberfläche geht. Der Text ist klein geschrieben. DELETE
+// zählt nur mit FROM, wie es in SQL immer steht: Allein ist es auch eine Methode von HTTP, und
+// die nennt die Meldung zu einem unbekannten Endpunkt.
+func istDatenbankFehler(text string) bool {
+	return strings.Contains(text, "pgx") ||
+		strings.Contains(text, "pgconn") ||
+		strings.Contains(text, "sql:") ||
+		strings.Contains(text, "unique constraint") ||
+		strings.Contains(text, "foreign key") ||
+		strings.Contains(text, "duplicate key") ||
+		strings.Contains(text, "violates") ||
+		strings.Contains(text, "insert into") ||
+		strings.Contains(text, "select ") ||
+		strings.Contains(text, "update ") ||
+		strings.Contains(text, "delete from")
+}
+
+// neutraleMeldung liefert die Meldung für einen Fehler im Server; zwei bekannte Verletzungen
+// einer Bedingung nennt sie in Worten der Bibliothek. Ohne Ursache gilt die allgemeine Meldung,
+// damit ein 500 ohne Ursache wie jeder andere deutsch antwortet.
+func neutraleMeldung(ursache error) string {
+	var text string
+	if ursache != nil {
+		text = ursache.Error()
+	}
+	switch {
+	case strings.Contains(text, "23505") || strings.Contains(text, "unique_violation") || strings.Contains(text, "duplicate key"):
+		return "Ein Eintrag mit denselben Angaben besteht bereits"
+	case strings.Contains(text, "23503") || strings.Contains(text, "foreign_key_violation"):
+		return "Das geht nicht, weil verknüpfte Daten bestehen"
+	default:
+		return meldungInternerFehler
+	}
+}

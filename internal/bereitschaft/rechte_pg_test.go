@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Die Kette an Postgres: Der Seed schreibt die Vorgabe, die Abfrage liest sie zurück, die

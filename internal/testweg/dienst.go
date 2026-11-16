@@ -16,8 +16,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
-	"bibliothek/repository"
 )
 
 // BucheAusleiheUeberDienst leiht ein Exemplar an einen Schüler aus, über denselben Dienst wie

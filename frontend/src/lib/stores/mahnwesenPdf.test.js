@@ -96,7 +96,7 @@ describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 		expect(store.drucktPdf).toBe(false);
 	});
 
-	// Der Druck zählt die Mahnung (api/mahnwesen/mahnbriefe.go). Ginge die Anfrage hinaus, obwohl
+	// Der Druck zählt die Mahnung (internal/api/mahnwesen/mahnbriefe.go). Ginge die Anfrage hinaus, obwohl
 	// der Tab blockiert ist, wäre gemahnt, ohne dass jemand den Brief sieht.
 	it('fragt bei blockiertem Tab nicht an und behält die Auswahl', async () => {
 		fenster = null;

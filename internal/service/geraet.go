@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/leserart"
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

@@ -107,7 +107,7 @@ test('Zwei Sicherungen auf einmal: jeder Vorgang geht einmal hinaus, und eine Da
 	]);
 
 	// Dieselbe Datei noch einmal: Zu einem Schlüssel, den er schon gebucht hat, wiederholt der
-	// Server seine Antwort und bucht nichts (api/theke/nachbuchen_schluessel.go).
+	// Server seine Antwort und bucht nichts (internal/api/theke/nachbuchen_schluessel.go).
 	lauf.ergebnisse.length = 0;
 	await spieleEin(page, { 'rechner-a.json': rechnerA });
 	await expect(page.getByText('2 Vorgang/Vorgänge aus 1 Datei(en) übernommen')).toBeVisible();

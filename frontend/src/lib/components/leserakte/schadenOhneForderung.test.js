@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 
 // Ein Kollege bekommt keine Forderung (entschieden am 16.09.2026). Entschieden wird das am
-// Server (repository/schaden_melden.go); der Dialog darf dann aber auch nicht nach einem
+// Server (internal/repository/schaden_melden.go); der Dialog darf dann aber auch nicht nach einem
 // Betrag fragen, den niemand fordern wird — sonst tippt die Bibliothekskraft eine Zahl ein,
 // die spurlos verschwindet, und wartet danach auf einen Bescheid, der nie kommt.
 describe('Verlust/Schaden melden', () => {

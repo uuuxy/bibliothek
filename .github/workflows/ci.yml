@@ -125,7 +125,7 @@ jobs:
     - name: Deadcode-Gate
       run: ./scripts/deadcode_gate.sh
 
-    # pg_dump/psql werden von der Restore-Probe (jobs/backup_drill_pg_test.go)
+    # pg_dump/psql werden von der Restore-Probe (internal/jobs/backup_drill_pg_test.go)
     # gebraucht: Sie erzeugt ein echtes verschlüsseltes Backup und spielt es in eine
     # frische Datenbank zurück. Fehlen die Werkzeuge, überspringt sich der Test selbst
     # — und ein übersprungener Notfallplan ist schlimmer als gar keiner, weil er wie
@@ -170,7 +170,7 @@ jobs:
 
     # Was hat dieser Lauf nicht ausgeführt? Ein übersprungener Prüfpunkt sieht aus wie ein
     # bestandener. Ob eine Prüfung laufen muss, entscheiden die Guards im Go-Code
-    # (db/pgtest_guard_test.go für die DB-Invarianten, jobs/restore_drill_guard_test.go für
+    # (internal/db/pgtest_guard_test.go für die DB-Invarianten, internal/jobs/restore_drill_guard_test.go für
     # den Notfallplan); sie stehen neben dem, was sie bewachen.
     #
     # Dieser Schritt bricht deshalb nichts ab. Er schreibt die Bilanz ins Log, damit ein neuer

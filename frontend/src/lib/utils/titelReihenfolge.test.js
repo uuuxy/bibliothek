@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import pruefung from './titelReihenfolge.faelle.json';
 
 // Die Titelliste ordnet der Server (GET /api/books, sortiereBuecherNachTitel in
-// api/katalog/titel_lesen.go). Die Listen der Oberfläche ordnen mit dieser Regel.
+// internal/api/katalog/titel_lesen.go). Die Listen der Oberfläche ordnen mit dieser Regel.
 // Beide Seiten lesen dieselben Fälle; der Go-Test steht in endpunkte_buecher_lesen_test.go.
 const ORDNUNG = new Intl.Collator('de', { numeric: true });
 

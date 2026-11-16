@@ -11,7 +11,7 @@ import {
 // Mehrere Schlagworte auf einmal löschen (docs/OFFEN.md 4.20, wie Littera „Datenbearbeitung")
 // über den Klickpfad bis in die Datenbank: markieren, die Leiste unten löscht, die Rückfrage
 // nennt Wörter, Titelzahl und den Verweis, der mitfällt. Die Regeln (alle oder keins, jeder
-// Titel einmal gezählt) beweist repository/schlagworte_loeschen_pg_test.go; hier geht es darum,
+// Titel einmal gezählt) beweist internal/repository/schlagworte_loeschen_pg_test.go; hier geht es darum,
 // dass genau die markierten Kennungen die Tür erreichen — und die nicht markierte nicht.
 test('Schlagwort-Pflege: mehrere Wörter auf einmal löschen', async ({ page }) => {
 	const s = uniqueSuffix().slice(0, 6);

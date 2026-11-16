@@ -7,10 +7,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/katalogdienste"
-	"bibliothek/pkg/safego"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/safego"
+	"bibliothek/internal/repository"
 )
 
 // CoverDienst holt die Cover der Titel im Hintergrund von den Katalogdiensten.

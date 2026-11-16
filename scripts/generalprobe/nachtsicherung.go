@@ -11,7 +11,7 @@
 package main
 
 import (
-	"bibliothek/jobs"
+	"bibliothek/internal/jobs"
 	"context"
 )
 

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/testdaten"
-	"bibliothek/pkg/schulzeit"
 )
 
 // „Ansch.J.“ auf dem Etikett ist das Jahr, in dem das Buch in den Bestand kam (zugang_am);

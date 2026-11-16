@@ -144,7 +144,7 @@ export const menueGruppen = [
 				// Unter Verwaltung, nicht an der Theke: Mahnen ist Schülerarbeit, keine
 				// Thekenarbeit. view_students wie die Mahnliste (/api/mahnwesen): Mit einem
 				// anderen Recht als seine Route sähe, wer mahnen darf, den Punkt nicht. Geprüft
-				// in api/rechte_paritaet_test.go.
+				// in internal/api/rechte_paritaet_test.go.
 				id: 'mahnwesen',
 				label: 'Mahnwesen',
 				icon: 'bell',
@@ -175,10 +175,10 @@ export const menueGruppen = [
 				// täglichen Arbeit im Weg.
 				//
 				// Recht: view_books wie der übrige Blick auf den Bestand — die vier Türen
-				// dahinter verlangen dasselbe (api/routen_katalog.go), und ein Menüpunkt, der
+				// dahinter verlangen dasselbe (internal/api/routen_katalog.go), und ein Menüpunkt, der
 				// enger ist als seine Route, schützt nichts: Die Adresse bleibt offen. Wer den
 				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt beide Seiten auf
-				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/rechte_vorgabe.go).
+				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, internal/db/rechte_vorgabe.go).
 				id: 'bestandsbuecher',
 				label: 'Bestandsbücher',
 				icon: 'book-marked',

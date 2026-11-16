@@ -1,0 +1,165 @@
+package theke
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"strings"
+	"time"
+
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/repository"
+)
+
+// Die Barcode-Liste der Theke für die Arbeit ohne Netz.
+//
+// Ohne Netz muss der Theken-Rechner eine nackte Ziffernfolge selbst einordnen: Buch oder
+// Ausweis? Die Vorsilben B-/LMF- und S-/L- sagen es; die Littera-Etiketten des Altbestands
+// und die alten Ausweise sagen es nicht — ein Schülerausweis liefert einen Buchstaben und elf
+// Ziffern (etwa `B12345678901`), ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
+// laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
+// auf.
+//
+// Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
+// Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett
+// rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/utils/litteraEtikett.js,
+// dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch; sonst
+// gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. Keine
+// Personendaten: nur Buchnummern.
+//
+// Bewusst ohne LIMIT, anders als jede andere Listen-Route
+// (vgl. internal/api/system/protokoll_grenze_pg_test.go).
+// Eine halbe Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
+// „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
+// Bestand begrenzt und wächst nicht von selbst weiter (rund 35.000 Exemplare erwartet,
+// je Zeile ~14 Byte). Größe und Dauer stehen im Log jeder Auslieferung, damit die Annahme
+// am Server überprüfbar bleibt statt geschätzt.
+
+// buchbarcodesWarnAb: Ab dieser Antwortgröße (vor dem Packen) steht eine Warnung im Log.
+// Kein Abbruch — die Liste bleibt richtig; die Zeile sagt nur, dass die Annahme „passt
+// bequem" kippt.
+const buchbarcodesWarnAb = 4 << 20 // 4 MB
+
+// buchbarcodesAntwort ist die Liste für den Theken-Rechner.
+type buchbarcodesAntwort struct {
+	// Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt
+	// ihn neben die Liste und schickt ihn beim nächsten Holen mit.
+	Stand string `json:"stand"`
+	// Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.
+	Anzahl int `json:"anzahl"`
+	// Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.
+	Barcodes []string `json:"barcodes"`
+}
+
+// Buchbarcodes liefert die Barcodes aller Exemplare, auch der ausgesonderten.
+func (t *Tueren) Buchbarcodes() http.HandlerFunc {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
+		begonnen := time.Now()
+
+		// Der Stand kommt aus Anzahl und jüngster Änderung, eine Abfrage ohne die Liste.
+		// Ein unveränderter Bestand spart damit die ganze Auslieferung. Ausgesonderte zählen
+		// mit, denn sie stehen auch in der Liste.
+		kennzahl, err := repository.LadeBuchbarcodeStand(ctx, t.DB.Pool)
+		if err != nil {
+			return apierrors.Internal("Buch-Barcodes konnten nicht gezählt werden", err)
+		}
+		stand := buchbarcodesStand(kennzahl)
+
+		// no-cache an der 200 und an der 304: Eine 304 bringt den Cache-Control-Kopf mit, den
+		// die 200 hätte (RFC 9110, 15.4.5); fehlte er, stünde an der 304 die Vorgabe no-store
+		// der Schnittstelle (internal/middleware/sicherheitskopfzeilen.go). no-cache statt
+		// no-store, weil die Liste nur Buchnummern trägt: erneut fragen, aber der ETag darf
+		// sparen.
+		w.Header().Set("Cache-Control", "no-cache")
+
+		// Unverändert: Der Rechner behält seine Liste. Das ist der Normalfall — der
+		// Bestand ändert sich selten, angemeldet wird täglich.
+		if passtStand(r.Header.Get("If-None-Match"), stand) {
+			w.Header().Set("ETag", `"`+stand+`"`)
+			w.WriteHeader(http.StatusNotModified)
+			return nil
+		}
+
+		barcodes, err := repository.LadeBuchbarcodes(ctx, t.DB.Pool, kennzahl.Anzahl)
+		if err != nil {
+			return apierrors.Internal("Buch-Barcodes konnten nicht gelesen werden", err)
+		}
+		antwort := buchbarcodesAntwort{Stand: stand, Anzahl: len(barcodes), Barcodes: barcodes}
+
+		w.Header().Set("ETag", `"`+stand+`"`)
+		groesse, err := schreibeGezaehlt(w, antwort)
+		if err != nil {
+			// Nach dem ersten geschriebenen Byte hilft kein Statuscode mehr — nur das Log.
+			slog.Warn("buchbarcodes: Antwort abgebrochen", "anzahl", antwort.Anzahl, "fehler", err)
+			return nil
+		}
+		if groesse > buchbarcodesWarnAb {
+			slog.Warn("buchbarcodes: die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (internal/api/theke/buchbarcodes.go)", "anzahl", antwort.Anzahl, "groesse", groesse, "dauer", time.Since(begonnen).Round(time.Millisecond).String())
+			return nil
+		}
+		slog.Info("buchbarcodes ausgeliefert", "anzahl", antwort.Anzahl, "groesse", groesse, "dauer", time.Since(begonnen).Round(time.Millisecond).String())
+		return nil
+	})
+}
+
+// buchbarcodesStand baut den Merker aus der Kennzahl des Bestands.
+func buchbarcodesStand(k repository.BuchbarcodeStand) string {
+	roh := fmt.Sprintf("%d|", k.Anzahl)
+	if k.Juengste != nil {
+		roh += k.Juengste.UTC().Format(time.RFC3339Nano)
+	}
+	summe := sha256.Sum256([]byte(roh))
+	return hex.EncodeToString(summe[:16])
+}
+
+// passtStand prüft den If-None-Match-Kopf gegen den Stand. Der Kopf darf mehrere Werte
+// tragen und die Anführungszeichen führen; W/ (schwach) gilt hier wie stark, weil der
+// Stand ohnehin nur die Fassung benennt.
+func passtStand(kopf, stand string) bool {
+	if kopf == "" {
+		return false
+	}
+	for _, teil := range strings.Split(kopf, ",") {
+		t := strings.TrimSpace(teil)
+		t = strings.TrimPrefix(t, "W/")
+		if strings.Trim(t, `"`) == stand {
+			return true
+		}
+	}
+	return false
+}
+
+// schreibeGezaehlt schreibt die Antwort als JSON und liefert ihre Größe vor dem Packen.
+// Gepackt wird sie wie jede Antwort in der Kette (kompressionMiddleware).
+func schreibeGezaehlt(w http.ResponseWriter, daten any) (int, error) {
+	w.Header().Set("Content-Type", "application/json")
+	z := &zaehlendeSchreiber{w: w}
+	err := json.NewEncoder(z).Encode(daten)
+	return z.n, err
+}
+
+// zaehlendeSchreiber zählt die Bytes der Antwort, bevor die Kette sie packt: Die Zahl im
+// Log nennt die Größe der Liste, wie der Theken-Rechner sie hält.
+//
+// CodeQL meldet hier go/reflected-xss (Alarm 30) und liegt falsch. Der
+// gemeldete Weg führt vom Anfragekörper des Mahnwesens über internal/mailservice/mail_sender.go zu
+// `part.Write([]byte(req.Body))` — und von dort hierher: `part` ist ein io.Writer, und
+// CodeQL löst den Aufruf gegen jede Write([]byte)-Methode des Programms auf, auch gegen
+// diese. In Wirklichkeit schreibt die Mail nie in diesen Schreiber, und die Antwort
+// dieser Tür enthält keinen Wert aus der Anfrage: nur den Stand (SHA-256 über
+// Bestandszahlen), die Anzahl und die Barcodes aus der Datenbank. Wer den Alarm erneut
+// sieht: Es ist die Überannäherung der Schnittstellen-Auflösung, nicht der Content-Type.
+type zaehlendeSchreiber struct {
+	w http.ResponseWriter
+	n int
+}
+
+func (z *zaehlendeSchreiber) Write(p []byte) (int, error) {
+	n, err := z.w.Write(p)
+	z.n += n
+	return n, err
+}

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Der Text der Bestellmail an den Lieferanten: Vorlage laden, Platzhalter ersetzen und die zwei

@@ -18,7 +18,7 @@ import { omniboxStore } from '../../stores/omnibox.svelte.js';
 import { authStore } from '../../stores/authStore.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 
-// So kommt der Leser aus der Antwort auf den Scan an (api/theke/theken_leser.go): ohne
+// So kommt der Leser aus der Antwort auf den Scan an (internal/api/theke/theken_leser.go): ohne
 // Abgangsjahr, Sperrgrund, Foto und Forderungen.
 const AUS_DEM_SCAN = {
 	id: 'l-1',

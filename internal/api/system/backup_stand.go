@@ -1,0 +1,78 @@
+package system
+
+// Der Wächter der Backups. Der nächtliche Backup-Job (internal/jobs/backup.go) überspringt sich still,
+// wenn BACKUP_ENCRYPTION_KEY fehlt; ohne diese Tür fiele das erst beim Versuch einer
+// Wiederherstellung auf. Der Wächter prüft den Schlüssel und das Alter der jüngsten
+// backup_*.sql.gz.enc-Datei im BACKUP_DIR.
+
+import (
+	"net/http"
+	"os"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/jobs"
+	"bibliothek/internal/repository"
+)
+
+// backupStandAntwort beschreibt den Zustand der nächtlichen Datenbank-Backups.
+type backupStandAntwort struct {
+	LetztesBackup     *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
+	SchluesselGesetzt bool       `json:"encryption_key_set"`
+	SchluesselSchwach bool       `json:"encryption_key_weak"` // gesetzt, aber zu kurz (unter MinBackupSchluesselLaenge)
+	// "ok" | "warning" | "critical", oder "aus", wenn die Schule die eigene Sicherung abgeschaltet
+	// hat (Einstellungen → Sicherung): Dann gibt es nichts anzumahnen.
+	Status string `json:"status"`
+}
+
+// juengstesBackup liefert den Zeitpunkt der jüngsten Sicherung (jobs.BackupDatei.SicherungsZeit)
+// oder nil, wenn (noch) keine existiert. Nach dem Zurückspielen des Ordners meldete die
+// Änderungszeit eine frische Sicherung, auch wenn seit Wochen keine entstanden ist. Eine Datei ohne
+// den Kopf des Formats zählt nicht (jobs.BackupDatei.HatKopf). Ein fehlendes Verzeichnis ist kein
+// Fehler, sondern schlicht "kein Backup vorhanden".
+func juengstesBackup(verzeichnis string) *time.Time {
+	dateien, err := jobs.LeseBackupDateien(verzeichnis)
+	if err != nil || len(dateien) == 0 {
+		return nil
+	}
+	var juengstes time.Time
+	for _, d := range dateien {
+		if zeit := d.SicherungsZeit(); zeit.After(juengstes) && d.HatKopf(verzeichnis) {
+			juengstes = zeit
+		}
+	}
+	if juengstes.IsZero() {
+		return nil
+	}
+	return &juengstes
+}
+
+// BackupStand liefert den Zustand der Backups für den Fuß der Navigation und die Warnung
+// über dem Inhalt.
+// GET /api/admin/system/backup-status
+func (t *Tueren) BackupStand() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		schluessel := os.Getenv("BACKUP_ENCRYPTION_KEY")
+		gesetzt := schluessel != ""
+		schwach := jobs.IstSchluesselSchwach(schluessel)
+
+		verzeichnis := os.Getenv("BACKUP_DIR")
+		if verzeichnis == "" {
+			verzeichnis = "./backups" // dieselbe Vorgabe wie internal/jobs/backup.go
+		}
+		letztes := juengstesBackup(verzeichnis)
+
+		status := jobs.BackupStatus(gesetzt, schwach, letztes, time.Now())
+		// Nicht lesbar zählt wie eingeschaltet: lieber einmal zu viel gemahnt als eine fehlende
+		// Sicherung verschwiegen.
+		if einst, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(r.Context()); err == nil && !einst.SicherungAn {
+			status = "aus"
+		}
+		tuer.AntworteJSON(w, http.StatusOK, backupStandAntwort{
+			LetztesBackup:     letztes,
+			SchluesselGesetzt: gesetzt,
+			SchluesselSchwach: schwach,
+			Status:            status,
+		})
+	}
+}

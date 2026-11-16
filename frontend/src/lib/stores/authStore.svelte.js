@@ -7,13 +7,13 @@ import { thekeLeeren } from './thekeLeeren.js';
 import { snackbars } from './snackbars.svelte.js';
 
 // Boot-Restore gegen einen Datenbank-Aussetzer: dreimal fragen, 2 s auseinander. Die
-// Frist des Servers bei der Token-Prüfung ist 2 s (auth/token.go), ein kurzer Aussetzer ist
+// Frist des Servers bei der Token-Prüfung ist 2 s (internal/auth/token.go), ein kurzer Aussetzer ist
 // damit überbrückt; länger darf der Ladekreis vor dem Login nicht stehen.
 const RESTORE_VERSUCHE = 3;
 const RESTORE_WARTEZEIT_MS = 2000;
 
 // Eine Abmeldung, die den Server nicht erreicht hat. Das Löschcookie setzt nur die
-// Antwort des Servers (api/abmeldung.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
+// Antwort des Servers (internal/api/abmeldung.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
 // vom Proxy, kommt keine an: Das HttpOnly-Cookie bleibt im Browser, und JavaScript kann es nicht
 // löschen. Ohne diesen Merker meldete das nächste Neuladen mit Netz die vorige Person wieder an —
 // am geteilten Theken-Rechner arbeitete der Nächste unter fremdem Konto. Der Merker trägt keine
@@ -71,7 +71,7 @@ class AuthStore {
 	isLoggingIn = $state(false);
 	/**
 	 * Steht nach einer Abmeldung, deren Widerruf der Server nicht bestätigt hat (503,
-	 * api/abmeldung.go): Das Löschcookie kam an, dieser Browser ist abgemeldet, die Sitzung
+	 * internal/api/abmeldung.go): Das Löschcookie kam an, dieser Browser ist abgemeldet, die Sitzung
 	 * selbst gilt bis zu ihrem Ablauf weiter. Abgemeldet wird trotzdem, dazu steht dieser
 	 * Hinweis auf der Anmeldemaske.
 	 */
@@ -193,7 +193,7 @@ class AuthStore {
 		//
 		// perform_actions ist das Recht, an der Theke und im Bestand zu arbeiten (/api/action,
 		// /scan, /search). Wer es hat, gehört in die Verwaltung; das Kollegium hat es nicht
-		// (db/rechte_vorgabe.go) und sieht sein Portal. Welchen Bildschirm jemand öffnen darf,
+		// (internal/db/rechte_vorgabe.go) und sieht sein Portal. Welchen Bildschirm jemand öffnen darf,
 		// liest der Router ohnehin aus denselben Rechten (menue.js, erlaubteBildschirme).
 		const arbeitetInDerBibliothek = hatRecht(konto, 'perform_actions');
 		appState.adminAuthenticated = arbeitetInDerBibliothek;
@@ -207,7 +207,7 @@ class AuthStore {
 	 *
 	 * Ein 5xx beantwortet die Frage „gilt diese Sitzung?" nicht — er sagt, dass der Server
 	 * sie gerade nicht prüfen kann. Bei einem Datenbank-Aussetzer antwortet er mit 503
-	 * statt 401, damit ein Arbeitsplatz nicht abgemeldet wird (auth/anmelden.go). Hieße
+	 * statt 401, damit ein Arbeitsplatz nicht abgemeldet wird (internal/auth/anmelden.go). Hieße
 	 * „nicht ok" hier Login-Bildschirm, müsste sich, wer während des Aussetzers neu lädt (F5,
 	 * Kiosk-Neustart, Bildschirm morgens an), neu anmelden, obwohl sein Cookie noch gilt.
 	 * Deshalb kurz warten und erneut fragen; der Boot zeigt so lange den Ladekreis
@@ -255,7 +255,7 @@ class AuthStore {
 		this.isLoggingIn = true;
 
 		try {
-			// apiFetch statt fetch: POST /login unterliegt der CSRF-Prüfung (api/csrf.go) und
+			// apiFetch statt fetch: POST /login unterliegt der CSRF-Prüfung (internal/api/csrf.go) und
 			// braucht den X-CSRF-Token-Header. apiFetch holt das Token notfalls selbst per
 			// Bootstrap (/api/csrf-token), es geht also auch beim allerersten Seitenaufruf ohne
 			// vorheriges Cookie.

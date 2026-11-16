@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/logger"
+	"bibliothek/internal/pkg/logger"
 )
 
 // erinnerungsAbstand ist eine Stunde kürzer als der Takt des Wächters, damit ein Lauf, der um

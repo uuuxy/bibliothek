@@ -9,7 +9,7 @@ import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-
 // vor der Anfrage, und gibt die Adresse erst frei, wenn er zu ist.
 //
 // Sieht nicht: einen Link auf eine Adresse, die der Server als Anhang schickt (das hält
-// api/anhang_ratsche_test.go), und einen Download über eine andere Schreibweise
+// internal/api/anhang_ratsche_test.go), und einen Download über eine andere Schreibweise
 // als `.download =` oder das Attribut download an einem Link.
 const ALS_DATEI = {
 	'src/inventur/lib/admin_api.js': 'der Katalog als CSV',

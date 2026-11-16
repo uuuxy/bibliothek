@@ -1,0 +1,120 @@
+package mahnwesen
+
+import (
+	"net/http"
+	"net/mail"
+	"strings"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
+)
+
+// klassenleitung ordnet einer Klasse die Adresse ihrer Klassenleitung zu.
+type klassenleitung struct {
+	Klasse      string `json:"klasse"`
+	LehrerEmail string `json:"lehrer_email"`
+	ErstelltAm  string `json:"erstellt_am,omitempty"`
+}
+
+// Klassenleitungen liefert alle Klassen mit der Adresse ihrer Klassenleitung.
+// GET /api/klassen-mapping
+func (t *Tueren) Klassenleitungen() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		zeilen, err := repository.LadeKlassenleitungen(ctx, t.DB.Pool)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		liste := []klassenleitung{}
+		for _, z := range zeilen {
+			liste = append(liste, klassenleitung{
+				Klasse: z.Klasse, LehrerEmail: z.LehrerEmail, ErstelltAm: z.ErstelltAm.In(schulzeit.Zone()).Format("2006-01-02"),
+			})
+		}
+
+		tuer.AntworteJSON(w, http.StatusOK, liste)
+	}
+}
+
+// KlassenleitungSetzen trägt die Adresse der Klassenleitung einer Klasse ein oder ändert sie.
+// POST /api/klassen-mapping  { "klasse": "5b", "lehrer_email": "..." }
+func (t *Tueren) KlassenleitungSetzen() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req klassenleitung
+		if !tuer.LeseAnfrage(w, r, &req) {
+			return
+		}
+		// Getrimmt speichern: Ein aus der Zwischenablage mitgeschlepptes Leerzeichen ist
+		// unsichtbar, macht das Kürzel aber zu einem anderen — die Klasse bliebe ohne
+		// Adresse, ohne dass jemand sieht warum.
+		req.Klasse = strings.TrimSpace(req.Klasse)
+		req.LehrerEmail = strings.TrimSpace(req.LehrerEmail)
+
+		if req.Klasse == "" || req.LehrerEmail == "" {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Klasse und E-Mail-Adresse der Lehrkraft angeben", nil)
+			return
+		}
+		// Beim Speichern prüfen wie den Absender (mail_einstellungen.go): Eine Adresse mit
+		// Tippfehler fiele sonst erst beim Versand der Mahnliste auf.
+		adresse, err := mail.ParseAddress(req.LehrerEmail)
+		if err != nil {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse der Lehrkraft ist ungültig", err)
+			return
+		}
+		req.LehrerEmail = adresse.Address
+
+		ctx := r.Context()
+
+		// Der Stand davor entscheidet über den Protokolleintrag: neu eingetragen, geändert
+		// oder dieselbe Adresse noch einmal gespeichert.
+		neu, unveraendert, err := repository.SetzeKlassenleitung(ctx, t.DB.Pool, req.Klasse, req.LehrerEmail)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+		// An diese Adresse gehen die Mahnlisten der Klasse mit Namen und Titeln. Der Eintrag
+		// nennt die Klasse, nicht die Adresse.
+		if !unveraendert {
+			art := "geaendert"
+			if neu {
+				art = "eingetragen"
+			}
+			t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungGeaendert,
+				map[string]any{"klasse": req.Klasse, "art": art})
+		}
+
+		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	}
+}
+
+// KlassenleitungLoeschen nimmt die Adresse der Klassenleitung einer Klasse heraus.
+// DELETE /api/klassen-mapping/{klasse}
+func (t *Tueren) KlassenleitungLoeschen() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		klasse := r.PathValue("klasse")
+		if klasse == "" {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte eine Klasse angeben", nil)
+			return
+		}
+
+		ctx := r.Context()
+
+		getroffen, err := repository.LoescheKlassenleitung(ctx, t.DB.Pool, klasse)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+		// 204 für etwas, das nie existierte, wäre ein Erfolg, den es nicht gab.
+		if getroffen == 0 {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Eintrag für diese Klasse", nil)
+			return
+		}
+		t.ProtokolliereVerwaltung(ctx, tuer.AktionKlassenleitungEntfernt, map[string]any{"klasse": klasse})
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

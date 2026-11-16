@@ -2,7 +2,7 @@ services:
   postgres-db:
     # Dieselbe Major-Version wie die Produktion (docker-compose.yml) — sonst wäre SQL, das
     # erst in einer neueren Version existiert, lokal grün und bräche beim Deploy die
-    # Migration ab; der Server startet dann gar nicht (db/migrationen.go kehrt beim ersten
+    # Migration ab; der Server startet dann gar nicht (internal/db/migrationen.go kehrt beim ersten
     # Fehler um).
     image: postgres:18-alpine
     container_name: bibliothek-db-local
@@ -42,7 +42,7 @@ services:
     ports:
       # Nur an localhost — aus demselben Grund wie beim Datenbank-Port oben, hier aber
       # dringender: Dieser Stack läuft mit IMAP_HOST=mock, und mock lässt JEDES Passwort
-      # für JEDE in benutzer vorhandene E-Mail durch (auth/imap.go). Mit "8084:8084" war
+      # für JEDE in benutzer vorhandene E-Mail durch (internal/auth/imap.go). Mit "8084:8084" war
       # dieser Login im gesamten Schul-/Heimnetz erreichbar — auf einem Arbeitsplatz, an
       # dem parallel echte Daten liegen, ist das eine offene Tür.
       # Caddy erreicht den Container weiterhin über das Docker-Netz

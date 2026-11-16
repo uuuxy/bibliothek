@@ -2,8 +2,8 @@
 // Admin-Konto. Recht, CSRF und Middleware hängen am Router, nicht an der Tür; ein Test, der eine
 // Tür am Weg der Anfrage prüfen will, nimmt ihn.
 //
-// Das Paket bindet api/ ein. Ein Test im Paket api oder im Paket eines Themas kann es deshalb
-// nicht nutzen, Go weist den Kreis ab; es ist für die Testpakete in api/ und in den Ordnern
+// Das Paket bindet internal/api/ ein. Ein Test im Paket api oder im Paket eines Themas kann es deshalb
+// nicht nutzen, Go weist den Kreis ab; es ist für die Testpakete in internal/api/ und in den Ordnern
 // der Themen (package api_test, package thema_test). Die Ausnahmeliste der Prüfung auf toten
 // Code führt seine Funktionen mit Begründung.
 package routertest
@@ -13,10 +13,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bibliothek/api"
-	"bibliothek/db"
+	"bibliothek/internal/api"
+	"bibliothek/internal/db"
+	"bibliothek/internal/sse"
 	"bibliothek/internal/tuertest"
-	"bibliothek/sse"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

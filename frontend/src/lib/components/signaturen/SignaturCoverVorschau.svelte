@@ -17,7 +17,7 @@
 		/** @type {{ titel_id: string, titel: string, isbn: string, cover_url: string }[]} */ ([])
 	);
 	// Die Abfrage verlangt view_books. Das Menü der Signatur steht auch Konten mit create_orders
-	// offen, die den Katalog nicht sehen (api/nur_sitzung_liste_test.go); sie bekämen je Zeigen
+	// offen, die den Katalog nicht sehen (internal/api/nur_sitzung_liste_test.go); sie bekämen je Zeigen
 	// eine Ablehnung.
 	const darf = $derived(hatRecht(authStore.currentUser, 'view_books'));
 	$effect(() => {

@@ -1,6 +1,6 @@
 // utils/listenGrenze.js
 // Die Grenze einer Liste, die der Server kappt. Er nennt sie im Kopf X-Grenze
-// (api/tuer/antwort.go, AntworteListe); die Zahl und die Regel, wann sie gilt, stehen nur dort.
+// (internal/api/tuer/antwort.go, AntworteListe); die Zahl und die Regel, wann sie gilt, stehen nur dort.
 // Führte die Oberfläche eine eigene Zahl, behauptete sie nach einer geänderten Grenze eine falsche
 // oder schwiege über eine gekappte Liste.
 

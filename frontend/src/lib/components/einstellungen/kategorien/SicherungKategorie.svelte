@@ -3,7 +3,7 @@
 	 * @component SicherungKategorie
 	 * Ob die Bibliothek ihre Datenbank jede Nacht selbst sichert. Vorgabe aus, weil der Server der
 	 * Schule selbst gesichert wird; einschalten, wo das fehlt. Aus heißt: keine eigene Sicherung,
-	 * kein Mangel in der Betriebsbereitschaft, ältere Stände laufen aus (jobs/sicherung_aus.go).
+	 * kein Mangel in der Betriebsbereitschaft, ältere Stände laufen aus (internal/jobs/sicherung_aus.go).
 	 */
 	import { untrack } from 'svelte';
 	import Switch from '../../ui/Switch.svelte';

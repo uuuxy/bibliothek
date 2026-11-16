@@ -23,7 +23,7 @@ var DSGVOLeserQuellen = []struct {
 	// Personenbezug auf NULL.
 	{"nachbuch_meldungen", "ausleiher_schueler_id / vorbesitzer_schueler_id (FK, bei Tilgung -> NULL)", true},
 	// Ein Konto zeigt auf seine Leserzeile. Die Auskunft nennt das Konto samt Anmeldedaten
-	// (repository/dsgvo_konto.go), die Tilgung löst die Verknüpfung. Der Fremdschlüssel steht
+	// (internal/repository/dsgvo_konto.go), die Tilgung löst die Verknüpfung. Der Fremdschlüssel steht
 	// auf ON DELETE SET NULL und greift erst, wenn die Leserzeile ganz verschwindet.
 	{"benutzer", "leser_id (FK, ON DELETE SET NULL; bei Tilgung -> NULL)", true},
 	{"audit_log", "datensatz_id (tabelle='schueler') bzw. details->>'schueler_id'", false},

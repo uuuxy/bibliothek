@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/mitteltopf"
+	"bibliothek/internal/pkg/mitteltopf"
 )
 
 func TestZuordnungAusVermerk(t *testing.T) {

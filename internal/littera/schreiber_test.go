@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // TestOptionenVorgabe prüft die Vorgabewerte für einen Lauf.

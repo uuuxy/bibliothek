@@ -36,7 +36,7 @@
 	 * @prop {number} [max=300] - Höchstzahl; darüber meldet das Feld den Fehlerzustand.
 	 * @prop {number} [maxZeichen=80] - Länge eines Werts.
 	 *   Beide sind die Grenzen des Servers (repository.SchlagworteJeTitelMax und
-	 *   SchlagwortMaxZeichen), gehalten von repository/schlagworte_grenzen_zwilling_test.go.
+	 *   SchlagwortMaxZeichen), gehalten von internal/repository/schlagworte_grenzen_zwilling_test.go.
 	 * @prop {string[]} [angebote] - Werte zum Anklicken unter den Chips (M3 Suggestion chips),
 	 *   etwa der Schlagwort-Vorschlag aus der DNB. Ein Klick übernimmt; bis dahin ist nichts
 	 *   eingetragen. Was schon gewählt ist, steht nicht mehr darunter.

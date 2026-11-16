@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"bibliothek/pkg/ersatzwert"
+	"bibliothek/internal/pkg/ersatzwert"
 )
 
 // Gate gegen eine Staffel, die im Konzept anders steht als im Code. Die Prozentzahlen stehen
@@ -23,7 +23,7 @@ import (
 //
 // Reparatur bei Rot: Zuerst die Arbeitshilfe lesen, nicht die jeweils andere Stelle
 // abschreiben. Stimmt der Code, gehört das Dokument nachgezogen; stimmt das Dokument,
-// ist es ein Fehler in pkg/ersatzwert und betrifft echtes Geld.
+// ist es ein Fehler in internal/pkg/ersatzwert und betrifft echtes Geld.
 func TestStaffelImKonzeptStimmtMitDerRechnung(t *testing.T) {
 	konzept, err := os.ReadFile("mittel_konzept.md")
 	if err != nil {

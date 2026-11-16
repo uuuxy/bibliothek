@@ -77,7 +77,7 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 
 // Der Druck folgt der Suche (seit 21.09.2026). Auch das sieht im Browser nur die Saison:
 // Außerhalb von Mai bis Juli ist die Liste leer und der Druck 404. Die Adresse wird deshalb
-// hier festgehalten — was der Server aus ihr macht, hält api/mahnwesen/abgaenger_druck_auswahl_pg_test.go.
+// hier festgehalten — was der Server aus ihr macht, hält internal/api/mahnwesen/abgaenger_druck_auswahl_pg_test.go.
 describe('abgaengerDienst.kontoauszugAdresse', () => {
 	const SICHTBAR = [{ id: 'a-1' }, { id: 'b-2' }];
 
@@ -115,7 +115,7 @@ describe('abgaengerDienst.kontoauszugAdresse', () => {
 
 // Die Kontoauszüge tragen die Namen der Abgänger; als Download blieben sie im Download-Ordner
 // des Arbeitsplatzes liegen. Sie gehen im Tab auf (utils/pdfImFenster.js); den Dateinamen fürs
-// Speichern nennt der Server (api/mahnwesen/abgaenger_druck_auswahl_pg_test.go).
+// Speichern nennt der Server (internal/api/mahnwesen/abgaenger_druck_auswahl_pg_test.go).
 // Die Liste nennt beim Laden den Grund des Servers; vorher stand dort „Error: Fehler beim Laden".
 describe('abgaengerDienst.ladeAbgaenger', () => {
 	it('wirft bei einer Fehlerantwort die Meldung des Servers', async () => {

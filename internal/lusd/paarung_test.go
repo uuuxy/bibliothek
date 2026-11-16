@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/repository"
 	"bibliothek/internal/xlsxtest"
-	"bibliothek/repository"
 )
 
 // Die Paarungsregeln ohne Datenbank: Welche Signale ein Paar tragen, welche nicht, und
 // wie Konkurrenz aufgelöst wird. Die Datenbankseite (Vorschau → Bestätigung → derselbe
-// Datensatz) steht in api/leser/lusd_umbenennung_pg_test.go.
+// Datensatz) steht in internal/api/leser/lusd_umbenennung_pg_test.go.
 
 func tag(j int, m time.Month, t int) *time.Time {
 	d := time.Date(j, m, t, 0, 0, 0, 0, time.UTC)

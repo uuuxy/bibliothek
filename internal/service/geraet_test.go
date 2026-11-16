@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
 )

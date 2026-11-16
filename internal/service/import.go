@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bibliothek/db"
+	"bibliothek/internal/db"
 )
 
 // ImportDienst liest Titel und Exemplare aus den Dateien von Littera und aus Tabellen (CSV,

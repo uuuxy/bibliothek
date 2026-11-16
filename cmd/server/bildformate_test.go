@@ -13,7 +13,7 @@ import (
 // Decoder selbst anmeldete.
 //
 // Blindheit: GIF, JPEG und PNG melden auch die PDF-Bibliotheken an (gofpdf, pdfcpu, maroto),
-// WebP auch pkg/imageutil. Rot wird die Prüfung erst, wenn keiner das Format mehr einbindet.
+// WebP auch internal/pkg/imageutil. Rot wird die Prüfung erst, wenn keiner das Format mehr einbindet.
 func TestServer_LiestDieBildformate(t *testing.T) {
 	proben := map[string]string{
 		"gif":  "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAkQBADs=",

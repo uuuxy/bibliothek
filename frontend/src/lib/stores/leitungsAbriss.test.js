@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Der Server beendet die Live-Leitung, sobald die Anmeldung nicht mehr gilt (sse/sse.go). Danach
+// Der Server beendet die Live-Leitung, sobald die Anmeldung nicht mehr gilt (internal/sse/sse.go). Danach
 // zeigt die Anwendung, was am Server gilt: den Sperrbildschirm oder die Anmeldung, und nicht
 // nach 25 Sekunden „Keine Verbindung“.
 

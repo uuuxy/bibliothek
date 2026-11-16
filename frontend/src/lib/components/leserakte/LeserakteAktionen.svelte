@@ -38,7 +38,7 @@
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
 	// Zwei der Dokumente gibt es für einen Kollegen nicht: Kontoauszug und Ersatzforderung
-	// lesen die Sicht `schueler` (api/leser/kontoauszug.go, api/schaden/rechnung.go) und
+	// lesen die Sicht `schueler` (internal/api/leser/kontoauszug.go, internal/api/schaden/rechnung.go) und
 	// beantworten seine ID mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist
 	// schlechter als keiner, und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern
 	// eines Schülers. Die DSGVO-Auskunft gibt es für jeden Leser (SchuelerDokumente).

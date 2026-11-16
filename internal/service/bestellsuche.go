@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/katalogdienste"
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/repository"
 )
 
 // BestellTreffer ist ein Treffer der Bestellsuche. Welche Felder gefüllt sind, hängt von der

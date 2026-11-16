@@ -1,0 +1,364 @@
+package system_test
+
+import (
+	"encoding/json"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/system"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
+	"bibliothek/internal/xlsxtest"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// Die beiden Türen, über die der Bestand der Schule ins Programm kommt:
+// POST /api/import/littera (Katalogisat-XML, CSV, XLSX) und POST
+// /api/admin/import-bestand (die endgültige Bestands-CSV). Vor dem Echtstart läuft hier der
+// ganze Katalog durch.
+//
+// Geprüft wird über den ganzen Router mit Sitzung, nicht an der nackten Tür: Sie hängt an
+// Recht (manage_inventory), CSRF und der Mehrteil-Form, und genau dort saßen in diesem Projekt
+// schon Fehler, die die Tür allein nicht zeigte.
+//
+// Je Zusicherung eine Gegenprobe: Was abgewiesen wird, darf nichts geschrieben haben.
+
+// ladeImport schickt eine Datei als Mehrteil-Form an die Tür und liefert die Antwort.
+func ladeImport(t *testing.T, rufeRoh func(t *testing.T, methode, pfad string, rumpf string, typ string) *httptest.ResponseRecorder,
+	pfad, dateiname string, inhalt []byte) *httptest.ResponseRecorder {
+	t.Helper()
+	var koerper strings.Builder
+	mw := multipart.NewWriter(&koerper)
+	teil, err := mw.CreateFormFile("file", dateiname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := teil.Write(inhalt); err != nil {
+		t.Fatal(err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return rufeRoh(t, http.MethodPost, pfad, koerper.String(), mw.FormDataContentType())
+}
+
+// importAntwort liest die Zähler der Antwort.
+func importAntwort(t *testing.T, rec *httptest.ResponseRecorder) system.LitteraImportAntwort {
+	t.Helper()
+	var a system.LitteraImportAntwort
+	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
+		t.Fatalf("Antwort unlesbar (%s): %v", rec.Body.String(), err)
+	}
+	return a
+}
+
+func TestLitteraImport_UeberDieTuer(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	adminID, _, rufeRoh := importWelt(t, pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
+	})
+
+	// zaehle liefert Titel und Exemplare, die dieser Test angelegt haben könnte.
+	zaehle := func(t *testing.T) (titel, exemplare int) {
+		t.Helper()
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel LIKE 'E2E-Imp-%'`),
+			pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE barcode_id LIKE 'IMP-%'`)
+	}
+	// spuren zählt die Protokolleinträge der Importe.
+	spuren := func(t *testing.T, aktion string) int {
+		t.Helper()
+		return pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM audit_logs WHERE aktion = $1 AND admin_id = $2`, aktion, adminID)
+	}
+
+	t.Run("CSV: zwei Titel mit je einem Exemplar", func(t *testing.T) {
+		csv := "Titel;Verfasser;ISBN;Exemplarnummer\n" +
+			"E2E-Imp-Mathe 7;Musterfrau;9783111111111;IMP-A1\n" +
+			"E2E-Imp-Deutsch 8;Mustermann;9783222222222;IMP-A2\n"
+		rec := ladeImport(t, rufeRoh, "/api/import/littera", "littera.csv", []byte(csv))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		a := importAntwort(t, rec)
+		if a.Art != "csv" {
+			t.Errorf("Art %q, erwartet csv", a.Art)
+		}
+		if a.NeueTitel != 2 || a.ImportierteExemplare != 2 {
+			t.Errorf("gemeldet: %d Titel, %d Exemplare — erwartet 2 und 2", a.NeueTitel, a.ImportierteExemplare)
+		}
+		// Die Antwort ist nicht der Beleg: nachgezählt in der Datenbank.
+		if titel, exemplare := zaehle(t); titel != 2 || exemplare != 2 {
+			t.Errorf("in der Datenbank: %d Titel, %d Exemplare — erwartet 2 und 2", titel, exemplare)
+		}
+		if n := spuren(t, "LITTERA_IMPORT"); n != 1 {
+			t.Errorf("%d Protokolleinträge, erwartet 1", n)
+		}
+	})
+
+	t.Run("CSV ohne Pflichtspalte Barcode: 400 und nichts geschrieben", func(t *testing.T) {
+		vorherT, vorherE := zaehle(t)
+		rec := ladeImport(t, rufeRoh, "/api/import/littera", "littera.csv",
+			[]byte("Titel;Verfasser\nE2E-Imp-Ohne Barcode;Niemand\n"))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		if got, will := tuertest.Fehlermeldung(t, rec), "In der Kopfzeile fehlt die Pflichtspalte „barcode“ oder „exemplarnummer“"; got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
+		}
+		if titel, exemplare := zaehle(t); titel != vorherT || exemplare != vorherE {
+			t.Errorf("eine abgewiesene Datei hat geschrieben: Titel %d→%d, Exemplare %d→%d",
+				vorherT, titel, vorherE, exemplare)
+		}
+	})
+
+	t.Run("XLSX: dieselben Spalten aus einer Arbeitsmappe", func(t *testing.T) {
+		xlsx := xlsxtest.Baue(t, map[string][][]any{
+			"Bestand": {
+				{"Titel", "Verfasser", "ISBN", "Exemplarnummer"},
+				{"E2E-Imp-Physik 9", "Musterfrau", "9783333333333", "IMP-B1"},
+			},
+		})
+		rec := ladeImport(t, rufeRoh, "/api/import/littera", "littera.xlsx", xlsx)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		if a := importAntwort(t, rec); a.Art != "xlsx" || a.NeueTitel != 1 {
+			t.Errorf("Art %q, %d neue Titel — erwartet xlsx und 1", a.Art, a.NeueTitel)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-B1'`); n != 1 {
+			t.Errorf("das Exemplar aus der Arbeitsmappe steht %d mal in der Datenbank, erwartet 1", n)
+		}
+	})
+
+	// Der Weg aus internal/pkg/xlsxgrenze am Live-Pfad: Eine Datei, die excelize nicht lesen kann,
+	// ist eine Auskunft (400) und kein Serverfehler.
+	//
+	// Was dieser Fall nicht belegt: Keine der vier Eingaben löst einen Absturz der Bibliothek
+	// aus, und ob der OLE-Container vor excelize abgewiesen wird, ist von hier aus nicht zu sehen;
+	// ohne die Abweisung lehnt excelize ihn selbst ab, auch mit 400. Beides steht im Test des
+	// Pakets (internal/pkg/xlsxgrenze/lesemappe_test.go), wo der Absturz herstellbar und der Fehlerwert
+	// unterscheidbar ist. Hier steht, dass die Tür nicht mit 500 antwortet.
+	t.Run("XLSX unlesbar: 400, kein Serverfehler", func(t *testing.T) {
+		vorherT, vorherE := zaehle(t)
+		faelle := map[string][]byte{
+			"kein Zip":           []byte("das ist keine Arbeitsmappe"),
+			"OLE-Container":      {0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0, 0, 0, 0, 0, 0, 0},
+			"leere Datei":        {},
+			"Zip ohne Arbeitsm.": []byte("PK\x03\x04 nur der Kopf, nichts dahinter"),
+		}
+		for name, inhalt := range faelle {
+			rec := ladeImport(t, rufeRoh, "/api/import/littera", "littera.xlsx", inhalt)
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("%s: Status %d, erwartet 400: %s", name, rec.Code, rec.Body.String())
+			} else if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Excel-Datei ließ sich nicht") {
+				t.Errorf("%s: Meldung %q, erwartet einen Satz zur Excel-Datei", name, got)
+			}
+		}
+		if titel, exemplare := zaehle(t); titel != vorherT || exemplare != vorherE {
+			t.Errorf("eine unlesbare Datei hat geschrieben: Titel %d→%d, Exemplare %d→%d",
+				vorherT, titel, vorherE, exemplare)
+		}
+	})
+
+	// Ein XML, das kein Katalogisat ist (etwa ein Schlagwort-Export), ist ein Formatfehler
+	// des Nutzers: 400 mit einem Satz, der sagt, was erwartet wird — nicht 500.
+	t.Run("XML ohne Katalogisat: 400 mit Hinweis", func(t *testing.T) {
+		rec := ladeImport(t, rufeRoh, "/api/import/littera", "schlagworte.xml",
+			[]byte(`<?xml version="1.0" encoding="UTF-8"?><Schlagworte><Wort>Algebra</Wort></Schlagworte>`))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Datei ist kein Katalogisat-Export aus Littera.") {
+			t.Errorf("die Meldung sagt nicht, was erwartet wird: %q", got)
+		}
+	})
+
+	t.Run("ohne Datei: 400", func(t *testing.T) {
+		rec := rufeRoh(t, http.MethodPost, "/api/import/littera", "", "multipart/form-data; boundary=xyz")
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		} else if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Datei ließ sich nicht hochladen.") {
+			t.Errorf("Meldung %q, erwartet den Satz zum Hochladen", got)
+		}
+	})
+}
+
+func TestBestandImport_UeberDieTuer(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	adminID, _, rufeRoh := importWelt(t, pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)
+	})
+
+	t.Run("CSV mit Komma: Titel und Exemplar stehen in der Datenbank", func(t *testing.T) {
+		csv := "Titel,Verfasser,Exemplarnummer,Zustand\n" +
+			"E2E-Imp-Bestand Chemie,Musterfrau,IMP-C1,gut\n"
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv", []byte(csv))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-C1'`); n != 1 {
+			t.Errorf("das Exemplar steht %d mal in der Datenbank, erwartet 1", n)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM audit_logs WHERE aktion = 'BESTAND_IMPORT' AND admin_id = $1`,
+			adminID); n != 1 {
+			t.Errorf("%d Protokolleinträge, erwartet 1", n)
+		}
+	})
+
+	// Die Tür nimmt ausdrücklich nur CSV. Eine Arbeitsmappe wird an der Endung abgewiesen,
+	// bevor sie gelesen wird — anders als bei der Littera-Tür daneben, und das ist Absicht.
+	t.Run("Nur CSV: eine Arbeitsmappe wird abgewiesen", func(t *testing.T) {
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.xlsx",
+			xlsxtest.Baue(t, map[string][][]any{"B": {{"Titel", "Exemplarnummer"}, {"X", "IMP-D1"}}}))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		// Der Wortlaut dieser Abweisung, nicht irgendeiner mit „CSV" darin: Ohne die Prüfung
+		// der Endung läuft die Arbeitsmappe in den CSV-Leser und scheitert dort mit
+		// „Die CSV-Datei ließ sich nicht lesen", auch ein 400, aber aus einem anderen Grund.
+		if !strings.Contains(rec.Body.String(), "Nur CSV-Dateien werden angenommen") {
+			t.Errorf("die Meldung ist nicht die der Endungs-Prüfung: %s", rec.Body.String())
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-D1'`); n != 0 {
+			t.Errorf("die abgewiesene Arbeitsmappe hat %d Exemplare geschrieben", n)
+		}
+	})
+
+	t.Run("CSV nur mit Kopfzeile: 400, die Meldung nennt die fehlenden Datenzeilen", func(t *testing.T) {
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv",
+			[]byte("Titel,Exemplarnummer\n"))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), "Datenzeilen") {
+			t.Errorf("die Meldung nennt den Grund nicht: %s", rec.Body.String())
+		}
+	})
+
+	// Eine Nummer ist entweder ein Buch oder ein Ausweis. Trägt eine Zeile den Ausweis eines
+	// Lesers als Buchnummer, nennt die Antwort die Zeile, und geschrieben ist nichts, auch nicht
+	// die Zeile davor.
+	t.Run("Buchnummer ist ein Leserausweis: 400 mit der Zeile, nichts geschrieben", func(t *testing.T) {
+		testdaten.LegeSchuelerAn(t, pool, "IMP-AUSWEIS-1", "Ida", "07R1")
+		csv := "Titel,Verfasser,Exemplarnummer\n" +
+			"E2E-Imp-Ausweis Bio,Musterfrau,IMP-F1\n" +
+			"E2E-Imp-Ausweis Bio,Musterfrau,IMP-AUSWEIS-1\n"
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv", []byte(csv))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		const will = "Nichts importiert: Zeile 3 trägt als Buchnummer IMP-AUSWEIS-1, die Nummer eines " +
+			"Leserausweises. Eine Nummer ist entweder ein Buch oder ein Ausweis. Bitte die Buchnummer " +
+			"in der Datei berichtigen und die Datei erneut hochladen."
+		if got := tuertest.Fehlermeldung(t, rec); got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id IN ('IMP-F1', 'IMP-AUSWEIS-1')`); n != 0 {
+			t.Errorf("der abgewiesene Import hat %d Exemplare geschrieben", n)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_titel WHERE titel = 'E2E-Imp-Ausweis Bio'`); n != 0 {
+			t.Errorf("der abgewiesene Import hat %d Titel geschrieben", n)
+		}
+	})
+
+	t.Run("CSV ohne Pflichtspalte Titel: 400", func(t *testing.T) {
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv",
+			[]byte("Verfasser,Exemplarnummer\nMusterfrau,IMP-E1\n"))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		if got, will := tuertest.Fehlermeldung(t, rec), "In der Kopfzeile fehlt die Pflichtspalte „titel“"; got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
+		}
+	})
+}
+
+// importWelt legt ein Admin-Konto mit Sitzung an und liefert einen Aufruf über den ganzen
+// Router — dieselbe Bauart wie routertest.MitAufruf, nur mit frei wählbarem Inhaltstyp für die
+// Mehrteil-Form.
+// Die beiden Türen mit einer CSV, wie Excel sie unter Windows speichert: Windows-1252, und in der
+// Datei mit BOM geht das Gleiche als „CSV UTF-8". Der Umlaut kommt in beiden Fällen richtig an, und
+// ein Nullzeichen in einer kaputten Datei ist kein Serverfehler.
+func TestImport_CSVAusExcelKommtMitUmlautAn(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, _, rufeRoh := importWelt(t, pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
+	})
+
+	for _, fall := range []struct {
+		name, pfad, inhalt, titel string
+	}{
+		{"Littera, Windows-1252", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\xdcbung f\xfcr 7;M\xfcller;IMP-K1\r\n", "E2E-Imp-Übung für 7"},
+		{"Littera, UTF-8 mit BOM", "/api/import/littera", "\xef\xbb\xbf\"Titel\";Verfasser;Exemplarnummer\r\nE2E-Imp-Übung für 8;Müller;IMP-K2\r\n", "E2E-Imp-Übung für 8"},
+		{"Bestand, Windows-1252", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\xdcbung f\xfcr 9;M\xfcller;IMP-K3\r\n", "E2E-Imp-Übung für 9"},
+		{"Littera, Nullzeichen", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 1;Müller;IMP-K4\r\n", "E2E-Imp-Null 1"},
+		{"Bestand, Nullzeichen", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 2;Müller;IMP-K5\r\n", "E2E-Imp-Null 2"},
+		{"Littera, Excel für Mac", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x86bung f\x9fr 10;M\x9fller;IMP-K6\r\n", "E2E-Imp-Übung für 10"},
+		{"Bestand, Excel für Mac", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x86bung f\x9fr 11;M\x9fller;IMP-K7\r\n", "E2E-Imp-Übung für 11"},
+		{"Littera, CSV (Macintosh)", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\rE2E-Imp-\x86bung f\x9fr 12;M\x9fller;IMP-K8\r", "E2E-Imp-Übung für 12"},
+		{"Bestand, CSV (Macintosh)", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\rE2E-Imp-\x86bung f\x9fr 13;M\x9fller;IMP-K9\r", "E2E-Imp-Übung für 13"},
+		{"Littera, CSV (MS-DOS)", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x9abung f\x81r 14;M\x81ller;IMP-K10\r\n", "E2E-Imp-Übung für 14"},
+		{"Bestand, CSV (MS-DOS)", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x9abung f\x81r 15;M\x81ller;IMP-K11\r\n", "E2E-Imp-Übung für 15"},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			rec := ladeImport(t, rufeRoh, fall.pfad, "liste.csv", []byte(fall.inhalt))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+			}
+			if n := pgtest.ZaehleZeilen(t, pool,
+				`SELECT count(*) FROM buecher_titel WHERE titel = $1 AND autor = 'Müller'`, fall.titel); n != 1 {
+				t.Errorf("%d Titel %q mit Autor Müller, erwartet 1: %s", n, fall.titel, rec.Body.String())
+			}
+		})
+	}
+}
+
+// Eine Datei, deren Kodierung offen bleibt, nennt den Grund und legt keinen falschen Titel an.
+func TestImport_UnklareKodierungBleibtAusDemKatalog(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, _, rufeRoh := importWelt(t, pool)
+
+	for _, pfad := range []string{"/api/import/littera", "/api/admin/import-bestand"} {
+		rec := ladeImport(t, rufeRoh, pfad, "liste.csv", []byte("Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-Kre\x9aimir;Ana;IMP-K12\r\n"))
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "CSV UTF-8") {
+			t.Errorf("%s = %d: %s", pfad, rec.Code, rec.Body.String())
+		}
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel LIKE 'E2E-Imp-Kre%'`); n != 0 {
+		t.Errorf("%d Titel im Katalog, erwartet 0", n)
+	}
+}
+
+func importWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, sitzung string,
+	rufeRoh func(t *testing.T, methode, pfad, rumpf, typ string) *httptest.ResponseRecorder) {
+	t.Helper()
+	adminID, sitzung, router := routertest.MitSitzung(t, pool, "import-tuer@example.org", "Imp", "Ort")
+	return adminID, sitzung, func(t *testing.T, methode, pfad, rumpf, typ string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", typ)
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
+		return rec
+	}
+}

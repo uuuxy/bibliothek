@@ -99,7 +99,7 @@ func besuche(pakete []*packages.Package, f func(*packages.Package)) {
 }
 
 // sichtbarkeitsMessung hält, was über alle Pakete gesammelt wird; Schlüssel ist der volle Name,
-// bei Methoden mit dem Typ (bibliothek/pdf.SchuleInfo.OrtDatum).
+// bei Methoden mit dem Typ (bibliothek/internal/pdf.SchuleInfo.OrtDatum).
 type sichtbarkeitsMessung struct {
 	wurzel            string
 	definiert         map[string]string // öffentlicher Name → Stelle der Definition

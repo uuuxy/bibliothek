@@ -3,7 +3,7 @@
   SchuelerDokumente — Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
 
   Die ersten beiden gehören einem Kollegen nicht: Sie lesen die Sicht `schueler`
-  (api/leser/kontoauszug.go, api/schaden/rechnung.go) und beantworten seine ID mit „nicht
+  (internal/api/leser/kontoauszug.go, internal/api/schaden/rechnung.go) und beantworten seine ID mit „nicht
   gefunden"; die Ersatzforderung ist ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft
   gibt es für jeden Leser. Beieinander statt dreimal dieselbe Bedingung.
 -->
@@ -36,7 +36,7 @@
 		zeigeRechnung
 	} = $props();
 
-	// Jeder Abruf erteilt eine Auskunft und steht im Protokoll (api/leser/dsgvo_pdf.go): Ein
+	// Jeder Abruf erteilt eine Auskunft und steht im Protokoll (internal/api/leser/dsgvo_pdf.go): Ein
 	// zweiter Klick vor der Antwort öffnete einen zweiten Tab und zählte eine zweite Auskunft.
 	let auskunftLaedt = $state(false);
 

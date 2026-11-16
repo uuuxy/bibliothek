@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/testweg"
-	"bibliothek/repository"
 )
 
 // Antwort der Schule: Die Lernmittelfreiheit in Hessen lässt keine automatische Sperre zu —

@@ -3,7 +3,7 @@ package tuertest
 import (
 	"context"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // EinstellungenAttrappe ist ein Ablageort der Einstellungen für Tests: Sie liefert die gesetzten

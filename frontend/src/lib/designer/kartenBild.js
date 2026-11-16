@@ -10,7 +10,7 @@ const UNVERAENDERT_BIS_BYTES = 300_000;
 // bei Kartendruckern 300.
 const KANTE_PIXEL = 1200;
 // Was auch verkleinert darüber liegt, nimmt der Designer nicht an. Der Server lässt für das
-// ganze Design 5 MiB zu (api/druck, MaxAusweisLayoutBytes).
+// ganze Design 5 MiB zu (internal/api/druck, MaxAusweisLayoutBytes).
 const HOECHSTENS_BYTES = 1_000_000;
 
 /** @param {Blob} blob @returns {Promise<string>} */

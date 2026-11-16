@@ -4,7 +4,7 @@ package pruefung_test
 //
 // Warum: Geht ein Text wie `?session_id=x`, `?titel_id=x` oder `{"session_id":"x"}` ungeprüft an
 // Postgres, kommt `invalid input syntax for type uuid` (SQLSTATE 22P02) als 500 zurück.
-// uuidPfadMiddleware (api/middleware.go) prüft nur Pfad-Parameter.
+// uuidPfadMiddleware (internal/api/middleware.go) prüft nur Pfad-Parameter.
 //
 // Warum nicht zentral „22P02 → 400" in apierrors: Das wäre die Bugklasse Fehler-Kollaps
 // (fehler_kollaps_test.go); ein kaputter Wert, den der Server erzeugt, sähe dann aus wie ein
@@ -21,8 +21,8 @@ package pruefung_test
 // uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen nicht als Prüfung und
 // werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
 //
-// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/eingabe.go), für
-// Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (internal/api/tuer/eingabe.go), für
+// Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (internal/pkg/kennung); ist die Kennung
 // keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das belegt.
 
 import (
@@ -50,8 +50,8 @@ var uuidEingabenAusnahmen = map[string]string{
 	"katalog.geraetAnlegenAnfrage.BarcodeID":   "geraete.barcode_id ist VARCHAR",
 	"katalog.geraetAendernAnfrage.BarcodeID":   "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
 	"inventurlauf.scanAnfrage.BarcodeID":       "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
-	"druck.etikettenbogenAnfrage.FormatID":     "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
-	"druck.schuelerEtikettenAnfrage.FormatID":  "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"druck.etikettenbogenAnfrage.FormatID":     "Formatschlüssel aus internal/pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"druck.schuelerEtikettenAnfrage.FormatID":  "Formatschlüssel aus internal/pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
 	"druck.etikettenVermerkAnfrage.BarcodeIDs": "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
 }
 
@@ -260,8 +260,8 @@ func ruftAuf(body *ast.BlockStmt, paket string, namen ...string) bool {
 }
 
 // eingabeDerTueren nennt die Namen, unter denen die Türen ihre Eingabe lesen und prüfen: die
-// Dekodierer (Name → liest streng) und den gemeinsamen Validator aus api/tuer. Die Prüfung
-// liest sie an der Form der Erklärung ab und nicht als Text, damit ein Umbenennen in api/tuer
+// Dekodierer (Name → liest streng) und den gemeinsamen Validator aus internal/api/tuer. Die Prüfung
+// liest sie an der Form der Erklärung ab und nicht als Text, damit ein Umbenennen in internal/api/tuer
 // sie nicht blind macht.
 type eingabeDerTueren struct {
 	dekodierer map[string]bool
@@ -277,7 +277,7 @@ type eingabeDerTueren struct {
 // liefert, die *validator.Validate zurückgibt.
 func ladeEingabeDerTueren() (eingabeDerTueren, error) {
 	namen := eingabeDerTueren{dekodierer: map[string]bool{}, roh: map[string]bool{}}
-	pfade, err := filepath.Glob(filepath.Join("api", "tuer", "*.go"))
+	pfade, err := filepath.Glob(filepath.Join("internal", "api", "tuer", "*.go"))
 	if err != nil {
 		return namen, err
 	}
@@ -415,7 +415,7 @@ func ruftMethodeAuf(body *ast.BlockStmt, name string) bool {
 	return gefunden
 }
 
-// pruefeEingabeDerTueren hält die Prüfung an, wenn sie Dekodierer oder Validator in api/tuer
+// pruefeEingabeDerTueren hält die Prüfung an, wenn sie Dekodierer oder Validator in internal/api/tuer
 // nicht mehr findet: Ohne sie sähe sie keine Eingabe, die über die Türen hereinkommt.
 func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
 	t.Helper()
@@ -430,7 +430,7 @@ func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
 		}
 	}
 	if len(namen.dekodierer) != 2 || streng != 1 || len(namen.roh) != 1 || namen.validator == "" {
-		t.Fatalf("api/tuer: erwartet zwei Dekodierer, einer davon streng, einen rohen Leser und einen "+
+		t.Fatalf("internal/api/tuer: erwartet zwei Dekodierer, einer davon streng, einen rohen Leser und einen "+
 			"Validator; gefunden %v, %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
 			namen.dekodierer, namen.roh, namen.validator)
 	}
@@ -472,7 +472,7 @@ func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
 // dekodierZiel: Name der Variablen hinter &x im Aufruf eines Dekodierers der Türen
 // (tuer.<Dekodierer>(w, r, &x)) oder in json.NewDecoder(...).Decode(&x); direkt=true für den
 // zweiten Weg. Der Dekodierer der Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn
-// aus api/tuer, das Paket selbst ohne Namen davor.
+// aus internal/api/tuer, das Paket selbst ohne Namen davor.
 func dekodierZiel(call *ast.CallExpr, namen eingabeDerTueren) (string, bool) {
 	var arg ast.Expr
 	direkt := false
@@ -661,7 +661,7 @@ func istTextKennung(typ ast.Expr) bool {
 func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	wechsleInDieWurzel(t)
 	namen := pruefeEingabeDerTueren(t)
-	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api"), namen)
+	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, filepath.Join("internal", "api")), namen)
 	if len(gesehen) < 5 {
 		t.Fatalf("nur %d Kennungs-Eingaben gefunden — der Sammler greift vermutlich ins Leere", len(gesehen))
 	}
@@ -745,7 +745,7 @@ func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
 // Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
 func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
 	wechsleInDieWurzel(t)
-	// LESE, LESESTRENG und VALIDATOR stehen für die Namen, die ladeEingabeDerTueren in api/tuer
+	// LESE, LESESTRENG und VALIDATOR stehen für die Namen, die ladeEingabeDerTueren in internal/api/tuer
 	// findet; die Probe ruft die Türen so, wie sie heute heißen.
 	quelle := `package p
 type ohneTag struct { SessionID string ` + "`json:\"session_id\"`" + ` }

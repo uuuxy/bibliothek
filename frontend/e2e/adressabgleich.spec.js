@@ -5,7 +5,7 @@ import { uiLogin, einstellungsKategorie, menuepunkt, apiPut } from './helpers.js
 // Zugang speichern, Probelauf. Ein echtes Roundcube gibt es im Stack nicht; die Adresse liegt
 // unter .invalid (RFC 2606), der Probelauf endet also mit dem Satz für ein unerreichbares
 // Webmail. Damit ist der Weg durch Router, Verschlüsselung und Anzeige belegt, ohne dass eine
-// Anfrage die Schule erreicht. Den Abgleich selbst prüfen api/system/adressabgleich_pg_test.go
+// Anfrage die Schule erreicht. Den Abgleich selbst prüfen internal/api/system/adressabgleich_pg_test.go
 // und internal/adressabgleich gegen einen Nachbau und ein echtes Roundcube.
 test('Einstellungen → Mail: Zugang zum Webmail speichern und Probelauf', async ({ page }) => {
 	await uiLogin(page);

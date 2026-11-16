@@ -1,0 +1,125 @@
+package bestellung
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/bestelllink"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// Die unter „Bestellwesen" eingestellte Frist kommt an beiden Stellen an, die einen
+// Bestätigungs-Link erzeugen: beim Bestellen und bei „Neuen Link erzeugen". Gemessen wird am
+// Ablauf in der Datenbank, in Tagen ab jetzt.
+
+// setzeLinkFrist hinterlegt die Frist direkt in der Tabelle und nimmt sie nach dem Test weg.
+func setzeLinkFrist(t *testing.T, pool *pgxpool.Pool, tage string) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO system_einstellungen (schluessel, wert) VALUES ('bestelllink_gueltigkeit_tage', $1)
+		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, tage); err != nil {
+		t.Fatalf("Frist setzen: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx,
+			`DELETE FROM system_einstellungen WHERE schluessel = 'bestelllink_gueltigkeit_tage'`); err != nil {
+			t.Errorf("Frist entfernen: %v", err)
+		}
+	})
+}
+
+// linkTageAbJetzt liest, in wie vielen Tagen der Link der Bestellung abläuft.
+func linkTageAbJetzt(t *testing.T, pool *pgxpool.Pool, bestellungID string) int {
+	t.Helper()
+	var tage int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT round(extract(epoch FROM token_gueltig_bis - now()) / 86400)::int
+		FROM bestellungen_verlauf WHERE id = $1`, bestellungID).Scan(&tage); err != nil {
+		t.Fatalf("Ablauf des Links lesen: %v", err)
+	}
+	return tage
+}
+
+func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
+	titel := testdaten.LegeTitelAn(t, pool, "LMF-Frist")
+	bestelle := func() *service.BestellErgebnis {
+		t.Helper()
+		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
+			Mittel:      mitteltopf.Land,
+			LieferantID: lieferant,
+			Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 1000, MitVorabBarcode: true}},
+		})
+		if err != nil {
+			t.Fatalf("Bestellung: %v", err)
+		}
+		return res
+	}
+
+	ohne := bestelle()
+	if tage := linkTageAbJetzt(t, pool, ohne.BestellungID); tage != bestelllink.TageVorgabe {
+		t.Errorf("ohne Einstellung läuft der Link in %d Tagen ab, erwartet die Vorgabe %d", tage, bestelllink.TageVorgabe)
+	}
+
+	setzeLinkFrist(t, pool, "45")
+	mit := bestelle()
+	if tage := linkTageAbJetzt(t, pool, mit.BestellungID); tage != 45 {
+		t.Errorf("eingestellt sind 45 Tage, der Link läuft in %d Tagen ab", tage)
+	}
+	// Die Mail nennt den Ablauf aus dem Ergebnis; er ist derselbe wie in der Datenbank.
+	if mit.LinkGueltigBis == nil {
+		t.Fatal("das Ergebnis der Bestellung nennt keinen Ablauf des Links")
+	}
+	if tage := int(time.Until(*mit.LinkGueltigBis).Round(24*time.Hour) / (24 * time.Hour)); tage != 45 {
+		t.Errorf("das Ergebnis der Bestellung nennt einen Ablauf in %d Tagen, erwartet 45", tage)
+	}
+}
+
+func TestBestelllinkFrist_NeuerLinkBekommtDieEingestellteFrist(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher", true)
+	// Der alte Link läuft in drei Tagen ab; der neue bekommt die eingestellte Frist ab heute.
+	bestellungID, _ := bestellungMitToken(t, pool, lieferant, 3)
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
+	setzeLinkFrist(t, pool, "45")
+
+	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
+	req.SetPathValue("id", bestellungID)
+	rec := httptest.NewRecorder()
+	srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if tage := linkTageAbJetzt(t, pool, bestellungID); tage != 45 {
+		t.Errorf("eingestellt sind 45 Tage, der neue Link läuft in %d Tagen ab", tage)
+	}
+	var antwort struct {
+		GueltigBis time.Time `json:"gueltig_bis"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	if tage := int(time.Until(antwort.GueltigBis).Round(24*time.Hour) / (24 * time.Hour)); tage != 45 {
+		t.Errorf("die Antwort nennt einen Ablauf in %d Tagen, erwartet 45", tage)
+	}
+}

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Die Ausgänge der Nachbuch-Tür, die nichts oder nur einen Teil buchen, am echten Postgres:

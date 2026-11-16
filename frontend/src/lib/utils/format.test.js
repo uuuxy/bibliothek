@@ -78,7 +78,7 @@ describe('format.js — eine deutsche Schreibweise', () => {
 	});
 
 	// Dieselben Fälle prüft die Go-Seite am Ausdruck der Schulbuchliste
-	// (pdf/schulbuecher_test.go).
+	// (internal/pdf/schulbuecher_test.go).
 	it('Jahrgang: ein Jahr, eine Spanne, und leer ohne Eintrag', () => {
 		expect(jahrgangFaelle.faelle.length).toBeGreaterThan(0);
 		for (const f of jahrgangFaelle.faelle) {

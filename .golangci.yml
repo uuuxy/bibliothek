@@ -109,7 +109,7 @@ linters:
         text: slog und Stufe
       # csvutil.BaueLeser gilt für hochgeladene Dateien. Tests und Werkzeuge lesen eigene Dateien,
       # und die Übernahme des Altbestands liest die Ausgabe von mdb-export.
-      - path: (_test\.go$|^cmd/|^scripts/|^internal/littera/|^pkg/csvutil/)
+      - path: (_test\.go$|^cmd/|^scripts/|^internal/littera/|^internal/pkg/csvutil/)
         linters:
           - forbidigo
         text: csvutil\.BaueLeser

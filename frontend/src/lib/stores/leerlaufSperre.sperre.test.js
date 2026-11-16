@@ -65,7 +65,7 @@ function anderesFenster(key, newValue) {
 
 /**
  * Die Sperre nach Inaktivität gilt am Server und für alle Fenster eines Browsers. Der Server
- * selbst steht in auth/sperre_pg_test.go; hier steht, was das Fenster ihm sagt und glaubt.
+ * selbst steht in internal/auth/sperre_pg_test.go; hier steht, was das Fenster ihm sagt und glaubt.
  */
 describe('leerlaufSperre: Sperre am Server', () => {
 	/** @type {LeerlaufSperre} */

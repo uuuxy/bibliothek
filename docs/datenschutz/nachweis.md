@@ -128,16 +128,16 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 
 | Zusage                                                                                       | Test                                                                                                   |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Katalog, Monitor und Bilder liefern keine Personendaten; jede Adresse liefert höchstens ihre Stufe | `api/pii_antwort_pg_test.go` ruft jede lesende Adresse mit dem Recht ihrer Zeile auf und sucht in der Antwort nach eingestreuten Prüfwerten |
-| Jede Adresse des Programms ist eingestuft und verlangt ein Recht                              | `api/pii_matrix_test.go`, `api/geschuetzte_routen_test.go`                                           |
-| Ohne das Recht wird jeder schreibende Aufruf abgewiesen, auch am Menü vorbei                  | `api/rechte_schreibwege_pg_test.go`                                                                     |
-| Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/cron_dsgvo_lesehistorie_pg_test.go`, `jobs/cron_dsgvo_anliegen_pg_test.go`, `jobs/cron_dsgvo_kulanz_pg_test.go`, `jobs/loeschrueckstand_paarung_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
-| Die Anonymisierung entfernt, was an der Person hängt                                          | `api/leser/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
-| Die Auskunft druckt jede Angabe, die sie enthält; Protokolleinträge stehen in Worten da, ohne Kennungen des Programms und ohne das buchende Konto | `internal/auskunft/blatt_vollstaendig_test.go`, `api/leser/dsgvo_blatt_pg_test.go`, `repository/protokoll_auskunft_test.go` |
-| Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
+| Katalog, Monitor und Bilder liefern keine Personendaten; jede Adresse liefert höchstens ihre Stufe | `internal/api/pii_antwort_pg_test.go` ruft jede lesende Adresse mit dem Recht ihrer Zeile auf und sucht in der Antwort nach eingestreuten Prüfwerten |
+| Jede Adresse des Programms ist eingestuft und verlangt ein Recht                              | `internal/api/pii_matrix_test.go`, `internal/api/geschuetzte_routen_test.go`                                           |
+| Ohne das Recht wird jeder schreibende Aufruf abgewiesen, auch am Menü vorbei                  | `internal/api/rechte_schreibwege_pg_test.go`                                                                     |
+| Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `internal/jobs/cron_dsgvo_karenz_pg_test.go`, `internal/jobs/cron_dsgvo_abgaenger_pg_test.go`, `internal/jobs/cron_dsgvo_lesehistorie_pg_test.go`, `internal/jobs/cron_dsgvo_anliegen_pg_test.go`, `internal/jobs/cron_dsgvo_kulanz_pg_test.go`, `internal/jobs/loeschrueckstand_paarung_pg_test.go`, `internal/repository/nachtlauf_ratsche_test.go` |
+| Die Anonymisierung entfernt, was an der Person hängt                                          | `internal/api/leser/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
+| Die Auskunft druckt jede Angabe, die sie enthält; Protokolleinträge stehen in Worten da, ohne Kennungen des Programms und ohne das buchende Konto | `internal/auskunft/blatt_vollstaendig_test.go`, `internal/api/leser/dsgvo_blatt_pg_test.go`, `internal/repository/protokoll_auskunft_test.go` |
+| Eine Sicherung lässt sich zurückspielen                                                       | `internal/jobs/backup_drill_pg_test.go`, `internal/jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
 | Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
-| Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
-| Mail geht nie unverschlüsselt hinaus                                                          | `mailservice/versand_test.go`                                                                           |
+| Antworten mit Personendaten legt der Browser nicht ab                                       | `internal/api/pii_antwort_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
+| Mail geht nie unverschlüsselt hinaus                                                          | `internal/mailservice/versand_test.go`                                                                           |
 | Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/leerlaufSperre.test.js`                                                              |
 
 ## 7. Auskunft, Berichtigung, Löschung
@@ -200,7 +200,7 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 
 - Alle Sicherungen liegen auf demselben Server; ein zweiter Ort ist nicht eingerichtet (7.3).
   Wird er als S3-Speicher eingerichtet, löscht das Programm dort nach derselben Aufbewahrung wie
-  auf dem Server (`jobs/backup_auslagerung.go`). Lässt sich die Liste am Speicher nicht lesen,
+  auf dem Server (`internal/jobs/backup_auslagerung.go`). Lässt sich die Liste am Speicher nicht lesen,
   löscht es in dieser Nacht nichts.
 - Die Sicherungen decken die Sommerferien ab; gelöschte Personen bleiben
   damit bis zu etwa drei Monate in den Sicherungen. Wer einen älteren Stand zurückspielt, holt
@@ -223,7 +223,7 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Ein Wert einer Person, den die Anonymisierung nicht kennt oder dessen Eintrag sie nicht
   findet, bliebe im Protokoll. Ein Test prüft jede Stelle im Code, die einen Protokolleintrag
   mit der Kennung eines Lesers oder eines Zugangskontos baut
-  (`repository/protokoll_personenbezug_test.go`). Einträge, die vor einer Behebung geschrieben
+  (`internal/repository/protokoll_personenbezug_test.go`). Einträge, die vor einer Behebung geschrieben
   wurden, gibt es am Testserver nicht (gezählt am 08.10.2026: kein alter Eintrag zu einem
   gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über ein
   früheres Konto).

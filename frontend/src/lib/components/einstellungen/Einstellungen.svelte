@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * Die Einstellungen als Material-3-Liste mit Detailfläche, gespeichert je Kategorie: Jede
-	 * schickt nur ihre eigenen Felder (repository/einstellungen_patch.go), und überall gilt
+	 * schickt nur ihre eigenen Felder (internal/repository/einstellungen_patch.go), und überall gilt
 	 * dieselbe Regel. Mit einem Knopf für alles bräuchte jede Sektion eine eigene Notbremse
 	 * gegen das Überschreiben der anderen.
 	 *

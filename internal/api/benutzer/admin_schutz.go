@@ -1,0 +1,98 @@
+package benutzer
+
+import (
+	"context"
+	"net/http"
+	"strings"
+
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/auth"
+)
+
+// Trennung von manage_users und Administrator.
+//
+// manage_users ist ein Recht, das der Administrator weitergeben kann: Die Rechte-Matrix bietet
+// es den Rollen unterhalb des Administrators an (frontend/src/lib/components/benutzer/rechteKategorien.js). Ohne
+// die Regeln dieser Datei käme es einem Administrator gleich, auf drei Wegen:
+//
+//  1. Selbstbeförderung: PUT /api/benutzer/{eigene-id} mit rolle:"admin". pruefeSelbstschutz
+//     lehnt jede Änderung der eigenen Rolle ab.
+//  2. Fremdbeförderung: POST oder PUT /api/benutzer mit rolle:"admin" für ein beliebiges
+//     Konto. pruefeAdminVergabe verlangt dafür einen Administrator.
+//  3. Übernahme eines Admin-Kontos ohne Änderung der Rolle: Die Anmeldung prüft die
+//     Zugangsdaten per IMAP und sucht das Konto danach über seine E-Mail-Adresse
+//     (internal/auth/anmelden.go, pruefeIMAPZugang). Wer die E-Mail eines Admin-Kontos auf die
+//     eigene Schuladresse setzt, meldet sich mit den eigenen Zugangsdaten an und bekommt die
+//     Admin-Sitzung. Deshalb schützt pruefeAdminZiel das ganze Konto, nicht nur die Rolle.
+//
+// Die Regel dahinter: manage_users verwaltet Konten unterhalb der Administratorebene.
+// Wer einen Administrator anlegen, verändern oder löschen will, muss selbst einer sein.
+// Dieselbe Regel hält das Löschen in der Leserdatei, mit dem das Konto eines Kollegen fällt
+// (internal/api/leser/leser_aendern.go, kontoregel).
+
+// istAufruferAdmin liest die Rolle des Aufrufers aus den Claims. Die stammt aus der
+// Datenbank, nicht aus dem signierten Token — auth.PruefeToken überschreibt sie bei
+// jeder Anfrage, eine Herabstufung wirkt also sofort.
+func istAufruferAdmin(r *http.Request) bool {
+	claims, ok := auth.ClaimsAusKontext(r.Context())
+	return ok && claims.Rolle.IstAdmin()
+}
+
+// pruefeAdminVergabe verlangt Administratorrechte, wenn die gewünschte Rolle "admin"
+// ist. Bei Verstoß wird die HTTP-Antwort geschrieben und false geliefert.
+func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle string) bool {
+	if !auth.Rolle(gewuenschteRolle).IstAdmin() || istAufruferAdmin(r) {
+		return true
+	}
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Rolle Administrator vergibt nur ein Administrator", nil)
+	return false
+}
+
+// pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel heute ein Administrator ist,
+// gleich welches Feld geändert werden soll. Ein unbekanntes Ziel (kein Treffer) lässt die
+// Prüfung passieren; darüber entscheidet die Tür.
+func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, kontoAbfragen kontoPflege, id string) bool {
+	if istAufruferAdmin(r) {
+		return true
+	}
+	rolle, err := kontoAbfragen.LadeRolle(ctx, id)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if auth.Rolle(rolle).IstAdmin() {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das Konto eines Administrators bearbeitet nur ein Administrator", nil)
+		return false
+	}
+	return true
+}
+
+// pruefeSelbstschutz verhindert, dass jemand die eigene Rolle oder das eigene Anmeldeverfahren
+// ändert oder das eigene Konto deaktiviert, gleich welcher Rolle er angehört. Er darf nicht
+// unterstellen, wer sich selbst bearbeitet, sei Admin: Dann scheiterte ein Mitarbeiter mit
+// manage_users am Speichern seines eigenen Datensatzes, und durch ginge ausgerechnet
+// rolle:"admin". Ein Tippfehler in der eigenen LDAP-Kennung sperrte den Admin bei der nächsten
+// Anmeldung aus, und gibt es keinen zweiten, hilft nur noch die Datenbank.
+//
+// Ein Feld ist nil, wenn die Änderung es nicht nennt: Dann bleibt es, wie es ist, und es gibt
+// nichts zu schützen.
+func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, req kontoAendernAnfrage) bool {
+	claims, ok := auth.ClaimsAusKontext(r.Context())
+	if !ok || claims.KontoID != id {
+		return true
+	}
+	neueRolle, aktiv := req.Rolle, req.Aktiv
+	if req.Anmeldeverfahren != nil || req.LDAPKennung != nil {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das eigene Anmeldeverfahren lässt sich nicht ändern. Das muss eine andere Person mit Administratorrechten tun.", nil)
+		return false
+	}
+	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die eigene Rolle lässt sich nicht ändern. Das muss eine andere Person mit Administratorrechten tun.", nil)
+		return false
+	}
+	if aktiv != nil && !*aktiv {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das eigene Konto lässt sich nicht deaktivieren", nil)
+		return false
+	}
+	return true
+}

@@ -1,8 +1,8 @@
 package lusd
 
 import (
-	"bibliothek/pkg/csvutil"
-	"bibliothek/pkg/xlsxgrenze"
+	"bibliothek/internal/pkg/csvutil"
+	"bibliothek/internal/pkg/xlsxgrenze"
 	"bytes"
 	"errors"
 	"fmt"

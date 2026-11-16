@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 
 	"github.com/phpdave11/gofpdf"
 )
 
 // dsgvoKontoAbschnitt druckt das Zugangskonto samt Klassenleitungen, Anfragen und den
-// Einträgen des Verwaltungsprotokolls über das Konto (repository/dsgvo_konto.go). Bei
+// Einträgen des Verwaltungsprotokolls über das Konto (internal/repository/dsgvo_konto.go). Bei
 // Schülern zeigt in der Regel kein Konto auf den Leser; dann steht das hier in einem Satz.
 func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.DSGVOZugangskonto) {
 	dsgvoAbschnitt(p, tr, "10. Zugangskonto")
@@ -197,8 +197,8 @@ func dsgvoAnfrageArt(art string) string {
 }
 
 // dsgvoKontoAktion schreibt die Aktion eines Kontoereignisses aus (Schreiber:
-// api/benutzer/konto_anlegen_aendern.go, auth/selbstanmeldung.go, api/leser/leser_aendern.go,
-// api/system/adressabgleich_lauf.go). Ein unbekannter Wert bleibt stehen.
+// internal/api/benutzer/konto_anlegen_aendern.go, internal/auth/selbstanmeldung.go, internal/api/leser/leser_aendern.go,
+// internal/api/system/adressabgleich_lauf.go). Ein unbekannter Wert bleibt stehen.
 func dsgvoKontoAktion(aktion string) string {
 	switch aktion {
 	case "USER_CREATE":

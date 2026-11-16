@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
 )

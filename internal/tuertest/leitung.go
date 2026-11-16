@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/sse"
+	"bibliothek/internal/sse"
 )
 
 // BeobachteLeitung öffnet an einem neuen Broker einen Strom und liefert den Broker und eine

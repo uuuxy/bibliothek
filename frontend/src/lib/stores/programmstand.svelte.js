@@ -4,7 +4,7 @@
 // Nach einem Update arbeitet ein offenes Fenster sonst mit dem alten Programm gegen den neuen
 // Server weiter und liest eine geänderte Antwort falsch, ohne Meldung. Der Stand ist der Name der
 // Programmdatei, mit der die Startseite die Oberfläche lädt (/assets/index-….js); der Server nennt
-// seinen in jeder Antwort (pkg/oberflaechenstand). Weicht er ab, steht über dem Inhalt der
+// seinen in jeder Antwort (internal/pkg/oberflaechenstand). Weicht er ab, steht über dem Inhalt der
 // Hinweis „Neu laden" (NeueFassung.svelte).
 //
 // Von selbst lädt ein Fenster nur neu, wenn darin noch niemand etwas bedient hat: Die Theke darf

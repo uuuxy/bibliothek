@@ -2,10 +2,10 @@
 
 Abschluss von Befund **F2** der unabhängigen Prüfung (`bewertung/datenbank-pruefbericht.md`):
 Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
-`api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
+`internal/api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
 Recht wird gegen die Registrierung geprüft. **Die Stufe der GET-Routen ist
-gemessen, nicht nur behauptet:** `api/pii_antwort_pg_test.go` ruft
+gemessen, nicht nur behauptet:** `internal/api/pii_antwort_pg_test.go` ruft
 jede GET-Route über den echten Router mit genau dem Recht ihrer Zeile auf und prüft
 die Antwort (inkl. entpackter PDF-Ströme) gegen Kanarienwerte je Stufe — nichts
 oberhalb der dokumentierten Stufe darf erscheinen, Schlüsselrouten tragen
@@ -15,7 +15,7 @@ der Theken-Scan (`POST /api/action`) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
 Nicht-GET-Routen (Schreibpfade) bleibt die STUFE Handarbeit: Wer eine Zeile
 anlegt, hat den Handler gelesen. Ihr RECHT dagegen ist
-gemessen: `api/rechte_schreibwege_pg_test.go` fährt jede Schreibroute mit
+gemessen: `internal/api/rechte_schreibwege_pg_test.go` fährt jede Schreibroute mit
 Fachrecht (am 08.10.2026 sind es 101) über den echten Router mit einer Rolle,
 die das Recht ihrer Zeile NICHT hat, und verlangt 403 mit der Begründung des
 Rechte-Wächters. Damit ist
@@ -42,10 +42,10 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | 0     | keine Schülerdaten                                                                                                                                                                                                 | Katalog, Bestellwesen, System |
 | 1     | Kiosk-Niveau: Name, Klasse, Barcode-ID, Sperrstatus                                                                                                                                                                | Scanner-Suche, Vormerkungen   |
-| 2     | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `jobs/cron_dsgvo_lesehistorie.go`) | Leserdatei, Mahnwesen         |
+| 2     | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `internal/jobs/cron_dsgvo_lesehistorie.go`) | Leserdatei, Mahnwesen         |
 | 3     | sensibel: Wohnadresse, Eltern-E-Mail, Foto, Gebühren-/Schadensdaten mit Namen                                                                                                                                      | DSGVO-Auskunft, Rechnungen    |
 
-**Rechte-Spalte:** ein Rechtename aus `db/rechte_vorgabe.go` (geprüft gegen
+**Rechte-Spalte:** ein Rechtename aus `internal/db/rechte_vorgabe.go` (geprüft gegen
 `verlangeRecht`), `öffentlich` (kein Wrapper, MUSS Stufe 0 sein — eigener Test),
 `Token` (Link-Token ist der Ausweis), `selbst-prüfend` (Handler validiert das
 Session-Cookie selbst) oder `Sitzung` (`VerlangeAnmeldung`).
@@ -53,9 +53,9 @@ Session-Cookie selbst) oder `Sitzung` (`VerlangeAnmeldung`).
 **Leitplanken (aus den Sicherheitsbefunden, `bewertung/sicherheitsbefund-*.md`):**
 `view_books` und `perform_actions` besitzt die Helfer-Rolle ab Werk — Routen mit
 Stufe ≥2 dürfen NIE allein dahinter liegen. Stufe 1 hinter Helfer-Rechten ist die
-bewusste Theken-Ausnahme (Theken-Sicht `thekenLeser`, `api/theke/theken_leser.go`). Der
+bewusste Theken-Ausnahme (Theken-Sicht `thekenLeser`, `internal/api/theke/theken_leser.go`). Der
 Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und hängt überall an
-`view_students` (`ohneSperrgrund` in `api/theke/eingabe.go`, auch für die Antwort des
+`view_students` (`ohneSperrgrund` in `internal/api/theke/eingabe.go`, auch für die Antwort des
 Nachbuchens). Stufe 3 gehört
 ausschließlich hinter `view_students`/`manage_students_admin`.
 

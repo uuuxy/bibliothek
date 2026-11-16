@@ -1,4 +1,4 @@
-// Die drei Wege der Sperre zum Server (auth/sperre.go): sperren, aufschließen, den Zustand lesen.
+// Die drei Wege der Sperre zum Server (internal/auth/sperre.go): sperren, aufschließen, den Zustand lesen.
 // Alle laufen unter /api/auth/: Ein 401 dort meldet den Arbeitsplatz nicht ab (apiFetch).
 
 import { apiFetch } from '../apiFetch.js';
@@ -59,7 +59,7 @@ export function entsperreAmServer(passwort) {
 
 /**
  * Fragt den Server, wie es um die Anmeldung steht. Gesperrt nennt er den Grund: nach
- * Inaktivität oder zehn Stunden nach der letzten Passworteingabe (auth/sitzungen.go).
+ * Inaktivität oder zehn Stunden nach der letzten Passworteingabe (internal/auth/sitzungen.go).
  * @returns {Promise<{ zustand: 'offen', konto: any } | { zustand: 'gesperrt', grund: SperrGrund } | { zustand: 'beendet' | 'unbekannt' }>}
  */
 export async function leseSperrzustand() {

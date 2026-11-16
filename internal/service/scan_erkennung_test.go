@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 
 	"github.com/google/go-cmp/cmp"
 )

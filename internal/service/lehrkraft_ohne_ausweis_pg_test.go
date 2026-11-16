@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
-	"bibliothek/repository"
 )
 
 func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {

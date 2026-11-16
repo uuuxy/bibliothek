@@ -18,7 +18,7 @@
 	const ablauf = useInventur();
 
 	// Der Menüpunkt hängt an inventory_scan. Starten, Abschließen, Verwerfen und die früheren Läufe
-	// verlangen manage_inventory (api/routen_theke.go); ohne das Recht bleibt das Scannen.
+	// verlangen manage_inventory (internal/api/routen_theke.go); ohne das Recht bleibt das Scannen.
 	const darfVerwalten = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
 
 	// $state, nicht `let`: Das Feld wird per bind:this gefüllt und unten in einem $effect

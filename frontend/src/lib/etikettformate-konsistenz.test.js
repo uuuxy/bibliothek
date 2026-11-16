@@ -13,7 +13,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 // diesem Projekt schon zweimal auseinandergelaufen ist (zuletzt die dreifach kopierte
 // Cover-Host-Allowlist, die eine Kopie kannte books.google nicht).
 //
-// Maßgeblich ist pdf/etikett_formate.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
+// Maßgeblich ist internal/pdf/etikett_formate.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
 // eigene Kopie davon: src/lib/components/etiketten/etikettformate.js. Vorher waren es zwei (Liste in
 // EtikettLayoutOptionen.svelte, Stückzahlen in stores/etiketten.svelte.js), und mit den
 // Schüler-Etiketten wäre die Ausweis-Werkzeugleiste die dritte geworden.
@@ -30,7 +30,7 @@ const repoRoot = join(libDir, '..', '..', '..');
 const goQuelle = readFileSync(join(repoRoot, 'pdf', 'etikett_formate.go'), 'utf8');
 
 /**
- * Liest die Formate aus pdf/etikett_formate.go: ID, Spalten und Zeilen.
+ * Liest die Formate aus internal/pdf/etikett_formate.go: ID, Spalten und Zeilen.
  * @returns {{id: string, cols: number, rows: number}[]}
  */
 function formateAusGo() {

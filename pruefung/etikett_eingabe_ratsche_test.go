@@ -3,15 +3,15 @@ package pruefung_test
 // Ratsche: Die Eingabe der Buchetiketten (pdf.BuchEtikett) füllt im Produktivcode nur die
 // Funktion PDFEtiketten in internal/buchetikett/buchetikett.go.
 //
-// Die Erzeuger in pdf/ kennen den Topf eines Exemplars nicht und drucken den
+// Die Erzeuger in internal/pdf/ kennen den Topf eines Exemplars nicht und drucken den
 // Eigentumsvermerk, den sie bekommen. Welcher gilt, entscheidet PDFEtiketten für alle
 // Druckwege. Ein zweiter Füller wählte den Vermerk nach eigener Regel oder gar nicht, und
 // dasselbe Buch trüge je nach Druckweg einen anderen Aufdruck.
 //
-// Regel: Außerhalb von pdf/ nennt keine Produktivdatei den Typ, außer in PDFEtiketten. Wer
+// Regel: Außerhalb von internal/pdf/ nennt keine Produktivdatei den Typ, außer in PDFEtiketten. Wer
 // nur das Ergebnis der Funktion weiterreicht, braucht den Namen nicht.
 //
-// Blindheit: ein Füller, der den Typ nie nennt (Reflection, eine Funktion in pdf/ selbst).
+// Blindheit: ein Füller, der den Typ nie nennt (Reflection, eine Funktion in internal/pdf/ selbst).
 // Testdateien prüft die Ratsche mit Absicht nicht.
 
 import (
@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	etikettEingabePaket = "bibliothek/pdf"
+	etikettEingabePaket = "bibliothek/internal/pdf"
 	etikettEingabeTyp   = "BuchEtikett"
 )
 
@@ -130,7 +130,7 @@ func TestEtikettEingabe_NurPDFEtikettenFuelltSie(t *testing.T) {
 // Der Detektor erkennt jede Form, in der eine Datei den Typ nennen kann, und hält einen
 // gleichnamigen Typ aus einem anderen Paket nicht für ihn.
 func TestEtikettEingabe_DetektorErkenntJedeForm(t *testing.T) {
-	const kopf = "package x\nimport \"bibliothek/pdf\"\n"
+	const kopf = "package x\nimport \"bibliothek/internal/pdf\"\n"
 	mit := map[string]string{
 		"Literal":                kopf + "func f() any { return pdf.BuchEtikett{Titel: \"a\"} }\n",
 		"Literal in einer Liste": kopf + "func f() any { return []pdf.BuchEtikett{{Titel: \"a\"}} }\n",
@@ -138,8 +138,8 @@ func TestEtikettEingabe_DetektorErkenntJedeForm(t *testing.T) {
 		"make":                   kopf + "func f() any { return make([]pdf.BuchEtikett, 1) }\n",
 		"Parameter":              kopf + "func f(e pdf.BuchEtikett) {}\n",
 		"Paketebene":             kopf + "var muster = pdf.BuchEtikett{}\n",
-		"eigener Name":           "package x\nimport blatt \"bibliothek/pdf\"\nfunc f() any { return blatt.BuchEtikett{} }\n",
-		"mit Punkt":              "package x\nimport . \"bibliothek/pdf\"\nfunc f() any { return BuchEtikett{} }\n",
+		"eigener Name":           "package x\nimport blatt \"bibliothek/internal/pdf\"\nfunc f() any { return blatt.BuchEtikett{} }\n",
+		"mit Punkt":              "package x\nimport . \"bibliothek/internal/pdf\"\nfunc f() any { return BuchEtikett{} }\n",
 	}
 	for form, quelle := range mit {
 		if len(etikettEingabeNennungen(t, "probe.go", quelle)) == 0 {
@@ -150,7 +150,7 @@ func TestEtikettEingabe_DetektorErkenntJedeForm(t *testing.T) {
 		"nur das Ergebnis":       kopf + "func f() any { return pdf.ErzeugeBuchEtiketten }\n",
 		"anderer Typ des Pakets": kopf + "func f() any { return pdf.SchuelerEtikett{} }\n",
 		"anderes Paket":          "package x\nimport \"bibliothek/andere\"\nfunc f() any { return andere.BuchEtikett{} }\n",
-		"anderes Paket neben pdf": "package x\nimport (\n\t\"bibliothek/andere\"\n\t\"bibliothek/pdf\"\n)\n" +
+		"anderes Paket neben pdf": "package x\nimport (\n\t\"bibliothek/andere\"\n\t\"bibliothek/internal/pdf\"\n)\n" +
 			"func f() any { return andere.BuchEtikett{} }\nvar _ = pdf.ErzeugeBuchEtiketten\n",
 		"eigener Typ":      "package x\ntype BuchEtikett struct{}\nfunc f() any { return BuchEtikett{} }\n",
 		"nur im Kommentar": kopf + "// pdf.BuchEtikett füllt ein anderer\nvar _ = pdf.ErzeugeBuchEtiketten\n",

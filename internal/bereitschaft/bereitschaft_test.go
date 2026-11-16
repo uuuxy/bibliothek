@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/jobs"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/jobs"
+	"bibliothek/internal/repository"
 )
 
 // testJetzt ist der feste Bezugspunkt statt time.Now(): Die Altersrechnung des Backups soll

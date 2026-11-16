@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
 )
 
 // Dieselben Daten auf beiden Wegen zum Etikett. Das Druck-Center bekommt Anschaffungsjahr,

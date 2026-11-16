@@ -19,7 +19,7 @@ import {
 // Geplant wird die AUSGABE: Sie setzt keine Fristen. Ein Rückgabe-Plan über die
 // Seed-Klassen würde die Fristen der Testausleihen umschreiben, und die anderen Läufe
 // dieser Suite rechnen mit dem Stichtag. Die Frist-Kopplung misst
-// api/lernmittel/lmf_termine_frist_pg_test.go am Postgres.
+// internal/api/lernmittel/lmf_termine_frist_pg_test.go am Postgres.
 const LEHRER_EMAIL = 'e2e-lehrer-lmfplan@test.local';
 
 // Der Plan schlägt die Klassen vor, in denen Schüler sind. Diese hier legt die Datei selbst an: je

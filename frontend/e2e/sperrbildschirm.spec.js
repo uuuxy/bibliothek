@@ -13,7 +13,7 @@ import { uiLogin, apiPost, csrfToken, uniqueSuffix, ADMIN_PASSWORD } from './hel
  *
  * Die Sperre gilt am Server: Hinter ihr beantwortet er keine Anfrage, und weder Neuladen
  * noch ein neuer Tab öffnen die Anwendung. Dass sie bei einem Ausfall des Mailservers mit
- * dem Passwort der Anmeldung aufgeht, steht in auth/sperre_pg_test.go — der Stack hier
+ * dem Passwort der Anmeldung aufgeht, steht in internal/auth/sperre_pg_test.go — der Stack hier
  * nimmt jedes Passwort an.
  *
  * Die Fristen werden NICHT verändert (Vorgaben 5/15 Minuten) — ein Teardown, der die

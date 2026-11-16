@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/mailservice"
 	"bibliothek/internal/smtptest"
-	"bibliothek/mailservice"
 )
 
 // FangeMailAb startet einen Testserver und liefert einen Postausgang, der dorthin verschickt,

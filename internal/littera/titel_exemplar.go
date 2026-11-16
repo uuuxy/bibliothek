@@ -27,8 +27,8 @@ import (
 	"strconv"
 	"strings"
 
-	"bibliothek/pkg/betrag"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/repository"
 )
 
 // Titel ist ein Katalogeintrag aus der Littera-Tabelle `Titel`.

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
-	"bibliothek/pkg/lmfplan"
+	"bibliothek/internal/pkg/lmfplan"
 )
 
 // Die Ausleihe liest ihre Einstellungen an der Datenbank: gesetzte Werte kommen an, eine Zeile

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // schweregrad einer Zeile im Protokoll.

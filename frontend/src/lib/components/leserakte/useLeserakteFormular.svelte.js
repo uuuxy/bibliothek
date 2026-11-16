@@ -107,7 +107,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 
 	// Ob zu dieser Leserzeile bereits ein Konto besteht. Es ist nicht dasselbe wie „das
 	// Feld ist ausgefüllt": Nachgetragen wird nur in eine LEERE Adresse, danach ist das
-	// Feld eine Anzeige (geändert wird in der Benutzerverwaltung, api/leser/leser_schul_email.go).
+	// Feld eine Anzeige (geändert wird in der Benutzerverwaltung, internal/api/leser/leser_schul_email.go).
 	let kontoVorhanden = $state(false);
 
 	// Die Nutzlast, wie die Maske sie direkt nach dem Füllen schickte. Das Speichern schickt

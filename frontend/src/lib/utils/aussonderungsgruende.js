@@ -1,6 +1,6 @@
 /**
  * Die vier Gründe, mit denen ein Exemplar aus dem Bestand geht, in der Reihenfolge der Auswahl
- * im Löschdialog. Der Server schreibt denselben Text ins Abgangsbuch (repository/aussonderungsgrund.go);
+ * im Löschdialog. Der Server schreibt denselben Text ins Abgangsbuch (internal/repository/aussonderungsgrund.go);
  * beide Seiten prüfen gegen aussonderungsgruende.faelle.json.
  *
  * „Alter Bestand" ist vorgewählt: In Littera stand er bei knapp drei Vierteln aller Abgänge mit

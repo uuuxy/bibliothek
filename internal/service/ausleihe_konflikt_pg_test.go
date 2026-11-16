@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 )
 
 // Nach einem abgeprallten Schreiben: Derselbe Leser hat sein Buch schon (der Scanner löste doppelt

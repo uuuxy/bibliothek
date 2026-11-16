@@ -39,7 +39,7 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `TRUSTED_PROXIES`                                                          | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log). Genau **ein** Hop: Client = rechtester Eintrag, den Caddy angehängt hat                                                                        | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig. Ein Eintrag, der weder Netz noch Adresse ist, fällt weg; der Start nennt ihn im Log, die Selbstprüfung als Warnung                   |
 | `BACKUP_DIR`                                                               | Zielverzeichnis der automatischen Backups                                                                                                                                                                                                    | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md)                                                                                                                                                                    |
 | `BACKUP_ENCRYPTION_KEY`                                                    | AES-256-Schlüssel der Backups                                                                                                                                                                                                                | **Ohne ihn läuft kein Backup** — der Job überspringt sich mit einer Logzeile; sichtbar wird das im Admin-Dashboard über `/api/admin/system/backup-status`                                                                                  |
-| `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_USE_SSL` | Optionaler Offsite-Upload der verschlüsselten Backups (`jobs/backup_auslagerung.go`); am Speicher löscht das Programm nach derselben Aufbewahrung wie im Volume                                                                              | Nur gemeinsam sinnvoll; fehlt eine, unterbleibt der Upload. Je Server ein eigener Bucket, denn die Aufbewahrung zählt alle Sicherungen darin; die Versionierung am Bucket bleibt aus, sonst behält der Speicher jede gelöschte Sicherung als ältere Fassung |
+| `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_USE_SSL` | Optionaler Offsite-Upload der verschlüsselten Backups (`internal/jobs/backup_auslagerung.go`); am Speicher löscht das Programm nach derselben Aufbewahrung wie im Volume                                                                              | Nur gemeinsam sinnvoll; fehlt eine, unterbleibt der Upload. Je Server ein eigener Bucket, denn die Aufbewahrung zählt alle Sicherungen darin; die Versionierung am Bucket bleibt aus, sonst behält der Speicher jede gelöschte Sicherung als ältere Fassung |
 | `SMTP_HOST`                                                                | SMTP-Server                                                                                                                                                                                                                                  | Optional (Mahnwesen)                                                                                                                                                                                                                       |
 | `SMTP_PORT`                                                                | SMTP-Port                                                                                                                                                                                                                                    | Standard: 587                                                                                                                                                                                                                              |
 | `SMTP_USER`                                                                | SMTP-Benutzername                                                                                                                                                                                                                            | Optional                                                                                                                                                                                                                                   |
@@ -139,7 +139,7 @@ Einstellung in der Oberfläche maßgeblich (`mail_settings_config`).
 > **`BACKUP_ENCRYPTION_KEY` nicht vergessen** — die Vorab-Sicherung vor jedem Update und die
 > Sicherung von Hand verschlüsseln damit, und die Nachtsicherung braucht ihn, sobald sie unter
 > Einstellungen → Sicherung eingeschaltet ist; ohne ihn überspringt sie sich mit einer Logzeile
-> (`jobs/backup.go`). Das fällt sonst erst auf, wenn man ein Backup braucht. Mindestens 32
+> (`internal/jobs/backup.go`). Das fällt sonst erst auf, wenn man ein Backup braucht. Mindestens 32
 > Zeichen: Die Ableitung läuft
 > per **scrypt** (speicherhart, gesalzen) — das erschwert den Offline-Rateangriff auf eine
 > entwendete Backup-Datei erheblich, ersetzt aber keine Passphrase-Entropie; eine kurze
@@ -306,7 +306,7 @@ der Container nicht.
 Auf einem anderen Host
 gehört der Abschnitt „Bibliothek" daraus in dessen Caddyfile, samt den Fristen unter
 `transport http`: Sie müssen zur Anwendung passen, denn ein Import darf 5 Minuten dauern
-(`langLaufendeFrist` in `api/middleware.go`), und der SSE-Strom `/events` läuft dauerhaft. Eine
+(`langLaufendeFrist` in `internal/api/middleware.go`), und der SSE-Strom `/events` läuft dauerhaft. Eine
 `tls`-Zeile braucht es nicht, Caddy holt das Zertifikat selbst (ACME).
 
 ### Von außen nur die Bestellseite
@@ -389,7 +389,7 @@ Migrationen laufen **automatisch beim Serverstart** (`db.Verbindung.FuehreMigrat
 ### Neue Migration hinzufügen
 
 1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
-2. Dateinamen in `schema.sql` unter `schema_migrations` eintragen (geprüft von `TestMigrationslisteImSchemaGleichDenDateien` in `db/migrationen_drift_test.go`)
+2. Dateinamen in `schema.sql` unter `schema_migrations` eintragen (geprüft von `TestMigrationslisteImSchemaGleichDenDateien` in `internal/db/migrationen_drift_test.go`)
 
 ### Major-Upgrade der Datenbank (z. B. 15 → 18)
 
@@ -443,7 +443,7 @@ Bricht Schritt 4 ab, bleibt der Abzug für den nächsten Versuch liegen. Er geh�
 gelöscht, wenn der alte oder der neue Stand wieder läuft; sonst nimmt ihn nach zwei Tagen die Uhr.
 
 Beim **nächsten** Major-Upgrade müssen vier Stellen gemeinsam wandern, sonst schlägt
-die Restore-Probe (`jobs/restore_probe.go`) am ersten Sonntag Alarm:
+die Restore-Probe (`internal/jobs/restore_probe.go`) am ersten Sonntag Alarm:
 `docker-compose.yml` + `docker-compose.local.yml` (Server), `Dockerfile`
 (`postgresqlNN-client`), `.github/workflows/ci.yml` (Service-Image **und** `PG_MAJOR`
 im Client-Installationsschritt).
@@ -593,7 +593,7 @@ grep -h '"level":"ERROR"' logs/backend_*.log
 Warnungen zeigt derselbe Befehl mit `"level":"WARN"`.
 
 Endete der vorige Lauf nicht geordnet, meldet der nächste Start, wie er endete
-(`pkg/laufvermerk`, der Vermerk liegt im Container unter `/app/laufvermerk`). Ein Update und ein
+(`internal/pkg/laufvermerk`, der Vermerk liegt im Container unter `/app/laufvermerk`). Ein Update und ein
 Neustart von Docker oder des Rechners halten den Server geordnet an und melden nichts.
 
 - „Voriger Lauf des Servers ist abgestürzt“: ein Programmfehler. Die Ursache nennt die Stelle im

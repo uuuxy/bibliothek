@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pkg/csvutil"
 	"bibliothek/internal/xlsxtest"
-	"bibliothek/pkg/csvutil"
 )
 
 // Die Quelle: CSV oder Excel, Kopfzeile gesucht statt vorausgesetzt. Ob die Schule
@@ -68,7 +68,7 @@ func TestLeseDatei_XLSXOhneKopfzeileMeldetPflichtspalte(t *testing.T) {
 }
 
 // Die Anleitung, wie aus der Datei eine lesbare wird, formuliert die Tür
-// (api/leser/lusd_datei_ablehnung_pg_test.go).
+// (internal/api/leser/lusd_datei_ablehnung_pg_test.go).
 func TestLeseDatei_AltesXlsWirdAbgewiesen(t *testing.T) {
 	xls := append([]byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, bytes.Repeat([]byte{0}, 64)...)
 	_, err := LeseDatei(xls)

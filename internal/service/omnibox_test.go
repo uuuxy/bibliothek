@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 
 	"github.com/google/go-cmp/cmp"
 )

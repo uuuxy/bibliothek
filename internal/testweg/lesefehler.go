@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 
 	"github.com/jackc/pgx/v5"
 )

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // LegeAusleiheMitFristAn legt Titel, Exemplar und eine offene Ausleihe mit der Frist an und

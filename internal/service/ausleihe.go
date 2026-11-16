@@ -3,9 +3,9 @@ package service
 import (
 	"time"
 
-	"bibliothek/db"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // AusleihErgebnis ist das Ergebnis einer Ausleihe oder Rückgabe eines Buchs.

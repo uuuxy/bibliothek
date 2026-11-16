@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // TestEchteKartennummerFindetDenSchueler prüft eine Nummer in der Form eines echten

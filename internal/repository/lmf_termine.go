@@ -1,0 +1,269 @@
+package repository
+
+import (
+	"context"
+	"time"
+
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+)
+
+// Der LMF-Plan: Rückgabe- und Ausgabetermine je Klasse — die Excel-
+// Tabelle der Schule als Tabelle im System. Ein Termin hat Datum, Stunde, Art und
+// Vermerk und 0..n Klassen aus dem Vokabular; „Bücher setzen" ist ein Termin ohne
+// Klasse, „6F1/6F2" einer mit zwei. Geschrieben werden Termine
+// nur über den Plan (lmf_plan.go): Die Reihenfolge ist die Wahrheit, Datum und Stunde
+// sind gerechnet — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
+
+// Die zwei Arten eines Termins: Rückgabe (setzt die Frist der Klasse) und Ausgabe.
+const (
+	LMFTerminRueckgabe = "rueckgabe"
+	LMFTerminAusgabe   = "ausgabe"
+)
+
+// LMFTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur Rückgabe" ist
+// kein gerechnetes Feld, sondern Text im Vermerk: Der Planer belegt ihn im Vorschlag vor, die
+// Bibliothek darf ihn ändern.
+type LMFTermin struct {
+	ID      string   `json:"id"`
+	Datum   string   `json:"datum"` // YYYY-MM-DD
+	Stunde  int      `json:"stunde"`
+	Art     string   `json:"art"`
+	Klassen []string `json:"klassen"`
+	Vermerk string   `json:"vermerk"`
+}
+
+// LMFListenFilter steuert LadeTermine: MitEntwuerfen zeigt auch unveröffentlichte
+// Pläne (nur der Planer selbst, für das PDF an die Schulleitung).
+type LMFListenFilter struct {
+	MitEntwuerfen bool
+}
+
+// SchuljahrBeginn liefert den 1. August des Schuljahres, in dem t liegt (Hessen:
+// 1. August bis 31. Juli) — in der Schulzeitzone, weil daraus Kalendertage werden.
+func SchuljahrBeginn(t time.Time) time.Time {
+	t = t.In(schulzeit.Zone())
+	jahr := t.Year()
+	if t.Month() < time.August {
+		jahr--
+	}
+	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
+}
+
+// schuljahrVon liefert das Schuljahr eines Zeitpunkts als Zahl — das Jahr seines
+// 1. August (Schuljahr 2026/27 → 2026). Die Differenz zweier solcher Zahlen ist die Zahl
+// der Schuljahre dazwischen; genau das braucht das Verleihjahr im Schadensersatz-Bescheid.
+func schuljahrVon(t time.Time) int {
+	return SchuljahrBeginn(t).Year()
+}
+
+// LMFAbfragen liest und schreibt den Plan der Lernmittel: die Termine der Rückgabe und Ausgabe
+// je Klasse.
+type LMFAbfragen struct {
+	db db.Pool
+}
+
+// NewLMFAbfragen liefert die Abfragen des Plans an Postgres.
+func NewLMFAbfragen(pool db.Pool) *LMFAbfragen {
+	return &LMFAbfragen{db: pool}
+}
+
+// LadeTermine liefert die Termine veröffentlichter Pläne ab einem Datum
+// (einschließlich), nach Datum und Stunde sortiert; ab = Nullzeit liefert alle. Die
+// Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
+// Entwürfe sieht nur, wer MitEntwuerfen setzt.
+func (a *LMFAbfragen) LadeTermine(ctx context.Context, ab time.Time, f LMFListenFilter) ([]LMFTermin, error) {
+	return a.ladeTermine(ctx, `
+		SELECT `+sqlLMFTerminSpalten+`
+		FROM lmf_termine t
+		JOIN lmf_plaene p ON p.id = t.plan_id
+		WHERE ($1::date IS NULL OR t.datum >= $1::date)
+		  AND ($2 OR p.veroeffentlicht_am IS NOT NULL)
+		ORDER BY t.datum, t.stunde, t.position`, nullbaresDatum(ab), f.MitEntwuerfen)
+}
+
+// LadeNaechstenPlan liefert die Termine des veröffentlichten Plans, der als nächster dran ist:
+// des Plans mit dem frühesten Termin am oder nach dem Tag. Ein laufender Plan steht so bis
+// einschließlich zu seinem letzten Tag, ab dem Tag danach der folgende. Gibt es keinen solchen
+// Termin, ist die Liste leer.
+func (a *LMFAbfragen) LadeNaechstenPlan(ctx context.Context, tag time.Time) ([]LMFTermin, error) {
+	return a.ladeTermine(ctx, `
+		SELECT `+sqlLMFTerminSpalten+`
+		FROM lmf_termine t
+		WHERE t.plan_id = (
+			SELECT n.plan_id FROM lmf_termine n
+			JOIN lmf_plaene p ON p.id = n.plan_id
+			WHERE p.veroeffentlicht_am IS NOT NULL AND n.datum >= $1::date
+			ORDER BY n.datum, n.stunde, n.position
+			LIMIT 1)
+		ORDER BY t.datum, t.stunde, t.position`, tag.In(schulzeit.Zone()).Format("2006-01-02"))
+}
+
+// sqlLMFTerminSpalten sind die Spalten eines Termins (Alias t) in der Reihenfolge, in der
+// ladeTermine sie liest.
+const sqlLMFTerminSpalten = `t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
+		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse) COLLATE deutsch)
+		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')`
+
+func (a *LMFAbfragen) ladeTermine(ctx context.Context, sql string, args ...any) ([]LMFTermin, error) {
+	rows, err := a.db.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	termine := []LMFTermin{}
+	for rows.Next() {
+		var t LMFTermin
+		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen); err != nil {
+			return nil, err
+		}
+		termine = append(termine, t)
+	}
+	return termine, rows.Err()
+}
+
+// nullbaresDatum macht aus der Nullzeit ein SQL-NULL, damit „alle" ohne zweites
+// Statement geht.
+func nullbaresDatum(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+// LMFTerminLage sagt, wo eine Klasse im veröffentlichten Rückgabe-Plan steht, gesehen von
+// einem Kalendertag aus. Der Ausleihdienst fragt sie beim Ausleihen eines Schulbuchs.
+type LMFTerminLage struct {
+	// Naechster ist der früheste Rückgabe-Termin der Klasse nach dem Tag (Mitternacht,
+	// Schulzeitzone) — Schreibvariante der Klasse egal, Ausgabe-Zeilen zählen nicht,
+	// Entwürfe zählen nicht.
+	Naechster time.Time
+	// Bevorstehend: es gibt einen solchen Termin.
+	Bevorstehend bool
+	// TauschBegonnen: Der Büchertausch des Schuljahres hat am oder vor dem Tag begonnen, gleich
+	// mit welcher Klasse oder Zeile. Wer jetzt ein Schulbuch bekommt, bekommt es für das nächste
+	// Schuljahr, auch aus einer Klasse, die nicht im Plan steht, oder als Nachzügler. Mit dem
+	// Stichtag des laufenden Schuljahres läge die Frist in den Ferien; danach wäre das Kind
+	// überfällig und nach 14 Tagen gesperrt.
+	TauschBegonnen bool
+}
+
+// LadeRueckgabeTerminLage liefert die Lage der Klasse zum Tag: den nächsten Termin danach
+// und ob der Büchertausch des laufenden Schuljahres am oder vor dem Tag begonnen hat. Eine
+// Abfrage, damit beide Antworten denselben Stand sehen.
+func (a *LMFAbfragen) LadeRueckgabeTerminLage(ctx context.Context, klasse string, tag time.Time) (LMFTerminLage, error) {
+	tag = tag.In(schulzeit.Zone())
+	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
+	var lage LMFTerminLage
+	var naechster *time.Time
+	// LEFT JOIN: Auch eine Zeile ohne Klasse („Bücher setzen") gehört zum Büchertausch.
+	err := a.db.QueryRow(ctx, `
+		SELECT min(t.datum) FILTER (WHERE t.datum > $1::date AND klassen_normkey(k.klasse) = klassen_normkey($2)),
+		       coalesce(bool_or(t.datum <= $1::date AND t.datum >= $3::date), false)
+		FROM lmf_termine t
+		JOIN lmf_plaene p ON p.id = t.plan_id
+		LEFT JOIN lmf_termin_klassen k ON k.termin_id = t.id
+		WHERE t.art = 'rueckgabe' AND p.veroeffentlicht_am IS NOT NULL`,
+		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.TauschBegonnen)
+	if err != nil {
+		return LMFTerminLage{}, err
+	}
+	if naechster != nil {
+		d := *naechster
+		lage.Naechster = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, schulzeit.Zone())
+		lage.Bevorstehend = true
+	}
+	return lage, nil
+}
+
+// sqlSchulbuchFristGehtMit sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
+// mitnehmen: die Massenverlängerung (VerlaengereLernmittelDerKlasse) und der LMF-Plan
+// (SetzeLernmittelFristFuerKlassen); s ist die Sicht `schueler`. Es ist die Regel der Theke für
+// das Lernmittel (service.PruefeSperreAmLeser): Die Sperre von Hand hält an, ein
+// anonymisierter Datensatz bekommt nichts, der Papierkorb ist draußen. Die Sperre, die das
+// Programm den Ehemaligen setzt (ist_gesperrt), zählt nicht.
+const sqlSchulbuchFristGehtMit = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
+
+// SetzeLernmittelFristFuerKlassen schreibt die Frist offener Lernmittel-Ausleihen der
+// genannten Klassen um — dieselbe Regel wie die Massenverlängerung (internal/api/theke/ausleihe.go):
+// nur Schüler nach sqlSchulbuchFristGehtMit, nur Lernmittel, Mahnstufe zurück, wenn die neue
+// Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
+// mehrjährige Ausleihe (Frist im übernächsten Sommer) folgt dem Plan nicht. Ist
+// nurWennFristAm gesetzt, werden nur Ausleihen angefasst, deren Frist genau an diesem
+// Tag liegt (Rückweg: ein gelöschter Termin gibt die Frist an den Stichtag zurück, ohne
+// Fristen zu berühren, die jemand von Hand gesetzt hat).
+//
+// Arbeitet auf einem Executor des Aufrufers — die Plan-Handler koppeln die Fristen in
+// derselben Transaktion wie den Plan.
+func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Datenbank, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
+	if len(klassen) == 0 {
+		return 0, nil
+	}
+	var nurTag *time.Time
+	if nurWennFristAm != nil {
+		t := nurWennFristAm.In(schulzeit.Zone())
+		tag := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, schulzeit.Zone())
+		nurTag = &tag
+	}
+	tag, err := ex.Exec(ctx, `
+		UPDATE ausleihen a
+		SET rueckgabe_frist = $1,
+		    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+		    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
+		FROM schueler s, buecher_exemplare e, buecher_titel t
+		WHERE a.schueler_id = s.id
+		  AND a.exemplar_id = e.id
+		  AND e.titel_id = t.id
+		  AND a.rueckgabe_am IS NULL
+		  AND `+sqlSchulbuchFristGehtMit+`
+		  -- eine Normalform für beide Seiten (klassen_normkey): „09H1" in der
+		  -- Akte und „9h1" aus dem Plan sind dieselbe Klasse. KlassenSchluessel (Go) kennt
+		  -- die führende Null nicht — deshalb hier nicht.
+		  AND klassen_normkey(s.klasse) IN (SELECT klassen_normkey(x) FROM unnest($2::text[]) AS x)
+		  AND t.ist_lernmittel
+		  AND a.rueckgabe_frist >= $3 AND a.rueckgabe_frist < $4
+		  AND ($5::date IS NULL OR (a.rueckgabe_frist AT TIME ZONE $6)::date = $5::date)`,
+		frist, klassen, von, bis, nurTag, schulzeit.Zone().String())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
+// SetzeLernmittelFristAbTauschbeginn gibt den offenen Schulbüchern, die am oder nach dem Beginn
+// des Büchertauschs ausgegeben wurden, die Frist des folgenden Schuljahres: dieselbe Regel, die
+// der Ausleihdienst beim Ausleihen über LMFTerminLage.TauschBegonnen anwendet. Sie zieht nach,
+// wenn der Plan erst während des Tauschs veröffentlicht wird oder sein Beginn nach vorn rückt.
+// Angefasst werden wie bei SetzeLernmittelFristFuerKlassen nur Schüler nach
+// sqlSchulbuchFristGehtMit mit einer Klasse und nur Fristen im Schuljahr [von, bis). Welcher
+// Stichtag gilt, hängt wie bei LMFStichtagNachJahren am Jahrgang des Kindes im folgenden Schuljahr.
+func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex Datenbank, beginn time.Time, ferien lmfplan.Ferientabelle, von, bis time.Time) (int64, error) {
+	ende := SchuljahrBeginn(beginn).Year() + 2
+	mittelstufe := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, true, ferien))
+	sonst := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, false, ferien))
+	tag, err := ex.Exec(ctx, `
+		UPDATE ausleihen a
+		SET rueckgabe_frist = f.frist,
+		    mahnstufe = CASE WHEN f.frist > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+		    letztes_mahndatum = CASE WHEN f.frist > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
+		FROM schueler s
+		CROSS JOIN LATERAL (SELECT CASE WHEN `+lmfMittelstufeSQL("s.klasse", 1)+`
+		                    THEN $1::timestamptz ELSE $2::timestamptz END AS frist) f,
+		     buecher_exemplare e, buecher_titel t
+		WHERE a.schueler_id = s.id
+		  AND a.exemplar_id = e.id
+		  AND e.titel_id = t.id
+		  AND a.rueckgabe_am IS NULL
+		  AND `+sqlSchulbuchFristGehtMit+`
+		  AND COALESCE(s.klasse, '') <> ''
+		  AND t.ist_lernmittel
+		  AND a.ausgeliehen_am >= $3
+		  AND a.rueckgabe_frist >= $4 AND a.rueckgabe_frist < $5`,
+		mittelstufe, sonst, beginn, von, bis)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

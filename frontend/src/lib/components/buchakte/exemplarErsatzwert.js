@@ -9,7 +9,7 @@
  * ist nicht wertlos, sein Preis ist bloß nicht erfasst.
  *
  * Deshalb beantwortet der Server die Frage und schickt sie als eigenes Feld mit
- * (`ersatzwert_bekannt`, pkg/ersatzwert.Vorschlag.HatPreis), statt dass hier ein Satz der
+ * (`ersatzwert_bekannt`, internal/pkg/ersatzwert.Vorschlag.HatPreis), statt dass hier ein Satz der
  * Herleitung gelesen wird, der bei der ersten Umformulierung still bricht. Fehlt das Feld
  * (eine alte Antwort, ein Objekt aus einer anderen Quelle), gilt „nicht bekannt": Lieber
  * eine Zeile zu wenig als eine falsche Zahl über einem Buch.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // litteraBefundDauer ist die Zeit, in der die Selbstprüfung das Ergebnis der letzten

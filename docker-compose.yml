@@ -78,7 +78,7 @@ services:
       # Schulserver möglicherweise anders). Ein zu enger Wert fällt nicht als Fehler
       # auf — er lässt still jede Client-IP auf die Proxy-Adresse zusammenfallen.
       #
-      # Der Default darf so weit sein: pkg/clientip vertraut genau einem Hop und nimmt den
+      # Der Default darf so weit sein: internal/pkg/clientip vertraut genau einem Hop und nimmt den
       # rechten X-Forwarded-For-Eintrag, den Caddy angehängt hat. Die Liste sagt nur, wer den
       # Header setzen darf, nicht, wer Client ist; die Geräte der Schule liegen selbst in
       # 192.168.x/10.x und zählen so jedes für sich.
@@ -109,12 +109,12 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, zufaellig - siehe .env.example)}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
-      # Kein Default: Die Attrappe "mock" (auth/imap.go) nimmt jedes Passwort für jede in
+      # Kein Default: Die Attrappe "mock" (internal/auth/imap.go) nimmt jedes Passwort für jede in
       # benutzer vorhandene E-Mail an; als Vorgabe stünde die Anmeldung offen. Leer ist erlaubt,
       # wenn LDAP_URL gesetzt ist; fehlen beide, verweigert der Server den Start
       # (auth.PruefeAnmeldeKonfig), ebenso mit "mock" außerhalb von APP_ENV=local/development/test.
       - IMAP_HOST=${IMAP_HOST:-}
-      # Verzeichnisdienst für Konten mit Anmeldeverfahren LDAP (auth/ldap.go); leer = kein LDAP.
+      # Verzeichnisdienst für Konten mit Anmeldeverfahren LDAP (internal/auth/ldap.go); leer = kein LDAP.
       # LDAP_CA_DATEI ist ein Pfad im Container: Eine Datei aus LDAP_CA_ORDNER liegt dort unter
       # /app/certs (volumes unten).
       - LDAP_URL=${LDAP_URL:-}
@@ -132,7 +132,7 @@ services:
       # Gesetzt, entsteht der erste Admin als LDAP-Konto mit dieser Kennung; nötig ohne IMAP_HOST.
       - INITIAL_ADMIN_LDAP_KENNUNG=${INITIAL_ADMIN_LDAP_KENNUNG:-}
       # Leer ist der Normalfall und warnt deshalb nicht: Versendet wird mit der Mail-Konfiguration
-      # in der Datenbank; die Umgebung ist nur Rückfall und Erstbefüllung (db/mail_konfig_uebernahme.go).
+      # in der Datenbank; die Umgebung ist nur Rückfall und Erstbefüllung (internal/db/mail_konfig_uebernahme.go).
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
@@ -140,7 +140,7 @@ services:
       - SMTP_FROM=${SMTP_FROM:-}
       # Backup-Variablen stehen hier, weil Compose ohne env_file nur die hier gelisteten
       # Schlüssel durchreicht. Fehlte eine, fände der nächtliche Backup-Job im Container keinen
-      # Schlüssel und übersprünge sich still (jobs/backup.go), auch wenn sie in der .env steht.
+      # Schlüssel und übersprünge sich still (internal/jobs/backup.go), auch wenn sie in der .env steht.
       # Ein Backup, das lautlos ausfällt, merkt man erst, wenn man es braucht.
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
       - BACKUP_DIR=${BACKUP_DIR:-/app/backups}

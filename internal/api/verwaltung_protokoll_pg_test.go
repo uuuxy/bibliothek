@@ -1,0 +1,347 @@
+package api_test
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/routertest"
+	"bibliothek/internal/testdaten"
+)
+
+// Vier Türen der Verwaltung ändern, wohin Mahnlisten und Bestellungen gehen, was in den Mails
+// steht und wann eine Klasse ihre Schulbücher abgibt. Wer es geändert hat, steht im Protokoll:
+// Bearbeiter, Zeit und Gegenstand. Die Mailadresse selbst steht nicht darin, sie bliebe bis
+// zur Aufbewahrungsfrist des Protokolls, auch wenn die Lehrkraft die Schule verlassen hat.
+// Eine Anfrage, die nichts ändert, und eine abgelehnte schreiben keinen Eintrag.
+func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := t.Context()
+	adminID, rufe := routertest.MitAufruf(t, pool)
+
+	const (
+		adresseLeitung  = "frau.beispiel@schule.example"
+		adresseLeitung2 = "herr.muster@schule.example"
+		adresseHaendler = "bestellung@haendler.example"
+	)
+	aktionen := `('KLASSENLEITUNG_GEAENDERT', 'KLASSENLEITUNG_ENTFERNT', 'MAILVORLAGE_GEAENDERT',
+		'LIEFERANT_ANGELEGT', 'LIEFERANT_GEAENDERT', 'LIEFERANT_GELOESCHT', 'FRIST_KLASSE_GEAENDERT')`
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN `+aktionen)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM klassen_lehrer_mapping WHERE klasse = 'VP7'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM mail_vorlagen WHERE typ = 'protokoll_probe'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
+	})
+
+	eintraege := func(t *testing.T, aktion string) int {
+		t.Helper()
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktion)
+	}
+	// letzter liest den jüngsten Eintrag der Aktion und prüft den Bearbeiter.
+	letzter := func(t *testing.T, aktion string) map[string]any {
+		t.Helper()
+		var wer string
+		var roh []byte
+		if err := pool.QueryRow(ctx, `
+			SELECT coalesce(admin_id::text, ''), details FROM audit_logs
+			WHERE aktion = $1 ORDER BY zeitstempel DESC, id DESC LIMIT 1`, aktion).Scan(&wer, &roh); err != nil {
+			t.Fatalf("%s: kein Eintrag im Protokoll: %v", aktion, err)
+		}
+		if wer != adminID {
+			t.Errorf("%s: Bearbeiter %q, erwartet %q", aktion, wer, adminID)
+		}
+		details := map[string]any{}
+		if err := json.Unmarshal(roh, &details); err != nil {
+			t.Fatalf("%s: Details unlesbar: %v", aktion, err)
+		}
+		return details
+	}
+	erwarte := func(t *testing.T, rec *httptest.ResponseRecorder, status int, was string) {
+		t.Helper()
+		if rec.Code != status {
+			t.Fatalf("%s: Status %d, erwartet %d: %s", was, rec.Code, status, rec.Body.String())
+		}
+	}
+
+	t.Run("Klassenleitung", func(t *testing.T) {
+		erwarte(t, rufe(t, http.MethodPost, "/api/klassen-mapping",
+			`{"klasse":"VP7","lehrer_email":"`+adresseLeitung+`"}`), http.StatusOK, "eintragen")
+		if d := letzter(t, "KLASSENLEITUNG_GEAENDERT"); d["klasse"] != "VP7" || d["art"] != "eingetragen" {
+			t.Errorf("Eintrag nach dem Eintragen: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPost, "/api/klassen-mapping",
+			`{"klasse":"VP7","lehrer_email":"`+adresseLeitung+`"}`), http.StatusOK, "dieselbe Adresse")
+		if n := eintraege(t, "KLASSENLEITUNG_GEAENDERT"); n != 1 {
+			t.Errorf("%d Einträge, nachdem dieselbe Adresse noch einmal gespeichert wurde; erwartet 1", n)
+		}
+
+		erwarte(t, rufe(t, http.MethodPost, "/api/klassen-mapping",
+			`{"klasse":"VP7","lehrer_email":"`+adresseLeitung2+`"}`), http.StatusOK, "andere Adresse")
+		if d := letzter(t, "KLASSENLEITUNG_GEAENDERT"); d["klasse"] != "VP7" || d["art"] != "geaendert" {
+			t.Errorf("Eintrag nach dem Ändern: %v", d)
+		}
+		if n := eintraege(t, "KLASSENLEITUNG_GEAENDERT"); n != 2 {
+			t.Errorf("%d Einträge nach Eintragen und Ändern, erwartet 2", n)
+		}
+
+		erwarte(t, rufe(t, http.MethodDelete, "/api/klassen-mapping/VP7", ""), http.StatusNoContent, "entfernen")
+		if d := letzter(t, "KLASSENLEITUNG_ENTFERNT"); d["klasse"] != "VP7" {
+			t.Errorf("Eintrag nach dem Entfernen: %v", d)
+		}
+		erwarte(t, rufe(t, http.MethodDelete, "/api/klassen-mapping/VP7", ""), http.StatusNotFound, "noch einmal entfernen")
+		if n := eintraege(t, "KLASSENLEITUNG_ENTFERNT"); n != 1 {
+			t.Errorf("%d Einträge zum Entfernen, erwartet 1", n)
+		}
+	})
+
+	t.Run("Mail-Vorlage", func(t *testing.T) {
+		var id string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO mail_vorlagen (typ, betreff, text_body)
+			VALUES ('protokoll_probe', 'Alter Betreff', 'Alter Text') RETURNING id`).Scan(&id); err != nil {
+			t.Fatalf("Vorlage anlegen: %v", err)
+		}
+		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/"+id,
+			`{"betreff":"Neuer Betreff","text_body":"Alter Text"}`), http.StatusOK, "Betreff ändern")
+		d := letzter(t, "MAILVORLAGE_GEAENDERT")
+		if d["vorlage"] != "protokoll_probe" || felderAlsZeile(d["felder"]) != "betreff" {
+			t.Errorf("Eintrag nach dem Ändern des Betreffs: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/"+id,
+			`{"betreff":"Neuer Betreff","text_body":"Alter Text"}`), http.StatusOK, "unverändert speichern")
+		if n := eintraege(t, "MAILVORLAGE_GEAENDERT"); n != 1 {
+			t.Errorf("%d Einträge nach einem Speichern ohne Änderung, erwartet 1", n)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/"+id,
+			`{"betreff":"Dritter Betreff","text_body":"Neuer Text"}`), http.StatusOK, "beides ändern")
+		if d := letzter(t, "MAILVORLAGE_GEAENDERT"); felderAlsZeile(d["felder"]) != "betreff,text" {
+			t.Errorf("Eintrag nach dem Ändern von Betreff und Text: %v", d)
+		}
+
+		// Eine Vorlage, die es nicht gibt, ist kein „Erfolgreich gespeichert".
+		erwarte(t, rufe(t, http.MethodPut, "/api/mail-templates/00000000-0000-4000-8000-000000000000",
+			`{"betreff":"x","text_body":"y"}`), http.StatusNotFound, "unbekannte Vorlage")
+		if n := eintraege(t, "MAILVORLAGE_GEAENDERT"); n != 2 {
+			t.Errorf("%d Einträge nach einer unbekannten Vorlage, erwartet 2", n)
+		}
+	})
+
+	t.Run("Lieferant", func(t *testing.T) {
+		rec := rufe(t, http.MethodPost, "/api/lieferanten",
+			`{"name":"Buchhandlung Protokoll","email":"`+adresseHaendler+`","customerNumber":"K-1"}`)
+		erwarte(t, rec, http.StatusCreated, "anlegen")
+		var angelegt struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &angelegt); err != nil || angelegt.ID == "" {
+			t.Fatalf("Antwort der Anlage ohne Kennung: %s", rec.Body.String())
+		}
+		if d := letzter(t, "LIEFERANT_ANGELEGT"); d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll" {
+			t.Errorf("Eintrag nach der Anlage: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID,
+			`{"name":"Buchhandlung Protokoll","email":"neu-`+adresseHaendler+`","customerNumber":"K-1"}`),
+			http.StatusOK, "Adresse ändern")
+		d := letzter(t, "LIEFERANT_GEAENDERT")
+		if d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll" || felderAlsZeile(d["felder"]) != "email" {
+			t.Errorf("Eintrag nach dem Ändern der Adresse: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID,
+			`{"name":"Buchhandlung Protokoll","email":"neu-`+adresseHaendler+`","customerNumber":"K-1"}`),
+			http.StatusOK, "unverändert speichern")
+		if n := eintraege(t, "LIEFERANT_GEAENDERT"); n != 1 {
+			t.Errorf("%d Einträge nach einem Speichern ohne Änderung, erwartet 1", n)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID,
+			`{"name":"Buchhandlung Protokoll 2","email":"neu-`+adresseHaendler+`","customerNumber":"K-2","ist_hauptlieferant":true}`),
+			http.StatusOK, "Name, Nummer und Hauptlieferant ändern")
+		if d := letzter(t, "LIEFERANT_GEAENDERT"); felderAlsZeile(d["felder"]) != "name,kundennummer,hauptlieferant" || d["name"] != "Buchhandlung Protokoll 2" {
+			t.Errorf("Eintrag nach dem Ändern von Name, Nummer und Hauptlieferant: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/00000000-0000-4000-8000-000000000000",
+			`{"name":"Niemand","email":"niemand@haendler.example","customerNumber":"K-0"}`),
+			http.StatusNotFound, "unbekannten Lieferanten ändern")
+		if n := eintraege(t, "LIEFERANT_GEAENDERT"); n != 2 {
+			t.Errorf("%d Einträge nach einem unbekannten Lieferanten, erwartet 2", n)
+		}
+
+		erwarte(t, rufe(t, http.MethodDelete, "/api/lieferanten/"+angelegt.ID, ""), http.StatusConflict, "Hauptlieferanten löschen")
+		if n := eintraege(t, "LIEFERANT_GELOESCHT"); n != 0 {
+			t.Errorf("%d Einträge zu einem abgelehnten Löschen", n)
+		}
+		// Abgewählt wird ausdrücklich: Ein Rumpf ohne das Merkmal lässt es stehen.
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID, `{"ist_hauptlieferant":false}`),
+			http.StatusOK, "Hauptlieferant abwählen")
+		if d := letzter(t, "LIEFERANT_GEAENDERT"); felderAlsZeile(d["felder"]) != "hauptlieferant" {
+			t.Errorf("Eintrag nach dem Abwählen: %v", d)
+		}
+		erwarte(t, rufe(t, http.MethodDelete, "/api/lieferanten/"+angelegt.ID, ""), http.StatusNoContent, "löschen")
+		if d := letzter(t, "LIEFERANT_GELOESCHT"); d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll 2" {
+			t.Errorf("Eintrag nach dem Löschen: %v", d)
+		}
+	})
+
+	t.Run("Lernmittel einer Klasse verlängern", func(t *testing.T) {
+		kind := testdaten.LegeSchuelerAn(t, pool, "S-VPR-1", "Protokoll", "5a")
+		testdaten.LegeAusleiheMitFristAn(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(2027, time.March, 31))
+
+		rec := rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
+			`{"klasse":"5a","neues_rueckgabe_datum":"2027-06-30"}`)
+		erwarte(t, rec, http.StatusOK, "verlängern")
+		d := letzter(t, "FRIST_KLASSE_GEAENDERT")
+		frist, istText := d["neue_frist"].(string)
+		if !istText || d["klasse"] != "5a" || d["fristen_angepasst"] != float64(1) || !strings.HasPrefix(frist, "2027-06-30") {
+			t.Errorf("Eintrag nach dem Verlängern: %v", d)
+		}
+
+		erwarte(t, rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
+			`{"klasse":"VP9","neues_rueckgabe_datum":"2027-06-30"}`), http.StatusOK, "Klasse ohne Ausleihe")
+		if n := eintraege(t, "FRIST_KLASSE_GEAENDERT"); n != 1 {
+			t.Errorf("%d Einträge, nachdem für eine Klasse ohne Ausleihe nichts geändert wurde; erwartet 1", n)
+		}
+	})
+
+	// Keine der Adressen steht in einem der Einträge.
+	for _, adresse := range []string{adresseLeitung, adresseLeitung2, adresseHaendler} {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs
+			WHERE aktion IN `+aktionen+` AND position($1 in details::text) > 0`, adresse); n != 0 {
+			t.Errorf("Die Adresse %s steht in %d Einträgen des Protokolls", adresse, n)
+		}
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN `+aktionen); n != 11 {
+		t.Errorf("%d Einträge insgesamt, erwartet 11", n)
+	}
+}
+
+// felderAlsZeile macht aus der Liste der geänderten Felder eines Eintrags eine Zeile.
+func felderAlsZeile(wert any) string {
+	liste, istListe := wert.([]any)
+	if !istListe {
+		return ""
+	}
+	namen := make([]string, 0, len(liste))
+	for _, f := range liste {
+		if s, ok := f.(string); ok {
+			namen = append(namen, s)
+		}
+	}
+	return strings.Join(namen, ",")
+}
+
+// Zusammenführen, Umleiten und Löschen von Schlagworten lassen sich nicht zurücknehmen: Die
+// Titel hängen danach an einem anderen Wort oder an keinem. Wer es getan hat, steht im
+// Protokoll, mit den Wörtern und der Zahl der Titel. Eine abgelehnte Anfrage schreibt nichts.
+func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := t.Context()
+	adminID, rufe := routertest.MitAufruf(t, pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
+	})
+
+	var titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_titel (titel, autor) VALUES ('Protokollprobe Schlagworte', 'Test') RETURNING id`).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if _, err := repository.SetzeSchlagworte(ctx, pool, titelID,
+		[]string{"Protokollprobe Tierfantasy", "Protokollprobe Fantasy", "Protokollprobe Weg"}); err != nil {
+		t.Fatalf("Schlagworte setzen: %v", err)
+	}
+	kennung := func(wort string) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE wort = $1`, wort).Scan(&id); err != nil {
+			t.Fatalf("Schlagwort %q lesen: %v", wort, err)
+		}
+		return id
+	}
+	// letzter liest den jüngsten Eintrag der Aktion und prüft den Bearbeiter.
+	letzter := func(t *testing.T, aktion string) map[string]any {
+		t.Helper()
+		var wer string
+		var roh []byte
+		if err := pool.QueryRow(ctx, `
+			SELECT coalesce(admin_id::text, ''), details FROM audit_logs
+			WHERE aktion = $1 ORDER BY zeitstempel DESC, id DESC LIMIT 1`, aktion).Scan(&wer, &roh); err != nil {
+			t.Fatalf("%s: kein Eintrag im Protokoll: %v", aktion, err)
+		}
+		if wer != adminID {
+			t.Errorf("%s: Bearbeiter %q, erwartet %q", aktion, wer, adminID)
+		}
+		details := map[string]any{}
+		if err := json.Unmarshal(roh, &details); err != nil {
+			t.Fatalf("%s: Details unlesbar: %v", aktion, err)
+		}
+		return details
+	}
+	eintraege := func(t *testing.T) int {
+		t.Helper()
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+	}
+	tierfantasy, fantasy, weg := kennung("Protokollprobe Tierfantasy"), kennung("Protokollprobe Fantasy"), kennung("Protokollprobe Weg")
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/"+tierfantasy+"/zusammenfuehren",
+		`{"ziel_id":"`+fantasy+`","alte_als_verweis":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("zusammenführen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_ZUSAMMENGEFUEHRT"); d["von"] != "Protokollprobe Tierfantasy" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(1) || d["alte_als_verweis"] != false {
+		t.Errorf("Eintrag nach dem Zusammenführen: %v", d)
+	}
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/verweise",
+		`{"wort":"Protokollprobe Phantastik","ziel_id":"`+fantasy+`"}`); rec.Code != http.StatusNoContent {
+		t.Fatalf("Verweis setzen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_VERWEIS"); d["wort"] != "Protokollprobe Phantastik" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(0) {
+		t.Errorf("Eintrag nach dem Verweis: %v", d)
+	}
+
+	// Eine Schreibweise, die es schon als Schlagwort mit einem Titel gibt, wird mit dem Ziel
+	// zusammengeführt. Gewählt ist der Verweis „Phantastik"; der Eintrag nennt das Wort
+	// dahinter, die gespeicherte Schreibweise und den Titel, der umgehängt wurde.
+	phantastik := kennung("Protokollprobe Phantastik")
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/verweise",
+		`{"wort":"  protokollprobe   WEG ","ziel_id":"`+phantastik+`"}`); rec.Code != http.StatusNoContent {
+		t.Fatalf("vorhandenes Wort umleiten: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_VERWEIS"); d["wort"] != "Protokollprobe Weg" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(1) {
+		t.Errorf("Eintrag nach dem Umleiten eines vorhandenen Wortes: %v", d)
+	}
+
+	vorher := eintraege(t)
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/loeschen",
+		`{"ids":["`+weg+`","00000000-0000-0000-0000-000000000000"]}`); rec.Code != http.StatusNotFound {
+		t.Fatalf("löschen mit einer unbekannten Kennung: Status %d, erwartet 404", rec.Code)
+	}
+	if n := eintraege(t); n != vorher {
+		t.Errorf("die abgelehnte Löschung hat einen Eintrag geschrieben (%d statt %d)", n, vorher)
+	}
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/loeschen", `{"ids":["`+weg+`"]}`); rec.Code != http.StatusOK {
+		t.Fatalf("löschen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	d := letzter(t, "SCHLAGWORT_GELOESCHT")
+	woerter, ok := d["woerter"].([]any)
+	if !ok || len(woerter) != 1 || woerter[0] != "Protokollprobe Weg" || d["anzahl"] != float64(1) || d["titel"] != float64(0) {
+		t.Errorf("Eintrag nach dem Löschen: %v", d)
+	}
+}

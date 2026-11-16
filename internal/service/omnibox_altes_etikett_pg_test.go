@@ -11,7 +11,7 @@ package service
 // Umlauf und müssen weiter funktionieren.
 //
 // Geprüft am echten Dienst gegen echtes Postgres, nicht an der Zeichenrechnung: Dass Mod 43
-// stimmt, steht in pkg/code39. Hier geht es um die Frage, die nur der Live-Pfad beantwortet —
+// stimmt, steht in internal/pkg/code39. Hier geht es um die Frage, die nur der Live-Pfad beantwortet —
 // kommt am Ende eine Ausleihe zustande, und findet ein alter Ausweis sein Kind?
 
 import (
@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/code39"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
-	"bibliothek/pkg/code39"
-	"bibliothek/repository"
 )
 
 func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {

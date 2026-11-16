@@ -13,7 +13,7 @@ set -eu
 # (`GET /api/dinge/{id}`, `POST /extend/`), die keine Routen sind. Dieselbe Regel wie beim
 # Frontend unten.
 go_routen() {
-  grep -rhE '\.Handle(Func)?\(' api/ --include="*.go" --exclude="*_test.go" \
+  grep -rhE '\.Handle(Func)?\(' internal/api/ --include="*.go" --exclude="*_test.go" \
     | grep -oE '"(GET |POST |PUT |PATCH |DELETE )?/[^"]*"' \
     | tr -d '"' | sed 's/^ *//' | sort -u
 }
@@ -34,10 +34,14 @@ go_routen > "$TMP/go_routes.txt"
 
 # 2. Frontend-Aufrufe (Literale und Template-Strings)
 #
-# Zwei Ausschlüsse gegen falsche Alarme im Abschnitt "Geister-Aufrufe":
+# Drei Ausschlüsse gegen falsche Alarme im Abschnitt "Geister-Aufrufe":
 #
 #   --exclude=*.test.js/*.spec.js : Testdateien erfinden Pfade (`/api/test` in
 #       apiFetch.test.js) und rufen keine echten Routen.
+#
+#   /api/ hinter einem Buchstaben, einer Ziffer oder _ : Ein Kommentar, der auf eine Go-Datei
+#       verweist (internal/api/abmeldung.go), ist kein Aufruf. Das Zeichen davor nimmt der
+#       erste sed wieder ab.
 #
 #   sed 's/[.,;:)]*$//' : Ein Pfad in einem Kommentar ("geladen aus
 #       /api/bestellungen/konfiguration.") nähme sonst den Satzpunkt mit, weil '.' in der
@@ -49,9 +53,9 @@ go_routen > "$TMP/go_routes.txt"
 # Frontend-Aufrufer". Das schließende ')' entfernt der sed unten, wenn es am Ende steht.
 #
 # Ein Register, das Fehlalarm schlägt, wird nach dem zweiten Mal nicht mehr gelesen.
-grep -rhoE '(/api/[A-Za-z0-9_/${}().?=&-]*)' frontend/src --include="*.js" --include="*.svelte" \
+grep -rhoE '(^|[^A-Za-z0-9_])/api/[A-Za-z0-9_/${}().?=&-]*' frontend/src --include="*.js" --include="*.svelte" \
   --exclude="*.test.js" --exclude="*.spec.js" \
-  | sed 's/[?].*$//' | sed 's/[.,;:)]*$//' | sort -u > "$TMP/fe_calls.txt"
+  | sed 's|^[^/]||' | sed 's/[?].*$//' | sed 's/[.,;:)]*$//' | sort -u > "$TMP/fe_calls.txt"
 
 # 3. Abgleich
 python3 - "$TMP" <<'EOF' > "$TMP/abgleich.txt"

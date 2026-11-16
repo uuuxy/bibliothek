@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"bibliothek/pkg/pdfzeichen"
+	"bibliothek/internal/pkg/pdfzeichen"
 
 	"github.com/phpdave11/gofpdf"
 )

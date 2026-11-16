@@ -33,9 +33,9 @@ $$;
 -- -------------------------------------------------------------
 -- 1. ENUMS AND CUSTOM TYPES
 -- -------------------------------------------------------------
--- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/token.go RolleHelfer, Router.svelte).
+-- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe internal/auth/token.go RolleHelfer, Router.svelte).
 -- 'leitung': Bibliotheksleitung — alles ausser manage_users und manage_settings
--- (Migration 121/122, Rechte in db/rechte_vorgabe.go).
+-- (Migration 121/122, Rechte in internal/db/rechte_vorgabe.go).
 -- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
 -- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER. Es ist
 -- der GRUNDZUSTAND jeder Lehrkraft (Selbstanmeldung), keine vergebene Rolle.
@@ -118,7 +118,7 @@ CREATE TABLE benutzer (
     -- leser.art; das Konto sagt nur, was er darf.
 );
 
--- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/anmelden.go).
+-- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, internal/auth/anmelden.go).
 CREATE UNIQUE INDEX uniq_benutzer_email_lower ON benutzer (lower(email));
 -- Migration 172: Die Anmeldung findet ein LDAP-Konto auch über seine Kennung.
 CREATE UNIQUE INDEX uniq_benutzer_ldap_kennung_lower
@@ -132,7 +132,7 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- Hinweis: Die frühere Tabelle benutzer_rollen wurde mit Migration 044 entfernt.
 -- Die Rolle eines Benutzers steht ausschliesslich in benutzer.rolle (ENUM). Welche
 -- Rechte eine Rolle hat, steht in role_permissions (GROSS-Vokabular; die Middleware
--- verbindet beide per UPPER(), siehe api/permission_middleware.go).
+-- verbindet beide per UPPER(), siehe internal/api/permission_middleware.go).
 
 -- Table: role_permissions (Rechte je Rolle). Der Inhalt kommt aus dem Seed
 -- (db.RechteVorgabe, ON CONFLICT DO NOTHING) — nur die Struktur steht hier, und in
@@ -154,7 +154,7 @@ CREATE TABLE role_permissions (
 -- und eltern_email. Zweck der Adress-/Kontaktdaten ist ausschließlich der Versand
 -- von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
 -- Löschung: Beim Abgang ohne offene Vorgänge werden diese Felder in der
--- Anonymisierung geleert (siehe repository/lusd_import.go: AnonymisiereAbgaenger).
+-- Anonymisierung geleert (siehe internal/repository/lusd_import.go: AnonymisiereAbgaenger).
 -- Hinweis: Rechtsgrundlage & Aufbewahrungsfrist für das Verzeichnis von
 -- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
 CREATE TABLE leser (
@@ -250,7 +250,7 @@ CREATE INDEX idx_schueler_barcode_lower_trgm ON leser USING gin (lower(barcode_i
 -- nur unter aktiven Schülern (soft-gelöschte dürfen bei Wiederanmeldung neu entstehen,
 -- analog uniq_schueler_lusd_id_active). Siehe Migration 048.
 -- In der Normalform suchnorm (Migration 108): „Anna Müller" und „Anna Mueller" mit gleichem
--- Geburtsdatum sind EIN Mensch — dieselbe Regel wie der LUSD-Schlüssel (repository/lusd_bestand.go).
+-- Geburtsdatum sind EIN Mensch — dieselbe Regel wie der LUSD-Schlüssel (internal/repository/lusd_bestand.go).
 CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON leser (suchnorm(vorname), suchnorm(nachname), geburtsdatum)
     WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL AND lusd_id IS NULL;
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
@@ -305,7 +305,7 @@ FOR EACH ROW EXECUTE FUNCTION leser_aktualisiert_am();
 --
 -- SELECT * friert die Spaltenliste beim Anlegen ein. Eine neue Spalte in leser
 -- erscheint hier also NICHT von selbst; das Gate dafuer steht in
--- repository/schema_gegenrichtung_pg_test.go. Auf dem gewachsenen Weg muss die
+-- internal/repository/schema_gegenrichtung_pg_test.go. Auf dem gewachsenen Weg muss die
 -- Migration die Sicht deshalb mit CREATE OR REPLACE VIEW nachziehen — Migration 137
 -- (letzter_vorgang_am) ist der erste Fall, und PredikatAnonymisierung liest genau
 -- diese Sicht.
@@ -436,7 +436,7 @@ CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
 -- Table: sitzungen (Migration 155) — eine Zeile je Anmeldung. An ihr hängt die Sperre nach
 -- Inaktivität; das Token trägt ihre Kennung und behält sie über jede Erneuerung.
 -- passwort_pruefwert schließt die Sperre auf, wenn der Mailserver der Schule nicht erreichbar
--- ist (auth/pruefwert.go). Abmelden löscht die Zeile, abgelaufene räumt der Server ab.
+-- ist (internal/auth/pruefwert.go). Abmelden löscht die Zeile, abgelaufene räumt der Server ab.
 CREATE TABLE sitzungen (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     benutzer_id UUID NOT NULL REFERENCES benutzer(id) ON DELETE CASCADE,
@@ -454,7 +454,7 @@ CREATE INDEX idx_sitzungen_benutzer ON sitzungen(benutzer_id);
 -- Table: werke (Migration 148) — ein Buch über seinen Auflagen. Titel mit derselben
 -- werk_id sind Auflagen desselben Buchs; ein Titel ohne Werk ist sein eigenes (gelesen über
 -- COALESCE(werk_id, id)). Kein Name: Jede Ansicht zeigt die neueste Auflage mit ihrem Titel.
--- Geschrieben nur über repository/auflagen.go.
+-- Geschrieben nur über internal/repository/auflagen.go.
 CREATE TABLE werke (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     angelegt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -462,7 +462,7 @@ CREATE TABLE werke (
 
 COMMENT ON TABLE werke IS
     'Ein Buch über seinen Auflagen (Migration 148): Titel mit derselben werk_id sind '
-    'Auflagen desselben Buchs. Geschrieben nur über repository/auflagen.go.';
+    'Auflagen desselben Buchs. Geschrieben nur über internal/repository/auflagen.go.';
 
 -- Table: buecher_titel (Master book catalog metadata)
 -- Under the strict rule: metadata is separated from physical copies
@@ -496,7 +496,7 @@ CREATE TABLE buecher_titel (
     -- Liste unterscheidbar macht.
     auflage VARCHAR(50),
     -- Migration 148: das Buch, zu dem diese Auflage gehört (docs/OFFEN.md 4.18). NULL heißt:
-    -- keine andere Auflage zugeordnet. Geschrieben nur über repository/auflagen.go, nicht
+    -- keine andere Auflage zugeordnet. Geschrieben nur über internal/repository/auflagen.go, nicht
     -- über AendereTitel; ein Werk löscht nur diese Datei, nachdem sie den letzten Titel gelöst
     -- hat — SET NULL fängt einen übersehenen auf.
     werk_id UUID CONSTRAINT fk_titel_werk REFERENCES werke (id) ON DELETE SET NULL,
@@ -636,7 +636,7 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- case-insensitiv eindeutig (die zuerst angelegte Schreibweise gewinnt); ein Titel trägt
 -- beliebig viele. Eigene Tabelle statt Spalte am Titel, damit Umbenennen und Zählen eine
 -- Zeile bzw. ein JOIN sind. Geschrieben über repository.SetzeSchlagworte (am Titel) und
--- repository/schlagworte_pflege.go (Pflege, Migration 143).
+-- internal/repository/schlagworte_pflege.go (Pflege, Migration 143).
 CREATE TABLE schlagworte (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     wort TEXT NOT NULL,
@@ -857,7 +857,7 @@ CREATE INDEX IF NOT EXISTS idx_exemplare_ausgesondert_am
 -- Migration 130: der Tag kommt aus der SCHULZEITZONE, nicht aus CURRENT_DATE. Die
 -- Sitzung läuft in UTC; bis 2 Uhr Berliner Zeit ist CURRENT_DATE dort noch der Vortag,
 -- und ein Wareneingang um halb eins landete damit im falschen Halbjahr des
--- Zugangsbuchs. Gleiche Rechnung wie pkg/schulzeit (SQLHeute).
+-- Zugangsbuchs. Gleiche Rechnung wie internal/pkg/schulzeit (SQLHeute).
 CREATE OR REPLACE FUNCTION stempel_zugang_am()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -1165,7 +1165,7 @@ CREATE TABLE ausleihen (
     ist_handapparat BOOLEAN NOT NULL DEFAULT false,    -- True if borrowed by a teacher (handapparat)
 
     -- Mahnwesen: Mahnstufe (0 = noch nie gemahnt) und Zeitpunkt der letzten Mahnung.
-    -- Der Bulk-Mahnlauf (api/mahnwesen/mahnbriefe.go) zählt mahnstufe pro Mahnung hoch.
+    -- Der Bulk-Mahnlauf (internal/api/mahnwesen/mahnbriefe.go) zählt mahnstufe pro Mahnung hoch.
     mahnstufe INTEGER NOT NULL DEFAULT 0,
     letztes_mahndatum TIMESTAMP WITH TIME ZONE,
 
@@ -1258,7 +1258,7 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 -- Migration 137: Ein ABGESCHLOSSENER Schadensfall stempelt leser.letzter_vorgang_am.
 -- Abgeschlossen heißt ist_bezahlt — das setzt die Bezahlung wie das Storno
--- (repository/audit_system.go). Der Zeitpunkt ist der spätere von aktualisiert_am und
+-- (internal/repository/audit_system.go). Der Zeitpunkt ist der spätere von aktualisiert_am und
 -- storniert_am; GREATEST übergeht dabei ein NULL. Gestempelt wird nur nach vorne.
 CREATE OR REPLACE FUNCTION leser_stempel_schaden()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -1290,7 +1290,7 @@ FOR EACH ROW EXECUTE FUNCTION leser_stempel_schaden();
 --   audit_logs (mit s)  = ADMIN-Eingriffe mit IP-Adresse (admin_id/aktion/details,
 --                         Schreiber: LogAdminAktion, z. B. UPDATE_SETTINGS, USER_CREATE).
 -- Keine Umbenennung: Beide Namen stehen in zu vielen Abfragen, Tests und der
--- Aufbewahrungs-Routine (jobs/cron_protokoll_aufbewahrung.go löscht beide). Wer hier eine
+-- Aufbewahrungs-Routine (internal/jobs/cron_protokoll_aufbewahrung.go löscht beide). Wer hier eine
 -- dritte Protokoll-Tabelle anlegt, wählt bitte einen unverwechselbaren Namen.
 CREATE TABLE audit_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1438,7 +1438,7 @@ CREATE TABLE bestellungen_verlauf (
         CHECK (etiketten_groesse IS NULL OR etiketten_groesse IN ('klein', 'gross')),
     -- Bogenraster der KLEINEN Etiketten, das der Lieferant beim Drucken gewaehlt hat
     -- (z. B. 'zweckform_l4760'), NULL wenn nicht angegeben (Migration 067).
-    -- Bewusst OHNE CHECK: Die gueltigen Werte stehen in api/label_formats.go und wachsen;
+    -- Bewusst OHNE CHECK: Die gueltigen Werte stehen in internal/api/label_formats.go und wachsen;
     -- geprueft wird an der Eingangstuer (istBekanntesEtikettFormat, 400 statt 500).
     etiketten_format   TEXT,
     -- Bestätigungs-Link an den Lieferanten (Migration 063). Gespeichert wird NUR der
@@ -1508,7 +1508,7 @@ CREATE INDEX idx_buecher_exemplare_bestellung
     WHERE bestellung_id IS NOT NULL;
 
 -- Exemplare ohne gedrucktes Etikett je Titel (Migration 064). Die Bedingung muss
--- wortgleich zu etikettenOffenBedingung (api/druck/etiketten_offen.go) bleiben — sonst kann
+-- wortgleich zu etikettenOffenBedingung (internal/api/druck/etiketten_offen.go) bleiben — sonst kann
 -- Postgres den Teil-Index nicht mehr verwenden, und er wird still nutzlos.
 CREATE INDEX idx_buecher_exemplare_etikett_offen
     ON buecher_exemplare (titel_id)
@@ -1805,7 +1805,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 -- WICHTIG: Diese Liste MUSS exakt allen Dateien in migrations/*.sql entsprechen.
 -- schema.sql baut bei einer Neuinstallation bereits das vollständige, aktuelle Schema auf.
--- Damit der Migrations-Runner (db/migrationen.go) beim Start NICHT versucht, dieselben
+-- Damit der Migrations-Runner (internal/db/migrationen.go) beim Start NICHT versucht, dieselben
 -- Migrationen erneut anzuwenden (→ "column already exists"-Fehler → os.Exit(1)), werden
 -- hier ALLE Migrationsversionen als bereits angewendet markiert. Fehlt hier eine Datei,
 -- läuft sie beim Start gegen das fertige Schema und bricht den Serverstart ab.
@@ -2026,11 +2026,11 @@ GROUP BY bt.id, bt.titel;
 
 -- barcode_seq ist die EINZIGE Quelle für Exemplarnummern (Präfix "B-") — Bestellwesen,
 -- Handvergabe in der Exemplarkarte und Littera-Import ziehen alle hier (siehe
--- repository/barcode_vergabe.go, Migration 068). Sie zählt streng aufwärts und sieht
+-- internal/repository/barcode_vergabe.go, Migration 068). Sie zählt streng aufwärts und sieht
 -- den Bestand nie an: Die Nummer eines gelöschten Exemplars wird deshalb NICHT wieder
 -- frei. Das ist Absicht — die Nummer klebt physisch am Buch.
 -- Ziffernlänge begrenzt und bigint statt integer — identisch zu Migration 068 und
--- repository/barcode_vergabe.go. Zwei abweichende Vorstellungen davon, was eine gültige
+-- internal/repository/barcode_vergabe.go. Zwei abweichende Vorstellungen davon, was eine gültige
 -- B-Nummer ist, waren genau der Ursprung dieses Fehlers.
 CREATE SEQUENCE IF NOT EXISTS barcode_seq START 10000;
 SELECT setval('barcode_seq', (

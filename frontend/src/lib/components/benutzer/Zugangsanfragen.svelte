@@ -13,7 +13,7 @@
 	 *  1. Littera-Treffer: Eine aus Littera übernommene Lehrkraft hat nur eine
 	 *     Platzhalter-Adresse (internal/littera/schreiber_personen.go: …@littera.invalid).
 	 *     Der Server verbindet mit Absicht nicht über den Namen
-	 *     (auth/selbstanmeldung_littera_pg_test.go).
+	 *     (internal/auth/selbstanmeldung_littera_pg_test.go).
 	 *  2. Leserzeile ohne Konto: ein Kollege, der vor der Schul-E-Mail-Pflicht von Hand
 	 *     eingetragen wurde. Ihn findet die Selbstanmeldung nicht, und in `konten` steht er
 	 *     auch nicht. Gesucht wird er deshalb dort, wo er steht: über die Kandidatensuche des
@@ -21,7 +21,7 @@
 	 *     trg_benutzer_hat_leserzeile als Kollegen anlegt; die Suche liefert nur Kollegium).
 	 *
 	 * Zuordnen statt löschen: Das Konto zieht auf den vorhandenen Eintrag um, die Zeile des
-	 * Wächters geht darin auf (repository/zugangsanfrage_zuordnen_pg_test.go). Die Anfrage zu
+	 * Wächters geht darin auf (internal/repository/zugangsanfrage_zuordnen_pg_test.go). Die Anfrage zu
 	 * löschen und die Adresse am vorhandenen Eintrag nachzutragen, hinterließe die Leserzeile
 	 * des Wächters als Waise, ohne Konto und ohne Ausweis: genau den Doppeleintrag, vor dem
 	 * die Zeile warnt.
@@ -40,7 +40,7 @@
 
 	const LITTERA_PLATZHALTER = '@littera.invalid';
 
-	// Zusammenführen hängt am Recht merge_students (api/routen_leser.go). Ohne das
+	// Zusammenführen hängt am Recht merge_students (internal/api/routen_leser.go). Ohne das
 	// Recht bleibt der Hinweis stehen, aber ohne Knopf — der Server lehnte ihn mit 403 ab.
 	const darfZuordnen = $derived(hatRecht(authStore.currentUser, 'merge_students'));
 

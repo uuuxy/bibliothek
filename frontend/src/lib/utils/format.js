@@ -56,7 +56,7 @@ export function formatZeitpunkt(wert) {
  * Auslegung des dritten Falls wäre eine zu viel.
  *
  * `null`/`undefined` heißt nicht null: Nur die Suchabfragen liefern die Zahlen mit
- * (siehe repository/titel.go, Bestand/Verfuegbar als Zeiger); alle anderen lassen
+ * (siehe internal/repository/titel.go, Bestand/Verfuegbar als Zeiger); alle anderen lassen
  * sie weg. Über einen Titel, dessen Bestand niemand gezählt hat, schreibt die
  * Oberfläche gar nichts statt „Keine Exemplare".
  *
@@ -118,7 +118,7 @@ export function bestandLage(gesamt, verfuegbar) {
 /**
  * Der Jahrgang eines Titels als Text: „7" für ein Jahr, „7–10" für eine Spanne. Ohne Eintrag
  * ist er unbekannt und der Text leer. Dieselbe Regel wie im Ausdruck der Schulbuchliste
- * (pdf/schulbuecher.go, jahrgangText); beide Seiten lesen dieselben Prüffälle
+ * (internal/pdf/schulbuecher.go, jahrgangText); beide Seiten lesen dieselben Prüffälle
  * (jahrgangSpanne.faelle.json).
  *
  * @param {number | string | null | undefined} von

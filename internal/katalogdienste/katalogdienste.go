@@ -1,6 +1,6 @@
 // Package katalogdienste fragt die Katalogdienste nach den Angaben zu einem Buch: die Deutsche
 // Nationalbibliothek, Google Books und OpenLibrary. Es liest ihre Antworten, schätzt aus dem Titel
-// Fach und Jahrgang und legt das gefundene Cover in der lokalen Ablage ab (pkg/coverablage).
+// Fach und Jahrgang und legt das gefundene Cover in der lokalen Ablage ab (internal/pkg/coverablage).
 //
 // Das Paket formuliert keine Anweisung an die Datenbank. Wer einen Treffer speichert, ist die
 // Tür, die ihn bekommt: die Maske eines Titels, die Bestellung über die ISBN, der Listenimport und
@@ -17,11 +17,11 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/betrag"
-	"bibliothek/pkg/coverquelle"
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/pkg/safehttp"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/coverquelle"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/pkg/safehttp"
+	"bibliothek/internal/repository"
 )
 
 // MetadatenClient fragt die Katalogdienste (DNB, Google Books, OpenLibrary) über HTTP nach den
@@ -65,7 +65,7 @@ type MetadatenErgebnis struct {
 // NewMetadatenClient baut den Client mit einer Frist von 8 Sekunden, damit ein hängender Dienst
 // die Anfrage nicht aufhält.
 //
-// Der Client kommt aus pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
+// Der Client kommt aus internal/pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
 // mit fremden Servern (DNB, Google, OpenLibrary, lobid) und lädt über dieselbe Instanz
 // auch Cover herunter. Die Hostnamen-Allowlist in coverquelle.Hole prüft nur die URL,
 // die WIR bilden — wohin ein erlaubter Host per Redirect weiterschickt, sah sie nicht.
@@ -242,7 +242,7 @@ func (c *MetadatenClient) holeInhalt(kontext context.Context, adresse string) ([
 	// Angefragt wird die NEU gebaute URL, nicht apiURL: Geprüft hätte url.Parse,
 	// losgeschickt worden wäre der rohe String. Wo sich die beiden Parser über ein
 	// Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den geprüften
-	// (Parsing Differential, gosec G704). Die Liste liegt in pkg/coverquelle und ist
+	// (Parsing Differential, gosec G704). Die Liste liegt in internal/pkg/coverquelle und ist
 	// bewusst enger als die Cover-Liste.
 	sichereURL, ok := coverquelle.SichereURL(adresse, coverquelle.MetadatenHosts)
 	if !ok {

@@ -3,7 +3,7 @@ package auskunft
 import (
 	"fmt"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // dsgvoVerarbeitungsangabenKollegium sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für
@@ -14,10 +14,10 @@ import (
 //
 // Woran jede Aussage im Code hängt:
 //   - Klassenleitung: klassen_lehrer_mapping speist die Mahnliste der Klasse und den Versand
-//     der Abgänger-Kontoauszüge (api/mahnwesen/abgaenger_mail.go).
+//     der Abgänger-Kontoauszüge (internal/api/mahnwesen/abgaenger_mail.go).
 //   - Namen am Anliegen und an der Reservierung sieht das Bibliothekspersonal
-//     (repository/anliegen.go, reservierung.go); die Kontenliste verlangt
-//     manage_users, das Protokoll audit_logs (api/routen_system.go).
+//     (internal/repository/anliegen.go, reservierung.go); die Kontenliste verlangt
+//     manage_users, das Protokoll audit_logs (internal/api/routen_system.go).
 //   - Trennen der Ausleihen: praedikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
 //     und Meldungen (FuehreKlassensatzBefristungAus). Ein gelöschter Kollege fällt nach 180 Tagen im

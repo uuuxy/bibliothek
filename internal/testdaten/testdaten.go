@@ -2,7 +2,7 @@
 // Konten, Ausleihen, Bestellungen, Forderungen. Was es anlegt, schreibt es unmittelbar in die
 // Tabelle, nicht über den Weg des Programms: Ein Test stellt damit eine Lage her und prüft dann
 // die Tür. Was über den Weg des Programms geht, steht in internal/testweg. Pakete des Projekts
-// bindet testdaten nicht ein, außer internal/pgtest und zwei aus pkg/ ohne eigene Abhängigkeiten:
+// bindet testdaten nicht ein, außer internal/pgtest und zwei aus internal/pkg/ ohne eigene Abhängigkeiten:
 // So können auch die Tests von repository, db und internal/service es einbinden.
 //
 // Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden: Eine Testdatei
@@ -18,7 +18,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // LeereBestandsdaten leert Bestands-, Bestell- und Personendaten zwischen Tests. klassen und

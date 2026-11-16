@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 )
 
 // Die Schlagworte der Titel kommen alle mit. Littera führt sie in der Tabelle Schlagworte

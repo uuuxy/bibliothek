@@ -1,0 +1,174 @@
+package leser
+
+import (
+	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auskunft"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pdf"
+	"bibliothek/internal/testdaten"
+
+	"github.com/pashagolub/pgxmock/v5"
+)
+
+// TestErzeugeBlatt stellt sicher, dass der Auskunfts-Generator aus
+// vollständigen Daten ein valides, nicht-triviales PDF erzeugt — inkl. gefüllter
+// Listen (die MultiCell-Umbrüche und optionale Zeiger-Felder auslösen).
+func TestErzeugeBlatt(t *testing.T) {
+	gebdatum := "2010-05-01"
+	lusd := "LUSD-4711"
+	sperrgrund := "Test-Sperrgrund"
+	rueckgabe := time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+	notiz := "bitte zurücklegen"
+	kontext := "Import"
+
+	daten := &dsgvoDaten{
+		stammdaten: &auskunft.Stammdaten{
+			ID: "abc-123", BarcodeID: "S-10001", Vorname: "Erika", Nachname: "Mustermann",
+			Klasse: "7b", Geburtsdatum: &gebdatum, AbgaengerJahr: 2030, LUSDID: &lusd,
+			Strasse: "Hauptstr.", Hausnummer: "5", Plz: "60311", Ort: "Frankfurt",
+			ElternEmail: "eltern@example.org", IstGesperrt: true, IstVonHandGesperrt: true,
+			Sperrgrund: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
+		},
+		foto:               auskunft.Foto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
+		ausleihen:          []auskunft.Ausleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
+		schaeden:           []auskunft.Schadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
+		vormerkungen:       []auskunft.Vormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
+		protokollEintraege: []auskunft.ProtokollEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
+	}
+
+	out, err := auskunft.ErzeugeBlatt(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	if err != nil {
+		t.Fatalf("ErzeugeBlatt: %v", err)
+	}
+	if !bytes.HasPrefix(out, []byte("%PDF")) {
+		t.Errorf("Ausgabe ist kein PDF (Prefix %q)", out[:min(8, len(out))])
+	}
+	if len(out) < 1500 {
+		t.Errorf("PDF verdächtig klein: %d Bytes", len(out))
+	}
+}
+
+func dsgvoPDFAnfrage(t *testing.T, mock pgxmock.PgxPoolIface, pathID string) *httptest.ResponseRecorder {
+	t.Helper()
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+pathID+"/dsgvo-auskunft/pdf", nil)
+	req.SetPathValue("id", pathID)
+	rec := httptest.NewRecorder()
+	s.DSGVOAuskunftPDF()(rec, req)
+	return rec
+}
+
+func TestDSGVOAuskunftPDF_Erfolg(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	erwarteStammdaten(mock)
+	fotoZeit := time.Now().Add(-24 * time.Hour)
+	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"aktualisiert_am"}).AddRow(fotoZeit))
+	mock.ExpectQuery(`FROM ausleihen a`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"gegenstand", "barcode", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "ist_handapparat"}).
+			AddRow("Mathe 7", "B-100", time.Now(), time.Now().Add(14*24*time.Hour), (*time.Time)(nil), false))
+	mock.ExpectQuery(`FROM schadensfaelle`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"beschreibung", "betrag", "ist_bezahlt", "erstellt_am", "storniert_am", "stornierungsgrund"}).
+			AddRow("Wasserschaden", "12.50", true, time.Now(), (*time.Time)(nil), (*string)(nil)))
+	mock.ExpectQuery(`FROM vormerkungen v`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"titel", "status", "notiz", "erstellt_am"}).
+			AddRow("Faust I", "offen", (*string)(nil), time.Now()))
+	mock.ExpectQuery(`FROM schadensersatz_bescheide`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"referenznummer", "brief_datum", "frist_bis", "gesamtbetrag", "status"}))
+	mock.ExpectQuery(`FROM nachbuch_meldungen`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"rolle", "barcode", "ergebnis", "grund", "gescannt_am", "quittiert_am"}))
+	mock.ExpectQuery(`FROM audit_log`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"tabelle", "aktion", "akteur", "timestamp", "kontext", "details", "gegenstand", "barcode"}).
+			AddRow("ausleihen", "CHECKOUT", "USER", time.Now(), (*string)(nil), []byte(`{"exemplar_id":"e-1"}`), "Mathebuch 7", "B-500"))
+	mock.ExpectQuery(`FROM audit_logs`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).
+			AddRow("RESTORE_STUDENT", time.Now(), []byte(`{"schueler_id":"`+dsgvoTestID+`"}`)))
+	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
+	// Frühere Zugangskonten über ihren Löscheintrag. Ein Schüler hat keine.
+	mock.ExpectQuery(`FROM audit_log\s+WHERE tabelle = 'benutzer' AND aktion = 'DELETE'`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "timestamp", "email", "rolle"}))
+
+	// Die Tür liest die Einstellungen zweimal: für die Fristen der Pflichtangaben und für den
+	// Kopf der Schule.
+	for range 2 {
+		mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
+			WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+				AddRow("schule_name", testdaten.ZeigerAuf("Test School")).
+				AddRow("schule_ort", testdaten.ZeigerAuf("Test City")))
+	}
+
+	// Der Eintrag über die erteilte Auskunft folgt dem Blatt.
+	mock.ExpectExec(`INSERT INTO audit_log`).
+		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("Content-Type") != "application/pdf" {
+		t.Errorf("falscher Content-Type: %s", rec.Header().Get("Content-Type"))
+	}
+	if !bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF")) {
+		t.Errorf("Ausgabe ist kein PDF (Prefix %q)", rec.Body.Bytes()[:min(8, rec.Body.Len())])
+	}
+	if len(rec.Body.Bytes()) < 1500 {
+		t.Errorf("PDF verdächtig klein: %d Bytes", rec.Body.Len())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unerfüllte Erwartungen: %s", err)
+	}
+}
+
+func TestDSGVOAuskunftPDF_OhneKennung(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	rec := dsgvoPDFAnfrage(t, mock, "")
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestDSGVOAuskunftPDF_Unbekannt(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT id, COALESCE\(barcode_id, ''\) AS barcode_id, vorname`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"})) // keine Zeile
+
+	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("rec.Code = %d, erwartet 404: %s", rec.Code, rec.Body.String())
+	}
+}

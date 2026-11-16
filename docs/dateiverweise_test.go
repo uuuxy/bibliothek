@@ -21,12 +21,12 @@ import (
 // sonst weiter auf den alten Ort, und wer ihm folgt, findet nichts.
 //
 // Ein Verweis ist ein Pfad, der mit einem Ordner der Wurzel beginnt und auf eine Dateiendung
-// endet (api/router.go, docs/OFFEN.md); die Oberfläche und die Skripte nennen Pfade auch ab
+// endet (internal/api/router.go, docs/OFFEN.md); die Oberfläche und die Skripte nennen Pfade auch ab
 // frontend/. In den Dokumenten zählen dazu die Ziele der Links. Gelesen und gemessen wird an den
 // Dateien, die git führt (git ls-files), nicht am Arbeitsplatz: Dort liegen gebaute und
 // abgelegte Dateien, die es im Prüflauf nicht gibt.
 //
-// Blindheit: ein Dateiname ohne Ordner (router.go), ein Muster (api/bestell*.go), ein Ordner
+// Blindheit: ein Dateiname ohne Ordner (router.go), ein Muster (internal/api/bestell*.go), ein Ordner
 // ohne Datei, ein Pfad hinter einem Commit (git show 424f186a:docs/x.md meint die Geschichte),
 // eine Datei, die .gitignore ausnimmt, eine neue Datei vor git add, im Go-Code alles außer den
 // Kommentaren, Migrationen und schema.sql (sie beschreiben den Stand ihres Tages), und ob die
@@ -358,19 +358,19 @@ func linkVerweise(stueck textstueck, ordner string) []dateiverweis {
 // für einen Verweis, was keiner ist.
 func TestDateiverweise_Selbstprobe(t *testing.T) {
 	baum := newDateiBaum([]string{
-		"api/router.go", "api/thema/tuer.go", "docs/OFFEN.md", "docs/datenschutz/nachweis.md", "README.md",
+		"internal/api/router.go", "internal/api/thema/tuer.go", "docs/OFFEN.md", "docs/datenschutz/nachweis.md", "README.md",
 		"frontend/src/lib/stores/meldung.svelte.js", "frontend/scripts/gate.mjs", "scripts/gate.sh",
 	})
 	text := strings.Join([]string{
-		"Die Tür steht in `api/router.go`, die Regel in api/thema/tuer.go.",                  // 1: zwei Verweise
-		"Weg ist api/alt.go:42 und api/thema/alt_test.go, dazu docs/FEHLT.md.",               // 2: drei ohne Datei
-		"Der Speicher (frontend/src/lib/stores/meldung.svelte.js) und src/lib/fehlt.js.",     // 3: einer da, einer ab frontend/ ohne Datei
-		"Kein Verweis: router.go, api/bestell*.go, api/, bibliothek/api/fehlt.go,",           // 4
-		"https://example.org/docs/fehlt.md, ../api/fehlt.go, pkg/lmf.SQLBedingung,",          // 5
-		"git show 424f186a:docs/geschichte.md, ${wurzel}/api/fehlt.go, andere/fehlt.go,",     // 6
-		"import x from '$lib/fehlt.js' und api/v1.2 und internal/service.",                   // 7
-		"Links: [Plan](OFFEN.md), [Nachweis](datenschutz/nachweis.md#frist), [oben](#kopf),", // 8
-		"[Netz](https://example.org/x.md), [weg](FEHLT.md), [hoch](../README.md).",           // 9
+		"Die Tür steht in `internal/api/router.go`, die Regel in internal/api/thema/tuer.go.",                 // 1: zwei Verweise
+		"Weg ist internal/api/alt.go:42 und internal/api/thema/alt_test.go, dazu docs/FEHLT.md.",              // 2: drei ohne Datei
+		"Der Speicher (frontend/src/lib/stores/meldung.svelte.js) und src/lib/fehlt.js.",                      // 3: einer da, einer ab frontend/ ohne Datei
+		"Kein Verweis: router.go, internal/api/bestell*.go, internal/api/, bibliothek/internal/api/fehlt.go,", // 4
+		"https://example.org/docs/fehlt.md, ../api/fehlt.go, internal/pkg/lmf.SQLBedingung,",                  // 5
+		"git show 424f186a:docs/geschichte.md, ${wurzel}/api/fehlt.go, andere/fehlt.go,",                      // 6
+		"import x from '$lib/fehlt.js' und internal/api/v1.2 und internal/service.",                           // 7
+		"Links: [Plan](OFFEN.md), [Nachweis](datenschutz/nachweis.md#frist), [oben](#kopf),",                  // 8
+		"[Netz](https://example.org/x.md), [weg](FEHLT.md), [hoch](../README.md).",                            // 9
 	}, "\n")
 	stueck := textstueck{zeile: 10, text: text}
 
@@ -384,7 +384,7 @@ func TestDateiverweise_Selbstprobe(t *testing.T) {
 		}
 	}
 	sort.Strings(ohne)
-	erwartet := []string{"11 api/alt.go", "11 api/thema/alt_test.go", "11 docs/FEHLT.md", "12 src/lib/fehlt.js", "18 (FEHLT.md)"}
+	erwartet := []string{"11 docs/FEHLT.md", "11 internal/api/alt.go", "11 internal/api/thema/alt_test.go", "12 src/lib/fehlt.js", "18 (FEHLT.md)"}
 	if !slices.Equal(ohne, erwartet) {
 		t.Errorf("ohne Datei gemeldet:\n  %q\nerwartet:\n  %q", ohne, erwartet)
 	}
@@ -416,7 +416,7 @@ func TestDateiverweise_Selbstprobe(t *testing.T) {
 	}
 
 	// Im Go-Code zählen die Kommentare, nicht die Zeichenketten.
-	quelle := "package x\n\n// Siehe api/router.go.\nvar a = \"api/erdacht.go\" /* und docs/OFFEN.md */\n"
+	quelle := "package x\n\n// Siehe internal/api/router.go.\nvar a = \"internal/api/erdacht.go\" /* und docs/OFFEN.md */\n"
 	kommentare := goKommentare([]byte(quelle))
 	if len(kommentare) != 2 || kommentare[0].zeile != 3 || kommentare[1].zeile != 4 ||
 		strings.Contains(kommentare[0].text+kommentare[1].text, "erdacht") {

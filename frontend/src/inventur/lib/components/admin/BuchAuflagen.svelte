@@ -1,7 +1,7 @@
 <!-- @component BuchAuflagen — „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske
      (docs/OFFEN.md 4.18). Eine neue Auflage ist ein eigener Titel mit eigener ISBN; hier
      ordnet man die Titel zu, die dasselbe Schulbuch sind, und löst sie wieder. Die Regeln
-     stehen im Server (repository/auflagen.go).
+     stehen im Server (internal/repository/auflagen.go).
 
      Sichtbar bei jedem Lernmittel und bei jedem Titel, der schon zu einem Buch gehört: Sonst
      ließe er sich nicht mehr lösen. Aufbau wie ein Feld (Beschriftung, Liste und Knopf,

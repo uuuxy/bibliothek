@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // Die Reihenfolge, mit der ein neuer LMF-Plan beginnt, und was die Tür dazu über einen Plan

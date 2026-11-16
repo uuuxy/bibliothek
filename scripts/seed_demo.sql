@@ -50,7 +50,7 @@ SELECT
     s.klasse,
     DATE '2007-01-01' + ((s.i * 37) % 2600),
     -- Abgänger aufs AKTUELLE Jahr: der GDPR-Job löscht Abgänger mit abgaenger_jahr <
-    -- aktuellem Jahr (jobs/cron.go). CURRENT_DATE hält sie in der Karenzzeit und macht
+    -- aktuellem Jahr (internal/jobs/cron.go). CURRENT_DATE hält sie in der Karenzzeit und macht
     -- den Seed selbstwartend. Aktive Schüler: künftiges Abgangsjahr.
     CASE WHEN s.ist_abgaenger THEN EXTRACT(YEAR FROM CURRENT_DATE)::int ELSE 2028 + (s.i % 5) END,
     s.ist_abgaenger,

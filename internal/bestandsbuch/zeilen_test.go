@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/mitteltopf"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 
 	"github.com/google/go-cmp/cmp"
 )

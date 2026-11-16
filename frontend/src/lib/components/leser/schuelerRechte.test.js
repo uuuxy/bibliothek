@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { schuelerRechte, darfAuskunftUeber } from './schuelerRechte.js';
 
 // Die DSGVO-Auskunft über einen Leser mit Zugangskonto verlangt am Server zusätzlich
-// manage_users (api/leser/dsgvo_auskunft.go, TestDSGVOAuskunft_KontoVerlangtKontenrecht). Die Akte
+// manage_users (internal/api/leser/dsgvo_auskunft.go, TestDSGVOAuskunft_KontoVerlangtKontenrecht). Die Akte
 // bietet den Knopf nach derselben Regel an — sonst stünde er bei der Leitung da und endete
 // mit 403.
 describe('darfAuskunftUeber', () => {
@@ -28,7 +28,7 @@ describe('darfAuskunftUeber', () => {
 });
 
 // Mit der Leserzeile eines Kollegen fällt sein Konto; einen Zugang löscht der Server deshalb nur
-// mit manage_users (api/leser_loeschen_zugang_pg_test.go). Die Gefahrenzone fragt dasselbe Recht.
+// mit manage_users (internal/api/leser_loeschen_zugang_pg_test.go). Die Gefahrenzone fragt dasselbe Recht.
 describe('loeschenMitZugang', () => {
 	const mitarbeiter = { rolle: 'mitarbeiter', permissions: ['view_students', 'delete_students'] };
 

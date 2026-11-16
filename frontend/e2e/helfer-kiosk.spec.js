@@ -16,7 +16,7 @@ import { sammleStoerungen } from './rundgang-hilfe.js';
 //
 // Diese Spec sichert das ab, was die Rolle ausmacht: Sie ist vergebbar, sie führt in
 // den Kiosk, sie bucht dort, und sie kommt an nichts anderes heran. Ab Werk hält sie
-// perform_actions und view_books (db/rechte_vorgabe.go); die Grenze zu den Akten zieht
+// perform_actions und view_books (internal/db/rechte_vorgabe.go); die Grenze zu den Akten zieht
 // view_students (docs/datenschutz/nachweis.md, Abschnitt 3).
 
 const HELFER_EMAIL = 'e2e-helfer@test.local';

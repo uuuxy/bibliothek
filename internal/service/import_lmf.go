@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"bibliothek/pkg/lmf"
+	"bibliothek/internal/pkg/lmf"
 )
 
 // Littera kennzeichnet Schulbücher der Lernmittelfreiheit uneinheitlich: als Vorsilbe der

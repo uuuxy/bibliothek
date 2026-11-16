@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // SchuljahrEnde liefert das Jahr, in dem das laufende Schuljahr endet (Schuljahr 2026/27:

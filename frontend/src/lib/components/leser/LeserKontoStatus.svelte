@@ -61,7 +61,7 @@
 
 	{#if onLock}
 		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Der Knopf hebt jede Sperre am
-		     Leser auf, auch die der Ehemaligen (api/leser/leser_sperre.go). Ein Kollege wird nie
+		     Leser auf, auch die der Ehemaligen (internal/api/leser/leser_sperre.go). Ein Kollege wird nie
 		     gesperrt: Der Knopf bleibt an seiner Stelle, verschlossen, mit dem Satz warum (eine
 		     Maske für jeden). -->
 		<Button

@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 15.11.2026
+Stand: 16.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -67,7 +67,7 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
-- [ ] Ablage nach dem Aufbau des Go-Teams: die zehn oberen Paketordner nach `internal/`. (5.184)
+- [x] Ablage nach dem Aufbau des Go-Teams: die zehn oberen Paketordner nach `internal/`. (5.184)
 
 ### Termin
 
@@ -114,7 +114,7 @@ Schuljahres aus. Der Übergang soll für die Oberstufe entspannt sein: Nicht all
 dabei, und manche behalten ein Buch länger.
 
 Stand im Programm: Schulbücher der Oberstufe haben den 31. Juli als Frist (FACHKONZEPT 2.1,
-`repository/lmf_stichtag.go`). Ein Schulbuch hält nur eine Sperre von Hand auf (Entscheidung der
+`internal/repository/lmf_stichtag.go`). Ein Schulbuch hält nur eine Sperre von Hand auf (Entscheidung der
 Schule, FACHKONZEPT 2.2). Die Überfällig-Automatik zählt aber jede überfällige Ausleihe
 außer Handapparat und Gerät, also auch Schulbücher (`repository.ZaehleUeberfaelligeAusleihen`):
 Wer im September Bücher des Vorjahres noch hat, wird nach den Toleranztagen für Bücher der
@@ -132,22 +132,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.184 Ablage nach go.dev: Pakete unter `internal/`
-
-Die Anleitung des Go-Teams für Server-Projekte ([go.dev/doc/modules/layout](https://go.dev/doc/modules/layout),
-„Server project“): „it's recommended to keep the Go packages implementing the server's logic in
-the internal directory“, die Programme unter `cmd/`. Zehn Paketordner liegen oben neben
-`internal/` (`api`, `apierrors`, `auth`, `db`, `jobs`, `mailservice`, `pdf`, `pkg`, `repository`,
-`sse`); die Programme stehen schon unter `cmd/`, der Server in `cmd/server/`. Das Dockerfile kopiert jeden
-Paketordner einzeln; daran hingen drei Fixes, seitdem hält `pruefung/image_quellen_test.go` die Liste. Die Prüfungen
-über das ganze Repository stehen schon in `pruefung/` (ARCHITEKTUR 5.2.2).
-
-Nächster Schritt: die zehn Ordner nach
-`internal/`: Importe in 966 Go-Dateien, das Dockerfile kopiert nur noch `internal/` und `cmd/`,
-Pfade in CI, Skripten, Sonar und Doku nachziehen (`/api/…` in Webadressen bleibt), die Regel in
-ARCHITEKTUR 5.2.2. Nachweis: Go-Suite, Linter, alte Pfade gezählt gleich null, jede Ratsche
-einmal rot, Browser-Suite, Image gebaut.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -254,7 +238,7 @@ Programm gedrucktes Etikett mit `B-` oder `LMF-`, den ISBN-Strichcode auf der R�
 mit fünfstelligem Preiszusatz (im ISBN-Feld beim Titel anlegen kommen 13 Ziffern an; `isbnFormen.js`
 kennt nur 10 oder 13).
 
-**Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`pdf/orte_test.go`),
+**Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`internal/pdf/orte_test.go`),
 Rand und Maßstab des Druckers nicht. Je einmal drucken: einen Mahnbrief für einen Schüler mit
 mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folgeseite mit
 „Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die

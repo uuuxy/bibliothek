@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/testweg"
-	"bibliothek/repository"
 )
 
 // In offener Sitzung scannt die Theke ein Buch, das das Kind selbst ausgeliehen hat — das ist

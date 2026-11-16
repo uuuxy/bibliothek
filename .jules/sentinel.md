@@ -1,10 +1,10 @@
 ## 2026-06-14 - SMTP Header Injection via Unsanitized Email Subject
-**Vulnerability:** A `HIGH` severity gosec warning (G707) identified a potential SMTP header injection in `api/mail_sender.go`. The issue occurred because `req.Subject` was written directly to the email's headers without first sanitizing the `\r` (carriage return) and `\n` (line feed) characters. This could allow an attacker to inject arbitrary SMTP headers.
+**Vulnerability:** A `HIGH` severity gosec warning (G707) identified a potential SMTP header injection in `internal/api/mail_sender.go`. The issue occurred because `req.Subject` was written directly to the email's headers without first sanitizing the `\r` (carriage return) and `\n` (line feed) characters. This could allow an attacker to inject arbitrary SMTP headers.
 **Learning:** `net/mail.ParseAddress()` is great for validating the `To` field, but it does not sanitize or cover other fields like `Subject` and `From`. This project uses direct string formatting for headers before the body, so any free-text header must be manually sanitized.
 **Prevention:** Strictly sanitize all free-text email headers by stripping carriage returns (`\r`) and line feeds (`\n`) using `strings.ReplaceAll` before appending them to the email header buffer.
 
 ## 2025-02-27 - Mitigate Path Traversal (G304) Using Go 1.24 os.OpenRoot
-**Vulnerability:** A `G304: Potential file inclusion via variable` vulnerability was found in `api/image_caching.go` during image cover caching, caused by insecure creation of files via concatenated paths.
+**Vulnerability:** A `G304: Potential file inclusion via variable` vulnerability was found in `internal/api/image_caching.go` during image cover caching, caused by insecure creation of files via concatenated paths.
 **Learning:** Manual path sanitization using `filepath.Clean` and `strings.HasPrefix` logic is prone to errors, false positives, and flagged by security linters (like gosec). Go 1.24 introduced `os.OpenRoot(dir)` which natively provides OS-level bounded directory contexts.
 **Prevention:** Rather than performing string validations to enforce file directory boundaries, prefer adopting `os.OpenRoot` and manipulating files via `root.OpenFile`, `root.Remove`, and serving via `http.ServeFileFS(..., root.FS(), ...)` to securely prevent directory traversal.
 
@@ -14,7 +14,7 @@
 **Prevention:** In functions that process files dynamically within a directory tree (such as creating zip archives), first establish a bounded context using `root, err := os.OpenRoot(dir)`. Subsequently, safely access the discovered files by passing their relative paths to the root descriptor: `root.Open(relPath)`.
 
 ## 2026-07-02 - Mitigate Command Injection and Password Exposure (G204) Using .pgpass
-**Vulnerability:** The PostgreSQL password was being passed to `pg_dump` via the `PGPASSWORD` environment variable in `jobs/backup.go`. This is insecure because environment variables can be exposed to other processes on the same system, leading to credential theft.
+**Vulnerability:** The PostgreSQL password was being passed to `pg_dump` via the `PGPASSWORD` environment variable in `internal/jobs/backup.go`. This is insecure because environment variables can be exposed to other processes on the same system, leading to credential theft.
 **Learning:** `gosec` G204 can be triggered by passing connection strings directly to subprocesses, and using `PGPASSWORD` exposes the password to other processes.
 **Prevention:** To securely pass PostgreSQL connection details to external subprocesses like `pg_dump`, construct explicit command-line arguments and DO NOT pass the password via `PGPASSWORD`. Instead, supply the password via a securely generated temporary `.pgpass` file with restrictive permissions.
 
@@ -24,11 +24,11 @@
 **Prevention:** Always bound the maximum amount of decompressed data using `io.LimitReader` when reading from compressed streams to prevent potential DoS attacks.
 
 ## 2024-05-24 - [CRITICAL] Fix CWE-614 Hardcoded Environment Check for Cookie Secure Attribute
-**Vulnerability:** The codebase had a CWE-614 vulnerability where `http.Cookie` instances in `auth/handlers.go`, `api/logout_handler.go`, and `api/csrf.go` determined their `Secure` attribute by dynamically checking `os.Getenv("APP_ENV") != "local"`. This bypassed the explicit `cookieSecure` boolean parameter that was injected throughout the application (e.g., in the `Server` struct and `auth.LoginHandler`).
+**Vulnerability:** The codebase had a CWE-614 vulnerability where `http.Cookie` instances in `internal/auth/handlers.go`, `internal/api/logout_handler.go`, and `internal/api/csrf.go` determined their `Secure` attribute by dynamically checking `os.Getenv("APP_ENV") != "local"`. This bypassed the explicit `cookieSecure` boolean parameter that was injected throughout the application (e.g., in the `Server` struct and `auth.LoginHandler`).
 **Learning:** Environment checks inside handlers drift away from the central rule. The application runs only over HTTPS, so there is no switch at all: every cookie sets `Secure: true` literally (`docs/ARCHITEKTUR.md`, T10). Browsers still accept such cookies on `http://localhost`.
 **Prevention:** Set `Secure: true` on every `http.Cookie` the server sends; gosec G124 (`scripts/gosec-gate.sh`) and the cookie tests fail otherwise. Do not reintroduce a configuration switch or an `APP_ENV` check for it.
 ## 2024-05-15 - [Medium] Path Traversal in PDF Generation via os.ReadFile
-**Vulnerability:** Path traversal vulnerability during PDF generation (`api/mahnwesen_pdf.go`) where a user-provided image path was read directly with `os.ReadFile`.
+**Vulnerability:** Path traversal vulnerability during PDF generation (`internal/api/mahnwesen_pdf.go`) where a user-provided image path was read directly with `os.ReadFile`.
 **Learning:** `os.ReadFile` does not protect against traversing directories. Even if the input is sanitized (as it was partly done in `coverDateiPfad`), it relies on manual validation instead of OS-level scoping.
 **Prevention:** Use the `os.Root` API introduced in Go 1.24 (`os.OpenRoot(".")` and `root.Open(pfad)`) to enforce an OS-level sandbox root directory, which provides stronger guarantees against traversal attacks.
 ## 2026-07-20 - Mitigate Path Traversal (G304) using centralized os.OpenRoot wrapper

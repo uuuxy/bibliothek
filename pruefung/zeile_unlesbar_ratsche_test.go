@@ -15,7 +15,7 @@ import (
 //
 // Warum: Lässt die Schleife die Zeile aus, kommt die Liste kürzer an, und niemand erfährt es. Vor
 // dem Löschen eines Titels hieße eine ausgelassene Ausleihe „nichts verliehen". Die Regel steht
-// in repository/zeile_unlesbar.go.
+// in internal/repository/zeile_unlesbar.go.
 //
 // Regel: In einer Schleife über X.Next() führt der Fehler eines Scan weder zu continue noch
 // übernimmt die Schleife die Zeile nur bei err == nil, und der Zweig des Fehlers endet mit return
@@ -33,7 +33,7 @@ func TestLeseschleifen_LassenKeineZeileAus(t *testing.T) {
 	t.Logf("%d Leseschleifen mit Scan gelesen", schleifen)
 	if len(verstoesse) > 0 {
 		t.Errorf("Leseschleife lässt eine unlesbare Zeile aus:\n  %s\n"+
-			"Fix: den Fehler zurückgeben, in repository/ als zeileUnlesbar(err) (repository/zeile_unlesbar.go).",
+			"Fix: den Fehler zurückgeben, in internal/repository/ als zeileUnlesbar(err) (internal/repository/zeile_unlesbar.go).",
 			strings.Join(verstoesse, "\n  "))
 	}
 }

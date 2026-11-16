@@ -27,12 +27,12 @@ var schreibpfadeGegenSicht = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"internal/testdaten/leser.go":            {3, "Prüfhilfe der Tests: legt Schüler an; kein Schreibpfad des Programms"},
-	"internal/testweg/lusd.go":               {1, "Prüfhilfe der Tests: legt einen Schüler an, wie der LUSD-Import ihn hinterlässt"},
-	"internal/littera/schreiber_personen.go": {1, "Littera-Schülerlauf; der Personenlauf des Kollegiums schreibt in benutzer"},
-	"repository/schuljahreswechsel.go":       {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
-	"repository/lusd_import.go":              {5, "LUSD-Abgleich: anlegen, ändern, Abgang buchen — die LUSD kennt nur Schüler"},
-	"repository/nachtlauf.go":                {1, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
+	"internal/testdaten/leser.go":               {3, "Prüfhilfe der Tests: legt Schüler an; kein Schreibpfad des Programms"},
+	"internal/testweg/lusd.go":                  {1, "Prüfhilfe der Tests: legt einen Schüler an, wie der LUSD-Import ihn hinterlässt"},
+	"internal/littera/schreiber_personen.go":    {1, "Littera-Schülerlauf; der Personenlauf des Kollegiums schreibt in benutzer"},
+	"internal/repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
+	"internal/repository/lusd_import.go":        {5, "LUSD-Abgleich: anlegen, ändern, Abgang buchen — die LUSD kennt nur Schüler"},
+	"internal/repository/nachtlauf.go":          {1, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
 }
 
 var musterSchreibpfad = regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+schueler\b`)

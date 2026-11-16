@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pkg/coverablage"
+	"bibliothek/internal/pkg/coverablage"
 )
 
 func TestSpeichereCoverDatei(t *testing.T) {

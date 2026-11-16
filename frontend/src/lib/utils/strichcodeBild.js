@@ -8,7 +8,7 @@
  * Die Adresse trägt außerdem die Fassung der Kodierung: Ein Bild, das ein Browser oder ein
  * Zwischenspeicher unter derselben Adresse aufhebt, zeigte sonst nach einer Umstellung den
  * alten Strichcode, und gescannt würde eine Nummer, die es nicht gibt. Wer am Erzeuger etwas
- * ändert (pkg/strichcode), zählt FASSUNG hoch; dann ist es für jeden Browser ein neues Bild,
+ * ändert (internal/pkg/strichcode), zählt FASSUNG hoch; dann ist es für jeden Browser ein neues Bild,
  * ohne dass jemand einen Cache leeren muss.
  */
 export const FASSUNG = 'c128';

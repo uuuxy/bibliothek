@@ -1,15 +1,15 @@
 // Package lusd gleicht den Bestand der Schüler mit einem Export der LUSD ab: Es liest die
 // Datei, ordnet jede Zeile dem Bestand zu, bildet die Vorschau und wendet die Änderungen in
-// einer Transaktion an. Die Tür steht in api/leser/lusd.go, die Anweisungen an die Datenbank stehen
-// in repository/lusd_import.go.
+// einer Transaktion an. Die Tür steht in internal/api/leser/lusd.go, die Anweisungen an die Datenbank stehen
+// in internal/repository/lusd_import.go.
 package lusd
 
 import (
 	"context"
 	"fmt"
 
-	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/repository"
 )
 
 // VorschauSchueler ist ein Schüler-Eintrag der Vorschau. ID ist der Listenschlüssel der

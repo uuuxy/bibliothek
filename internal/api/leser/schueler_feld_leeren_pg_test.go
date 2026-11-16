@@ -1,0 +1,126 @@
+package leser
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+)
+
+// Ein geleertes Stammdatenfeld muss auch in der Datenbank leer werden.
+//
+// Das Formular (useLeserakteFormular.svelte.js) schickt ein geräumtes Feld als leeren Text.
+// Käme es als JSON-null, landete es in leserAendernAnfrage als nil im *string und hieße
+// „nicht mitgeschickt": Der alte Wert bliebe stehen, die Oberfläche meldete „Änderungen
+// gespeichert", und beim nächsten Öffnen der Akte stünde die gelöschte Adresse wieder da.
+//
+// Das betrifft ausgerechnet die Felder, deren Löschung jemand verlangen kann:
+// eltern_email und die Postanschrift.
+func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	var id string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr,
+		                      strasse, hausnummer, plz, ort, eltern_email)
+		VALUES ('Leer','Test','07a','LEER-1', 2030,
+		        'Hauptstr','12','60311','Frankfurt','eltern@example.org')
+		RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+
+	fahre := func(body string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
+		req.SetPathValue("id", id)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
+		rec := httptest.NewRecorder()
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
+		return rec
+	}
+
+	// Genau der Rumpf, den das Formular schickt, wenn jemand Adresse und
+	// Eltern-Mail räumt und speichert.
+	rec := fahre(`{"vorname":"Leer","nachname":"Test","geburtsdatum":null,"lusd_id":"",
+	          "klasse":"07a","barcode_id":"LEER-1","abgaenger_jahr":2030,
+	          "strasse":"","hausnummer":"","plz":"","ort":"","eltern_email":""}`)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("PATCH gab %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var strasse, hausnummer, plz, ort, elternMail string
+	if err := pool.QueryRow(ctx, `
+		SELECT coalesce(strasse,''), coalesce(hausnummer,''), coalesce(plz,''),
+		       coalesce(ort,''), coalesce(eltern_email,'')
+		FROM schueler WHERE id = $1`, id).
+		Scan(&strasse, &hausnummer, &plz, &ort, &elternMail); err != nil {
+		t.Fatalf("zurücklesen: %v", err)
+	}
+
+	for _, f := range []struct{ name, wert string }{
+		{"strasse", strasse}, {"hausnummer", hausnummer},
+		{"plz", plz}, {"ort", ort}, {"eltern_email", elternMail},
+	} {
+		if f.wert != "" {
+			t.Errorf("%s steht nach dem Leeren immer noch auf %q — die Oberfläche hat "+
+				"\"gespeichert\" gemeldet, geändert hat sich nichts.", f.name, f.wert)
+		}
+	}
+}
+
+// Die Gegenrichtung derselben Regel: Pflichtfelder lassen sich nicht wegräumen.
+//
+// Ohne diese Hälfte wäre der Schutz oben ein Tausch von einem Schaden gegen einen größeren:
+// Sobald das Formular geräumte Felder als leeren String schickt, käme ein leerer Vorname
+// genauso an, und der PATCH schriebe ihn mit 200 durch. Bei der Klasse käme ein zweiter
+// Schaden dazu: repository.AbgaengerJahr leitete aus dem leeren Namen noch ein
+// Abgängerjahr ab.
+func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, "PFLICHT-1", "Echt", "Name", "07a", 2030)
+
+	for _, rumpf := range []string{
+		`{"vorname":""}`, `{"nachname":""}`, `{"barcode_id":""}`, `{"klasse":""}`,
+		`{"vorname":"   "}`,
+	} {
+		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(rumpf))
+		req.SetPathValue("id", id)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: id, Rolle: auth.RolleAdmin}))
+		rec := httptest.NewRecorder()
+		srv.LeserAendern(repository.NewProtokollAbfragen(pool))(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s gab %d statt 400 — ein Pflichtfeld liess sich leeren", rumpf, rec.Code)
+		}
+	}
+
+	var v, n, b, k string
+	if err := pool.QueryRow(ctx, `
+		SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(barcode_id,''), coalesce(klasse,'')
+		FROM schueler WHERE id = $1`, id).Scan(&v, &n, &b, &k); err != nil {
+		t.Fatalf("zurücklesen: %v", err)
+	}
+	if v != "Echt" || n != "Name" || b != "PFLICHT-1" {
+		t.Errorf("Stammdaten wurden trotz Ablehnung verändert: %q %q %q", v, n, b)
+	}
+	if k != "07A" {
+		t.Errorf("die Klasse steht auf %q statt auf 07A — trotz Ablehnung verändert", k)
+	}
+}

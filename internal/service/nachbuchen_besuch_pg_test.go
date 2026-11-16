@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Ein Scan mit Person ohne Netz trägt die Absicht „Ausleihe". Am Netz nimmt derselbe Scan ein Buch

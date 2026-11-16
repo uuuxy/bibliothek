@@ -146,7 +146,7 @@ export function useLeserakte() {
 
 	// Der Dialog bekommt die Daten der Ausleihe und die Auskunft, ob eine Forderung
 	// entsteht: Bei einem Kollegen entsteht keine (Begründung in
-	// repository/schaden_melden.go). Der Server entscheidet das selbst; hier steht es, damit
+	// internal/repository/schaden_melden.go). Der Server entscheidet das selbst; hier steht es, damit
 	// der Dialog nicht nach einem Betrag fragt, den niemand fordern wird.
 	function oeffneSchaden(book) {
 		schadenExemplar = { ...book, ohneForderung: istKollegium(akte) };

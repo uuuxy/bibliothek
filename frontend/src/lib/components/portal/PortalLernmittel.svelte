@@ -5,7 +5,7 @@
 	 * plus die Klassensatz-Zuordnung, damit Lehrkräfte sehen, was da ist und wie viel.
 	 *
 	 * Hinter der Anmeldung statt im öffentlichen OPAC: Der OPAC schließt
-	 * Schulbücher aus (Suchtreffer-Flut, api/portal/opac.go), und die Bestandszahlen der
+	 * Schulbücher aus (Suchtreffer-Flut, internal/api/portal/opac.go), und die Bestandszahlen der
 	 * Schule gehören nicht offen ins Netz. Die Daten kommen über die Portal-Türen
 	 * /api/portal/klassensaetze (Anmeldung genügt, kein
 	 * view_books — das Recht würde der Rolle den ganzen Medienkatalog öffnen).

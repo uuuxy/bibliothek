@@ -21,7 +21,7 @@ import (
 // ohne SKIP LOCKED wartet die Anweisung auf sie, und zwei Wege mit verschiedener Reihenfolge
 // warten aufeinander. So übersprang das Nachrücken einer Vormerkung den Ältesten der
 // Warteschlange, während die Theke die Zeile dieses Schülers für eine Ausleihe hielt
-// (repository/vormerkung_nachruecken_sperre_pg_test.go).
+// (internal/repository/vormerkung_nachruecken_sperre_pg_test.go).
 //
 // Gelesen wird der Text jeder Anweisung, wie er zusammengesetzt ist: Ein Verbund im einen Stück
 // und die Sperre im nächsten gehören zusammen.

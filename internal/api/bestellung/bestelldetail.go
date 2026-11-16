@@ -1,0 +1,46 @@
+package bestellung
+
+import (
+	"errors"
+	"net/http"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/repository"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// Bestelldetail liefert eine Bestellung mit allem, was zu ihr gehört.
+//
+// Warum ein eigener Endpunkt und nicht mehr Felder in /api/bestellhistorie: Diese Liste
+// ist auf 200 Bestellungen gedeckelt, weil sie ohne Grenze 2,45 MB und knapp vier
+// Sekunden gebraucht hat. Autor, Verlag, Cover und die Exemplarliste an jede der 200
+// Zeilen zu hängen, holte genau dieses Problem zurück — für Daten, von denen jeweils
+// eine einzige Bestellung angesehen wird.
+//
+// Kein SQL in dieser Datei: Eine neue Tür nimmt internal/repository/ (siehe schichtung_ratsche_test.go).
+func (t *Tueren) Bestelldetail(bestelldetailAbfragen *repository.BestelldetailAbfragen) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Bestellung fehlt", nil)
+			return
+		}
+
+		detail, err := bestelldetailAbfragen.Lade(r.Context(), id)
+		if err != nil {
+			// 404 statt 500: Eine unbekannte ID ist keine Störung, sondern ein veralteter
+			// Verweis — und der Sanitizer macht aus jeder 500 ohnehin "interner
+			// Datenbankfehler", womit die Ursache im Formular nie ankäme.
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bestellung nicht gefunden", nil)
+				return
+			}
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		tuer.AntworteJSON(w, http.StatusOK, detail)
+	}
+}

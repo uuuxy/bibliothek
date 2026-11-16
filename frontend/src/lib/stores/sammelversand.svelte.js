@@ -1,7 +1,7 @@
 // Ein Sammelversand an die Klassenleitungen: der Mahnlauf und die Kontoauszüge der Abgänger.
 // Beide schicken denselben Rumpf an ihre Tür (klassenVersandAnfrage im Server) und melden auf
 // dieselbe Weise; die Regeln darunter gibt es deshalb einmal. Den Aufruf schreibt jeder
-// Aufrufer selbst, mit Adresse und Frist (api/mail_routen_frist_test.go liest ihn dort).
+// Aufrufer selbst, mit Adresse und Frist (internal/api/mail_routen_frist_test.go liest ihn dort).
 //
 // Ein Lauf zur Zeit: Er dauert je Klasse eine Mail lang, bis zu FRIST_SAMMELVERSAND_MS, und ein
 // zweiter Start in der Zeit verschickte jede Mail noch einmal. Hier hält die Sperre den zweiten

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // Die Kandidaten des Schlagwort-Vorschlags: Gattungsbegriffe aus 655 $a

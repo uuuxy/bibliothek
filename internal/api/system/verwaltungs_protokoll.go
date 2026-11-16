@@ -1,0 +1,44 @@
+package system
+
+import (
+	"net/http"
+	"time"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/apierrors"
+	"bibliothek/internal/repository"
+)
+
+// verwaltungsEintrag ist eine Zeile des Protokolls der Verwaltung, wie die Oberfläche sie
+// anzeigt. AdminID ist bewusst nullbar: Systemgetriebene Einträge (Cron, Migration)
+// haben keinen Bearbeiter, sollen aber trotzdem im Protokoll stehen.
+type verwaltungsEintrag struct {
+	ID          string    `json:"id"`
+	AdminID     *string   `json:"admin_id"`
+	AdminName   string    `json:"admin_name"`
+	Aktion      string    `json:"aktion"`
+	Details     any       `json:"details"`
+	IPAdresse   string    `json:"ip_adresse"`
+	Zeitstempel time.Time `json:"zeitstempel"`
+}
+
+// VerwaltungsProtokoll liefert die jüngsten Einträge des Protokolls der Verwaltung, höchstens
+// protokollMaxZeilen.
+func (t *Tueren) VerwaltungsProtokoll() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		zeilen, err := repository.LadeAdminProtokoll(ctx, t.DB.Pool, protokollMaxZeilen)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		liste := []verwaltungsEintrag{}
+		for _, z := range zeilen {
+			liste = append(liste, verwaltungsEintrag(z))
+		}
+
+		tuer.AntworteListe(w, liste, protokollMaxZeilen)
+	}
+}

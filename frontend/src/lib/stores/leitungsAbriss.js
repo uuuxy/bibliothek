@@ -1,6 +1,6 @@
 // Reißt die Live-Leitung ab, fragt dieses Modul den Server, wie es um die Anmeldung steht. Der
 // Server beendet die Leitung, sobald die Anmeldung abgemeldet, gesperrt oder über der Höchstdauer
-// ist (sse/sse.go). Ohne die Frage stünde an einer gesperrten Theke nach 25 Sekunden
+// ist (internal/sse/sse.go). Ohne die Frage stünde an einer gesperrten Theke nach 25 Sekunden
 // „Keine Verbindung“ statt des Sperrbildschirms. Ist die Anmeldung offen oder antwortet der
 // Server nicht, baut liveEvents.js die Leitung selbst neu auf.
 

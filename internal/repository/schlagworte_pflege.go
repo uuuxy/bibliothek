@@ -1,0 +1,523 @@
+package repository
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
+	"bibliothek/internal/db"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
+// Pflege der Schlagworte: umbenennen, zusammenführen, löschen, Verweise und die
+// Filter-Markierung. Das ist die zweite Schreib-Tür der Tabelle schlagworte neben
+// SetzeSchlagworte (am Titel); beide halten dieselben Regeln, die die Datenbank zusätzlich
+// festschreibt: kein Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein
+// Verweis als Filter.
+
+// schlagwortPflegeTrefferMax kappt die Zeilen einer Antwort; die Antwort sagt, wie viele zur
+// Suche passen. Gesucht wird am Server über alle Wörter: Das Katalogisat aus Littera vom Juni
+// 2026 trägt 13.207 verschiedene, und eine Liste, die nur die ersten Tausend ausliefert und im
+// Browser durchsucht, zeigte die meisten davon nie. Dasselbe Muster wie die Serversuche der
+// Leserdatei (schuelerSuche.svelte.js).
+const schlagwortPflegeTrefferMax = 200
+
+// schlagworteLoeschenMax begrenzt, wie viele Wörter ein Löschauftrag nennen darf. Die Anzeige
+// hat ihre eigene Grenze (schlagwortPflegeTrefferMax).
+const schlagworteLoeschenMax = 5000
+
+var (
+	// ErrSchlagwortNichtGefunden meldet eine Kennung, die zu keinem Schlagwort gehört.
+	ErrSchlagwortNichtGefunden = errors.New("schlagwort nicht gefunden")
+	// ErrSchlagwortGibtEs meldet ein Umbenennen auf ein Wort, das es schon gibt — das ist ein
+	// Zusammenführen und muss als solches gewählt werden.
+	ErrSchlagwortGibtEs = errors.New("schlagwort gibt es schon")
+	// ErrSchlagwortRegel meldet eine verletzte Regel der Verweise (Kette, Filter an einem
+	// Verweis, Zusammenführen mit sich selbst).
+	ErrSchlagwortRegel = errors.New("regel der schlagworte verletzt")
+)
+
+// SchlagwortPflegeZeile ist eine Zeile der Pflegeseite.
+type SchlagwortPflegeZeile struct {
+	ID   string `json:"id"`
+	Wort string `json:"wort"`
+	// Titel: wie viele Titel das Wort tragen. Ein Verweis trägt nie welche.
+	Titel int `json:"titel"`
+	// VerweisAuf: das Ziel, wenn das Wort ein Verweis ist; sonst leer.
+	VerweisAufID string `json:"verweis_auf_id,omitempty"`
+	VerweisAuf   string `json:"verweis_auf,omitempty"`
+	// Verweise: die Wörter, die auf dieses zeigen, alphabetisch; nie nil.
+	Verweise  []string `json:"verweise"`
+	IstFilter bool     `json:"ist_filter"`
+}
+
+// SchlagwortPflegeListe ist die Antwort der Pflegeseite: die passenden Zeilen alphabetisch,
+// höchstens schlagwortPflegeTrefferMax, und die Zahlen dazu. Gesamt zählt jede Zeile der
+// Tabelle, Verweise die Zeilen, die Verweise sind (die Wörter sind die Differenz), Filter die
+// als Filter markierten Wörter — alle drei über die ganze Tabelle, unabhängig von der Suche.
+// Treffer zählt, was zur Suche passt; liegt es über den gelieferten Zeilen, sagt die Seite das.
+type SchlagwortPflegeListe struct {
+	Zeilen   []SchlagwortPflegeZeile `json:"zeilen"`
+	Gesamt   int                     `json:"gesamt"`
+	Verweise int                     `json:"verweise"`
+	Filter   int                     `json:"filter"`
+	Treffer  int                     `json:"treffer"`
+}
+
+// sqlPflegeSuchePasst ist die Bedingung der Pflegesuche ($1 = Suchtext, leer = alle): Das
+// Wort oder ein Verweis darauf enthält den Text, ohne Rücksicht auf Groß- und
+// Kleinschreibung. Verglichen wird über lower() wie im eindeutigen
+// Index der Wörter, nicht über LIKE; so braucht der Suchtext keine maskierten Joker.
+const sqlPflegeSuchePasst = `($1 = ''
+	OR strpos(lower(s.wort), lower($1)) > 0
+	OR EXISTS (SELECT 1 FROM schlagworte v
+	           WHERE v.verweis_auf = s.id AND strpos(lower(v.wort), lower($1)) > 0))`
+
+// LadeSchlagworteZurPflege liefert die Schlagworte, die zur Suche passen (leer = alle), mit
+// Titelzahl, Verweisziel und den Verweisen darauf, alphabetisch und höchstens
+// schlagwortPflegeTrefferMax Zeilen, dazu die Zahlen der ganzen Tabelle.
+func LadeSchlagworteZurPflege(ctx context.Context, q Datenbank, suche string) (SchlagwortPflegeListe, error) {
+	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
+	suche = schlagwortNormalform(suche)
+	if err := q.QueryRow(ctx, `
+		SELECT count(*)::int, count(verweis_auf)::int, count(*) FILTER (WHERE ist_filter)::int,
+		       count(*) FILTER (WHERE `+sqlPflegeSuchePasst+`)::int
+		FROM schlagworte s`, suche).
+		Scan(&liste.Gesamt, &liste.Verweise, &liste.Filter, &liste.Treffer); err != nil {
+		return liste, fmt.Errorf("schlagworte zählen: %w", err)
+	}
+	rows, err := q.Query(ctx, `
+		SELECT s.id::text, s.wort,
+		       (SELECT count(*)::int FROM titel_schlagworte ts WHERE ts.schlagwort_id = s.id),
+		       coalesce(z.id::text, ''), coalesce(z.wort, ''),
+		       coalesce((SELECT array_agg(v.wort ORDER BY lower(v.wort) COLLATE deutsch)
+		                 FROM schlagworte v WHERE v.verweis_auf = s.id), '{}'),
+		       s.ist_filter
+		FROM schlagworte s
+		LEFT JOIN schlagworte z ON z.id = s.verweis_auf
+		WHERE `+sqlPflegeSuchePasst+`
+		ORDER BY lower(s.wort) COLLATE deutsch
+		LIMIT $2`, suche, schlagwortPflegeTrefferMax)
+	if err != nil {
+		return liste, fmt.Errorf("schlagworte zur pflege lesen: %w", err)
+	}
+	zeilen, err := pgx.CollectRows(rows, pgx.RowToStructByPos[SchlagwortPflegeZeile])
+	if err != nil {
+		return liste, fmt.Errorf("schlagworte zur pflege lesen: %w", err)
+	}
+	liste.Zeilen = zeilen
+	return liste, nil
+}
+
+// pflegeWort ist ein gesperrtes Schlagwort innerhalb einer Pflege-Transaktion.
+type pflegeWort struct {
+	id, wort   string
+	verweisAuf *string
+	istFilter  bool
+}
+
+// sperreSchlagwort liest und sperrt ein Schlagwort; unbekannt ist ErrSchlagwortNichtGefunden.
+func sperreSchlagwort(ctx context.Context, tx pgx.Tx, id string) (pflegeWort, error) {
+	var w pflegeWort
+	err := tx.QueryRow(ctx, `
+		SELECT id::text, wort, verweis_auf::text, ist_filter FROM schlagworte WHERE id = $1 FOR UPDATE`, id).
+		Scan(&w.id, &w.wort, &w.verweisAuf, &w.istFilter)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return w, ErrSchlagwortNichtGefunden
+	}
+	if err != nil {
+		return w, fmt.Errorf("schlagwort sperren: %w", err)
+	}
+	return w, nil
+}
+
+// einWort bringt eine Eingabe in die gespeicherte Form (dieselbe wie am Titel).
+func einWort(roh string) (string, error) {
+	woerter, err := NormalisiereSchlagworte([]string{roh})
+	if err != nil {
+		return "", err
+	}
+	if len(woerter) == 0 {
+		return "", regelVerletzt(ErrSchlagwortUngueltig, "das Wort ist leer")
+	}
+	return woerter[0], nil
+}
+
+// uebersetzeTriggerAusnahme übersetzt eine Ausnahme der Trigger in ErrSchlagwortRegel.
+// Die Tür prüft dieselben Regeln vorher; die Datenbank ist der Rückhalt, etwa wenn zwei
+// Pflegende gleichzeitig arbeiten.
+func uebersetzeTriggerAusnahme(err error, was string) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && strings.HasPrefix(pgErr.Message, "schlagwort_verweis_") {
+		// Der Code vor dem Doppelpunkt ist für die Erkennung da, der Satz dahinter für Menschen.
+		_, satz, _ := strings.Cut(pgErr.Message, ": ")
+		return regelVerletzt(ErrSchlagwortRegel, "%s", satz)
+	}
+	return fmt.Errorf("%s: %w", was, err)
+}
+
+// BenenneSchlagwortUm gibt einem Wort eine neue Schreibweise; alle Titel tragen danach die
+// neue. Gibt es das neue Wort schon (ohne Rücksicht auf Groß- und Kleinschreibung) als
+// anderes Schlagwort, ist das ein Zusammenführen und wird abgelehnt (ErrSchlagwortGibtEs) —
+// die Pflegeseite fragt dann nach. Nur die Schreibweise zu ändern („fantasy" → „Fantasy")
+// geht. Ist die neue Schreibweise ein Verweis auf eben dieses Wort, tauschen die beiden:
+// „Krimi" mit dem Verweis „Kriminalroman" wird „Kriminalroman", der Verweis geht im Wort
+// auf. Zusammenführen ginge hier nicht: Es scheitert an einem
+// eigenen Verweis („nicht mit sich selbst").
+//
+// alteAlsVerweis lässt die alte Schreibweise als Verweis auf das Wort stehen, wie beim
+// Zusammenführen. Das hält eine Maske
+// richtig, die beim Umbenennen offen war: Buchformular und Bestellkorb schicken beim
+// Speichern die Menge zurück, die sie beim Öffnen gelesen haben, und die alte Schreibweise
+// löst sich dann zum Wort auf. Ohne Verweis — so macht es Littera — legt ein solches
+// Speichern die alte Schreibweise wieder an. Liefert die gespeicherte Schreibweise und ob ein
+// Verweis entstanden ist.
+//
+// Ein Verweis selbst lässt sich nur ohne alteAlsVerweis umbenennen (ErrSchlagwortRegel, mit
+// dem Weg im Satz): Seine alte Schreibweise müsste auf sein Ziel zeigen, und dafür bräuchte
+// die Tür nach dem Verweis noch das Ziel — die umgekehrte Reihenfolge des Zusammenführens,
+// das erst das Ziel sperrt und dann seine Verweise umhängt. Eine weitere Schreibweise legt
+// „Verweis anlegen" am Ziel an.
+func BenenneSchlagwortUm(ctx context.Context, q Datenbank, id, neu string, alteAlsVerweis bool) (string, bool, error) {
+	wort, err := einWort(neu)
+	if err != nil {
+		return "", false, err
+	}
+	tx, err := q.Begin(ctx)
+	if err != nil {
+		return "", false, fmt.Errorf("umbenennen: transaktion öffnen: %w", err)
+	}
+	defer db.Verwerfe(ctx, tx)
+	alt, err := sperreSchlagwort(ctx, tx, id)
+	if err != nil {
+		return "", false, err
+	}
+	if alteAlsVerweis && alt.verweisAuf != nil {
+		return "", false, regelVerletzt(ErrSchlagwortRegel, "„%s“ ist ein Verweis, eine weitere Schreibweise legt „Verweis anlegen“ am Ziel an", alt.wort)
+	}
+	if err := macheSchreibweiseFrei(ctx, tx, id, wort); err != nil {
+		return "", false, err
+	}
+	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET wort = $2 WHERE id = $1`, id, wort)
+	if err != nil {
+		return "", false, fmt.Errorf("umbenennen: %w", err)
+	}
+	if tag.RowsAffected() != 1 {
+		return "", false, ErrSchlagwortNichtGefunden
+	}
+	verweis := false
+	if alteAlsVerweis {
+		// Der Konflikt auf lower(wort) ist genau der Fall „nur die Groß- und Kleinschreibung
+		// geändert": Dann ist die alte Schreibweise dasselbe Wort, ein Verweis wäre keiner.
+		tag, err := tx.Exec(ctx, `
+			INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)
+			ON CONFLICT (lower(wort)) DO NOTHING`, alt.wort, id)
+		if err != nil {
+			return "", false, uebersetzeTriggerAusnahme(err, "umbenennen: alte schreibweise als verweis")
+		}
+		verweis = tag.RowsAffected() == 1
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", false, fmt.Errorf("umbenennen: commit: %w", err)
+	}
+	return wort, verweis, nil
+}
+
+// macheSchreibweiseFrei prüft, ob ein anderes Wort die neue Schreibweise schon trägt. Ist es
+// der eigene Verweis, geht er im Wort auf; jedes andere Wort ist ein Konflikt
+// (ErrSchlagwortGibtEs).
+func macheSchreibweiseFrei(ctx context.Context, tx pgx.Tx, id, wort string) error {
+	var anderesID, anderes string
+	var anderesZiel *string
+	err := tx.QueryRow(ctx, `SELECT id::text, wort, verweis_auf::text FROM schlagworte
+		WHERE lower(wort) = lower($1) AND id <> $2`, wort, id).Scan(&anderesID, &anderes, &anderesZiel)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return nil
+	case err != nil:
+		return fmt.Errorf("umbenennen: vorhandenes wort suchen: %w", err)
+	case anderesZiel != nil && *anderesZiel == id:
+		// Der eigene Verweis geht im Wort auf. Ohne Sperre gelesen, damit die Tür nur Zeilen
+		// sperrt, die sie ändert. Hat ihn inzwischen jemand umgehängt oder gelöscht, trifft
+		// das DELETE keine Zeile; die Tür meldet dann „gibt es schon", und ein zweiter Versuch
+		// sieht den neuen Stand.
+		tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = $1 AND verweis_auf = $2`, anderesID, id)
+		if err != nil {
+			return fmt.Errorf("umbenennen: eigenen verweis auflösen: %w", err)
+		}
+		if tag.RowsAffected() != 1 {
+			return regelVerletzt(ErrSchlagwortGibtEs, "„%s“", anderes)
+		}
+		return nil
+	default:
+		return regelVerletzt(ErrSchlagwortGibtEs, "„%s“", anderes)
+	}
+}
+
+// FuehreSchlagworteZusammen hängt die Titel von „von" an „in". Mit alteAlsVerweis wird „von"
+// zum Verweis auf „in" — wer das alte Wort gewohnt ist, landet weiter richtig —, sonst fällt
+// es weg, wie in Littera. Verweise auf „von" zeigen danach auf „in", eine Filter-Markierung
+// geht auf „in" über. Ist „in" selbst ein Verweis, gilt sein Ziel.
+func FuehreSchlagworteZusammen(ctx context.Context, q Datenbank, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
+	tx, err := q.Begin(ctx)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
+	}
+	defer db.Verwerfe(ctx, tx)
+	ergebnis, err := fuehreZusammenIn(ctx, tx, vonID, inID, alteAlsVerweis)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: commit: %w", err)
+	}
+	return ergebnis, nil
+}
+
+// SchlagwortZusammenfuehrung sagt, was ein Zusammenführen oder ein Verweis getan hat: das alte
+// Wort, das Wort, an dem die Titel jetzt hängen, und die Zahl der Titel, die das alte trug.
+// Beide Wörter in der gespeicherten Schreibweise.
+type SchlagwortZusammenfuehrung struct {
+	Von   string
+	In    string
+	Titel int
+}
+
+// fuehreZusammenIn ist das Zusammenführen innerhalb einer laufenden Transaktion.
+func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
+	von, ziel, err := sperreVonUndZiel(ctx, tx, vonID, inID)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, err
+	}
+	if von.id == ziel.id {
+		return SchlagwortZusammenfuehrung{}, regelVerletzt(ErrSchlagwortRegel, "ein Wort lässt sich nicht mit sich selbst zusammenführen")
+	}
+
+	ergebnis := SchlagwortZusammenfuehrung{Von: von.wort, In: ziel.wort}
+	if err := tx.QueryRow(ctx,
+		`SELECT count(*)::int FROM titel_schlagworte WHERE schlagwort_id = $1`, von.id).Scan(&ergebnis.Titel); err != nil {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: titel zählen: %w", err)
+	}
+	// Die Reihenfolge ist die Regel der Trigger: erst Titel und Verweise von „von"
+	// wegnehmen, dann wird „von" selbst zum Verweis (oder fällt weg).
+	type zusammenSchritt struct {
+		was, sql string
+		args     []any
+	}
+	letzter := zusammenSchritt{"zum verweis machen", `UPDATE schlagworte SET verweis_auf = $2, ist_filter = false WHERE id = $1`,
+		[]any{von.id, ziel.id}}
+	if !alteAlsVerweis {
+		letzter = zusammenSchritt{"altes wort löschen", `DELETE FROM schlagworte WHERE id = $1`, []any{von.id}}
+	}
+	schritte := []zusammenSchritt{
+		{"titel umhängen", `INSERT INTO titel_schlagworte (titel_id, schlagwort_id)
+			SELECT titel_id, $2 FROM titel_schlagworte WHERE schlagwort_id = $1 ON CONFLICT DO NOTHING`,
+			[]any{von.id, ziel.id}},
+		{"titel lösen", `DELETE FROM titel_schlagworte WHERE schlagwort_id = $1`, []any{von.id}},
+		{"verweise umhängen", `UPDATE schlagworte SET verweis_auf = $2 WHERE verweis_auf = $1`,
+			[]any{von.id, ziel.id}},
+		{"filter übernehmen", `UPDATE schlagworte SET ist_filter = true WHERE id = $1`, nil},
+		letzter,
+	}
+	for _, schritt := range schritte {
+		if schritt.args == nil {
+			// Die Markierung geht nur über, wenn „von" sie trug.
+			if !von.istFilter {
+				continue
+			}
+			schritt.args = []any{ziel.id}
+		}
+		if _, err := tx.Exec(ctx, schritt.sql, schritt.args...); err != nil {
+			return SchlagwortZusammenfuehrung{}, uebersetzeTriggerAusnahme(err, "zusammenführen: "+schritt.was)
+		}
+	}
+	return ergebnis, nil
+}
+
+// sperreVonUndZiel sperrt beide Wörter in fester Reihenfolge, damit zwei gegenläufige Aufrufe
+// nicht verklemmen. Ist das Ziel selbst ein Verweis, gilt und sperrt sie dessen Ziel.
+func sperreVonUndZiel(ctx context.Context, tx pgx.Tx, vonID, inID string) (von, ziel pflegeWort, err error) {
+	erste, zweite := vonID, inID
+	if zweite < erste {
+		erste, zweite = zweite, erste
+	}
+	gesperrt := map[string]pflegeWort{}
+	for _, id := range []string{erste, zweite} {
+		w, err := sperreSchlagwort(ctx, tx, id)
+		if err != nil {
+			return pflegeWort{}, pflegeWort{}, err
+		}
+		gesperrt[id] = w
+	}
+	von, ziel = gesperrt[vonID], gesperrt[inID]
+	if ziel.verweisAuf != nil {
+		z, err := sperreSchlagwort(ctx, tx, *ziel.verweisAuf)
+		if err != nil {
+			return pflegeWort{}, pflegeWort{}, err
+		}
+		ziel = z
+	}
+	return von, ziel, nil
+}
+
+// SchlagwortLoeschung sagt, was ein Löschen getroffen hat: die gewählten Wörter, die Titel,
+// die dadurch Schlagworte verloren (jeder Titel einmal), und die Verweise, die mitfielen, ohne
+// selbst gewählt zu sein. Namen sind die gewählten Wörter in Reihenfolge des Alphabets.
+type SchlagwortLoeschung struct {
+	Woerter  int
+	Titel    int
+	Verweise int
+	Namen    []string
+}
+
+// LoescheSchlagworte löscht die gewählten Wörter in einer Transaktion — alle oder keins; die
+// Titel verlieren sie, die Verweise darauf fallen mit (ON DELETE CASCADE). Mehrere auf einmal
+// wie in Littera („Datenbearbeitung", Markieren und Löschen), für das Aufräumen nach dem
+// Einlesen der Littera-Schlagworte. Ein einzelnes Wort ist eine Liste mit
+// einem Eintrag: eine Tür, eine Regel. Gibt es eine Kennung nicht (mehr), löscht die Tür
+// nichts (ErrSchlagwortNichtGefunden) — die Pflegeseite lädt dann den neuen Stand.
+func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (SchlagwortLoeschung, error) {
+	var ergebnis SchlagwortLoeschung
+	if len(ids) == 0 {
+		return ergebnis, regelVerletzt(ErrSchlagwortUngueltig, "kein Schlagwort gewählt")
+	}
+	if len(ids) > schlagworteLoeschenMax {
+		return ergebnis, regelVerletzt(ErrSchlagwortUngueltig, "höchstens %d Schlagworte auf einmal", schlagworteLoeschenMax)
+	}
+	tx, err := q.Begin(ctx)
+	if err != nil {
+		return ergebnis, fmt.Errorf("löschen: transaktion öffnen: %w", err)
+	}
+	defer db.Verwerfe(ctx, tx)
+	// Wie viele verschiedene Wörter gewählt sind, zählt die Datenbank: Sie liest „7C9E…" und
+	// „7c9e…" als dieselbe Kennung, die Tür nimmt beide Schreibweisen an. Entdoppelte Go den
+	// Text, zählten zwei Schreibweisen als zwei Wörter, die Sperre fände eine Zeile, und die
+	// Tür meldete 404, obwohl alles da ist.
+	var gewaehlt, gesperrt int
+	if err := tx.QueryRow(ctx, `SELECT count(DISTINCT k)::int FROM unnest($1::uuid[]) k`, ids).
+		Scan(&gewaehlt); err != nil {
+		return ergebnis, fmt.Errorf("löschen: kennungen zählen: %w", err)
+	}
+	// In fester Reihenfolge sperren (LockRows steht über dem Sort), wie fuehreZusammenIn —
+	// zwei Löschende mit überlappender Auswahl verklemmen sich nicht.
+	var namen []string
+	if err := tx.QueryRow(ctx, `
+		SELECT count(*)::int, coalesce(array_agg(g.wort ORDER BY lower(g.wort) COLLATE deutsch, g.wort COLLATE deutsch), '{}') FROM (
+			SELECT id, wort FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+		) g`, ids).Scan(&gesperrt, &namen); err != nil {
+		return ergebnis, fmt.Errorf("löschen: sperren: %w", err)
+	}
+	if gesperrt != gewaehlt {
+		return ergebnis, ErrSchlagwortNichtGefunden
+	}
+	if err := tx.QueryRow(ctx, `
+		SELECT (SELECT count(DISTINCT titel_id)::int FROM titel_schlagworte WHERE schlagwort_id = ANY($1::uuid[])),
+		       (SELECT count(*)::int FROM schlagworte
+		        WHERE verweis_auf = ANY($1::uuid[]) AND NOT id = ANY($1::uuid[]))`, ids).
+		Scan(&ergebnis.Titel, &ergebnis.Verweise); err != nil {
+		return ergebnis, fmt.Errorf("löschen: zählen: %w", err)
+	}
+	tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = ANY($1::uuid[])`, ids)
+	if err != nil {
+		return ergebnis, fmt.Errorf("löschen: %w", err)
+	}
+	// Die Zeilen sind gesperrt; ein gewählter Verweis, dessen Ziel ebenfalls gewählt ist, fällt
+	// hier selbst, nicht erst über die Kaskade (die läuft am Ende der Anweisung).
+	if tag.RowsAffected() != int64(gewaehlt) {
+		return ergebnis, fmt.Errorf("löschen: %d Zeilen statt %d", tag.RowsAffected(), gewaehlt)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return ergebnis, fmt.Errorf("löschen: commit: %w", err)
+	}
+	ergebnis.Woerter, ergebnis.Namen = gewaehlt, namen
+	return ergebnis, nil
+}
+
+// SetzeSchlagwortVerweis leitet eine Schreibweise auf ein Wort („Tierfantasy" → „Fantasy").
+// Gibt es die Schreibweise noch nicht, entsteht sie als Verweis. Gibt es sie und trägt sie
+// Titel oder Verweise, wird sie mit dem Ziel zusammengeführt — das ist, was ein Verweis
+// bedeutet. Ist das Ziel selbst ein Verweis, gilt dessen Ziel.
+func SetzeSchlagwortVerweis(ctx context.Context, q Datenbank, roh, zielID string) (SchlagwortZusammenfuehrung, error) {
+	var ergebnis SchlagwortZusammenfuehrung
+	wort, err := einWort(roh)
+	if err != nil {
+		return ergebnis, err
+	}
+	tx, err := q.Begin(ctx)
+	if err != nil {
+		return ergebnis, fmt.Errorf("verweis: transaktion öffnen: %w", err)
+	}
+	defer db.Verwerfe(ctx, tx)
+
+	var vorhandenID string
+	err = tx.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE lower(wort) = lower($1)`, wort).Scan(&vorhandenID)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		if ergebnis, err = legeVerweisAn(ctx, tx, wort, zielID); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
+		}
+	case err != nil:
+		return ergebnis, fmt.Errorf("verweis: vorhandenes wort suchen: %w", err)
+	default:
+		if ergebnis, err = fuehreZusammenIn(ctx, tx, vorhandenID, zielID, true); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("verweis: commit: %w", err)
+	}
+	return ergebnis, nil
+}
+
+// legeVerweisAn legt eine neue Schreibweise als Verweis an. Ist das Ziel selbst ein Verweis,
+// zeigt sie auf dessen Ziel.
+func legeVerweisAn(ctx context.Context, tx pgx.Tx, wort, zielID string) (SchlagwortZusammenfuehrung, error) {
+	ziel, err := sperreSchlagwort(ctx, tx, zielID)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, err
+	}
+	if ziel.verweisAuf != nil {
+		if ziel, err = sperreSchlagwort(ctx, tx, *ziel.verweisAuf); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
+		}
+	}
+	tag, err := tx.Exec(ctx, `INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)`, wort, ziel.id)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, uebersetzeTriggerAusnahme(err, "verweis anlegen")
+	}
+	if tag.RowsAffected() != 1 {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("verweis anlegen: %d Zeilen statt 1", tag.RowsAffected())
+	}
+	return SchlagwortZusammenfuehrung{Von: wort, In: ziel.wort}, nil
+}
+
+// SetzeSchlagwortFilter markiert ein Wort als Filter im Portal (oder nimmt die Markierung
+// weg). Ein Verweis ist nie Filter — markiert wird sein Ziel.
+func SetzeSchlagwortFilter(ctx context.Context, q Datenbank, id string, an bool) error {
+	tx, err := q.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("filter: transaktion öffnen: %w", err)
+	}
+	defer db.Verwerfe(ctx, tx)
+	w, err := sperreSchlagwort(ctx, tx, id)
+	if err != nil {
+		return err
+	}
+	if an && w.verweisAuf != nil {
+		return regelVerletzt(ErrSchlagwortRegel, "„%s“ ist ein Verweis, als Filter markiert wird sein Ziel", w.wort)
+	}
+	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET ist_filter = $2 WHERE id = $1`, id, an)
+	if err != nil {
+		return uebersetzeTriggerAusnahme(err, "filter setzen")
+	}
+	if tag.RowsAffected() != 1 {
+		return ErrSchlagwortNichtGefunden
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("filter: commit: %w", err)
+	}
+	return nil
+}

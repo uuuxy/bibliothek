@@ -4,7 +4,7 @@
      Titel über
      dieselbe Tür wie die Titelsuche (POST /api/buecher/aus-isbn — aus dem Katalog oder neu aus
      der DNB), der Dialog zeigt ihn, und erst „Zuordnen und bestellen" fasst zusammen
-     (POST …/neue-auflage, create_orders, repository/auflagen.go) und legt ihn in den Warenkorb.
+     (POST …/neue-auflage, create_orders, internal/repository/auflagen.go) und legt ihn in den Warenkorb.
 
      Material 3, Dialogs: höchstens zwei Aktionen, die bestätigende gesperrt, bis es etwas zu
      bestätigen gibt; die abbrechende nie. -->
@@ -64,7 +64,7 @@
 			gefunden = await res.json();
 		} catch (err) {
 			// Ob die Anfrage ankam, sagt ein Netzfehler nicht; ein Titel, den sie angelegt hat,
-			// findet der zweite Versuch über die ISBN (api/katalog/isbn_zu_titel.go).
+			// findet der zweite Versuch über die ISBN (internal/api/katalog/isbn_zu_titel.go).
 			fehler = fehlertext(err);
 		} finally {
 			laeuft = false;

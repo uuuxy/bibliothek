@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"bibliothek/pkg/coverablage"
-	"bibliothek/pkg/coverquelle"
+	"bibliothek/internal/pkg/coverablage"
+	"bibliothek/internal/pkg/coverquelle"
 )
 
 // speichereCoverDatei schreibt das aufbereitete Cover in uploads/ und liefert den

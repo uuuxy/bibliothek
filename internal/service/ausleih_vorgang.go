@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"bibliothek/pkg/leserart"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/leserart"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // ausleihVorgang ist der Leser einer Buchung mit seiner Frist und den übergangenen Hinweisen.

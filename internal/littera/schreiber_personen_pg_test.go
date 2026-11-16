@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 func leser(id, nummer, klasse string, art LeserArt) Leser {

@@ -9,11 +9,11 @@ import (
 )
 
 // Der Wegweiser (WEGWEISER.md) führt vom Menüpunkt zum Code. Er taugt nur, solange er
-// vollständig ist: Ein neuer Menüpunkt oder ein neues Thema unter api/, das dort fehlt, lässt
+// vollständig ist: Ein neuer Menüpunkt oder ein neues Thema unter internal/api/, das dort fehlt, lässt
 // den Leser an der Stelle allein, an der er sucht.
 //
 // Geprüft wird: Jede Beschriftung aus dem Menü der Oberfläche (frontend/src/lib/menue.js) steht
-// im Wegweiser, jeder Ordner unter api/ mit Programmcode ist dort genannt, und jeder Bildschirm,
+// im Wegweiser, jeder Ordner unter internal/api/ mit Programmcode ist dort genannt, und jeder Bildschirm,
 // den die Tabelle der Menüpunkte nennt, liegt unter frontend/src/lib/. Die Dateien mit ganzem
 // Pfad hält schon dateiverweise_test.go.
 //
@@ -42,28 +42,28 @@ func TestWegweiser_NenntJedenMenuepunktUndJedesThema(t *testing.T) {
 	}
 
 	themen := 0
-	ordner, err := os.ReadDir(filepath.Join("..", "api"))
+	ordner, err := os.ReadDir(filepath.Join("..", "internal", "api"))
 	if err != nil {
-		t.Fatalf("api/ lesen: %v", err)
+		t.Fatalf("internal/api/ lesen: %v", err)
 	}
 	for _, o := range ordner {
 		if !o.IsDir() {
 			continue
 		}
-		quellen, err := filepath.Glob(filepath.Join("..", "api", o.Name(), "*.go"))
+		quellen, err := filepath.Glob(filepath.Join("..", "internal", "api", o.Name(), "*.go"))
 		if err != nil {
-			t.Fatalf("api/%s lesen: %v", o.Name(), err)
+			t.Fatalf("internal/api/%s lesen: %v", o.Name(), err)
 		}
 		if len(quellen) == 0 {
 			continue
 		}
 		themen++
-		if !strings.Contains(wegweiser, "`api/"+o.Name()+"/") {
-			t.Errorf("Ordner api/%s steht nicht in WEGWEISER.md", o.Name())
+		if !strings.Contains(wegweiser, "`internal/api/"+o.Name()+"/") {
+			t.Errorf("Ordner internal/api/%s steht nicht in WEGWEISER.md", o.Name())
 		}
 	}
 	if themen < 10 {
-		t.Fatalf("nur %d Ordner mit Programmcode unter api/ gefunden — die Prüfung mäße an einem leeren Baum", themen)
+		t.Fatalf("nur %d Ordner mit Programmcode unter internal/api/ gefunden — die Prüfung mäße an einem leeren Baum", themen)
 	}
 
 	bildschirme := regexp.MustCompile("`([A-Za-z/]+\\.svelte)`").FindAllStringSubmatch(wegweiser, -1)

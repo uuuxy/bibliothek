@@ -26,7 +26,7 @@ import (
 
 // Variable nennt die Umgebungsvariable mit der Adresse der Testdatenbank. Ohne sie
 // überspringen sich die Tests an der Datenbank; in der CI setzt der Workflow sie auf den
-// Postgres des Laufs, und db/pgtest_guard_test.go hält fest, dass er es tut.
+// Postgres des Laufs, und internal/db/pgtest_guard_test.go hält fest, dass er es tut.
 const Variable = "TEST_DATABASE_URL"
 
 // sperrSchluessel reiht die Pakete an der Testdatenbank ein. Alle Pakete teilen sich eine

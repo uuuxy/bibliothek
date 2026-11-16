@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pdf"
 	"bibliothek/internal/pdftest"
-	"bibliothek/pdf"
-	"bibliothek/pkg/schulzeit"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // Die gedruckte Auskunft enthält, was die abgerufene enthält: Die Person bekommt das PDF, nicht
@@ -30,7 +30,7 @@ import (
 func TestBlatt_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	// Ausnahmen: Pfad → Begründung. Die Angaben der Protokolleinträge (details) sind keine mehr:
 	// Das Blatt druckt jeden Schlüssel, den es nicht als Kennung des Programms oder als buchendes
-	// Konto führt (repository/protokoll_auskunft.go) — auch einen, den es nicht kennt, wie den
+	// Konto führt (internal/repository/protokoll_auskunft.go) — auch einen, den es nicht kennt, wie den
 	// Prüfwert hier.
 	ausnahmen := map[string]string{}
 

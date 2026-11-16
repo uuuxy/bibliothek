@@ -1,0 +1,140 @@
+package xlsxgrenze_test
+
+import (
+	"archive/zip"
+	"bytes"
+	"fmt"
+	"testing"
+
+	"bibliothek/internal/pkg/closeutil"
+	"bibliothek/internal/pkg/xlsxgrenze"
+
+	"github.com/xuri/excelize/v2"
+)
+
+// Eine Zelle vom Typ `s` mit einem negativen Index in die Zeichenkettentabelle ließ excelize
+// bis v2.11.0 abstürzen, sobald die Tabelle in eine Temp-Datei ausgelagert war (GO-2026-6452).
+// Ausgelagert wird nur eine Tabelle, die größer ist als UnzipXMLSizeLimit. Optionen() setzt
+// beide Entpackgrenzen gleich: Eine so große Datei scheitert damit vorher an der Gesamtgrenze.
+//
+// Die Tests halten die gleichen Grenzen fest und melden, wenn der Absturz mit einer späteren
+// Fassung der Bibliothek zurückkommt.
+
+// bosartigeMappe baut die kleinste .xlsx mit einer Zelle `t="s"` und dem gegebenen Index.
+func bosartigeMappe(t *testing.T, index string) []byte {
+	t.Helper()
+	return mappeMitZeilen(t, fmt.Sprintf(`<row r="1"><c r="A1" t="s"><v>%s</v></c></row>`, index))
+}
+
+// mappeMitZeilen baut die kleinste .xlsx, deren Blatt „Tabelle1" die gegebenen Zeilen trägt.
+func mappeMitZeilen(t *testing.T, zeilen string) []byte {
+	t.Helper()
+	puffer := &bytes.Buffer{}
+	z := zip.NewWriter(puffer)
+	teile := map[string]string{
+		"[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+</Types>`,
+		"_rels/.rels": `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`,
+		"xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="Tabelle1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+</Relationships>`,
+		"xl/sharedStrings.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="1" uniqueCount="1"><si><t>harmlos</t></si></sst>`,
+		"xl/worksheets/sheet1.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetData>` + zeilen + `</sheetData></worksheet>`,
+	}
+	for name, inhalt := range teile {
+		w, err := z.Create(name)
+		if err != nil {
+			t.Fatalf("zip %s: %v", name, err)
+		}
+		if _, err := w.Write([]byte(inhalt)); err != nil {
+			t.Fatalf("schreiben %s: %v", name, err)
+		}
+	}
+	if err := z.Close(); err != nil {
+		t.Fatalf("zip schließen: %v", err)
+	}
+	return puffer.Bytes()
+}
+
+// liesMit liest die Mappe mit den gegebenen Optionen und meldet einen Panic als Wert,
+// statt den Testlauf mitzureißen.
+func liesMit(daten []byte, opt excelize.Options) (gepanickt any) {
+	defer func() { gepanickt = recover() }()
+	f, err := excelize.OpenReader(bytes.NewReader(daten), opt)
+	if err != nil {
+		return nil // abgewiesen, und das ist hier ein gutes Ergebnis
+	}
+	defer closeutil.Schliesse(f, "xlsxgrenze-probe")
+	// Ein Fehler ist hier ebenfalls ein gutes Ergebnis: Gemessen wird der Absturz, nicht die
+	// Frage, ob die präparierte Mappe lesbar ist.
+	if _, err := f.GetRows("Tabelle1", excelize.Options{RawCellValue: true}); err != nil {
+		return nil
+	}
+	return nil
+}
+
+// Die eingesetzte Fassung trägt die Korrektur: Auch mit auseinandergezogenen Grenzen, also
+// auf dem Auslagerungs-Weg, stürzt sie nicht ab. Wird dieser Test rot, hat eine spätere
+// Fassung den Absturz wieder, und die gleichen Grenzen in Optionen() sind die einzige Abwehr.
+func TestNegativerSharedStringIndex_AuslagerungsWegStuerztNichtAb(t *testing.T) {
+	daten := bosartigeMappe(t, "-1")
+	if gepanickt := liesMit(daten, excelize.Options{UnzipSizeLimit: 1 << 20, UnzipXMLSizeLimit: 64}); gepanickt != nil {
+		t.Errorf("Panic im Auslagerungs-Weg: %v — diese excelize-Fassung trägt die Korrektur zu "+
+			"GO-2026-6452 nicht", gepanickt)
+	}
+}
+
+// Mit den Optionen dieses Programms passiert an keiner Fassung etwas.
+func TestNegativerSharedStringIndex_UnsereOptionenWehrenAb(t *testing.T) {
+	for _, index := range []string{"-1", "-2147483648", "0", "99999"} {
+		t.Run("index="+index, func(t *testing.T) {
+			if gepanickt := liesMit(bosartigeMappe(t, index), xlsxgrenze.Optionen()); gepanickt != nil {
+				t.Errorf("Panic mit den Optionen dieses Programms: %v — ein Import mit einer "+
+					"präparierten Datei reißt damit die Anfrage ab (GO-2026-6452)", gepanickt)
+			}
+		})
+	}
+}
+
+// Im Kleinen gemessen, worauf Optionen sich stützt: Sind beide Grenzen gleich, wird eine
+// Datei, die groß genug zum Auslagern wäre, vorher abgewiesen.
+func TestGleicheGrenzenMachenDenAuslagerungsWegUnerreichbar(t *testing.T) {
+	daten := bosartigeMappe(t, "-1")
+	for _, grenze := range []int64{64, 128, 256, 512, 1024} {
+		if gepanickt := liesMit(daten, excelize.Options{UnzipSizeLimit: grenze, UnzipXMLSizeLimit: grenze}); gepanickt != nil {
+			t.Errorf("Grenze %d: Panic trotz gleicher Grenzen — die Annahme hinter Optionen() "+
+				"stimmt nicht mehr: %v", grenze, gepanickt)
+		}
+	}
+}
+
+// Optionen setzt beide Grenzen gleich. Wer die XML-Grenze senkt, um Speicher zu sparen, macht
+// den verwundbaren Weg erreichbar, und kein Fehler meldet es.
+func TestOptionenSetzenBeideGrenzenGleich(t *testing.T) {
+	o := xlsxgrenze.Optionen()
+	if o.UnzipSizeLimit != o.UnzipXMLSizeLimit {
+		t.Fatalf("UnzipSizeLimit=%d, UnzipXMLSizeLimit=%d — verschieden. Damit lagert excelize "+
+			"die Zeichenkettentabelle in eine Temp-Datei aus, und dort fehlt der Schutz gegen "+
+			"negative Indizes (GO-2026-6452).", o.UnzipSizeLimit, o.UnzipXMLSizeLimit)
+	}
+	if o.UnzipSizeLimit != xlsxgrenze.EntpacktMaxBytes {
+		t.Errorf("UnzipSizeLimit=%d, erwartet %d", o.UnzipSizeLimit, xlsxgrenze.EntpacktMaxBytes)
+	}
+}

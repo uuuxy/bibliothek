@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // „Plan speichern" darf den laufenden Plan nicht überschreiben, auch nicht an den drei Tagen

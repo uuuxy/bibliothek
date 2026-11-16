@@ -6,7 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { darfSehen, erlaubteBildschirme, menueGruppen, bildschirmGesperrt } from './menue.js';
 
 /**
- * Liest die geseedeten Rechte einer Rolle aus db/rechte_vorgabe.go.
+ * Liest die geseedeten Rechte einer Rolle aus internal/db/rechte_vorgabe.go.
  *
  * Warum aus der Datei statt als Literal hier: Der Kollegiums-Test unten stand bis zum
  * 10.08.2026 auf `permissions: []` — einem Konto, das es nicht gibt. Er war grün, während
@@ -21,13 +21,13 @@ function geseedeteRechte(rolle) {
 	// Aufwärts suchen statt relativ zu import.meta.url: Vitest transformiert die Datei,
 	// import.meta.url trägt dort ein http-Schema und readFileSync lehnt es ab.
 	let verzeichnis = process.cwd();
-	while (!existsSync(resolve(verzeichnis, 'db/rechte_vorgabe.go'))) {
+	while (!existsSync(resolve(verzeichnis, 'internal/db/rechte_vorgabe.go'))) {
 		const eltern = dirname(verzeichnis);
-		if (eltern === verzeichnis) throw new Error('db/rechte_vorgabe.go nicht gefunden');
+		if (eltern === verzeichnis) throw new Error('internal/db/rechte_vorgabe.go nicht gefunden');
 		verzeichnis = eltern;
 	}
 
-	const seed = readFileSync(resolve(verzeichnis, 'db/rechte_vorgabe.go'), 'utf8');
+	const seed = readFileSync(resolve(verzeichnis, 'internal/db/rechte_vorgabe.go'), 'utf8');
 	const zeilen = [...seed.matchAll(/\{"([A-Z]+)",\s*"(\w+)",\s*(true|false)\}/g)];
 
 	// Ohne diesen Riegel prüft der Test nichts mehr, sobald sich die Schreibweise in
@@ -36,7 +36,7 @@ function geseedeteRechte(rolle) {
 	const dieserRolle = zeilen.filter(([, r]) => r === rolle);
 	if (dieserRolle.length === 0) {
 		throw new Error(
-			`Keine Vorgaben für Rolle ${rolle} in db/rechte_vorgabe.go gefunden — das Muster passt nicht mehr.`
+			`Keine Vorgaben für Rolle ${rolle} in internal/db/rechte_vorgabe.go gefunden — das Muster passt nicht mehr.`
 		);
 	}
 
@@ -48,7 +48,7 @@ function geseedeteRechte(rolle) {
  * Oberfläche und Rechtelage.
  *
  * Das Backend hat den Admin-Vorrang fest eingebaut („Admins dürfen immer",
- * api/tuer/rechte.go). Im Menü stand die Portal-Ausnahme aber ÜBER dem
+ * internal/api/tuer/rechte.go). Im Menü stand die Portal-Ausnahme aber ÜBER dem
  * Admin-Vorrang. Ergebnis: Ein Admin durfte die Klassensatz-Reservierung aufrufen, sah
  * den Menüpunkt aber nicht — und fand die Funktion deshalb schlicht nicht. Genau so ist
  * es passiert (Absprache vom 09.08.2026: „Klassensatz reservieren wo und wie?").
@@ -200,7 +200,7 @@ describe('Menü-Sichtbarkeit', () => {
 		//
 		// Der Test prüft die Sektion UND das Recht: Ein späterer Umzug soll nicht
 		// unbemerkt auch die Tür verschieben. Die Bestandsbücher hängen an view_books wie
-		// ihre vier Routen (api/routen_katalog.go); die Helfer haben view_orders ab Werk
+		// ihre vier Routen (internal/api/routen_katalog.go); die Helfer haben view_orders ab Werk
 		// NICHT, ein Platz im Bestellwesen hätte sie ausgesperrt.
 		const gruppe = (/** @type {string} */ id) =>
 			menueGruppen.find((g) => g.items.some((i) => i.id === id))?.name;

@@ -30,19 +30,8 @@ ENV GOWORK=off
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy Go source code
-COPY api/ ./api/
-COPY apierrors/ ./apierrors/
-COPY auth/ ./auth/
-COPY db/ ./db/
-COPY jobs/ ./jobs/
-COPY migrations/ ./migrations/
-COPY repository/ ./repository/
-COPY sse/ ./sse/
-COPY mailservice/ ./mailservice/
-COPY pdf/ ./pdf/
+# Die Pakete stehen unter internal/, die Programme unter cmd/ (go.dev/doc/modules/layout).
 COPY internal/ ./internal/
-COPY pkg/ ./pkg/
 COPY cmd/ ./cmd/
 
 # Install build-base for WebP CGO compilation
@@ -77,7 +66,7 @@ WORKDIR /app
 
 # ca-certificates: sichere ausgehende Verbindungen (Cover-/Metadaten-APIs).
 #
-# postgresql-client: pg_dump für jobs/backup.go und psql für die Restore-Probe. Die
+# postgresql-client: pg_dump für internal/jobs/backup.go und psql für die Restore-Probe. Die
 # Hauptversion ist die des Servers (docker-compose.yml): Ein älterer Client verweigert einen
 # neueren Server, ein neuerer schreibt Einstellungen in den Dump (`SET transaction_timeout`
 # ab 17), die ein älterer Server unter ON_ERROR_STOP nicht einspielt. Beim Upgrade des

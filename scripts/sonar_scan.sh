@@ -43,7 +43,7 @@ fi
 #     Abdeckungsbericht, den derselbe Scan hochlaedt.
 #
 #  3. Ohne -coverpkg rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.
-#     Die Tests der Tueren liegen in api/ und fuehren repository/ ueber den Router aus.
+#     Die Tests der Tueren liegen in internal/api/ und fuehren internal/repository/ ueber den Router aus.
 if [ -n "${TEST_DATABASE_URL:-}" ]; then
 	echo "[1/3] Erzeuge Go-Coverage — MIT PostgreSQL-Integrationstests."
 else

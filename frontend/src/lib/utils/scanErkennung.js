@@ -1,7 +1,7 @@
 // Ein Handscanner ist eine Tastatur, die schneller tippt als ein Mensch und mit Enter endet.
 // Steht der Fokus in einem Passwortfeld, ginge sein Scan als Passwort zum Server und zählte
 // dort als Fehlversuch; nach fünf Scans wäre das Konto an diesem Rechner 15 Minuten gesperrt
-// (auth/anmelden.go, anmeldeBremse). Erkannt wird der Scan an den Abständen der Tasten.
+// (internal/auth/anmelden.go, anmeldeBremse). Erkannt wird der Scan an den Abständen der Tasten.
 
 import { on } from 'svelte/events';
 

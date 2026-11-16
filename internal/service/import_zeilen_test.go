@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/isbnutil"
+	"bibliothek/internal/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
 )

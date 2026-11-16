@@ -130,7 +130,7 @@ describe('KlassenUebersicht', () => {
 	});
 
 	// Die Oberstufe trägt keinen Zweigbuchstaben; der Server wählt sie über den Wert
-	// zweigOberstufe (repository/klassensaetze.go).
+	// zweigOberstufe (internal/repository/klassensaetze.go).
 	it('fragt mit „Nur Oberstufe" den Server nach branch=oberstufe', async () => {
 		alsBenutzerMit(['view_books']);
 		const screen = render(KlassenUebersicht);

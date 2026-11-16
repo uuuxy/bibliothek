@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/db"
+	"bibliothek/internal/db"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"

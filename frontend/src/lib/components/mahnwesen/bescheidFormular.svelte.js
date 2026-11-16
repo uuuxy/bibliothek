@@ -36,7 +36,7 @@ export function zeilenAus(vorschlag) {
 }
 
 /** Ein Betrag gilt ab einem Cent; leer, 0 und negativ nicht. Der Server rundet auf den Cent
- *  und weist dieselben Beträge ab (api/schaden/bescheid_erstellen.go, pruefeBescheidBetraege).
+ *  und weist dieselben Beträge ab (internal/api/schaden/bescheid_erstellen.go, pruefeBescheidBetraege).
  *  @param {unknown} wert */
 export function betragGueltig(wert) {
 	return Math.round(Number(wert) * 100) > 0;

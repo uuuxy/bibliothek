@@ -29,7 +29,7 @@ async function getDB() {
 /**
  * Ein Eintrag der Warteschlange (Format 2): der Schnappschuss vom Scan.
  *
- * `id` ist der Idempotenz-Schlüssel, den der Server kennt (api/theke/eingabe.go); `art` die Absicht
+ * `id` ist der Idempotenz-Schlüssel, den der Server kennt (internal/api/theke/eingabe.go); `art` die Absicht
  * beim Scan; `leser_id` die Person, die in diesem Moment geladen war; `gescannt_am` der
  * Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id, timestamp}`, auch
  * in alten Sicherungsdateien) wird beim Lesen übersetzt.

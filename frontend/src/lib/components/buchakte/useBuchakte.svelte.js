@@ -38,7 +38,7 @@ export function useBuchakte() {
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
 	// Ausleiher und Historie nennen Personen (view_students), die Warteliste hängt am engen
-	// Theken-Recht manage_vormerkungen (db/rechte_vorgabe.go). Ohne das Recht fragt die Akte nicht
+	// Theken-Recht manage_vormerkungen (internal/db/rechte_vorgabe.go). Ohne das Recht fragt die Akte nicht
 	// danach und bietet den Reiter nicht an.
 	const darfPersonen = $derived(hatRecht(authStore.currentUser, 'view_students'));
 	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));

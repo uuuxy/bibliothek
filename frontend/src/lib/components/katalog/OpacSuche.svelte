@@ -18,7 +18,7 @@
 	// Der Grund, wenn die Suche scheiterte: „Keine Titel gefunden" hieße, der Katalog habe das Buch
 	// nicht.
 	let ladefehler = $state('');
-	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/portal/opac.go). */
+	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, internal/api/portal/opac.go). */
 	let gesamt = $state(0);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let debounce;

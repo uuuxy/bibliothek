@@ -92,7 +92,7 @@ else
 fi
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-# Eigenes Präfix: Das nächtliche Backup heißt backup_<Zeit>.sql.gz.enc (jobs/backup.go, im
+# Eigenes Präfix: Das nächtliche Backup heißt backup_<Zeit>.sql.gz.enc (internal/jobs/backup.go, im
 # Volume des Containers). Trüge die Vorab-Sicherung dasselbe Muster, wählte die
 # Restore-Anleitung per `ls -t backups/backup_*` die letzte Deploy-Sicherung statt des
 # Nachtbackups, und alles seit dem letzten Deploy wäre nach dem Restore still weg.

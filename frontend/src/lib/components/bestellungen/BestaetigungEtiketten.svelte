@@ -1,6 +1,6 @@
 <!-- @component BestaetigungEtiketten — der Etikettenblock der Lieferanten-Seite, mit zwei
      Formen: Gilt die Bestellung der Schülerbücherei, gibt es das große Lernmittel-Etikett nicht
-     (`grosses_etikett`, entschieden in pkg/mitteltopf). Der Knopf entfällt dann
+     (`grosses_etikett`, entschieden in internal/pkg/mitteltopf). Der Knopf entfällt dann
      ganz, statt deaktiviert stehen zu bleiben; die Tür liefert das Etikett auch nicht. -->
 <script>
 	import Button from '../ui/Button.svelte';

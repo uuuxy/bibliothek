@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // ausleihEinstellungen sind die Einstellungen, die Ausleihe und Sperren brauchen. Die Felder

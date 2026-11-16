@@ -1,0 +1,402 @@
+package repository
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"testing"
+)
+
+// Jeder Schlüssel neben der Kennung eines Lesers ist
+// eingeordnet — die Tilgung nimmt ihn, oder er bleibt mit Grund.
+//
+// Viermal derselbe Fehler: LUSD-ID, Ausweisnummer, Sperrgrund,
+// Name und Freitext der Titel-Löschspur. Jedes Mal kam ein Wert der
+// Leserzeile oder ein Freitext neben schueler_id ins Protokoll, und die Tilgung entfernte ihn
+// nicht. Die Rundreise (internal/api/leser/dsgvo_paar_rundreise_pg_test.go) sieht nur Werte, die sie selbst
+// anlegt.
+//
+// Detektor am Merkmal, nicht an einer Liste von Schreibern: jede Map im Nicht-Test-Code, die
+// den Schlüssel "schueler_id" bekommt — als Literal, per Index-Zuweisung oder als JSON-Text
+// —, mit allen Schlüsseln derselben Variable in derselben Funktion. Ob eine Map ins Protokoll
+// geht, rät das Gate nicht: Auch ein Hilfsaufruf wie protokolliereBescheid schreibt eine. Eine
+// Map, die kein Protokolleintrag ist, steht mit Ort und Grund in keinProtokoll.
+//
+// „getilgt" heißt: der Schlüssel steht in protokollSchluesselMitPersonenbezug
+// (protokoll_personenbezug.go), aus der die Tilgung ihre Anweisungen für audit_logs und
+// audit_log baut. Dass die Anweisungen die Schlüssel wirklich nehmen, zeigen die PG-Tests
+// (internal/repository/titel_loeschspur_tilgung_pg_test.go, internal/api/leser/sperrgrund_tilgung_pg_test.go).
+//
+// Dieselbe Einordnung gilt neben der Kennung eines Zugangskontos (ziel_id): Einträge über ein
+// Konto tragen Name und Adresse, und die Tilgung nimmt sie aus den Einträgen der früheren
+// Konten eines Lesers (kontoSchluesselMitPersonenbezug, internal/api/konto_eintraege_tilgung_pg_test.go).
+//
+// Blind für: Schlüssel, die erst zur Laufzeit entstehen (Variable als Schlüssel); verschachtelte
+// Maps (eingeordnet wird der äußere Schlüssel); Strukturen mit JSON-Tag schueler_id als
+// Protokoll-Details (heute keine); Protokolleinträge, die einen Leser meinen und weder seine
+// Kennung noch die seines Kontos tragen — wer Freitext in einen Eintrag schreibt, setzt die
+// Kennung daneben, wie die Stornierung einer Forderung; generierter Code unter docs/.
+
+// bleibtSchluessel: Schlüssel neben schueler_id, die die Tilgung stehen lässt, mit Grund.
+var bleibtSchluessel = map[string]string{
+	"action":                  "fester Merker der Spur (titel_geloescht_mit_…), kein Wert der Person",
+	"anlass":                  "fester Merker der Stornierung (rueckgabe), kein Wert der Person",
+	"aufgeloest_id":           "Kennung der zusammengeführten, danach gelöschten Leserzeile — ein Pseudonym wie schueler_id",
+	"ausgeliehen_am":          "Datum; die Ausleihspur verliert schueler_id und entleiher (Lesehistorie-Befristung, Tilgung)",
+	"ausleihe_id":             "Kennung der Ausleihe, die mit dem Titel gelöscht wurde",
+	"ausleihen":               "Zahl der umgehängten Ausleihen beim Zusammenführen",
+	"barcode_id":              "Nummer des Exemplars, nicht des Lesers",
+	"bearbeiter_id":           "Kennung des Kontos, das die Forderung storniert hat",
+	"benutzer_id":             "Konto-Kennung aus der Zeit getrennter Lehrerausleihen; alle Aufrufer von ProtokolliereAusleihe und ProtokolliereRueckgabe übergeben heute einen leeren Wert",
+	"bescheid_id":             "Kennung des Bescheids; er bleibt als Beleg, sein Empfänger wird getilgt",
+	"betrag":                  "Betrag der Forderung, Beleg",
+	"erstellt_am":             "Datum",
+	"exemplar_id":             "Kennung des Exemplars",
+	"gesamtbetrag":            "Betrag des Bescheids, Beleg",
+	"leserzeile_bleibt_wegen": "Tabelle oder „ausweis\": warum die Leserzeile eines gelöschten Kontos blieb (loescheUnberuehrteLeserzeile)",
+	"leserzeile_geloescht":    "Wahrheitswert: Die unberührte Leserzeile ging mit dem Konto",
+	"mittel":                  "Topf des Bescheids (mitteltopf.IstGueltig)",
+	"positionen":              "Zahl der Positionen im Bescheid",
+	"referenznummer":          "Referenznummer des Bescheids; an ihr werden Zahlungen zugeordnet, der Empfänger wird getilgt",
+	"rolle":                   "Rolle des gelöschten Zugangskontos (kollegium, mitarbeiter …), kein Wert der Leserzeile",
+	"schadensfall_id":         "Kennung der Forderung",
+	"schaeden":                "Zahl der umgehängten Forderungen beim Zusammenführen",
+	"status":                  "Zustand der Vormerkung (wartend, abholbereit)",
+	"storniert_am":            "Zeitpunkt der Stornierung",
+	"tabelle":                 "Name der Tabelle, aus der der Bezug stammt",
+	"titel":                   "Buchtitel; nach der Anonymisierung hängt er an einem Pseudonym (Frist dieser Spuren: praedikatLesehistorieVormerkspur)",
+	"vom_programm":            "Wahrheitswert: Die Sperre davor kam vom Programm",
+	"von_hand":                "Wahrheitswert: Die Sperre davor kam von Hand",
+	"vormerkungen":            "Zahl der umgehängten Vormerkungen beim Zusammenführen",
+	"zeitpunkt":               "Zeitpunkt der Buchung",
+}
+
+// bleibtNebenKontokennung: Schlüssel neben ziel_id, die die Tilgung stehen lässt, mit Grund.
+var bleibtNebenKontokennung = map[string]string{
+	"aktiv":            "Wahrheitswert: Das Konto ist freigeschaltet",
+	"anmeldeverfahren": "imap oder ldap: welcher Server prüft, kein Wert der Person",
+	"rolle":            "Rolle des Kontos (kollegium, mitarbeiter …), kein Wert der Person",
+	"schueler_id":      "Kennung des Lesers neben der des Kontos (KOLLEGIUMSKONTO_NACHGETRAGEN); die Tilgung des Lesers nimmt dort ziel_id",
+}
+
+// keinProtokoll: Maps mit schueler_id, die kein Protokolleintrag sind (Datei:Funktion → Grund).
+// Leer: Jede solche Map im Code geht ins Protokoll.
+var keinProtokoll = map[string]string{}
+
+type leserkennungStelle struct {
+	ort        string // Datei:Funktion
+	art        string // Literal, Index, JSON
+	schluessel []string
+}
+
+var jsonSchluessel = regexp.MustCompile(`"([A-Za-z0-9_]+)"\s*:`)
+
+// sammleLeserkennungStellen sammelt jede Map mit der Kennung eines Lesers.
+func sammleLeserkennungStellen(t *testing.T) []leserkennungStelle {
+	t.Helper()
+	return sammleStellenMit(t, "schueler_id")
+}
+
+// sammleStellenMit durchsucht den Nicht-Test-Code des Repositorys nach Maps mit dem Schlüssel
+// merkmal.
+func sammleStellenMit(t *testing.T, merkmal string) []leserkennungStelle {
+	t.Helper()
+	jsonMitMerkmal := regexp.MustCompile(`"` + merkmal + `"\s*:`)
+	wurzel := filepath.Join("..", "..")
+	var stellen []leserkennungStelle
+	fset := token.NewFileSet()
+	err := filepath.WalkDir(wurzel, func(pfad string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git", "node_modules", "frontend", "vendor", "docs":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+			return nil
+		}
+		datei, err := parser.ParseFile(fset, pfad, nil, 0)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(wurzel, pfad)
+		if err != nil {
+			return err
+		}
+		for _, decl := range datei.Decls {
+			name := "(Paketebene)"
+			var knoten ast.Node = decl
+			if fn, ok := decl.(*ast.FuncDecl); ok {
+				if fn.Body == nil {
+					continue
+				}
+				name, knoten = fn.Name.Name, fn.Body
+			}
+			stellen = append(stellen, stellenIn(t, filepath.ToSlash(rel)+":"+name, knoten, merkmal, jsonMitMerkmal)...)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Quelltext lesen: %v", err)
+	}
+	return stellen
+}
+
+// stellenIn sammelt in einer Funktion (oder einer Deklaration auf Paketebene) jede Map mit
+// dem Schlüssel merkmal. Schlüssel werden je Variable zusammengeführt: das Literal der
+// Zuweisung und jede spätere Index-Zuweisung.
+func stellenIn(t *testing.T, ort string, knoten ast.Node, merkmal string, jsonMitMerkmal *regexp.Regexp) []leserkennungStelle {
+	t.Helper()
+	schluesselJeVariable := map[string]map[string]bool{}
+	perIndex := map[string]bool{}
+	gebunden := map[*ast.CompositeLit]bool{}
+	merke := func(variable, schluessel string) {
+		if schluesselJeVariable[variable] == nil {
+			schluesselJeVariable[variable] = map[string]bool{}
+		}
+		schluesselJeVariable[variable][schluessel] = true
+	}
+	bindeLiteral := func(variable string, wert ast.Expr) {
+		if cl, ok := wert.(*ast.CompositeLit); ok {
+			gebunden[cl] = true
+			for _, k := range literalSchluessel(t, ort, cl) {
+				merke(variable, k)
+			}
+		}
+	}
+
+	var stellen []leserkennungStelle
+	ast.Inspect(knoten, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.AssignStmt:
+			for i, links := range x.Lhs {
+				if ie, ok := links.(*ast.IndexExpr); ok {
+					if id, ok := ie.X.(*ast.Ident); ok {
+						if bl, ok := ie.Index.(*ast.BasicLit); ok && bl.Kind == token.STRING {
+							k := entpacke(t, ort, bl)
+							merke(id.Name, k)
+							if k == merkmal {
+								perIndex[id.Name] = true
+							}
+						}
+					}
+				}
+				if id, ok := links.(*ast.Ident); ok && i < len(x.Rhs) {
+					bindeLiteral(id.Name, x.Rhs[i])
+				}
+			}
+		case *ast.ValueSpec:
+			for i, id := range x.Names {
+				if i < len(x.Values) {
+					bindeLiteral(id.Name, x.Values[i])
+				}
+			}
+		case *ast.BasicLit:
+			if x.Kind == token.STRING {
+				text := entpacke(t, ort, x)
+				if strings.Contains(text, "jsonb_build_object") && strings.Contains(text, "'"+merkmal+"'") {
+					t.Errorf("%s: jsonb_build_object mit '%s' — diese Form liest das Gate nicht; "+
+						"als Map in Go bauen oder das Gate erweitern", ort, merkmal)
+				}
+				if jsonMitMerkmal.MatchString(text) {
+					var ks []string
+					for _, m := range jsonSchluessel.FindAllStringSubmatch(text, -1) {
+						ks = append(ks, m[1])
+					}
+					stellen = append(stellen, leserkennungStelle{ort: ort, art: "JSON", schluessel: ks})
+				}
+			}
+		}
+		return true
+	})
+	// Literale mit dem Merkmal, die an keine Variable gebunden sind (direkt übergeben).
+	ast.Inspect(knoten, func(n ast.Node) bool {
+		if cl, ok := n.(*ast.CompositeLit); ok && !gebunden[cl] {
+			ks := literalSchluessel(t, ort, cl)
+			for _, k := range ks {
+				if k == merkmal {
+					stellen = append(stellen, leserkennungStelle{ort: ort, art: "Literal", schluessel: ks})
+					break
+				}
+			}
+		}
+		return true
+	})
+	for variable, ks := range schluesselJeVariable {
+		if !ks[merkmal] {
+			continue
+		}
+		art := "Literal"
+		if perIndex[variable] {
+			art = "Index"
+		}
+		var liste []string
+		for k := range ks {
+			liste = append(liste, k)
+		}
+		sort.Strings(liste)
+		stellen = append(stellen, leserkennungStelle{ort: ort, art: art, schluessel: liste})
+	}
+	return stellen
+}
+
+func literalSchluessel(t *testing.T, ort string, cl *ast.CompositeLit) []string {
+	t.Helper()
+	var ks []string
+	for _, e := range cl.Elts {
+		if kv, ok := e.(*ast.KeyValueExpr); ok {
+			if bl, ok := kv.Key.(*ast.BasicLit); ok && bl.Kind == token.STRING {
+				ks = append(ks, entpacke(t, ort, bl))
+			}
+		}
+	}
+	return ks
+}
+
+// entpacke liest eine Zeichenkette aus dem Quelltext. Scheitert das, sähe das Gate den
+// Schlüssel nicht — deshalb bricht es ab, statt still weiterzulesen.
+func entpacke(t *testing.T, ort string, bl *ast.BasicLit) string {
+	t.Helper()
+	text, err := strconv.Unquote(bl.Value)
+	if err != nil {
+		t.Fatalf("%s: Zeichenkette %s nicht lesbar: %v", ort, bl.Value, err)
+	}
+	return text
+}
+
+func getilgtSchluessel() map[string]bool {
+	getilgt := map[string]bool{}
+	for _, k := range protokollSchluesselMitPersonenbezug {
+		getilgt[k] = true
+	}
+	return getilgt
+}
+
+func TestProtokollPersonenbezug_JederSchluesselNebenDerLeserkennungIstEingeordnet(t *testing.T) {
+	stellen := sammleLeserkennungStellen(t)
+	getilgt := getilgtSchluessel()
+
+	// Nicht-leer je Form: Fällt ein Zweig des Detektors aus, bliebe das Gate für diese Form
+	// still grün. Gefunden und gegen die Durchsicht von Hand gehalten: 6 Literale,
+	// 5 Index-Zuweisungen, 3 JSON-Texte. Die Untergrenzen liegen darunter, damit ein Umbau
+	// einer Stelle das Gate nicht rot macht.
+	jeArt := map[string]int{}
+	for _, s := range stellen {
+		jeArt[s.art]++
+	}
+	for art, mindestens := range map[string]int{"Literal": 4, "Index": 3, "JSON": 2} {
+		if jeArt[art] < mindestens {
+			t.Errorf("nur %d Stellen der Form %s gefunden, erwartet mindestens %d — der Detektor sieht diese Form nicht mehr",
+				jeArt[art], art, mindestens)
+		}
+	}
+
+	for _, s := range stellen {
+		if _, ausgenommen := keinProtokoll[s.ort]; ausgenommen {
+			continue
+		}
+		for _, k := range s.schluessel {
+			if k == "schueler_id" || getilgt[k] {
+				continue
+			}
+			if _, bleibt := bleibtSchluessel[k]; !bleibt {
+				t.Errorf("%s (%s): Schlüssel %q neben schueler_id ist nicht eingeordnet. Trägt er einen Wert der "+
+					"Leserzeile oder Freitext, gehört er in protokollSchluesselMitPersonenbezug "+
+					"(internal/repository/protokoll_personenbezug.go); sonst mit Grund in bleibtSchluessel.", s.ort, s.art, k)
+			}
+		}
+	}
+}
+
+// Einträge über ein Zugangskonto: Jeder Schlüssel neben ziel_id ist eingeordnet. Die Tilgung
+// nimmt Name und Adresse aus den Einträgen der früheren Konten eines Lesers; ein neuer Wert
+// der Person daneben bliebe sonst bis zur Audit-Aufbewahrung stehen.
+func TestProtokollPersonenbezug_JederSchluesselNebenDerKontokennungIstEingeordnet(t *testing.T) {
+	stellen := sammleStellenMit(t, "ziel_id")
+	getilgt := map[string]bool{}
+	for _, k := range kontoSchluesselMitPersonenbezug {
+		getilgt[k] = true
+	}
+
+	// Gefunden: vier Literale (Anlage und Änderung eines Kontos, die eigene
+	// Anmeldung, der Nachtrag der Schul-E-Mail). Die Untergrenze liegt darunter.
+	if len(stellen) < 3 {
+		t.Errorf("nur %d Maps mit ziel_id gefunden, erwartet mindestens 3 — der Detektor sieht sie nicht mehr", len(stellen))
+	}
+
+	gesehen := map[string]bool{}
+	for _, s := range stellen {
+		for _, k := range s.schluessel {
+			gesehen[k] = true
+			if k == "ziel_id" || getilgt[k] {
+				continue
+			}
+			if _, bleibt := bleibtNebenKontokennung[k]; !bleibt {
+				t.Errorf("%s (%s): Schlüssel %q neben ziel_id ist nicht eingeordnet. Trägt er Name, Adresse oder einen "+
+					"anderen Wert der Person, gehört er in kontoSchluesselMitPersonenbezug "+
+					"(internal/repository/protokoll_personenbezug.go); sonst mit Grund in bleibtNebenKontokennung.", s.ort, s.art, k)
+			}
+		}
+	}
+	for k := range bleibtNebenKontokennung {
+		if getilgt[k] {
+			t.Errorf("%q steht in bleibtNebenKontokennung und in kontoSchluesselMitPersonenbezug", k)
+		}
+		if !gesehen[k] {
+			t.Errorf("%q steht in bleibtNebenKontokennung, aber kein Eintrag mit ziel_id trägt ihn — austragen", k)
+		}
+	}
+	nurBuchstaben := regexp.MustCompile(`^[a-z_]+$`)
+	for _, k := range kontoSchluesselMitPersonenbezug {
+		if !nurBuchstaben.MatchString(k) {
+			t.Errorf("Schlüssel %q in kontoSchluesselMitPersonenbezug: nur Kleinbuchstaben und _", k)
+		}
+		if !gesehen[k] {
+			t.Errorf("%q steht in kontoSchluesselMitPersonenbezug, aber kein Eintrag mit ziel_id trägt ihn — austragen", k)
+		}
+	}
+}
+
+func TestProtokollPersonenbezug_ListenSindSauber(t *testing.T) {
+	stellen := sammleLeserkennungStellen(t)
+	getilgt := getilgtSchluessel()
+
+	gesehen := map[string]bool{}
+	orte := map[string]bool{}
+	for _, s := range stellen {
+		orte[s.ort] = true
+		for _, k := range s.schluessel {
+			gesehen[k] = true
+		}
+	}
+	for k := range bleibtSchluessel {
+		if getilgt[k] {
+			t.Errorf("%q steht in bleibtSchluessel und in protokollSchluesselMitPersonenbezug", k)
+		}
+		if !gesehen[k] {
+			t.Errorf("%q steht in bleibtSchluessel, aber kein Protokolleintrag mit schueler_id trägt ihn — austragen", k)
+		}
+	}
+	for ort := range keinProtokoll {
+		if !orte[ort] {
+			t.Errorf("keinProtokoll nennt %s, dort steht keine Map mit schueler_id mehr — austragen", ort)
+		}
+	}
+	// Die Schlüssel gehen als Text in die SQL-Anweisung der Tilgung (tilgePersonenbezugImProtokoll).
+	nurBuchstaben := regexp.MustCompile(`^[a-z_]+$`)
+	for _, k := range protokollSchluesselMitPersonenbezug {
+		if !nurBuchstaben.MatchString(k) {
+			t.Errorf("Schlüssel %q in protokollSchluesselMitPersonenbezug: nur Kleinbuchstaben und _", k)
+		}
+	}
+}

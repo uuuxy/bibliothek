@@ -27,22 +27,22 @@ import (
 	"syscall"
 	"time"
 
-	"bibliothek/api"
-	"bibliothek/auth"
-	"bibliothek/db"
+	"bibliothek/internal/api"
+	"bibliothek/internal/auth"
 	"bibliothek/internal/bereitschaft"
 	"bibliothek/internal/crypto"
+	"bibliothek/internal/db"
+	"bibliothek/internal/jobs"
+	"bibliothek/internal/pkg/clientip"
+	"bibliothek/internal/pkg/laufvermerk"
+	"bibliothek/internal/pkg/logger"
+	"bibliothek/internal/pkg/safego"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
-	"bibliothek/jobs"
-	"bibliothek/pkg/clientip"
-	"bibliothek/pkg/laufvermerk"
-	"bibliothek/pkg/logger"
-	"bibliothek/pkg/safego"
-	"bibliothek/repository"
-	"bibliothek/sse"
+	"bibliothek/internal/sse"
 
 	// Die Bildformate, die der Server liest: Cover und Ausweisfotos. WebP dekodiert libwebp aus
-	// chai2010/webp, mit dem pkg/imageutil die Cover auch schreibt.
+	// chai2010/webp, mit dem internal/pkg/imageutil die Cover auch schreibt.
 	_ "github.com/chai2010/webp"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -93,7 +93,7 @@ func starteServer(port string, server *api.Server) *http.Server {
 
 // starteBereitschaftsWaechter meldet kritische Befunde der Selbstprüfung täglich per Mail an die
 // Admins, ein Wächter, der sich meldet, statt gelesen werden zu müssen
-// (api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst). Der erste
+// (internal/api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst). Der erste
 // Lauf kommt drei Minuten nach dem Start: Ein Deploy mit kaputter Umgebung meldet sich so noch am
 // selben Vormittag, nicht erst am nächsten Tag. Dieselbe Mail wie zuletzt schickt er dabei nicht
 // noch einmal (internal/bereitschaft/alarm.go).

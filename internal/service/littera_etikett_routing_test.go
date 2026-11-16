@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/repository"
 )
 
 // etikettAusleihAttrappe hält fest, mit welchem Exemplar die Ausleih-Logik angesteuert

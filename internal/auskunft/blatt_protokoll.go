@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pkg/betrag"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/repository"
 
 	"github.com/phpdave11/gofpdf"
 )
@@ -18,7 +18,7 @@ import (
 // Die Protokolleinträge auf dem Blatt der Auskunft: der Vorgang in Worten, darunter die Angaben
 // des Eintrags mit Bezeichnung. Welche Schlüssel eine Bezeichnung haben und welche nicht aufs
 // Blatt kommen (Kennungen des Programms, das buchende Konto), steht in
-// repository/protokoll_auskunft.go. Einen Vorgang oder Schlüssel, den das Blatt nicht kennt,
+// internal/repository/protokoll_auskunft.go. Einen Vorgang oder Schlüssel, den das Blatt nicht kennt,
 // druckt es mit seinem Namen, statt ihn wegzulassen.
 
 // dsgvoVorgangsArt ist ein Vorgang der Datensatz-Historie: Tabelle, Aktion und der Merker, den

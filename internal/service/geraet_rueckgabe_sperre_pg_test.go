@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
-	"bibliothek/repository"
 )
 
 func TestGeraetRueckgabeTrotzSperre(t *testing.T) {

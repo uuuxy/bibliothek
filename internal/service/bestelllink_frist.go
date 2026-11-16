@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"bibliothek/db"
-	"bibliothek/pkg/bestelllink"
-	"bibliothek/repository"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/bestelllink"
+	"bibliothek/internal/repository"
 )
 
 // LadeBestelllinkTage liest die Frist, die ein neuer Bestätigungs-Link bekommt. Lässt sich die

@@ -28,7 +28,7 @@ import (
 // eine Antwort über MitFehlerantwort; einen Status aus einer Variablen.
 var einmalImLogBestand = map[string]string{
 	// „datei:funktion": Grund.
-	"api/middleware.go:panikMiddleware": "die Panik steht mit Stack in ihrer eigenen Zeile; die Antwort trägt mit Absicht keine Ursache",
+	"internal/api/middleware.go:panikMiddleware": "die Panik steht mit Stack in ihrer eigenen Zeile; die Antwort trägt mit Absicht keine Ursache",
 }
 
 // fuenfhundert sind die Status, deren Antwort logMiddleware als Fehler schreibt.

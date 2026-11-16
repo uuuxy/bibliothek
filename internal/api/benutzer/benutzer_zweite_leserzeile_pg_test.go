@@ -1,0 +1,92 @@
+package benutzer
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
+	"bibliothek/internal/testdaten"
+)
+
+// Ein zweites Konto derselben Person darf keine zweite Leserzeile erzeugen.
+//
+// Der Wächter trg_benutzer_hat_leserzeile hängt jedem Konto ohne Leserzeile eine frische an.
+// Wird das Konto eines Kollegen gelöscht (seine Leserzeile bleibt, die Ausleihen hängen
+// daran) und legt die Benutzerverwaltung ihm später ein neues an, stünde er zweimal in der
+// Leserdatei: einmal mit Ausweis und Geschichte, einmal leer. Zusammenführen repariert das;
+// entstehen soll es gar nicht. Der Weg zum Konto an einer vorhandenen Leserzeile ist die
+// Schul-E-Mail in der Akte (LegeKollegiumskontoAn); dorthin verweist die Antwort.
+func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	userRepo := repository.NewKontoAbfragen(pool)
+	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a517", Rolle: auth.RolleAdmin}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id IN
+			(SELECT leser_id FROM benutzer WHERE email LIKE '%@zweitezeile.invalid')`); err != nil {
+			t.Errorf("aufräumen (Leser der Konten): %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email LIKE '%@zweitezeile.invalid'`); err != nil {
+			t.Errorf("aufräumen (Konten): %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname IN ('Zweitezeile', 'Zweitezeile-Kind')`); err != nil {
+			t.Errorf("aufräumen (Leser): %v", err)
+		}
+	})
+	anlegen := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/benutzer", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, admin))
+		rec := httptest.NewRecorder()
+		srv.KontoAnlegen(userRepo).ServeHTTP(rec, req)
+		return rec
+	}
+	zaehleLeser := func(t *testing.T, nachname string) int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM leser WHERE nachname = $1 AND deleted_at IS NULL`, nachname).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	// Die Leserzeile eines Kollegen ohne Konto — so sieht sie nach dem Löschen des Kontos
+	// aus, und so kommt sie aus der Littera-Übernahme.
+	testdaten.LegeLeserAn(t, pool, "A-517", "Kim", "Zweitezeile", "lehrkraft")
+
+	rec := anlegen(`{"vorname":"Kim","nachname":"Zweitezeile","email":"kim@zweitezeile.invalid","rolle":"kollegium"}`)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("Konto für eine Person mit Leserzeile ohne Konto: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "Akte") {
+		t.Errorf("die Antwort nennt den Weg nicht (Schul-E-Mail in der Akte): %s", rec.Body.String())
+	}
+	if n := zaehleLeser(t, "Zweitezeile"); n != 1 {
+		t.Errorf("%d Leserzeilen für Kim Zweitezeile, erwartet 1 — die zweite ist genau der Doppeleintrag", n)
+	}
+
+	// Gegenprobe 1: Ein Schüler gleichen Namens ist eine andere Person — das Konto entsteht.
+	testdaten.LegeSchuelerMitNamenAn(t, pool, "S-517", "Lea", "Zweitezeile-Kind", "7a", 2030)
+	if rec := anlegen(`{"vorname":"Lea","nachname":"Zweitezeile-Kind","email":"lea@zweitezeile.invalid","rolle":"kollegium"}`); rec.Code != http.StatusOK {
+		t.Errorf("Namensvetter unter den Schülern darf nicht bremsen: Status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Gegenprobe 2: Hat der Kollege gleichen Namens schon ein Konto, ist der Neue ein
+	// Namensvetter mit eigener Adresse — kein Doppeleintrag, den die Akte auflösen könnte.
+	if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+		VALUES ('Kim', 'Zweitezeile', 'kim.alt@zweitezeile.invalid', 'kollegium', true,
+		        (SELECT id FROM leser WHERE barcode_id = 'A-517'))`); err != nil {
+		t.Fatal(err)
+	}
+	if rec := anlegen(`{"vorname":"Kim","nachname":"Zweitezeile","email":"kim.neu@zweitezeile.invalid","rolle":"kollegium"}`); rec.Code != http.StatusOK {
+		t.Errorf("Namensvetter mit eigenem Konto darf nicht bremsen: Status %d: %s", rec.Code, rec.Body.String())
+	}
+}

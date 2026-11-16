@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"bibliothek/pkg/lmfplan"
-	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
+	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // LMFPlanEntwurf ist ein geprüfter Plan vor dem Rechnen: Rahmen, Zeilen, je Zeile der feste
@@ -19,7 +19,7 @@ type LMFPlanEntwurf struct {
 }
 
 // VerteileLMFPlan rechnet die Plätze der Zeilen über die Schultage, also ohne die freien Tage
-// des Plans und die Feiertage und Ferien aus pkg/lmfplan, und nennt die Ausfälle vom ersten Tag
+// des Plans und die Feiertage und Ferien aus internal/pkg/lmfplan, und nennt die Ausfälle vom ersten Tag
 // bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her rückwärts; sein Beginn
 // (e.Plan.ErsterTag und Startstunde) ist danach der früheste Platz.
 func VerteileLMFPlan(entwurf *LMFPlanEntwurf) ([]lmfplan.Platz, []lmfplan.Ausfall, error) {
