@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 15.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 16.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -83,7 +83,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 
 ## 1. Einführung und Ziele
 
-Stand: 01.11.2026
+Stand: 16.11.2026
 
 ---
 
@@ -162,7 +162,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | **Bibliotheksleitung**               | Überblick, Mahnwesen, Bestellung, Statistik ohne Klarnamen; Systempflege nicht übernehmen müssen                                   | Eigene Rolle `leitung` = Admin **minus** `manage_users`/`manage_settings`, abgeleitet statt abgeschrieben (Migration 122) |
 | **Bibliotheks-Mitarbeiter**          | Tagesgeschäft an der Theke, schnell, ohne Systemwissen                                                                             | Omnibox als einziges Eingabefeld; Fehler sprechen deutsch und sagen die nächste Handlung                             |
 | **Helfer** (Eltern, Hilfskräfte)     | Ausleihe/Rückgabe und die Frage „habt ihr Band 3 noch da?" beantworten — an der Theke mit Name, Klasse, Ausweisnummer und Sperre, ohne Akte und Ausleihen | Genau zwei Rechte (`perform_actions`, `view_books`), Grenze zur Akte über `view_students`                             |
-| **Kollegium** (~160 Lehrkräfte)      | Selbst anmelden können, Klassensätze reservieren, LMF-Termine sehen, Probleme melden                                                | Selbstanmeldung über die Schuldomain mit **Freischaltung durch die Bibliothek**; Portal hängt am Recht `create_reservations`, nicht an der Rolle |
+| **Kollegium** (~160 Lehrkräfte)      | Selbst anmelden können, Klassensätze reservieren, LMF-Termine sehen, Probleme melden                                                | Selbstanmeldung über die Schuldomain mit **Freischaltung durch die Bibliothek**, mit Kürzel und Passwort des Schulnetzes sofort (A30); Portal hängt am Recht `create_reservations`, nicht an der Rolle |
 | **Schüler und Eltern**               | Sehen, ob ein Buch da ist — ohne Konto                                                                                             | Öffentlicher Katalog und Monitor, die ausschließlich Titeldaten liefern (PII-Stufe 0)                                |
 | **Sekretariat / Schulleitung**        | Schülerdaten müssen ohne Doppelerfassung hereinkommen; Versetzung und Abgang müssen funktionieren                                   | LUSD-Import mit drei Zuordnungsstufen, Umbenennungs-Paarung und Karenzzeit ([LUSD.md](LUSD.md))                   |
 | **Datenschutzbeauftragte(r)**        | Nachweisbare Fristen, Rechtsgrundlagen, Verarbeitungsverzeichnis, Auskunft                                                          | PII-Matrix je Route als Gate, automatische Löschroutinen, VVT- und Art.-13-Entwürfe unter `docs/datenschutz/`         |
@@ -192,7 +192,7 @@ Messbefehl nicht.
 
 ## 2. Randbedingungen
 
-Stand: 21.10.2026
+Stand: 16.11.2026
 
 Randbedingungen sind das, was **nicht zur Diskussion stand**. Sie erklären mehr von dieser
 Architektur als jede Entwurfsvorliebe: Der Grund für die Omnibox, für IMAP als
@@ -227,7 +227,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | O1 | **Ein Entwickler, ein Betreiber — dieselbe Person**                   | Alles, was nur durch Disziplin funktioniert, funktioniert nicht. Daher: Gates statt Checklisten, Selbstprüfung statt Runbook-Gedächtnis, `OFFEN.md` als **einzige** Liste.            |
 | O2 | **Der Betrieb läuft, während gebaut wird**                            | Migrationen müssen idempotent sein und beim Start von selbst laufen; ein Deploy darf offene SSE-Verbindungen nicht mit `os.Exit(1)` beenden (der Grund für den Broker-Umbau).         |
 | O3 | **Lernmittelfreiheit ist Landesrecht**                                | Das Ende des Schuljahres am 31. Juli, die Ersatzwert-Staffel und der Bescheid-Weg (Konto statt Bargeld) sind Vorgaben, keine Produktentscheidungen. Die Staffel ist bewusst ein **Vorschlag mit Herleitung**, weil der Betrag im Ermessen der Schule liegt. |
-| O4 | **~160 Lehrkräfte legt niemand von Hand an**                          | Selbstanmeldung über die Schuldomain ist Pflicht, die Freischaltung bleibt aber bei der Schule: IMAP beantwortet „wer bist du", nicht „darfst du rein".                               |
+| O4 | **~160 Lehrkräfte legt niemand von Hand an**                          | Selbstanmeldung über die Schuldomain ist Pflicht, die Freischaltung bleibt aber bei der Schule: IMAP beantwortet „wer bist du", nicht „darfst du rein". Mit dem Kürzel antwortet darauf das Adressbuch der Schule, ohne Freischalten (A30).                               |
 | O5 | **Zwei Anforderungen aus dem Anforderungsprotokoll vom 16.09.2026** | Alte Aufdrucke bleiben lesbar (A14), und ein Lernmittel kann über mehrere Jahre beim selben Kind bleiben (Mehrjahresband am Titel, Spalte `mehrjahresband`). Beides ist gebaut. Wie die übrigen der zwölf Punkte behandelt sind, steht in den Commits vom 17. und 22.09.2026, die begründeten Abweichungen im Mahnwesen in [mittel_konzept.md](mittel_konzept.md), Abschnitt 3. |
 | O6 | **Kein Passwort-Selbstservice, kein Nutzerverzeichnis**                | Es gibt keinen „Passwort vergessen"-Pfad und keine Registrierung außer der Selbstanmeldung — beides liegt beim Schul-IT-Betrieb.                                                       |
 | O7 | **Altbestand aus Littera muss verlustfrei übernommen werden**          | Übernahme als eigenes Kommando gegen dieselbe Datenbank, mit Savepoint **je Datensatz** und Abgleich gegen den tatsächlichen Zeilenzuwachs — ein abgebrochener Batch darf nicht alles mitnehmen. |
@@ -274,7 +274,7 @@ Diese Werkzeuge sind keine Beigabe: Ohne sie wären mehrere Entscheidungen in
 
 ## 3. Kontextabgrenzung
 
-Stand: 26.10.2026
+Stand: 16.11.2026
 
 ---
 
@@ -320,7 +320,7 @@ graph TB
 | Nachbar                     | Eingang in das System                                                                                       | Ausgang aus dem System                                                                                                | Besonderheit                                                                                                    |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | **Bibliothekspersonal**     | Barcode-Scans, Stammdatenpflege, Mahnlauf, Inventurzählung, Wareneingang                                     | Bildschirm-Rückmeldung je Scan, PDFs (Mahnungen, Etiketten, Ausweise, Bescheide, Listen)                              | Bedienung ist auf **Tastatur und Scanner** ausgelegt; die Maus ist optional                                     |
-| **Kollegium**               | Selbstanmeldung mit dem Schulpostfach, Reservierungen, Meldungen                                              | Portal-Ansichten (Klassensätze, LMF-Plan, Schulbücher als PDF), Terminbestätigungen                                    | Zugang entsteht **inaktiv** und wird von der Bibliothek freigeschaltet                                          |
+| **Kollegium**               | Selbstanmeldung mit dem Schulpostfach, Reservierungen, Meldungen                                              | Portal-Ansichten (Klassensätze, LMF-Plan, Schulbücher als PDF), Terminbestätigungen                                    | Zugang entsteht **inaktiv** und wird von der Bibliothek freigeschaltet; mit Kürzel und Passwort des Schulnetzes sofort aktiv (A30)                                          |
 | **Sekretariat**             | LUSD-Bericht als `.xlsx` **oder** Semikolon-CSV (LANIS-Klassenliste, UTF-8 mit BOM)                           | Abgleichbericht: neu, geändert, Umbenennung, Abgänger                                                                  | Die Kopfzeile wird **gesucht, nicht vorausgesetzt** — LUSD-Berichte tragen Titelzeilen darüber                  |
 | **Schüler und Eltern**      | Suchanfragen im öffentlichen Katalog                                                                         | Titel, Cover, Verfügbarkeit                                                                                            | **Nie** Ausleiherdaten — PII-Stufe 0, im Gate `api/pii_matrix_test.go` festgehalten                              |
 | **Buchhändler**             | Bestätigung über einen Token-Link, ohne Konto                                                                 | Bestellmail mit Positionsliste und Barcodebogen                                                                        | Der Token steht **im Pfad** und wird im Log maskiert (`maskiereToken`); gespeichert wird nur sein Hash           |
@@ -1742,7 +1742,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.11.2026
+Stand: 16.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2291,19 +2291,23 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   (Formular-Token, Sitzungs-Keks, Anfrage-Token) und lädt das globale Adressbuch (Kennung
   `global`) als vCard; im Webmail liest er nur, und nur über https (auf dem eigenen Rechner auch
   http). Er trägt aktiven Konten mit Platzhalter (`repository.PlatzhalterDomain`) die Adresse der
-  Schule ein (Domain aus `SELBSTANMELDUNG_DOMAIN`); eine echte Adresse ändert er nie, denn bei
-  IMAP ist sie der Anmeldename. Die Treffer suchen der Reihe nach das Kürzel (fünfter Teil von
-  `N`) gegen die LDAP-Kennung, dann den Namen genau, tolerant (Umlaute, Akzente, Bindestriche,
-  Titel, nur der erste Vorname) und als Teil eines Doppelnamens. Jeder Treffer muss in beide
+  Schule ein (Domain aus `SELBSTANMELDUNG_DOMAIN`), dazu aktiven Konten des Kollegiums mit
+  LDAP-Kennung, deren Adresse von der zu ihrem Kürzel abweicht: Bei LDAP ist die Adresse nicht der
+  Anmeldename, und die Mails aus Mein Portal gehen an sie. Die Adresse eines IMAP-Kontos ändert er
+  nie, denn dort ist sie der Anmeldename; ein Konto mit einer anderen Rolle bleibt bei der
+  Benutzerverwaltung. Die Treffer suchen der Reihe nach das Kürzel (fünfter Teil von `N`) gegen
+  die LDAP-Kennung, bei Konten mit Platzhalter dann den Namen genau, tolerant (Umlaute, Akzente,
+  Bindestriche, Titel, nur der erste Vorname) und als Teil eines Doppelnamens. Jeder Treffer muss in beide
   Richtungen eindeutig sein, die Adresse darf kein anderes Konto tragen und im Adressbuch nur bei
   einem Eintrag stehen. Geschrieben wird über `KontoAbfragen.Aendere` mit `EmailBisher`: Hat
-  jemand die Adresse inzwischen von Hand gesetzt, bleibt sie stehen. Jede Übernahme steht als
+  jemand die Adresse inzwischen von Hand geändert, bleibt sie stehen. Jede Übernahme steht als
   `ADRESSE_AUS_WEBMAIL` mit `ziel_id` im Protokoll der Verwaltung, wo die Tilgung der Konten sie
   findet; der Stand des letzten Laufs (`adressabgleich_stand`) trägt nur Zahlen. Der Lauf kommt
   am Ersten jedes Monats (`zeitAdressabgleich`, 04:30 UTC) und auf Knopfdruck; der Probelauf
   rechnet nur. Hat ein Lauf nach Zeitplan etwas eingetragen oder ist er gescheitert, geht eine
   Mail an die Empfänger der Alarme, nur mit Zahlen. Entschieden: automatisch, ohne Bestätigung je
-  Konto, ein fester Takt statt einer Einstellung.
+  Konto, ein fester Takt statt einer Einstellung. Mit demselben Abruf (`Tueren.HoleAdressbuch`)
+  holt die erste Anmeldung mit dem Kürzel Name und Adresse (A30).
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`errSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
   Mahntexte mit Schülernamen. `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und
@@ -2738,7 +2742,7 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 29.10.2026
+Stand: 16.11.2026
 
 Die Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre Nummer wird
 nicht neu vergeben. Format je Eintrag:
@@ -3391,7 +3395,8 @@ wird mit Suchen-dann-Binden: Das Dienstkonto (`LDAP_BIND_DN`) sucht den Eintrag 
 `LDAP_FILTER`, in dem `%s` für die gespeicherte Kennung steht, in jedem Ordner aus
 `LDAP_BASIS_DN` (mit `;` getrennt), dann meldet sich der Eintrag mit dem Passwort an. Die Anmeldung liest zuerst das Konto, über die E-Mail oder die Kennung, und
 fragt dann den Server, den es nennt. Eine Eingabe ohne Konto erreicht keinen Server; die
-Ausnahme ist die Selbstanmeldung, die den Mailserver fragt, ob es das Postfach gibt.
+Ausnahmen sind die erste Anmeldung mit dem Kürzel (unten) und die Selbstanmeldung, die den
+Mailserver fragt, ob es das Postfach gibt.
 
 **Anlass.** Schulen, deren Konten im Verzeichnisdienst (Active Directory, OpenLDAP) liegen. Ein
 Schalter für die ganze Anlage hätte alle Konten auf einmal umgestellt; je Konto laufen beide
@@ -3423,16 +3428,45 @@ Bibliothek Namen durchprobiert.
   `benutzer` „darfst du hinein".
 - Die LDAP-Kennung ist der Name, den die Person beim Anmelden tippt; `LDAP_FILTER` legt fest, wo
   er im Verzeichnis steht, und darf feste Teile tragen (`(userPrincipalName=%s@schule.local)`).
-- Die Selbstanmeldung prüft weiter nur am Mailserver. Wer allein über LDAP anmeldet, lässt
-  `SELBSTANMELDUNG_DOMAIN` leer; dann legt keine Anmeldung ein Konto an.
+- Die Selbstanmeldung prüft weiter nur am Mailserver und braucht das Freischalten; ohne
+  `IMAP_HOST` legt sie kein Konto an.
+- **Erste Anmeldung mit dem Kürzel** (entschieden: sofort, ohne Freischalten und ohne
+  Handgriff, nur für Mein Portal). Trifft eine Eingabe ohne @ kein Konto und ist LDAP
+  eingerichtet, sucht die Anmeldung sie als Kürzel im globalen Adressbuch des Webmails
+  (`adressabgleich.FindeKuerzel`; abgerufen über `system.Tueren.HoleAdressbuch` wie beim
+  Adressabgleich, 8.10). Nur ein eindeutiger Eintrag mit genau einer Adresse der Schule führt zum
+  Verzeichnisdienst; ein Name außerhalb des Adressbuchs erreicht ihn nicht, auch nicht der eines
+  Schülers mit Zugang zum Schulnetz. Mit dem richtigen Passwort wird das Konto des Kollegiums mit
+  der Adresse aus dem Adressbuch auf LDAP mit dem Kürzel umgestellt (ein offener Antrag ist damit
+  erledigt); gibt es keins, entsteht über `KontoAbfragen.LegeAn` ein aktives Konto des Kollegiums
+  mit Name und Adresse aus dem Adressbuch. Ob der Weg greift, steht fest, bevor der
+  Verzeichnisdienst gefragt wird; greift er nicht, geht die Anmeldung wie bisher. Er greift nicht
+  für ein Konto oder einen Antrag mit einer anderen Rolle (die vergibt und ändert weiter nur die
+  Benutzerverwaltung), für ein deaktiviertes Konto, für ein Konto des Kollegiums mit einer anderen
+  LDAP-Kennung und, wenn zur Adresse kein Konto besteht, für einen Namen, der schon in der
+  Leserdatei steht (dieselbe Regel wie beim Anlegen einer Lehrkraft an der Theke,
+  `repository.IstLeserNamensdubletteVorhanden`): Sonst stünde dieselbe Person zweimal dort, etwa
+  wenn ihr Konto an der Theke unter einer vertippten Adresse entstand; der Eintrag im Fehlerstand
+  nennt die Abhilfe. Im Protokoll steht USER_CREATE oder USER_UPDATE mit dem Konto selbst als
+  Bearbeiter. Anders als in der Benutzerverwaltung (`pruefeSelbstschutz`) stellt hier die Person
+  ihr eigenes Verfahren um: Die Kennung hat sich in derselben Anmeldung am Verzeichnisdienst
+  bewährt, ein Tippfehler kann nicht aussperren. „Darfst du hinein" beantwortet auf diesem Weg das
+  Adressbuch, das Verzeichnis des Personals, das die Schule selbst pflegt. Annahme: Das Kürzel im
+  Adressbuch ist der Anmeldename derselben Person im Schulnetz.
+- Das Adressbuch hält die Anmeldung im Speicher und holt es höchstens alle zwei Minuten
+  (`adressbuchAbstand`), je Abruf höchstens zehn Sekunden lang: Wer Namen durchprobiert, löst
+  höchstens einen Abruf je Abstand aus. Scheitert ein Abruf, steht er im Fehlerstand, und es gilt
+  das vorige Adressbuch. Ohne Zugang zum Webmail oder ohne `SELBSTANMELDUNG_DOMAIN` gibt es den
+  Weg nicht (`adressabgleich.ErrNichtEingerichtet`).
 - Erster Start ohne Mailserver: `INITIAL_ADMIN_LDAP_KENNUNG` legt den ersten Admin als LDAP-Konto
   an; ohne sie und ohne `IMAP_HOST` bricht der Start ab.
 
-**Fundstelle.** `auth/ldap.go`, `auth/anmelden.go` (`pruefeZugang`), `auth/sperre.go`,
+**Fundstelle.** `auth/ldap.go`, `auth/anmelden.go` (`pruefeZugang`), `auth/anmeldung_mit_kuerzel.go`, `auth/sperre.go`,
 `api/benutzer/konto_pruefungen.go` (`pruefeAnmeldeverfahren`), Migration 172. Gates:
 `auth/ldap_test.go`, `auth/anmelden_verfahren_test.go`, `auth/sperre_pg_test.go`
 (`TestSperre_LDAPKontoSchliesstAmVerzeichnisdienstAuf`), `repository/anmeldeverfahren_pg_test.go`,
-`api/benutzer/anmeldeverfahren_test.go`, jedes am Rückbau rot gesehen.
+`api/benutzer/anmeldeverfahren_test.go`, `auth/anmeldung_mit_kuerzel_pg_test.go`,
+`auth/anmeldung_mit_kuerzel_test.go`, jedes am Rückbau rot gesehen.
 
 ---
 

@@ -18,6 +18,9 @@ type Konto struct {
 	// LDAPKennung ist der Anmeldename im PaedNet; steht er als Kürzel im Adressbuch, gilt der
 	// Treffer über das Kürzel vor dem über den Namen.
 	LDAPKennung string
+	// Kollegium: Das Konto hat die Rolle Kollegium (Mein Portal). Nur ein solches Konto mit
+	// LDAP-Kennung bekommt über das Kürzel eine andere Adresse als die, die es trägt.
+	Kollegium bool
 }
 
 // Uebernahme ist eine Adresse, die ein Konto bekommt, und der Weg, auf dem sie gefunden wurde.
@@ -26,10 +29,10 @@ type Uebernahme struct {
 	Name        string `json:"name"`
 	Adresse     string `json:"adresse"`
 	Weg         string `json:"weg"`
-	Platzhalter string `json:"-"`
+	EmailBisher string `json:"-"`
 }
 
-// Uebergangen ist ein Konto mit Platzhalter, das keine Adresse bekommt, und der Grund dafür.
+// Uebergangen ist ein Konto, das keine Adresse bekommt, und der Grund dafür.
 type Uebergangen struct {
 	KontoID string `json:"konto_id"`
 	Name    string `json:"name"`
@@ -69,9 +72,11 @@ const (
 var wegJeStufe = [anzahlStufen]string{"Name", "Name in anderer Schreibung", "Teil des Nachnamens"}
 
 // BerechneZuordnung bestimmt, welches Konto welche Adresse bekommt. Die Regeln:
-//   - Nur aktive Konten mit einer Platzhalter-Adresse (platzhalterDomain, etwa „@littera.invalid")
-//     bekommen eine Adresse; eine echte Adresse ändert der Abgleich nie, denn bei der Anmeldung über
-//     den Mailserver ist sie der Anmeldename.
+//   - Nur aktive Konten bekommen eine Adresse: eines mit Platzhalter-Adresse (platzhalterDomain,
+//     etwa „@littera.invalid") über das Kürzel oder den Namen, eines des Kollegiums mit
+//     LDAP-Kennung nur über das Kürzel und nur, wenn es eine andere Adresse trägt. Die Adresse
+//     eines Kontos, das sich über den Mailserver anmeldet, ändert der Abgleich nie, denn dort ist
+//     sie der Anmeldename; ein Konto mit einer anderen Rolle bleibt bei der Benutzerverwaltung.
 //   - Nur Adressen der Schule (schulDomain) zählen; private Adressen im Adressbuch nicht.
 //   - Zuerst zählt das Kürzel: Trägt das Konto eine LDAP-Kennung und steht sie als Kürzel im
 //     Adressbuch, ist das der Treffer. Sonst der Name in drei Stufen (stufeGenau bis stufeTeil).
@@ -79,7 +84,7 @@ var wegJeStufe = [anzahlStufen]string{"Name", "Name in anderer Schreibung", "Tei
 //     Konto passt zu diesem Eintrag. Die Adresse trägt noch kein anderes Konto und steht im
 //     Adressbuch nur bei diesem Eintrag.
 func BerechneZuordnung(eintraege []Eintrag, konten []Konto, schulDomain, platzhalterDomain string) Zuordnung {
-	schulDomain = "@" + strings.TrimPrefix(strings.ToLower(strings.TrimSpace(schulDomain)), "@")
+	schulDomain = domainAlsEndung(schulDomain)
 	platzhalterDomain = strings.ToLower(platzhalterDomain)
 
 	buch := leseBuch(eintraege, schulDomain)
@@ -95,18 +100,29 @@ func BerechneZuordnung(eintraege []Eintrag, konten []Konto, schulDomain, platzha
 	var z Zuordnung
 	for _, i := range reihenfolgeNachName(konten) {
 		k := konten[i]
-		if !k.Aktiv || !istPlatzhalter(k.Email, platzhalterDomain) {
+		if !k.Aktiv {
 			continue
 		}
-		z.KontenMitPlatzhalter++
+		var adresse, weg, grund string
+		switch {
+		case istPlatzhalter(k.Email, platzhalterDomain):
+			z.KontenMitPlatzhalter++
+			adresse, weg, grund = buch.finde(k.LDAPKennung, kontoNamen[i], kontoNamen, vergeben)
+		case k.Kollegium && k.LDAPKennung != "":
+			var andere bool
+			if adresse, weg, grund, andere = buch.andereAdresseUeberKuerzel(k.LDAPKennung, k.Email, vergeben); !andere {
+				continue
+			}
+		default:
+			continue
+		}
 		name := strings.TrimSpace(k.Vorname + " " + k.Nachname)
-		adresse, weg, grund := buch.finde(k.LDAPKennung, kontoNamen[i], kontoNamen, vergeben)
 		if grund != "" {
 			z.Uebergangen = append(z.Uebergangen, Uebergangen{KontoID: k.ID, Name: name, Grund: grund})
 			continue
 		}
 		vergeben[adresse] = true
-		z.Uebernahmen = append(z.Uebernahmen, Uebernahme{KontoID: k.ID, Name: name, Adresse: adresse, Weg: weg, Platzhalter: k.Email})
+		z.Uebernahmen = append(z.Uebernahmen, Uebernahme{KontoID: k.ID, Name: name, Adresse: adresse, Weg: weg, EmailBisher: k.Email})
 	}
 	return z
 }
@@ -116,6 +132,7 @@ type buchEintrag struct {
 	namen   namen
 	kuerzel string
 	adresse string // die Adresse der Schule oder mehrdeutigeAdresse
+	quelle  Eintrag
 }
 
 type adressbuch struct {
@@ -130,7 +147,7 @@ func leseBuch(eintraege []Eintrag, schulDomain string) adressbuch {
 		if !ok {
 			continue
 		}
-		b.eintraege = append(b.eintraege, buchEintrag{namen: namenAus(e.Nachname, e.Vorname), kuerzel: kuerzelSchluessel(e.Kuerzel), adresse: adresse})
+		b.eintraege = append(b.eintraege, buchEintrag{namen: namenAus(e.Nachname, e.Vorname), kuerzel: kuerzelSchluessel(e.Kuerzel), adresse: adresse, quelle: e})
 		b.eintraegeJeAdresse[adresse]++
 	}
 	return b
@@ -166,16 +183,7 @@ func (b adressbuch) finde(kennung string, konto namen, alleKonten []namen, verge
 // nicht steht und der Name entscheiden soll. Mehrere Konten mit derselben Kennung gibt es nicht:
 // Die LDAP-Kennung ist eindeutig.
 func (b adressbuch) findeUeberKuerzel(kennung string, vergeben map[string]bool) (adresse, weg, grund string, gefunden bool) {
-	k := kuerzelSchluessel(kennung)
-	if k == "" {
-		return "", "", "", false
-	}
-	var treffer []buchEintrag
-	for _, e := range b.eintraege {
-		if e.kuerzel == k {
-			treffer = append(treffer, e)
-		}
-	}
+	treffer := b.mitKuerzel(kennung)
 	switch len(treffer) {
 	case 0:
 		return "", "", "", false
@@ -184,6 +192,70 @@ func (b adressbuch) findeUeberKuerzel(kennung string, vergeben map[string]bool) 
 		return adresse, weg, grund, true
 	}
 	return "", "", grundKuerzelMehrfach, true
+}
+
+// andereAdresseUeberKuerzel sucht für ein Konto des Kollegiums mit LDAP-Kennung die Adresse zum
+// Kürzel. andere ist false, wenn das Kürzel nicht im Adressbuch steht oder das Konto die Adresse
+// schon trägt; dann bleibt das Konto, wie es ist.
+func (b adressbuch) andereAdresseUeberKuerzel(kennung, bisher string, vergeben map[string]bool) (adresse, weg, grund string, andere bool) {
+	treffer := b.mitKuerzel(kennung)
+	switch {
+	case len(treffer) == 0:
+		return "", "", "", false
+	case len(treffer) > 1:
+		return "", "", grundKuerzelMehrfach, true
+	case treffer[0].adresse == strings.ToLower(strings.TrimSpace(bisher)):
+		return "", "", "", false
+	}
+	adresse, weg, grund = b.pruefeAdresse(treffer[0].adresse, wegKuerzel, vergeben)
+	return adresse, weg, grund, true
+}
+
+// mitKuerzel liefert die Einträge, die dieses Kürzel tragen; ein leeres trägt keiner.
+func (b adressbuch) mitKuerzel(kennung string) []buchEintrag {
+	k := kuerzelSchluessel(kennung)
+	if k == "" {
+		return nil
+	}
+	var treffer []buchEintrag
+	for _, e := range b.eintraege {
+		if e.kuerzel == k {
+			treffer = append(treffer, e)
+		}
+	}
+	return treffer
+}
+
+// Person ist ein Eintrag des Adressbuchs mit seiner Adresse der Schule.
+type Person struct {
+	Vorname, Nachname, Adresse string
+}
+
+// FindeKuerzel sucht die Person zu einem Kürzel nach den Regeln des Abgleichs: Genau ein Eintrag
+// trägt das Kürzel, er hat genau eine Adresse der Schule, und kein anderer Eintrag trägt sie.
+// gefunden ist false, wenn das Kürzel nicht im Adressbuch steht; steht es dort ohne sichere
+// Adresse, nennt grund, warum.
+func FindeKuerzel(eintraege []Eintrag, kuerzel, schulDomain string) (p Person, grund string, gefunden bool) {
+	buch := leseBuch(eintraege, domainAlsEndung(schulDomain))
+	treffer := buch.mitKuerzel(kuerzel)
+	if len(treffer) == 0 {
+		return Person{}, "", false
+	}
+	if len(treffer) > 1 {
+		return Person{}, grundKuerzelMehrfach, true
+	}
+	adresse, _, grund := buch.pruefeAdresse(treffer[0].adresse, wegKuerzel, nil)
+	if grund != "" {
+		return Person{}, grund, true
+	}
+	q := treffer[0].quelle
+	return Person{Vorname: strings.TrimSpace(q.Vorname), Nachname: strings.TrimSpace(q.Nachname), Adresse: adresse}, "", true
+}
+
+// domainAlsEndung macht aus der Domain der Schule die Endung ihrer Adressen („@schule.example"),
+// damit „x@nachbarschule.example" nicht als Adresse der Schule zählt.
+func domainAlsEndung(schulDomain string) string {
+	return "@" + strings.TrimPrefix(strings.ToLower(strings.TrimSpace(schulDomain)), "@")
 }
 
 // passendeEintraege liefert die Einträge mit Namen, die auf dieser Stufe zum Konto passen.

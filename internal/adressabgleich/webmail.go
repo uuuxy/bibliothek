@@ -38,6 +38,9 @@ var (
 	ErrKeinGlobalesAdressbuch = errors.New("das Webmail zeigt kein globales Adressbuch")
 	// ErrAdresseOhneHTTPS: Unverschlüsselt ginge das Passwort im Klartext durchs Netz.
 	ErrAdresseOhneHTTPS = errors.New("die Adresse des Webmails muss mit https:// beginnen")
+	// ErrNichtEingerichtet: Zugang zum Webmail oder Domain der Schule fehlen; abgerufen wird
+	// nichts. Die Anmeldung mit dem Kürzel ist dann abgeschaltet, nicht gestört.
+	ErrNichtEingerichtet = errors.New("abruf des adressbuchs nicht eingerichtet")
 )
 
 const (

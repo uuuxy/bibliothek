@@ -197,8 +197,8 @@ func dsgvoAnfrageArt(art string) string {
 }
 
 // dsgvoKontoAktion schreibt die Aktion eines Kontoereignisses aus (Schreiber:
-// api/benutzer/konto_anlegen_aendern.go, auth/selbstanmeldung.go, api/leser/leser_aendern.go,
-// api/system/adressabgleich_lauf.go). Ein unbekannter Wert bleibt stehen.
+// api/benutzer/konto_anlegen_aendern.go, auth/selbstanmeldung.go, auth/anmeldung_mit_kuerzel.go,
+// api/leser/leser_aendern.go, api/system/adressabgleich_lauf.go). Ein unbekannter Wert bleibt stehen.
 func dsgvoKontoAktion(aktion string) string {
 	switch aktion {
 	case "USER_CREATE":

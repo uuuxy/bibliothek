@@ -101,7 +101,7 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 	if coverAbgleich == nil {
 		coverAbgleich = service.NewCoverDienst(datenbank.Pool)
 	}
-	return &Server{
+	s := &Server{
 		Basis: tuer.Basis{
 			DB: datenbank, Auth: authenticator, Broker: broker,
 			Mail: mailservice.NewPostausgang(mailservice.KonfigAusDatenbank(datenbank.Pool)),
@@ -112,6 +112,12 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 		fehlerstand:       konfig.Fehlerstand,
 		katalogdienste:    katalogdienste.NewMetadatenClient(),
 	}
+	// Die erste Anmeldung mit dem Kürzel holt das Adressbuch auf demselben Weg wie der Abgleich.
+	// Ohne Anmeldung, wie in den Tests der ausgelieferten Oberfläche, gibt es nichts anzuschließen.
+	if authenticator != nil {
+		authenticator.SetzeAdressbuch(s.system().HoleAdressbuch)
+	}
+	return s
 }
 
 // lernmittel ist der Zugang zu den Türen des LMF-Plans. Ein Thema bekommt die Basis des Servers

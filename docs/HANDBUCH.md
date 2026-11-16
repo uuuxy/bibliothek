@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-15. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-16. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -9,8 +9,11 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 - Es gibt **keine Passwörter** zu verwalten. Angemeldet wird mit dem Schul-Postfach
   (E-Mail + Mail-Passwort) oder, wo das Konto so eingestellt ist, mit dem Benutzernamen und
   Passwort des Schulnetzes (LDAP). Ist die Domain der Schule eingerichtet, genügt der Name vor
-  dem @; den Rest ergänzt das Programm. Wer kein Konto hat, kann sich mit dem Postfach selbst
-  anmelden und wird von der Bibliothek freigeschaltet (→ Benutzer & Rechte).
+  dem @; den Rest ergänzt das Programm. Lehrkräfte melden sich mit Kürzel und Passwort des
+  Schulnetzes an; beim ersten Mal legt das Programm das Konto selbst an, mit Name und Adresse
+  aus dem Adressbuch des Webmails, ohne Freischalten und nur für _Mein Portal_ (→ Einstellungen
+  → Mail). Ein Konto mit einer anderen Rolle stellen Sie unter Benutzer & Rechte auf LDAP. Wer sich mit dem
+  Postfach selbst anmeldet, wird von der Bibliothek freigeschaltet (→ Benutzer & Rechte).
 - **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
   Theke ohne Leserakten, Mitarbeitende den Thekenbetrieb, Admins alles.
 
@@ -903,7 +906,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |
 | Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                                                                                                                              |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger, Schalter „Auch Warnungen mailen“                                                                                                                                                                                                                                                                        |
-| Mail                    | Postausgang mit Verbindungstest und eigenem Absender für die Mails aus Mein Portal (leer: über den Postausgang); Adressen aus dem Webmail: Zugang zum Roundcube der Schule, damit Konten aus Littera am Ersten jedes Monats ihre Adresse der Schule bekommen („Probelauf“ zeigt vorher, wer welche bekäme); zwei Vorlagen: Elternbrief zur Mahnung (gedruckt) und Bestellmail an den Händler                                                                                                                                                                                             |
+| Mail                    | Postausgang mit Verbindungstest und eigenem Absender für die Mails aus Mein Portal (leer: über den Postausgang); Adressen aus dem Webmail: Zugang zum Roundcube der Schule; aus seinem globalen Adressbuch holt die erste Anmeldung mit Kürzel und Passwort des Schulnetzes Name und Adresse der Lehrkraft, und Konten des Kollegiums, die sich mit Kürzel anmelden, bekommen am Ersten jedes Monats ihre Adresse der Schule; Konten mit einer anderen Rolle bleiben, wie sie sind („Probelauf“ zeigt vorher, wer welche bekäme); zwei Vorlagen: Elternbrief zur Mahnung (gedruckt) und Bestellmail an den Händler                                                                                                                                                                                             |
 | LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                                                                                                                                                                                                                                                                                   |
 | Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern; ein Buch mit LMF-Nummer bekommt eine kurze, sein altes Etikett scannt weiter), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum, Standort, LMF-Nummer des alten Etiketts), Offline-Sicherungen einspielen |
 | LUSD & Versetzung       | LUSD-Abgleich, Versetzung zum Schuljahresende, Sommerferien für den LMF-Plan                                                                                                                                                                                                                                                                                                                  |

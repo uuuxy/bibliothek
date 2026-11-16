@@ -23,7 +23,9 @@ const abgleichVCF = "BEGIN:VCARD\r\nVERSION:3.0\r\nN:Abgleich;Adria;;;AAB\r\nEMA
 	"BEGIN:VCARD\r\nN:Abgleich;Bruno;;;BA1\r\nEMAIL:bruno1@schule.example\r\nEND:VCARD\r\n" +
 	"BEGIN:VCARD\r\nN:Abgleich;Bruno;;;BA2\r\nEMAIL:bruno2@schule.example\r\nEND:VCARD\r\n" +
 	"BEGIN:VCARD\r\nN:Abgleich;Cora;;;CAB\r\nEMAIL:cora@schule.example\r\nEND:VCARD\r\n" +
-	"BEGIN:VCARD\r\nN:Abgleich;Dana;;;DAB\r\nEMAIL:dana@schule.example\r\nEND:VCARD\r\n"
+	"BEGIN:VCARD\r\nN:Abgleich;Dana;;;DAB\r\nEMAIL:dana@schule.example\r\nEND:VCARD\r\n" +
+	"BEGIN:VCARD\r\nN:Abgleich;Erik;;;EAB\r\nEMAIL:erik@schule.example\r\nEND:VCARD\r\n" +
+	"BEGIN:VCARD\r\nN:Abgleich;Frida;;;FAB\r\nEMAIL:frida@schule.example\r\nEND:VCARD\r\n"
 
 // abgleichWebmail spielt Anmeldung, Kontakte und Export von Roundcube nach; nur das Passwort
 // „richtig" kommt hinein.
@@ -74,7 +76,16 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 	cora := testdaten.LegeKontoAn(t, pool, "Cora", "Abgleich", "cora.alt@schule.example", "kollegium", true)
 	dana := testdaten.LegeKontoAn(t, pool, "Dana", "Abgleich", "littera-9003@littera.invalid", "kollegium", true)
 	selbst := testdaten.LegeKontoAn(t, pool, "D.", "Selbst", "dana@schule.example", "kollegium", false)
-	konten := []string{adria, bruno, cora, dana, selbst}
+	// Erik meldet sich über PaedNet an und trägt eine falsche Adresse; Frida ebenso, hat aber eine
+	// Rolle und bleibt deshalb, wie sie ist.
+	erik := testdaten.LegeKontoAn(t, pool, "Erik", "Abgleich", "eab@schule.example", "kollegium", true)
+	frida := testdaten.LegeKontoAn(t, pool, "Frida", "Abgleich", "fab@schule.example", "mitarbeiter", true)
+	for id, kennung := range map[string]string{erik: "eab", frida: "fab"} {
+		if _, err := pool.Exec(ctx, `UPDATE benutzer SET anmeldeverfahren = 'ldap', ldap_kennung = $2 WHERE id = $1`, id, kennung); err != nil {
+			t.Fatalf("Konto auf LDAP stellen: %v", err)
+		}
+	}
+	konten := []string{adria, bruno, cora, dana, selbst, erik, frida}
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE details->>'ziel_id' = ANY($1::text[])`, konten)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = ANY($1::uuid[])`, konten)
@@ -124,10 +135,10 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 		t.Fatalf("Zugang speichern: Status %d, %s", rec.Code, rec.Body.String())
 	}
 
-	// Der Probelauf zeigt die Übernahme und ändert nichts.
+	// Der Probelauf zeigt die Übernahmen und ändert nichts.
 	code, probe := lauf(true)
-	if code != http.StatusOK || len(probe.Uebernahmen) != 1 || probe.Uebernahmen[0].KontoID != adria {
-		t.Fatalf("Probelauf: Status %d, Übernahmen %+v, erwartet nur Adria", code, probe.Uebernahmen)
+	if code != http.StatusOK || len(probe.Uebernahmen) != 2 || probe.Uebernahmen[0].KontoID != adria || probe.Uebernahmen[1].KontoID != erik {
+		t.Fatalf("Probelauf: Status %d, Übernahmen %+v, erwartet Adria und Erik", code, probe.Uebernahmen)
 	}
 	if got := email(adria); got != "littera-9001@littera.invalid" {
 		t.Errorf("nach dem Probelauf trägt Adria %q, erwartet den Platzhalter", got)
@@ -136,14 +147,15 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 		t.Error("der Probelauf hat einen Stand gespeichert")
 	}
 
-	// Der echte Lauf trägt nur Adria ein; Bruno (Name doppelt), Cora (echte Adresse) und Dana
-	// (Adresse vergeben) bleiben.
+	// Der echte Lauf trägt Adria und Erik ein; Bruno (Name doppelt), Cora (echte Adresse über den
+	// Mailserver), Dana (Adresse vergeben) und Frida (Rolle) bleiben.
 	if code, _ := lauf(false); code != http.StatusOK {
 		t.Fatalf("Abgleich: Status %d", code)
 	}
 	for id, want := range map[string]string{
 		adria: "adria@schule.example", bruno: "littera-9002@littera.invalid",
 		cora: "cora.alt@schule.example", dana: "littera-9003@littera.invalid",
+		erik: "erik@schule.example", frida: "fab@schule.example",
 	} {
 		if got := email(id); got != want {
 			t.Errorf("Konto %s trägt nach dem Abgleich %q, erwartet %q", id, got, want)
@@ -155,8 +167,8 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 		t.Errorf("Protokolleinträge der Übernahme: %d (%v), erwartet 1", spuren, err)
 	}
 	stand := srv.ladeAdressabgleichStand(ctx)
-	if stand == nil || stand.Uebernommen != 1 || stand.Fehler != "" {
-		t.Errorf("gespeicherter Stand %+v, erwartet eine Übernahme ohne Fehler", stand)
+	if stand == nil || stand.Uebernommen != 2 || stand.Fehler != "" {
+		t.Errorf("gespeicherter Stand %+v, erwartet zwei Übernahmen ohne Fehler", stand)
 	}
 
 	// Ein zweiter Lauf findet nichts mehr, und die leere Liste geht als [] hinaus: Die Maske zählt

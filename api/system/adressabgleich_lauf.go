@@ -91,8 +91,8 @@ func (a *adressabgleichAbbruch) Error() string {
 
 func (a *adressabgleichAbbruch) Unwrap() error { return a.ursache }
 
-// fuehreAdressabgleichAus holt das globale Adressbuch und trägt den Konten mit Platzhalter ihre
-// Adresse ein; der Probelauf rechnet nur. adminID ist beim Lauf des Zeitplans leer. Der Stand
+// fuehreAdressabgleichAus holt das globale Adressbuch und trägt den Konten ihre Adresse der Schule
+// ein (Regeln: adressabgleich.BerechneZuordnung); der Probelauf rechnet nur. adminID ist beim Lauf des Zeitplans leer. Der Stand
 // eines Laufs, der eintragen durfte, wird gespeichert, auch wenn er scheiterte.
 func (t *Tueren) fuehreAdressabgleichAus(ctx context.Context, probelauf bool, adminID string) (adressabgleichErgebnis, error) {
 	ergebnis := adressabgleichErgebnis{Probelauf: probelauf, Stand: adressabgleichStand{Zeitpunkt: time.Now()}}
@@ -129,34 +129,11 @@ func (t *Tueren) fuehreAdressabgleichAus(ctx context.Context, probelauf bool, ad
 // berechneAdressabgleich lädt Zugang, Adressbuch und Konten und berechnet die Zuordnung. Es
 // liefert die Zahl der Einträge im Adressbuch mit, auch wenn danach etwas scheitert.
 func (t *Tueren) berechneAdressabgleich(ctx context.Context) (adressabgleich.Zuordnung, int, error) {
-	konfig, err := repository.NewMailEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+	eintraege, err := t.HoleAdressbuch(ctx)
 	if err != nil {
 		return adressabgleich.Zuordnung{}, 0, err
 	}
-	if konfig.WebmailAdresse == "" {
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailNichtEingerichtet}
-	}
-	passwort, err := crypto.Entschluessele(konfig.WebmailPasswortVerschluesselt)
-	if err != nil || len(passwort) == 0 {
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailPasswortUnlesbar, ursache: err}
-	}
 	schulDomain := auth.SelbstanmeldeDomain()
-	if schulDomain == "" {
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungSchulDomainFehlt}
-	}
-
-	vcf, err := adressabgleich.HoleGlobalesAdressbuch(ctx, adressabgleich.Zugang{
-		Adresse: konfig.WebmailAdresse, Benutzer: konfig.WebmailBenutzer, Passwort: string(passwort),
-	})
-	switch {
-	case errors.Is(err, adressabgleich.ErrAnmeldungAbgelehnt):
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailAbgelehnt, ursache: err}
-	case errors.Is(err, adressabgleich.ErrKeinGlobalesAdressbuch):
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungKeinGlobalesAdressbuch, ursache: err}
-	case err != nil:
-		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailUnerreichbar, ursache: err}
-	}
-	eintraege := adressabgleich.LeseAdressbuch(vcf)
 
 	konten, err := repository.NewKontoAbfragen(t.DB.Pool).LadeAlle(ctx)
 	if err != nil {
@@ -166,19 +143,54 @@ func (t *Tueren) berechneAdressabgleich(ctx context.Context) (adressabgleich.Zuo
 	for _, k := range konten {
 		abgleichKonten = append(abgleichKonten, adressabgleich.Konto{
 			ID: k.ID, Vorname: k.Vorname, Nachname: k.Nachname, Email: k.Email, Aktiv: k.Aktiv, LDAPKennung: k.LDAPKennung,
+			Kollegium: strings.EqualFold(k.Rolle, string(auth.RolleKollegium)),
 		})
 	}
 	return adressabgleich.BerechneZuordnung(eintraege, abgleichKonten, schulDomain, repository.PlatzhalterDomain), len(eintraege), nil
 }
 
+// HoleAdressbuch lädt mit dem Zugang aus Einstellungen → Mail das globale Adressbuch des Webmails.
+// Der Abgleich und die erste Anmeldung mit dem Kürzel (auth.Anmeldung.SetzeAdressbuch) holen es
+// beide hier. Ein Fehler ist ein *adressabgleichAbbruch mit der Meldung für die Oberfläche oder
+// ein Fehler der Datenbank.
+func (t *Tueren) HoleAdressbuch(ctx context.Context) ([]adressabgleich.Eintrag, error) {
+	konfig, err := repository.NewMailEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if konfig.WebmailAdresse == "" {
+		return nil, &adressabgleichAbbruch{meldung: meldungWebmailNichtEingerichtet, ursache: adressabgleich.ErrNichtEingerichtet}
+	}
+	passwort, err := crypto.Entschluessele(konfig.WebmailPasswortVerschluesselt)
+	if err != nil || len(passwort) == 0 {
+		return nil, &adressabgleichAbbruch{meldung: meldungWebmailPasswortUnlesbar, ursache: err}
+	}
+	if auth.SelbstanmeldeDomain() == "" {
+		return nil, &adressabgleichAbbruch{meldung: meldungSchulDomainFehlt, ursache: adressabgleich.ErrNichtEingerichtet}
+	}
+
+	vcf, err := adressabgleich.HoleGlobalesAdressbuch(ctx, adressabgleich.Zugang{
+		Adresse: konfig.WebmailAdresse, Benutzer: konfig.WebmailBenutzer, Passwort: string(passwort),
+	})
+	switch {
+	case errors.Is(err, adressabgleich.ErrAnmeldungAbgelehnt):
+		return nil, &adressabgleichAbbruch{meldung: meldungWebmailAbgelehnt, ursache: err}
+	case errors.Is(err, adressabgleich.ErrKeinGlobalesAdressbuch):
+		return nil, &adressabgleichAbbruch{meldung: meldungKeinGlobalesAdressbuch, ursache: err}
+	case err != nil:
+		return nil, &adressabgleichAbbruch{meldung: meldungWebmailUnerreichbar, ursache: err}
+	}
+	return adressabgleich.LeseAdressbuch(vcf), nil
+}
+
 // trageAdressenEin schreibt jede Übernahme über die Tür der Kontoänderung, nur solange das Konto
-// noch seinen Platzhalter trägt, und protokolliert sie. Was sich nicht eintragen ließ, wandert mit
+// noch seine bisherige Adresse trägt, und protokolliert sie. Was sich nicht eintragen ließ, wandert mit
 // Grund zu den übergangenen Konten.
 func (t *Tueren) trageAdressenEin(ctx context.Context, uebernahmen []adressabgleich.Uebernahme, adminID string, ergebnis *adressabgleichErgebnis) {
 	kontoAbfragen := repository.NewKontoAbfragen(t.DB.Pool)
 	for _, u := range uebernahmen {
-		adresse, platzhalter := u.Adresse, u.Platzhalter
-		_, err := kontoAbfragen.Aendere(ctx, repository.KontoAenderung{ID: u.KontoID, Email: &adresse, EmailBisher: &platzhalter})
+		adresse, bisher := u.Adresse, u.EmailBisher
+		_, err := kontoAbfragen.Aendere(ctx, repository.KontoAenderung{ID: u.KontoID, Email: &adresse, EmailBisher: &bisher})
 		if err != nil {
 			grund := grundNichtGespeichert
 			switch {
@@ -274,7 +286,7 @@ func formatiereAdressabgleichBericht(stand adressabgleichStand) (betreff, text s
 	}
 	return fmt.Sprintf("Adressabgleich: %d Adressen aus dem Webmail übernommen", stand.Uebernommen), fmt.Sprintf(
 		"Der monatliche Abgleich mit dem globalen Adressbuch des Webmails am %s hat %d Konten ihre Adresse "+
-			"der Schule eingetragen; %d Konten mit Platzhalter blieben ohne eindeutigen Treffer.\n\n"+
+			"der Schule eingetragen; %d Konten blieben ohne eindeutigen Treffer.\n\n"+
 			"Die Namen zeigt der Probelauf unter Einstellungen → Mail; jede Übernahme steht im Protokoll "+
 			"der Verwaltung („Adresse aus dem Webmail übernommen“).\n",
 		zeit, stand.Uebernommen, stand.Uebergangen)

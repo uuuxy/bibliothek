@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 15.11.2026
+Stand: 16.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -65,10 +65,10 @@ Nur, was kein Test leisten kann.
   auch Zeilen-Bauteile. (5.180)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
-- [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
-  Treffer ansehen. (5.182)
-- [ ] Anmeldung über PaedNet ohne Konto: Zugangsanfrage mit Name und Adresse aus dem globalen
-  Adressbuch. (5.183)
+- [ ] Zugang zum Webmail eintragen und „Probelauf“ wählen: Daraus holt die erste Anmeldung mit
+  dem Kürzel Name und Adresse. (5.182)
+- [ ] Anmeldung mit dem Kürzel am Schulserver ausprobieren (Branch
+  `versuch/anmeldung-per-kuerzel`), danach nach main. (5.183)
 
 ### Termin
 
@@ -124,26 +124,29 @@ Bibliothek gesperrt, für Schulbücher nicht.
 Nächster Schritt: den Ablauf zum Schuljahresbeginn an der Theke durchgehen, dann entscheiden, ob
 die Frist der Oberstufe oder die Zählung der Automatik sich ändert.
 
-### 5.182 Adressabgleich mit dem Webmail einrichten
+### 5.182 Zugang zum Webmail eintragen
 
-Konten aus Littera tragen eine Platzhalter-Adresse (`…@littera.invalid`); die Mails aus Mein
-Portal an sie kommen nie an. Der Abgleich (ARCHITEKTUR 8.10, Einstellungen → Mail) trägt die
-Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den Namen.
+Die erste Anmeldung mit dem Kürzel (5.183) holt Name und Adresse aus dem globalen Adressbuch des
+Webmails, mit dem Zugang unter Einstellungen → Mail → „Adressen aus dem Webmail“ (ARCHITEKTUR
+8.10). Ein Funktionspostfach der Schule taugt dafür besser als ein persönliches: Dann liegt kein
+persönliches Passwort im Programm. Ob es das globale Adressbuch sieht, zeigt „Probelauf“.
 
-Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
-Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
-kennt keine Kürzel, dort zählt nur der Name.
+Nächster Schritt: am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 
-### 5.183 Anmeldung über PaedNet ohne Konto
+### 5.183 Anmeldung mit dem Kürzel ausprobieren
 
-Über PaedNet meldet sich heute nur an, wessen Konto ein Admin auf LDAP gestellt hat; ohne Konto
-fragt die Selbstanmeldung nur den Mailserver (`auth/selbstanmeldung.go`), und das Passwort des
-Webmails kennen die wenigsten. Das globale Adressbuch nennt zu 217 von 223 Einträgen das Kürzel
-und die Adresse der Schule (gezählt am 15.11.2026).
+Gebaut auf dem Branch `versuch/anmeldung-per-kuerzel` (ARCHITEKTUR A30, 8.10), nur für Mein
+Portal: Wer sich mit Kürzel und PaedNet-Passwort anmeldet und noch kein Konto mit dieser Kennung
+hat, ist sofort drin. Ein Konto des Kollegiums mit der Adresse aus dem Adressbuch wird auf das
+Kürzel umgestellt, sonst entsteht eins mit Name und Adresse von dort. Konten des Kollegiums, die
+sich schon mit Kürzel anmelden, bekommen beim monatlichen Abgleich die Adresse aus dem
+Adressbuch. Konten mit einer anderen Rolle bleiben, wie sie sind. Voraussetzungen am Server: LDAP
+eingerichtet, `SELBSTANMELDUNG_DOMAIN` gesetzt, Zugang zum Webmail (5.182). Das globale Adressbuch
+nennt zu 217 von 223 Einträgen das Kürzel (gezählt am 15.11.2026).
 
-Offen ist, ob die PaedNet-Kennung das Kürzel ist. Wenn ja: Eine Anmeldung über PaedNet ohne
-Konto legt eine Zugangsanfrage an wie die Selbstanmeldung, mit Name und Adresse aus dem
-Adressbuch; freigeschaltet wird wie bisher von Hand.
+Nächster Schritt am Schulserver: den Branch einspielen, „Probelauf“ unter Einstellungen → Mail
+ansehen, mit dem Kürzel einer Lehrkraft ohne Konto anmelden und unter Benutzer & Rechte
+nachsehen (Name, Adresse, Anmeldung über LDAP). Trägt es, den Branch nach main.
 
 ### 7.2 Frisches Littera-Backup
 

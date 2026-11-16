@@ -187,3 +187,79 @@ func TestBerechneZuordnung_NameStages(t *testing.T) {
 		t.Errorf("BerechneZuordnung mit Stufen des Namens (-erwartet +ist):\n%s", diff)
 	}
 }
+
+func TestFindeKuerzel(t *testing.T) {
+	eintraege := []Eintrag{
+		{Nachname: " Beispiel", Vorname: "Anna ", Kuerzel: "ABE", Adressen: []string{"Anna.Beispiel@Schule.example", "anna@mail.example"}},
+		{Nachname: "Ka", Vorname: "Kai", Kuerzel: "KA", Adressen: []string{"kai@schule.example"}},
+		{Nachname: "Ka", Vorname: "Karl", Kuerzel: "ka", Adressen: []string{"karl@schule.example"}},
+		{Nachname: "Zwei", Vorname: "Zora", Kuerzel: "ZZ", Adressen: []string{"z1@schule.example", "z2@schule.example"}},
+		{Nachname: "Teilt", Vorname: "Tom", Kuerzel: "TT", Adressen: []string{"team@schule.example"}},
+		{Nachname: "Teilt", Vorname: "Tina", Adressen: []string{"team@schule.example"}},
+		{Nachname: "Privat", Vorname: "Pia", Kuerzel: "PP", Adressen: []string{"pia@mail.example"}},
+		{Nachname: "Nachbar", Vorname: "Nils", Kuerzel: "NN", Adressen: []string{"nils@nachbarschule.example"}},
+	}
+	type ergebnis struct {
+		Person   Person
+		Grund    string
+		Gefunden bool
+	}
+	faelle := map[string]ergebnis{
+		// Groß- und Kleinschreibung zählt nicht, Leerzeichen um die Namen fallen weg.
+		" abe ": {Person: Person{Vorname: "Anna", Nachname: "Beispiel", Adresse: "anna.beispiel@schule.example"}, Gefunden: true},
+		"KA":    {Grund: grundKuerzelMehrfach, Gefunden: true},
+		"zz":    {Grund: grundMehrereSchuladressen, Gefunden: true},
+		"tt":    {Grund: grundAdresseDoppelt, Gefunden: true},
+		// Ohne Adresse der Schule steht der Eintrag nicht im Buch; die Endung schließt die
+		// Nachbarschule aus.
+		"pp":  {},
+		"nn":  {},
+		"xyz": {},
+		"":    {},
+	}
+	for kuerzel, want := range faelle {
+		p, grund, gefunden := FindeKuerzel(eintraege, kuerzel, "Schule.example")
+		if diff := cmp.Diff(want, ergebnis{Person: p, Grund: grund, Gefunden: gefunden}); diff != "" {
+			t.Errorf("FindeKuerzel(%q) (-erwartet +ist):\n%s", kuerzel, diff)
+		}
+	}
+}
+
+// Ein Konto des Kollegiums mit LDAP-Kennung bekommt die Adresse zu seinem Kürzel, wenn es eine
+// andere trägt. Alles andere bleibt: die richtige Adresse, ein Kürzel außerhalb des Adressbuchs,
+// eine andere Rolle, ein Konto über den Mailserver, ein inaktives Konto. Gehört die Adresse schon
+// einem anderen Konto, bleibt das Konto mit Grund übergangen.
+func TestBerechneZuordnung_KollegiumWithKennung(t *testing.T) {
+	eintraege := []Eintrag{
+		{Nachname: "Falsch", Vorname: "Fiona", Kuerzel: "FFA", Adressen: []string{"fiona.falsch@schule.example"}},
+		{Nachname: "Richtig", Vorname: "Rolf", Kuerzel: "RRI", Adressen: []string{"rolf.richtig@schule.example"}},
+		{Nachname: "Rolle", Vorname: "Rita", Kuerzel: "RRO", Adressen: []string{"rita.rolle@schule.example"}},
+		{Nachname: "Mailserver", Vorname: "Mia", Kuerzel: "MMA", Adressen: []string{"mia.mailserver@schule.example"}},
+		{Nachname: "Ruhend", Vorname: "Rudi", Kuerzel: "RRU", Adressen: []string{"rudi.ruhend@schule.example"}},
+		{Nachname: "Besetzt", Vorname: "Bea", Kuerzel: "BBE", Adressen: []string{"bea.besetzt@schule.example"}},
+	}
+	konten := []Konto{
+		{ID: "fiona", Vorname: "Fiona", Nachname: "Falsch", Email: "ffa@schule.example", Aktiv: true, LDAPKennung: "ffa", Kollegium: true},
+		{ID: "rolf", Vorname: "Rolf", Nachname: "Richtig", Email: "Rolf.Richtig@schule.example", Aktiv: true, LDAPKennung: "rri", Kollegium: true},
+		{ID: "ohne", Vorname: "Otto", Nachname: "Ohne", Email: "otto@schule.example", Aktiv: true, LDAPKennung: "ooh", Kollegium: true},
+		{ID: "rita", Vorname: "Rita", Nachname: "Rolle", Email: "rita@privat.example", Aktiv: true, LDAPKennung: "rro"},
+		{ID: "mia", Vorname: "Mia", Nachname: "Mailserver", Email: "mia@schule.example", Aktiv: true, Kollegium: true},
+		{ID: "rudi", Vorname: "Rudi", Nachname: "Ruhend", Email: "rudi@schule.example", LDAPKennung: "rru", Kollegium: true},
+		{ID: "bea", Vorname: "Bea", Nachname: "Besetzt", Email: "bb@schule.example", Aktiv: true, LDAPKennung: "bbe", Kollegium: true},
+		{ID: "andere", Vorname: "Anders", Nachname: "Jemand", Email: "bea.besetzt@schule.example", Aktiv: true},
+	}
+
+	z := BerechneZuordnung(eintraege, konten, "schule.example", "@littera.invalid")
+
+	wantUebernahmen := []Uebernahme{{KontoID: "fiona", Name: "Fiona Falsch", Adresse: "fiona.falsch@schule.example", Weg: wegKuerzel, EmailBisher: "ffa@schule.example"}}
+	if diff := cmp.Diff(wantUebernahmen, z.Uebernahmen); diff != "" {
+		t.Errorf("Übernahmen (-erwartet +ist):\n%s", diff)
+	}
+	wantUebergangen := []Uebergangen{{KontoID: "bea", Name: "Bea Besetzt", Grund: grundAdresseVergeben}}
+	if diff := cmp.Diff(wantUebergangen, z.Uebergangen); diff != "" {
+		t.Errorf("Übergangen (-erwartet +ist):\n%s", diff)
+	}
+	if z.KontenMitPlatzhalter != 0 {
+		t.Errorf("KontenMitPlatzhalter = %d, erwartet 0", z.KontenMitPlatzhalter)
+	}
+}

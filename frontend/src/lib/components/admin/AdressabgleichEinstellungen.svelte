@@ -1,9 +1,9 @@
 <script>
 	/**
 	 * @component AdressabgleichEinstellungen
-	 * Der Zugang zum Webmail der Schule, mit dem der Abgleich das globale Adressbuch holt und Konten
-	 * mit Platzhalter-Adresse ihre Adresse der Schule einträgt. Er läuft am Ersten jedes Monats von
-	 * selbst; „Probelauf" zeigt nur, was er übernähme, „Jetzt abgleichen" trägt es ein.
+	 * Der Zugang zum Webmail. Aus dem globalen Adressbuch holen die erste Anmeldung mit Kürzel und der
+	 * Abgleich (am Ersten jedes Monats) die Adresse der Schule; „Probelauf" zeigt nur, was der
+	 * Abgleich übernähme, „Jetzt abgleichen" trägt es ein.
 	 */
 	import { onMount } from 'svelte';
 	import { apiGet, apiPost, apiPut } from '../../apiFetch.js';
@@ -108,8 +108,8 @@
 				Adressen aus dem Webmail
 			</h3>
 			<p class="text-sm text-on-surface-variant">
-				Trägt Konten mit Platzhalter-Adresse die Adresse der Schule aus dem globalen Adressbuch ein,
-				am Ersten jedes Monats von selbst. Eine vorhandene Adresse ändert der Abgleich nie.
+				Konten des Kollegiums, die sich mit Kürzel anmelden, bekommen von hier die Schuladresse aus
+				dem globalen Adressbuch: bei der ersten Anmeldung sofort, danach am Ersten jedes Monats.
 			</p>
 		</div>
 

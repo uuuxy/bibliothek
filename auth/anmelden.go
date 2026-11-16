@@ -320,7 +320,8 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 // pruefeZugang sucht zuerst das Konto und fragt dann den Server, den es nennt. Eine Eingabe ohne
 // Konto erreicht so weder Mailserver noch Verzeichnisdienst; ein Active Directory, das nach
 // Fehlversuchen sperrt, sperrt niemanden, nur weil jemand an der Bibliothek Namen durchprobiert.
-// Die eine Ausnahme ist die Selbstanmeldung (pruefeSelbstanmeldung).
+// Die Ausnahmen sind die Anmeldung mit einem Kürzel aus dem Adressbuch des Webmails
+// (pruefeAnmeldungMitKuerzel) und die Selbstanmeldung (pruefeSelbstanmeldung).
 //
 // Ein Fehler heißt, dass die Anmeldung nicht gilt. errAnmeldeserverNichtErreichbar und
 // errAnmeldedienstGestoert gehen unverändert weiter, damit die Tür den Ausfall vom falschen
@@ -329,6 +330,9 @@ func (a *Anmeldung) pruefeZugang(ctx context.Context, pool db.Pool, eingabe anme
 	konto, err := repository.LadeAnmeldeKonto(ctx, pool, eingabe.eingabe, eingabe.email)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
+		if konto, zustaendig, err := a.pruefeAnmeldungMitKuerzel(ctx, pool, eingabe); zustaendig {
+			return konto, err
+		}
 		return a.pruefeSelbstanmeldung(ctx, pool, eingabe)
 	case errors.Is(err, repository.ErrAnmeldungMehrdeutig):
 		slog.Error("Anmeldung: Die Eingabe trifft ein Konto über die E-Mail und ein anderes über die LDAP-Kennung")

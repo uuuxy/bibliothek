@@ -94,6 +94,9 @@ type Anmeldung struct {
 	// absageFrist ist die kürzeste Zeit bis zur Absage einer Anmeldung, im Betrieb
 	// mindestdauerAbsage. Ein Test, der Fehlversuche zählt, setzt sie auf null.
 	absageFrist time.Duration
+	// adressbuch ist die Quelle der Anmeldung mit dem Kürzel (SetzeAdressbuch); nil schaltet sie
+	// ab.
+	adressbuch *adressbuchVorrat
 }
 
 // NewAnmeldung baut die Anmeldung mit dem Geheimnis für die Signatur und der Laufzeit der
