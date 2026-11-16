@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ const komplexitaetsGrenze = 15
 // schreibt. Liefert eine Tür eine Closure, deren Rumpf als Methode führen: In der Closure kostet
 // jede Prüfung 2, in der Methode 1.
 func TestKomplexitaet_KeineProduktionsfunktionUeberDerGrenze(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	dateien := 0
 	var gemessen []gemesseneFunktion

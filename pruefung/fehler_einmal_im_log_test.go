@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -103,6 +103,7 @@ func doppeltImLog(rumpf *ast.BlockStmt, fset *token.FileSet) []string {
 }
 
 func TestServerfehlerStehtEinmalImLog(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	treffer := map[string][]string{}
 	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, err error) error {

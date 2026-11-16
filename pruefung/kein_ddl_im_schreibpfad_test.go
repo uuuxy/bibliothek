@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"io/fs"
@@ -24,6 +24,7 @@ import (
 // anlegen. Braucht eine Datei die Anweisung zur Laufzeit, steht sie mit dem Grund in
 // ddlAusnahmen.
 func TestKeinDDLImSchreibpfad(t *testing.T) {
+	wechsleInDieWurzel(t)
 	funde, gelesen, err := ddlImBaum(".")
 	if err != nil {
 		t.Fatalf("Baum nicht lesbar: %v", err)

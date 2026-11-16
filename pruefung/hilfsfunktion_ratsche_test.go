@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -31,6 +31,7 @@ import (
 // nichts melden kann, braucht nach Google kein t.Helper(), sondern keinen Parameter t; das
 // prüft sie nicht.
 func TestHilfsfunktionen_BeginnenMitHelper(t *testing.T) {
+	wechsleInDieWurzel(t)
 	funde, gezaehlt := hilfsfunktionenIn(t, leseGoQuellen(t, "."))
 	if gezaehlt < 500 {
 		t.Fatalf("nur %d Hilfsfunktionen gefunden: Der Sammler greift ins Leere", gezaehlt)

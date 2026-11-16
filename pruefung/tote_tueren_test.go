@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -28,6 +28,7 @@ import (
 var bewussteTueren = map[string]string{}
 
 func TestSchnittstellen_JedeMethodeHatAufrufer(t *testing.T) {
+	wechsleInDieWurzel(t)
 	deklariert := map[string]token.Position{} // Methodenname → Deklarationsort
 	benutzt := map[string]bool{}              // Selektorname → irgendwo produktiv verwendet
 

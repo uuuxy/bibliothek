@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 // Bugklasse „Parameter-Struktur mit vergessenem Feld": Eine Struktur statt einer langen
 // Parameterliste verhindert, dass benachbarte Argumente desselben Typs stumm vertauscht werden.
@@ -55,6 +55,7 @@ var parameterStrukturen = map[string]string{
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {
+	wechsleInDieWurzel(t)
 	felder, literale := sammleParameterStrukturen(t, "")
 	for name := range parameterStrukturen {
 		if _, da := felder[name]; !da {

@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -13,6 +13,7 @@ import (
 // Liste der Dateien fest, die audit_log(s) verändern oder löschen dürfen. Wer eine neue Tür baut,
 // trägt sie hier ein und begründet sie im Commit.
 func TestProtokollSchreibtueren_NurBekannteDateien(t *testing.T) {
+	wechsleInDieWurzel(t)
 	erlaubt := map[string]string{
 		// Auch der Lauf nach DSGVO (jobs/cron_dsgvo.go) fährt diese Statements, über
 		// repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür.

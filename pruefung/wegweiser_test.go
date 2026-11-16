@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -28,6 +28,7 @@ import (
 // Einstellungen, für einen Weg, in dem ein Schritt ausgezeichnet oder vom Programm eingesetzt
 // ist, und dafür, ob sich am genannten Ort tun lässt, was der Text verspricht.
 func TestWegweiserNennenOrteDieEsGibt(t *testing.T) {
+	wechsleInDieWurzel(t)
 	orte := wegOrteDerOberflaeche(t)
 	trifft := make([]int, len(wegKeinWeg))
 	for _, quelle := range []struct {

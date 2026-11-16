@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -20,6 +20,7 @@ import (
 // Blindheit: das Paket context unter anderem Namen eingebunden. Ob ein übergebener Kontext der
 // richtige ist, prüft contextcheck im Linter.
 func TestKontext_NurProgrammeLegenIhnAn(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	var funde []string
 	gelesen := 0

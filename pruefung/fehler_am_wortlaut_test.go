@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -153,6 +153,7 @@ var fehlerAmWortlautBestand = map[string]string{
 }
 
 func TestKeinFehlerAmWortlaut(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var treffer []string
 	funktionenMitFehlertext := 0
 	fset := token.NewFileSet()

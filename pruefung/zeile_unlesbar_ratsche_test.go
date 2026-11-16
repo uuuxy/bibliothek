@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -24,6 +24,7 @@ import (
 // Sieht nicht: einen Fehler, der erst später geprüft wird, und ein Scan in einer eigenen
 // Hilfsfunktion.
 func TestLeseschleifen_LassenKeineZeileAus(t *testing.T) {
+	wechsleInDieWurzel(t)
 	schleifen, verstoesse := pruefeLeseschleifen(t, ".")
 	// Untergrenze: Findet der Durchlauf kaum Schleifen, prüft er nichts.
 	if schleifen < 150 {

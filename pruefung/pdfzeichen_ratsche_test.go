@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -24,6 +24,7 @@ import (
 // pdfzeichen.Uebersetzer(. Wer einen neuen Renderer baut, bekommt die Ersetzung damit von allein,
 // oder diesen Test rot.
 func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	gefunden := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -179,6 +180,7 @@ func druckaufrufeOhneUebersetzer(t *testing.T, pfad string, quelle any) (verstoe
 }
 
 func TestPDFDruck_JederTextGehtDurchDenUebersetzer(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	gelesen := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -279,6 +281,7 @@ const marotoTextTuer = "pdf/maroto_text.go"
 // Seitenzahl aus der Konfiguration von maroto (ein festes Muster) und die Angaben im Kopf des
 // Dokuments (Titel, Autor); beides ist nicht im Einsatz.
 func TestPDFMaroto_TextNurUeberMarotoText(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	mitMaroto, tuerGefunden := 0, false
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {

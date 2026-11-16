@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -168,6 +168,7 @@ func sammleSQLFunde(t *testing.T) (funde map[string]sqlFunde, dateien int) {
 }
 
 func TestSchichtung_SQLNurInDerDatenbankschicht(t *testing.T) {
+	wechsleInDieWurzel(t)
 	funde, dateien := sammleSQLFunde(t)
 
 	jeEintrag := map[string]sqlFunde{}

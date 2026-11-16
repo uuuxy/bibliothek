@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -69,6 +69,7 @@ var (
 // ein Kommentar das Warum nennt, liest ein Mensch, ob ein Name öffentlich sein muss, prüft
 // sichtbarkeit_ratsche_test.go. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
 func TestStil_BestandWaechstNicht(t *testing.T) {
+	wechsleInDieWurzel(t)
 	ist, funde, namen, gelesen := stilMessen(t)
 	if namen < 5000 || gelesen < 60 {
 		t.Fatalf("nur %d Namen in %d Paketen gelesen: Der Detektor greift ins Leere", namen, gelesen)

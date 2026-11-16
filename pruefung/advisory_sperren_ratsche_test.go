@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 // hashtext(); die Zahl der Auflagen in den Skripten hält auflagen_schreibpfad_ratsche_test.go.
 // Ein Aufruf, dessen SQL erst aus Teilen entsteht, zählt nicht.
 func TestAdvisorySperren_JederSchluesselEinmal(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var quellen []sperrQuelle
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
 		if err != nil {

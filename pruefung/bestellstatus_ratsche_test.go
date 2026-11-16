@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -15,6 +15,7 @@ import (
 // Blind für jede andere Schreibweise der vier Muster: like klein geschrieben, ein Vergleich ohne
 // Leerzeichen, ein Muster aus einer Variablen.
 func TestKeinBestellstatusAusNotizText(t *testing.T) {
+	wechsleInDieWurzel(t)
 	verboten := []string{
 		"LIKE 'Im Zulauf",
 		"LIKE 'Bestellt",

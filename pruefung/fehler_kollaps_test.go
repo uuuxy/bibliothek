@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -130,6 +130,7 @@ func antwortetHarmlos(body *ast.BlockStmt) bool {
 }
 
 func TestKeinFehlerKollaps(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var treffer []string
 	fset := token.NewFileSet()
 	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, err error) error {

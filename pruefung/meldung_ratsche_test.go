@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -87,6 +87,7 @@ type meldungAufruf struct {
 }
 
 func TestMeldungen_SaetzeFuerDieOberflaeche(t *testing.T) {
+	wechsleInDieWurzel(t)
 	aufrufe := sammleMeldungen(t, ".")
 	fest := 0
 	gezaehlt := map[string]int{}

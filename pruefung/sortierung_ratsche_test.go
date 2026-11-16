@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -23,6 +23,7 @@ import (
 // entscheidet ihr Name (textSpalte); eine Textspalte mit anderem Namen sieht sie nicht, ebenso
 // SQL in scripts/ und in den Migrationen.
 func TestSortierung_TextspaltenOrdnenDeutsch(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	ordnungen := 0
 	gesehen := map[string]bool{}

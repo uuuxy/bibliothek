@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -24,6 +24,7 @@ import (
 // Variable aus := ohne genannten Typ sieht sie nicht; eine Abfrage, die einen Betrag mit
 // ::float8 in einen Cent liest, scheitert am Lesen (betrag.Cent.Scan nimmt kein float64).
 func TestGeldInCent(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var gefunden []string
 	gelesen := 0
 	fset := token.NewFileSet()

@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -26,6 +26,7 @@ var (
 // Blindheit: Meldungen aus Variablen oder Hilfsfunktionen, andere englische Wörter, und ob das
 // genannte Subjekt die geprüfte Funktion ist, liest ein Mensch.
 func TestTestmeldung_ErgebnisVorErwartetem(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	var funde []string
 	gelesen := 0

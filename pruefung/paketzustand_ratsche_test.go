@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -30,6 +30,7 @@ import (
 // Variablen, die eine Testdatei selbst erklärt. Dass es im Programmcode keinen Wert gibt, den sie
 // ändern könnten, hält TestPaketzustand_ProgrammcodeHaeltKeinenZustand.
 func TestPaketzustand_TestsSetzenKeineVariableDesPakets(t *testing.T) {
+	wechsleInDieWurzel(t)
 	funde, gelesen := paketzustandFunde(t, ".")
 	if gelesen < 500 {
 		t.Fatalf("nur %d Testdateien gelesen: Der Sammler greift ins Leere", gelesen)
@@ -232,6 +233,7 @@ func paketzustandIn(t *testing.T, quellen map[string]string) []string {
 // Blindheit: Eine Methode oder Funktion, die einen erlaubten Wert ändert (eine Map der
 // Paketebene als Argument), sieht die Prüfung nicht. Erzeugter Code (DO NOT EDIT) zählt nicht.
 func TestPaketzustand_ProgrammcodeHaeltKeinenZustand(t *testing.T) {
+	wechsleInDieWurzel(t)
 	funde, gelesen := programmzustandIn(t, leseGoQuellen(t, "."), paketwerteOhneZustand)
 	if gelesen < 150 {
 		t.Fatalf("nur %d Variablen der Paketebene gelesen: Der Sammler greift ins Leere", gelesen)

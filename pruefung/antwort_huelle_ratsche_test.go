@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -25,6 +25,7 @@ import (
 // („result", „items"). Ob die Oberfläche eine Antwort in der Form liest, die die Tür schickt,
 // prüft sie nicht; das zeigen die Tests im Browser.
 func TestAntwortOhneHuelle(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	gelesen, unterAPI := 0, 0
 

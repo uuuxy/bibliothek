@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -16,6 +16,7 @@ import (
 // Blind für: einen Betrag über %v oder strconv, ein Format aus zwei Zeichenketten, und einen
 // Betrag ohne Währung dahinter (Tabellenspalten, deren Kopf die Währung nennt).
 func TestBetraege_KommenAusDemHelfer(t *testing.T) {
+	wechsleInDieWurzel(t)
 	vonHand := regexp.MustCompile(`%\.\d?[fF]\s?(€|EUR|Euro)`)
 	gelesen := 0
 	err := filepath.WalkDir(".", func(pfad string, d os.DirEntry, err error) error {

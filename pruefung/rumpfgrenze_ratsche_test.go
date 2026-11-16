@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -18,6 +18,7 @@ import (
 // Blind für einen Rumpf, der über einen anderen Leser als json.NewDecoder und io.ReadAll gelesen
 // wird, etwa io.Copy in einen Puffer.
 func TestRumpfgrenze_KeineTuerLiestOhneGrenze(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var fundstellen []string
 	ueberTuer := 0
 	err := filepath.Walk("api", func(pfad string, info os.FileInfo, err error) error {

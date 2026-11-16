@@ -1,21 +1,16 @@
-package pruefung
+package pruefung_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
 
-// Die Prüfungen lesen das Repository mit Pfaden ab der Wurzel, go test startet sie aber im
-// Ordner des Pakets; deshalb wechselt TestMain einmal in die Wurzel und bricht ohne go.mod ab.
-func TestMain(m *testing.M) {
-	if err := os.Chdir(".."); err != nil {
-		fmt.Fprintln(os.Stderr, "Wechsel in die Wurzel des Repositorys gescheitert:", err)
-		os.Exit(1)
-	}
+// wechsleInDieWurzel wechselt für die Dauer des Tests in die Wurzel des Repositorys: Die Prüfungen
+// lesen den Baum mit Pfaden ab dort, go test startet sie aber im Ordner des Pakets.
+func wechsleInDieWurzel(t *testing.T) {
+	t.Helper()
+	t.Chdir("..")
 	if _, err := os.Stat("go.mod"); err != nil {
-		fmt.Fprintln(os.Stderr, "keine go.mod im Arbeitsverzeichnis, die Prüfungen liefen am falschen Ort:", err)
-		os.Exit(1)
+		t.Fatalf("keine go.mod im Arbeitsverzeichnis, die Prüfung liefe am falschen Ort: %v", err)
 	}
-	os.Exit(m.Run())
 }

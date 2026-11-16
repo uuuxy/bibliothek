@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -118,6 +118,7 @@ func nullwertKollaps(e ast.Expr) (hatKeineZeile, kollaps bool) {
 var nullwertKollapsBestand = map[string]string{}
 
 func TestKeinLesefehlerAlsNichtGespeichert(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var treffer []string
 	geprueft := 0
 	fset := token.NewFileSet()

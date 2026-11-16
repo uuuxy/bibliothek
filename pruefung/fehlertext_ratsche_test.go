@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -44,6 +44,7 @@ type fehlertextBefund struct {
 }
 
 func TestFehlertexte_KleinOhneSatzzeichen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	befund := pruefeFehlertexte(t, ".")
 	// Je Form eine Untergrenze: Liest der Durchlauf eine Form nicht mehr, prüft er sie nicht. Die
 	// Prüfungen neben den Türen liefern ihren Satz als apierrors.BadRequest statt als errors.New;

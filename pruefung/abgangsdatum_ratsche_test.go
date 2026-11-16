@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -14,6 +14,7 @@ import (
 // Blind für eine Zeile, die die Spalte ohne „SET“ und ohne „ausgesondert_am =“ schreibt: die
 // Spaltenliste eines INSERT und eine Zuweisung ohne Leerzeichen auf eigener Zeile.
 func TestAbgangsdatum_KeinSchreiberSetztEsSelbst(t *testing.T) {
+	wechsleInDieWurzel(t)
 	wurzel := "."
 	var fundstellen []string
 	genannt := 0

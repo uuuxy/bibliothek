@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -28,6 +28,7 @@ import (
 // im Baum keinen. Suchen, die die ISBN nur über den Volltext (search_vector) treffen, und Filter
 // im Browser sieht sie nicht.
 func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
+	wechsleInDieWurzel(t)
 	const baustein = "sqlSuchtextIstISBN"
 	var verstoesse []string
 	suchen := 0

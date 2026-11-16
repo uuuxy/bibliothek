@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/parser"
@@ -30,6 +30,7 @@ var pruefhilfen = []string{
 // Blindheit: Nur die Einbindung im Kopf einer Datei. Eine Prüfhilfe, die dieser Liste fehlt,
 // sieht die Prüfung nicht; ein neues Paket der Art wird hier eingetragen.
 func TestPruefhilfen_NurTestsBindenSieEin(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	gelesen := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {

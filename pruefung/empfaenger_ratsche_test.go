@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -21,6 +21,7 @@ import (
 // Blindheit: Testdateien liest die Prüfung nicht. Ob der Name ein Kürzel des Typs ist, liest
 // ein Mensch; die Türen der Themen heißen s wie am Server, von dem sie stammen.
 func TestEmpfaenger_EinNameJeTyp(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	namen := map[string]map[string]string{} // Ordner.Typ → Name → erste Stelle
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {

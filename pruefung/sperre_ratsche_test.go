@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -18,6 +18,7 @@ import (
 // über errors.Join oder einen eigenen Fehlertyp an ErrGesperrt hängt. Testdateien liest die
 // Prüfung nicht.
 func TestSperre_GrundNurUeberSperre(t *testing.T) {
+	wechsleInDieWurzel(t)
 	quellen := leseGoQuellen(t, ".")
 	fset := token.NewFileSet()
 	var funde []string

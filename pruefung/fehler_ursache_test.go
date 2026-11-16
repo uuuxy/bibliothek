@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -78,6 +78,7 @@ func verwirftUrsache(ifs *ast.IfStmt) bool {
 }
 
 func TestKein500VerwirftDieUrsache(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var treffer []string
 	geprueft := 0 // Zweige mit Fehler und 500: der Boden gegen einen blinden Lauf
 	fset := token.NewFileSet()

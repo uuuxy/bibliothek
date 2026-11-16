@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 // Ratsche: Die Eingabe der Buchetiketten (pdf.BuchEtikett) füllt im Produktivcode nur die
 // Funktion PDFEtiketten in internal/buchetikett/buchetikett.go.
@@ -82,6 +82,7 @@ func etikettEingabeNennungen(t *testing.T, pfad string, quelle any) []string {
 }
 
 func TestEtikettEingabe_NurPDFEtikettenFuelltSie(t *testing.T) {
+	wechsleInDieWurzel(t)
 	const erlaubt = "internal/buchetikett/buchetikett.go:PDFEtiketten"
 	var fremd []string
 	inErlaubter := 0

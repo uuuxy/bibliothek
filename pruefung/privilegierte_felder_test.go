@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -34,6 +34,7 @@ var (
 )
 
 func TestPrivilegierteAnfrageFelderEingetragen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	wurzel := "."
 	gefunden := map[string]bool{}
 

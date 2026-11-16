@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -30,6 +30,7 @@ import (
 // dem DELETE und in derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
 // repository/titel_loeschen_samt_ausleihen_auflagen_pg_test.go.
 func TestAuflagen_EinSchreibpfad(t *testing.T) {
+	wechsleInDieWurzel(t)
 	const tuer = "repository/auflagen.go"
 	var verstoesse []string
 	schreiberInTuer, loescher := 0, 0
@@ -191,6 +192,7 @@ func ruft(n ast.Node, name string) bool {
 // Anweisungen und ihre Reihenfolge zum letzten Löschen), nicht die Wirkung. Ein Skript, das Titel
 // über dynamisches SQL löscht, sieht sie nicht.
 func TestAuflagen_SkripteHaltenDieWerke(t *testing.T) {
+	wechsleInDieWurzel(t)
 	sperre := regexp.MustCompile(`pg_advisory_xact_lock\(\s*` + auflagenSperrschluessel(t) + `\s*\)`)
 	werkLoesen := regexp.MustCompile(`(?i)\bUPDATE\s+buecher_titel\s+SET\s+werk_id\s*=\s*NULL\b`)
 	sqlKommentar := regexp.MustCompile(`(?m)--.*$`)

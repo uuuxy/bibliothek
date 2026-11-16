@@ -1,4 +1,4 @@
-package docs
+package docs_test
 
 import (
 	"os"
@@ -24,7 +24,7 @@ func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 	keineRatsche := map[string]string{
 		"main_test.go":               "Start des Servers, kein Gate",
 		"landkarte_ratschen_test.go": "dieser Test",
-		"wurzel_test.go":             "TestMain der Prüfungen, kein Gate",
+		"wurzel_test.go":             "Hilfsfunktion der Prüfungen, kein Gate",
 	}
 
 	var kandidaten []string

@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -182,6 +182,7 @@ var phantomBestand = map[string]int{
 }
 
 func TestPhantomErfolg_KeineNeuenVerworfenenCommandTags(t *testing.T) {
+	wechsleInDieWurzel(t)
 	fset := token.NewFileSet()
 	gefunden := map[string]int{}
 

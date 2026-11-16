@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -16,6 +16,7 @@ import (
 //  1. Das Präfix steht als Literal nur in repository/abgaenger_sperre.go.
 //  2. Jedes SQL, das ist_abgaenger auf true setzt, stempelt im selben Statement abgaenger_seit.
 func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
+	wechsleInDieWurzel(t)
 	praefix := regexp.MustCompile(`Automati(sierte|sche) Abgänger-Sperre`)
 	setztAbgaenger := regexp.MustCompile(`(?s)ist_abgaenger\s*=\s*(true|c\.is_graduating)`)
 	rohstrings := regexp.MustCompile("(?s)`[^`]*`")

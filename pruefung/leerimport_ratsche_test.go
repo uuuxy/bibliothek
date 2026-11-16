@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/parser"
@@ -17,6 +17,7 @@ import (
 // Blindheit: Eine Nebenwirkung hinter einem Import mit Namen sieht die Prüfung nicht
 // (chai2010/webp meldet in pkg/imageutil auch seinen Decoder an), Testdateien liest sie nicht.
 func TestLeerimporte_NurInMainUndTests(t *testing.T) {
+	wechsleInDieWurzel(t)
 	quellen := leseGoQuellen(t, ".")
 	fset := token.NewFileSet()
 	var funde []string

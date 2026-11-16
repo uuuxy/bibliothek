@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -101,6 +101,7 @@ func zusammengesetzteTexte(pfad string, quelle any) ([]string, error) {
 }
 
 func TestZeilensperre_UeberEinenVerbundNenntIhreTabelle(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var verstoesse []string
 	sperren, mitTabelle := 0, 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {

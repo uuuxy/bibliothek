@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"fmt"
@@ -203,6 +203,7 @@ func schluesselText(ausdruck ast.Expr) (string, bool) {
 }
 
 func TestLogzeileNenntKeinenNamen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	var funde []string
 	zeilen := 0
 	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, err error) error {

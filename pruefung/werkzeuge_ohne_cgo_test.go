@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -13,6 +13,7 @@ import (
 // des Images: `go build ./...`, die Tests und die Hooks laufen mit cgo und merken nichts.
 // Der Weg dorthin ist kurz — ein neuer Import in repository genügt.
 func TestWerkzeugeOhneCgo_BindenKeinCgoPaketEin(t *testing.T) {
+	wechsleInDieWurzel(t)
 	dockerfile, err := os.ReadFile("Dockerfile")
 	if err != nil {
 		t.Fatalf("Dockerfile lesen: %v", err)

@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"encoding/json"
@@ -17,6 +17,7 @@ import (
 // Blindheit: Ob eine Freigabe der Liste zu weit gefasst ist, entscheidet, wer sie einträgt;
 // die unversionierte Datei sieht der Test nicht.
 func TestWerkzeugEinstellung_NurFreigabenFuerAlle(t *testing.T) {
+	wechsleInDieWurzel(t)
 	// fuerAlle sind die Freigaben, die jeder bekommen darf: Sie lesen oder prüfen nur, oder es
 	// sind Skripte dieses Repositorys. Eine neue Zeile hier ist eine Entscheidung für alle.
 	fuerAlle := map[string]bool{

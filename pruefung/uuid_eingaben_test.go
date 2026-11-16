@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 // Prüfung: Eine Kennung, die als UUID in die Datenbank geht, wird an der Tür geprüft.
 //
@@ -659,6 +659,7 @@ func istTextKennung(typ ast.Expr) bool {
 }
 
 func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
+	wechsleInDieWurzel(t)
 	namen := pruefeEingabeDerTueren(t)
 	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api"), namen)
 	if len(gesehen) < 5 {
@@ -743,6 +744,7 @@ func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
 
 // Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
 func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	// LESE, LESESTRENG und VALIDATOR stehen für die Namen, die ladeEingabeDerTueren in api/tuer
 	// findet; die Probe ruft die Türen so, wie sie heute heißen.
 	quelle := `package p

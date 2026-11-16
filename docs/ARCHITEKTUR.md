@@ -618,7 +618,8 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   Routen (Schutz, Rechte, Personendaten, Grenzen der Listen), die Schichtung und jeder Test, der
   Türen zweier Themen prüft.
 - Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht in `pruefung/`;
-  `TestMain` in `pruefung/wurzel_test.go` wechselt in die Wurzel, die Pfade gelten ab dort. Ihre
+  jede Prüfung, die den Baum liest, wechselt mit `wechsleInDieWurzel(t)` in die Wurzel, die Pfade
+  gelten ab dort. Ihre
   Blindheit steht im Kopf der Datei und in der Landkarte von [sweeps.md](sweeps.md) (Regel 7,
   gehalten von `docs/landkarte_ratschen_test.go`). Gehört die Regel einem Paket, steht die
   Prüfung dort, auch wenn sie dafür den Baum durchläuft

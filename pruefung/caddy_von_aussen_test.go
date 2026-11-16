@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"io/fs"
@@ -20,6 +20,7 @@ import (
 // außen in DEPLOYMENT.md, Abschnitt 3. Die Muster liest sie wie Caddy, genau oder mit * am Ende als
 // Präfix; ein Muster anderer Form lässt sie scheitern, statt es falsch zu lesen.
 func TestCaddyLaesstDieDateienDerBestellseiteDurch(t *testing.T) {
+	wechsleInDieWurzel(t)
 	roh, err := os.ReadFile("update_caddy.sh")
 	if err != nil {
 		t.Fatalf("update_caddy.sh lesen: %v", err)

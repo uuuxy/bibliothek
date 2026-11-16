@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"go/ast"
@@ -24,6 +24,7 @@ import (
 // dem ein Glied draußen genutzt wird (eine Aufzählung ist als Ganzes öffentlich). Blindheit: Aufrufe über Vorlagen und Reflexion und Schnittstellen, die
 // erst in einer Funktion erklärt sind.
 func TestSichtbarkeit_OeffentlichNurMitFremdemNutzer(t *testing.T) {
+	wechsleInDieWurzel(t)
 	pakete := ladePaketeMitTests(t)
 	m := newSichtbarkeitsMessung(t)
 	besuche(pakete, m.sammle)

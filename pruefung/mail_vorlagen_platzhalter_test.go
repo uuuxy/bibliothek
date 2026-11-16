@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 // Die Platzhalter einer Mail-Vorlage stimmen an drei Orten überein.
 //
@@ -125,6 +125,7 @@ func leseVorgabetexte(t *testing.T) map[string]map[string]bool {
 }
 
 func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
+	wechsleInDieWurzel(t)
 	editor := leseEditorPlatzhalter(t)
 	vorgaben := leseVorgabetexte(t)
 
@@ -203,6 +204,7 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 
 // Gegenprobe am Detektor: Ein Muster, das nichts findet, meldet ewig „alles gut".
 func TestVorlagenPlatzhalterDetektorGreift(t *testing.T) {
+	wechsleInDieWurzel(t)
 	if m := sammlePlatzhalter(`x := "{{.Vorname}} und {{.Frist}}"`); !m["{{.Vorname}}"] || !m["{{.Frist}}"] {
 		t.Error("Platzhalter-Muster erkennt String-Literale nicht")
 	}

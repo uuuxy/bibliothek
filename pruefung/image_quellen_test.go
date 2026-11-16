@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os"
@@ -20,6 +20,7 @@ import (
 // Laufzeit aus einem Ordner liest (Migrationen, Vorlagen), sieht sie nicht; das zeigt der Start
 // des Containers.
 func TestImageKopiertWasDerBauBraucht(t *testing.T) {
+	wechsleInDieWurzel(t)
 	roh, err := os.ReadFile("Dockerfile")
 	if err != nil {
 		t.Fatalf("Dockerfile lesen: %v", err)

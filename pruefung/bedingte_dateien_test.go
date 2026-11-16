@@ -1,4 +1,4 @@
-package pruefung
+package pruefung_test
 
 import (
 	"os/exec"
@@ -19,6 +19,7 @@ var bedingungDesBaus = regexp.MustCompile(`(?m)^//go:build (\w+)$`)
 //
 // Blindheit: Eine Bedingung aus mehreren Teilen (linux && amd64) liest sie nicht.
 func TestBedingteDateien_LassenSichUebersetzen(t *testing.T) {
+	wechsleInDieWurzel(t)
 	skripte, tags := bedingteDateien(t)
 
 	// Gegenprobe am Detektor: Die zwei Skripte und das Tag raster muss er finden.
