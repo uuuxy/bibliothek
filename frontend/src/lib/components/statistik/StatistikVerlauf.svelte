@@ -41,12 +41,12 @@
 	const hatDaten = $derived(daten.some((d) => d.ausleihen > 0 || d.rueckgaben > 0));
 	const maxVal = $derived(Math.max(1, ...daten.flatMap((d) => [d.ausleihen, d.rueckgaben])));
 
-	/** „Schöne" Schrittweite (1/2/5·10ⁿ), damit Y-Ticks ganzzahlig bleiben. @param {number} max */
+	/** „Schöne" Schrittweite (1/2/5·10ⁿ), nie unter 1: Ausleihen sind ganze Zahlen. @param {number} max */
 	function niceStep(max) {
 		const raw = max / 4;
 		const pow = Math.pow(10, Math.floor(Math.log10(raw)));
 		const n = raw / pow;
-		return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * pow;
+		return Math.max(1, (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * pow);
 	}
 	const step = $derived(niceStep(maxVal));
 	const yMax = $derived(Math.ceil(maxVal / step) * step);

@@ -41,3 +41,26 @@ describe('StatistikVerlauf: der Monat unter dem Zeiger', () => {
 		expect(einblendung).toContain('Rückgaben: 2');
 	});
 });
+
+// Ausleihen sind ganze Zahlen; die Achse zählt deshalb in ganzen Schritten, auch wenn kein
+// Monat mehr als ein oder zwei Ausleihen hat.
+describe('StatistikVerlauf: die Achse', () => {
+	const achse = (/** @type {number} */ hoechstwert) => {
+		const { container } = render(StatistikVerlauf, {
+			daten: [{ monat: '2026-10', ausleihen: hoechstwert, rueckgaben: 0 }]
+		});
+		return [...container.querySelectorAll('text[text-anchor="end"]')].map((t) =>
+			(t.textContent ?? '').trim()
+		);
+	};
+
+	it('zählt bei wenigen Ausleihen in ganzen Schritten', () => {
+		expect(achse(1)).toEqual(['0', '1']);
+		expect(achse(2)).toEqual(['0', '1', '2']);
+	});
+
+	it('behält die Schritte bei mehr Ausleihen', () => {
+		expect(achse(8)).toEqual(['0', '2', '4', '6', '8']);
+		expect(achse(37)).toEqual(['0', '10', '20', '30', '40']);
+	});
+});
