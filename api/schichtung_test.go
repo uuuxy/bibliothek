@@ -14,8 +14,8 @@ import (
 
 // Schichtung des Backends: Was in api/ liegt, ist eine Tür, auch in einem Unterordner. Der
 // Bestand dateienOhneTuer nennt, was ohne Tür in api/ liegt, und kann nur kleiner werden. Dass
-// kein Paket außerhalb der Datenbankschicht SQL formuliert, hält schichtung_ratsche_test.go im
-// Wurzelpaket.
+// kein Paket außerhalb der Datenbankschicht SQL formuliert, hält
+// pruefung/schichtung_ratsche_test.go.
 //
 // Blindheit: Regeln in einer Datei, die auch eine Tür trägt; eine Datei, die net/http nur für
 // eine Konstante einbindet.

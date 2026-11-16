@@ -7,7 +7,7 @@
 // Namen ist schlimmer als einer ohne Häkchen unter dem s; deshalb wird vorher ersetzt.
 //
 // Jeder Übersetzer eines Dokuments läuft durch Uebersetzer, jeder Text an maroto durch Ersetze;
-// pdfzeichen_ratsche_test.go im Wurzelpaket hält beides.
+// pruefung/pdfzeichen_ratsche_test.go hält beides.
 package pdfzeichen
 
 import "strings"

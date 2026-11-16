@@ -327,7 +327,8 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   Programm oder im Test, der es braucht; ausgenommen ist `embed` (Decisions, „Import blank":
   „Avoid blank imports in library packages, even if the library indirectly depends on them").
   Welche Bildformate der Server liest und dass er die API-Beschreibung anmeldet, legt `main.go`
-  fest. `leerimport_ratsche_test.go` hält beides.
+  fest. `leerimport_ratsche_test.go` hält beides; dass die Bildformate ankommen, prüft
+  `bildformate_test.go` neben `main.go`.
 - Der Kontext einer Anfrage reist als erster Parameter bis zur Abfrage, die Läufe bekommen den
   des Servers; kein Typ trägt einen als Feld (Decisions, „Contexts": „Do not add a context member
   to a struct type"). `context.Background()` steht nur in Programmen, Tests und Prüfhilfen. Muss

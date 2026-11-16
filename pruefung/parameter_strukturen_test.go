@@ -1,0 +1,253 @@
+package pruefung
+
+// Bugklasse „Parameter-Struktur mit vergessenem Feld": Eine Struktur statt einer langen
+// Parameterliste verhindert, dass benachbarte Argumente desselben Typs stumm vertauscht werden.
+// Der Preis: Aus einem Pflichtargument wird ein Feld, und ein vergessenes Feld ist kein
+// Compilerfehler, sondern der Nullwert. Bei fristAngaben wären das 0 Tage Frist, bei den
+// Parametern des Zusammenführens eine Spur für den Rückweg ohne Bezug.
+//
+// Diese Ratsche verlangt für genau diese Strukturen, dass jedes Literal jedes Feld setzt. Sie
+// gilt absichtlich nicht für alle Strukturen des Baums: Ein Objekt mit Optionen und Vorgabewerten
+// darf teilbefüllt sein. Wer eine neue Parameter-Struktur einführt, trägt sie hier ein, sonst ist
+// die Ratsche für sie blind; die Liste ist die Aussage, nicht der Zufall.
+//
+// Positionale Literale (`coverBox{x, y, b, h}`) zwingt der Compiler bereits zur Vollständigkeit;
+// sie werden deshalb nicht bemängelt.
+//
+// Ein Literal zählt mit und ohne Paketnamen: Zieht eine Struktur in ein anderes Paket, steht an
+// ihren Aufrufstellen `paket.Typ{…}`. Verglichen wird der Typname allein; zwei gelistete
+// Strukturen gleichen Namens in verschiedenen Paketen kann die Ratsche nicht unterscheiden.
+//
+// Blindheit: Strukturen, die nicht in der Liste stehen; Nullwerte über Zwischenvariablen; ein
+// Literal ohne Typnamen in einer Liste (`[]Typ{{…}}`).
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+)
+
+// parameterStrukturen: Typname → warum ein fehlendes Feld hier schadet.
+var parameterStrukturen = map[string]string{
+	"fristAngaben":           "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
+	"ausweisPruefung":        "fehlendes Feld = leere Ausschluss-ID oder leere Meldung",
+	"WareneingangAngaben":    "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
+	"Kuerzung":               "fehlendes Feld = Übernahme-Protokoll ohne Quelle, Kennung oder Wert",
+	"rueckwegEintrag":        "fehlendes Feld = Rückweg-Spur des Zusammenführens ohne Bezug",
+	"zusammengefuehrtesZiel": "fehlendes Feld = Zielsatz ohne Herkunft",
+	"TitelBestand":           "fehlende Map = Import ordnet Exemplare keinem oder dem falschen Titel zu",
+	"klassifizierungsLauf":   "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
+	"Bestellbericht":         "fehlendes Feld = Bericht über den falschen Zeitraum, ohne Preise oder ohne Bestellungen",
+	"Flaeche":                "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
+	"exemplarZurGruppe":      "fehlendes Feld = Zulaufzeile ohne Exemplar-ID oder ohne Cover",
+	"Rahmen":                 "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
+	"Ende":                   "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
+	"paarSignale":            "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
+	"leserAenderung":         "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
+	"nachbuchAbsender":       "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
+	"BestellMailWerte":       "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
+}
+
+func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {
+	felder, literale := sammleParameterStrukturen(t, "")
+	for name := range parameterStrukturen {
+		if _, da := felder[name]; !da {
+			t.Errorf("Struktur %q steht in der Liste, existiert im Baum aber nicht (mehr) — "+
+				"Eintrag entfernen oder Namen korrigieren; sonst prüft die Ratsche hier nichts.", name)
+		}
+	}
+	if len(literale) == 0 {
+		t.Fatal("kein einziges Literal gefunden — greift der Sammler noch?")
+	}
+	var maengel []string
+	for _, l := range literale {
+		if fehlt := fehlendeFelder(felder[l.typ], l.gesetzt); len(fehlt) > 0 {
+			maengel = append(maengel, fmt.Sprintf("%s: %s ohne %s (%s)",
+				l.ort, l.typ, strings.Join(fehlt, ", "), parameterStrukturen[l.typ]))
+		}
+	}
+	sort.Strings(maengel)
+	if len(maengel) > 0 {
+		t.Errorf("Parameter-Struktur unvollständig befüllt — ein vergessenes Feld ist hier kein "+
+			"Compilerfehler, sondern der Nullwert:\n  %s", strings.Join(maengel, "\n  "))
+	}
+}
+
+// Selbstprobe: Der Sammler muss eine Lücke auch wirklich finden — in beiden Schreibweisen
+// (Feld fehlt ganz, Feld nur im Kommentar) und ohne bei vollständigen Literalen anzuschlagen.
+func TestParameterStrukturen_DetektorFindetLuecke(t *testing.T) {
+	quelle := `package p
+type DueDateOptions struct {
+	IstLernmittel   bool
+	Medientyp       string
+	LmfStichtag     string
+	FristBuchTage   int
+	FristMedienTage int
+	AdditionalYears int
+}
+type coverBox struct{ x, y, breite, hoehe float64 }
+func vollstaendig() DueDateOptions {
+	return DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0}
+}
+func luecke() DueDateOptions {
+	// FristMedienTage: 7,
+	return DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, AdditionalYears: 0}
+}
+func positional() coverBox { return coverBox{1, 2, 3, 4} }
+func mitPaketnamen() any {
+	return fremd.DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7}
+}
+func mitPaketnamenVollstaendig() any {
+	return &fremd.DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0}
+}
+`
+	felder, literale := sammleParameterStrukturen(t, quelle)
+	if len(felder["coverBox"]) != 4 {
+		t.Errorf("gruppierte Felder (x, y, breite, hoehe) nicht erkannt: %v — genau diese Form "+
+			"übersieht ein Sammler, der je Feld einen eigenen Namen erwartet", felder["coverBox"])
+	}
+	var gemeldet []string
+	for _, l := range literale {
+		if fehlt := fehlendeFelder(felder[l.typ], l.gesetzt); len(fehlt) > 0 {
+			gemeldet = append(gemeldet, l.typ+":"+strings.Join(fehlt, ","))
+		}
+	}
+	sort.Strings(gemeldet)
+	will := []string{"DueDateOptions:AdditionalYears", "DueDateOptions:FristMedienTage"}
+	if len(gemeldet) != len(will) || gemeldet[0] != will[0] || gemeldet[1] != will[1] {
+		t.Errorf("Selbstprobe: erwartet genau zwei Lücken %v (das Literal mit Paketnamen ohne "+
+			"AdditionalYears, das ohne Paketnamen ohne FristMedienTage), gemeldet %v — ein "+
+			"auskommentiertes Feld darf nicht als gesetzt gelten, ein positionales Literal nicht "+
+			"als lückenhaft", will, gemeldet)
+	}
+}
+
+type strukturLiteral struct {
+	typ     string
+	ort     string
+	gesetzt map[string]bool
+}
+
+// sammleParameterStrukturen liest Felder und Literale der gelisteten Typen. Ist `quelle`
+// gesetzt, wird nur dieser Text geparst (Selbstprobe), sonst der ganze Baum.
+func sammleParameterStrukturen(t *testing.T, quelle string) (map[string][]string, []strukturLiteral) {
+	t.Helper()
+	fset := token.NewFileSet()
+	felder := map[string][]string{}
+	var literale []strukturLiteral
+
+	lies := func(pfad string, dateiQuelle any) error {
+		datei, err := parser.ParseFile(fset, pfad, dateiQuelle, 0)
+		if err != nil {
+			return fmt.Errorf("%s parsen: %w", pfad, err)
+		}
+		ast.Inspect(datei, func(n ast.Node) bool {
+			switch k := n.(type) {
+			case *ast.TypeSpec:
+				st, ok := k.Type.(*ast.StructType)
+				if !ok || !istParameterStruktur(k.Name.Name, quelle) {
+					return true
+				}
+				for _, f := range st.Fields.List {
+					for _, name := range f.Names {
+						felder[k.Name.Name] = append(felder[k.Name.Name], name.Name)
+					}
+				}
+			case *ast.CompositeLit:
+				typ := literalTypName(k.Type)
+				if !istParameterStruktur(typ, quelle) || len(k.Elts) == 0 {
+					return true
+				}
+				gesetzt := map[string]bool{}
+				positional := false
+				for _, e := range k.Elts {
+					kv, ok := e.(*ast.KeyValueExpr)
+					if !ok {
+						positional = true // der Compiler verlangt hier Vollständigkeit
+						continue
+					}
+					if key, ok := kv.Key.(*ast.Ident); ok {
+						gesetzt[key.Name] = true
+					}
+				}
+				if positional {
+					return true
+				}
+				literale = append(literale, strukturLiteral{
+					typ: typ, gesetzt: gesetzt,
+					ort: fmt.Sprintf("%s:%d", filepath.ToSlash(pfad), fset.Position(k.Pos()).Line),
+				})
+			}
+			return true
+		})
+		return nil
+	}
+
+	if quelle != "" {
+		if err := lies("selbstprobe.go", quelle); err != nil {
+			t.Fatal(err)
+		}
+		return felder, literale
+	}
+	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case "node_modules", ".git", "frontend", "testdata":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") {
+			return nil
+		}
+		return lies(pfad, nil)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return felder, literale
+}
+
+// literalTypName nennt den Typ eines Literals ohne Paketnamen, "" für eine Form ohne Namen.
+func literalTypName(typ ast.Expr) string {
+	switch t := typ.(type) {
+	case *ast.Ident:
+		return t.Name
+	case *ast.SelectorExpr:
+		return t.Sel.Name
+	}
+	return ""
+}
+
+// istParameterStruktur: im Selbstproben-Modus zählt jede Struktur der Quelle, sonst die
+// Liste oben.
+func istParameterStruktur(name, quelle string) bool {
+	if quelle != "" {
+		return name == "DueDateOptions" || name == "coverBox"
+	}
+	_, da := parameterStrukturen[name]
+	return da
+}
+
+func fehlendeFelder(alle []string, gesetzt map[string]bool) []string {
+	var fehlt []string
+	for _, f := range alle {
+		if !gesetzt[f] {
+			fehlt = append(fehlt, f)
+		}
+	}
+	return fehlt
+}

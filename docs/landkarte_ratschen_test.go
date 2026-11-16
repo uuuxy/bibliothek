@@ -12,9 +12,9 @@ import (
 // eines Gates sucht, keine.
 //
 // Geprüft wird die Anwesenheit des Dateinamens in sweeps.md, nicht der Inhalt der Zeile:
-// Ob die genannte Blindheit stimmt, liest ein Mensch. Umfang: die Ratschen im
-// Wurzelpaket, in docs/ und die Frontend-Hygiene-Tests; die Ratschen in api/, repository/
-// usw. stehen von Hand in der Landkarte, ohne Gate.
+// Ob die genannte Blindheit stimmt, liest ein Mensch. Umfang: die Prüfungen in
+// pruefung/, die Tests neben main.go, die Ratschen in docs/ und die Frontend-Hygiene-Tests; die
+// Ratschen in api/, repository/ usw. stehen von Hand in der Landkarte, ohne Gate.
 func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 	sweeps, err := os.ReadFile("sweeps.md")
 	if err != nil {
@@ -24,11 +24,13 @@ func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 	keineRatsche := map[string]string{
 		"main_test.go":               "Start des Servers, kein Gate",
 		"landkarte_ratschen_test.go": "dieser Test",
+		"wurzel_test.go":             "TestMain der Prüfungen, kein Gate",
 	}
 
 	var kandidaten []string
 	for _, muster := range []string{
 		"../*_test.go",
+		"../pruefung/*_test.go",
 		"*_test.go",
 		"../frontend/src/lib/frontend-hygiene*.test.js",
 		"../frontend/src/lib/fehlerausgang.test.js",
@@ -37,6 +39,10 @@ func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 		treffer, err := filepath.Glob(muster)
 		if err != nil {
 			t.Fatal(err)
+		}
+		// Nicht-leer-Garantie je Muster: Zieht eine Quelle um, fiele sie sonst still heraus.
+		if len(treffer) == 0 {
+			t.Fatalf("das Muster %s trifft keine Datei, die Quelle ist umgezogen oder gelöscht", muster)
 		}
 		kandidaten = append(kandidaten, treffer...)
 	}

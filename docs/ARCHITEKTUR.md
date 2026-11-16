@@ -617,11 +617,13 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 - In `api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über alle
   Routen (Schutz, Rechte, Personendaten, Grenzen der Listen), die Schichtung und jeder Test, der
   Türen zweier Themen prüft.
-- Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht im Wurzelpaket; ihre
+- Eine Prüfung, die den ganzen Baum liest und keinem Paket gehört, steht in `pruefung/`;
+  `TestMain` in `pruefung/wurzel_test.go` wechselt in die Wurzel, die Pfade gelten ab dort. Ihre
   Blindheit steht im Kopf der Datei und in der Landkarte von [sweeps.md](sweeps.md) (Regel 7,
   gehalten von `docs/landkarte_ratschen_test.go`). Gehört die Regel einem Paket, steht die
   Prüfung dort, auch wenn sie dafür den Baum durchläuft
-  (`repository/einstellungen_gelesene_schluessel_test.go`).
+  (`repository/einstellungen_gelesene_schluessel_test.go`). Tests, die `main.go` brauchen,
+  stehen daneben (`main_test.go`, `bildformate_test.go`).
 
 ##### `repository/` bleibt ein Paket
 

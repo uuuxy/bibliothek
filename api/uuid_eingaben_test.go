@@ -14,7 +14,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Das Verhalten zu uuid_eingaben_test.go im Wurzelpaket: Eine Kennung, die keine UUID ist, wird
+// Das Verhalten zu pruefung/uuid_eingaben_test.go: Eine Kennung, die keine UUID ist, wird
 // mit 400 abgewiesen, bevor Datenbank oder Abfragen sie sehen. Die Fälle stammen aus einem Lauf
 // von ZAP, der sie als 500 zeigte, und sind an einer lokalen Anlage nachgestellt.
 //

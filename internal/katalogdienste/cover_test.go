@@ -19,7 +19,7 @@ import (
 func TestSpeichereCoverDatei(t *testing.T) {
 	// Im vorübergehenden Verzeichnis, nicht im Verzeichnis des Pakets: Ein Test, der
 	// internal/katalogdienste/uploads im Repository anlegt und wieder löscht, stört die Ratschen
-	// im Wurzelpaket, die parallel den Baum lesen (WalkDir) und über das verschwundene
+	// in pruefung/, die parallel den Baum lesen (WalkDir) und über das verschwundene
 	// Verzeichnis stolpern („open internal/katalogdienste/uploads: no such file").
 	t.Chdir(t.TempDir())
 

@@ -12,7 +12,7 @@ import (
 	"bibliothek/db"
 )
 
-// Verhalten zu uuid_eingaben_test.go (Root-Paket): Eine Titel-Kennung, die keine UUID
+// Verhalten zu pruefung/uuid_eingaben_test.go: Eine Titel-Kennung, die keine UUID
 // ist, wird mit 400 abgewiesen, bevor sie die Datenbank erreicht. Die Listen gehen als
 // `= ANY($1::uuid[])` bzw. als class_books.book_id (UUID) an Postgres; ohne Prüfung kam
 // `invalid input syntax for type uuid` (22P02) als 500 zurück.

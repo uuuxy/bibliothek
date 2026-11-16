@@ -1,0 +1,859 @@
+package pruefung
+
+// Prüfung: Eine Kennung, die als UUID in die Datenbank geht, wird an der Tür geprüft.
+//
+// Warum: Geht ein Text wie `?session_id=x`, `?titel_id=x` oder `{"session_id":"x"}` ungeprüft an
+// Postgres, kommt `invalid input syntax for type uuid` (SQLSTATE 22P02) als 500 zurück.
+// uuidPfadMiddleware (api/middleware.go) prüft nur Pfad-Parameter.
+//
+// Warum nicht zentral „22P02 → 400" in apierrors: Das wäre die Bugklasse Fehler-Kollaps
+// (fehler_kollaps_test.go); ein kaputter Wert, den der Server erzeugt, sähe dann aus wie ein
+// Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe ankommt.
+//
+// Regel: In jedem Struct, das eine Tür aus dem Rumpf der Anfrage liest (tuer.LeseAnfrage,
+// tuer.DekodiereRumpf oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf
+// „id"/„ids" oder, für den Schlüssel gegen Doppelbuchung, auf „key"/„schluessel" vom Typ string,
+// *string oder []string einen validate-Tag mit „uuid", oder es steht mit Grund in
+// uuidEingabenAusnahmen. Liest eine Tür über DekodiereRumpf oder json.NewDecoder, muss sie außerdem
+// selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
+// tuer.Pruefer.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
+//
+// uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen nicht als Prüfung und
+// werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
+//
+// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/eingabe.go), für
+// Query-Parameter tuer.LeseUUIDParameter, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das belegt.
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
+	"testing"
+)
+
+// uuidEingabenAusnahmen: „paket.Typ.Feld" bzw. „paket:Funktion:query:name" / „paket:Funktion:ohne
+// Validierung" → warum es so richtig ist. Belegt an information_schema.columns: alle
+// Barcode-Spalten und schueler.lusd_id sind VARCHAR.
+var uuidEingabenAusnahmen = map[string]string{
+	"leser.leserAnlegenAnfrage.BarcodeID":      "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"leser.leserAendernAnfrage.BarcodeID":      "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"leser.leserAendernAnfrage.LUSDID":         "schueler.lusd_id ist VARCHAR (LUSD-Schlüssel)",
+	"benutzer.kontoAnlegenAnfrage.BarcodeID":   "benutzer.barcode_id ist VARCHAR",
+	"benutzer.kontoAendernAnfrage.BarcodeID":   "benutzer.barcode_id ist VARCHAR",
+	"katalog.geraetAnlegenAnfrage.BarcodeID":   "geraete.barcode_id ist VARCHAR",
+	"katalog.geraetAendernAnfrage.BarcodeID":   "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
+	"inventurlauf.scanAnfrage.BarcodeID":       "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
+	"druck.etikettenbogenAnfrage.FormatID":     "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"druck.schuelerEtikettenAnfrage.FormatID":  "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"druck.etikettenVermerkAnfrage.BarcodeIDs": "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
+}
+
+type uuidPaket struct {
+	typen   map[string]ast.Expr
+	dateien []*ast.File
+	// alle: die anderen Pakete nach Namen, für Typen der Anfrage aus einem fremden Paket (`var req
+	// repository.X`).
+	alle map[string]*uuidPaket
+}
+
+func ladeUUIDPakete(t *testing.T, wurzeln ...string) map[string]*uuidPaket {
+	t.Helper()
+	pakete := map[string]*uuidPaket{}
+	fset := token.NewFileSet()
+	for _, wurzel := range wurzeln {
+		err := filepath.WalkDir(wurzel, func(pfad string, e fs.DirEntry, err error) error {
+			if err != nil || e.IsDir() || !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+				return err
+			}
+			datei, err := parser.ParseFile(fset, pfad, nil, 0)
+			if err != nil {
+				return err
+			}
+			verz := filepath.Dir(pfad)
+			if pakete[verz] == nil {
+				pakete[verz] = &uuidPaket{typen: map[string]ast.Expr{}}
+			}
+			nimmUUIDDatei(pakete[verz], datei)
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return pakete
+}
+
+func nimmUUIDDatei(p *uuidPaket, datei *ast.File) {
+	p.dateien = append(p.dateien, datei)
+	ast.Inspect(datei, func(n ast.Node) bool {
+		if ts, ok := n.(*ast.TypeSpec); ok {
+			p.typen[ts.Name.Name] = ts.Type
+		}
+		return true
+	})
+}
+
+// pruefeUUIDEingaben liefert jede Stelle, an der eine Kennung ungeprüft hereinkommt.
+func pruefeUUIDEingaben(pakete map[string]*uuidPaket, namen eingabeDerTueren) (maengel []string, gesehen map[string]bool) {
+	gesehen = map[string]bool{}
+	nachName := map[string]*uuidPaket{}
+	for verz, p := range pakete {
+		nachName[filepath.Base(verz)] = p
+	}
+	for _, p := range pakete {
+		p.alle = nachName
+	}
+	melde := func(schluessel, ort string) {
+		if gesehen[schluessel] {
+			return
+		}
+		gesehen[schluessel] = true
+		if _, ok := uuidEingabenAusnahmen[schluessel]; !ok {
+			maengel = append(maengel, schluessel+" ("+ort+")")
+		}
+	}
+	for verz, p := range pakete {
+		paket := filepath.Base(verz)
+		for _, datei := range p.dateien {
+			for _, decl := range datei.Decls {
+				if fn, ok := decl.(*ast.FuncDecl); ok && fn.Body != nil {
+					pruefeUUIDFunktion(p, paket, fn, namen, melde)
+				}
+			}
+		}
+	}
+	sort.Strings(maengel)
+	return maengel, gesehen
+}
+
+func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, namen eingabeDerTueren, melde func(schluessel, ort string)) {
+	typen := lokaleVariablen(fn.Body)
+	if prueftLocker(fn.Body) {
+		melde(fmt.Sprintf("%s:%s:lockere UUID-Prüfung", paket, fn.Name.Name), fn.Name.Name)
+	}
+	if pfadSelbstZerlegt(fn.Body) {
+		melde(fmt.Sprintf("%s:%s:Pfad selbst zerlegt", paket, fn.Name.Name), fn.Name.Name)
+	}
+	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
+		ruftHelferAuf(fn.Body, "alleUUIDs")
+	validateSichtbar := ruftAuf(fn.Body, namen.validator, "Struct", "Var") || ruftValidatorDerTuerenAuf(fn.Body, namen.validator)
+	queryVars := parameterVariablen(fn.Body)
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		if name, ok := idParameterName(call, queryVars); ok {
+			melde(fmt.Sprintf("%s:%s:query:%s", paket, fn.Name.Name, name), fn.Name.Name)
+		}
+		ziel, direkt := dekodierZiel(call, namen)
+		if ziel == "" || typen[ziel] == nil || (direkt && uuidSichtbar) {
+			return true
+		}
+		kennungen := 0
+		pruefeStructFelder(p, paket, fn.Name.Name, typen[ziel], map[string]bool{}, melde, &kennungen)
+		if direkt && !validateSichtbar && kennungen > 0 {
+			melde(fmt.Sprintf("%s:%s:ohne Validierung", paket, fn.Name.Name), fn.Name.Name)
+		}
+		return true
+	})
+}
+
+// lokaleVariablen: `var req T`, `var req = T{}` und `req := T{}` / `req := &T{}`. Ohne die
+// Kurzform wäre eine Tür in dieser Schreibweise für den Detektor unsichtbar.
+func lokaleVariablen(body *ast.BlockStmt) map[string]ast.Expr {
+	typen := map[string]ast.Expr{}
+	ast.Inspect(body, func(n ast.Node) bool {
+		switch st := n.(type) {
+		case *ast.ValueSpec:
+			for i, name := range st.Names {
+				if st.Type != nil {
+					typen[name.Name] = st.Type
+				} else if i < len(st.Values) {
+					if typ := kompositTyp(st.Values[i]); typ != nil {
+						typen[name.Name] = typ
+					}
+				}
+			}
+		case *ast.AssignStmt:
+			if st.Tok != token.DEFINE || len(st.Lhs) != len(st.Rhs) {
+				return true
+			}
+			for i, lhs := range st.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok {
+					if typ := kompositTyp(st.Rhs[i]); typ != nil {
+						typen[id.Name] = typ
+					}
+				}
+			}
+		}
+		return true
+	})
+	return typen
+}
+
+// kompositTyp: der Typ hinter `T{}` oder `&T{}`, sonst nil.
+func kompositTyp(e ast.Expr) ast.Expr {
+	if u, ok := e.(*ast.UnaryExpr); ok && u.Op == token.AND {
+		e = u.X
+	}
+	if lit, ok := e.(*ast.CompositeLit); ok {
+		return lit.Type
+	}
+	return nil
+}
+
+// parameterVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")`
+// darauf ist dieselbe Tür wie `r.URL.Query().Get("…id")`; wer nur die zweite Schreibweise
+// sieht, lässt etwa `lieferant_id` am Bestellbericht durch.
+func parameterVariablen(body *ast.BlockStmt) map[string]bool {
+	namen := map[string]bool{}
+	istQueryAufruf := func(e ast.Expr) bool {
+		call, ok := e.(*ast.CallExpr)
+		if !ok {
+			return false
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		return ok && sel.Sel.Name == "Query" && len(call.Args) == 0
+	}
+	ast.Inspect(body, func(n ast.Node) bool {
+		switch st := n.(type) {
+		case *ast.AssignStmt:
+			for i, lhs := range st.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok && i < len(st.Rhs) && istQueryAufruf(st.Rhs[i]) {
+					namen[id.Name] = true
+				}
+			}
+		case *ast.ValueSpec:
+			for i, name := range st.Names {
+				if i < len(st.Values) && istQueryAufruf(st.Values[i]) {
+					namen[name.Name] = true
+				}
+			}
+		}
+		return true
+	})
+	return namen
+}
+
+// ruftAuf: irgendwo im Rumpf steht paket.Name(…) mit einem der Namen.
+func ruftAuf(body *ast.BlockStmt, paket string, namen ...string) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok {
+			if id, ok := sel.X.(*ast.Ident); ok && id.Name == paket {
+				for _, name := range namen {
+					gefunden = gefunden || sel.Sel.Name == name
+				}
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// eingabeDerTueren nennt die Namen, unter denen die Türen ihre Eingabe lesen und prüfen: die
+// Dekodierer (Name → liest streng) und den gemeinsamen Validator aus api/tuer. Die Prüfung
+// liest sie an der Form der Erklärung ab und nicht als Text, damit ein Umbenennen in api/tuer
+// sie nicht blind macht.
+type eingabeDerTueren struct {
+	dekodierer map[string]bool
+	// roh sind die Leser, die nur dekodieren und den Fehler liefern (tuer.DekodiereRumpf): Sie
+	// prüfen keine Felder, ihr Ziel zählt deshalb wie ein eigenes json.NewDecoder.
+	roh       map[string]bool
+	validator string
+}
+
+// ladeEingabeDerTueren erkennt einen Dekodierer daran, dass er generisch ist, als dritten
+// Parameter einen Zeiger auf seinen Typparameter nimmt und bool liefert; streng ist er, wenn
+// er DisallowUnknownFields ruft. Der Validator ist die Variable, deren Wert eine Funktion
+// liefert, die *validator.Validate zurückgibt.
+func ladeEingabeDerTueren() (eingabeDerTueren, error) {
+	namen := eingabeDerTueren{dekodierer: map[string]bool{}, roh: map[string]bool{}}
+	pfade, err := filepath.Glob(filepath.Join("api", "tuer", "*.go"))
+	if err != nil {
+		return namen, err
+	}
+	erzeuger := map[string]bool{}
+	var dateien []*ast.File
+	for _, pfad := range pfade {
+		if strings.HasSuffix(pfad, "_test.go") {
+			continue
+		}
+		datei, err := parser.ParseFile(token.NewFileSet(), pfad, nil, 0)
+		if err != nil {
+			return namen, err
+		}
+		dateien = append(dateien, datei)
+		for _, decl := range datei.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil {
+				continue
+			}
+			if istDekodiererForm(fn) {
+				namen.dekodierer[fn.Name.Name] = ruftMethodeAuf(fn.Body, "DisallowUnknownFields")
+			}
+			if istRohDekodiererForm(fn) {
+				namen.roh[fn.Name.Name] = true
+			}
+			if liefertValidator(fn) {
+				erzeuger[fn.Name.Name] = true
+			}
+		}
+	}
+	for _, datei := range dateien {
+		for _, decl := range datei.Decls {
+			gen, ok := decl.(*ast.GenDecl)
+			if !ok || gen.Tok != token.VAR {
+				continue
+			}
+			for _, spec := range gen.Specs {
+				vs, ok := spec.(*ast.ValueSpec)
+				if !ok || len(vs.Names) != 1 || len(vs.Values) != 1 {
+					continue
+				}
+				if call, ok := vs.Values[0].(*ast.CallExpr); ok {
+					if id, ok := call.Fun.(*ast.Ident); ok && erzeuger[id.Name] {
+						namen.validator = vs.Names[0].Name
+					}
+				}
+			}
+		}
+	}
+	return namen, nil
+}
+
+// istDekodiererForm: func X[T any](w, r, ziel *T) bool.
+func istDekodiererForm(fn *ast.FuncDecl) bool {
+	tp := fn.Type.TypeParams
+	if tp == nil || len(tp.List) != 1 || len(tp.List[0].Names) != 1 {
+		return false
+	}
+	var parameter []ast.Expr
+	for _, feld := range fn.Type.Params.List {
+		for range max(1, len(feld.Names)) {
+			parameter = append(parameter, feld.Type)
+		}
+	}
+	if len(parameter) != 3 {
+		return false
+	}
+	zeiger, ok := parameter[2].(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	if id, ok := zeiger.X.(*ast.Ident); !ok || id.Name != tp.List[0].Names[0].Name {
+		return false
+	}
+	return liefertNur(fn, "bool")
+}
+
+// istRohDekodiererForm: func X(w, r, ziel any) error, nicht generisch.
+func istRohDekodiererForm(fn *ast.FuncDecl) bool {
+	if fn.Type.TypeParams != nil {
+		return false
+	}
+	var parameter []ast.Expr
+	for _, feld := range fn.Type.Params.List {
+		for range max(1, len(feld.Names)) {
+			parameter = append(parameter, feld.Type)
+		}
+	}
+	if len(parameter) != 3 {
+		return false
+	}
+	if id, ok := parameter[2].(*ast.Ident); !ok || id.Name != "any" {
+		return false
+	}
+	return liefertNur(fn, "error")
+}
+
+// liefertNur: Die Funktion hat genau einen Rückgabewert, und sein Typ heißt so.
+func liefertNur(fn *ast.FuncDecl, typ string) bool {
+	ergebnis := fn.Type.Results
+	if ergebnis == nil || len(ergebnis.List) != 1 || len(ergebnis.List[0].Names) > 1 {
+		return false
+	}
+	id, ok := ergebnis.List[0].Type.(*ast.Ident)
+	return ok && id.Name == typ
+}
+
+// liefertValidator: func x() *validator.Validate.
+func liefertValidator(fn *ast.FuncDecl) bool {
+	ergebnis := fn.Type.Results
+	if ergebnis == nil || len(ergebnis.List) != 1 {
+		return false
+	}
+	zeiger, ok := ergebnis.List[0].Type.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	sel, ok := zeiger.X.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Validate" {
+		return false
+	}
+	paket, ok := sel.X.(*ast.Ident)
+	return ok && paket.Name == "validator"
+}
+
+// ruftMethodeAuf: irgendwo im Rumpf steht x.Name(…).
+func ruftMethodeAuf(body *ast.BlockStmt, name string) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && sel.Sel.Name == name {
+			gefunden = true
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// pruefeEingabeDerTueren hält die Prüfung an, wenn sie Dekodierer oder Validator in api/tuer
+// nicht mehr findet: Ohne sie sähe sie keine Eingabe, die über die Türen hereinkommt.
+func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
+	t.Helper()
+	namen, err := ladeEingabeDerTueren()
+	if err != nil {
+		t.Fatal(err)
+	}
+	streng := 0
+	for _, s := range namen.dekodierer {
+		if s {
+			streng++
+		}
+	}
+	if len(namen.dekodierer) != 2 || streng != 1 || len(namen.roh) != 1 || namen.validator == "" {
+		t.Fatalf("api/tuer: erwartet zwei Dekodierer, einer davon streng, einen rohen Leser und einen "+
+			"Validator; gefunden %v, %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
+			namen.dekodierer, namen.roh, namen.validator)
+	}
+	return namen
+}
+
+// ruftValidatorDerTuerenAuf: irgendwo im Rumpf steht tuer.<Validator>.Struct(…) oder
+// tuer.<Validator>.Var(…), der Validator der Türen aus einem anderen Paket gerufen.
+func ruftValidatorDerTuerenAuf(body *ast.BlockStmt, validatorName string) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && (sel.Sel.Name == "Struct" || sel.Sel.Name == "Var") {
+			if validator, ok := sel.X.(*ast.SelectorExpr); ok && validator.Sel.Name == validatorName {
+				if paket, ok := validator.X.(*ast.Ident); ok && paket.Name == "tuer" {
+					gefunden = true
+				}
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// ruftHelferAuf: irgendwo im Rumpf steht name(…) — ein Prüf-Helfer im selben Paket
+// (katalog.alleUUIDs).
+func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if c, ok := n.(*ast.CallExpr); ok {
+			if id, ok := c.Fun.(*ast.Ident); ok && id.Name == name {
+				gefunden = true
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// dekodierZiel: Name der Variablen hinter &x im Aufruf eines Dekodierers der Türen
+// (tuer.<Dekodierer>(w, r, &x)) oder in json.NewDecoder(...).Decode(&x); direkt=true für den
+// zweiten Weg. Der Dekodierer der Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn
+// aus api/tuer, das Paket selbst ohne Namen davor.
+func dekodierZiel(call *ast.CallExpr, namen eingabeDerTueren) (string, bool) {
+	var arg ast.Expr
+	direkt := false
+	// Ein roher Leser prüft nichts: Sein Ziel zählt wie ein eigenes json.NewDecoder (direkt).
+	nimm := func(name string) {
+		if _, ok := namen.dekodierer[name]; ok && len(call.Args) == 3 {
+			arg = call.Args[2]
+		} else if namen.roh[name] && len(call.Args) == 3 {
+			arg, direkt = call.Args[2], true
+		}
+	}
+	switch f := call.Fun.(type) {
+	case *ast.Ident:
+		nimm(f.Name)
+	case *ast.SelectorExpr:
+		if _, paket := f.X.(*ast.Ident); paket {
+			nimm(f.Sel.Name)
+			if arg != nil {
+				break
+			}
+		}
+		if inner, ok := f.X.(*ast.CallExpr); ok && f.Sel.Name == "Decode" && len(call.Args) == 1 {
+			if sel, ok := inner.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "NewDecoder" {
+				arg, direkt = call.Args[0], true
+			}
+		}
+	}
+	if u, ok := arg.(*ast.UnaryExpr); ok && u.Op == token.AND {
+		if id, ok := u.X.(*ast.Ident); ok {
+			return id.Name, direkt
+		}
+	}
+	return "", false
+}
+
+// idParameterName: `….Query().Get("…id")` oder `q.Get("…id")` (q aus parameterVariablen) mit
+// festem Namen.
+func idParameterName(call *ast.CallExpr, queryVars map[string]bool) (string, bool) {
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Get" || len(call.Args) != 1 {
+		return "", false
+	}
+	switch x := sel.X.(type) {
+	case *ast.CallExpr:
+		if q, ok := x.Fun.(*ast.SelectorExpr); !ok || q.Sel.Name != "Query" {
+			return "", false
+		}
+	case *ast.Ident:
+		if !queryVars[x.Name] {
+			return "", false
+		}
+	default:
+		return "", false
+	}
+	lit, ok := call.Args[0].(*ast.BasicLit)
+	if !ok {
+		return "", false
+	}
+	name := strings.Trim(lit.Value, `"`)
+	return name, istKennungsName(name)
+}
+
+// istKennungsName: Kennungen heißen auf id oder ids, der Schlüssel gegen Doppelbuchung auf key
+// oder schluessel; alle gehen als UUID in die Datenbank. Ein Schlüssel, der keine UUID ist,
+// gehört mit Grund in uuidEingabenAusnahmen.
+func istKennungsName(name string) bool {
+	n := strings.ToLower(name)
+	return strings.HasSuffix(n, "id") || strings.HasSuffix(n, "ids") ||
+		strings.HasSuffix(n, "key") || strings.HasSuffix(n, "schluessel")
+}
+
+func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besucht map[string]bool,
+	melde func(schluessel, ort string), kennungen *int) {
+	name := funktion
+	var st *ast.StructType
+	switch k := typ.(type) {
+	case *ast.StructType:
+		st = k
+	case *ast.Ident:
+		if besucht[k.Name] || p.typen[k.Name] == nil {
+			return
+		}
+		besucht[k.Name] = true
+		if s, ok := p.typen[k.Name].(*ast.StructType); ok {
+			st, name = s, k.Name
+		} else {
+			pruefeStructFelder(p, paket, funktion, p.typen[k.Name], besucht, melde, kennungen)
+			return
+		}
+	case *ast.ArrayType:
+		pruefeStructFelder(p, paket, funktion, k.Elt, besucht, melde, kennungen)
+		return
+	case *ast.StarExpr:
+		pruefeStructFelder(p, paket, funktion, k.X, besucht, melde, kennungen)
+		return
+	case *ast.SelectorExpr:
+		// Typ aus einem fremden Paket (`repository.EinstellungenPatch`): dort nachschlagen,
+		// der Schlüssel trägt dann dessen Paketnamen.
+		if pkg, ok := k.X.(*ast.Ident); ok && p.alle[pkg.Name] != nil {
+			// Als Ident weiterreichen, damit der Schlüssel den Typnamen trägt (fremd.Anfrage.ID),
+			// nicht den der aufrufenden Funktion.
+			pruefeStructFelder(p.alle[pkg.Name], pkg.Name, funktion, &ast.Ident{Name: k.Sel.Name}, besucht, melde, kennungen)
+		}
+		return
+	}
+	if st == nil {
+		return
+	}
+	for _, feld := range st.Fields.List {
+		tag := reflect.StructTag("")
+		if feld.Tag != nil {
+			tag = reflect.StructTag(strings.Trim(feld.Tag.Value, "`"))
+		}
+		jsonName := strings.Split(tag.Get("json"), ",")[0]
+		validate := tag.Get("validate")
+		if istTextKennung(feld.Type) && istKennungsName(jsonName) {
+			for _, n := range feld.Names {
+				schluessel := fmt.Sprintf("%s.%s.%s", paket, name, n.Name)
+				if _, ausnahme := uuidEingabenAusnahmen[schluessel]; !ausnahme {
+					*kennungen++
+				}
+				if !strings.Contains(validate, "uuid") {
+					melde(schluessel, funktion)
+				} else if istListe(feld.Type) && !strings.Contains(validate, "dive") {
+					melde(schluessel+":ohne dive", funktion)
+				} else if istListe(feld.Type) && !elementIstPflicht(validate) {
+					melde(schluessel+":leeres Element", funktion)
+				}
+			}
+			continue
+		}
+		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein
+		// `[]Eintrag` mit geprüftem `id` im Element, aber ohne `dive` am Feld, ist so ungeprüft
+		// wie ohne Tag.
+		vorher := *kennungen
+		pruefeStructFelder(p, paket, funktion, feld.Type, besucht, melde, kennungen)
+		if istListe(feld.Type) && *kennungen > vorher && !strings.Contains(validate, "dive") {
+			for _, n := range feld.Names {
+				melde(fmt.Sprintf("%s.%s.%s:ohne dive", paket, name, n.Name), funktion)
+			}
+		}
+	}
+}
+
+// elementIstPflicht sagt, ob ein Listen-Tag jedes Element als Pflicht prüft: `required` hinter
+// `dive`. uuid_oder_leer lässt "" durch, für ein optionales Einzelfeld richtig. In einer Liste
+// von Kennungen ist ein leeres Element aber keine Angabe, sondern ein Fehler, und es liefe bis
+// zur Datenbank: 500 statt 400. Das Muster der Geschwister (Eigentum, Standort,
+// Schlagwort-Pflege) ist `dive,required,uuid_oder_leer`.
+func elementIstPflicht(validate string) bool {
+	teile := strings.Split(validate, ",")
+	for i, t := range teile {
+		if t != "dive" {
+			continue
+		}
+		for _, regel := range teile[i+1:] {
+			if regel == "required" {
+				return true
+			}
+		}
+		return false
+	}
+	return false
+}
+
+func istListe(typ ast.Expr) bool {
+	if s, ok := typ.(*ast.StarExpr); ok {
+		typ = s.X
+	}
+	_, ok := typ.(*ast.ArrayType)
+	return ok
+}
+
+func istTextKennung(typ ast.Expr) bool {
+	switch k := typ.(type) {
+	case *ast.Ident:
+		return k.Name == "string"
+	case *ast.StarExpr:
+		return istTextKennung(k.X)
+	case *ast.ArrayType:
+		return istTextKennung(k.Elt)
+	}
+	return false
+}
+
+func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
+	namen := pruefeEingabeDerTueren(t)
+	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api"), namen)
+	if len(gesehen) < 5 {
+		t.Fatalf("nur %d Kennungs-Eingaben gefunden — der Sammler greift vermutlich ins Leere", len(gesehen))
+	}
+	if len(maengel) > 0 {
+		t.Errorf("Kennung kommt ungeprüft herein und endet bei einem Nicht-UUID-Wert als 500 (22P02):\n  %s\n"+
+			"Fix: validate-Tag mit uuid_oder_leer bzw. tuer.LeseUUIDParameter — oder Eintrag in uuidEingabenAusnahmen mit Grund.",
+			strings.Join(maengel, "\n  "))
+	}
+	for schluessel := range uuidEingabenAusnahmen {
+		if !gesehen[schluessel] {
+			t.Errorf("%s steht in uuidEingabenAusnahmen, kommt im Baum aber nicht mehr vor — streichen.", schluessel)
+		}
+	}
+}
+
+// prueftLocker: uuid.Validate oder ein uuid.Parse, dessen Ergebnis verworfen wird. Beide sagen
+// nur ja oder nein, und weiter geht der Rohtext. google/uuid nimmt aber Formen an, die Postgres
+// abweist (`urn:uuid:…`): Die Prüfung ist bestanden, die Datenbank meldet 22P02, der Aufrufer
+// bekommt 500. Ein uuid.Parse, dessen Wert weiterverwendet wird, ist keine Lücke: uuid.UUID
+// schreibt sich kanonisch.
+func prueftLocker(body *ast.BlockStmt) bool {
+	gefunden := ruftAuf(body, "uuid", "Validate")
+	ast.Inspect(body, func(n ast.Node) bool {
+		zuweisung, ok := n.(*ast.AssignStmt)
+		if !ok || len(zuweisung.Lhs) == 0 || len(zuweisung.Rhs) != 1 {
+			return !gefunden
+		}
+		if ziel, ok := zuweisung.Lhs[0].(*ast.Ident); !ok || ziel.Name != "_" {
+			return !gefunden
+		}
+		if aufruf, ok := zuweisung.Rhs[0].(*ast.CallExpr); ok {
+			if sel, ok := aufruf.Fun.(*ast.SelectorExpr); ok {
+				if paket, ok := sel.X.(*ast.Ident); ok && paket.Name == "uuid" && sel.Sel.Name == "Parse" {
+					gefunden = true
+				}
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// pfadSelbstZerlegt: Die Tür holt ein Segment aus r.URL.Path per strings.Split & Co. statt über
+// einen Platzhalter ({id}) und PathValue. Ein solches Segment sieht weder uuidPfadMiddleware (sie
+// liest nur Platzhalter) noch der Rest dieses Detektors (Query und Rumpf); ein kaputtes Segment
+// käme als 500 zurück.
+func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		aufruf, ok := n.(*ast.CallExpr)
+		if !ok {
+			return !gefunden
+		}
+		sel, ok := aufruf.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return !gefunden
+		}
+		if paket, ok := sel.X.(*ast.Ident); !ok || paket.Name != "strings" {
+			return !gefunden
+		}
+		switch sel.Sel.Name {
+		case "Split", "SplitN", "SplitAfter", "SplitAfterN", "Fields", "Cut":
+		default:
+			return !gefunden
+		}
+		for _, arg := range aufruf.Args {
+			ast.Inspect(arg, func(m ast.Node) bool {
+				if pfad, ok := m.(*ast.SelectorExpr); ok && (pfad.Sel.Name == "Path" || pfad.Sel.Name == "RawPath") {
+					if url, ok := pfad.X.(*ast.SelectorExpr); ok && url.Sel.Name == "URL" {
+						gefunden = true
+					}
+				}
+				return !gefunden
+			})
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
+// Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
+func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
+	// LESE, LESESTRENG und VALIDATOR stehen für die Namen, die ladeEingabeDerTueren in api/tuer
+	// findet; die Probe ruft die Türen so, wie sie heute heißen.
+	quelle := `package p
+type ohneTag struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+type mitTag struct { SessionID string ` + "`json:\"session_id\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+type liste struct { IDs []string ` + "`json:\"exemplar_ids\"`" + ` }
+type kein struct { Name string ` + "`json:\"name\"`" + ` }
+func aTag(w, r any) { var req ohneTag; LESE(w, r, &req) }
+func bSauber(w, r any) { var req mitTag; LESE(w, r, &req) }
+func cQuery(r any) { _ = r.URL.Query().Get("titel_id") }
+func dDirekt(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req) }
+func eDirektGeprueft(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); kennung.IstUUID(req.IDs[0]) }
+func fListe(w, r any) { var req liste; LESE(w, r, &req) }
+func hHelfer(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); alleUUIDs(req.IDs) }
+func gKeine(w, r any) { var req kein; LESE(w, r, &req) }
+func iLocker(s string) bool { return uuid.Validate(s) == nil }
+func jParseVerworfen(s string) bool { if _, err := uuid.Parse(s); err != nil { return false }; return true }
+func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String() }
+func lPfad(r any) string { teile := strings.Split(strings.Trim(r.URL.Path, "/"), "/"); return teile[2] }
+func mPlatzhalter(r any) string { return r.PathValue("id") }
+func nPfadOhneZerlegen(r any) string { return strings.TrimPrefix(r.URL.Path, "/") }
+type ohneTag2 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+type eintrag struct { ID string ` + "`json:\"id\" validate:\"uuid_oder_leer\"`" + ` }
+type stapel struct { Eintraege []eintrag ` + "`json:\"eintraege\"`" + ` }
+type stapelDive struct { Eintraege []eintrag ` + "`json:\"eintraege\" validate:\"dive\"`" + ` }
+type listeOhneDive struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+type listeLeeresElement struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,uuid_oder_leer\"`" + ` }
+type listeSauber struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,required,uuid_oder_leer\"`" + ` }
+func oKurz(w, r any) { req := ohneTag2{}; LESE(w, r, &req) }
+func pQueryVar(r any) { q := r.URL.Query(); _ = q.Get("schueler_id") }
+func qStapel(w, r any) { var req stapel; LESE(w, r, &req) }
+func rStapelDive(w, r any) { var req stapelDive; LESE(w, r, &req) }
+func sListeOhneDive(w, r any) { var req listeOhneDive; LESE(w, r, &req) }
+func tFremd(w, r any) { var req fremd.Anfrage; LESE(w, r, &req) }
+func uListeLeer(w, r any) { var req listeLeeresElement; LESE(w, r, &req) }
+func vListeSauber(w, r any) { var req listeSauber; LESE(w, r, &req) }
+type ohneTag3 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+type ohneTag4 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+func wTuer(w, r any) { var req ohneTag3; tuer.LESE(w, r, &req) }
+func xTuerStreng(w, r any) { var req ohneTag4; tuer.LESESTRENG(w, r, &req) }
+func yTuerSauber(w, r any) { var req mitTag; tuer.LESE(w, r, &req) }
+func zDirektTuerValidator(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req); tuer.VALIDATOR.Struct(req) }
+type schluesselOhneTag struct { Schluessel string ` + "`json:\"idempotency_key\"`" + ` }
+type schluesselMitTag struct { Schluessel string ` + "`json:\"idempotency_key\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+func aaSchluessel(w, r any) { var req schluesselOhneTag; LESE(w, r, &req) }
+func abSchluesselSauber(w, r any) { var req schluesselMitTag; LESE(w, r, &req) }
+type ohneTag5 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+func acRumpf(w, r any) { var req ohneTag5; tuer.ROH(w, r, &req) }
+func adRumpfGeprueft(w, r any) { var req liste; tuer.ROH(w, r, &req); alleUUIDs(req.IDs) }
+`
+	namen := pruefeEingabeDerTueren(t)
+	var lese, leseStreng string
+	for name, streng := range namen.dekodierer {
+		if streng {
+			leseStreng = name
+		} else {
+			lese = name
+		}
+	}
+	var roh string
+	for name := range namen.roh {
+		roh = name
+	}
+	quelle = strings.NewReplacer("LESESTRENG", leseStreng, "LESE", lese, "ROH", roh, "VALIDATOR", namen.validator).Replace(quelle)
+	fremdQuelle := `package fremd
+type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
+`
+	datei, err := parser.ParseFile(token.NewFileSet(), "p/probe.go", quelle, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fremdDatei, err := parser.ParseFile(token.NewFileSet(), "fremd/probe.go", fremdQuelle, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := &uuidPaket{typen: map[string]ast.Expr{}}
+	nimmUUIDDatei(p, datei)
+	fremd := &uuidPaket{typen: map[string]ast.Expr{}}
+	nimmUUIDDatei(fremd, fremdDatei)
+	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd}, namen)
+	// Dazu die Formen, die ein engerer Detektor übersähe: Kurzform `req := T{}` (oKurz),
+	// Query-Variable (pQueryVar), Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne
+	// `dive` (sListeOhneDive), Typ aus fremdem Paket (tFremd); rStapelDive ist die saubere
+	// Gegenprobe. Kennungsliste mit `dive`, aber ohne `required` je Element (uListeLeer);
+	// vListeSauber ist ihre Gegenprobe. Der Dekodierer hinter dem Paketnamen (wTuer,
+	// xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die Gegenproben,
+	// die zweite für den Validator der Türen nach einem eigenen Dekodieren. Ein Schlüssel gegen
+	// Doppelbuchung heißt auf key und geht ebenfalls als UUID in die Datenbank (aaSchluessel);
+	// abSchluesselSauber ist seine Gegenprobe. Der rohe Leser der Türen (tuer.DekodiereRumpf)
+	// prüft nichts und zählt wie ein eigenes Dekodieren (acRumpf); adRumpfGeprueft prüft selbst.
+	erwartet := []string{
+		"fremd.Anfrage.ID (tFremd)",
+		"p.liste.IDs (fListe)",
+		"p.listeLeeresElement.IDs:leeres Element (uListeLeer)",
+		"p.listeOhneDive.IDs:ohne dive (sListeOhneDive)",
+		"p.ohneTag.SessionID (aTag)",
+		"p.ohneTag2.SessionID (oKurz)",
+		"p.ohneTag3.SessionID (wTuer)",
+		"p.ohneTag4.SessionID (xTuerStreng)",
+		"p.ohneTag5.SessionID (acRumpf)",
+		"p.schluesselOhneTag.Schluessel (aaSchluessel)",
+		"p.stapel.Eintraege:ohne dive (qStapel)",
+		"p:acRumpf:ohne Validierung (acRumpf)",
+		"p:cQuery:query:titel_id (cQuery)",
+		"p:dDirekt:ohne Validierung (dDirekt)",
+		"p:iLocker:lockere UUID-Prüfung (iLocker)",
+		"p:jParseVerworfen:lockere UUID-Prüfung (jParseVerworfen)",
+		"p:lPfad:Pfad selbst zerlegt (lPfad)",
+		"p:pQueryVar:query:schueler_id (pQueryVar)",
+	}
+	if strings.Join(maengel, "|") != strings.Join(erwartet, "|") {
+		t.Errorf("Detektor meldet\n  %s\nerwartet\n  %s", strings.Join(maengel, "\n  "), strings.Join(erwartet, "\n  "))
+	}
+}
