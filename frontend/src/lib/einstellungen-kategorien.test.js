@@ -29,7 +29,7 @@ const SHELL = join(srcRoot, 'lib/components/einstellungen/KategorieDetail.svelte
 // Kategorie zugeordnet ist. Ein Feld, das keine Kategorie schickt, wäre also unsichtbar
 // entstanden, und der Server hätte es (seit dem strengen Decoder) beim ersten Versuch mit 400
 // abgelehnt. Genau die Bauform, gegen die dieses Gate antritt: zwei Wahrheitsquellen.
-const PATCH_GO = join(srcRoot, '../../repository/einstellungen_patch.go');
+const PATCH_GO = join(srcRoot, '../../internal/repository/einstellungen_patch.go');
 const ALLE_SCHLUESSEL = [
 	...readFileSync(PATCH_GO, 'utf8').matchAll(/json:"([a-z_0-9]+)(?:,[^"]*)?"/g)
 ].map((m) => m[1]);

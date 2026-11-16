@@ -27,7 +27,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 const libDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(libDir, '..', '..', '..');
 
-const goQuelle = readFileSync(join(repoRoot, 'pdf', 'etikett_formate.go'), 'utf8');
+const goQuelle = readFileSync(join(repoRoot, 'internal', 'pdf', 'etikett_formate.go'), 'utf8');
 
 /**
  * Liest die Formate aus internal/pdf/etikett_formate.go: ID, Spalten und Zeilen.
