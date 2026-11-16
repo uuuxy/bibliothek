@@ -109,6 +109,10 @@ func TestVersendeAbgaengerKontoauszuege_EinPDFJeSchueler(t *testing.T) {
 	if !strings.Contains(mails[0].Betreff, "5a") {
 		t.Fatalf("Betreff nennt die Klasse nicht: %q", mails[0].Betreff)
 	}
+	// Die Art wählt den Absender; ohne sie ginge der Auszug trotz Haken über den Postausgang.
+	if mails[0].Art != mailservice.MailartAbgaenger {
+		t.Errorf("Art = %q, erwartet %q", mails[0].Art, mailservice.MailartAbgaenger)
+	}
 }
 
 // Klassen ohne Adresse oder ohne offene Ausleihen bekommen keine Mail.

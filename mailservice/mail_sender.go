@@ -27,19 +27,39 @@ type Nachricht struct {
 	Betreff  string
 	Text     string
 	Anhaenge []Anhang
-	// Postfach nennt den Absender; ohne Angabe ist es der Postausgang der Einstellungen.
-	Postfach Postfach
+	// Art sagt, welche Mail das ist. Über welchen Absender sie hinausgeht, legen die
+	// Einstellungen fest (SMTPKonfig.postfachFuer); ohne Art geht sie über den Postausgang.
+	Art Mailart
 }
+
+// Mailart ist eine Art von Mail, die sich über den zweiten Absender schicken lässt. Die Werte
+// stehen so in mail_settings_config.portal_absender_fuer, dessen Bedingung sie aufzählt.
+type Mailart string
+
+const (
+	// MailartPortal sind die Mails an Lehrkräfte aus Mein Portal: Anliegen erledigt, Klassensatz
+	// bereit.
+	MailartPortal Mailart = "portal"
+	// MailartMahnliste sind die Mahnlisten an die Klassenleitungen.
+	MailartMahnliste Mailart = "mahnliste"
+	// MailartAbgaenger sind die Kontoauszüge der Abgänger an die Klassenleitungen.
+	MailartAbgaenger Mailart = "abgaenger"
+	// MailartBestellung ist die Bestellmail an den Händler.
+	MailartBestellung Mailart = "bestellung"
+)
+
+// Mailarten sind alle Arten in der Reihenfolge, in der die Einstellungen sie zeigen.
+var Mailarten = []Mailart{MailartPortal, MailartMahnliste, MailartAbgaenger, MailartBestellung}
 
 // Postfach sagt, unter welchem Absender eine Mail hinausgeht.
 type Postfach int
 
 const (
-	// PostfachAllgemein ist der Postausgang der Einstellungen. Ihn nimmt jede Mail, die nichts
-	// anderes sagt, die Bestellmail an den Händler eingeschlossen.
+	// PostfachAllgemein ist der Postausgang der Einstellungen. Ihn nimmt jede Mail, deren Art die
+	// Einstellungen nicht dem zweiten Absender geben.
 	PostfachAllgemein Postfach = iota
-	// PostfachPortal ist der Absender der Mails an Lehrkräfte aus Mein Portal. Ohne eigene
-	// Adresse in den Einstellungen gehen sie über den Postausgang wie alle anderen.
+	// PostfachPortal ist der zweite Absender (Spalten portal_*). Ohne eigene Adresse in den
+	// Einstellungen gehen auch seine Mails über den Postausgang.
 	PostfachPortal
 )
 
@@ -97,7 +117,7 @@ func (p *Postausgang) Sende(ctx context.Context, nachricht Nachricht) error {
 	if !konfig.istKonfiguriert() {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
-	konfig, err = konfig.fuer(nachricht.Postfach)
+	konfig, err = konfig.fuer(konfig.postfachFuer(nachricht.Art))
 	if err != nil {
 		return err
 	}

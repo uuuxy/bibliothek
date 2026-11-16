@@ -9,23 +9,23 @@ import (
 	"bibliothek/mailservice"
 )
 
-// postfachZeuge nimmt jede Mail an und meldet, unter welchem Postfach sie hinausgehen sollte.
+// postfachZeuge nimmt jede Mail an und meldet ihre Art; den Absender wählt der Postausgang danach.
 type postfachZeuge struct {
-	postfaecher chan<- mailservice.Postfach
+	postfaecher chan<- mailservice.Mailart
 }
 
 func (z postfachZeuge) Sende(_ context.Context, m mailservice.Nachricht) error {
-	z.postfaecher <- m.Postfach
+	z.postfaecher <- m.Art
 	return nil
 }
 
 func (postfachZeuge) IstKonfiguriert(context.Context) bool { return true }
 
-// Die Bestellmail an den Händler geht über den Postausgang der Einstellungen. Den Absender für
-// Mein Portal nehmen nur die Mails an Lehrkräfte; eine Bestellung darf nie unter ihm hinausgehen.
-func TestBestellmail_GehtUeberDenPostausgang(t *testing.T) {
+// Die Bestellmail an den Händler trägt die Art Bestellung: Über den zweiten Absender geht sie nur,
+// wenn die Einstellungen ihn dafür anhaken (mailservice.SMTPKonfig.postfachFuer).
+func TestBestellmail_TraegtDieArtBestellung(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "postfach")
-	postfaecher := make(chan mailservice.Postfach, 4)
+	postfaecher := make(chan mailservice.Mailart, 4)
 	l.srv.Mail = postfachZeuge{postfaecher: postfaecher}
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Postfach", false)
@@ -33,8 +33,8 @@ func TestBestellmail_GehtUeberDenPostausgang(t *testing.T) {
 
 	select {
 	case p := <-postfaecher:
-		if p != mailservice.PostfachAllgemein {
-			t.Errorf("Bestellmail unter Postfach %d, erwartet den Postausgang (PostfachAllgemein)", p)
+		if p != mailservice.MailartBestellung {
+			t.Errorf("Bestellmail mit Art %q, erwartet %q", p, mailservice.MailartBestellung)
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("keine Bestellmail verschickt")

@@ -4,7 +4,7 @@
 	 * Verschickt je gespeichertem Absender eine Test-E-Mail und zeigt, was daraus wurde.
 	 *
 	 * @prop {string} vorgabe - Empfänger, der zu Beginn im Feld steht (der Absender).
-	 * @prop {boolean} mitPortal - Ein Absender für Mein Portal ist gespeichert; er wird mitgeprüft.
+	 * @prop {boolean} mitPortal - Ein zweiter Absender ist gespeichert; er wird mitgeprüft.
 	 */
 	import { untrack } from 'svelte';
 	import { apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
@@ -50,7 +50,7 @@
 		testing = true;
 		ergebnisse = [];
 		await teste('Postausgang', { to: testEmail });
-		if (mitPortal) await teste('Absender für Mein Portal', { to: testEmail, postfach: 'portal' });
+		if (mitPortal) await teste('Zweiter Absender', { to: testEmail, postfach: 'portal' });
 		testing = false;
 	}
 </script>

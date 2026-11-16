@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/internal/tuertest"
+	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -86,6 +87,10 @@ func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 
 	if mail.An != "leitung7b@schule.invalid" {
 		t.Errorf("Empfänger = %q, erwartet die Adresse der Klassenleitung", mail.An)
+	}
+	// Die Art wählt den Absender; ohne sie ginge die Liste trotz Haken über den Postausgang.
+	if mail.Art != mailservice.MailartMahnliste {
+		t.Errorf("Art = %q, erwartet %q", mail.Art, mailservice.MailartMahnliste)
 	}
 	if !einerDerTage(mail.Betreff, "Mahnliste Schulbibliothek – Klasse 07B – %s", "02.01.2006") {
 		t.Errorf("Betreff = %q, erwartet Klasse und heutigen Tag in der Form TT.MM.JJJJ", mail.Betreff)

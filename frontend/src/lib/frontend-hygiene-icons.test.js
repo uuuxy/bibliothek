@@ -134,7 +134,11 @@ describe('Symbol-Hygiene', () => {
 			'LucideUnlock'
 		]);
 		expect(ungelesen).toBe(0);
-		expect(veraltet.get('AlertTriangle')).toBe('TriangleAlert');
+		// Welchen Namen der Hinweis an die Stelle setzt, legt Lucide fest und ändert es zwischen
+		// Fassungen; geprüft wird, dass er gelesen wird und selbst nicht veraltet ist.
+		const ersatz = veraltet.get('AlertTriangle') ?? '';
+		expect(ersatz).toMatch(/^[A-Z]\w+$/);
+		expect(veraltet.has(ersatz)).toBe(false);
 
 		for (const form of [
 			"import Trash2 from '@lucide/svelte/icons/trash-2';",

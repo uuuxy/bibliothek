@@ -290,6 +290,7 @@ func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailse
 		Betreff:  fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
 		Text:     text,
 		Anhaenge: anhaenge,
+		Art:      mailservice.MailartAbgaenger,
 	}
 }
 

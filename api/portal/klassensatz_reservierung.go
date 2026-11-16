@@ -202,10 +202,10 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
 			mailStatus = mailStatusVersendet
 			if err := t.Post().Sende(r.Context(), mailservice.Nachricht{
-				An:       *erledigt.AnfragendeMail,
-				Betreff:  fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
-				Text:     klassensatzBereitText(erledigt),
-				Postfach: mailservice.PostfachPortal,
+				An:      *erledigt.AnfragendeMail,
+				Betreff: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
+				Text:    klassensatzBereitText(erledigt),
+				Art:     mailservice.MailartPortal,
 			}); err != nil {
 				slog.Error("Klassensatz-Bereit-Mail fehlgeschlagen", "empfaenger", *erledigt.AnfragendeMail, "fehler", err)
 				mailStatus = mailStatusFehlgeschlagen

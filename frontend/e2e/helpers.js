@@ -552,22 +552,35 @@ export async function pruefeFeldreihen(page, kontext) {
 	const anzahl = await felder.count();
 	expect(anzahl, `${kontext}: keine Felder gefunden — die Prüfung misst nichts`).toBeGreaterThan(1);
 
-	/** @type {{ label: string, y: number }[]} */
+	/** @type {{ label: string, y: number, kaestchen: boolean }[]} */
 	const gemessen = [];
 	for (let i = 0; i < anzahl; i++) {
 		const box = await felder.nth(i).boundingBox();
 		if (!box) continue;
-		gemessen.push({
-			label: await felder
-				.nth(i)
-				.evaluate((el) => document.querySelector(`label[for="${el.id}"]`)?.textContent ?? '?'),
-			y: Math.round(box.y)
-		});
+		const { label, kaestchen } = await felder.nth(i).evaluate((el) => ({
+			label:
+				(
+					el.closest('label') ?? document.querySelector(`label[for="${el.id}"]`)
+				)?.textContent?.trim() ?? '?',
+			kaestchen: el.getAttribute('type') === 'checkbox' || el.getAttribute('type') === 'radio'
+		}));
+		gemessen.push({ label, y: Math.round(box.y), kaestchen });
 	}
 
 	for (const a of gemessen) {
 		for (const b of gemessen) {
 			const abstand = Math.abs(a.y - b.y);
+			// Kästchen stehen in Listen untereinander, nicht in Reihen eines Rasters. Für sie gilt
+			// die Trefferfläche: in einer Reihe oder mindestens 48 px auseinander (M3: 48 × 48 px).
+			if (a.kaestchen || b.kaestchen) {
+				expect(
+					abstand === 0 || abstand >= 48,
+					`${kontext}: „${a.label}" (y=${a.y}) und „${b.label}" (y=${b.y}) stehen ` +
+						`${abstand} px auseinander — ein Kästchen braucht 48 px, sonst überlappen ` +
+						`sich die Trefferflächen.`
+				).toBe(true);
+				continue;
+			}
 			expect(
 				abstand === 0 || abstand > 60,
 				`${kontext}: „${a.label}" (y=${a.y}) und „${b.label}" (y=${b.y}) stehen ` +

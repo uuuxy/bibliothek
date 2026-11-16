@@ -57,7 +57,7 @@ test('Test-Mail: unbrauchbarer Empfänger wird abgewiesen, ohne SMTP zu bemühen
 	expect(schmuggel.status(), 'Bcc-Schmuggel im Empfänger').toBe(400);
 
 	// Ein unbekannter Absender ist ebenso ein Eingabefehler: Der Testversand prüft nur den
-	// Postausgang oder den Absender für Mein Portal.
+	// Postausgang oder den zweiten Absender.
 	const fremd = await apiPost(page, '/api/admin/settings/mail/test', {
 		to: 'admin@schule.de',
 		postfach: 'haendler'
@@ -65,15 +65,23 @@ test('Test-Mail: unbrauchbarer Empfänger wird abgewiesen, ohne SMTP zu bemühen
 	expect(fremd.status(), 'unbekannter Absender').toBe(400);
 });
 
-// Der Absender für Mein Portal kommt über den echten Router mit, ohne Passwort. Gelesen wird
-// nur: Die Zeile des Stacks zeigt auf den Schulserver, ein Speichern gehört nicht in die Suite.
-test('Mail-Einstellungen nennen den Absender für Mein Portal', async ({ page }) => {
+// Der zweite Absender kommt über den echten Router mit, ohne Passwort, samt den Arten von Mails,
+// die sich ihm geben lassen. Gelesen wird nur: Die Zeile des Stacks zeigt auf den Schulserver, ein
+// Speichern gehört nicht in die Suite.
+test('Mail-Einstellungen nennen den zweiten Absender und seine Arten', async ({ page }) => {
 	await uiLogin(page);
 
 	const res = await page.request.get('/api/admin/settings/mail');
 	expect(res.status()).toBe(200);
 	const daten = await res.json();
-	expect(Object.keys(daten.portal).sort()).toEqual(['has_password', 'sender_email', 'smtp_user']);
+	expect(Object.keys(daten.portal).sort()).toEqual([
+		'arten',
+		'fuer',
+		'has_password',
+		'sender_email',
+		'smtp_user'
+	]);
+	expect(daten.portal.arten).toEqual(['portal', 'mahnliste', 'abgaenger', 'bestellung']);
 });
 
 // Der Testversand verschickt Mail über den Schul-SMTP — er gehört keinem Konto in

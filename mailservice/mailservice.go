@@ -163,7 +163,7 @@ func SendeTestmail(ctx context.Context, pool db.Pool, an string, postfach Postfa
 	betreff := "Test-E-Mail der Schulbibliothek"
 	text := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
 	if postfach == PostfachPortal {
-		betreff = "Test-E-Mail der Schulbibliothek (Absender für Mein Portal)"
+		betreff = "Test-E-Mail der Schulbibliothek (zweiter Absender)"
 	}
 
 	rohtext, err := baueTextNachricht(absender, an, betreff, text)

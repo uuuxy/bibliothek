@@ -96,13 +96,13 @@ func TestAnliegenErledigen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		postfach := mailservice.Postfach(-1)
-		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { postfach = m.Postfach; return nil }}
+		var art mailservice.Mailart
+		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { art = m.Art; return nil }}
 		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
-		if postfach != mailservice.PostfachPortal {
-			t.Errorf("Postfach %d — die Mail an die Lehrkraft geht unter dem Absender für Mein Portal hinaus", postfach)
+		if art != mailservice.MailartPortal {
+			t.Errorf("Art %q — die Mail an die Lehrkraft ist eine Mail aus Mein Portal", art)
 		}
 	})
 
@@ -210,13 +210,13 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 	})
 
 	t.Run("Versand ok → versendet", func(t *testing.T) {
-		postfach := mailservice.Postfach(-1)
-		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { postfach = m.Postfach; return nil }}
+		var art mailservice.Mailart
+		srv.Mail = mailAttrappe{sende: func(m mailservice.Nachricht) error { art = m.Art; return nil }}
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
 		}
-		if postfach != mailservice.PostfachPortal {
-			t.Errorf("Postfach %d — die Bereit-Mail geht unter dem Absender für Mein Portal hinaus", postfach)
+		if art != mailservice.MailartPortal {
+			t.Errorf("Art %q — die Bereit-Mail ist eine Mail aus Mein Portal", art)
 		}
 	})
 

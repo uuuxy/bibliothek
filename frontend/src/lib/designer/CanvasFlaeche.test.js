@@ -101,6 +101,13 @@ describe('CanvasFlaeche: Einrasten an der Linie', () => {
 	}
 	const linie = (/** @type {HTMLElement} */ c) =>
 		/** @type {HTMLElement} */ (c.querySelector('[data-sicherheitsrand]'));
+	// Die vier Werte von inset in der Reihenfolge oben, rechts, unten, links, gleich in welcher
+	// Kurzform der Stil sie schreibt: Gleiche Werte rechts und links dürfen zu drei Werten werden.
+	const inset = (/** @type {HTMLElement} */ c) => {
+		const werte = /inset:\s*([^;]+)/.exec(linie(c).getAttribute('style') ?? '')?.[1];
+		const [oben, rechts = oben, unten = oben, links = rechts] = werte?.trim().split(/\s+/) ?? [];
+		return [oben, rechts, unten, links];
+	};
 	/** @param {number} x  Zeigerweg in Pixeln */
 	const ziehe = async (x) => {
 		window.dispatchEvent(new MouseEvent('pointermove', { clientX: x, clientY: 0 }));
@@ -144,10 +151,10 @@ describe('CanvasFlaeche: Einrasten an der Linie', () => {
 		const { container } = zeichne({ ...el, zIndex: 1, show: true, proportional: true });
 		await ziehe(-142); // 5,8 mm: 0,5 mm vor der Grenze der Striche
 		expect(/** @type {any} */ (idStore.front.elements[0]).x).toBe(6.3);
-		expect(linie(container).getAttribute('style')).toContain('inset: 6.3mm 6.3mm 3.3mm 6.3mm');
+		expect(inset(container)).toEqual(['6.3mm', '6.3mm', '3.3mm', '6.3mm']);
 		window.dispatchEvent(new MouseEvent('pointerup'));
 		await tick();
-		expect(linie(container).getAttribute('style')).toContain('inset: 3mm');
+		expect(inset(container)).toEqual(['3mm', '3mm', '3mm', '3mm']);
 		vi.restoreAllMocks();
 	});
 });

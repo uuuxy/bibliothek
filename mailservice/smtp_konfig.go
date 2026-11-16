@@ -36,17 +36,27 @@ type SMTPKonfig struct {
 	Absender string
 	// portal ersetzt für PostfachPortal Absender und Zugang; nil heißt, es gibt keinen eigenen.
 	portal *portalAbsender
+	// portalFuer sind die Arten von Mails, die über den zweiten Absender gehen.
+	portalFuer map[Mailart]bool
 }
 
-// portalAbsender ist der Absender der Mails aus Mein Portal, wie die Einstellungen ihn nennen.
+// portalAbsender ist der zweite Absender, wie die Einstellungen ihn nennen.
 type portalAbsender struct {
 	absender string
 	// benutzer und passwort sind leer, wenn der Zugang des Postausgangs auch für diese Adresse gilt.
 	benutzer string
 	passwort string
 	// fehler hält ein Passwort fest, das sich nicht entschlüsseln ließ. Es hält nur die Mails
-	// dieses Absenders auf; die Bestellmail an den Händler geht weiter über den Postausgang.
+	// dieses Absenders auf; die übrigen gehen weiter über den Postausgang.
 	fehler error
+}
+
+// postfachFuer sagt, über welchen Absender eine Mail dieser Art hinausgeht.
+func (k SMTPKonfig) postfachFuer(art Mailart) Postfach {
+	if k.portalFuer[art] {
+		return PostfachPortal
+	}
+	return PostfachAllgemein
 }
 
 // fuer liefert die Konfiguration, mit der eine Mail des Postfachs hinausgeht. Server und Port
@@ -157,11 +167,15 @@ func ladeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
 		k.Absender = absenderVorgabe
 	}
 	k.portal = lesePortalAbsender(gespeichert)
+	k.portalFuer = map[Mailart]bool{}
+	for _, art := range gespeichert.PortalAbsenderFuer {
+		k.portalFuer[Mailart(art)] = true
+	}
 	return k, nil
 }
 
-// lesePortalAbsender liest den Absender der Mails aus Mein Portal aus der gespeicherten Zeile.
-// Ohne Adresse gibt es keinen, und diese Mails gehen über den Postausgang wie bisher.
+// lesePortalAbsender liest den zweiten Absender aus der gespeicherten Zeile. Ohne Adresse gibt
+// es keinen, und alle Mails gehen über den Postausgang.
 func lesePortalAbsender(gespeichert *repository.MailEinstellungen) *portalAbsender {
 	adresse := strings.TrimSpace(gespeichert.PortalAbsenderEmail)
 	if adresse == "" {
@@ -173,7 +187,7 @@ func lesePortalAbsender(gespeichert *repository.MailEinstellungen) *portalAbsend
 	}
 	entschluesselt, err := crypto.Entschluessele(gespeichert.PortalSMTPPasswortVerschluesselt)
 	if err != nil {
-		p.fehler = fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts für Mein Portal: %w", err)
+		p.fehler = fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts des zweiten Absenders: %w", err)
 		return p
 	}
 	p.passwort = string(entschluesselt)

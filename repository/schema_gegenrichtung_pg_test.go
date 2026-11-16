@@ -367,6 +367,9 @@ var checkBedingungenBestand = []string{
 	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",
 	"mail_settings_config_single_row_chk",
+	// Migration 177: Der zweite Absender nimmt nur Arten von Mails, die mailservice.Mailarten
+	// kennt. Die Tür lehnt eine andere Art schon ab (400); die Datenbank ist die zweite.
+	"mail_settings_config_absender_fuer_chk",
 	// Migration 146: Eine ausgeschiedene Ausweisnummer ist größer als 0.
 	// Frage 12: Einziger Schreiber ist der Trigger trg_leser_ausweisnummer_ausgeschieden, und
 	// er lässt „A-0" aus, statt an der Bedingung zu scheitern — sonst bräche das Löschen eines

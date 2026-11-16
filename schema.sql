@@ -1988,7 +1988,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('173_bestellschwellen_entfallen.sql'),
 ('174_lmf_stichtag_entfaellt.sql'),
 ('175_absender_fuer_mein_portal.sql'),
-('176_webmail_fuer_adressabgleich.sql')
+('176_webmail_fuer_adressabgleich.sql'),
+('177_zweiter_absender_je_mailart.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2202,15 +2203,19 @@ CREATE TABLE IF NOT EXISTS mail_settings_config (
     smtp_user VARCHAR(255) NOT NULL DEFAULT '',
     smtp_password_encrypted BYTEA,
     sender_email VARCHAR(255) NOT NULL DEFAULT 'noreply@bibliothek-schule.de',
-    -- Migration 175: eigener Absender der Mails aus Mein Portal; leer gilt der Postausgang darüber.
+    -- Migration 175: zweiter Absender neben dem Postausgang; leer gilt der Postausgang darüber.
     portal_absender_email VARCHAR(255) NOT NULL DEFAULT '',
     portal_smtp_benutzer VARCHAR(255) NOT NULL DEFAULT '',
     portal_smtp_passwort_verschluesselt BYTEA,
+    -- Migration 177: die Arten von Mails, die über den zweiten Absender gehen (mailservice.Mailart).
+    portal_absender_fuer TEXT[] NOT NULL DEFAULT '{portal}',
     -- Migration 176: Zugang zum Webmail für den Adressabgleich; leer gibt es keinen Abgleich.
     webmail_adresse VARCHAR(255) NOT NULL DEFAULT '',
     webmail_benutzer VARCHAR(255) NOT NULL DEFAULT '',
     webmail_passwort_verschluesselt BYTEA,
-    CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1)
+    CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1),
+    CONSTRAINT mail_settings_config_absender_fuer_chk
+        CHECK (portal_absender_fuer <@ ARRAY['portal', 'mahnliste', 'abgaenger', 'bestellung']::TEXT[])
 );
 INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 

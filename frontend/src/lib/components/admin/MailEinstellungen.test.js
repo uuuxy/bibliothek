@@ -74,9 +74,9 @@ describe('MailEinstellungen: Verbindung testen', () => {
 	});
 });
 
-// Der Absender für Mein Portal: Die Maske lädt und speichert ihn mit dem Postausgang, und der
-// Testversand prüft ihn mit, sobald er gespeichert ist.
-describe('MailEinstellungen: Absender für Mein Portal', () => {
+// Der zweite Absender: Die Maske lädt und speichert ihn samt den angehakten Arten von Mails mit dem
+// Postausgang, und der Testversand prüft ihn mit, sobald er gespeichert ist.
+describe('MailEinstellungen: zweiter Absender', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	const mitPortal = {
@@ -85,25 +85,43 @@ describe('MailEinstellungen: Absender für Mein Portal', () => {
 		smtp_user: 'bibliothek',
 		sender_email: 'bibliothek@schule.example',
 		has_password: true,
-		portal: { sender_email: 'anliegen@schule.example', smtp_user: '', has_password: false }
+		portal: {
+			sender_email: 'anliegen@schule.example',
+			smtp_user: '',
+			has_password: false,
+			fuer: ['portal'],
+			arten: ['portal', 'mahnliste', 'abgaenger', 'bestellung']
+		}
 	};
 
-	it('speichert den Absender für Mein Portal mit dem Postausgang', async () => {
+	it('speichert den zweiten Absender samt den angehakten Arten mit dem Postausgang', async () => {
 		vi.mocked(apiGet).mockResolvedValueOnce(mitPortal);
 		vi.mocked(apiPut).mockResolvedValueOnce({ status: 'ok' });
 		const screen = render(MailEinstellungen);
 
-		const gruppe = await screen.findByRole('group', { name: 'Absender für Mein Portal' });
+		const gruppe = await screen.findByRole('group', { name: 'Zweiter Absender' });
 		const adresse = /** @type {HTMLInputElement} */ (gruppe.querySelector('input[type="email"]'));
 		expect(adresse.value).toBe('anliegen@schule.example');
+		const portal = /** @type {HTMLInputElement} */ (
+			screen.getByRole('checkbox', { name: 'Mails aus Mein Portal' })
+		);
+		expect(portal.checked).toBe(true);
 
+		// Die Bestellmails dazu, die Mails aus Mein Portal heraus.
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Bestellmails an Händler' }));
+		await fireEvent.click(portal);
 		await fireEvent.click(screen.getByRole('button', { name: 'Postausgang speichern' }));
 
 		await waitFor(() =>
 			expect(apiPut).toHaveBeenCalledWith(
 				'/api/admin/settings/mail',
 				expect.objectContaining({
-					portal: { sender_email: 'anliegen@schule.example', smtp_user: '', smtp_password: '' }
+					portal: {
+						sender_email: 'anliegen@schule.example',
+						smtp_user: '',
+						smtp_password: '',
+						fuer: ['bestellung']
+					}
 				})
 			)
 		);
@@ -118,9 +136,7 @@ describe('MailEinstellungen: Absender für Mein Portal', () => {
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Test-E-Mail senden' }));
 
-		expect(
-			await screen.findByText('Absender für Mein Portal: Testversand fehlgeschlagen')
-		).toBeTruthy();
+		expect(await screen.findByText('Zweiter Absender: Testversand fehlgeschlagen')).toBeTruthy();
 		expect(screen.getByText('Postausgang: Test-E-Mail versendet')).toBeTruthy();
 		expect(screen.getByText('535 Anmeldung abgelehnt')).toBeTruthy();
 		expect(apiPost).toHaveBeenNthCalledWith(
