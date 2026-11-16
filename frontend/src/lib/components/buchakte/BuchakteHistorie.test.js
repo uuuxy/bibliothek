@@ -34,8 +34,16 @@ describe('BuchakteHistorie', () => {
 			.map((z) => (z.textContent ?? '').replace(/\s+/g, ' '));
 		expect(ida).toContain('Ida Imker (07A)');
 		expect(ida).toContain('Exemplar: B-1');
-		expect(ida).toContain('Zurück 20.9.2026');
+		expect(ida).toContain('Von 01.09.2026');
+		expect(ida).toContain('Zurück 20.09.2026');
 		expect(ole).toContain('Noch ausgeliehen');
+	});
+
+	it('schreibt bei einem unlesbaren Datum nicht „Invalid Date“', () => {
+		const screen = render(BuchakteHistorie, {
+			verlauf: [{ schueler_name: 'Ida', ausgeliehen_am: 'kaputt', rueckgabe_am: 'kaputt' }]
+		});
+		expect(screen.container.textContent ?? '').not.toContain('Invalid Date');
 	});
 
 	it('sagt, wenn es noch keine Ausleihe gab', () => {

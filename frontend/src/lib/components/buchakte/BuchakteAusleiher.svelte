@@ -5,7 +5,7 @@
 	import AusleiherListe from './AusleiherListe.svelte';
 	import { baueAusleiherDruckHtml } from '../../utils/ausleiherDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
-	import { fmtDateDE as fmtDate } from '../../utils/datum.js';
+	import { formatDatum } from '../../utils/format.js';
 	import { Printer, Users } from '@lucide/svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
@@ -72,5 +72,5 @@
 		</Button>
 	</div>
 
-	<AusleiherListe zeilen={gefilterteAusleiher} {onBack} {fmtDate} />
+	<AusleiherListe zeilen={gefilterteAusleiher} {onBack} fmtDate={formatDatum} />
 {/if}

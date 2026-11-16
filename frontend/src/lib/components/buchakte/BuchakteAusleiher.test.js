@@ -24,4 +24,15 @@ describe('Buchakte, Reiter „Ausleiher“: Druckknopf', () => {
 		expect(screen.getByRole('button', { name: 'Liste drucken' })).toBeTruthy();
 		expect(screen.container.textContent ?? '').not.toContain('Mahnliste');
 	});
+
+	it('schreibt die Daten zweistellig wie jedes Datum im Programm (utils/format.js)', () => {
+		const screen = render(BuchakteAusleiher, {
+			ausleiher: [ausleiher],
+			titel: { title: 'Die Räuber' },
+			onBack: () => {}
+		});
+		const text = screen.container.textContent ?? '';
+		expect(text).toContain('02.01.2026');
+		expect(text).toContain('01.02.2026');
+	});
 });

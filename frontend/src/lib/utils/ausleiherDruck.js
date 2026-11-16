@@ -7,7 +7,7 @@
 // an jeder Einsetzstelle auch aufgerufen wird (ausleiherDruck.test.js hält das zu).
 
 import { baueListenDruckHtml } from './listenDruck.js';
-import { fmtDateDE } from './datum.js';
+import { formatDatum } from './format.js';
 import { istUeberfaellig } from './ueberfaellig.js';
 
 /**
@@ -26,9 +26,9 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 			`${b.schueler_name ?? ''} ${b.schueler_nachname ?? ''}`,
 			b.klasse || '-',
 			{ text: b.exemplar_barcode ?? '', klasse: 'mono' },
-			fmtDateDE(b.ausgeliehen_am),
+			formatDatum(b.ausgeliehen_am),
 			{
-				text: dauerleihe ? 'ohne Frist' : fmtDateDE(b.rueckgabe_frist),
+				text: dauerleihe ? 'ohne Frist' : formatDatum(b.rueckgabe_frist),
 				klasse: ueberfaellig ? 'overdue' : ''
 			}
 		];
@@ -37,7 +37,7 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 	return baueListenDruckHtml({
 		// Das Blatt nennt alle Ausleiher des Titels, nicht nur die mit überschrittener Frist.
 		ueberschrift: `Ausleiher-Liste: ${buch?.title || 'Buch'}`,
-		meta: `Erstellt am: ${jetzt.toLocaleDateString('de-DE')} | Filter: Klasse ${filterKlasse}`,
+		meta: `Erstellt am: ${formatDatum(jetzt)} | Filter: Klasse ${filterKlasse}`,
 		// Nur der Name bricht um; die kurzen Spalten nehmen die Breite ihres Inhalts.
 		spalten: [
 			'Schüler/in',

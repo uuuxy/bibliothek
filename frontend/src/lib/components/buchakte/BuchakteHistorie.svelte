@@ -1,18 +1,9 @@
 <script>
 	import { Clock } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { formatDatum } from '../../utils/format.js';
 	/** @type {{ verlauf: any[] }} */
 	let { verlauf } = $props();
-
-	/** @param {string} d */
-	function fmtDate(d) {
-		if (!d) return '-';
-		try {
-			return new Date(d).toLocaleDateString('de-DE');
-		} catch {
-			return d;
-		}
-	}
 </script>
 
 {#if verlauf.length === 0}
@@ -45,10 +36,10 @@
 					<div class="text-right shrink-0 ml-4 space-y-0.5">
 						<p class="text-xs text-on-surface-variant">
 							<span class="font-medium">Von</span>
-							{fmtDate(h.ausgeliehen_am)}
+							{formatDatum(h.ausgeliehen_am)}
 						</p>
 						<p class="text-xs {h.rueckgabe_am ? 'text-success' : 'text-warning'} font-semibold">
-							{h.rueckgabe_am ? `Zurück ${fmtDate(h.rueckgabe_am)}` : 'Noch ausgeliehen'}
+							{h.rueckgabe_am ? `Zurück ${formatDatum(h.rueckgabe_am)}` : 'Noch ausgeliehen'}
 						</p>
 					</div>
 				</li>

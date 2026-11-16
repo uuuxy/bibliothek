@@ -58,7 +58,16 @@ describe('baueAusleiherDruckHtml', () => {
 		expect(html).toContain('7b');
 		expect(html).toContain('EX-4711');
 		expect(html).toContain('Die Räuber');
-		expect(html).toContain('2.1.2026'); // de-DE formatiert ohne führende Nullen
+		expect(html).toContain('02.01.2026'); // zweistellig wie jedes Datum (utils/format.js)
+	});
+
+	it('schreibt bei einem unlesbaren Datum nicht „Invalid Date“', () => {
+		const html = baueAusleiherDruckHtml(
+			[{ schueler_name: 'A', ausgeliehen_am: 'kaputt', rueckgabe_frist: 'kaputt' }],
+			{ title: 'X' },
+			'Alle'
+		);
+		expect(html).not.toContain('Invalid Date');
 	});
 
 	it('markiert nur überfällige Rückgaben', () => {
@@ -73,6 +82,8 @@ describe('baueAusleiherDruckHtml', () => {
 			jetzt
 		);
 		expect(html.match(/class="overdue schmal"/g) ?? []).toHaveLength(1);
+		// Kopf und Zeilen eines Blatts in derselben Schreibweise.
+		expect(html).toContain('Erstellt am: 01.03.2026');
 	});
 
 	// Dauerleihe (Kollegium): keine Frist, nie überfällig — dieselbe Regel wie in der Akte
@@ -95,7 +106,7 @@ describe('baueAusleiherDruckHtml', () => {
 		);
 		expect(html).not.toContain('class="overdue');
 		expect(html).toContain('ohne Frist');
-		expect(html).not.toContain('1.2.2025');
+		expect(html).not.toContain('01.02.2025');
 	});
 
 	it('maskiert Anführungszeichen auch im Titel-Element', () => {
