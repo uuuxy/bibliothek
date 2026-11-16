@@ -240,9 +240,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 // käme je an. Deshalb steht hier eine Liste, die man nur erweitert, wenn die Spalte dahinter
 // nachweislich eine UUID ist.
 //
-// In schema.sql sind leser.id und ausleihen.id UUID. {klasse} ist ein Klassenname und gehört
-// nicht dazu.
-var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id"}
+// In schema.sql sind leser.id, ausleihen.id und bestellungen_positionen.id UUID. {klasse} ist ein
+// Klassenname und gehört nicht dazu.
+var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id", "position_id"}
 
 // uuidPfadMiddleware weist Anfragen ab, deren UUID-Pfadparameter keine UUID
 // sind, bevor sie die Datenbank erreichen. Geprüft wird nur, was in

@@ -21,6 +21,7 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import BestellMittelDialog from './BestellMittelDialog.svelte';
+	import BestellPreisDialog from './BestellPreisDialog.svelte';
 	import { mittelBeschriftung } from './mittel.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
@@ -39,6 +40,8 @@
 	// Der Rückweg für den Topf: nur mit dem Recht, das auch bestellen darf (dieselbe Tür
 	// wie der Endpunkt — UI entscheidet nach Recht, nicht nach Rolle).
 	let mittelDialogOffen = $state(false);
+	/** Die Position, deren Preis gerade geändert wird; null, solange der Dialog zu ist. */
+	let preisPosition = $state(/** @type {any} */ (null));
 	const darfKorrigieren = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 	/** @type {HTMLElement | undefined} */
 	let wurzel = $state();
@@ -157,8 +160,17 @@
 				euro={formatEuro}
 				onNachdruck={zumNachdruck}
 				onTitel={zumTitel}
+				darfPreis={darfKorrigieren}
+				onPreis={(p) => (preisPosition = p)}
 			/>
 		</section>
+
+		<BestellPreisDialog
+			bestellungId={bestellung.id}
+			position={preisPosition}
+			onclose={() => (preisPosition = null)}
+			onAktualisieren={laden}
+		/>
 
 		<section>
 			<h3 class="mb-2 text-base font-bold text-on-surface">

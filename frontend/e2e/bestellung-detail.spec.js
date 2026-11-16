@@ -90,6 +90,20 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 			await expect(page.getByText(barcode, { exact: true })).toBeVisible();
 		}
 
+		// --- Preis laut Rechnung nachtragen ---------------------------------------
+		// Der Händler rechnet 9,80 € statt 12,50 € ab: Summe der Bestellung und Einkaufspreis
+		// der Exemplare ziehen mit.
+		await page.getByRole('button', { name: `Preis von ${titel.title} ändern` }).click();
+		await page.getByLabel('Einzelpreis in €').fill('9.80');
+		await page.getByRole('dialog').getByRole('button', { name: 'Preis ändern' }).click();
+		await expect(page.getByText(/29,40\s*€/).first()).toBeVisible();
+		expect(
+			querySQL(
+				`SELECT string_agg(DISTINCT einkaufspreis::text, ',') FROM buecher_exemplare WHERE bestellung_id = '${meine.id}'`
+			),
+			'Einkaufspreis der Exemplare'
+		).toBe('9.80');
+
 		// --- Zurück führt zur Liste ----------------------------------------------
 		await page.getByRole('button', { name: 'Zurück zur Bestellhistorie' }).click();
 		await expect(page.getByRole('group', { name: 'Nach Mittelherkunft filtern' })).toBeVisible();

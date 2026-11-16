@@ -40,4 +40,7 @@ func (s *Server) registriereBestellRouten(mux *http.ServeMux, bestellDienst *ser
 	mux.Handle("DELETE /api/bestellungen/{id}/mail", s.verlangeRecht("create_orders")(s.bestellung().BestellmailVermerkNehmen()))
 	// Der Rückweg für den Topf: mit Grund als Pflicht, im Protokoll der Verwaltung.
 	mux.Handle("PUT /api/bestellungen/{id}/mittel", s.verlangeRecht("create_orders")(s.bestellung().BestellungMittelKorrigieren()))
+	// Den Preis einer Position nachtragen, wie ihn die Rechnung des Händlers nennt; ändert auch
+	// den Einkaufspreis der Exemplare und die Summe der Bestellung.
+	mux.Handle("PUT /api/bestellungen/{id}/positionen/{position_id}/einzelpreis", s.verlangeRecht("create_orders")(s.bestellung().PositionspreisAendern()))
 }

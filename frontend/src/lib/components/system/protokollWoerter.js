@@ -28,6 +28,7 @@ export const VERWALTUNG_AKTIONEN = {
 	BESTAND_IMPORT: 'Bestand importiert',
 	BESTELLMAIL_ERNEUT_GESENDET: 'Bestellmail erneut gesendet',
 	BESTELLMAIL_VERMERK_ENTFERNT: 'Vermerk über gescheiterten Versand entfernt',
+	BESTELLPREIS_GEAENDERT: 'Preis einer Bestellposition geändert',
 	BESTELLUNG_MITTEL_KORRIGIERT: 'Mittelherkunft einer Bestellung korrigiert',
 	BULK_RECEIVE_ITEMS: 'Wareneingang gebucht',
 	DELETE_STUDENT: 'Leser in den Papierkorb verschoben',

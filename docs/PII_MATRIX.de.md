@@ -25,7 +25,7 @@ Das Antwort-Gate prüft auch den Kopf: Eine Antwort ab Stufe 1
 muss `Cache-Control: no-store` tragen, damit der Browser sie nicht ablegt
 (`pruefeKeinAblegen`), ebenso eine Route der Stufe 0, deren Adresse eine
 Personenkennung trägt (`adresseTraegtPersonendaten`, zurzeit `GET /api/barcode`).
-Stand: 15.11.2026. Erhoben am 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 16.11.2026. Erhoben am 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; neue und geänderte Routen sind danach am Code
 nachgetragen, die übrigen Zeilen nicht erneut erhoben.
 
@@ -243,6 +243,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/bestellungen/{id}/mail`              | create_orders | 0     | Meldung zum erneuten Versand              |
 | `DELETE /api/bestellungen/{id}/mail`            | create_orders | 0     | Meldung zum entfernten Hinweis            |
 | `PUT /api/bestellungen/{id}/mittel`             | create_orders | 0     | Topf (Land/Schulträger), Grund            |
+| `PUT /api/bestellungen/{id}/positionen/{position_id}/einzelpreis` | create_orders | 0 | neuer und alter Einzelpreis |
 
 ## routen_system.go
 

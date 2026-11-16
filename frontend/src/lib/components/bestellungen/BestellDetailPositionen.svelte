@@ -14,10 +14,13 @@
 	 *   positionen: any[],
 	 *   euro: (n: number) => string,
 	 *   onNachdruck: (pos: any) => void,
-	 *   onTitel: (pos: any) => void
+	 *   onTitel: (pos: any) => void,
+	 *   darfPreis?: boolean,
+	 *   onPreis?: (pos: any) => void
 	 * }}
+	 * darfPreis — Recht zum Bestellen; onPreis öffnet „Preis ändern“ für die Position.
 	 */
-	let { positionen, euro, onNachdruck, onTitel } = $props();
+	let { positionen, euro, onNachdruck, onTitel, darfPreis = false, onPreis = () => {} } = $props();
 </script>
 
 {#if positionen.length === 0}
@@ -81,6 +84,16 @@
 					{#if bestellStore.preiseErfassen}
 						<p class="text-xs text-on-surface-variant tabular-nums">{euro(p.einzelpreis)}</p>
 						<p class="mt-1 font-bold text-on-surface tabular-nums">{euro(p.gesamtpreis)}</p>
+						{#if darfPreis}
+							<button
+								type="button"
+								onclick={() => onPreis(p)}
+								aria-label="Preis von {p.titel_name} ändern"
+								class="mt-1 cursor-pointer text-label-small font-medium text-primary hover:underline"
+							>
+								Preis ändern
+							</button>
+						{/if}
 					{/if}
 				</div>
 			</li>

@@ -721,6 +721,12 @@ anderem Weg bestellt_ den Hinweis nach einer Rückfrage weg, ohne zu senden; dan
 die Bestellung nicht mehr aus dem Programm senden. Diesen Knopf gibt es nur an Bestellungen ohne
 Bestätigungs-Link; mit Link wird stattdessen die Zusage des Händlers nachgetragen. (§7)
 
+**Preis laut Rechnung:** Rechnet der Händler anders ab als bestellt, etwa mit einem Rabatt oder
+einem neuen Preis, steht in der geöffneten Bestellung unter dem Preis jedes Buchs _Preis ändern_.
+Das gilt jederzeit, auch lange nach der Bestellung. Der neue Preis gilt auch für die Exemplare
+dieses Buchs aus der Bestellung und für die Summe der Bestellung; die Änderung steht im
+Protokoll. (§7)
+
 **Wie der Bestellbedarf rechnet:** Jede Zeile nennt _Bestand / Bedarf_. Bestand sind alle
 Exemplare, die nicht ausgesondert sind, auch die verliehenen und die schon bestellten. Bedarf
 sind die Kinder, die das Buch im nächsten Schuljahr brauchen: Das Programm sieht an den

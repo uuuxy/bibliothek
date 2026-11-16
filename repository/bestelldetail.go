@@ -56,6 +56,8 @@ type BestellungKopf struct {
 // und CoverURL können in buecher_titel leer sein und kommen über COALESCE als leerer Text: NULL
 // ließe sich nicht in einen Text lesen. Leer heißt „nicht hinterlegt".
 type BestellPositionDetail struct {
+	// ID nennt die Position für die Korrektur ihres Preises (PUT …/positionen/{position_id}/einzelpreis).
+	ID          string      `json:"id"`
 	TitelID     string      `json:"titel_id,omitempty"`
 	TitelName   string      `json:"titel_name"`
 	ISBN        string      `json:"isbn"`
@@ -155,7 +157,7 @@ func (a *BestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID strin
 // Positionen aus dem Beleg.
 func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
 	rows, err := a.db.Query(ctx, `
-		SELECT coalesce(p.titel_id::text, ''), p.titel_name, p.isbn, p.menge, p.einzelpreis,
+		SELECT p.id::text, coalesce(p.titel_id::text, ''), p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''),
 		       (SELECT count(*) FROM buecher_exemplare e
 		         WHERE e.titel_id = p.titel_id AND `+EtikettOffenBedingung+`)
@@ -172,7 +174,7 @@ func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID
 	positionen := make([]BestellPositionDetail, 0)
 	for rows.Next() {
 		var p BestellPositionDetail
-		if err := rows.Scan(&p.TitelID, &p.TitelName, &p.ISBN, &p.Menge, &p.Einzelpreis,
+		if err := rows.Scan(&p.ID, &p.TitelID, &p.TitelName, &p.ISBN, &p.Menge, &p.Einzelpreis,
 			&p.Autor, &p.Verlag, &p.CoverURL, &p.EtikettenOffen); err != nil {
 			return nil, err
 		}
