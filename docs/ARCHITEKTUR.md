@@ -748,7 +748,7 @@ gemessen über die Importe des Produktivcodes:
 | `golang-jwt/jwt/v5`                                            | `internal/auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`internal/auth/token.go`)                   |
 | `emersion/go-imap`                                             | `internal/auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `internal/api`                                                            | Strukturprüfung von Request-Körpern                                                     |
-| `chai2010/webp`                                                | `main.go`, `internal/pkg/imageutil`                                       | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
+| `chai2010/webp`                                                | `cmd/server`, `internal/pkg/imageutil`                                       | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
 | `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `internal/pdf`, `internal/api`, `internal/auskunft`, `internal/pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `internal/pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `internal/pkg/code39`              |
 | `xuri/excelize/v2`                                             | `internal/api`, `internal/lusd`, `internal/pkg/xlsxgrenze`                         | Excel lesen (`OpenReader`), nur über `internal/pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
@@ -1195,7 +1195,7 @@ nichts.
 ```mermaid
 sequenceDiagram
     participant B as Browser
-    participant A as internal/api/auth
+    participant A as api/auth
     participant DB as PostgreSQL
     participant S as Schul-IMAP oder LDAP
 
@@ -1246,7 +1246,7 @@ Arbeitsplatz abmelden, obwohl die Sitzung gültig ist. Aus demselben Grund ist �
 ```mermaid
 sequenceDiagram
     participant K as Kiosk (Omnibox)
-    participant H as internal/api/action
+    participant H as api/action
     participant S as internal/service
     participant DB as PostgreSQL
     participant SSE as SSE-Broker
@@ -1642,7 +1642,7 @@ schlägt die Restore-Probe sonntags Alarm (ein älterer Client verweigert den ne
 | ------------------------- | ----------------------------------------------------- | ------------------------------------------------------------- |
 | Vollständiger Stack       | `docker compose -f docker-compose.local.yml up -d`    | Anwendung `http://localhost:8084`, DB `127.0.0.1:5434`         |
 | Frontend mit Hot Reload   | `cd frontend && npm ci && npm run dev`                | `http://localhost:5173`, reicht `/api`, `/login`, `/uploads`, `/events` an `127.0.0.1:8084` durch |
-| Backend von Hand          | `go run main.go`                                      | Port aus der `.env` (Beispiel: 8081) — dann `VITE_API_TARGET=http://127.0.0.1:8081 npm run dev` |
+| Backend von Hand          | `go run ./cmd/server`                                 | Port aus der `.env` (Beispiel: 8081) — dann `VITE_API_TARGET=http://127.0.0.1:8081 npm run dev` |
 
 Der lokale Stack fährt **dieselbe** Postgres-Major-Version wie Produktion und CI. Die
 Migrationen laufen beim Start automatisch. `IMAP_HOST=mock` akzeptiert in
