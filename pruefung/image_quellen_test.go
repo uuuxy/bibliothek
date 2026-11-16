@@ -35,7 +35,7 @@ func TestImageKopiertWasDerBauBraucht(t *testing.T) {
 			kopiert[strings.TrimSuffix(quelle, "/")] = true
 		}
 	}
-	ziele := regexp.MustCompile(`(?m)^RUN .*\bgo build\b.* (main\.go|\./cmd/[a-z0-9-]+)\s*$`).FindAllStringSubmatch(stufe, -1)
+	ziele := regexp.MustCompile(`(?m)^RUN .*\bgo build\b.* (\./cmd/[a-z0-9-]+)\s*$`).FindAllStringSubmatch(stufe, -1)
 	if len(kopiert) < 10 || len(ziele) < 4 {
 		t.Fatalf("nur %d Quellen und %d Bauziele im Dockerfile gefunden — der Leser greift nicht mehr", len(kopiert), len(ziele))
 	}
@@ -46,23 +46,15 @@ func TestImageKopiertWasDerBauBraucht(t *testing.T) {
 		}
 	}
 
-	// go list nimmt eine Datei (main.go) nicht zusammen mit Paketen an.
-	var dateien, pakete []string
+	pakete := make([]string, 0, len(ziele))
 	for _, z := range ziele {
-		if strings.HasSuffix(z[1], ".go") {
-			dateien = append(dateien, z[1])
-		} else {
-			pakete = append(pakete, z[1])
-		}
+		pakete = append(pakete, z[1])
 	}
-	var ordnerDerPakete []string
-	for _, gruppe := range [][]string{dateien, pakete} {
-		ausgabe, err := exec.Command("go", append([]string{"list", "-deps", "-f", `{{if not .Standard}}{{.Dir}}{{end}}`}, gruppe...)...).Output()
-		if err != nil {
-			t.Fatalf("go list -deps %v: %v", gruppe, err)
-		}
-		ordnerDerPakete = append(ordnerDerPakete, strings.Fields(string(ausgabe))...)
+	ausgabe, err := exec.Command("go", append([]string{"list", "-deps", "-f", `{{if not .Standard}}{{.Dir}}{{end}}`}, pakete...)...).Output()
+	if err != nil {
+		t.Fatalf("go list -deps %v: %v", pakete, err)
 	}
+	ordnerDerPakete := strings.Fields(string(ausgabe))
 	wurzel, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -74,9 +66,6 @@ func TestImageKopiertWasDerBauBraucht(t *testing.T) {
 			continue // ein Modul aus dem Zwischenspeicher, das go mod download holt
 		}
 		oben, _, _ := strings.Cut(filepath.ToSlash(rel), "/")
-		if oben == "." {
-			oben = "main.go" // das Wurzelpaket baut der Dockerfile aus main.go allein
-		}
 		gebraucht[oben] = true
 	}
 	if len(gebraucht) < 10 {

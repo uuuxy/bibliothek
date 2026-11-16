@@ -546,7 +546,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 
 | Paket                   | Verantwortung                                                                                                                                                                   |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.go`               | Konfiguration lesen **und hart prüfen** (DSN, Länge der Schlüssel, IMAP, Secret-Guard), Pool, Migrationen, Rechte ab Werk, erster Admin, Übernahme der SMTP-Konfiguration, Broker, Zeitplan, Server, geordnetes Herunterfahren |
+| `cmd/server/main.go`    | Konfiguration lesen **und hart prüfen** (DSN, Länge der Schlüssel, IMAP, Secret-Guard), Pool, Migrationen, Rechte ab Werk, erster Admin, Übernahme der SMTP-Konfiguration, Broker, Zeitplan, Server, geordnetes Herunterfahren |
 | `api/`                  | Router mit den Routenlisten (`routen_*.go`) und den Zugängen zu den Themen, Middleware, CSRF, die Bremsen für Anfragen und Anmeldungen, die Abmeldung                          |
 | `api/tuer/`             | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, Sitzung, Rechteprüfung mit Zwischenspeicher (5.4.3), Protokoll der Verwaltung, Uhr, Kopf der Briefe. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
 | `api/<Thema>/`          | Die Türen je Menüpunkt (A26): `lernmittel`, `inventurlauf`, `benutzer`, `portal`, `system`, `mahnwesen`, `schaden`, `katalog`, `druck`, `bestellung`, `leser`, `theke`        |

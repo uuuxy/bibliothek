@@ -29,7 +29,7 @@ func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 
 	var kandidaten []string
 	for _, muster := range []string{
-		"../*_test.go",
+		"../cmd/server/*_test.go",
 		"../pruefung/*_test.go",
 		"*_test.go",
 		"../frontend/src/lib/frontend-hygiene*.test.js",

@@ -31,7 +31,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy Go source code
-COPY main.go ./
 COPY api/ ./api/
 COPY apierrors/ ./apierrors/
 COPY auth/ ./auth/
@@ -50,7 +49,7 @@ COPY cmd/ ./cmd/
 RUN apk add --no-cache build-base
 
 # Compile static Go binary with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/server
 
 # Der Schlüsselwechsel gehört dorthin, wo die Daten sind: Der Server hat kein Go, ein
 # Werkzeug außerhalb des Images ließe sich dort nicht starten. Kein zusätzliches Risiko: Das

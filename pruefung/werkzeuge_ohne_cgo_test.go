@@ -24,7 +24,7 @@ func TestWerkzeugeOhneCgo_BindenKeinCgoPaketEin(t *testing.T) {
 	}
 
 	// Gegenprobe: Den Server selbst baut der Dockerfile mit cgo, und der Detektor sieht es.
-	if cgo := cgoPakete(t, "."); len(cgo) == 0 {
+	if cgo := cgoPakete(t, "./cmd/server"); len(cgo) == 0 {
 		t.Fatal("der Server bindet kein cgo-Paket ein — der Detektor sieht nichts, oder die Prüfung ist überholt")
 	}
 	for _, zeile := range ohneCgo {

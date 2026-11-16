@@ -69,8 +69,8 @@ Nur, was kein Test leisten kann.
   Treffer ansehen. (5.182)
 - [ ] Anmeldung über PaedNet ohne Konto: Zugangsanfrage mit Name und Adresse aus dem globalen
   Adressbuch. (5.183)
-- [ ] Ablage nach dem Aufbau des Go-Teams: `main.go` nach `cmd/`, die zehn oberen Paketordner nach
-  `internal/`, wenn #786 zusammengeführt oder geschlossen ist. (5.184)
+- [ ] Ablage nach dem Aufbau des Go-Teams: die zehn oberen Paketordner nach `internal/`, wenn #786
+  zusammengeführt oder geschlossen ist. (5.184)
 
 ### Termin
 
@@ -147,18 +147,17 @@ Offen ist, ob die PaedNet-Kennung das Kürzel ist. Wenn ja: Eine Anmeldung über
 Konto legt eine Zugangsanfrage an wie die Selbstanmeldung, mit Name und Adresse aus dem
 Adressbuch; freigeschaltet wird wie bisher von Hand.
 
-### 5.184 Ablage nach go.dev: Programme unter `cmd/`, Pakete unter `internal/`
+### 5.184 Ablage nach go.dev: Pakete unter `internal/`
 
 Die Anleitung des Go-Teams für Server-Projekte ([go.dev/doc/modules/layout](https://go.dev/doc/modules/layout),
 „Server project“): „it's recommended to keep the Go packages implementing the server's logic in
 the internal directory“, die Programme unter `cmd/`. Zehn Paketordner liegen oben neben
 `internal/` (`api`, `apierrors`, `auth`, `db`, `jobs`, `mailservice`, `pdf`, `pkg`, `repository`,
-`sse`), `main.go` liegt in der Wurzel statt unter `cmd/`. Das Dockerfile kopiert jeden
-Paketordner einzeln; daran hingen drei Fixes (`1b17ab1d`, `aad65196`, `d80a81d3`). Die Prüfungen
+`sse`); die Programme stehen schon unter `cmd/`, der Server in `cmd/server/`. Das Dockerfile kopiert jeden
+Paketordner einzeln; daran hingen drei Fixes, seitdem hält `pruefung/image_quellen_test.go` die Liste. Die Prüfungen
 über das ganze Repository stehen schon in `pruefung/` (ARCHITEKTUR 5.2.2).
 
-Nächster Schritt, wenn #786 zusammengeführt oder geschlossen ist: `main.go` mit seinen Tests
-nach `cmd/<name>/` (Dockerfile, Image bauen, Stack starten); danach die zehn Ordner nach
+Nächster Schritt, wenn #786 zusammengeführt oder geschlossen ist: die zehn Ordner nach
 `internal/`: Importe in 966 Go-Dateien, das Dockerfile kopiert nur noch `internal/` und `cmd/`,
 Pfade in CI, Skripten, Sonar und Doku nachziehen (`/api/…` in Webadressen bleibt), die Regel in
 ARCHITEKTUR 5.2.2. Nachweis: Go-Suite, Linter, alte Pfade gezählt gleich null, jede Ratsche
