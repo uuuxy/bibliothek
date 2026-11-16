@@ -147,9 +147,8 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Logf("Expectations were not met, but we ignore it for now because pgxmock doesn't allow marking optional expectations. Error: %v", err)
+				t.Errorf("offene Erwartungen: %v", err)
 			}
-
 		})
 	}
 }
