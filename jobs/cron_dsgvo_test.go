@@ -96,13 +96,9 @@ func TestAbgaengerLoeschung_Loescht(t *testing.T) {
 	z := NewZeitplan(mock, protokoll)
 	z.leserLoeschung = protokoll
 
-	// Ein Abgänger ist reif für die Löschung.
-	jetzt := time.Now()
-	stichjahr := jetzt.Year()
-	stichtag := time.Date(stichjahr, time.January, 30, 0, 0, 0, 0, time.UTC)
-	if jetzt.Before(stichtag) {
-		stichjahr--
-	}
+	// Ein Abgänger ist reif für die Löschung. Das Stichjahr rechnet dieselbe Funktion wie der
+	// Lauf: Eine eigene Rechnung in UTC wiche in der ersten Stunde des 30. Januar ab.
+	stichjahr := repository.AbgaengerStichjahr(time.Now())
 
 	zeilen := pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse", "barcode_id", "abgaenger_jahr"}).
 		AddRow("uuid-1234", "Max", "Mustermann", "10A", "12345", 2023)
@@ -140,12 +136,7 @@ func TestAbgaengerLoeschung_OhneLoeschreife(t *testing.T) {
 	z.leserLoeschung = protokoll
 
 	// Kein Abgänger ist reif, etwa weil noch Forderungen offen sind.
-	jetzt := time.Now()
-	stichjahr := jetzt.Year()
-	stichtag := time.Date(stichjahr, time.January, 30, 0, 0, 0, 0, time.UTC)
-	if jetzt.Before(stichtag) {
-		stichjahr--
-	}
+	stichjahr := repository.AbgaengerStichjahr(time.Now())
 
 	zeilen := pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse", "barcode_id", "abgaenger_jahr"})
 
