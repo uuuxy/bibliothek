@@ -11,9 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// LeereBescheide leert Bescheide und Nummernkreis. LeereBestandsdaten nimmt beide nicht mit:
-// Der Bescheid hängt am Schüler mit ON DELETE SET NULL, und der Zähler der Nummern steht für
-// sich.
+// LeereBescheide leert Bescheide und Nummernkreis. Den Zähler der Nummern nimmt
+// LeereBestandsdaten nicht mit, er steht für sich; die Bescheide leert sie mit, denn TRUNCATE …
+// CASCADE leert jede Tabelle ganz, die auf eine geleerte verweist, auch bei ON DELETE SET NULL.
 func LeereBescheide(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
