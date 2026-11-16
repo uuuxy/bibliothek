@@ -223,6 +223,17 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   austauschen will, gehört einem Typ, den der Rufer anlegt und weiterreicht, wie die Basis der
   Türen mit Mailversand und Cache der Rechte (Best Practices, „Global state").
   `paketzustand_ratsche_test.go` hält es.
+- Ein Test an der Datenbank hinterlässt sie so, wie `schema.sql` sie anlegt: „Ideally a test
+  case is hermetic between invocations of itself and between other test cases. At the very
+  least, ensure that individual test cases reset any global state they have modified if they
+  have done so (for instance, if the tests are working with an external database)" (Best
+  Practices, „When to use a custom TestMain entrypoint"). `pgtest.Pool` meldet dafür mit
+  `t.Cleanup` an, dass am Ende jedes Tests der obersten Ebene belegte Tabellen leer werden, die
+  Zeilen aus `schema.sql` zurückkommen und die Folgen auf ihren Wert springen; `t.Cleanup` „also
+  works with test helpers" (Best Practices, „Error handling in test helpers"). Ein Untertest
+  setzt nicht zurück, weil er oft teilt, was sein Test angelegt hat; die Helfer, die zu Beginn
+  leeren (`testdaten.LeereBestandsdaten` und die der Pakete), bleiben deshalb.
+  `internal/pgtest/grundzustand_test.go` hält es.
 - Eine Hilfsfunktion, die den Test führt (`*testing.T`, `*testing.B`, `*testing.F`,
   `testing.TB`), beginnt mit `t.Helper()` und nimmt `t` vorn, vor ihm steht nur ein Kontext:
   „call t.Helper to attribute failures in the test helper to the line where the helper is

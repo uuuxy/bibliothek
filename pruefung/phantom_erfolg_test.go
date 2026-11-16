@@ -166,6 +166,9 @@ var phantomBestand = map[string]int{
 	// Prüfhilfen der Tests: Sie legen Zeilen an, leeren Tabellen oder räumen auf. Eine Anweisung,
 	// die dort keine Zeile trifft, meldet niemandem einen Erfolg.
 	"internal/pgtest/anweisungen.go:RaeumeAuf":                    1,
+	"internal/pgtest/grundzustand.go:setzeZurueck":                2,
+	"internal/pgtest/grundzustand.go:leereBelegte":                1,
+	"internal/pgtest/grundzustand.go:schreibeZeilenZurueck":       2,
 	"internal/testdaten/ausleihe.go:LegeAusleiheVorZweiTagenAn":   1,
 	"internal/testdaten/ausleihe.go:LegeOffeneAusleiheAn":         1,
 	"internal/testdaten/bestellung.go:LegeBestellungOhneTopfAn":   1,

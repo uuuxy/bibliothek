@@ -35,11 +35,12 @@ const Variable = "TEST_DATABASE_URL"
 const sperrSchluessel int64 = 0x42DB0001
 
 // Pool und Schema entstehen je Testprogramm einmal: schema.sql lässt sich nicht zweimal
-// einspielen (CREATE TYPE bricht beim zweiten Mal ab). Aufräumen müssen die Tests selbst, mit
-// Rollback oder TRUNCATE ihrer Tabellen.
+// einspielen (CREATE TYPE bricht beim zweiten Mal ab). grund ist der Zustand gleich danach;
+// auf ihn setzt Pool am Ende jedes Tests zurück.
 var (
 	once   sync.Once
 	pool   *pgxpool.Pool
+	grund  grundzustand
 	fehler error
 	// sperrVerbindung hält die Sperre über eine eigene Verbindung, die bis zum Ende des
 	// Prozesses offen bleibt. Dann gibt Postgres die Sperre frei, und das nächste
@@ -49,6 +50,14 @@ var (
 
 // Pool liefert den gemeinsamen Pool der Tests mit frisch eingespieltem schema.sql. Ohne
 // TEST_DATABASE_URL überspringt sich der Test; lokal ist kein Postgres Pflicht.
+//
+// Am Ende eines Tests der obersten Ebene steht die Datenbank wieder so da, wie schema.sql sie
+// anlegt: „At the very least, ensure that individual test cases reset any global state they
+// have modified if they have done so (for instance, if the tests are working with an external
+// database)" (Googles Best Practices zu Go, „When to use a custom TestMain entrypoint"). Pool
+// meldet das Zurücksetzen dafür mit t.Cleanup an, das „also works with test helpers" (ebenda,
+// „Error handling in test helpers"). Ein Untertest setzt nicht zurück: Er teilt oft, was sein
+// Test vorher angelegt hat; zurückgesetzt wird am Ende des Tests, zu dem er gehört.
 func Pool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
@@ -56,9 +65,21 @@ func Pool(t *testing.T) *pgxpool.Pool {
 	if dsn == "" {
 		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", Variable)
 	}
-	once.Do(func() { pool, fehler = baueTestDB(dsn) })
+	once.Do(func() {
+		pool, fehler = baueTestDB(dsn)
+		if fehler == nil {
+			grund, fehler = leseGrundzustand(context.Background(), pool)
+		}
+	})
 	if fehler != nil {
 		t.Fatalf("Test-DB konnte nicht vorbereitet werden: %v", fehler)
+	}
+	if !strings.Contains(t.Name(), "/") {
+		t.Cleanup(func() {
+			if err := grund.setzeZurueck(context.Background(), pool); err != nil {
+				t.Errorf("Testdatenbank nicht zurückgesetzt: %v", err)
+			}
+		})
 	}
 	return pool
 }

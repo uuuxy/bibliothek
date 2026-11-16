@@ -47,7 +47,6 @@ func leiheMitFrist(t *testing.T, pool *pgxpool.Pool, titelID, schuelerID string,
 func TestFindeBuchFremdInKlasse(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
-	t.Cleanup(func() { resetAuflagen(t, pool) })
 	ctx := context.Background()
 
 	mathe8 := legeAuflageAn(t, pool, "Mathe 8", 2023, true)
@@ -141,7 +140,6 @@ func TestFindeBuchFremdInKlasse(t *testing.T) {
 func TestFindeBuchFremdInKlasse_Ausnahmen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
-	t.Cleanup(func() { resetAuflagen(t, pool) })
 	ctx := context.Background()
 
 	mathe := legeAuflageAn(t, pool, "Mathe", 2023, true)
@@ -203,7 +201,6 @@ func TestFindeBuchFremdInKlasse_Ausnahmen(t *testing.T) {
 func TestHatBuchSchon(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
-	t.Cleanup(func() { resetAuflagen(t, pool) })
 	ctx := context.Background()
 
 	mathe8 := legeAuflageAn(t, pool, "Mathe 8", 2023, true)

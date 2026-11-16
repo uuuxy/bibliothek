@@ -9,6 +9,10 @@ internal/pgtest/pgtest.go: unreachable func: Pool
 internal/pgtest/pgtest.go: unreachable func: baueTestDB
 internal/pgtest/pgtest.go: unreachable func: pruefeTestDatenbank
 internal/pgtest/pgtest.go: unreachable func: schemaPfad
+internal/pgtest/grundzustand.go: unreachable func: leseGrundzustand
+internal/pgtest/grundzustand.go: unreachable func: grundzustand.setzeZurueck
+internal/pgtest/grundzustand.go: unreachable func: grundzustand.leereBelegte
+internal/pgtest/grundzustand.go: unreachable func: grundzustand.schreibeZeilenZurueck
 # Dazu Anweisungen an die Testdatenbank (vorher Helfer in Testdateien von api/; die Tests der
 # Türen stehen in mehr als einem Paket, docs/OFFEN.md 5.65).
 internal/pgtest/anweisungen.go: unreachable func: InTx

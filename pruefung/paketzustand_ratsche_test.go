@@ -256,6 +256,8 @@ var paketwerteOhneZustand = map[string]string{
 	"internal/lusd/spalten.go: spalteZuKopf":      "Tabelle, beim Start gebaut",
 	"internal/pgtest/pgtest.go: fehler": "eine Verbindung zur Testdatenbank je Testlauf; nur Tests " +
 		"binden das Paket ein",
+	"internal/pgtest/pgtest.go: grund": "der Zustand nach dem Einspielen des Schemas, einmal je " +
+		"Testlauf gelesen; nur Tests binden das Paket ein",
 	"internal/pgtest/pgtest.go: once": "eine Verbindung zur Testdatenbank je Testlauf; nur Tests " +
 		"binden das Paket ein",
 	"internal/pgtest/pgtest.go: pool": "eine Verbindung zur Testdatenbank je Testlauf; nur Tests " +
