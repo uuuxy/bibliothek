@@ -204,6 +204,9 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 // Wege zählen, auf denen ein Passwort als falsch gilt: Der Mailserver lehnt ab, oder er fällt aus
 // und der Prüfwert passt nicht.
 func TestSperre_BremseWeistDenSechstenVersuchAb(t *testing.T) {
+	// Auch der Test selbst holt die Datenbank: pgtest setzt am Ende des Tests zurück, der sie
+	// geholt hat, nicht am Ende eines Untertests.
+	pgPoolFuerSelbstanmeldung(t)
 	for _, fall := range []struct {
 		name       string
 		mailserver func(t *testing.T, a *Anmeldung)

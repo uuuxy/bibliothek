@@ -366,6 +366,9 @@ func TestDoppelterBarcodeWeichtAus(t *testing.T) {
 // Etiketten", und am Scanner läse das Buch weiter die Nummer des anderen Exemplars.
 // Gezählt wird mit der Bedingung, mit der die Liste selbst filtert.
 func TestNeueNummerStehtInFehlendeEtiketten(t *testing.T) {
+	// Auch der Test selbst holt die Datenbank: pgtest setzt am Ende des Tests zurück, der sie
+	// geholt hat, nicht am Ende eines Untertests.
+	pgTestPool(t)
 	aufDerListe := `SELECT count(*) FROM buecher_exemplare e WHERE ` + repository.EtikettOffenBedingung
 
 	t.Run("doppelte Nummer", func(t *testing.T) {

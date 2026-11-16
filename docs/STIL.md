@@ -232,7 +232,9 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   Zeilen aus `schema.sql` zurückkommen und die Folgen auf ihren Wert springen; `t.Cleanup` „also
   works with test helpers" (Best Practices, „Error handling in test helpers"). Ein Untertest
   setzt nicht zurück, weil er oft teilt, was sein Test angelegt hat; die Helfer, die zu Beginn
-  leeren (`testdaten.LeereBestandsdaten` und die der Pakete), bleiben deshalb.
+  leeren (`testdaten.LeereBestandsdaten` und die der Pakete), bleiben deshalb. Braucht ein Test
+  die Datenbank nur in Untertests, holt er den Pool auch selbst, vor ihnen; sonst setzt niemand
+  zurück.
   `internal/pgtest/grundzustand_test.go` hält es.
 - Eine Hilfsfunktion, die den Test führt (`*testing.T`, `*testing.B`, `*testing.F`,
   `testing.TB`), beginnt mit `t.Helper()` und nimmt `t` vorn, vor ihm steht nur ein Kontext:

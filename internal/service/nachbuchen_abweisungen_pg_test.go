@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/repository"
 )
 
@@ -105,6 +106,9 @@ func TestBucheNach_OfflineGescannterAusweisLoestDiePersonAuf(t *testing.T) {
 // es nicht mehr gibt — auch wenn das Exemplar keinen Bewegungsstempel trägt. Die Ausleihe
 // bleibt, der Eintrag ist veraltet und gemeldet.
 func TestBucheNach_ScanVorDerAusleiheIstVeraltet(t *testing.T) {
+	// Auch der Test selbst holt die Datenbank: pgtest setzt am Ende des Tests zurück, der sie
+	// geholt hat, nicht am Ende eines Untertests.
+	pgtest.Pool(t)
 	for _, f := range []struct {
 		name, absicht, grund string
 		person               func(w *nbWelt) *string
