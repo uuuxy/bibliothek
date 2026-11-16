@@ -82,6 +82,7 @@ func TestDSGVOKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
 func TestDSGVOAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
+	t.Cleanup(func() { testdaten.LeereBestandsdaten(t, pool) })
 	ctx := context.Background()
 	exec := func(sql string, args ...any) {
 		t.Helper()
