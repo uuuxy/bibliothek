@@ -35,7 +35,7 @@ gespeichert; Rechtsgrundlage: Einwilligung (gesondertes Formular)."]
 Ausleihvorgang selbst und, einmalig bei der Umstellung, aus dem bisherigen
 Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum).
 
-**Wer die Daten sieht.** Das Bibliothekspersonal der Schule; Helferinnen und Helfer am
+**Wer die Daten sieht.** Das Bibliothekspersonal der Schule; Helferinnen und Helfer an der
 Ausleihtheke sehen nur Name, Klasse und ob eine Ausleihsperre besteht. Die
 Klassenleitung erhält eine Liste überfälliger Bücher ihrer Klasse. Eine Weitergabe an
 Dritte außerhalb der Schule findet nicht statt; im Fall eines Schadensersatzes entscheidet
