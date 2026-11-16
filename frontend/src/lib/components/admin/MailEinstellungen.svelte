@@ -7,6 +7,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import MailTestversand from './MailTestversand.svelte';
+	import MailZweiterAbsender from './MailZweiterAbsender.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	let laedt = $state(true);
@@ -22,18 +23,23 @@
 	let password = $state('');
 	let hasPassword = $state(false);
 
-	// Der Absender der Mails aus Mein Portal; leer gehen sie über den Postausgang darüber.
+	// Der zweite Absender und die Arten von Mails, die über ihn gehen; ohne Adresse gehen alle über
+	// den Postausgang darüber. Welche Arten es gibt, sagt der Server.
 	let portalSender = $state('');
 	let portalBenutzername = $state('');
 	let portalPassword = $state('');
 	let portalHasPassword = $state(false);
+	let portalFuer = $state(/** @type {string[]} */ (['portal']));
+	let portalArten = $state(/** @type {string[]} */ ([]));
 	// Gespeichert, nicht getippt: Der Testversand prüft die gespeicherten Zugangsdaten.
 	let portalGespeichert = $state(false);
 
 	// Der Stand nach Laden und Speichern. Ein getipptes Passwort ist immer ungespeichert, denn das
 	// gespeicherte kommt nie zurück.
 	const stand = () =>
-		[host, port, benutzername, sender, portalSender, portalBenutzername].map(String).join('\n');
+		[host, port, benutzername, sender, portalSender, portalBenutzername, portalFuer.join(',')]
+			.map(String)
+			.join('\n');
 	let gespeichert = stand();
 	meldeFormular(() => password !== '' || portalPassword !== '' || stand() !== gespeichert);
 
@@ -49,6 +55,8 @@
 			portalSender = daten.portal?.sender_email || '';
 			portalBenutzername = daten.portal?.smtp_user || '';
 			portalHasPassword = daten.portal?.has_password || false;
+			portalFuer = daten.portal?.fuer ?? ['portal'];
+			portalArten = daten.portal?.arten ?? [];
 			portalGespeichert = portalSender !== '';
 			gespeichert = stand();
 			ladeFehler = false;
@@ -74,7 +82,8 @@
 				portal: {
 					sender_email: portalSender,
 					smtp_user: portalBenutzername,
-					smtp_password: portalPassword
+					smtp_password: portalPassword,
+					fuer: portalFuer
 				}
 			});
 			snackbars.addToast('Mail-Konfiguration gespeichert', 'success');
@@ -104,7 +113,8 @@
 			<div class="flex flex-col gap-1">
 				<h3 class="text-base font-medium text-on-surface">Postausgang (SMTP)</h3>
 				<p class="text-sm text-on-surface-variant">
-					Gilt für alle E-Mails der Bibliothek und wirkt sofort, ohne Neustart.
+					Gilt für alle E-Mails der Bibliothek, die unten nicht angehakt sind; wirkt sofort, ohne
+					Neustart.
 				</p>
 			</div>
 
@@ -133,44 +143,14 @@
 				/>
 			</div>
 
-			<div
-				role="group"
-				aria-labelledby="mail-portal-absender"
-				class="flex flex-col gap-6 border-t border-outline-variant pt-6"
-			>
-				<div class="flex flex-col gap-1">
-					<span id="mail-portal-absender" class="text-sm font-medium text-on-surface"
-						>Absender für Mein Portal</span
-					>
-					<span class="text-sm text-on-surface-variant"
-						>Für die Mails an Lehrkräfte, wenn ihr Wunsch, ihre Meldung oder ihr Klassensatz
-						erledigt ist; leer gehen sie über den Postausgang darüber.</span
-					>
-				</div>
-				<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-					<Feld
-						bind:value={portalSender}
-						etikett="Absender-E-Mail"
-						type="email"
-						placeholder="anliegen@bibliothek-schule.de"
-					/>
-					<Feld
-						bind:value={portalBenutzername}
-						etikett="Benutzername"
-						type="text"
-						placeholder="Benutzername oder E-Mail"
-						hint="Leer lassen, um mit dem Zugang oben zu senden."
-					/>
-					<Feld
-						bind:value={portalPassword}
-						etikett="Passwort"
-						type="password"
-						placeholder={portalHasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
-						hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
-						class="md:col-span-2"
-					/>
-				</div>
-			</div>
+			<MailZweiterAbsender
+				bind:sender={portalSender}
+				bind:benutzername={portalBenutzername}
+				bind:password={portalPassword}
+				hatPasswort={portalHasPassword}
+				bind:fuer={portalFuer}
+				arten={portalArten}
+			/>
 
 			<div class="flex justify-end">
 				<Button onclick={speichereEinstellungen} disabled={speichert}>

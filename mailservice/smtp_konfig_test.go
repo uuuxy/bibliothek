@@ -29,14 +29,16 @@ func konfigZeile(host, port, benutzer string, passwort []byte, absender string) 
 	return konfigZeileMitPortal(host, port, benutzer, passwort, absender, "", "", nil)
 }
 
-// konfigZeileMitPortal ist die gespeicherte Zeile samt dem Absender der Mails aus Mein Portal.
+// konfigZeileMitPortal ist die gespeicherte Zeile samt dem zweiten Absender, der ab Werk die Mails
+// aus Mein Portal nimmt.
 func konfigZeileMitPortal(host, port, benutzer string, passwort []byte, absender,
 	portalAbsender, portalBenutzer string, portalPasswort []byte,
 ) *pgxmock.Rows {
 	return pgxmock.NewRows([]string{"smtp_host", "smtp_port", "smtp_user", "smtp_password_encrypted", "sender_email",
-		"portal_absender_email", "portal_smtp_benutzer", "portal_smtp_passwort_verschluesselt",
+		"portal_absender_email", "portal_smtp_benutzer", "portal_smtp_passwort_verschluesselt", "portal_absender_fuer",
 		"webmail_adresse", "webmail_benutzer", "webmail_passwort_verschluesselt"}).
-		AddRow(host, port, benutzer, passwort, absender, portalAbsender, portalBenutzer, portalPasswort, "", "", []byte{})
+		AddRow(host, port, benutzer, passwort, absender, portalAbsender, portalBenutzer, portalPasswort, []string{"portal"},
+			"", "", []byte{})
 }
 
 // Der Kernfall: Was der Admin gespeichert hat, gilt, auch wenn in der Umgebung noch

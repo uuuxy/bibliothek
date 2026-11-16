@@ -57,7 +57,7 @@ func TestMailEinstellungenSchreiben_UnbrauchbarerPortalAbsenderKommtNichtInDieDa
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(tuertest.Fehlermeldung(t, rec), "Mein Portal") {
+	if !strings.Contains(tuertest.Fehlermeldung(t, rec), "zweiten Absenders") {
 		t.Errorf("Meldung benennt das Feld nicht: %q", tuertest.Fehlermeldung(t, rec))
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

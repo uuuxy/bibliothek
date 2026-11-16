@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/mail"
+	"slices"
 	"strings"
 
 	"bibliothek/api/tuer"
@@ -28,19 +29,24 @@ type mailEinstellungenAntwort struct {
 	Portal        mailPortalAntwort `json:"portal"`
 }
 
-// mailPortalAntwort ist der Absender der Mails aus Mein Portal, ohne Passwort wie oben.
+// mailPortalAntwort ist der zweite Absender, ohne Passwort wie oben. Fuer sind die Arten von
+// Mails, die über ihn gehen, Arten alle, die sich wählen lassen (mailservice.Mailarten).
 type mailPortalAntwort struct {
-	AbsenderEmail string `json:"sender_email"`
-	SMTPBenutzer  string `json:"smtp_user"`
-	HatPasswort   bool   `json:"has_password"`
+	AbsenderEmail string   `json:"sender_email"`
+	SMTPBenutzer  string   `json:"smtp_user"`
+	HatPasswort   bool     `json:"has_password"`
+	Fuer          []string `json:"fuer"`
+	Arten         []string `json:"arten"`
 }
 
-// mailPortalAnfrage ist der eingehende Absender der Mails aus Mein Portal. Eine leere Adresse
-// heißt, sie gehen über den Postausgang; ein leerer Benutzer, mit dessen Zugang.
+// mailPortalAnfrage ist der eingehende zweite Absender. Eine leere Adresse heißt, alle Mails
+// gehen über den Postausgang; ein leerer Benutzer, mit dessen Zugang. Fehlt Fuer, bleiben die
+// gespeicherten Arten stehen; eine leere Liste nimmt alle heraus.
 type mailPortalAnfrage struct {
-	AbsenderEmail string `json:"sender_email"`
-	SMTPBenutzer  string `json:"smtp_user"`
-	SMTPPasswort  string `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
+	AbsenderEmail string   `json:"sender_email"`
+	SMTPBenutzer  string   `json:"smtp_user"`
+	SMTPPasswort  string   `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
+	Fuer          []string `json:"fuer"`
 }
 
 // mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPasswort
@@ -53,8 +59,8 @@ type mailEinstellungenAnfrage struct {
 	SMTPBenutzer  string `json:"smtp_user"`
 	SMTPPasswort  string `json:"smtp_password"` // leer: das gespeicherte Passwort bleibt
 	AbsenderEmail string `json:"sender_email"`
-	// Fehlt Portal, bleibt der gespeicherte Absender für Mein Portal unangetastet: Eine Seite,
-	// die vor dem Update geladen wurde, kennt das Feld nicht und löschte ihn sonst beim Speichern.
+	// Fehlt Portal, bleibt der gespeicherte zweite Absender unangetastet: Eine Seite, die vor dem
+	// Update geladen wurde, kennt das Feld nicht und löschte ihn sonst beim Speichern.
 	Portal *mailPortalAnfrage `json:"portal"`
 }
 
@@ -83,6 +89,8 @@ func (t *Tueren) MailEinstellungen(mailAbfragen *repository.MailEinstellungsAbfr
 				AbsenderEmail: konfig.PortalAbsenderEmail,
 				SMTPBenutzer:  konfig.PortalSMTPBenutzer,
 				HatPasswort:   len(konfig.PortalSMTPPasswortVerschluesselt) > 0,
+				Fuer:          ordneMailarten(konfig.PortalAbsenderFuer),
+				Arten:         ordneMailarten(nil),
 			},
 		}
 
@@ -121,20 +129,49 @@ func leseMailEinstellungen(w http.ResponseWriter, r *http.Request) (mailEinstell
 		req.AbsenderEmail = adresse.Address
 	}
 
-	if req.Portal != nil {
-		req.Portal.SMTPBenutzer = strings.TrimSpace(req.Portal.SMTPBenutzer)
-		if absender := strings.TrimSpace(req.Portal.AbsenderEmail); absender != "" {
-			adresse, err := mail.ParseAddress(absender)
-			if err != nil {
-				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Absenders für Mein Portal ist ungültig", err)
-				return req, false
-			}
-			req.Portal.AbsenderEmail = adresse.Address
-		} else {
-			req.Portal.AbsenderEmail = ""
-		}
+	if req.Portal != nil && !pruefePortalAbsender(w, req.Portal) {
+		return req, false
 	}
 	return req, true
+}
+
+// pruefePortalAbsender prüft den zweiten Absender und bringt Adresse, Benutzer und Arten in ihre
+// feste Form. Bei einem Fehler hat sie mit 400 geantwortet und liefert false.
+func pruefePortalAbsender(w http.ResponseWriter, p *mailPortalAnfrage) bool {
+	p.SMTPBenutzer = strings.TrimSpace(p.SMTPBenutzer)
+	p.AbsenderEmail = strings.TrimSpace(p.AbsenderEmail)
+	if p.AbsenderEmail != "" {
+		adresse, err := mail.ParseAddress(p.AbsenderEmail)
+		if err != nil {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des zweiten Absenders ist ungültig", err)
+			return false
+		}
+		p.AbsenderEmail = adresse.Address
+	}
+	if p.Fuer == nil {
+		return true
+	}
+	// Eine unbekannte Art fiele beim Ordnen still weg; die Tür lehnt sie deshalb vorher ab.
+	for _, art := range p.Fuer {
+		if !slices.Contains(mailservice.Mailarten, mailservice.Mailart(art)) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Unbekannte Art von Mail für den zweiten Absender", nil)
+			return false
+		}
+	}
+	p.Fuer = ordneMailarten(p.Fuer)
+	return true
+}
+
+// ordneMailarten liefert die genannten Arten in der Reihenfolge von mailservice.Mailarten, jede
+// einmal; nil nennt alle. Die Antwort trägt so nie null, und gespeichert wird eine feste Form.
+func ordneMailarten(genannt []string) []string {
+	geordnet := []string{}
+	for _, art := range mailservice.Mailarten {
+		if genannt == nil || slices.Contains(genannt, string(art)) {
+			geordnet = append(geordnet, string(art))
+		}
+	}
+	return geordnet
 }
 
 // MailEinstellungenSchreiben speichert die Mail-Konfiguration
@@ -156,7 +193,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 }
 
 // schreibeMailEinstellungen schreibt den Postausgang und, wenn die Anfrage ihn nennt, den
-// Absender für Mein Portal.
+// zweiten Absender.
 func schreibeMailEinstellungen(ctx context.Context, mailAbfragen *repository.MailEinstellungsAbfragen, req mailEinstellungenAnfrage) error {
 	if err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail); err != nil {
 		return err
@@ -164,7 +201,7 @@ func schreibeMailEinstellungen(ctx context.Context, mailAbfragen *repository.Mai
 	if req.Portal == nil {
 		return nil
 	}
-	return mailAbfragen.SchreibePortalAbsender(ctx, req.Portal.AbsenderEmail, req.Portal.SMTPBenutzer, req.Portal.SMTPPasswort)
+	return mailAbfragen.SchreibePortalAbsender(ctx, req.Portal.AbsenderEmail, req.Portal.SMTPBenutzer, req.Portal.SMTPPasswort, req.Portal.Fuer)
 }
 
 // protokolliereMailEinstellungen schreibt das Speichern ins Protokoll der Verwaltung. Die
@@ -185,6 +222,9 @@ func (t *Tueren) protokolliereMailEinstellungen(ctx context.Context, req mailEin
 		eintrag["portal_sender_email"] = req.Portal.AbsenderEmail
 		eintrag["portal_smtp_user"] = req.Portal.SMTPBenutzer
 		eintrag["portal_password_changed"] = req.Portal.SMTPPasswort != ""
+		if req.Portal.Fuer != nil {
+			eintrag["portal_fuer"] = req.Portal.Fuer
+		}
 	}
 	details, err := json.Marshal(eintrag)
 	if err != nil {
@@ -199,7 +239,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			To string `json:"to"`
-			// "portal" prüft den Absender für Mein Portal; ohne Angabe gilt der Postausgang.
+			// "portal" prüft den zweiten Absender; ohne Angabe gilt der Postausgang.
 			Postfach string `json:"postfach"`
 		}
 		if !tuer.LeseAnfrage(w, r, &req) {

@@ -70,6 +70,7 @@ func (t *Tueren) verschickeBestellmail(ctx context.Context, m bestellMail) error
 		Betreff:  m.Betreff,
 		Text:     m.Text,
 		Anhaenge: anhaenge,
+		Art:      mailservice.MailartBestellung,
 	}
 
 	if err := t.Post().Sende(ctx, nachricht); err != nil {

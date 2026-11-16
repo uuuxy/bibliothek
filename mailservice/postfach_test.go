@@ -109,35 +109,63 @@ func TestLadeSMTPKonfig_UnlesbaresPortalPasswortHaeltNurDiePortalMailsAuf(t *tes
 	if _, err := konfig.fuer(PostfachAllgemein); err != nil {
 		t.Errorf("Postausgang aufgehalten: %v", err)
 	}
-	if _, err := konfig.fuer(PostfachPortal); err == nil || !strings.Contains(err.Error(), "Mein Portal") {
-		t.Errorf("fuer(PostfachPortal) = %v, erwartet den Fehler des Passworts für Mein Portal", err)
+	if _, err := konfig.fuer(PostfachPortal); err == nil || !strings.Contains(err.Error(), "zweiten Absenders") {
+		t.Errorf("fuer(PostfachPortal) = %v, erwartet den Fehler des Passworts des zweiten Absenders", err)
 	}
 }
 
-// Der Weg einer echten Mail: Der Postausgang wählt den Absender nach dem Postfach der Nachricht.
-func TestPostausgang_SendeWaehltDenAbsenderNachDemPostfach(t *testing.T) {
+// Der Weg einer echten Mail: Der Postausgang wählt den Absender nach der Art der Mail, wie die
+// Einstellungen sie dem zweiten Absender geben. Ohne Art und ohne Haken gilt der Postausgang.
+func TestPostausgang_SendeWaehltDenAbsenderNachDerArt(t *testing.T) {
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true") // Testserver ohne STARTTLS
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 	post := NewPostausgang(func(context.Context) (SMTPKonfig, error) {
 		return SMTPKonfig{Host: host, Port: port, Absender: "bib@schule.example",
-			portal: &portalAbsender{absender: "portal@schule.example"}}, nil
+			portal:     &portalAbsender{absender: "zweiter@schule.example"},
+			portalFuer: map[Mailart]bool{MailartBestellung: true, MailartMahnliste: true}}, nil
 	})
 
 	faelle := []struct {
-		postfach Postfach
+		art      Mailart
 		absender string
 	}{
-		{PostfachAllgemein, "From: bib@schule.example"},
-		{PostfachPortal, "From: portal@schule.example"},
+		{"", "From: bib@schule.example"},
+		{MailartPortal, "From: bib@schule.example"},
+		{MailartAbgaenger, "From: bib@schule.example"},
+		{MailartMahnliste, "From: zweiter@schule.example"},
+		{MailartBestellung, "From: zweiter@schule.example"},
 	}
 	for _, f := range faelle {
-		err := post.Sende(t.Context(), Nachricht{An: "lehrerin@schule.example", Betreff: "x", Text: "y", Postfach: f.postfach})
+		err := post.Sende(t.Context(), Nachricht{An: "lehrerin@schule.example", Betreff: "x", Text: "y", Art: f.art})
 		if err != nil {
-			t.Fatalf("Postfach %d: Versand fehlgeschlagen: %v", f.postfach, err)
+			t.Fatalf("Art %q: Versand fehlgeschlagen: %v", f.art, err)
 		}
 		sitzung := <-sitzungen
 		if !strings.Contains(sitzung.Nachricht, f.absender) {
-			t.Errorf("Postfach %d: erwartet %q in\n%s", f.postfach, f.absender, sitzung.Nachricht)
+			t.Errorf("Art %q: erwartet %q in\n%s", f.art, f.absender, sitzung.Nachricht)
 		}
+	}
+}
+
+// Ab Werk nimmt der zweite Absender nur die Mails aus Mein Portal, wie die gespeicherte Zeile sagt.
+func TestLadeSMTPKonfig_ZweiterAbsenderNimmtDieGespeichertenArten(t *testing.T) {
+	mock := attrappe(t)
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(
+		"smtp.schule.de", "587", "", nil, "bib@schule.de", "portal@schule.de", "", nil))
+	konfig, err := ladeSMTPKonfig(context.Background(), mock)
+	if err != nil {
+		t.Fatalf("ladeSMTPKonfig: %v", err)
+	}
+	for _, art := range Mailarten {
+		want := PostfachAllgemein
+		if art == MailartPortal {
+			want = PostfachPortal
+		}
+		if got := konfig.postfachFuer(art); got != want {
+			t.Errorf("postfachFuer(%q) = %d, erwartet %d", art, got, want)
+		}
+	}
+	if got := konfig.postfachFuer(""); got != PostfachAllgemein {
+		t.Errorf("postfachFuer(ohne Art) = %d, erwartet den Postausgang", got)
 	}
 }

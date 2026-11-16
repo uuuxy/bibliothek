@@ -48,9 +48,9 @@ func erwarteMailKonfig(mock pgxmock.PgxPoolIface, host, port, absender string) {
 func erwarteMailKonfigMitPortal(mock pgxmock.PgxPoolIface, host, port, absender, portalAbsender string) {
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(pgxmock.NewRows([]string{"smtp_host", "smtp_port", "smtp_user", "smtp_password_encrypted", "sender_email",
-			"portal_absender_email", "portal_smtp_benutzer", "portal_smtp_passwort_verschluesselt",
+			"portal_absender_email", "portal_smtp_benutzer", "portal_smtp_passwort_verschluesselt", "portal_absender_fuer",
 			"webmail_adresse", "webmail_benutzer", "webmail_passwort_verschluesselt"}).
-			AddRow(host, port, "", []byte{}, absender, portalAbsender, "", []byte{}, "", "", []byte{}))
+			AddRow(host, port, "", []byte{}, absender, portalAbsender, "", []byte{}, []string{"portal"}, "", "", []byte{}))
 }
 
 func sendeTestmail(t *testing.T, s *Tueren, body string) *httptest.ResponseRecorder {

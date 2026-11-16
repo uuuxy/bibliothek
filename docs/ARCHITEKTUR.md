@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 15.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 16.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1742,7 +1742,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.11.2026
+Stand: 16.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2278,13 +2278,19 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   Postausgang ihrer Basis. Ohne Postausgang lehnt `Post()` jede Mail als nicht konfiguriert ab,
   wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),
   oder gibt der Basis eine Attrappe.
-- **Zwei Absender, ein Postausgang.** `Nachricht.Postfach` wählt den Absender: Ohne Angabe
-  (`PostfachAllgemein`) gilt der Postausgang der Einstellungen, auch für die Bestellmail an den
-  Händler. `PostfachPortal` setzen nur die Mails an Lehrkräfte aus Mein Portal (Anliegen erledigt,
-  Klassensatz bereit). Sie gehen unter `portal_absender_email` hinaus, mit eigenem Zugang, wenn
-  `portal_smtp_benutzer` gesetzt ist; leer gilt jeweils der Postausgang (`SMTPKonfig.fuer`).
-  Server und Port teilen sich beide. Ein unlesbares Passwort des Portal-Absenders hält nur dessen
-  Mails auf. Ein Speichern ohne das Feld `portal` lässt den Portal-Absender stehen.
+- **Zwei Absender, ein Postausgang.** Jede Mail nennt ihre Art (`Nachricht.Art`): `portal` für
+  die Mails an Lehrkräfte aus Mein Portal (Anliegen erledigt, Klassensatz bereit), `mahnliste` und
+  `abgaenger` für die Mails an die Klassenleitungen, `bestellung` für die Bestellmail an den
+  Händler; ohne Art gehen etwa die Alarme. `portal_absender_fuer` (Migration 177, die Häkchen in
+  der Maske) nennt die Arten, die über den zweiten Absender gehen; ab Werk nur `portal`. Er geht
+  unter `portal_absender_email` hinaus, mit eigenem Zugang, wenn `portal_smtp_benutzer` gesetzt
+  ist. Alle anderen Mails gehen über den Postausgang, ebenso alle, solange der zweite Absender
+  keine Adresse hat (`SMTPKonfig.postfachFuer`, `SMTPKonfig.fuer`). Eine unbekannte Art lehnt die
+  Tür ab (400) und die Datenbank ebenso (`mail_settings_config_absender_fuer_chk`); ohne die
+  Prüfung an der Tür leerte sie die Liste still. Server und Port teilen sich beide. Ein
+  unlesbares Passwort des zweiten Absenders hält nur dessen Mails auf. Ein Speichern ohne das
+  Feld `portal` lässt den zweiten Absender stehen, eines ohne `fuer` seine Arten. Seine Spalten
+  heißen `portal_*`.
 - **Adressen aus dem Webmail.** Der Adressabgleich (`internal/adressabgleich`,
   `api/system/adressabgleich.go`) meldet sich mit dem Zugang aus `mail_settings_config`
   (`webmail_*`, Passwort verschlüsselt, Migration 176) am Roundcube der Schule an wie ein Browser
