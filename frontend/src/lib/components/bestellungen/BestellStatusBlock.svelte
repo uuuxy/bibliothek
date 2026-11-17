@@ -41,7 +41,9 @@
 			b.bestaetigt_am ? langdatum(b.bestaetigt_am) : null,
 			b.bestaetigt_durch === 'lieferant' ? 'über den zugeschickten Link' : null,
 			b.etiketten_groesse
-				? `${b.etiketten_groesse === 'gross' ? 'große' : 'kleine'} Etiketten`
+				? b.etiketten_groesse === 'gross'
+					? 'große Etiketten'
+					: 'kleine Etiketten'
 				: null
 		]
 			.filter(Boolean)

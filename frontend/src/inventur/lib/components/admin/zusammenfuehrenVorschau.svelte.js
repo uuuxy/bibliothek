@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
+import { anzahlText } from '../../../../lib/utils/format.js';
 
 /**
  * Die Vorschau des Dialogs „Titel zusammenführen": was das Zusammenführen täte, vom Server
@@ -62,4 +63,4 @@ export function erzeugeZusammenfuehrenVorschau() {
  * Die Zahl der Exemplare in Worten, wie die Trefferliste und die Zeile „Danach" sie nennen.
  * @param {number | null | undefined} n
  */
-export const exemplare = (n) => `${n ?? 0} ${n === 1 ? 'Exemplar' : 'Exemplare'}`;
+export const exemplare = (n) => anzahlText(n, 'Exemplar', 'Exemplare');

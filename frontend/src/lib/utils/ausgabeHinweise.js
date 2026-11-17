@@ -9,6 +9,7 @@
  * mehrere Sätze mit Punkt; keine Klammer für einen Nachsatz, kein Gedankenstrich.
  */
 import { auflagenHinweisText } from './auflagenText.js';
+import { anzahlText } from './format.js';
 
 /** @typedef {{ exemplar: string, art: 'doppelt' | 'klasse' | 'auflagen', text: string }} AusgabeHinweis */
 
@@ -19,7 +20,7 @@ import { auflagenHinweisText } from './auflagenText.js';
  * @param {string} titel
  */
 export function klassenHinweisText(h, titel) {
-	return `„${titel}" hat sonst niemand in der ${h.klasse}. ${h.mit_buechern} von ${h.kinder} Kindern haben ihre Schulbücher schon.`;
+	return `„${titel}" hat sonst niemand in der ${h.klasse}. ${h.mit_buechern} von ${anzahlText(h.kinder, 'Kind', 'Kindern')} ${h.mit_buechern === 1 ? 'hat seine' : 'haben ihre'} Schulbücher schon.`;
 }
 
 /**

@@ -8,6 +8,7 @@
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	// Die Vorschau ist das Druck-PDF des Servers, wie bei Chrome: Eine eigene Zeichnung im Browser
 	// lief auseinander, ihr fehlten Schulname, Jahr und Vermerk (docs/OFFEN.md 5.114). Gezeigt wird
@@ -121,7 +122,7 @@
 		</div>
 		{#if bogenZahl > 1}
 			<p class="mt-4 text-xs font-medium text-on-surface-variant">
-				Bogen 1 von {bogenZahl} · {etikettenZahl} Etiketten
+				Bogen 1 von {bogenZahl} · {anzahlText(etikettenZahl, 'Etikett', 'Etiketten')}
 			</p>
 		{/if}
 	{/if}

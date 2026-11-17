@@ -20,6 +20,7 @@
 	import Select from '../ui/Select.svelte';
 	import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
 	import { STUNDEN } from './lmfplanDienst.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], sommerferien: import('./lmfplanDienst.js').Sommerferien | null }} */
 	let { art, entwurf = $bindable(), ausfaelle, sommerferien } = $props();
@@ -78,7 +79,7 @@
 			<Select
 				id="lmf-plan-stunden"
 				bind:value={entwurf.stunden_je_tag}
-				options={STUNDEN.map((s) => ({ value: s, label: `${s} Stunden` }))}
+				options={STUNDEN.map((s) => ({ value: s, label: anzahlText(s, 'Stunde', 'Stunden') }))}
 			/>
 		</div>
 		<LmfPlanFreieTage bind:tage={entwurf.freie_tage} {ausfaelle} />

@@ -100,16 +100,16 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 			b.Folge = "Ein Datenbankschaden kostet den gesamten Bestand."
 			b.Abhilfe = "Backup-Job und BACKUP_DIR prüfen; der Job läuft täglich 02:30."
 		default:
-			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mehr als %d Stunden alt.",
-				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()), int(jobs.BackupKritischAlter.Hours()))
+			b.Befund = fmt.Sprintf("Letztes Backup vor %s — mehr als %d Stunden alt.",
+				stundenText(l.Jetzt.Sub(*l.LetztesBackup)), int(jobs.BackupKritischAlter.Hours()))
 			b.Folge = "Der Datenverlust-Puffer ist aufgebraucht; der Job steht offenbar still."
 			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
 		}
 	case "warning":
 		b.Stufe = StufeWarnung
 		if l.LetztesBackup != nil && l.Jetzt.Sub(*l.LetztesBackup) > jobs.BackupWarnAlter {
-			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mindestens ein Lauf wurde verpasst.",
-				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
+			b.Befund = fmt.Sprintf("Letztes Backup vor %s — mindestens ein Lauf wurde verpasst.",
+				stundenText(l.Jetzt.Sub(*l.LetztesBackup)))
 			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht."
 			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
 		} else {
@@ -119,7 +119,16 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 		}
 	default:
 		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden.", int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
+		b.Befund = fmt.Sprintf("Letztes Backup vor %s.", stundenText(l.Jetzt.Sub(*l.LetztesBackup)))
 	}
 	return b
+}
+
+// stundenText nennt das Alter einer Sicherung in ganzen Stunden, bei einer Stunde in der
+// Einzahl.
+func stundenText(alter time.Duration) string {
+	if h := int(alter.Hours()); h != 1 {
+		return fmt.Sprintf("%d Stunden", h)
+	}
+	return "1 Stunde"
 }

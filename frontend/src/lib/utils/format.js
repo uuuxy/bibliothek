@@ -10,6 +10,21 @@ export function formatZahl(wert) {
 	return (wert ?? 0).toLocaleString('de-DE');
 }
 
+const mehrzahlRegel = new Intl.PluralRules('de-DE');
+
+/**
+ * „1 Exemplar", „1.234 Exemplare": die Zahl wie formatZahl, das Wort danach in der Form, die
+ * die Sprachregel für diese Zahl verlangt. Feste Mehrzahl ergab „1 Exemplare". Am Server
+ * dasselbe in internal/pdf/anzahl_text.go.
+ * @param {number | null | undefined} wert
+ * @param {string} einzahl
+ * @param {string} mehrzahl
+ */
+export function anzahlText(wert, einzahl, mehrzahl) {
+	const n = wert ?? 0;
+	return `${formatZahl(n)} ${mehrzahlRegel.select(n) === 'one' ? einzahl : mehrzahl}`;
+}
+
 /**
  * „19,92 €" — Beträge stehen in Forderungen und Bescheiden, deshalb immer zwei
  * Nachkommastellen und immer dieselbe Schreibweise.

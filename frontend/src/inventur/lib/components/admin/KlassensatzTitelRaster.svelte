@@ -2,7 +2,7 @@
 	import { Check } from '@lucide/svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
-	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
+	import { jahrgangSpanne, anzahlText } from '../../../../lib/utils/format.js';
 	import { isbnFormen, normalisiereIsbn } from '../../../../lib/utils/isbnFormen.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
@@ -66,7 +66,8 @@
 
 	{#if gefilterteTitel.length > ANZEIGE_GRENZE}
 		<p class="mt-2 px-1 text-sm text-on-surface-variant">
-			{ANZEIGE_GRENZE} von {gefilterteTitel.length} Titeln. Grenze die Suche ein, um die übrigen zu sehen.
+			{ANZEIGE_GRENZE} von {anzahlText(gefilterteTitel.length, 'Titel', 'Titeln')}. Grenze die Suche
+			ein, um die übrigen zu sehen.
 		</p>
 	{/if}
 </div>

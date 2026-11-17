@@ -11,6 +11,7 @@
 	import BestaetigungEtiketten from './BestaetigungEtiketten.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	const token = window.location.pathname.replace(/^\/bestellung\//, '').replace(/\/+$/, '');
 
@@ -91,7 +92,7 @@
 			bestellung?.mittel,
 			bestellung?.lieferant_name,
 			bestellung?.kundennummer ? `Kundennummer ${bestellung.kundennummer}` : null,
-			`${bestellung?.anzahl_exemplare} Exemplare`
+			anzahlText(bestellung?.anzahl_exemplare, 'Exemplar', 'Exemplare')
 		]
 			.filter(Boolean)
 			.join(' · ')

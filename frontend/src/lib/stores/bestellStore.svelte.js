@@ -20,6 +20,7 @@ import {
 	anderesMittel,
 	mittelVorschlag
 } from '../components/bestellungen/mittel.js';
+import { anzahlText } from '../utils/format.js';
 
 /** @typedef {import('../components/bestellungen/mittel.js').Mittel} Mittel */
 /** @typedef {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean, kundennummer_schultraeger?: string }} Supplier */
@@ -512,12 +513,11 @@ class BestellStore {
 			);
 			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
 			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
-			const meldungsArt = antwort?.status === 'warning' ? 'error' : 'success';
-			const barcodeInfo =
-				antwort?.ordered_qty != null ? ` (${antwort.ordered_qty} Barcodes reserviert.)` : '';
+			const n = antwort?.ordered_qty;
+			const info = n == null ? '' : ` (${anzahlText(n, 'Barcode', 'Barcodes')} reserviert.)`;
 			snackbars.addToast(
-				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst.'}${barcodeInfo}`,
-				meldungsArt
+				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst.'}${info}`,
+				antwort?.status === 'warning' ? 'error' : 'success'
 			);
 			return true;
 		} catch {

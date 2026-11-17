@@ -16,6 +16,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { BookOpen, Trash } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ exemplare: any[], titel: any, ladeAlles: (id: string) => void }} */
 	let { exemplare = $bindable([]), titel, ladeAlles } = $props();
@@ -118,11 +119,11 @@
 		}
 		const geloescht = ergebnisse.length - gruende.length;
 		if (geloescht > 0) {
-			melde(`${geloescht} Exemplare erfolgreich gelöscht`, 'success');
+			melde(`${anzahlText(geloescht, 'Exemplar', 'Exemplare')} erfolgreich gelöscht`, 'success');
 			if (titel && titel.id) ladeAlles(titel.id);
 		}
 		if (gruende.length > 0) {
-			const anzahl = `${gruende.length} von ${ergebnisse.length} Exemplaren`;
+			const anzahl = `${gruende.length} von ${anzahlText(ergebnisse.length, 'Exemplar', 'Exemplaren')}`;
 			melde(`${anzahl} nicht gelöscht: ${gruende[0]}`, 'error');
 		}
 	}

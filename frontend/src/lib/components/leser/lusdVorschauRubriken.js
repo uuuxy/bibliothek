@@ -2,6 +2,8 @@
 // Ansicht (LusdImport.svelte steht an der 200-Zeilen-Marke). Reine Daten: Was der
 // Server liefert, heißt hier so, wie der Admin es lesen soll.
 
+import { anzahlText } from '../../utils/format.js';
+
 /**
  * @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff
  * @typedef {{ schueler_id: string, lusd_id: string, vorname: string, nachname: string, geburtsdatum: string, alte_klasse?: string, neue_klasse?: string }} AdoptionDiff
@@ -37,7 +39,7 @@ export function modusInfo(modus) {
  */
 export function abgaengerHinweis(karenzTage) {
 	return karenzTage > 0
-		? `Fehlen in der Datei — werden als Abgänger gesperrt; ohne offene Vorgänge nach ${karenzTage} Tagen Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
+		? `Fehlen in der Datei — werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
 		: 'Fehlen in der Datei — werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert (Karenzzeit 0)';
 }
 
@@ -52,6 +54,33 @@ export function dublettenHinweis(modus) {
 	return modus === 'lusd_id'
 		? 'Dieselbe LUSD-ID zweimal mit verschiedenen Klassen — die spätere Zeile gilt'
 		: 'Gleicher Name und Geburtsdatum zweimal, in verschiedenen Klassen — die spätere Zeile gilt. Sind es zwei Schüler, Geburtsdatum in der Datei prüfen';
+}
+
+/**
+ * Die Zahlen über der Vorschau, je mit ihrem Ton: Datei und Bestand, dazu übersprungene und
+ * doppelte Zeilen, wenn es sie gibt.
+ * @param {LusdPreviewResult} r
+ * @returns {{ text: string, ton: string }[]}
+ */
+export function dateiZahlen(r) {
+	const teile = [
+		{ text: `${anzahlText(r.total_csv_records, 'Zeile', 'Zeilen')} in der Datei`, ton: '' },
+		{
+			text: `${anzahlText(r.active_db_students, 'aktiver Schüler', 'aktive Schüler')} im Bestand`,
+			ton: ''
+		}
+	];
+	if (r.skipped_no_id > 0)
+		teile.push({
+			text: `${anzahlText(r.skipped_no_id, 'Zeile ohne LUSD-ID wird', 'Zeilen ohne LUSD-ID werden')} übersprungen`,
+			ton: 'text-warning font-semibold'
+		});
+	if (r.dubletten_in_datei > 0)
+		teile.push({
+			text: `${anzahlText(r.dubletten_in_datei, 'doppelte Zeile', 'doppelte Zeilen')} zusammengelegt (letzte gewinnt)`,
+			ton: 'font-semibold'
+		});
+	return teile;
 }
 
 /**

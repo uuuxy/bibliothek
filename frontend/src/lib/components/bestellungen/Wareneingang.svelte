@@ -9,6 +9,7 @@
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	let { incomingShipments = [], onReceived } = $props();
 
@@ -61,7 +62,10 @@
 			const daten = await apiPost('/api/bestellungen/bulk-receive', {
 				exemplar_ids: gewaehlteExemplare
 			});
-			snackbars.addToast(`${daten.received_count} Exemplare erfolgreich eingebucht!`, 'success');
+			snackbars.addToast(
+				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} erfolgreich eingebucht!`,
+				'success'
+			);
 			gewaehlteExemplare = [];
 			onReceived(daten.received_items ?? []);
 		} catch {

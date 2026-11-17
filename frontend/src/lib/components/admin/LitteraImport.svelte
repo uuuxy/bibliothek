@@ -3,6 +3,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import { nimmDatei } from '../../utils/dateiwahl.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	let datei = $state(/** @type {File | null} */ (null));
 	let isImporting = $state(false);
@@ -32,9 +33,9 @@
 			if (daten.type === 'xml') {
 				successMsg = `XML-Import erfolgreich! ${daten.updated_titles_count} bestehende Titel wurden aktualisiert.`;
 			} else if (daten.type === 'xlsx') {
-				successMsg = `Excel-Import erfolgreich! ${daten.new_titles_count} neue Titel und ${daten.imported_copies_count} Exemplare wurden angelegt.`;
+				successMsg = `Excel-Import erfolgreich! ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} wurden angelegt.`;
 			} else {
-				successMsg = `CSV-Import erfolgreich! ${daten.new_titles_count} neue Titel und ${daten.imported_copies_count} Exemplare wurden angelegt.`;
+				successMsg = `CSV-Import erfolgreich! ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} wurden angelegt.`;
 			}
 
 			importErgebnis = {

@@ -13,6 +13,7 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import { ChevronLeft } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @param {string} alle @param {string[]} werte */
 	const mitAlle = (alle, werte) => [
@@ -109,7 +110,7 @@
 		</div>
 		{#if !abruf.loading && !nichtGeladen}
 			<p class="text-label-small text-on-surface-variant font-medium">
-				{gefiltert.length} von {items.length} Einträgen
+				{gefiltert.length} von {anzahlText(items.length, 'Eintrag', 'Einträgen')}
 			</p>
 		{/if}
 	</header>

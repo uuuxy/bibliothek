@@ -1,6 +1,6 @@
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { ladeFehlbestand, meldeVerlustGefunden, loescheVerlustEndgueltig } from './inventurApi.js';
-import { formatEuro } from '../../utils/format.js';
+import { formatEuro, anzahlText } from '../../utils/format.js';
 
 /**
  * Der Fehlbestandsbericht: Liste und die zwei Handlungen darauf (Gefunden / endgültig
@@ -97,7 +97,10 @@ export function useFehlbestand() {
 				'warning'
 			);
 		} else {
-			snackbars.addToast(`${geloeschteIds.length} Exemplare endgültig gelöscht.`, 'success');
+			snackbars.addToast(
+				`${anzahlText(geloeschteIds.length, 'Exemplar', 'Exemplare')} endgültig gelöscht.`,
+				'success'
+			);
 		}
 	}
 

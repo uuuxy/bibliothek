@@ -20,6 +20,7 @@
 		erzeugeReservierungsListen
 	} from './klassensatzReservierung.svelte.js';
 	import { erzeugeProblemMeldung, OHNE_BUCH } from './problemMeldung.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 	/** @type {{ konto: any }} */
 	let { konto } = $props();
 
@@ -131,7 +132,8 @@
 		{#if suche.treffer.length > 0}
 			{#if suche.gesamt > suche.treffer.length}
 				<p class="text-sm text-on-surface-variant">
-					{suche.treffer.length} von {suche.gesamt} Treffern. Ein Suchwort grenzt ein.
+					{suche.treffer.length} von {anzahlText(suche.gesamt, 'Treffer', 'Treffern')}. Ein Suchwort
+					grenzt ein.
 				</p>
 			{/if}
 			<div class="space-y-4">

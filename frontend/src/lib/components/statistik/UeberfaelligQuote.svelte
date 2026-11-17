@@ -6,6 +6,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { erlaubteBildschirme } from '../../menue.js';
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
 	 *  medientyp: der Bestandsfilter der Übersicht ('' Gesamt, 'freihand', 'lmf'). Die Zahl
@@ -96,7 +97,7 @@
 			<div class="flex items-baseline justify-between gap-2 mt-5 mb-2.5">
 				<h4 class="text-xs font-medium text-on-surface-variant">Verteilung nach Dauer</h4>
 				<span class="shrink-0 text-xs text-on-surface-variant"
-					>längste: {uebersicht.max_tage_overdue} Tage</span
+					>längste: {anzahlText(uebersicht.max_tage_overdue, 'Tag', 'Tage')}</span
 				>
 			</div>
 			<!-- 2 Spalten fix (nicht viewport-abhängig): die Card ist immer schmal. -->

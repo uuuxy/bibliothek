@@ -6,6 +6,7 @@
  *  es keinen JavaScript-Zwilling der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js';
+import { anzahlText } from '../../utils/format.js';
 
 /** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
 /** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
@@ -260,11 +261,7 @@ export async function speicherePlan(art, entwurf) {
 	const { res, json, meldung } = await sende(art, entwurf, false, 'Speichern fehlgeschlagen.');
 	if (!res.ok) return { ok: false, konflikt: res.status === 409, meldung };
 	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert.' };
-	const n = Number(json.fristen_angepasst ?? 0);
-	return {
-		ok: true,
-		meldung: n > 0 ? `Plan gespeichert · Frist von ${n} Ausleihen angepasst.` : 'Plan gespeichert.'
-	};
+	return fristMeldung('Plan gespeichert', json);
 }
 
 /** Veröffentlicht den gespeicherten Plan der Art: ab jetzt sehen ihn Portal und PDF, und
@@ -275,12 +272,7 @@ export async function veroeffentlichePlan(art) {
 	if (!res.ok)
 		return { ok: false, meldung: await leseApiFehler(res, 'Veröffentlichen fehlgeschlagen.') };
 	const json = await res.json().catch(() => ({}));
-	const n = Number(json.fristen_angepasst ?? 0);
-	return {
-		ok: true,
-		meldung:
-			n > 0 ? `Plan veröffentlicht · Frist von ${n} Ausleihen angepasst.` : 'Plan veröffentlicht.'
-	};
+	return fristMeldung('Plan veröffentlicht', json);
 }
 
 /** @param {string} art @returns {Promise<{ ok: boolean, meldung: string }>} */
@@ -288,13 +280,18 @@ export async function verwerfePlan(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`, { method: 'DELETE' });
 	if (!res.ok) return { ok: false, meldung: await leseApiFehler(res, 'Verwerfen fehlgeschlagen.') };
 	const json = await res.json().catch(() => ({}));
+	return fristMeldung('Plan verworfen', json, 'auf den Stichtag zurückgesetzt');
+}
+
+/** Die Meldung nach Speichern, Veröffentlichen oder Verwerfen, mit der Zahl der Ausleihen,
+ *  deren Frist der Server angepasst hat.
+ *  @param {string} satz @param {{ fristen_angepasst?: number }} json @param {string} [wie] */
+function fristMeldung(satz, json, wie = 'angepasst') {
 	const n = Number(json.fristen_angepasst ?? 0);
+	if (n <= 0) return { ok: true, meldung: `${satz}.` };
 	return {
 		ok: true,
-		meldung:
-			n > 0
-				? `Plan verworfen · Frist von ${n} Ausleihen auf den Stichtag zurückgesetzt.`
-				: 'Plan verworfen.'
+		meldung: `${satz} · Frist von ${anzahlText(n, 'Ausleihe', 'Ausleihen')} ${wie}.`
 	};
 }
 

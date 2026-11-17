@@ -6,6 +6,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import BestellStandChip from './BestellStandChip.svelte';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * @component WareneingangTabelle
@@ -52,7 +53,7 @@
 <div>
 	<div class="flex items-center justify-between mb-3">
 		<h3 class="text-base font-medium text-on-surface-variant">
-			Erwartete Positionen ({totalItems} Exemplare)
+			Erwartete Positionen ({anzahlText(totalItems, 'Exemplar', 'Exemplare')})
 		</h3>
 		{#if incomingShipments.length > 0}
 			<Button variant="ghost" size="sm" onclick={toggleAll}>

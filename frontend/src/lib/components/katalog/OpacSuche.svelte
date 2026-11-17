@@ -9,6 +9,7 @@
 	import NeueFassung from '../layout/NeueFassung.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	let suche = $state('');
 	/** @type {any[]} */
@@ -105,7 +106,8 @@
 			     des Servers da wie die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
 			<p class="text-sm text-on-surface-variant mb-4">
 				{#if gesamt > ergebnisse.length}
-					{ergebnisse.length} von {gesamt} Treffern. Ein Suchwort grenzt ein.
+					{ergebnisse.length} von {anzahlText(gesamt, 'Treffer', 'Treffern')}. Ein Suchwort grenzt
+					ein.
 				{:else}
 					{ergebnisse.length} Treffer
 				{/if}

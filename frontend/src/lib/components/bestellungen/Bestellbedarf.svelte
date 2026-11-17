@@ -9,6 +9,7 @@
 	import { filtereBedarf } from './bedarfFilter.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { resthoehe } from '../../actions/resthoehe.js';
+	import { anzahlText } from '../../utils/format.js';
 	let { vorschlaege, onAddToCart } = $props();
 	// Kam der Bedarf nicht, steht der Grund statt der leeren Liste da: „Kein Schulbuch fehlt" hieße,
 	// es sei nichts zu bestellen. Scheitert nur das Auffrischen, bleibt die Liste von vorhin stehen.
@@ -88,7 +89,7 @@
 				kamera
 				id="bestellbedarf-suchfeld"
 				bind:wert={filter}
-				platzhalter="In {vorschlaege.length} Titeln filtern …"
+				platzhalter="In {anzahlText(vorschlaege.length, 'Titel', 'Titeln')} filtern …"
 				etikett="Bestellvorschläge filtern"
 			/>
 		{/if}

@@ -26,7 +26,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { ArrowLeft } from '@lucide/svelte';
-	import { formatEuro } from '../../utils/format.js';
+	import { formatEuro, anzahlText } from '../../utils/format.js';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
 	let { bestellungId, onBack } = $props();
@@ -130,7 +130,7 @@
 					</div>
 				{/if}
 				<div class="text-sm text-on-surface-variant tabular-nums">
-					{bestellung.anzahl_exemplare} Exemplare bestellt
+					{anzahlText(bestellung.anzahl_exemplare, 'Exemplar', 'Exemplare')} bestellt
 				</div>
 			</div>
 		</div>

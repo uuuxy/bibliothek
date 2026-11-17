@@ -5,6 +5,7 @@ import { useFehlbestand } from './useFehlbestand.svelte.js';
 import { useFruehereInventuren } from './useFruehereInventuren.svelte.js';
 import { useInventurlauf } from './useInventurlauf.svelte.js';
 import { spieleErfolgston, spieleFehlerton } from '../../utils/audio.js';
+import { anzahlText } from '../../utils/format.js';
 
 /**
  * Was die Rückfrage vor dem Abschluss sagt: wie viele Bücher als verloren gebucht werden.
@@ -90,10 +91,8 @@ export function useInventur() {
 	async function schliesseInventurAb() {
 		const r = await schliesseAb(lauf.laufKennung);
 		if (r.ok) {
-			snackbars.addToast(
-				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
-				'success'
-			);
+			const verloren = anzahlText(r.data.verloren_gemeldet, 'Buch wurde', 'Bücher wurden');
+			snackbars.addToast(`Inventur abgeschlossen! ${verloren} als verloren markiert.`, 'success');
 			// Die Liste vor dem Zurücksetzen sichern: Mit der Zahl allein geht niemand ins Regal, und
 			// nach der Aussonderung fallen die Exemplare aus dem Bereich der Inventur.
 			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label, lauf.laufKennung);

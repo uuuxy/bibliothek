@@ -3,6 +3,7 @@ import {
 	formatDatum,
 	formatZeitpunkt,
 	formatZahl,
+	anzahlText,
 	bestandSatz,
 	bestandKurz,
 	bestandLage,
@@ -22,6 +23,14 @@ describe('format.js — eine deutsche Schreibweise', () => {
 
 	it('Zahl: Tausenderpunkt', () => {
 		expect(formatZahl(12345)).toBe('12.345');
+	});
+
+	it('Anzahl: Einzahl nur bei 1, Zahl mit Tausenderpunkt', () => {
+		expect(anzahlText(1, 'Exemplar', 'Exemplare')).toBe('1 Exemplar');
+		expect(anzahlText(0, 'Exemplar', 'Exemplare')).toBe('0 Exemplare');
+		expect(anzahlText(2, 'Buch wurde', 'Bücher wurden')).toBe('2 Bücher wurden');
+		expect(anzahlText(1234, 'Tag', 'Tage')).toBe('1.234 Tage');
+		expect(anzahlText(null, 'Zeile', 'Zeilen')).toBe('0 Zeilen');
 	});
 
 	// Drei Fälle, und der dritte ist der Grund für die Funktion: „nicht gezählt" ist

@@ -5,6 +5,7 @@
 	import Button from './Button.svelte';
 	import Kaestchen from './Kaestchen.svelte';
 	import Feld from './Feld.svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * KlassenVersandDialog — Türsteher vor jedem klassenweisen Massenversand.
@@ -155,7 +156,8 @@
 			<!-- Umfang in einer Zeile: „5 Klassen senden" allein verrät nicht, wie viele
 			     Menschen das betrifft. -->
 			<p class="text-xs text-on-surface-variant">
-				{ausgewaehlt.length} von {klassen.length} Klassen · {ausgewaehlteSchueler} Schüler
+				{ausgewaehlt.length} von {anzahlText(klassen.length, 'Klasse', 'Klassen')} · {ausgewaehlteSchueler}
+				Schüler
 			</p>
 		</div>
 

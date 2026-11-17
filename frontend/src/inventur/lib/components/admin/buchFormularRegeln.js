@@ -1,3 +1,5 @@
+import { anzahlText } from '../../../../lib/utils/format.js';
+
 /**
  * Der Wert für „bis", wenn sich „von" ändert: „bis" geht mit, solange es leer ist oder dieselbe
  * Zahl zeigt wie „von" vor der Änderung. Die meisten Schulbücher gelten für ein Jahr; wer 7
@@ -32,7 +34,7 @@ export function mehrjahresbandHinweis(an, von, bis) {
 	if (!spanneOk) {
 		return 'Braucht eine Spanne über mehr als einen Jahrgang: „bis" muss über „von" liegen, sonst lässt sich der Titel nicht speichern.';
 	}
-	return `Bleibt beim Kind bis zum Ende von Jahrgang ${b}. Ein Kind der ${v} gibt es nach ${b - v + 1} Schuljahren zurück; die Frist ist der Stichtag dieses Schuljahres.`;
+	return `Bleibt beim Kind bis zum Ende von Jahrgang ${b}. Ein Kind der ${v} gibt es nach ${anzahlText(b - v + 1, 'Schuljahr', 'Schuljahren')} zurück; die Frist ist der Stichtag dieses Schuljahres.`;
 }
 
 /**

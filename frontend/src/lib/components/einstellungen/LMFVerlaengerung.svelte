@@ -11,6 +11,7 @@
 		klassenPlatzhalter,
 		klassenLadefehler
 	} from '../leser/klassenVorschlaege.svelte.js';
+	import { formatDatum, anzahlText } from '../../utils/format.js';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -32,7 +33,7 @@
 
 		const confirmed = await bestaetigen({
 			titel: `Alle LMF-Ausleihen der Klasse ${klasse} verlängern?`,
-			text: `Neues Rückgabedatum ${neuesDatum}. Das verändert möglicherweise hunderte Datensätze gleichzeitig.`,
+			text: `Neues Rückgabedatum ${formatDatum(neuesDatum)}. Das verändert möglicherweise hunderte Datensätze gleichzeitig.`,
 			aktion: 'Verlängern',
 			gefaehrlich: true
 		});
@@ -47,7 +48,10 @@
 
 			if (res.ok) {
 				const daten = await res.json();
-				snackbars.addToast(`${daten.updated_count} Ausleihen wurden verlängert.`, 'success');
+				snackbars.addToast(
+					`${anzahlText(daten.updated_count, 'Ausleihe wurde', 'Ausleihen wurden')} verlängert.`,
+					'success'
+				);
 				klasse = '';
 				neuesDatum = '';
 			} else {

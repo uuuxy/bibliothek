@@ -6,7 +6,7 @@
  *
  * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, encryption_key_weak?: boolean, status: 'ok'|'warning'|'critical'|'aus' }} BackupStatus
  */
-import { formatDatum } from '../../utils/format.js';
+import { formatDatum, anzahlText } from '../../utils/format.js';
 
 /**
  * Kurzmeldung: im ok-Fall der Zeitpunkt, sonst was fehlt.
@@ -36,7 +36,7 @@ export function backupMessage(s) {
 	const ageH = (Date.now() - lastMs) / 3600000;
 	const tage = Math.floor(ageH / 24);
 	if (tage < 1) {
-		return `Letztes Backup vor ${Math.round(ageH)} Stunden`;
+		return `Letztes Backup vor ${anzahlText(Math.round(ageH), 'Stunde', 'Stunden')}`;
 	}
 	const dauer = tage === 1 ? 'über 1 Tag' : `${tage} Tagen`;
 	return `Seit ${dauer} kein Backup`;

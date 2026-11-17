@@ -25,6 +25,7 @@
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import EtikettenListe from './EtikettenListe.svelte';
+	import { anzahlText, formatZahl } from '../../utils/format.js';
 
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
@@ -219,9 +220,6 @@
 					tun: uebergeben
 				}
 	);
-
-	/** @param {number} n */
-	const zahl = (n) => n.toLocaleString('de-DE');
 </script>
 
 <div class="no-print animate-fade-in w-full">
@@ -261,7 +259,7 @@
 				{/if}
 				{hauptaktion.anzahl === 0
 					? hauptaktion.leer
-					: `${zahl(hauptaktion.anzahl)} ${hauptaktion.text}`}
+					: `${formatZahl(hauptaktion.anzahl)} ${hauptaktion.text}`}
 			</Button>
 
 			<!-- Die Nebenwege stehen in derselben Zeile, nicht in einem Kasten, der bei
@@ -275,7 +273,7 @@
 					data-tip="Etikett ist schon am Buch — z. B. vom Lieferanten oder aus dem Altsystem"
 				>
 					<Eraser class="h-4 w-4" aria-hidden="true" />
-					{zahl(gewaehltOffen.length)} als erledigt vermerken
+					{formatZahl(gewaehltOffen.length)} als erledigt vermerken
 				</Button>
 			{/if}
 			{#if status !== 'erledigt' && gewaehltErledigt.length > 0}
@@ -287,13 +285,13 @@
 					data-tip="Etikett fehlt doch — z. B. nach einem Papierstau"
 				>
 					<Undo2 class="h-4 w-4" aria-hidden="true" />
-					{zahl(gewaehltErledigt.length)} wieder als offen vermerken
+					{formatZahl(gewaehltErledigt.length)} wieder als offen vermerken
 				</Button>
 			{/if}
 			{#if status === 'erledigt' && gewaehltErledigt.length > 0}
 				<Button variant="ghost" size="lg" disabled={arbeitet} onclick={uebergeben}>
 					<Printer class="h-4 w-4" aria-hidden="true" />
-					{zahl(gewaehltErledigt.length)} noch einmal drucken
+					{formatZahl(gewaehltErledigt.length)} noch einmal drucken
 				</Button>
 			{/if}
 		</div>
@@ -326,10 +324,10 @@
 		     Fuß, und im Screenshot war von ihr nichts zu sehen. -->
 		<p class="py-3 text-sm text-on-surface-variant">
 			{#if gesamt > offen.length}
-				{zahl(offen.length)} von {zahl(gesamt)} Exemplaren, die neuesten zuerst. Suche nach Titel oder
-				Barcode, um die übrigen zu finden.
+				{formatZahl(offen.length)} von {anzahlText(gesamt, 'Exemplar', 'Exemplaren')}, die neuesten
+				zuerst. Suche nach Titel oder Barcode, um die übrigen zu finden.
 			{:else}
-				{zahl(offen.length)}
+				{formatZahl(offen.length)}
 				{offen.length === 1 ? 'Exemplar' : 'Exemplare'}, neueste zuerst.
 			{/if}
 		</p>

@@ -1,7 +1,7 @@
 <script>
 	import { Clock } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
-	import { formatDatum } from '../../utils/format.js';
+	import { formatDatum, formatZahl } from '../../utils/format.js';
 	/** @type {{ verlauf: any[] }} */
 	let { verlauf } = $props();
 </script>
@@ -11,7 +11,11 @@
 {:else}
 	<div class="w-full">
 		<div class="px-1 py-3 border-b border-outline-variant flex items-center justify-between">
-			<p class="text-sm font-medium text-on-surface-variant">Letzte {verlauf.length} Ausleihen</p>
+			<p class="text-sm font-medium text-on-surface-variant">
+				{verlauf.length === 1
+					? 'Letzte Ausleihe'
+					: `Letzte ${formatZahl(verlauf.length)} Ausleihen`}
+			</p>
 		</div>
 		<ul class="divide-y divide-outline-variant">
 			{#each verlauf as h, _i (_i)}

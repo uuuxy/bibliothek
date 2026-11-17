@@ -1,4 +1,5 @@
 import { Pencil, Merge, CornerDownRight, Trash } from '@lucide/svelte';
+import { anzahlText } from '../../utils/format.js';
 
 // Die Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was das
 // Menü einer Zeile anbietet, was die Löschen-Rückfrage sagt, die Zählzeile
@@ -137,7 +138,10 @@ export function loeschFrage(gewaehlt) {
 	if (mit > 0)
 		saetze.push(mit === 1 ? '1 Verweis darauf fällt mit.' : `${mit} Verweise darauf fallen mit.`);
 	saetze.push('Das lässt sich nicht rückgängig machen.');
-	return { titel: `${gewaehlt.length} Schlagworte löschen?`, text: saetze.join(' ') };
+	return {
+		titel: `${anzahlText(gewaehlt.length, 'Schlagwort', 'Schlagworte')} löschen?`,
+		text: saetze.join(' ')
+	};
 }
 
 /**
@@ -147,7 +151,7 @@ export function loeschFrage(gewaehlt) {
  */
 export function loeschErgebnis(gewaehlt, antwort) {
 	if (gewaehlt.length === 1) return `„${gewaehlt[0].wort}“ gelöscht.`;
-	const geloescht = `${antwort.woerter} Schlagworte gelöscht.`;
+	const geloescht = `${anzahlText(antwort.woerter, 'Schlagwort', 'Schlagworte')} gelöscht.`;
 	if (antwort.titel === 0) return geloescht;
 	const haben = antwort.titel === 1 ? 'Titel hat' : 'Titel haben';
 	return `${geloescht} ${antwort.titel} ${haben} Schlagworte verloren.`;

@@ -18,6 +18,7 @@
 	import Button from '../ui/Button.svelte';
 	import LusdUmbenennungen from './LusdUmbenennungen.svelte';
 	import {
+		dateiZahlen,
 		modusInfo,
 		rubriken,
 		umbenennungenFormwert,
@@ -259,18 +260,9 @@
 		{#if stage === 'preview' && probeErgebnis}
 			<div class="space-y-4">
 				<p class="text-xs text-on-surface-variant">
-					{probeErgebnis.total_csv_records} Datensätze in der Datei · {probeErgebnis.active_db_students}
-					aktive Schüler im Bestand
-					{#if probeErgebnis.skipped_no_id > 0}
-						· <span class="text-warning font-semibold"
-							>{probeErgebnis.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span
-						>
-					{/if}
-					{#if probeErgebnis.dubletten_in_datei > 0}
-						· <span class="text-on-surface-variant font-semibold"
-							>{probeErgebnis.dubletten_in_datei} doppelte Zeilen zusammengelegt (letzte gewinnt)</span
-						>
-					{/if}
+					{#each dateiZahlen(probeErgebnis) as teil, i (teil.text)}
+						{i ? ' · ' : ''}<span class={teil.ton}>{teil.text}</span>
+					{/each}
 				</p>
 				{#if vieleAbgaenger}
 					<div

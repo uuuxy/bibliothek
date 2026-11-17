@@ -9,7 +9,7 @@
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { ShoppingBag } from '@lucide/svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
-	import { formatEuro } from '../../utils/format.js';
+	import { formatEuro, anzahlText } from '../../utils/format.js';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
@@ -190,8 +190,8 @@
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->
 			{#if gekappt}
 				<p class="text-sm text-on-surface-variant">
-					{bestellungen.length} von {gesamtImBlick} Bestellungen, die neuesten zuerst. Ältere stehen in
-					den Bestellberichten.
+					{bestellungen.length} von {anzahlText(gesamtImBlick, 'Bestellung', 'Bestellungen')}, die
+					neuesten zuerst. Ältere stehen in den Bestellberichten.
 				</p>
 			{/if}
 			<BestellHistorieTabelle {bestellungen} euro={formatEuro} {datum} onOeffnen={oeffne} />

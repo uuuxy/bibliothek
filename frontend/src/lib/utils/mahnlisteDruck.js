@@ -4,14 +4,11 @@
 // Blatt zählt keine Mahnung.
 
 import { baueListenDruckHtml } from './listenDruck.js';
-import { formatDatum } from './format.js';
+import { formatDatum, anzahlText } from './format.js';
 import { ANSICHTEN, gemahntSatz } from '../components/mahnwesen/mahnungen.js';
 
 // Zahlen in der Klasse zählen als Zahl: 9A steht vor 10R.
 const ORDNUNG = new Intl.Collator('de', { numeric: true });
-
-/** @param {number} anzahl @param {string} eins @param {string} viele */
-const zahlwort = (anzahl, eins, viele) => `${anzahl} ${anzahl === 1 ? eins : viele}`;
 
 /**
  * @param {any[]} kinder Zeilen der Mahnliste, bereits gefiltert
@@ -41,7 +38,7 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 		`Ansicht: ${ANSICHTEN[sicht.ansicht] ?? sicht.ansicht}`,
 		sicht.klasse ? `Klasse ${sicht.klasse}` : 'alle Klassen',
 		sicht.suche.trim() ? `Suche: ${sicht.suche.trim()}` : '',
-		`${zahlwort(geordnet.length, 'Kind', 'Kinder')}, ${zahlwort(zeilen.length, 'Buch', 'Bücher')}`
+		`${anzahlText(geordnet.length, 'Kind', 'Kinder')}, ${anzahlText(zeilen.length, 'Buch', 'Bücher')}`
 	]
 		.filter(Boolean)
 		.join(' | ');

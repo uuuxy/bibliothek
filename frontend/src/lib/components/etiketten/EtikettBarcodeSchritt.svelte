@@ -11,6 +11,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import { formatZahl } from '../../utils/format.js';
 
 	// Eine Stelle für den Namen des Schritts: Er steht auch im Platzhalter.
 	const SCHRITT = '2. Exemplare wählen';
@@ -27,7 +28,9 @@
 	const gesucht = $derived(etikettenStore.exemplarSuche.trim());
 	const sichtbar = $derived(etikettenStore.sichtbareExemplare.length);
 	const alleText = $derived.by(() => {
-		if (!gesucht) return `Alle ${etikettenStore.auswahl.gesamt} Exemplare`;
+		const gesamt = etikettenStore.auswahl.gesamt;
+		if (!gesucht)
+			return gesamt === 1 ? 'Das eine Exemplar' : `Alle ${formatZahl(gesamt)} Exemplare`;
 		return sichtbar === 1 ? 'Der eine Treffer' : `Alle ${sichtbar} Treffer`;
 	});
 	const ausgesondertText = $derived(

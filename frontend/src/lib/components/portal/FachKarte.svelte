@@ -12,6 +12,7 @@
 	import { ChevronDown, Download } from '@lucide/svelte';
 	import KlassenBuchKachel from '../../../inventur/lib/components/admin/KlassenBuchKachel.svelte';
 	import { RASTER_ABSTAND } from '../../../inventur/lib/components/BuchKarte.svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * @type {{
@@ -49,7 +50,7 @@
 			/>
 			<span
 				class="inline-flex min-w-26 shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-xs font-semibold tabular-nums text-on-secondary-container"
-				>{fach.gesamt} Exemplare</span
+				>{anzahlText(fach.gesamt, 'Exemplar', 'Exemplare')}</span
 			>
 			<span class="truncate text-base font-medium text-on-surface">{name}</span>
 			<span class="shrink-0 text-sm tabular-nums text-on-surface-variant">

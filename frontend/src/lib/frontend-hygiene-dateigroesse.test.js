@@ -17,13 +17,13 @@ const BESTAND = {
 	'src/lib/components/statistik/Statistik.svelte': 334,
 	'src/lib/components/leserakte/Leserakte.svelte': 211,
 	'src/lib/components/benutzer/Konten.svelte': 207,
-	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 344,
+	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 342,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
-	'src/lib/components/leser/LusdImport.svelte': 310,
+	'src/lib/components/leser/LusdImport.svelte': 302,
 	'src/lib/apiFetch.js': 291,
 	'src/lib/designer/ausweisVorlagen.js': 451,
 	'src/lib/designer/idDesignerStore.svelte.js': 520,
-	'src/lib/components/lmfplan/lmfplanDienst.js': 374,
+	'src/lib/components/lmfplan/lmfplanDienst.js': 371,
 	'src/lib/components/lmfplan/lmfplanPlaner.svelte.js': 227,
 	'src/lib/menue.js': 263,
 	'src/lib/stores/authStore.svelte.js': 351,
@@ -33,7 +33,7 @@ const BESTAND = {
 	'src/lib/stores/mahnwesen.svelte.js': 231,
 	'src/lib/stores/offlineSync.svelte.js': 383,
 	'src/lib/stores/omnibox.svelte.js': 412,
-	'src/lib/components/inventur/useInventur.svelte.js': 233,
+	'src/lib/components/inventur/useInventur.svelte.js': 232,
 	'src/lib/components/leserakte/useLeserakte.svelte.js': 298
 };
 

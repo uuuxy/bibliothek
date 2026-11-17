@@ -13,6 +13,7 @@
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
 	import Dialog from '../ui/Dialog.svelte';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ open: boolean, leser: any, onMerged: (zielId: string) => void }} */
 	let { open = $bindable(false), leser, onMerged } = $props();
@@ -64,7 +65,7 @@
 			}
 			const erg = await res.json();
 			snackbars.addToast(
-				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}) — ${erg.ausleihen} Ausleihen, ${erg.schaeden} Gebühren, ${erg.vormerkungen} Vormerkungen übernommen.`,
+				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}) — ${anzahlText(erg.ausleihen, 'Ausleihe', 'Ausleihen')}, ${anzahlText(erg.schaeden, 'Gebühr', 'Gebühren')}, ${anzahlText(erg.vormerkungen, 'Vormerkung', 'Vormerkungen')} übernommen.`,
 				'success'
 			);
 			if (lauf.nochOffen()) open = false;

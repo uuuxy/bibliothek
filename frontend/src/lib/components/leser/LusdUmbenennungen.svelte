@@ -9,6 +9,7 @@
 	import { ArrowRight, CircleCheck, UserRoundPen } from '@lucide/svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * @type {{
@@ -46,8 +47,8 @@
 					<p class="text-sm font-bold text-on-surface">Vermutlich dieselbe Person</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">
 						{#if abgeschlossen}
-							{bestaetigte} von {paare.length} Paaren bestätigt — bestätigte Schüler behielten ihren Datensatz,
-							die übrigen wurden als Abgänger + Neuzugang behandelt
+							{bestaetigte} von {anzahlText(paare.length, 'Paar', 'Paaren')} bestätigt — bestätigte Schüler
+							behielten ihren Datensatz, die übrigen wurden als Abgänger + Neuzugang behandelt
 						{:else}
 							Ein Abgänger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
 							Anschrift zusammengehören (Namensänderung oder Datumskorrektur in der LUSD).

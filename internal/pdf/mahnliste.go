@@ -84,7 +84,7 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 		pdf.SetTextColor(200, 30, 30)
 		pdf.SetFont("Arial", "B", 8)
 	}
-	pdf.CellFormat(26, zeilenHoehe, fmt.Sprintf("%d Tage", med.TageUeberfaellig), "1", 1, "C", false, 0, "")
+	pdf.CellFormat(26, zeilenHoehe, anzahlText(med.TageUeberfaellig, "Tag", "Tage"), "1", 1, "C", false, 0, "")
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetFont("Arial", "", 8)
 }

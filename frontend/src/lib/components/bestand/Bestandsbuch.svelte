@@ -145,17 +145,29 @@
 		     Antwort, und `undefined > 0` ist falsch: Der Hinweis bleibt dann weg. -->
 		{#if buch.ohne_zeitpunkt > 0}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
-				{buch.ohne_zeitpunkt} weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt
-				ist. Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und lassen sich keinem Zeitraum
-				zuordnen.
+				{#if buch.ohne_zeitpunkt !== 1}
+					{formatZahl(buch.ohne_zeitpunkt)} weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum
+					bekannt ist. Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und lassen sich keinem
+					Zeitraum zuordnen.
+				{:else}
+					1 weiteres Exemplar ist ausgesondert, ohne dass ein Abgangsdatum bekannt ist. Es wurde vor
+					der Einführung des Abgangsbuchs ausgebucht und lässt sich keinem Zeitraum zuordnen.
+				{/if}
 			</p>
 		{/if}
 		{#if buch.aus_katalog_geloescht > 0}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
-				{buch.aus_katalog_geloescht} Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt
-				ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. Titel, Signatur
-				und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen deshalb in keiner Liste oben. Ihre
-				Nummern sind in den System-Logs nachschlagbar.
+				{#if buch.aus_katalog_geloescht !== 1}
+					{formatZahl(buch.aus_katalog_geloescht)} Exemplare wurden in diesem Zeitraum aus dem Katalog
+					gelöscht, statt ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust.
+					Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen deshalb in keiner
+					Liste oben. Ihre Nummern sind in den System-Logs nachschlagbar.
+				{:else}
+					1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht, statt ausgesondert zu werden
+					— mit seinem Titel oder als endgültig entfernter Verlust. Titel, Signatur und Abgangsgrund
+					sind mit ihm gelöscht worden; es steht deshalb in keiner Liste oben. Seine Nummer ist in
+					den System-Logs nachschlagbar.
+				{/if}
 			</p>
 		{/if}
 		<!-- Der Satz erklärt die Liste „ohne Zuordnung"; ist sie nicht zu sehen, erklärt er nichts. -->

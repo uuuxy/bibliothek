@@ -9,6 +9,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Pencil, Trash } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * Die Sachgruppen als Tabelle; je Zeile ändern oder löschen. Nach jeder Änderung lädt
@@ -67,7 +68,7 @@
 		// Umlabeln, nicht einem Klick.
 		if (daten?.titel_mitgezogen > 0) {
 			snackbars.addToast(
-				`Geändert. ${daten.titel_mitgezogen} Bücher auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
+				`Geändert. ${anzahlText(daten.titel_mitgezogen, 'Buch', 'Bücher')} auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
 				'success'
 			);
 		} else {

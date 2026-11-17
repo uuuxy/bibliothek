@@ -10,6 +10,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * @type {{
@@ -74,7 +75,10 @@
 		step="0.01"
 		min="0"
 		bind:value={preis}
-		hint="Gilt für {position?.menge ?? 0} Exemplare von „{position?.titel_name ??
-			''}“ aus dieser Bestellung."
+		hint="Gilt für {anzahlText(
+			position?.menge,
+			'Exemplar',
+			'Exemplare'
+		)} von „{position?.titel_name ?? ''}“ aus dieser Bestellung."
 	/>
 </EingabeDialog>

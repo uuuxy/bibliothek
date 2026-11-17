@@ -7,6 +7,7 @@
  */
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { loeschenMitGrund } from '../../stores/bestaetigung.svelte.js';
+import { anzahlText } from '../../utils/format.js';
 
 /** Mehr Namen stehen nicht im Dialog; der Rest heißt „und n weitere". */
 const MAX_NAMEN = 5;
@@ -18,7 +19,7 @@ const MAX_NAMEN = 5;
  */
 
 /** @param {number} n */
-const exemplare = (n) => (n === 1 ? '1 Exemplar' : `${n} Exemplare`);
+const exemplare = (n) => anzahlText(n, 'Exemplar', 'Exemplare');
 
 /**
  * Die Überschrift der Rückfrage: die Zahl der Titel, sonst der Name des einen.

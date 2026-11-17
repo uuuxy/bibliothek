@@ -10,6 +10,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import { nimmDatei } from '../../utils/dateiwahl.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	let datei = $state(/** @type {File | null} */ (null));
 	let laeuft = $state(false);
@@ -32,7 +33,7 @@
 			const daten = await res.json();
 			ergebnis = {
 				type: 'success',
-				message: `Kombi-Import erfolgreich! ${daten.new_titles_count || 0} neue Titel und ${daten.imported_copies_count || 0} Exemplare wurden verarbeitet.`
+				message: `Kombi-Import erfolgreich! ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} wurden verarbeitet.`
 			};
 			datei = null;
 		} catch (err) {
