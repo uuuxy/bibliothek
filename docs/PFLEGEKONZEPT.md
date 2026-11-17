@@ -220,11 +220,12 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Paket, das nur über ein anderes hereinkommt, ist eine Schwachstelle veröffentlicht. Im Ordner
   `frontend` nennt `npm ls <Paket>`, wer es hereinzieht. Geprüft wird ohne die
   Entwicklungspakete (`npm audit --audit-level=high --omit=dev` in `scripts/npm-audit-gate.sh`, das
-  auch der Hook vor dem Push ruft: Ein Befund hält dort den Push an); `@tailwindcss/vite` steht
-  unter `dependencies`, sein Unterbaum zählt deshalb mit. Abhilfe: `npm update` mit genau den
-  gemeldeten Paketnamen; das ändert nur `package-lock.json`. Die Sammel-PRs von Dependabot
-  heben direkte Pakete; ein gemeldetes Paket aus dem Unterbaum ist darin nicht unbedingt
-  enthalten.
+  auch der Hook vor dem Push ruft: Ein Befund hält dort den Push an). Unter `dependencies` steht
+  nur, was im gebauten Programm landet; Bauwerkzeuge wie `vite`, `tailwindcss` und
+  `@tailwindcss/vite` stehen unter `devDependencies`, das Image installiert sie nur in seiner
+  Bau-Stufe. Abhilfe: `npm update` mit genau den gemeldeten Paketnamen; das ändert nur
+  `package-lock.json`. Die Sammel-PRs von Dependabot heben direkte Pakete; ein gemeldetes Paket
+  aus dem Unterbaum ist darin nicht unbedingt enthalten.
 - **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (Go-Bibliothek).** Der
   Job „Docker – Trivy image scan" meldet Schwachstellen in einer Bibliothek, etwa
   `xuri/excelize`; govulncheck und Dependabot melden dabei nicht unbedingt etwas. Gibt es keine
