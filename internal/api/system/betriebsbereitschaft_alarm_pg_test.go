@@ -33,7 +33,7 @@ func (p *alarmPost) Sende(context.Context, mailservice.Nachricht) error {
 
 func (*alarmPost) IstKonfiguriert(context.Context) bool { return true }
 
-// Der Wächter läuft drei Minuten nach jedem Start (main.go). Über die echte Datenbank: Dieselbe
+// Der Wächter läuft drei Minuten nach jedem Start (cmd/server/main.go). Über die echte Datenbank: Dieselbe
 // Mail geht nur einmal hinaus, ein neuer Punkt mit dem nächsten Lauf, nach einem Tag eine
 // Erinnerung. Ein gescheiterter Versand zählt nicht als gemeldet, sonst verschluckte ein Aussetzer
 // des Mailservers den Alarm für einen Tag.

@@ -73,7 +73,7 @@ func TestAnmeldungNachDemHerunterfahrenWirdAbgelehnt(t *testing.T) {
 
 // Die Türen warten an ihrem Kanal. Bleiben die Kanäle beim Herunterfahren offen, wartet jede
 // Tür bis zu 15 Sekunden auf das nächste Lebenszeichen, länger als die zehn Sekunden, die
-// main.go dem Herunterfahren gibt.
+// cmd/server/main.go dem Herunterfahren gibt.
 func TestHerunterfahrenSchliesstOffeneStroeme(t *testing.T) {
 	broker := NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())

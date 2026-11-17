@@ -41,7 +41,7 @@ kritisch() { printf "  ${ROT}✗ %s${AUS}\n    %s\n" "$1" "$2"; befunde=$((befun
 warnung() { printf "  ${GELB}! %s${AUS}\n    %s\n" "$1" "$2"; warnungen=$((warnungen + 1)); }
 gut() { printf "  ${GRUEN}✓ %s${AUS}\n" "$1"; }
 
-# Die Beispielwerte aus docker-compose.yml, main.go und .env.example. Wer einen davon
+# Die Beispielwerte aus docker-compose.yml, cmd/server/main.go und .env.example. Wer einen davon
 # einsetzt, nutzt ein Geheimnis, das öffentlich im Repository steht.
 ist_bekannter_default() {
 	case "$1" in
@@ -62,7 +62,7 @@ echo "── Geheimnisse ──────────────────�
 # dem Schulserver bekam ein grünes Häkchen, nur weil es kein bekannter Default war.
 mindestlaenge() {
 	case "$1" in
-	JWT_SECRET) echo 32 ;;         # HMAC-Schlüssel, main.go verlangt >= 32
+	JWT_SECRET) echo 32 ;;         # HMAC-Schlüssel, cmd/server/main.go verlangt >= 32
 	APP_ENCRYPTION_KEY) echo 32 ;; # AES-256: exakt 32 Byte oder 64 Hex-Zeichen
 	POSTGRES_PASSWORD) echo 16 ;;  # kein harter Zwang im Code, aber alles darunter ist ratbar
 	*) echo 0 ;;

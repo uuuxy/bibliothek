@@ -88,7 +88,7 @@ type ServerKonfig struct {
 	// CoverAbgleich ist der Abgleich der Cover, den Start und Zeitplan mit dem Knopf in der
 	// Verwaltung teilen; nil heißt, der Server legt einen eigenen an.
 	CoverAbgleich *service.CoverDienst
-	// Fehlerstand zählt die Zeilen der Stufe ERROR im Log des Servers (main.go); nil heißt, die
+	// Fehlerstand zählt die Zeilen der Stufe ERROR im Log des Servers (cmd/server/main.go); nil heißt, die
 	// Selbstprüfung meldet den Bereich als nicht erhoben.
 	Fehlerstand *logger.Fehlerstand
 }
@@ -141,7 +141,7 @@ func (s *Server) system() *system.Tueren {
 }
 
 // BereitschaftsAlarm prüft die Betriebsbereitschaft und mailt kritische Befunde an die Admins.
-// Der Start ruft ihn einmal am Tag (main.go). Die Prüfung steht bei den Türen der Systempflege,
+// Der Start ruft ihn einmal am Tag (cmd/server/main.go). Die Prüfung steht bei den Türen der Systempflege,
 // weil die Seite „Betriebsbereitschaft" dieselbe Lage sammelt.
 func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 	s.system().BereitschaftsAlarm(ctx)
@@ -318,7 +318,7 @@ func (s *Server) baueKette(mux http.Handler, stand string) http.Handler {
 	//
 	// erweitereLesefristFuerLangeUploads steht vor rumpfGrenze und damit vor jedem Lesen des
 	// Rumpfes; danach gesetzt käme die Frist zu spät. Sie hebt die strenge
-	// serverweite ReadTimeout (main.go) für die Import-Endpunkte an.
+	// serverweite ReadTimeout (cmd/server/main.go) für die Import-Endpunkte an.
 	//
 	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
 	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt

@@ -3,7 +3,7 @@ package bereitschaft
 import "strings"
 
 // IstBeispielGeheimnis meldet, ob ein Wert eines der mitgelieferten Beispiel-Geheimnisse
-// ist. Der Start (main.go) und die Selbstprüfung fragen dieselbe Liste; zwei Listen liefen
+// ist. Der Start (cmd/server/main.go) und die Selbstprüfung fragen dieselbe Liste; zwei Listen liefen
 // auseinander, und die Seite meldete „alles gut", während der Server den Start verweigert.
 func IstBeispielGeheimnis(wert string) bool {
 	switch wert {
@@ -21,7 +21,7 @@ func IstBeispielGeheimnis(wert string) bool {
 }
 
 // IstGeheimnisSchutzScharf entscheidet, ob der Server den Start mit einem bekannten
-// Beispiel-Geheimnis verweigert (main.go) und ob die Selbstprüfung die Absicherung als scharf
+// Beispiel-Geheimnis verweigert (cmd/server/main.go) und ob die Selbstprüfung die Absicherung als scharf
 // meldet (pruefeGeheimnisse). Eine Funktion für beide, sonst sagt die Seite „scharf", während
 // der Server aus demselben Grund durchstartet.
 //

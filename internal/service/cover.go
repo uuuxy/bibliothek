@@ -20,7 +20,7 @@ type CoverDienst struct {
 	// nach, statt DNB, Google Books und OpenLibrary im Netz zu fragen.
 	katalog func() *katalogdienste.MetadatenClient
 	// laeuft verhindert, dass zwei Läufe sich überlappen. Start, Zeitplan und der Knopf in der
-	// Verwaltung teilen sich deshalb einen Dienst (main.go).
+	// Verwaltung teilen sich deshalb einen Dienst (cmd/server/main.go).
 	laeuft atomic.Bool
 }
 

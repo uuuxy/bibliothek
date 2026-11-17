@@ -216,7 +216,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Server** (`/root/caddy/Caddyfile`). Am Testserver schreibt sie `update_caddy.sh`, am Schulserver wird der Abschnitt „Bibliothek" daraus übernommen ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3). |
 | T10| **Der Betrieb läuft nur über HTTPS**                                           | Die Cookies von Sitzung und CSRF tragen fest `Secure`; einen Schalter für den Betrieb über HTTP gibt es nicht. Ohne TLS gingen Sitzung, das Mail-Passwort jeder Anmeldung und die Schülerdaten offen durchs Schulnetz. Auch ein Server, den die Schule nur über eine IP-Adresse erreicht, braucht deshalb ein Zertifikat. Lokal genügt `http://localhost`: Dort nehmen Browser Cookies mit `Secure` an (MDN, Set-Cookie). |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
-| T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen. `LICENSE` trägt die englische Fassung: Nur sie erkennt GitHub als „EUPL-1.2", die deutsche zeigt es als „Other". Rechtlich sind alle Sprachfassungen gleichwertig (Artikel 13 der EUPL). |
+| T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `cmd/server/main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen. `LICENSE` trägt die englische Fassung: Nur sie erkennt GitHub als „EUPL-1.2", die deutsche zeigt es als „Other". Rechtlich sind alle Sprachfassungen gleichwertig (Artikel 13 der EUPL). |
 
 ---
 
@@ -630,7 +630,7 @@ Prüfungen über den ganzen Baum (`pruefung/`), die Gates der Dokumente (`docs/`
   Blindheit steht im Kopf der Datei und in der Landkarte von [sweeps.md](sweeps.md) (Regel 7,
   gehalten von `docs/landkarte_ratschen_test.go`). Gehört die Regel einem Paket, steht die
   Prüfung dort, auch wenn sie dafür den Baum durchläuft
-  (`internal/repository/einstellungen_gelesene_schluessel_test.go`). Tests, die `main.go` brauchen,
+  (`internal/repository/einstellungen_gelesene_schluessel_test.go`). Tests, die `cmd/server/main.go` brauchen,
   stehen daneben (`main_test.go`, `bildformate_test.go`).
 
 ##### `internal/repository/` bleibt ein Paket
@@ -1078,7 +1078,7 @@ Basis des Servers.
 | Rückstau               | Puffer 10 je Client, `select`/`default`: ein langsamer Client wird übersprungen, nicht abgewartet     |
 | Lebenszeichen          | Heartbeat alle 15 s als Dead-Man-Switch                                                               |
 | Anmeldung              | Vor jedem Heartbeat fragt die Tür `gilt` (`IstSitzungGueltig`); gilt die Anmeldung nicht mehr, endet der Strom |
-| Abbruch                | Kontext-Abbruch beim Shutdown; Zeitfenster 10 s in `main.go`                                          |
+| Abbruch                | Kontext-Abbruch beim Shutdown; Zeitfenster 10 s in `cmd/server/main.go`                               |
 
 > **Wer hier einen „zentralen Event-Loop" wiederherstellt, baut einen Betriebsfehler
 > zurück ein:** Mit Register-Kanälen endete jeder Deploy mit `os.Exit(1)` (A6).
@@ -2478,7 +2478,7 @@ sieht.
   spätere Regel die Daten, die sie umstellt, läuft der Test in einer Transaktion, die die Regel
   herausnimmt und am Ende zurückrollt (`internal/db/lmf_kurze_nummer_migration_pg_test.go`).
 - **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle Pakete
-  des Moduls. Eine Datei unter 50 % (ohne `cmd/`, `main.go` und sehr kleine Dateien) bekommt
+  des Moduls. Eine Datei unter 50 % (ohne `cmd/` und sehr kleine Dateien) bekommt
   einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung.
 - **Eine neue Tabelle oder Route macht Register rot, die ein gezielter Testlauf nicht sieht.**
   Deshalb nach der ersten grünen Probe die ganze Suite fahren. Erwartet wird je ein Eintrag: in
@@ -3127,7 +3127,7 @@ entschlüsseln können (APP_ENCRYPTION_KEY).
 wären genau die Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut",
 während der Server aus demselben Grund den Start verweigert.
 
-**Fundstelle.** `main.go/leseKonfig`, `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`.
+**Fundstelle.** `leseKonfig` in `cmd/server/main.go`, `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`.
 
 ---
 
@@ -3997,8 +3997,8 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `frontend/src/lib/components/admin/` hält Teile der Einstellungen, deren Türen in `internal/api/system`
   stehen; STIL.md 13 verlangt den Namen des Themas. Anlass: ein Umzug in Stufen wie der von
   `components/students` nach `components/leser`, mit Bau-Vergleich.
-- **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
-  beenden das Programm an 14 Stellen selbst (`os.Exit`); Best Practices, „Program
+- **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in
+  `cmd/server/main.go` beenden das Programm an 14 Stellen selbst (`os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
   Abbruch beim Start prüfen soll. 47 Funktionen des Programms (ohne `cmd/` und Prüfhilfen) haben
   sechs oder sieben Parameter; Google nennt keine Zahl („Don't let the signature of a function

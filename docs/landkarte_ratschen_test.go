@@ -13,8 +13,9 @@ import (
 //
 // Geprüft wird die Anwesenheit des Dateinamens in sweeps.md, nicht der Inhalt der Zeile:
 // Ob die genannte Blindheit stimmt, liest ein Mensch. Umfang: die Prüfungen in
-// pruefung/, die Tests neben main.go, die Ratschen in docs/ und die Frontend-Hygiene-Tests; die
-// Ratschen in internal/api/, internal/repository/ usw. stehen von Hand in der Landkarte, ohne Gate.
+// pruefung/, die Tests neben cmd/server/main.go, die Ratschen in docs/ und die
+// Frontend-Hygiene-Tests; die Ratschen in internal/api/, internal/repository/ usw. stehen von
+// Hand in der Landkarte, ohne Gate.
 func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 	sweeps, err := os.ReadFile("sweeps.md")
 	if err != nil {

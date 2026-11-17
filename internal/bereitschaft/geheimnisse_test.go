@@ -31,7 +31,7 @@ func TestIstGeheimnisSchutzScharf(t *testing.T) {
 	}
 }
 
-// Die Liste der Beispiel-Geheimnisse teilt sich die Selbstprüfung mit main.go. Fehlt ein
+// Die Liste der Beispiel-Geheimnisse teilt sich die Selbstprüfung mit cmd/server/main.go. Fehlt ein
 // Wert, startet der Server mit einem öffentlich bekannten Schlüssel.
 func TestIstBeispielGeheimnis(t *testing.T) {
 	for _, wert := range []string{

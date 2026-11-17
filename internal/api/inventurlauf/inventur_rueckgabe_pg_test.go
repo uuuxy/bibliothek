@@ -33,7 +33,7 @@ type verliehenImRegal struct {
 func legeVerliehenesImRegalAn(t *testing.T, pool *pgxpool.Pool) verliehenImRegal {
 	t.Helper()
 	leereInventur(t, pool)
-	// Die Rechte der Rollen wie in einer neuen Anlage (main.go): Ob zurückgebucht wird, hängt am
+	// Die Rechte der Rollen wie in einer neuen Anlage (cmd/server/main.go): Ob zurückgebucht wird, hängt am
 	// Recht perform_actions der Rolle.
 	if err := (&db.Verbindung{Pool: pool}).SchreibeRechteVorgabe(context.Background()); err != nil {
 		t.Fatalf("Rechte vorbelegen: %v", err)

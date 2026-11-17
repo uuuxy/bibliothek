@@ -16,7 +16,7 @@ import (
 const JPEGQualitaet = 80
 
 // AlsJPEG wandelt ein Bild in ein Baseline-JPEG. Es liest jedes Format, dessen Decoder das
-// Programm einbindet; der Server bindet sie in main.go ein.
+// Programm einbindet; der Server bindet sie in cmd/server/main.go ein.
 //
 // Gebraucht wird es zum Einbetten in ein PDF: gofpdf kennt nur JPG, PNG und GIF, die Cover
 // liegen aber als WebP vor. Das Ziel ist JPEG, weil Cover Fotos sind und als PNG ein Vielfaches

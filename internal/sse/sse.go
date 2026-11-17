@@ -79,7 +79,7 @@ func NewBroker() *Broker {
 //
 // Das Herunterfahren schließt die Kanäle aller Fenster, und das beendet die laufenden Ströme:
 // Ohne dieses Signal wartete jede Tür bis zu 15 Sekunden auf ihr nächstes Lebenszeichen,
-// länger als die zehn Sekunden, die main.go dem Herunterfahren gibt.
+// länger als die zehn Sekunden, die cmd/server/main.go dem Herunterfahren gibt.
 func (b *Broker) FuehreAus(ctx context.Context) {
 	<-ctx.Done()
 	b.fahreHerunter()

@@ -105,7 +105,7 @@ func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
 	}
 }
 
-// booteAnwendung geht den Weg des Starts (main.go: FuehreMigrationenAus, dann
+// booteAnwendung geht den Weg des Starts (cmd/server/main.go: FuehreMigrationenAus, dann
 // SchreibeRechteVorgabe). Beide Seiten starten gleich; so misst der Vergleich nur den Unterschied
 // zwischen der Kette der Migrationen und schema.sql, nicht den Code des Starts.
 func booteAnwendung(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {

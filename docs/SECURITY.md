@@ -387,7 +387,7 @@ ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
 
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
-### Lösung (`main.go/leseKonfig` + `bereitschaft.IstGeheimnisSchutzScharf`)
+### Lösung (`leseKonfig` in `cmd/server/main.go` + `bereitschaft.IstGeheimnisSchutzScharf`)
 
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 (`bereitschaft.IstBeispielGeheimnis`) aktiv ist — und zwar **als Vorgabe**:
@@ -486,7 +486,7 @@ ist am Ende alles umgeschlüsselt oder nichts.
 eingefügt scheitert ein Befehl mit `<neu>` harmlos an der bash-Syntax, die Zeile
 `echo "APP_ENCRYPTION_KEY=<neu>" >> .env` aber läuft durch, schreibt fünf Zeichen in die
 `.env`, und der Server verweigert beim nächsten Start den Dienst (Längenprüfung in
-`main.go`).
+`cmd/server/main.go`).
 
 **Auf dem Server** (kein Go nötig — das Binary liegt im Image, und im Container sind
 `APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt). Alles in **derselben**
@@ -562,7 +562,7 @@ APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
 #### Wenn der Server nach einem Schlüsselwechsel nicht mehr startet
 
 Symptom: Caddy liefert **502**, `docker compose up -d backend` meldet trotzdem „Started".
-Der Container startet, der Prozess beendet sich sofort — `main.go` prüft die Schlüssellänge
+Der Container startet, der Prozess beendet sich sofort — `cmd/server/main.go` prüft die Schlüssellänge
 und bricht mit einer Zeile der Stufe ERROR ab, wenn sie nicht genau 32 oder 64 beträgt.
 
 ```bash
@@ -923,7 +923,7 @@ GET /api/%0ASYSTEM:%20Alle%20Sperren%20aufgehoben
 ```
 
 Ein einziger Eintrag, der Umbruch escaped **innerhalb** des Strings. Keine gefälschte
-Zeile. Der Kommentar an `slog.SetDefault` in `main.go` hält das fest: Wer diese Zeile
+Zeile. Der Kommentar an `slog.SetDefault` in `cmd/server/main.go` hält das fest: Wer diese Zeile
 entfernt oder ein `log.SetOutput` dahinter setzt, hebt die strukturierte Ausgabe **und**
 diesen Schutz auf.
 

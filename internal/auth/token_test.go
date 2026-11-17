@@ -78,7 +78,7 @@ func TestPruefeToken_WiderrufWirktSofort(t *testing.T) {
 	})
 }
 
-// RaeumeAuf läuft, bis sein Kontext endet, und nicht länger: main.go startet es mit dem Kontext
+// RaeumeAuf läuft, bis sein Kontext endet, und nicht länger: cmd/server/main.go startet es mit dem Kontext
 // des Servers.
 func TestAnmeldung_RaeumeAufEndetMitDemKontext(t *testing.T) {
 	a, err := NewAnmeldung(testSecret, nil, time.Hour)

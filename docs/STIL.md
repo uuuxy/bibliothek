@@ -328,7 +328,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   on global state" (Best Practices, „Global state").
 - Was sich ändert, gehört einem Typ, den der Rufer anlegt und weiterreicht: die Bremse der
   Fehlversuche an `auth.Anmeldung`, die Sperre des Cover-Abgleichs an `service.CoverDienst`
-  (einer für Start, Zeitplan und Knopf, `main.go`), die vertrauten Proxys am Server
+  (einer für Start, Zeitplan und Knopf, `cmd/server/main.go`), die vertrauten Proxys am Server
   (`api.ServerKonfig`). Was nur eine Anfrage betrifft, reist in ihrem Kontext
   (`clientip.AusAnfrage`); was eine Tür allein braucht, bekommt sie als Parameter.
 - Ein Programm (`package main`) darf Werte der Paketebene halten; Google lässt sie dort zu
@@ -339,8 +339,8 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Ein Paket, das nur für seine Nebenwirkung eingebunden wird (`import _`), steht in einem
   Programm oder im Test, der es braucht; ausgenommen ist `embed` (Decisions, „Import blank":
   „Avoid blank imports in library packages, even if the library indirectly depends on them").
-  Welche Bildformate der Server liest und dass er die API-Beschreibung anmeldet, legt `main.go`
-  fest. `leerimport_ratsche_test.go` hält beides; dass die Bildformate ankommen, prüft
+  Welche Bildformate der Server liest und dass er die API-Beschreibung anmeldet, legt
+  `cmd/server/main.go` fest. `leerimport_ratsche_test.go` hält beides; dass die Bildformate ankommen, prüft
   `bildformate_test.go` neben `main.go`.
 - Der Kontext einer Anfrage reist als erster Parameter bis zur Abfrage, die Läufe bekommen den
   des Servers; kein Typ trägt einen als Feld (Decisions, „Contexts": „Do not add a context member

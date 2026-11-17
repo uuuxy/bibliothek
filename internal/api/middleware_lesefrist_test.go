@@ -110,7 +110,7 @@ func TestLesefrist_ImportpfadDarfLangsamSein(t *testing.T) {
 // Genau daran hängt der SSE-Stream (/events), eine Antwort, die definitionsgemäß nie endet. Wäre
 // die Lesefrist auch eine Schreibfrist, verlöre die Oberfläche reihum ihre Aktualisierung, und
 // zwar ohne Fehler: Der Browser baut die Verbindung neu auf, es fällt nur als „manchmal
-// aktualisiert es nicht" auf. Deshalb steht am Server bewusst kein WriteTimeout (siehe main.go);
+// aktualisiert es nicht" auf. Deshalb steht am Server bewusst kein WriteTimeout (siehe cmd/server/main.go);
 // dieser Test hält fest, dass ReadTimeout allein das nicht heimlich nachholt.
 func TestLesefrist_LangeAntwortWirdNichtAbgeschnitten(t *testing.T) {
 	const readTimeout = 300 * time.Millisecond

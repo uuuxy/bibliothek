@@ -1,7 +1,7 @@
 package bereitschaft
 
 // Wann der Bereitschafts-Alarm dieselbe Mail noch einmal schickt. Der Wächter läuft drei Minuten
-// nach jedem Start und danach täglich (main.go); ohne Gedächtnis brächte jedes Update dieselbe
+// nach jedem Start und danach täglich (cmd/server/main.go); ohne Gedächtnis brächte jedes Update dieselbe
 // Mail, und ein Alarm, der ständig kommt, wird überlesen. Wie repeat_interval bei Prometheus
 // Alertmanager („How long to wait before repeating the last notification“) geht Unverändertes
 // darum einmal am Tag hinaus, ein neuer Punkt mit dem nächsten Lauf.

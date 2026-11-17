@@ -23,7 +23,7 @@ func (p *abfrageZaehler) QueryRow(ctx context.Context, sql string, args ...any) 
 	return p.PgxPoolIface.QueryRow(ctx, sql, args...)
 }
 
-// Der Start ruft den Bereitschafts-Alarm am Server (main.go), und der Server reicht ihn an die
+// Der Start ruft den Bereitschafts-Alarm am Server (cmd/server/main.go), und der Server reicht ihn an die
 // Türen der Systempflege weiter. Bliebe der Aufruf dort liegen, fiele die tägliche Warnmail aus,
 // ohne dass ein anderer Test es merkt. Die Umgebung „test" hält den Alarm vor dem Versand an;
 // dass er lief, zeigt die Lage, die er vorher aus der Datenbank sammelt.
@@ -44,7 +44,7 @@ func TestBereitschaftsAlarm_ServerReichtAnDieSystempflegeWeiter(t *testing.T) {
 	}
 }
 
-// Der Start gibt dem Server den Fehlerstand, an dem das Log zählt (main.go), und die Systempflege
+// Der Start gibt dem Server den Fehlerstand, an dem das Log zählt (cmd/server/main.go), und die Systempflege
 // muss denselben bekommen. Bekäme sie keinen, meldete die Seite „nicht erhoben"; bekäme sie einen
 // eigenen, zeigte sie dauerhaft keine Fehler.
 func TestNewServer_ReichtDenFehlerstandAnDieSystempflege(t *testing.T) {
