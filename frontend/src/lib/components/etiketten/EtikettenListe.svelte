@@ -19,7 +19,7 @@
 
 	/** @param {string} iso */
 	function datum(iso) {
-		return formatDatum(iso) || '—';
+		return formatDatum(iso) || '–';
 	}
 </script>
 

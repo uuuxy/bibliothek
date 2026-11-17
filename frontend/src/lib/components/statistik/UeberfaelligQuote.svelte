@@ -6,7 +6,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { erlaubteBildschirme } from '../../menue.js';
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
-	import { anzahlText } from '../../utils/format.js';
+	import { anzahlText, formatZahl } from '../../utils/format.js';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
 	 *  medientyp: der Bestandsfilter der Übersicht ('' Gesamt, 'freihand', 'lmf'). Die Zahl
@@ -86,7 +86,7 @@
 		<h3 class="text-base font-medium text-on-surface-variant">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
 			<span class="text-4xl font-light text-on-surface tabular-nums leading-none"
-				>{uebersicht.total_overdue}</span
+				>{formatZahl(uebersicht.total_overdue)}</span
 			>
 			{#if quote !== null && hatMahnungen}
 				<span class="text-xs text-on-surface-variant">≈ {quote} % der laufenden Ausleihen</span>

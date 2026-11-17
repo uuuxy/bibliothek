@@ -5,6 +5,7 @@
      eine visuell versteckte Tabelle als barrierefreier „Table-View". Keine Personendaten. -->
 <script>
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { formatZahl } from '../../utils/format.js';
 
 	/** @typedef {{ monat: string, ausleihen: number, rueckgaben: number }} TrendPunkt */
 	/** nichtGelesen: Der Server konnte den Verlauf nicht lesen; `daten` ist dann leer, aber kein
@@ -159,8 +160,7 @@
 						text-anchor="end"
 						dominant-baseline="middle"
 						class="fill-on-surface-variant"
-						style="font-size:11px; font-variant-numeric:tabular-nums"
-						>{t.val.toLocaleString('de-DE')}</text
+						style="font-size:11px; font-variant-numeric:tabular-nums">{formatZahl(t.val)}</text
 					>
 				{/each}
 

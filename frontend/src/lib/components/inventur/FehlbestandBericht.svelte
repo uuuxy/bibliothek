@@ -144,7 +144,7 @@
 					{#each eintraege as e (e.barcode_id)}
 						{@const istGefunden = Boolean(e.gefunden_am)}
 						<tr>
-							<td class="whitespace-nowrap">{e.signatur || '—'}</td>
+							<td class="whitespace-nowrap">{e.signatur || '–'}</td>
 							<!-- w-full: Die Zelle nimmt den Rest der Breite, und ein langer Titel läuft um.
 							     Gekürzt stünde der Rest nur in einer Sprechblase, die ohne Maus nicht erscheint. -->
 							<td class="w-full">
@@ -170,7 +170,7 @@
 									/>
 								{:else}
 									<span class="text-sm text-on-surface-variant" title="Bereits endgültig gelöscht"
-										>—</span
+										>–</span
 									>
 								{/if}
 							</td>

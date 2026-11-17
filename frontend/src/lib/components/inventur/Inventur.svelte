@@ -14,6 +14,7 @@
 	import ScanRueckmeldung from './ScanRueckmeldung.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
+	import { formatZahl } from '../../utils/format.js';
 
 	const ablauf = useInventur();
 
@@ -101,7 +102,7 @@
 					<div>
 						<span class="text-sm font-semibold text-on-surface-variant">Aktueller Fortschritt</span>
 						<div class="text-2xl font-bold text-on-surface mt-1">
-							{gefunden} / {ablauf.stand.erwartet}
+							{formatZahl(gefunden)} / {formatZahl(ablauf.stand.erwartet)}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>

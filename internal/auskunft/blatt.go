@@ -352,14 +352,14 @@ func dsgvoLeer(p *gofpdf.Fpdf, tr func(string) string) {
 
 func dsgvoTextOderStrich(s *string) string {
 	if s == nil {
-		return "—"
+		return "–"
 	}
 	return dsgvoWertOderStrich(*s)
 }
 
 func dsgvoWertOderStrich(s string) string {
 	if strings.TrimSpace(s) == "" {
-		return "—"
+		return "–"
 	}
 	return s
 }
@@ -379,7 +379,7 @@ func dsgvoDatum(t time.Time) string {
 // dsgvoZeitOderStrich liefert den Zeitpunkt oder einen Strich, wie dsgvoTextOderStrich für Texte.
 func dsgvoZeitOderStrich(t *time.Time) string {
 	if t == nil {
-		return "—"
+		return "–"
 	}
 	return dsgvoZeit(*t)
 }

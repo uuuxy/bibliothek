@@ -145,7 +145,7 @@
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-bold text-on-surface truncate" title={row.titel}>{row.titel}</p>
 						<p class="text-xs text-on-surface-variant truncate">
-							{row.autor || '—'}
+							{row.autor || '–'}
 							{#if row.fachbereich}· {row.fachbereich}{/if}
 							{#if row.systematik}· <span class="font-mono">{row.systematik}</span>{/if}
 							{#if row.erscheinungsjahr}· {row.erscheinungsjahr}{/if}

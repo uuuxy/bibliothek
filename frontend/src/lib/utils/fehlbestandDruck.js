@@ -39,7 +39,7 @@ export function baueFehlbestandDruckHtml(offene, { label = '', gebucht }, jetzt 
 			{ text: 'Gefunden', klasse: 'schmal' }
 		],
 		zeilen: offene.map((e) => [
-			e.signatur || '—',
+			e.signatur || '–',
 			e.titel ?? '',
 			e.autor ?? '',
 			{ text: e.barcode_id ?? '', klasse: 'mono' },

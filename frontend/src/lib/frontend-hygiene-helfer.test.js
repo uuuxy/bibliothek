@@ -19,6 +19,9 @@ const FORMAT = 'src/lib/utils/format.js';
 const BETRAG = /\+\s*['"`](?:\s|\\u00a0)*€|\}(?:\s|\\u00a0|&nbsp;)+€|currency\s*:\s*['"`]EUR/;
 const FEHLERTEXT =
 	/instanceof\s+Error\s*\?\s*[\w$.]+\.message\s*:\s*String\(|String\(\s*[\w$.]+\s+instanceof\s+Error\s*\?|\.message\s*\|\|\s*String\(/;
+// Eine Zahl mit Tausenderpunkt schreibt formatZahl; drei Bildschirme hatten dafür einen eigenen
+// Helfer, die übrigen schrieben „1234". Sieht nicht: eine Zahl ganz ohne Formatierung.
+const ZAHL_VON_HAND = /\.toLocaleString\(\s*['"`]de-DE['"`]\s*\)/;
 // Ohne Angaben schreibt toLocaleDateString „T.M.JJJJ" neben „TT.MM.JJJJ" aus formatDatum, ebenso
 // toLocaleString an einem neuen Date. Sieht nicht: toLocaleString an einem Datum aus einer
 // Variablen und eine eigene Form mit Angaben (der LMF-Plan schreibt „TT.MM.JJ").
@@ -79,6 +82,18 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 			von_hand.filter((f) => f !== FORMAT),
 			'Betrag von Hand geschrieben — formatEuro aus utils/format.js nehmen'
 		).toEqual([]);
+	});
+
+	it('keine Quelldatei außer utils/format.js schreibt eine Zahl mit Tausenderpunkt von Hand', () => {
+		const von_hand = treffer(ZAHL_VON_HAND);
+		expect(von_hand, 'der Detektor findet formatZahl nicht').toContain(FORMAT);
+		expect(
+			von_hand.filter((f) => f !== FORMAT),
+			'Zahl von Hand geschrieben — formatZahl aus utils/format.js nehmen'
+		).toEqual([]);
+		expect(ZAHL_VON_HAND.test("const num = (v) => (v ?? 0).toLocaleString('de-DE');")).toBe(true);
+		expect(ZAHL_VON_HAND.test('>{t.val.toLocaleString("de-DE")}</text')).toBe(true);
+		expect(ZAHL_VON_HAND.test("d.toLocaleString('de-DE', { hour: '2-digit' })")).toBe(false);
 	});
 
 	it('keine Quelldatei schreibt ein Datum ohne Angaben, also mit einstelligem Tag und Monat', () => {

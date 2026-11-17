@@ -62,7 +62,7 @@
 								<div class="font-bold">{book.titel}</div>
 								<div class="text-xs text-on-surface-variant">{book.autor}</div>
 							</td>
-							<td class="py-3 px-2 text-center font-mono text-xs">{book.barcode_id || '-'}</td>
+							<td class="py-3 px-2 text-center font-mono text-xs">{book.barcode_id || '–'}</td>
 							<td class="py-3 px-2 text-center">{formatDate(book.ausgeliehen_am)}</td>
 							<!-- Eine Dauerleihe hat keine Frist, wie in der Leserakte. -->
 							<td

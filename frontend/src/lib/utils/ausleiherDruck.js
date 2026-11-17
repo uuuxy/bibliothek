@@ -24,7 +24,7 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 		const ueberfaellig = istUeberfaellig(b, jetzt);
 		return [
 			`${b.schueler_name ?? ''} ${b.schueler_nachname ?? ''}`,
-			b.klasse || '-',
+			b.klasse || '–',
 			{ text: b.exemplar_barcode ?? '', klasse: 'mono' },
 			formatDatum(b.ausgeliehen_am),
 			{

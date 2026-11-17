@@ -124,7 +124,7 @@ func zeichneBerichtPositionen(p *gofpdf.Fpdf, tr func(string) string, positionen
 		}
 		isbn := pos.ISBN
 		if isbn == "" {
-			isbn = "—"
+			isbn = "–"
 		}
 		// Gekürzt wird auf die gedruckte Breite der Zelle; gofpdf druckt Überlanges über die ISBN.
 		titel := pdfzeichen.KuerzeAufZelle(p, tr, pos.TitelName, s.Titel)

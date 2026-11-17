@@ -97,7 +97,7 @@
 									{log.admin_name}
 								</td>
 								<td class="whitespace-nowrap font-mono">
-									{log.ip_adresse || '-'}
+									{log.ip_adresse || '–'}
 								</td>
 								<td>
 									<pre

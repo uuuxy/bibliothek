@@ -62,7 +62,7 @@
 							{v.schueler_name || 'Unbekannt'}
 						</td>
 						<td>
-							{v.notiz || '—'}
+							{v.notiz || '–'}
 						</td>
 						<td class="text-right">
 							<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie in der Leserakte. -->

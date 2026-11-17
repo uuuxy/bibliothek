@@ -91,7 +91,7 @@ describe('baueFehlbestandDruckHtml', () => {
 		);
 		expect(html).toContain('<h1>Fehlbestand</h1>');
 		expect(rumpf(html)[0]).toContain(
-			'<td class="schmal">—</td><td>Diercke Weltatlas</td><td></td>'
+			'<td class="schmal">–</td><td>Diercke Weltatlas</td><td></td>'
 		);
 	});
 });

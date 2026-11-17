@@ -350,7 +350,7 @@ func TestBestellbericht_PositionOhneISBNTraegtEinenStrich(t *testing.T) {
 	}
 	texte := pdftest.TexteInReihenfolge(t, roh)
 	i := slices.Index(texte, "Ein Titel ganz ohne erfassten Preis")
-	if i < 0 || i+2 >= len(texte) || texte[i+1] != "—" || texte[i+2] != "4" {
+	if i < 0 || i+2 >= len(texte) || texte[i+1] != "–" || texte[i+2] != "4" {
 		t.Errorf("hinter dem Titel ohne ISBN stehen nicht Strich und Menge: %q", texte)
 	}
 }

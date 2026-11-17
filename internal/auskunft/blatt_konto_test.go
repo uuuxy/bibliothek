@@ -34,7 +34,7 @@ func TestDSGVOVorgaengeJeTag(t *testing.T) {
 		{tag: "23.09.2026", handlung: "Protokolleintrag: CHECKOUT (ausleihen)", zeiten: []string{"11:05"}},
 		{tag: "23.09.2026", handlung: "Ausleihe gebucht", zeiten: []string{"11:00", "09:59"}},
 		{tag: "23.09.2026", handlung: "Verwaltungseingriff: OVERRIDE_BLOCK", zeiten: []string{"10:00 (IP 10.0.0.7)"}},
-		{tag: "ohne gespeicherten Zeitpunkt", handlung: "Rückgabe gebucht", zeiten: []string{"—"}},
+		{tag: "ohne gespeicherten Zeitpunkt", handlung: "Rückgabe gebucht", zeiten: []string{"–"}},
 	}
 	if diff := cmp.Diff(want, dsgvoVorgaengeJeTag(vorgaenge), cmp.AllowUnexported(dsgvoVorgangsZeile{})); diff != "" {
 		t.Errorf("dsgvoVorgaengeJeTag: Zeilen weichen ab (-erwartet +ist):\n%s", diff)

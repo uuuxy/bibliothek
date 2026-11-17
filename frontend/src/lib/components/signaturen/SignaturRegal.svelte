@@ -118,7 +118,7 @@
 									{buch.titel}
 								</button>
 							</td>
-							<td class="wrap-anywhere hyphens-auto">{buch.autor || '—'}</td>
+							<td class="wrap-anywhere hyphens-auto">{buch.autor || '–'}</td>
 							<td class="text-right">{buch.exemplare}</td>
 							<td class="text-right">{buch.verliehen}</td>
 						</tr>

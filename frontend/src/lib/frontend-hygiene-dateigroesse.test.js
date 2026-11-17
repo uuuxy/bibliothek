@@ -14,7 +14,7 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 209,
 	'src/lib/components/bestellungen/Bestellwesen.svelte': 212,
 	'src/lib/components/omnibox/Omnibox.svelte': 202,
-	'src/lib/components/statistik/Statistik.svelte': 334,
+	'src/lib/components/statistik/Statistik.svelte': 331,
 	'src/lib/components/leserakte/Leserakte.svelte': 211,
 	'src/lib/components/benutzer/Konten.svelte': 207,
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 342,

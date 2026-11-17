@@ -30,7 +30,7 @@
 			<h4 class="truncate text-sm leading-snug font-semibold text-on-surface">
 				{position.titel}
 			</h4>
-			<p class="truncate font-mono text-xs text-on-surface-variant">{position.isbn || '—'}</p>
+			<p class="truncate font-mono text-xs text-on-surface-variant">{position.isbn || '–'}</p>
 			{#if position.generate_barcodes}
 				<div class="mt-1">
 					<StatusChip

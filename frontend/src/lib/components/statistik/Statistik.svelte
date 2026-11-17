@@ -1,6 +1,6 @@
 <script>
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { formatEuro as euro } from '../../utils/format.js';
+	import { formatEuro as euro, formatZahl as num } from '../../utils/format.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import UeberfaelligQuote from './UeberfaelligQuote.svelte';
 	import StatistikVerlauf from './StatistikVerlauf.svelte';
@@ -49,9 +49,6 @@
 		{ wert: 'renner', text: 'Renner' },
 		{ wert: 'ladenhueter', text: 'Ladenhüter' }
 	];
-
-	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
-	const num = (v) => (v ?? 0).toLocaleString('de-DE');
 
 	// Die Card zeigt Top 8 (eine Tabelle statt zwei → mehr Platz pro Zeile);
 	// die volle Liste liegt auf der Detailseite.

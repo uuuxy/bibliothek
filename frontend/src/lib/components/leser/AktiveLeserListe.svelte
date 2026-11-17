@@ -163,7 +163,7 @@
 							<td>{leserArtText(s.art)}</td>
 							<td class="font-medium">
 								{#if istKollegium(s)}
-									<span class="text-on-surface-variant" aria-label="keine Klasse">—</span>
+									<span class="text-on-surface-variant" aria-label="keine Klasse">–</span>
 								{:else}
 									Kl. {s.klasse || 'N/A'}
 								{/if}

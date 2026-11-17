@@ -12,7 +12,7 @@
 	import { ChevronDown, Download } from '@lucide/svelte';
 	import KlassenBuchKachel from '../../../inventur/lib/components/admin/KlassenBuchKachel.svelte';
 	import { RASTER_ABSTAND } from '../../../inventur/lib/components/BuchKarte.svelte';
-	import { anzahlText } from '../../utils/format.js';
+	import { anzahlText, formatZahl } from '../../utils/format.js';
 
 	/**
 	 * @type {{
@@ -54,7 +54,9 @@
 			>
 			<span class="truncate text-base font-medium text-on-surface">{name}</span>
 			<span class="shrink-0 text-sm tabular-nums text-on-surface-variant">
-				{fach.titel} Titel{fach.verliehen ? ` · ${fach.verliehen} verliehen` : ''}
+				{formatZahl(fach.titel)} Titel{fach.verliehen
+					? ` · ${formatZahl(fach.verliehen)} verliehen`
+					: ''}
 			</span>
 		</button>
 

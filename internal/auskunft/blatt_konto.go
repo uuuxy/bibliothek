@@ -128,7 +128,7 @@ func dsgvoVorgaengeJeTag(vorgaenge []repository.DSGVOEigenerVorgang) []dsgvoVorg
 	var zeilen []dsgvoVorgangsZeile
 	index := map[[2]string]int{}
 	for _, v := range vorgaenge {
-		tag, zeit := "ohne gespeicherten Zeitpunkt", "—"
+		tag, zeit := "ohne gespeicherten Zeitpunkt", "–"
 		if v.Zeitpunkt != nil {
 			lokal := v.Zeitpunkt.In(schulzeit.Zone())
 			tag, zeit = lokal.Format(dsgvoDatumFormat), lokal.Format("15:04")

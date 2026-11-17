@@ -155,7 +155,7 @@
 					><span class="text-on-surface-variant font-mono shrink-0"
 						>{item.alte_klasse && item.neue_klasse
 							? `${item.alte_klasse} → ${item.neue_klasse}`
-							: item.neue_klasse || item.alte_klasse || '—'}</span
+							: item.neue_klasse || item.alte_klasse || '–'}</span
 					>
 				</li>
 			{/each}
