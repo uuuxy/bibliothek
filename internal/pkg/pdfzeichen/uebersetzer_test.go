@@ -50,9 +50,25 @@ func TestUebersetzer_ErsetztWasCp1252NichtKennt(t *testing.T) {
 	}
 }
 
-// Was die Liste nicht kennt, bleibt beim Verhalten des Übersetzers — der Punkt. Das ist
-// die Grenze der Ersetzung, nicht ihr Fehler: Für kyrillische oder griechische Namen
-// gibt es keine Ersetzung, die ein Etikett noch lesbar macht.
+// Lateinische Buchstaben, die die Liste nicht nennt, verlieren ihre Akzente statt zum Punkt zu
+// werden: „ǧ“ stand so in einem echten LUSD-Auszug, vietnamesische Namen tragen „ễ“ oder „ư“.
+func TestUebersetzer_NimmtGrundbuchstabenStattPunkt(t *testing.T) {
+	tr := Uebersetzer(cp1252Nachbau)
+	faelle := map[string]string{
+		"Doǧan":          "Dogan",
+		"Nguyễn Văn Ưng": "Nguyen Van Ung",
+		"Lǚ Mǎ":          "Lu Ma",
+	}
+	for eingabe, erwartet := range faelle {
+		if got := tr(eingabe); got != erwartet {
+			t.Errorf("%q → %q, erwartet %q", eingabe, got, erwartet)
+		}
+	}
+}
+
+// Was sich nicht auf einen Buchstaben aus cp1252 bringen lässt, bleibt beim Verhalten des
+// Übersetzers — der Punkt. Das ist die Grenze der Ersetzung, nicht ihr Fehler: Für kyrillische
+// oder griechische Namen gibt es keine Ersetzung, die ein Etikett noch lesbar macht.
 func TestUebersetzer_LaesstUnbekanntesBeimPunkt(t *testing.T) {
 	tr := Uebersetzer(cp1252Nachbau)
 	if got := tr("Дмитрий"); got != "......." {

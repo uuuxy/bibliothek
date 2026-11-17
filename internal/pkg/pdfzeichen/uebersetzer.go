@@ -10,7 +10,13 @@
 // pruefung/pdfzeichen_ratsche_test.go hält beides.
 package pdfzeichen
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/unicode/norm"
+)
 
 // ersatz bildet Buchstaben ab, die cp1252 nicht kennt. Abgedeckt sind die Sprachen, die an
 // einer hessischen Schule vorkommen: Türkisch, Polnisch, Rumänisch, Tschechisch, Slowakisch,
@@ -41,5 +47,36 @@ func Uebersetzer(cp1252 func(string) string) func(string) string {
 // Ersetze ist die Ersetzung allein, für Erzeuger, die den cp1252-Übersetzer selbst aufrufen:
 // maroto tut das für jeden Text in einer Standardschrift (pdf.marotoText).
 func Ersetze(text string) string {
-	return ersatz.Replace(text)
+	return grundbuchstaben(ersatz.Replace(text))
+}
+
+// grundbuchstaben nimmt einem Buchstaben, den weder cp1252 noch die Liste kennt, seine Akzente:
+// „ǧ“ wird „g“, „ễ“ wird „e“. Solche Buchstaben erlaubt DIN 91379 in Namen, und der Grundbuchstabe
+// ist lesbarer als der Punkt des Übersetzers. Was sich so nicht auf ein Zeichen aus cp1252 bringen
+// lässt (Kyrillisch, Griechisch), bleibt und wird zum Punkt.
+func grundbuchstaben(text string) string {
+	var b strings.Builder
+	for _, r := range text {
+		b.WriteRune(grundbuchstabe(r))
+	}
+	return b.String()
+}
+
+func grundbuchstabe(r rune) rune {
+	if _, bekannt := charmap.Windows1252.EncodeRune(r); bekannt {
+		return r
+	}
+	var grund []rune
+	for _, z := range norm.NFD.String(string(r)) {
+		if !unicode.Is(unicode.Mn, z) {
+			grund = append(grund, z)
+		}
+	}
+	if len(grund) != 1 {
+		return r
+	}
+	if _, bekannt := charmap.Windows1252.EncodeRune(grund[0]); !bekannt {
+		return r
+	}
+	return grund[0]
 }
