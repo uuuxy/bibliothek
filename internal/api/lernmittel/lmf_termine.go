@@ -62,9 +62,9 @@ func lmfArtErklaerung(art string, eingang []int) string {
 		// Ohne bekannte Jahrgänge kein leeres Klammerpaar („(Jahrgang )"): Der Satz nennt dann
 		// nur die Regel. Beide Seiten müssen das gleich halten; TestLMFTexte prüft es.
 		if len(eingang) == 0 {
-			return "Nur die neu gebildeten Klassen bekommen ihre Schulbücher."
+			return "Nur die neu gebildeten Klassen bekommen ihre Schulbücher"
 		}
-		return "Nur die neu gebildeten Klassen (Jahrgang " + jahrgaengeText(eingang) + ") bekommen ihre Schulbücher."
+		return "Nur die neu gebildeten Klassen (Jahrgang " + jahrgaengeText(eingang) + ") bekommen ihre Schulbücher"
 	}
 	return "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
 		"„Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden."

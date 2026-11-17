@@ -50,14 +50,14 @@ func TestLMFTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	// Ohne Jahrgänge fällt das Klammerpaar weg — auf beiden Seiten gleich, sonst stünde im
 	// Portal „(Jahrgang )", während das PDF den ganzen Satz druckt.
 	if got, will := lmfArtErklaerung(repository.LMFTerminAusgabe, nil),
-		"Nur die neu gebildeten Klassen bekommen ihre Schulbücher."; got != will {
+		"Nur die neu gebildeten Klassen bekommen ihre Schulbücher"; got != will {
 		t.Errorf("Ausgabe-Satz ohne Jahrgänge: %q", got)
 	}
-	if !strings.Contains(js, "'Nur die neu gebildeten Klassen bekommen ihre Schulbücher.'") {
+	if !strings.Contains(js, "'Nur die neu gebildeten Klassen bekommen ihre Schulbücher'") {
 		t.Error("lmfplanDienst.js kennt den Satz ohne Jahrgänge nicht — dann zeigt das Portal ein leeres Klammerpaar")
 	}
 	saetze := map[string]string{
-		repository.LMFTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.",
+		repository.LMFTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher",
 		repository.LMFTerminRueckgabe: "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
 			"„Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
 	}
