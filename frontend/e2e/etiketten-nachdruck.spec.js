@@ -225,11 +225,12 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 	// Angesprochen wird der Knopf selbst, nicht seine Zeile: Die aufgeklappte Bestellzeile
 	// enthaelt die gesamte Positionstabelle, ein row-Treffer waere also mehrdeutig.
 	const nachdruckOffen = page.getByRole('button', {
-		name: `Etiketten für ${offenerTitel} nachdrucken`
+		// „1 Etikett für …“ bei einem, „2 Etiketten für …“ bei mehreren (anzahlText).
+		name: new RegExp(`Etikett(en)? für ${offenerTitel} nachdrucken`)
 	});
 	await expect(nachdruckOffen).toBeVisible();
 	await expect(
-		page.getByRole('button', { name: `Etiketten für ${fertigerTitel} nachdrucken` })
+		page.getByRole('button', { name: new RegExp(`Etikett(en)? für ${fertigerTitel} nachdrucken`) })
 	).toHaveCount(0);
 
 	// Und der Verweis landet in der Liste, bereits auf diesen Titel gefiltert.

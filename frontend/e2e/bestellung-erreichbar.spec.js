@@ -69,7 +69,7 @@ for (const [breite, hoehe] of FENSTER) {
 			await plus.click();
 			// Auf die Wirkung warten statt auf eine feste Zeit: Der Korb muss die Position
 			// übernommen haben, bevor die nächste dazukommt.
-			await expect(knopf).toHaveText(new RegExp(`${i + 1}\\s*Expl`), { timeout: 10_000 });
+			await expect(knopf).toHaveText(new RegExp(`${i + 1}\\s*Exemplar`), { timeout: 10_000 });
 		}
 
 		await expect(knopf).toBeVisible();
@@ -78,7 +78,7 @@ for (const [breite, hoehe] of FENSTER) {
 		await expect(
 			knopf,
 			'Der Warenkorb muss die erwarteten Positionen tragen — sonst misst der Test den falschen Fall'
-		).toHaveText(new RegExp(`${ZIEL_POSITIONEN}\\s*Expl`), { timeout: 10_000 });
+		).toHaveText(new RegExp(`${ZIEL_POSITIONEN}\\s*Exemplar`), { timeout: 10_000 });
 
 		// Alle Scroll-Container auf Anfang — die Arbeitsfläche steht oben, wie nach dem
 		// Öffnen der Ansicht.

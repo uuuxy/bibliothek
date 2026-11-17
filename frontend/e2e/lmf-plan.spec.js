@@ -64,12 +64,12 @@ function iso(/** @type {Date} */ tag) {
 	return `${tag.getFullYear()}-${zwei(tag.getMonth() + 1)}-${zwei(tag.getDate())}`;
 }
 
-/** TT.MM.JJ, wie ihn der Planer zeigt. */
+/** TT.MM.JJJJ, wie ihn der Planer zeigt. */
 function kurz(/** @type {Date} */ tag) {
 	return new Intl.DateTimeFormat('de-DE', {
 		day: '2-digit',
 		month: '2-digit',
-		year: '2-digit'
+		year: 'numeric'
 	}).format(tag);
 }
 
@@ -396,7 +396,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	const festerTag = zeile.getByLabel(`Fester Tag Zeile ${nummer}`);
 	await expect(festerTag).toBeFocused();
 	expect(
-		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(
+		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
 			new Date(`${await festerTag.inputValue()}T12:00:00`)
 		),
 		'vorbelegt mit dem Platz der Zeile'
@@ -487,7 +487,7 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	const letzte = zeilen.last();
 	await expect(letzte).toContainText('4. Std.');
 	await expect(letzte).toContainText(
-		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(
+		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
 			new Date(`${wert}T12:00:00`)
 		)
 	);

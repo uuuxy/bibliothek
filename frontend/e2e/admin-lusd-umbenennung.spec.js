@@ -49,7 +49,7 @@ test('LUSD-Import: umbenannter Schüler wird als Paar erkannt und behält seinen
 		await bremse.click();
 	}
 	await expect(erfolg).toBeVisible();
-	await expect(page.getByText('1 von 1 Paaren bestätigt')).toBeVisible();
+	await expect(page.getByText('1 von 1 Paar bestätigt')).toBeVisible();
 
 	// An der Datenbank: eine Zeile, derselbe Barcode, neuer Name, kein Abgänger.
 	const zeilen = querySQL(
