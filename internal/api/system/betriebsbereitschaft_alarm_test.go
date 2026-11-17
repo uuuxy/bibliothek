@@ -32,12 +32,12 @@ func TestFormatiereAlarmMail(t *testing.T) {
 		if n != 1 {
 			t.Fatalf("kritische = %d, erwartet 1", n)
 		}
-		if !strings.Contains(betreff, "1 kritische(r) Befund(e)") {
+		if !strings.Contains(betreff, "1 kritischer Befund der") {
 			t.Errorf("Betreff nennt die Zahl nicht: %q", betreff)
 		}
 		for _, muss := range []string{
 			"Auslagerung der Backups", "Kein Ziel außer Haus", "Plattenausfall", "S3_ENDPOINT",
-			"1 Warnung(en)", "Betriebsbereitschaft",
+			"Daneben steht 1 Warnung —", "Betriebsbereitschaft",
 		} {
 			if !strings.Contains(text, muss) {
 				t.Errorf("Mail-Text ohne %q:\n%s", muss, text)
@@ -82,7 +82,7 @@ func TestFormatiereAlarmMail_FehlerImLog(t *testing.T) {
 	}
 
 	betreff, text, n = formatiereAlarmMail([]bereitschaft.Befund{kritisch}, fehler, alarmWarnungen{})
-	if want := "Bibliothek: 1 kritische(r) Befund(e) der Betriebsbereitschaft, 3 Fehlermeldungen im Log"; n != 1 || betreff != want {
+	if want := "Bibliothek: 1 kritischer Befund der Betriebsbereitschaft, 3 Fehlermeldungen im Log"; n != 1 || betreff != want {
 		t.Errorf("beides: kritische = %d, Betreff %q, erwartet 1 und %q", n, betreff, want)
 	}
 	if i, j := strings.Index(text, "‼ Auslagerung der Backups"), strings.Index(text, "‼ Fehler im Log"); i < 0 || j < i {
@@ -118,7 +118,7 @@ func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
 	}
 
 	betreff, text, n := formatiereAlarmMail([]bereitschaft.Befund{warnBefund}, ohneFehler, alarmWarnungen{an: true, imLog: imLog})
-	if want := "Bibliothek: 1 Warnung(en) der Betriebsbereitschaft, 2 Warnungen im Log"; n != 0 || betreff != want {
+	if want := "Bibliothek: 1 Warnung der Betriebsbereitschaft, 2 Warnungen im Log"; n != 0 || betreff != want {
 		t.Errorf("Schalter an: kritische = %d, Betreff %q, erwartet 0 und %q", n, betreff, want)
 	}
 	for _, muss := range []string{
@@ -131,7 +131,7 @@ func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
 			t.Errorf("Mail ohne %q:\n%s", muss, text)
 		}
 	}
-	if strings.Contains(text, "Daneben stehen") {
+	if strings.Contains(text, "Daneben steh") {
 		t.Errorf("Schalter an: Die Warnungen stehen ausgeschrieben, nicht als Fußnote:\n%s", text)
 	}
 
@@ -141,8 +141,27 @@ func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
 		t.Errorf("Kritisches an %d, Warnung an %d, erwartet erst das Kritische:\n%s", i, j, text)
 	}
 	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, kritisch}, ohneFehler, alarmWarnungen{imLog: imLog})
-	if !strings.Contains(text, "Daneben stehen 1 Warnung(en)") || strings.Contains(text, "⚠") {
+	if !strings.Contains(text, "Daneben steht 1 Warnung —") || strings.Contains(text, "⚠") {
 		t.Errorf("Schalter aus: erwartet nur die Fußnote:\n%s", text)
+	}
+	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, warnBefund, kritisch}, ohneFehler, alarmWarnungen{imLog: imLog})
+	if !strings.Contains(text, "Daneben stehen 2 Warnungen —") {
+		t.Errorf("Schalter aus, zwei Warnungen: erwartet die Fußnote in der Mehrzahl:\n%s", text)
+	}
+}
+
+// Der Betreff nennt jede Zahl mit ihrem Wort, bei 1 in der Einzahl.
+func TestAlarmBetreff_EinzahlUndMehrzahl(t *testing.T) {
+	for _, fall := range []struct {
+		kritische, warnBefunde int
+		want                   string
+	}{
+		{1, 1, "Bibliothek: 1 kritischer Befund der Betriebsbereitschaft, 1 Warnung der Betriebsbereitschaft"},
+		{2, 3, "Bibliothek: 2 kritische Befunde der Betriebsbereitschaft, 3 Warnungen der Betriebsbereitschaft"},
+	} {
+		if got := alarmBetreff(fall.kritische, 0, fall.warnBefunde, 0); got != fall.want {
+			t.Errorf("alarmBetreff(%d, 0, %d, 0) = %q, erwartet %q", fall.kritische, fall.warnBefunde, got, fall.want)
+		}
 	}
 }
 

@@ -192,18 +192,26 @@ func teileBefunde(befunde []bereitschaft.Befund) (kritisch, warnung []bereitscha
 func alarmBetreff(kritische, fehlerImLog, warnBefunde, warnungenImLog int) string {
 	var teile []string
 	if kritische > 0 {
-		teile = append(teile, fmt.Sprintf("%d kritische(r) Befund(e) der Betriebsbereitschaft", kritische))
+		teile = append(teile, kritischeBefunde(kritische)+" der Betriebsbereitschaft")
 	}
 	if fehlerImLog > 0 {
 		teile = append(teile, fehlermeldungen(fehlerImLog)+" im Log")
 	}
 	if warnBefunde > 0 {
-		teile = append(teile, fmt.Sprintf("%d Warnung(en) der Betriebsbereitschaft", warnBefunde))
+		teile = append(teile, warnungenText(warnBefunde)+" der Betriebsbereitschaft")
 	}
 	if warnungenImLog > 0 {
 		teile = append(teile, warnungenText(warnungenImLog)+" im Log")
 	}
 	return "Bibliothek: " + strings.Join(teile, ", ")
+}
+
+// kritischeBefunde nennt die Zahl der kritischen Befunde, bei einem in der Einzahl.
+func kritischeBefunde(n int) string {
+	if n == 1 {
+		return "1 kritischer Befund"
+	}
+	return fmt.Sprintf("%d kritische Befunde", n)
 }
 
 // schreibeWarnungsteil schreibt die Warnungen: mit dem Schalter ausgeschrieben, die der
@@ -212,7 +220,11 @@ func alarmBetreff(kritische, fehlerImLog, warnBefunde, warnungenImLog int) strin
 func schreibeWarnungsteil(sb *strings.Builder, warnBefunde []bereitschaft.Befund, warnungen alarmWarnungen) {
 	if !warnungen.an {
 		if len(warnBefunde) > 0 {
-			fmt.Fprintf(sb, "Daneben stehen %d Warnung(en) — Details unter System → Einstellungen → Betriebsbereitschaft.\n", len(warnBefunde))
+			verb := "stehen"
+			if len(warnBefunde) == 1 {
+				verb = "steht"
+			}
+			fmt.Fprintf(sb, "Daneben %s %s — Details unter System → Einstellungen → Betriebsbereitschaft.\n", verb, warnungenText(len(warnBefunde)))
 		}
 		return
 	}

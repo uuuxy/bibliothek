@@ -25,6 +25,9 @@ func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
 		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund+b.Folge, "HELFER/manage_vormerkungen fehlt live") {
 			t.Errorf("Befund Rechte-Vorgabe = %q: %s, erwartet eine Warnung über die fehlende optionale Zeile", b.Stufe, b.Befund)
 		}
+		if !strings.HasPrefix(b.Befund, "1 Abweichung von der Code-Vorgabe: ") {
+			t.Errorf("Befund Rechte-Vorgabe = %q, erwartet die Einzahl „1 Abweichung von …“", b.Befund)
+		}
 	})
 }
 
@@ -37,6 +40,9 @@ func TestBetriebsbereitschaft_RechteAbweichungenWerdenGekappt(t *testing.T) {
 	b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
 	if b.Stufe != StufeWarnung {
 		t.Fatalf("Stufe %q statt Warnung: %s", b.Stufe, b.Befund)
+	}
+	if !strings.Contains(b.Befund, " Abweichungen von der Code-Vorgabe: ") {
+		t.Errorf("Befund Rechte-Vorgabe = %q, erwartet die Mehrzahl „… Abweichungen von …“", b.Befund)
 	}
 	if !strings.Contains(b.Befund, "weitere") {
 		t.Errorf("die Kappung fehlt — der Befund listet alles: %s", b.Befund)

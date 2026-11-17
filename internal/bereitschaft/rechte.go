@@ -68,14 +68,22 @@ func pruefeRechteVorgabe(l Lage) Befund {
 			fmt.Sprintf("… und %d weitere", len(abweichungen)-zeigeMax))
 	}
 	b.Stufe = StufeWarnung
-	b.Befund = fmt.Sprintf("%d Abweichung(en) von der Code-Vorgabe: %s.",
-		len(abweichungen), strings.Join(gezeigt, "; "))
+	b.Befund = fmt.Sprintf("%s von der Code-Vorgabe: %s.",
+		abweichungenText(len(abweichungen)), strings.Join(gezeigt, "; "))
 	b.Folge = "Menü und API richten sich nach der Live-Tabelle, nicht nach dem Code. " +
 		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen — eine Rolle sieht " +
 		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
 	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
 		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
 	return b
+}
+
+// abweichungenText nennt die Zahl der Abweichungen, bei einer in der Einzahl.
+func abweichungenText(n int) string {
+	if n == 1 {
+		return "1 Abweichung"
+	}
+	return fmt.Sprintf("%d Abweichungen", n)
 }
 
 // rechteAbweichungen vergleicht die Live-Rechte in beiden Richtungen mit der Vorgabe und
