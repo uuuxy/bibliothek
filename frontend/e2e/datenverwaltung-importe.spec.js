@@ -103,7 +103,7 @@ test('Datenverwaltung: Listenimport erzeugt B-Nummern ohne Etikett, Bestands-Imp
 	// (internal/katalogdienste/katalogdienste.go, 8 s Timeout) — die erfundene Test-ISBN läuft dort ins
 	// Leere, und erst danach schreibt der Import die Dateiwerte. Beim ersten Lauf kam die
 	// Antwort nach 5,0 s, exakt an der Wartegrenze vorbei (Trace: POST 200, 5.0 s).
-	await expect(page.getByTestId('listenimport-ergebnis')).toHaveText(/1 Titel importiert/, {
+	await expect(page.getByText(/1 Titel importiert/)).toBeVisible({
 		timeout: 20_000
 	});
 	expect(
@@ -123,7 +123,7 @@ test('Datenverwaltung: Listenimport erzeugt B-Nummern ohne Etikett, Bestands-Imp
 		)
 	});
 	await page.getByRole('button', { name: 'Bestand importieren' }).click();
-	await expect(page.getByTestId('bestandimport-ergebnis')).toHaveText(/Kombi-Import erfolgreich/, {
+	await expect(page.getByText(/Bestand übernommen/)).toBeVisible({
 		timeout: 20_000
 	});
 	expect(

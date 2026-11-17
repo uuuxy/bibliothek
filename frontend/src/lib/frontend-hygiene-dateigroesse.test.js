@@ -19,7 +19,7 @@ const BESTAND = {
 	'src/lib/components/benutzer/Konten.svelte': 207,
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 342,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
-	'src/lib/components/leser/LusdImport.svelte': 302,
+	'src/lib/components/leser/LusdImport.svelte': 301,
 	'src/lib/apiFetch.js': 291,
 	'src/lib/designer/ausweisVorlagen.js': 451,
 	'src/lib/designer/idDesignerStore.svelte.js': 520,

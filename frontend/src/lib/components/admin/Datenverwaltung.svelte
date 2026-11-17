@@ -17,43 +17,42 @@
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	const darfImport = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
 	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	let isExporting = $state(false);
-	let exportFehler = $state(/** @type {string | null} */ (null));
 
 	async function exportiere() {
 		isExporting = true;
-		exportFehler = null;
 		try {
 			await exportiereCSV();
 		} catch (err) {
-			exportFehler = (err instanceof Error && err.message) || 'Export fehlgeschlagen';
+			snackbars.addToast(
+				(err instanceof Error && err.message) || 'Der Katalog ließ sich nicht herunterladen.',
+				'error'
+			);
 		} finally {
 			isExporting = false;
 		}
 	}
 
+	const COVER_NICHT_GESTARTET = 'Die Suche nach Covern ließ sich nicht starten.';
 	let isSyncingCovers = $state(false);
-	let coverAbgleichErgebnis = $state(
-		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
-	);
 
 	async function gleicheCoverAb() {
 		isSyncingCovers = true;
-		coverAbgleichErgebnis = null;
 		try {
 			const res = await apiFetch('/api/admin/sync-covers', { method: 'POST' });
-			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Starten des Cover-Syncs'));
+			if (!res.ok) throw new Error(await leseApiFehler(res, COVER_NICHT_GESTARTET));
 			const daten = await res.json();
-			coverAbgleichErgebnis = { type: 'success', message: daten.message || 'Job gestartet.' };
+			snackbars.addToast(
+				daten.message || 'Fehlende Cover werden im Hintergrund geladen',
+				'success'
+			);
 		} catch (err) {
-			coverAbgleichErgebnis = {
-				type: 'error',
-				message: (err instanceof Error && err.message) || 'Job konnte nicht gestartet werden.'
-			};
+			snackbars.addToast((err instanceof Error && err.message) || COVER_NICHT_GESTARTET, 'error');
 		} finally {
 			isSyncingCovers = false;
 		}
@@ -101,29 +100,13 @@
 		<ListenImport />
 
 		<div class="border-t border-outline-variant pt-6">
-			<h4 class="mb-1 text-sm font-bold text-on-surface">Cover-Synchronisation</h4>
+			<h4 class="mb-1 text-sm font-bold text-on-surface">Fehlende Cover</h4>
 			<p class="mb-4 text-xs text-on-surface-variant">
-				Laden Sie fehlende Buchcover im Hintergrund asynchron aus externen APIs herunter (z. B.
-				Google Books, DNB).
+				Sucht für Titel ohne Cover ein Bild, etwa bei Google Books oder der Deutschen
+				Nationalbibliothek. Der Server arbeitet die Titel im Hintergrund ab.
 			</p>
 
-			{@render actionButton(
-				'Fehlende Cover im Hintergrund laden',
-				Upload,
-				gleicheCoverAb,
-				isSyncingCovers
-			)}
-
-			{#if coverAbgleichErgebnis}
-				<div
-					role={coverAbgleichErgebnis.type === 'error' ? 'alert' : 'status'}
-					class="mt-4 rounded-xl p-4 text-sm font-semibold {coverAbgleichErgebnis.type === 'error'
-						? 'bg-error-container text-on-error-container'
-						: 'bg-success-container text-on-success-container'}"
-				>
-					{coverAbgleichErgebnis.message}
-				</div>
-			{/if}
+			{@render actionButton('Fehlende Cover laden', Upload, gleicheCoverAb, isSyncingCovers)}
 		</div>
 	</div>
 {/snippet}
@@ -133,14 +116,6 @@
 		<div>
 			{@render actionButton('Katalog als CSV herunterladen', Download, exportiere, isExporting)}
 		</div>
-		{#if exportFehler}
-			<div
-				role="alert"
-				class="rounded-xl bg-error-container p-4 text-sm font-semibold text-on-error-container"
-			>
-				{exportFehler}
-			</div>
-		{/if}
 	</div>
 {/snippet}
 
@@ -150,7 +125,7 @@
 		{#if darfImport}
 			{@render adminCard(
 				'Daten importieren',
-				'Aktualisieren Sie den Bestand via MAB2-XML oder legen Sie neue Titel und Exemplare via Excel/CSV an.',
+				'Übernimmt Titel und Exemplare aus Littera oder aus einer Tabelle und lädt fehlende Cover.',
 				Upload,
 				importContent
 			)}
@@ -158,7 +133,7 @@
 		{#if darfExport}
 			{@render adminCard(
 				'Daten exportieren',
-				'Exportieren Sie den aktuellen Medien- und Buchbestand vollständig als CSV-Datei zur weiteren Bearbeitung oder Archivierung.',
+				'Lädt den ganzen Katalog als CSV-Datei herunter, zum Weiterbearbeiten in einer Tabelle oder zum Aufheben.',
 				Download,
 				exportContent
 			)}

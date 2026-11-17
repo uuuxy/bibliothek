@@ -172,7 +172,7 @@
 				<div
 					class="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant"
 				>
-					<p class="text-sm">Bitte wählen Sie links eine Vorlage aus.</p>
+					<p class="text-sm">Wähle links eine Vorlage aus.</p>
 				</div>
 			{/if}
 		</div>

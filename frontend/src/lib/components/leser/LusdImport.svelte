@@ -240,10 +240,9 @@
 						LUSD-CSV oder -Excel auswählen oder reinziehen
 					</p>
 					<p class="text-label-small text-on-surface-variant font-medium">
-						CSV (Komma/Semikolon) oder .xlsx · Pflichtspalten: <code>vorname, nachname, klasse</code
-						>
-						· Zuordnung über <code>lusd_id</code>, sonst <code>geburtsdatum</code> (empfohlen),
-						sonst nur der Name · <code>eintritt</code> (Schuleintritt) hilft bei Umbenennungen
+						CSV (Komma oder Semikolon) oder Excel · Pflichtspalten: Vorname, Nachname, Klasse ·
+						Zuordnung über die LUSD-ID, sonst das Geburtsdatum (empfohlen), sonst nur den Namen ·
+						die Spalte Eintritt (Schuleintritt) hilft bei Umbenennungen
 					</p>
 				</div>
 			{/if}

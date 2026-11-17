@@ -14,6 +14,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { nimmDatei } from '../../utils/dateiwahl.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	// Die Route verlangt edit_books (internal/api/routen_katalog.go); die Karte darüber zeigt sich
 	// schon bei manage_inventory. Ohne eigene Prüfung sähe jemand einen Knopf, der 403 liefert.
@@ -21,9 +22,7 @@
 
 	let datei = $state(/** @type {File | null} */ (null));
 	let laeuft = $state(false);
-	let ergebnis = $state(
-		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
-	);
+
 	// Ein Schlüssel je Dateiauswahl, nicht je Klick: Bleibt die Auswahl nach einem
 	// Netzfehler stehen, holt der nächste Klick das Ergebnis des ersten Laufs ab, statt
 	// die Exemplare ein zweites Mal anzulegen. Eine neue Auswahl ist ein neuer Lauf.
@@ -32,18 +31,17 @@
 	async function importieren() {
 		if (!datei) return;
 		laeuft = true;
-		ergebnis = null;
 		try {
 			const r = await importiereListe(datei, schluessel);
 			const fehl = r.failed > 0 ? `, ${r.failed} fehlgeschlagen` : '';
-			ergebnis = { type: 'success', message: `${r.imported} Titel importiert${fehl}.` };
+			snackbars.addToast(`${r.imported} Titel importiert${fehl}.`, 'success');
 			datei = null;
 			schluessel = crypto.randomUUID();
 		} catch (err) {
-			ergebnis = {
-				type: 'error',
-				message: (err instanceof Error && err.message) || 'Import fehlgeschlagen.'
-			};
+			snackbars.addToast(
+				(err instanceof Error && err.message) || 'Import fehlgeschlagen.',
+				'error'
+			);
 		} finally {
 			laeuft = false;
 		}
@@ -84,23 +82,11 @@
 			<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 				{#if laeuft}
 					<Ladekreis size="sm" farbe="aktuell" />
-					<span>Importiere Liste …</span>
+					<span>Wird importiert …</span>
 				{:else}
 					<span>Liste importieren</span>
 				{/if}
 			</Button>
 		</div>
-
-		{#if ergebnis}
-			<div
-				role={ergebnis.type === 'error' ? 'alert' : 'status'}
-				class="mt-4 p-4 rounded-xl text-sm font-semibold {ergebnis.type === 'error'
-					? 'bg-error-container text-on-error-container'
-					: 'bg-success-container text-on-success-container'}"
-				data-testid="listenimport-ergebnis"
-			>
-				{ergebnis.message}
-			</div>
-		{/if}
 	</div>
 {/if}

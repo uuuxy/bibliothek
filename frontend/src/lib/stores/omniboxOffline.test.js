@@ -98,7 +98,7 @@ describe('Omnibox offline', () => {
 		const laeuft = omniboxStore.fuehreAktionAus(new Event('submit'));
 		// Während die Anfrage hängt: Escape an der Theke.
 		omniboxStore.aktiverLeser = null;
-		scheitern(new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'));
+		scheitern(new Error('Der Server hat nicht rechtzeitig geantwortet.'));
 		await laeuft;
 
 		const q = await ladeWarteschlange();

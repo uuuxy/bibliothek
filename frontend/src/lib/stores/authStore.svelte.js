@@ -263,7 +263,7 @@ class AuthStore {
 			// timeoutMs über dem Standard von 10 s für Mutationen: Die Anmeldung wartet auf den
 			// IMAP-Server der Schule, und pruefeIMAPAnmeldung räumt dem selbst 15 s ein. Mit dem
 			// Standardwert bräche apiFetch eine langsame, aber erfolgreiche Anmeldung als
-			// "Netzwerk-Timeout" ab.
+			// Zeitüberschreitung ab.
 			const res = await apiFetch('/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },

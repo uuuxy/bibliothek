@@ -77,7 +77,7 @@
 			leer, tragen diese Bücher keinen Vermerk.
 		</p>
 		<p>
-			Grauer Text im Feld ist ein Beispiel, kein gespeicherter Wert. Ein Feld, das Sie leeren, wird
+			Grauer Text im Feld ist ein Beispiel, kein gespeicherter Wert. Ein Feld, das du leerst, wird
 			auch gespeichert geleert — der Ausweis fällt dann auf seinen Musterkopf zurück.
 		</p>
 	{/snippet}

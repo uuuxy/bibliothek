@@ -159,7 +159,7 @@ describe('apiFetch error handling', () => {
 		});
 
 		await expect(apiFetch('/api/test')).rejects.toThrow(
-			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+			'Der Server hat nicht rechtzeitig geantwortet.'
 		);
 	});
 
@@ -241,7 +241,7 @@ describe('apiGet, apiPost, apiPut und apiDelete melden jeden Fehler', () => {
 		const meldung = vi.spyOn(snackbars, 'addToast');
 		for (const [wurf, text] of [
 			[new TypeError('Failed to fetch'), 'Keine Verbindung zum Server.'],
-			[abbruch, 'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.']
+			[abbruch, 'Der Server hat nicht rechtzeitig geantwortet.']
 		]) {
 			vi.spyOn(globalThis, 'fetch').mockRejectedValue(wurf);
 			const fehler = await rufe().catch((/** @type {any} */ e) => e);

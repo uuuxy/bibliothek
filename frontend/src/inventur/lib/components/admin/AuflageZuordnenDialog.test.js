@@ -123,7 +123,7 @@ describe('AuflageZuordnenDialog', () => {
 			.mockResolvedValueOnce(/** @type {any} */ (buecher([])))
 			.mockResolvedValueOnce(/** @type {any} */ (auflagen(1)));
 		vi.mocked(apiClient.post).mockRejectedValue(
-			new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.')
+			new Error('Der Server hat nicht rechtzeitig geantwortet.')
 		);
 		const { screen, onZugeordnet } = await bisZumTreffer();
 		await fireEvent.click(screen.getByRole('button', { name: /4\. Aufl\. · 2023/ }));
@@ -132,7 +132,7 @@ describe('AuflageZuordnenDialog', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(screen.getByRole('alert').textContent).toContain(
-			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+			'Der Server hat nicht rechtzeitig geantwortet.'
 		);
 		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');
 		expect(onZugeordnet).not.toHaveBeenCalled();

@@ -85,15 +85,10 @@
 
 	<div class="px-6 py-6 text-on-surface-variant space-y-4">
 		<p class="text-sm font-medium leading-relaxed">
-			{#if gesperrt}
-				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
-					>{leser.vorname} {leser.nachname}</span
-				> wirklich freigeben?
-			{:else}
-				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
-					>{leser?.vorname} {leser?.nachname}</span
-				> wirklich sperren?
-			{/if}
+			<span class="font-bold text-on-surface">{leser?.vorname} {leser?.nachname}</span>
+			{gesperrt
+				? 'kann danach wieder ausleihen.'
+				: 'kann danach nichts ausleihen, bis die Sperre aufgehoben ist.'}
 		</p>
 
 		{#if wirdGesperrt}

@@ -107,7 +107,7 @@ export async function apiFetch(url, options = {}) {
 	} catch (error) {
 		clearTimeout(id);
 		if (error instanceof Error && error.name === 'AbortError') {
-			throw new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
+			throw new Error('Der Server hat nicht rechtzeitig geantwortet.');
 		}
 		// Ohne Antwort wirft fetch einen TypeError mit englischem Text des Browsers („Load failed").
 		if (error instanceof TypeError)

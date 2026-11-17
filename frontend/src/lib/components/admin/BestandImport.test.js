@@ -5,16 +5,22 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
+vi.mock('../../stores/snackbars.svelte.js', () => ({
+	snackbars: { addToast: vi.fn() }
+}));
 
 import { apiFetch } from '../../apiFetch.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import BestandImport from './BestandImport.svelte';
 import { serverAntwort } from '../../serverAntwort.js';
 
 // Startet der Server gerade neu, antwortet der Proxy mit 502 ohne Rumpf. Der Import las die
 // Antwort als JSON, bevor er nach res.ok fragte, und zeigte „Unexpected end of JSON input".
-describe('BestandImport: abgelehnter Import', () => {
+// Das Ergebnis steht in der Meldung am unteren Rand; vorgelesen wird es dort (SnackbarAnzeige).
+describe('BestandImport: Ergebnis in der Meldung', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		vi.mocked(snackbars.addToast).mockReset();
 	});
 
 	/** @param {any} antwort */
@@ -30,28 +36,25 @@ describe('BestandImport: abgelehnter Import', () => {
 	}
 
 	it('nennt ohne Rumpf, etwa bei 502 vom Proxy, die Vorgabe', async () => {
-		const screen = await importiere(serverAntwort(502));
-		const ergebnis = await screen.findByTestId('bestandimport-ergebnis');
-		expect(ergebnis.textContent?.trim()).toBe('Bestands-Import fehlgeschlagen');
+		await importiere(serverAntwort(502));
+		await vi.waitFor(() =>
+			expect(snackbars.addToast).toHaveBeenCalledWith('Bestands-Import fehlgeschlagen', 'error')
+		);
 	});
 
 	it('nennt die Meldung des Servers', async () => {
 		const meldung = 'Zeile 3: Die Nummer ist die eines Leserausweises.';
-		const screen = await importiere(serverAntwort(400, { error: meldung }));
-		const ergebnis = await screen.findByTestId('bestandimport-ergebnis');
-		expect(ergebnis.textContent?.trim()).toBe(meldung);
+		await importiere(serverAntwort(400, { error: meldung }));
+		await vi.waitFor(() => expect(snackbars.addToast).toHaveBeenCalledWith(meldung, 'error'));
 	});
 
-	// Das Ergebnis erscheint nach dem Klick, ohne dass der Fokus zu ihm wandert: Ohne Rolle liest
-	// ein Bildschirmleser es nicht vor. Fehler als alert, Erfolg als status.
-	it('lässt Fehler und Erfolg vorlesen', async () => {
-		let screen = await importiere(serverAntwort(400, { error: 'Zeile 3 ist leer.' }));
-		expect((await screen.findByRole('alert')).textContent?.trim()).toBe('Zeile 3 ist leer.');
-		screen.unmount();
-
-		screen = await importiere(
-			serverAntwort(200, { new_titles_count: 2, imported_copies_count: 5 })
+	it('nennt nach dem Erfolg die Zahlen, in der Einzahl bei einem Titel', async () => {
+		await importiere(serverAntwort(200, { new_titles_count: 1, imported_copies_count: 5 }));
+		await vi.waitFor(() =>
+			expect(snackbars.addToast).toHaveBeenCalledWith(
+				'Bestand übernommen: 1 neuer Titel, 5 Exemplare.',
+				'success'
+			)
 		);
-		expect((await screen.findByRole('status')).textContent).toContain('2 neue Titel');
 	});
 });

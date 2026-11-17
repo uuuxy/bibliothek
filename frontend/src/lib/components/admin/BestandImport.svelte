@@ -11,17 +11,14 @@
 	import Button from '../ui/Button.svelte';
 	import { nimmDatei } from '../../utils/dateiwahl.js';
 	import { anzahlText } from '../../utils/format.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	let datei = $state(/** @type {File | null} */ (null));
 	let laeuft = $state(false);
-	let ergebnis = $state(
-		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
-	);
 
 	async function importieren() {
 		if (!datei) return;
 		laeuft = true;
-		ergebnis = null;
 		const formulardaten = new FormData();
 		formulardaten.append('file', datei);
 		try {
@@ -31,16 +28,16 @@
 			});
 			if (!res.ok) throw new Error(await leseApiFehler(res, 'Bestands-Import fehlgeschlagen'));
 			const daten = await res.json();
-			ergebnis = {
-				type: 'success',
-				message: `Kombi-Import erfolgreich! ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} wurden verarbeitet.`
-			};
+			snackbars.addToast(
+				`Bestand übernommen: ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')}, ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')}.`,
+				'success'
+			);
 			datei = null;
 		} catch (err) {
-			ergebnis = {
-				type: 'error',
-				message: (err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.'
-			};
+			snackbars.addToast(
+				(err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.',
+				'error'
+			);
 		} finally {
 			laeuft = false;
 		}
@@ -48,11 +45,11 @@
 </script>
 
 <div class="pt-6 border-t border-outline-variant">
-	<h4 class="text-sm font-bold text-on-surface mb-1">Finaler Bestands-Import (Kombi-CSV)</h4>
+	<h4 class="text-sm font-bold text-on-surface mb-1">Bestand mit vorhandenen Nummern</h4>
 	<p class="text-xs text-on-surface-variant mb-4">
-		Laden Sie die finale Semikolon-separierte CSV hoch (Spalten:
-		Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand). Die Exemplare behalten die Nummer aus
-		der Datei und gelten als etikettiert.
+		Für Bücher, die schon eine Nummer tragen: eine CSV-Datei mit Semikolon als Trenner und einer
+		Kopfzeile mit den Spalten Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode und Zustand. Die
+		Exemplare behalten ihre Nummer und gelten als etikettiert.
 	</p>
 
 	<div class="flex items-center gap-4">
@@ -75,22 +72,10 @@
 		<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
-				<span>Importiere Bestand …</span>
+				<span>Wird importiert …</span>
 			{:else}
 				<span>Bestand importieren</span>
 			{/if}
 		</Button>
 	</div>
-
-	{#if ergebnis}
-		<div
-			role={ergebnis.type === 'error' ? 'alert' : 'status'}
-			class="mt-4 p-4 rounded-xl text-sm font-semibold {ergebnis.type === 'error'
-				? 'bg-error-container text-on-error-container'
-				: 'bg-success-container text-on-success-container'}"
-			data-testid="bestandimport-ergebnis"
-		>
-			{ergebnis.message}
-		</div>
-	{/if}
 </div>
