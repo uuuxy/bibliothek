@@ -22,7 +22,7 @@ import (
 // meldungSchuelerDuplikat nennt die Regel, an der die Anlage scheitert — auch die
 // Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
 // in der Liste nicht findet.
-const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
+const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System. Eine andere Schreibweise wie Mueller statt Müller oder eine andere Groß- und Kleinschreibung zählt dabei als gleich."
 
 // leserAnlegenAnfrage ist ein neuer Leser, gleich welcher Art. „Neuen Leser anlegen" fragt
 // zuerst nach der Art; Klasse und Geburtsdatum sind deshalb nicht am Feld als Pflicht

@@ -54,7 +54,7 @@ func TestLitteraUebernahmeUndSchalterErreichenDieSelbstpruefung(t *testing.T) {
 	if err := littera.SchreibeErgebnis(ctx, pool, e); err != nil {
 		t.Fatalf("Ergebnis ablegen: %v", err)
 	}
-	if b := befund(); b.Stufe != bereitschaft.StufeKritisch || !strings.Contains(b.Befund, "unvollständig (2 Fehler, 7 Warnungen") {
+	if b := befund(); b.Stufe != bereitschaft.StufeKritisch || !strings.Contains(b.Befund, "unvollständig; das Protokoll nennt 2 Fehler und 7 Warnungen") {
 		t.Errorf("unvollständige Übernahme: %+v, erwartet kritisch mit den Zahlen", b)
 	}
 

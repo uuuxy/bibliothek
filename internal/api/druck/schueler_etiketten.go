@@ -84,7 +84,7 @@ func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 	}
 	proSeite := format.Spalten * format.Zeilen
 	if req.Startposition < 1 || req.Startposition > proSeite {
-		return apierrors.BadRequest(fmt.Sprintf("Startposition %d liegt außerhalb des Bogens (1 bis %d)", req.Startposition, proSeite), nil)
+		return apierrors.BadRequest(fmt.Sprintf("Startposition %d liegt außerhalb des Bogens mit den Plätzen 1 bis %d", req.Startposition, proSeite), nil)
 	}
 	return nil
 }

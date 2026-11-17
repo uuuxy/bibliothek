@@ -261,7 +261,7 @@ func (e *BestandVeraltet) Error() string {
 // die vor dem Update geladen wurde: Sie kann die Zahl nicht mitschicken, bis sie neu lädt.
 func (e *BestandVeraltet) Meldung() string {
 	if e.Gesehen == nil {
-		return fmt.Sprintf("Der Bestand lässt sich mit dieser Fassung der Seite nicht ändern (er steht bei %d). "+
+		return fmt.Sprintf("Der Bestand steht inzwischen bei %d und lässt sich mit dieser Fassung der Seite nicht ändern. "+
 			"Nichts gespeichert: bitte die Seite neu laden und den Titel neu öffnen.", e.Aktuell)
 	}
 	return fmt.Sprintf("Der Bestand wurde inzwischen an anderer Stelle geändert: jetzt %d statt %d. "+

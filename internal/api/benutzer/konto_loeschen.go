@@ -61,8 +61,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 		// Der Admin muss die Bücher erst zurückbuchen.
 		var mitAusleihen *repository.KontoHatAusleihenFehler
 		if errors.As(err, &mitAusleihen) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf(
-				"Das Konto hat noch ausgeliehene Exemplare (%d offen). Bitte zuerst zurückbuchen.", mitAusleihen.Offen), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungKontoMitAusleihen(mitAusleihen.Offen), err)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -72,4 +71,12 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 	// leser_bleibt: Gelöscht ist der Zugang. Trägt die Person einen Ausweis oder hängt etwas an
 	// ihrer Leserzeile, steht sie weiter in der Leserdatei, und die Oberfläche sagt das.
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": "success", "leser_bleibt": leserBleibt})
+}
+
+// meldungKontoMitAusleihen nennt die offenen Ausleihen mit der Einzahl bei einem Exemplar.
+func meldungKontoMitAusleihen(offen int) string {
+	if offen == 1 {
+		return "Das Konto hat noch ein ausgeliehenes Exemplar. Bitte zuerst zurückbuchen."
+	}
+	return fmt.Sprintf("Das Konto hat noch %d ausgeliehene Exemplare. Bitte zuerst zurückbuchen.", offen)
 }

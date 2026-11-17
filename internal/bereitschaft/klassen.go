@@ -62,7 +62,7 @@ func pruefeKlassenDrift(l Lage) Befund {
 	b := Befund{Bereich: "Klassen-Zuordnung"}
 	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)"
+		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden, weil die Datenbank nicht erreichbar war"
 		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt"
 		b.Abhilfe = abhilfeDBNeuLaden
 		return b

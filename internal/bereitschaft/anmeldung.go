@@ -41,7 +41,7 @@ func pruefeSelbstanmeldung(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = "SELBSTANMELDUNG_DOMAIN ist leer. Lehrkräfte können sich nicht selbst anmelden."
 		b.Folge = "Eine Lehrkraft ohne Konto bekommt trotz richtigem Passwort „Anmeldung fehlgeschlagen“; jedes Kollegiums-Konto muss unter Benutzer & Rechte von Hand angelegt werden. Im Sammelversand an die Klassenleitungen braucht eine abweichende Adresse die volle Domain."
-		b.Abhilfe = "Die Schul-Maildomain eintragen (z. B. SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de). Neue Konten entstehen dann inaktiv und werden unter Benutzer & Rechte freigeschaltet."
+		b.Abhilfe = "Die Schul-Maildomain eintragen, etwa SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de, damit neue Konten inaktiv entstehen und unter Benutzer & Rechte freigeschaltet werden"
 		return b
 	}
 	b.Stufe = StufeOK

@@ -38,7 +38,7 @@ func pruefeMailversand(l Lage) Befund {
 			"anbietet; SMTP_ALLOW_INSECURE_TLS prüft das Zertifikat des Mailservers nicht. Mahnungen " +
 			"tragen Schülernamen und Elternadressen."
 		b.Abhilfe = "Die Zeile aus der .env entfernen und den Stack neu starten, außer der Mailserver " +
-			"der Schule verlangt die Ausnahme wirklich (altes Relay, selbstsigniertes Zertifikat)"
+			"der Schule verlangt die Ausnahme wirklich, etwa als altes Relay oder mit selbstsigniertem Zertifikat"
 		return b
 	}
 	if l.SMTPHost != "" {

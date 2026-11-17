@@ -14,7 +14,7 @@ func befundSicherungAus(bereich, befund string) Befund {
 	return Befund{
 		Bereich: bereich,
 		Stufe:   StufeOK,
-		Befund:  befund + " Die eigene Sicherung ist abgeschaltet (Einstellungen → Sicherung); es gilt die Sicherung des Servers",
+		Befund:  befund + " Die eigene Sicherung ist unter Einstellungen → Sicherung abgeschaltet; es gilt die Sicherung des Servers",
 	}
 }
 
@@ -25,7 +25,7 @@ func pruefeAuslagerung(l Lage) Befund {
 	}
 	if l.S3Endpunkt != "" && l.S3Zugangsschluessel != "" && l.S3Geheimschluessel != "" && l.S3Bucket != "" {
 		b.Stufe = StufeOK
-		b.Befund = "Backups werden zusätzlich außer Haus abgelegt (" + l.S3Bucket + ")"
+		b.Befund = "Backups werden zusätzlich außer Haus abgelegt: " + l.S3Bucket
 		return b
 	}
 	b.Stufe = StufeKritisch
@@ -33,7 +33,7 @@ func pruefeAuslagerung(l Lage) Befund {
 	b.Folge = "Alle Backups liegen auf derselben Platte wie die Datenbank. " +
 		"Ein Plattenausfall kostet den gesamten Bestand samt aller Sicherungen."
 	b.Abhilfe = "S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY und S3_BUCKET in der .env setzen und den Stack " +
-		"neu starten (docker compose reicht sie seit 22.08.2026 durch; davor kamen sie nie im Container an)"
+		"neu starten"
 	return b
 }
 
@@ -58,7 +58,7 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 		b.Stufe = StufeKritisch
 		b.Befund = "Die letzte Wiederherstellungs-Probe ist FEHLGESCHLAGEN: " + l.RestoreProbe.Fehler
 		b.Folge = "Im Ernstfall ließe sich die Datenbank aus dem jüngsten Backup nicht wiederherstellen"
-		b.Abhilfe = "Ursache im Befundtext beheben (Schlüssel? Datei? psql?). Nach einem Fehlschlag " +
+		b.Abhilfe = "Die Ursache im Befundtext beheben, etwa Schlüssel, Datei oder psql. Nach einem Fehlschlag " +
 			"probt der Stack beim nächsten Neustart von selbst erneut, sonst am Sonntag 03:30 UTC."
 	case l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt) > 9*24*time.Hour:
 		b.Stufe = StufeKritisch
@@ -68,7 +68,7 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 		b.Abhilfe = "Container-Logs nach 'Restore-Probe' durchsuchen; läuft der Scheduler?"
 	default:
 		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Backup %s erfolgreich wiederhergestellt (%d Tabellen, Probe vom %s)",
+		b.Befund = fmt.Sprintf("Probe vom %[3]s: Backup %[1]s mit %[2]d Tabellen erfolgreich wiederhergestellt",
 			l.RestoreProbe.BackupDatei, l.RestoreProbe.Tabellen, l.RestoreProbe.Zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006"))
 	}
 	return b
@@ -94,7 +94,7 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 		case !l.BackupSchluesselGesetzt:
 			b.Befund = "BACKUP_ENCRYPTION_KEY fehlt. Der nächtliche Job überspringt sich still."
 			b.Folge = "Es entsteht KEIN Backup. Ein Datenbankschaden kostet den gesamten Bestand."
-			b.Abhilfe = "BACKUP_ENCRYPTION_KEY in der .env setzen (≥32 Zeichen) und den Schlüssel getrennt verwahren"
+			b.Abhilfe = "BACKUP_ENCRYPTION_KEY mit mindestens 32 Zeichen in der .env setzen und den Schlüssel getrennt verwahren"
 		case l.LetztesBackup == nil:
 			b.Befund = "Noch nie ein Backup geschrieben"
 			b.Folge = "Ein Datenbankschaden kostet den gesamten Bestand"
@@ -103,7 +103,7 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 			b.Befund = fmt.Sprintf("Letztes Backup vor %s, mehr als %d Stunden alt",
 				stundenText(l.Jetzt.Sub(*l.LetztesBackup)), int(jobs.BackupKritischAlter.Hours()))
 			b.Folge = "Der Datenverlust-Puffer ist aufgebraucht; der Job steht offenbar still"
-			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)"
+			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen, der täglich um 02:30 läuft"
 		}
 	case "warning":
 		b.Stufe = StufeWarnung
@@ -111,9 +111,9 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 			b.Befund = fmt.Sprintf("Letztes Backup vor %s. Mindestens ein Lauf wurde verpasst.",
 				stundenText(l.Jetzt.Sub(*l.LetztesBackup)))
 			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht"
-			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)"
+			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen, der täglich um 02:30 läuft"
 		} else {
-			b.Befund = "BACKUP_ENCRYPTION_KEY ist zu kurz (unter 32 Zeichen)"
+			b.Befund = "BACKUP_ENCRYPTION_KEY hat weniger als 32 Zeichen"
 			b.Folge = "Auch die scrypt-Ableitung rettet eine kurze Passphrase nicht. Eine entwendete Backup-Datei wäre offline durchprobierbar."
 			b.Abhilfe = "Einen Schlüssel mit mindestens 32 Zeichen setzen"
 		}

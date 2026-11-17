@@ -62,13 +62,13 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber ausdrücklich auf false"
 		b.Folge = "Der Server würde auch mit einem Beispiel-Geheimnis starten. " +
 			"Ein versehentliches Zurückfallen fiele nicht auf."
-		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen (Vorgabe ist scharf)"
+		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen; ohne sie gilt die scharfe Vorgabe"
 	case echt:
 		b.Stufe = StufeKritisch
 		b.Befund = "Es laufen mitgelieferte Beispiel-Geheimnisse"
 		b.Folge = "JWT_SECRET und APP_ENCRYPTION_KEY stehen öffentlich im Repository. " +
 			"Wer sie kennt, kann Sitzungen fälschen und verschlüsselte Ablagen lesen."
-		b.Abhilfe = "Eigene Werte setzen (JWT_SECRET ≥32 Zeichen, APP_ENCRYPTION_KEY genau 32 Byte) " +
+		b.Abhilfe = "Eigene Werte setzen, JWT_SECRET mit mindestens 32 Zeichen und APP_ENCRYPTION_KEY mit genau 32 Byte, " +
 			"und die Zeile ENFORCE_PROD_SECRETS=false entfernen"
 	default:
 		b.Stufe = StufeOK
@@ -104,7 +104,7 @@ func pruefeSchluesselPasstZumBestand(l Lage) Befund {
 		b.Befund = "Es liegt noch nichts verschlüsselt in der Datenbank. Der Schlüssel kann nichts verfehlen."
 	default:
 		b.Stufe = StufeOK
-		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand (Stichprobe je verschlüsselter Spalte)"
+		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand, geprüft an einer Stichprobe je verschlüsselter Spalte"
 	}
 	return b
 }

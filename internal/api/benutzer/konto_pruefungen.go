@@ -111,7 +111,7 @@ func meldeAusweisKollision(w http.ResponseWriter, err error) bool {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein", nil)
 		return true
 	case repository.IstAusweisKollision(err):
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Ausweisnummer trägt bereits eine andere Person aus der Schülerschaft oder dem Kollegium", nil)
 		return true
 	}
 	return false

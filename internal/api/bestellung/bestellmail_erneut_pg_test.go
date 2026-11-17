@@ -295,7 +295,7 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("Erneut senden ohne Mailserver: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
-	const ohneMailserver = "Es ist kein Mailserver eingerichtet (Einstellungen → Mail). Die Bestellmail wurde nicht gesendet."
+	const ohneMailserver = "Unter Einstellungen → Mail ist kein Mailserver eingerichtet. Die Bestellmail wurde nicht gesendet."
 	if got := tuertest.Fehlermeldung(t, rec); got != ohneMailserver {
 		t.Errorf("Erneut senden ohne Mailserver: Meldung %q, erwartet %q", got, ohneMailserver)
 	}

@@ -49,7 +49,7 @@ func BucheWareneingang(ctx context.Context, pool db.Pool, protokollAbfragen *rep
 
 	meldeProtokollFehler("wareneingang-bulk", protokollAbfragen.ProtokolliereAdminAktion(ctx, angaben.BearbeiterID, "BULK_RECEIVE_ITEMS", angaben.IPAdresse, map[string]any{
 		"received_count": len(exemplare),
-		"message":        "Wareneingang gebucht (Massen-Freigabe)",
+		"message":        "Wareneingang als Massen-Freigabe gebucht",
 	}))
 
 	return exemplare, nil

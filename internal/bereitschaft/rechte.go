@@ -58,7 +58,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	abweichungen := rechteAbweichungen(l.RechteLive)
 	if len(abweichungen) == 0 {
 		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Live-Rechte decken sich mit der Code-Vorgabe (%d Zeilen)", len(db.RechteVorgabe))
+		b.Befund = fmt.Sprintf("Alle %d Zeilen der Live-Rechte decken sich mit der Code-Vorgabe", len(db.RechteVorgabe))
 		return b
 	}
 
@@ -76,8 +76,8 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	b.Folge = "Menü und API richten sich nach der Live-Tabelle, nicht nach dem Code. " +
 		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen. Eine Rolle sieht " +
 		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
-	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
-		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
+	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen, die Warnung " +
+		"dokumentiert sie. Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
 	return b
 }
 

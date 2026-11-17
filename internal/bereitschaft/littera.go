@@ -35,12 +35,12 @@ func pruefeLitteraUebernahme(l Lage) Befund {
 	switch {
 	case e.Abgebrochen:
 		b.Stufe = StufeKritisch
-		b.Befund = fmt.Sprintf("Die Übernahme am %s ist abgebrochen (%d Fehler, %d Warnungen im Protokoll)", am, e.Fehler, e.Warnungen)
+		b.Befund = fmt.Sprintf("Die Übernahme am %s ist abgebrochen; das Protokoll nennt %d Fehler und %s", am, e.Fehler, warnungenText(e.Warnungen))
 		b.Folge = "Der Bestand aus Littera ist nur zum Teil angekommen"
 		b.Abhilfe = protokoll + " Die Ursache steht in der Ausgabe des Befehls und im Protokoll; danach die Übernahme neu starten"
 	case !e.Vollstaendig:
 		b.Stufe = StufeKritisch
-		b.Befund = fmt.Sprintf("Die Übernahme am %s ist unvollständig (%d Fehler, %d Warnungen im Protokoll)", am, e.Fehler, e.Warnungen)
+		b.Befund = fmt.Sprintf("Die Übernahme am %s ist unvollständig; das Protokoll nennt %d Fehler und %s", am, e.Fehler, warnungenText(e.Warnungen))
 		b.Folge = "Nicht jeder Datensatz aus Littera ist angekommen"
 		b.Abhilfe = protokoll + " Es nennt jeden fehlenden Datensatz mit seiner Kennung aus Littera"
 	case e.Warnungen > 0:
@@ -59,9 +59,17 @@ func pruefeLitteraUebernahme(l Lage) Befund {
 func litteraZusammenfassung(abgebrochen, vollstaendig bool, fehler, warnungen int) string {
 	switch {
 	case abgebrochen:
-		return fmt.Sprintf("abgebrochen, %d Fehler und %d Warnungen", fehler, warnungen)
+		return fmt.Sprintf("abgebrochen, %d Fehler und %s", fehler, warnungenText(warnungen))
 	case !vollstaendig:
-		return fmt.Sprintf("unvollständig, %d Fehler und %d Warnungen", fehler, warnungen)
+		return fmt.Sprintf("unvollständig, %d Fehler und %s", fehler, warnungenText(warnungen))
 	}
-	return fmt.Sprintf("vollständig, %d Warnungen", warnungen)
+	return "vollständig, " + warnungenText(warnungen)
+}
+
+// warnungenText nennt die Zahl mit der Einzahl bei eins: „1 Warnung“, sonst „2 Warnungen“.
+func warnungenText(n int) string {
+	if n == 1 {
+		return "1 Warnung"
+	}
+	return fmt.Sprintf("%d Warnungen", n)
 }

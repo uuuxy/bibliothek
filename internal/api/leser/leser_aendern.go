@@ -597,7 +597,7 @@ func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWrit
 		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
 		// eine Auskunft, kein Serverfehler.
 		if repository.IstAusweisKollision(err) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diese Ausweisnummer trägt bereits eine andere Person aus der Schülerschaft oder dem Kollegium", nil)
 			return false
 		}
 		if repository.IstNummerBuchOderAusweisKollision(err) {

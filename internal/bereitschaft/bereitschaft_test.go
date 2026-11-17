@@ -379,7 +379,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			aendere:  func(l *Lage) { l.BackupSchluesselSchwach = true },
 			bereich:  "Nächtliches Backup",
 			stufe:    StufeWarnung,
-			enthaelt: "zu kurz",
+			enthaelt: "weniger als 32 Zeichen",
 		},
 		// Restore-Probe: Ein Backup, das sich nicht einspielen lässt, ist so viel wert wie
 		// keins, und ohne diese Befunde erführe das niemand vor dem Ernstfall.

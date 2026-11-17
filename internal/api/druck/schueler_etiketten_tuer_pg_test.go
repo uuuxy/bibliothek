@@ -100,7 +100,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	t.Run("Startposition außerhalb des Bogens: 400", func(t *testing.T) {
 		rec := bogen(t, map[string]any{"startPosition": 9999, "schuelerIds": []string{schueler}})
 		erwarte400(t, rec, "Startposition")
-		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Startposition 9999 liegt außerhalb des Bogens (1 bis 21)"; got != erwartet {
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Startposition 9999 liegt außerhalb des Bogens mit den Plätzen 1 bis 21"; got != erwartet {
 			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
 		}
 	})

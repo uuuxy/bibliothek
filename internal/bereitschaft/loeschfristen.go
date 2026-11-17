@@ -36,7 +36,7 @@ func pruefeLoeschroutinen(l Lage) Befund {
 		b.Stufe = StufeKritisch
 		b.Befund = "Überfällig und nicht gelöscht: " + strings.Join(ueberfaellig, "; ")
 		b.Folge = "Mindestens eine nächtliche Löschroutine läuft nicht oder scheitert still. Personendaten bleiben über die Frist hinaus stehen (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Container-Logs der letzten Nacht nach der genannten Routine durchsuchen (der Fehlertext steht dort); die Jobs wiederholen sich jede Nacht und heilen den Rückstand selbst, sobald die Ursache weg ist"
+		b.Abhilfe = "Container-Logs der letzten Nacht nach der genannten Routine durchsuchen, dort steht der Fehlertext; die Jobs wiederholen sich jede Nacht und heilen den Rückstand selbst, sobald die Ursache weg ist"
 		return b
 	}
 
@@ -74,7 +74,7 @@ func pruefeEhemaligeOffen(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = fmt.Sprintf("%d Ehemalige haben seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung", n)
 		b.Folge = "Solange der Vorgang offen ist, bleiben Name und Anschrift gespeichert. Karenz, Anonymisierung und Löschung greifen nicht (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Leserdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden (schließt die Ausleihe, die Forderung entsteht), dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
+		b.Abhilfe = "Leserdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden, das schließt die Ausleihe und legt die Forderung an, dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
 		return b
 	}
 	b.Stufe = StufeOK

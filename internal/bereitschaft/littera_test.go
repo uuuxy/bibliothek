@@ -23,9 +23,9 @@ func TestPruefeLitteraUebernahme(t *testing.T) {
 	}{
 		{"nie gelaufen", nil, StufeOK, []string{"Keine Littera-Übernahme verzeichnet"}},
 		{"abgebrochen", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Abgebrochen: true, Fehler: 1, Protokoll: protokoll},
-			StufeKritisch, []string{"am 18.01.2027 13:00 ist abgebrochen (1 Fehler, 0 Warnungen", protokoll}},
+			StufeKritisch, []string{"am 18.01.2027 13:00 ist abgebrochen; das Protokoll nennt 1 Fehler und 0 Warnungen", protokoll}},
 		{"unvollständig", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Fehler: 3, Warnungen: 5, Protokoll: protokoll},
-			StufeKritisch, []string{"ist unvollständig (3 Fehler, 5 Warnungen", protokoll}},
+			StufeKritisch, []string{"ist unvollständig; das Protokoll nennt 3 Fehler und 5 Warnungen", protokoll}},
 		{"vollständig mit Warnungen", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Vollstaendig: true, Warnungen: 3812, Protokoll: protokoll},
 			StufeWarnung, []string{"ist vollständig, mit 3812 Warnungen", protokoll}},
 		{"vollständig ohne Warnung", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Vollstaendig: true, Protokoll: protokoll},

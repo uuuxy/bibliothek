@@ -111,7 +111,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schüler doppelt", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7a","geburtsdatum":"2012-05-06"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7b","geburtsdatum":"2012-05-06"}`), http.StatusConflict,
-			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System")
+			"Achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System. Eine andere Schreibweise wie Mueller statt Müller oder eine andere Groß- und Kleinschreibung zählt dabei als gleich.")
 	})
 	t.Run("Anlegen: Kollege mit demselben Namen", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Nora","nachname":"Namensgleich","art":"praktikum"}`)

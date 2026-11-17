@@ -113,7 +113,7 @@ func (t *Tueren) BescheidUebergeben(bescheidAbfragen *repository.BescheidAbfrage
 				// Entweder gibt es den Bescheid nicht, oder sein Zustand passt nicht.
 				// Die Meldung nennt beides, statt einen 404 zu behaupten.
 				return apierrors.Conflict(
-					"Übergabe nicht möglich: Der Bescheid ist nicht (mehr) offen oder seine Frist läuft noch",
+					"Übergabe nicht möglich: Der Bescheid ist nicht offen oder seine Frist läuft noch",
 					err)
 			}
 			return apierrors.Internal("Übergabe konnte nicht gebucht werden", err)

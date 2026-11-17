@@ -20,7 +20,7 @@ func pruefeDemodaten(l Lage) Befund {
 	// Nicht der Block am Anfang von seed_demo.sql: Der bricht auf einem benutzten System an
 	// Schäden ab (RESTRICT) und lässt Bescheide und Verluste der Inventur ohne Bezug stehen.
 	b.Abhilfe = "Vor dem Echtstart scripts/entferne_demo_daten.sql ausführen: erst ohne Schalter " +
-		"(Vorschau, zeigt jede Verflechtung mit echten Daten), dann mit -v ausfuehren=ja. " +
+		"als Vorschau, die jede Verflechtung mit echten Daten zeigt, dann mit -v ausfuehren=ja. " +
 		"Der Aufruf steht im Kopf der Datei."
 	return b
 }
