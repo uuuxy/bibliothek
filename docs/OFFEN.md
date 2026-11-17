@@ -49,8 +49,9 @@ Nur, was kein Test leisten kann.
   die 23 Stellen angleichen. (5.186)
 - [x] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
   welche Regel für beide gilt. (5.187)
-- [ ] Klammern und Schrägstriche in Texten der Oberfläche und Meldungen wie bei Google: Klammern
-  nur für Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten. (5.188)
+- [ ] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
+  Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
+- [ ] Große Lernmittel-Etiketten auch im Druck-Center der Schule anbieten? (5.190)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
 
@@ -110,17 +111,30 @@ kennt keine Kürzel, dort zählt nur der Name.
 M3 (Content design, Grammar and punctuation): „Parentheses can be used to define acronyms or
 jargon or when referencing a source. They shouldn’t be used when adding a side note or an
 afterthought of a sentence.“ Googles developer documentation style guide (Slashes): „Don't use
-slashes to separate alternatives.“ Keine der beiden Satzzeichen-Prüfungen sieht das. Am Server
-etwa: „Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein)
-…“ (`leser_anlegen.go`), „Der Bescheid ist nicht (mehr) offen …“ (`bescheid.go`), „Diese
-Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)“. Grob gezählt:
-67 feste Texte mit Klammer in `internal/` und `cmd/`, darunter erlaubte (`(IMAP)`,
-`(Art. 16)`); die Oberfläche ist nicht gezählt.
+slashes to separate alternatives.“ Am Server sind die Meldungen und die Sätze der
+Betriebsbereitschaft umgestellt; erlaubt blieben Quellen und Begriffe (`(docs/DEPLOYMENT.md)`,
+`(kmk.org/…)`, „Katalogdienste (DNB, Google, OpenLibrary)“, `(DSGVO)`).
 
-Nächster Schritt: Die Prüfung der Oberfläche und die am Server zählen lassen, welche Texte
-Klammern und Schrägstriche tragen. Je Text: Erklärt die Klammer einen Begriff oder nennt eine
-Quelle, bleibt sie; sonst in den Satz ziehen oder streichen. Einen Schrägstrich zwischen
-Wahlmöglichkeiten ersetzt „oder“.
+In der Oberfläche gezählt (Texte, die frontend-hygiene-satzzeichen.test.js liest): 230 Texte mit
+Klammern, davon 157 mit Wortlaut (136 verschiedene Inhalte, meist Einzelfälle), 59 nur mit einer
+Zahl („Papierkorb (3)“), 12 Kürzel und 3 Rechtsquellen, die bleiben dürfen. Schrägstriche
+zwischen Wörtern: 16 Texte („Schüler/in“, „Verlust/Schaden“, „N/A“), dazu Etiketten mit
+„ / “ wie der Reiter „Ehemalige / Archiv“, die die Zählung nicht erfasst.
+
+Nächster Schritt: je Gruppe nach Google entscheiden: Einheiten wie „Frist (Tage)“ als Suffix im
+Feld (M3, Text fields), Zahlen als Zählerpille statt in Klammern, die übrigen Nebengedanken in den
+Satz. Danach eine Prüfung für neue Klammern mit Wortlaut. Aufwand: etwa fünf Stunden.
+
+### 5.190 Große Lernmittel-Etiketten im Druck-Center
+
+Das große Lernmittel-Etikett (vier je A4-Blatt, `pdf.ErzeugeLernmittelEtiketten`) erzeugt nur
+der Weg des Händlers: die Seite hinter dem Bestelllink und der Mailanhang. Das Druck-Center der
+Schule bietet nur die kleinen Bögen (Zweckform L4760, Avery 3475, Standard 52). Die Schule kann
+das große Etikett deshalb nicht selbst drucken.
+
+Nächster Schritt, falls gewünscht: im Druck-Center das große Etikett als weiteres Format, mit
+demselben Erzeuger und derselben Regel wie beim Händler (nicht für den Topf Schülerbücherei,
+`mitteltopf.HatGrossesLernmittelEtikett`). Aufwand: etwa zwei Stunden.
 
 ### 7.2 Frisches Littera-Backup
 
