@@ -25,44 +25,20 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
-- [x] Die Läufe unter anderen Bedingungen wiederholen, wenn die übrigen Änderungen drin sind. (7.15)
-- [x] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
 ### Bei dir
 
 Nur, was kein Test leisten kann.
 
-- [x] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
-  gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Mit dem Scanner je ein Littera-Etikett, ein gedrucktes Etikett und eine ISBN mit Preiszusatz
   scannen. (7.10)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] In Excel für Windows eine kleine Leserliste anlegen und in jedem CSV-Format speichern, das
   „Speichern unter" anbietet; die Dateien gibst du mir. (7.10)
-- [x] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
-  Danach prüfe ich in Safari, ob die Dokumente mit Personendaten im Tab erscheinen. (5.106)
 
 ### Nebenbei
 
-- [x] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen und die Äste von #759 bis #763
-  löschen. (5.169)
-- [x] Ein ß hinter einer Vorsilbe auch in den übrigen Feldern als Bindestrich lesen, in die gescannt
-  wird: Inventur, Theken-Auskunft und Suchen. (5.170)
-- [x] Zugangs- und Abgangsbuch: Spalte „Barcodes“ statt „Nummer“, wie im übrigen Programm.
-  (5.172)
-- [x] Zugangs- und Abgangsbuch: je Tag und Titel eine Zeile mit Anzahl und Barcodes statt einer
-  Zeile je Exemplar. (5.173)
-- [x] Schlagwort-Chips: die Vorschläge im Menü von `ui/VorschlagFeld` statt in der Liste des
-  Browsers. (5.174)
-- [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
-  Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
-- [x] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
-- [x] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
-- [x] Die Grenze der Protokoll-Listen (1000 Einträge) an einer Stelle festlegen. (5.178)
-- [x] Menü ⋮: lange Einträge nicht abschneiden, ohne dass der ganze Text zu lesen ist. (5.179)
-- [x] Planer-Tabelle: Zellen ohne eigene Farben wie in jeder anderen Tabelle; die Ratsche sieht
-  auch Zeilen-Bauteile. (5.180)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -71,7 +47,6 @@ Nur, was kein Test leisten kann.
   kein langer Strich. Vorher entscheiden, ob der Durchgang gemacht wird. (5.185)
 - [ ] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
   die 23 Stellen angleichen. (5.186)
-- [x] Ablage nach dem Aufbau des Go-Teams: die zehn oberen Paketordner nach `internal/`. (5.184)
 
 ### Termin
 
