@@ -57,7 +57,7 @@
 				mittel: gewaehlt,
 				grund: grund.trim()
 			});
-			snackbars.addToast(`Topf geändert: ${mittelBeschriftung(gewaehlt)}.`, 'success');
+			snackbars.addToast(`Topf geändert: ${mittelBeschriftung(gewaehlt)}`, 'success');
 			await onAktualisieren();
 			onclose();
 		} catch {

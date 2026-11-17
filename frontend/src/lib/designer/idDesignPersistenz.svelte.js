@@ -157,8 +157,8 @@ export function erzeugeDesignAblage() {
 			const ok = await bestaetigen({
 				titel: 'Ausweis-Design auf die Standardwerte zurücksetzen?',
 				text:
-					'Alle eigenen Anpassungen an Vorder- und Rückseite gehen verloren — ' +
-					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.',
+					'Alle eigenen Anpassungen an Vorder- und Rückseite gehen verloren, ' +
+					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird',
 				aktion: 'Zurücksetzen',
 				gefaehrlich: true
 			});
@@ -186,8 +186,8 @@ export function erzeugeDesignAblage() {
 			const ok = await bestaetigen({
 				titel: `Design-Vorlage „${name}" anwenden?`,
 				text:
-					'Vorder- und Rückseite werden ersetzt; eigene Anpassungen gehen verloren — ' +
-					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.',
+					'Vorder- und Rückseite werden ersetzt; eigene Anpassungen gehen verloren, ' +
+					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird',
 				aktion: 'Anwenden',
 				gefaehrlich: true
 			});

@@ -55,10 +55,10 @@ describe('Bestellbestätigung des Lieferanten: laden', () => {
 	});
 
 	it('sagt bei Netzausfall, dass keine Verbindung besteht', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		render(BestellBestaetigung);
 
-		expect(await screen.findByText('Keine Verbindung zum Server.')).toBeTruthy();
+		expect(await screen.findByText('Keine Verbindung zum Server')).toBeTruthy();
 		expect(screen.queryByText('Dieser Link ist nicht mehr gültig')).toBeNull();
 	});
 });

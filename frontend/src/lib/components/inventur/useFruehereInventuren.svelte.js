@@ -52,13 +52,13 @@ export function useFruehereInventuren(nichtGeladen, nachLoeschen) {
 	async function loesche(inventur) {
 		const r = await loescheAbgeschlosseneInventur(inventur.session_id);
 		if (!r.ok && r.status !== 404) {
-			snackbars.addToast(r.error || 'Die Inventur konnte nicht gelöscht werden.', 'error');
+			snackbars.addToast(r.error || 'Die Inventur konnte nicht gelöscht werden', 'error');
 			return;
 		}
 		laeufe = laeufe.filter((l) => l.session_id !== inventur.session_id);
 		nachLoeschen?.(inventur.session_id);
-		if (r.ok) snackbars.addToast(`Inventur „${inventur.label}“ gelöscht.`, 'success');
-		else snackbars.addToast(r.error || 'Die Inventur war schon gelöscht.', 'warning');
+		if (r.ok) snackbars.addToast(`Inventur „${inventur.label}“ gelöscht`, 'success');
+		else snackbars.addToast(r.error || 'Die Inventur war schon gelöscht', 'warning');
 	}
 
 	return /** @satisfies {object} */ ({

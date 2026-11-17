@@ -53,7 +53,7 @@
 	<span
 		class="rounded-lg bg-warning-container px-2.5 py-1 text-xs leading-snug text-on-warning-container"
 	>
-		{ohneDatum} davon ohne Ablaufjahr — Klasse lässt keine Ableitung zu. Einzeln im Profil eintragen.
+		{ohneDatum} davon ohne Ablaufjahr, die Klasse lässt keine Ableitung zu. Einzeln im Profil eintragen.
 	</span>
 {/if}
 

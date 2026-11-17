@@ -55,8 +55,8 @@
 	placeholder={mitKonto ? 'vorname.nachname@schule.de' : ''}
 	disabled={!mitKonto}
 	hint={mitKonto
-		? 'Damit entsteht der Zugang zu „Mein Portal“ — und die Person steht später nicht doppelt da.'
-		: 'Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“.'}
+		? 'Damit entsteht der Zugang zu „Mein Portal“, und die Person steht später nicht doppelt da'
+		: 'Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“'}
 />
 
 <Feld
@@ -71,11 +71,11 @@
 	<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
 	{#if mitKonto}
 		<p>
-			Es entsteht ein Eintrag in der Leserdatei — damit an der Theke Bücher auf diese Person gehen
-			können — <span class="font-semibold">und ihr Zugang zu „Mein Portal“</span>. Anmelden wird sie
+			Es entstehen ein Eintrag in der Leserdatei, über den an der Theke Bücher auf diese Person
+			gehen, <span class="font-semibold">und ihr Zugang zu „Mein Portal“</span>. Anmelden wird sie
 			sich mit ihrer Schuladresse und ihrem Mail-Passwort; ein Passwort speichern wir nicht. Eine
-			<span class="font-semibold">Rolle</span> bekommt sie hier nicht — die vergibt der Administrator
-			eigens in Benutzer &amp; Rechte.
+			<span class="font-semibold">Rolle</span> bekommt sie hier nicht, die vergibt der Administrator eigens
+			in Benutzer &amp; Rechte.
 		</p>
 	{:else}
 		<p>

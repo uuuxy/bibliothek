@@ -37,10 +37,10 @@
 {#if hatIsbn}
 	{#if status === 'da' && offen === 0}
 		<p class="text-xs text-on-surface-variant" role="status">
-			Keine weiteren Schlagworte aus der DNB.
+			Keine weiteren Schlagworte aus der DNB
 		</p>
 	{:else if status === 'unbekannt'}
-		<p class="text-xs text-on-surface-variant" role="status">Die DNB kennt diese ISBN nicht.</p>
+		<p class="text-xs text-on-surface-variant" role="status">Die DNB kennt diese ISBN nicht</p>
 	{:else if status === 'fehler'}
 		<!-- Der Grund kommt vom Server oder vom Browser: Ein fester Satz sagte auch bei „Keine
 		     gültige ISBN", die DNB sei nicht erreichbar. -->

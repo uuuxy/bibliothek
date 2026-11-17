@@ -28,14 +28,14 @@
 
 			snackbars.addToast(
 				daten.type === 'xml'
-					? `${anzahlText(daten.updated_titles_count, 'vorhandener Titel', 'vorhandene Titel')} aktualisiert.`
-					: `${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} angelegt.`,
+					? `${anzahlText(daten.updated_titles_count, 'vorhandener Titel', 'vorhandene Titel')} aktualisiert`
+					: `${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')} und ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')} angelegt`,
 				'success'
 			);
 			datei = null;
 		} catch (err) {
 			snackbars.addToast(
-				(err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.',
+				(err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten',
 				'error'
 			);
 		} finally {

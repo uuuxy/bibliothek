@@ -124,7 +124,7 @@
 					type="month"
 					bind:value={monatJahr}
 					ungueltig={monatUngueltig}
-					hint={monatUngueltig ? 'Monat als Jahr und Monat eingeben, zum Beispiel 2026-10.' : ''}
+					hint={monatUngueltig ? 'Monat als Jahr und Monat eingeben, zum Beispiel 2026-10' : ''}
 				/>
 			{:else if typ === 'jahr'}
 				<div class="space-y-1.5">
@@ -141,7 +141,7 @@
 					{#if bestellStore.nichtGeladen.lieferanten && suppliers.length === 0}
 						<LadeFehler knapp titel="Lieferanten nicht geladen" />
 					{:else if suppliers.length === 0}
-						<p class="text-sm text-on-surface-variant italic">Keine Lieferanten vorhanden.</p>
+						<p class="text-sm text-on-surface-variant italic">Keine Lieferanten vorhanden</p>
 					{:else}
 						<Select
 							id="lieferant"
@@ -158,7 +158,7 @@
 						type="date"
 						bind:value={bisDatum}
 						ungueltig={rangeInvalid}
-						hint={rangeInvalid ? 'Das Von-Datum liegt nach dem Bis-Datum.' : ''}
+						hint={rangeInvalid ? 'Das Von-Datum liegt nach dem Bis-Datum' : ''}
 					/>
 				</div>
 			{/if}
@@ -179,7 +179,7 @@
 				Als PDF
 			</a>
 			<p class="text-xs text-on-surface-variant">
-				Das PDF öffnet sich im Browser — von dort ausdrucken oder als Datei speichern.
+				Das PDF öffnet sich im Browser, von dort ausdrucken oder als Datei speichern
 			</p>
 		</section>
 	</div>

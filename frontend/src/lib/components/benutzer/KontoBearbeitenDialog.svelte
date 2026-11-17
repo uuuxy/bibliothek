@@ -69,7 +69,7 @@
 			id="barcode_id"
 			etikett="Ausweisnummer"
 			bind:value={formular.barcode_id}
-			hint="Leeres Feld: Das Programm vergibt die nächste freie Nummer."
+			hint="Leeres Feld: Das Programm vergibt die nächste freie Nummer"
 		/>
 		{#each AUSWAHLEN as auswahl (auswahl.id)}
 			<div class="space-y-1.5">
@@ -87,7 +87,7 @@
 				required
 				autocapitalize="none"
 				spellcheck="false"
-				hint="Der Name, mit dem sich die Person anmeldet, etwa ihr Kürzel."
+				hint="Der Name, mit dem sich die Person anmeldet, etwa ihr Kürzel"
 			/>
 		{/if}
 		{#if istAenderung}

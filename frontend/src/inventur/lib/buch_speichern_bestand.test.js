@@ -79,7 +79,7 @@ describe('buch_speichern: der Bestand eines vorhandenen Titels', () => {
 			const fehler = await speichereBuch(
 				geoeffnet({ id: 'abc', isbn: '978', stock: feld, stockGesehen: 3 })
 			).catch((e) => e);
-			expect(fehler.message).toBe('Der Bestand muss eine ganze Zahl ab 0 sein.');
+			expect(fehler.message).toBe('Der Bestand muss eine ganze Zahl ab 0 sein');
 			expect(apiFetch).not.toHaveBeenCalled();
 		}
 	);

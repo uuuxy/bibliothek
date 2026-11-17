@@ -60,7 +60,7 @@
 
 <KategorieRahmen
 	titel="Ausleihe & Fristen"
-	kurz="Rückgabefristen, Ausleih-Obergrenze und Eingangsjahrgänge der Lernmittelfreiheit."
+	kurz="Rückgabefristen, Ausleih-Obergrenze und Eingangsjahrgänge der Lernmittelfreiheit"
 	{eingabe}
 	{onSaved}
 >
@@ -78,7 +78,7 @@
 		</p>
 		<p>
 			Der Ferien-Leseclub überschreibt beide Fristen: Solange er aktiv ist, bekommt JEDE neue
-			Ausleihe das eingetragene Ferienende als Rückgabetermin.
+			Ausleihe das eingetragene Ferienende als Rückgabetermin
 		</p>
 	{/snippet}
 
@@ -101,7 +101,7 @@
 			<div class="flex flex-col gap-1">
 				<span class="text-sm font-medium text-on-surface">Ferien-Leseclub</span>
 				<span class="text-sm text-on-surface-variant"
-					>Alle neuen Ausleihen laufen bis zum Ferienende statt bis zur Regelfrist.</span
+					>Alle neuen Ausleihen laufen bis zum Ferienende statt bis zur Regelfrist</span
 				>
 			</div>
 			<Switch bind:checked={leseclubAktiv} etikett="Ferien-Leseclub umschalten" />

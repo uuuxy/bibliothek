@@ -113,7 +113,7 @@ describe('BuchAuflagen', () => {
 					antwort([auflage('t2', '4. Aufl.', 2023), auflage('t1', '3. Aufl.', 2019)])
 				)
 			)
-			.mockRejectedValueOnce(new Error('Der Server hat nicht rechtzeitig geantwortet.'))
+			.mockRejectedValueOnce(new Error('Der Server hat nicht rechtzeitig geantwortet'))
 			.mockResolvedValueOnce(/** @type {any} */ (antwort([auflage('t1', '3. Aufl.', 2019)])));
 		const screen = render(BuchAuflagen, { formular: { id: 't1', istLernmittel: true } });
 
@@ -122,7 +122,7 @@ describe('BuchAuflagen', () => {
 		);
 		await stillhalten();
 
-		expect(melde).toHaveBeenCalledWith('Der Server hat nicht rechtzeitig geantwortet.', 'error');
+		expect(melde).toHaveBeenCalledWith('Der Server hat nicht rechtzeitig geantwortet', 'error');
 		expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/buecher/titel/t1/auflagen');
 		expect(screen.queryByRole('list', { name: 'Auflagen dieses Buchs' })).toBeNull();
 	});

@@ -77,9 +77,9 @@
 				await laden();
 				return;
 			}
-			fehler = await leseApiFehler(res, 'Die Bestätigung konnte nicht gespeichert werden.');
+			fehler = await leseApiFehler(res, 'Die Bestätigung konnte nicht gespeichert werden');
 		} catch {
-			fehler = 'Die Bestätigung konnte nicht gespeichert werden.';
+			fehler = 'Die Bestätigung konnte nicht gespeichert werden';
 		} finally {
 			sendet = false;
 		}
@@ -171,7 +171,7 @@
 					<h2 class="text-primary text-base font-semibold">Bestellung bestätigt</h2>
 					<p class="text-on-surface-variant mt-1 text-sm">
 						Eingegangen am {datum(bestellung.bestaetigt_am)}. Die Schulbibliothek sieht die
-						Bestätigung in ihrer Bestellhistorie — Sie müssen nichts weiter tun.{bestellung.link_gueltig_bis
+						Bestätigung in ihrer Bestellhistorie. Sie müssen nichts weiter tun.{bestellung.link_gueltig_bis
 							? ` Diese Seite und die Etiketten bleiben bis zum ${datum(bestellung.link_gueltig_bis)} erreichbar.`
 							: ''}
 					</p>

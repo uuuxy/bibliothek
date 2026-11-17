@@ -78,7 +78,7 @@
 
 <KategorieRahmen
 	titel="Schadensersatz"
-	kurz="Grundlage der Berechnung und die Angaben für den Bescheid."
+	kurz="Grundlage der Berechnung und die Angaben für den Bescheid"
 	{eingabe}
 	{onSaved}
 >
@@ -86,15 +86,15 @@
 		<p>
 			Welcher Preis die Grundlage ist, entscheidet über den Betrag: Der Listenpreis ist, was ein
 			Ersatz heute kostet, der Einkaufspreis, was die Schule damals bezahlt hat. Ist der Schalter
-			aus, gilt ab dem zweiten Verleihjahr der Listenpreis — so verlangt es die Arbeitshilfe des
-			Landes — und ohne erfassten Listenpreis ersatzweise der Einkaufspreis. Ist er an, gilt immer
+			aus, gilt ab dem zweiten Verleihjahr der Listenpreis, so verlangt es die Arbeitshilfe des
+			Landes, und ohne erfassten Listenpreis ersatzweise der Einkaufspreis. Ist er an, gilt immer
 			der Einkaufspreis; die Begründung im Bescheid sagt das. Im ersten Verleihjahr ändert der
 			Schalter nichts, dort gilt ohnehin der Einkaufspreis.
 		</p>
 		<p>
 			Die Referenznummer setzt sich aus vier vierstelligen Blöcken zusammen: Nummer des
 			Schulamtsbereichs, Kassenjahr, Schulnummer und einer laufenden Nummer, die das Programm je
-			Kassenjahr weiterzählt. Sie wird pro Brief vergeben und nie zweimal — über sie wird eine
+			Kassenjahr weiterzählt. Sie wird pro Brief vergeben und nie zweimal, über sie wird eine
 			eingehende Zahlung zugeordnet. Ohne die beiden Nummern lässt sich kein Bescheid erstellen.
 		</p>
 		<p>
@@ -111,7 +111,7 @@
 			<span class="text-sm font-medium text-on-surface">Immer mit dem Einkaufspreis rechnen</span>
 			<!-- EIN Satz wie in den Nachbarkategorien; das Ausführliche steht unter „Mehr". -->
 			<span class="text-sm text-on-surface-variant"
-				>Aus: der heutige Listenpreis, wie es die Arbeitshilfe verlangt.</span
+				>Aus: der heutige Listenpreis, wie es die Arbeitshilfe verlangt</span
 			>
 		</div>
 		<Switch bind:checked={immerKaufpreis} etikett="Berechnungsgrundlage umschalten" />

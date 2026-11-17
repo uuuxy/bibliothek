@@ -113,7 +113,7 @@
 			step="0.01"
 			min="0"
 			bind:value={formular.listenpreis}
-			hint="Was ein Ersatz heute kostet. Leer lassen, wenn unbekannt — dann rechnet der Schadensersatz mit dem Einkaufspreis."
+			hint="Was ein Ersatz heute kostet. Leer lassen, wenn unbekannt, dann rechnet der Schadensersatz mit dem Einkaufspreis."
 		>
 			{#snippet nachlaufend()}€{/snippet}
 		</Feld>
@@ -131,7 +131,7 @@
 			disabled={!schlagworteGeladen}
 			hint={schlagworteGeladen
 				? undefined
-				: 'Nicht geladen — die vorhandenen bleiben beim Speichern unverändert.'}
+				: 'Nicht geladen, die vorhandenen bleiben beim Speichern unverändert'}
 			placeholder="Thema, Gattung, Stichwort"
 			angebote={dnbVorschlag.liste(formular.isbn)}
 			angeboteEtikett="Vorschläge aus der DNB"

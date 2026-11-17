@@ -275,7 +275,7 @@ class BestellStore {
 	async editSupplier(id, aenderung) {
 		await apiPut(`/api/lieferanten/${id}`, aenderung);
 		await this.loadSuppliers();
-		snackbars.addToast('Lieferant aktualisiert.', 'success');
+		snackbars.addToast('Lieferant aktualisiert', 'success');
 	}
 
 	/** @param {string} id */
@@ -516,7 +516,7 @@ class BestellStore {
 			const n = antwort?.ordered_qty;
 			const info = n == null ? '' : ` (${anzahlText(n, 'Barcode', 'Barcodes')} reserviert.)`;
 			snackbars.addToast(
-				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst.'}${info}`,
+				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst'}${info}`,
 				antwort?.status === 'warning' ? 'error' : 'success'
 			);
 			return true;

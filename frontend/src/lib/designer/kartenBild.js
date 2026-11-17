@@ -19,7 +19,7 @@ function alsDatenAdresse(blob) {
 	return new Promise((resolve, reject) => {
 		const leser = new FileReader();
 		leser.onload = () => resolve(/** @type {string} */ (leser.result));
-		leser.onerror = () => reject(new Error('Die Datei ließ sich nicht lesen.'));
+		leser.onerror = () => reject(new Error('Die Datei ließ sich nicht lesen'));
 		leser.readAsDataURL(blob);
 	});
 }
@@ -43,7 +43,7 @@ export async function leseKartenBild(datei) {
 				guete: 0.9
 			});
 		} catch {
-			throw new Error(`„${datei.name}“ ist kein Bild, das der Browser lesen kann.`);
+			throw new Error(`„${datei.name}“ ist kein Bild, das der Browser lesen kann`);
 		}
 	}
 	if (bild.size > HOECHSTENS_BYTES) {

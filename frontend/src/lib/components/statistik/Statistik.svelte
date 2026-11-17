@@ -131,7 +131,7 @@
 {#snippet keineLadenhueter()}
 	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
 	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-success" aria-hidden="true" />
-	Keine Ladenhüter — der Bestand ist in Bewegung.
+	Keine Ladenhüter, der Bestand ist in Bewegung
 {/snippet}
 
 {#snippet rennerTabelle()}
@@ -234,7 +234,7 @@
 			<LadeFehler
 				onerneut={ladeKennzahlen}
 				titel="Statistik nicht geladen"
-				text="Die Kennzahlen konnten nicht abgerufen werden."
+				text="Die Kennzahlen konnten nicht abgerufen werden"
 			/>
 		{:else if kennzahlen}
 			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->

@@ -166,7 +166,7 @@ describe('TitelZusammenfuehrenDialog', () => {
 		});
 		expect(onZusammengefuehrt).toHaveBeenCalledWith('klein');
 		expect(vi.mocked(snackbars.addToast).mock.calls[0]).toEqual([
-			'Zusammengeführt: „Natur und Technik - Biologie 7/10“ hat jetzt 59 Exemplare.',
+			'Zusammengeführt: „Natur und Technik - Biologie 7/10“ hat jetzt 59 Exemplare',
 			'success'
 		]);
 	});

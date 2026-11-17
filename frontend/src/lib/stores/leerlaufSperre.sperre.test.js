@@ -310,7 +310,7 @@ describe('leerlaufSperre: Sperre am Server', () => {
 		});
 
 		it('hört auf, sobald aufgeschlossen ist', async () => {
-			vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+			vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 			await fristLaeuftAb();
 			serverAntwortet({ '/api/auth/entsperren': { status: 200, body: KONTO } });
 			expect(await lock.entsperren('geheim')).toBe(true);

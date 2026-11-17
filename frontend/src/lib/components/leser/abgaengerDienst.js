@@ -53,7 +53,7 @@ export function kontoauszugAdresse(klasse, suche = '', sichtbar = []) {
 	const parameter = new URLSearchParams();
 	if (klasse) parameter.set('klasse', klasse);
 	if (suche.trim()) {
-		if (sichtbar.length === 0) throw new Error('Die Suche zeigt niemanden.');
+		if (sichtbar.length === 0) throw new Error('Die Suche zeigt niemanden');
 		parameter.set('ids', sichtbar.map((s) => s.id).join(','));
 	}
 	const parameterText = parameter.toString();
@@ -75,7 +75,7 @@ export async function zeigeKontoauszuege(klasse, suche = '', sichtbar = []) {
 	const antwort = await zeigePdf(() => apiFetch(adresse));
 	if (!antwort) return false;
 	if (!antwort.ok) {
-		throw new Error(await leseApiFehler(antwort, 'Der Server hat kein PDF geliefert.'));
+		throw new Error(await leseApiFehler(antwort, 'Der Server hat kein PDF geliefert'));
 	}
 	return true;
 }

@@ -33,7 +33,7 @@ test('Rückgabe: entliehenes Buch scannen bucht es zurück', async ({ page }) =>
 	await scanInput.fill(bookBarcode);
 	await scanInput.press('Enter');
 
-	await expect(page.getByText(`„${bookTitle}" erfolgreich zurückgegeben.`)).toBeVisible();
+	await expect(page.getByText(`„${bookTitle}" erfolgreich zurückgegeben`)).toBeVisible();
 });
 
 // Fremdrückgabe (Produktentscheidung 10.07.): Buch von Schüler A wird in der
@@ -77,6 +77,6 @@ test('Fremdrückgabe: Scan 1 bucht nur beim Vorbesitzer aus, Scan 2 leiht an die
 	// Scan 2: jetzt ist das Buch frei → normale Ausleihe an B
 	await scanInput.fill(bookBarcode);
 	await scanInput.press('Enter');
-	await expect(page.getByText(`„${bookTitle}" ausgeliehen an E2E.`)).toBeVisible();
+	await expect(page.getByText(`„${bookTitle}" ausgeliehen an E2E`)).toBeVisible();
 	await expect(page.getByText('ENTLIEHENE BÜCHER (1)')).toBeVisible();
 });

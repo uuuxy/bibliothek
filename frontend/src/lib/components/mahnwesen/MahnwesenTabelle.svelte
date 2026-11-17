@@ -43,7 +43,7 @@
 	/>
 {:else if !mahnwesenStore.daten || mahnwesenStore.klassen.length === 0}
 	<div class="py-16 text-center text-base text-on-surface-variant">
-		Keine überfälligen Ausleihen vorhanden.
+		Keine überfälligen Ausleihen vorhanden
 	</div>
 {:else}
 	<!-- Kein Kartenrahmen. Die Kontur kam mit 160e298 dazu, weil der Arbeitsbereich
@@ -151,7 +151,7 @@
 					{#if mahnwesenStore.gefilterteSchueler.length === 0}
 						<tr>
 							<td colspan="5" class="text-center">
-								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche).
+								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche)
 							</td>
 						</tr>
 					{/if}

@@ -129,7 +129,7 @@
 					<span class="mt-0.5 block text-xs text-on-surface-variant">
 						Beim Bestellen vorausgewählt. Bekommt statt der reinen Bestellmail einen Link: wählt
 						darüber große oder kleine Etiketten, beklebt die Bücher selbst und bestätigt damit die
-						Bestellung — die Bestätigung erscheint automatisch in der Bestellhistorie. Seine Bücher
+						Bestellung. Die Bestätigung erscheint automatisch in der Bestellhistorie. Seine Bücher
 						stehen deshalb nicht auf der Nachdruck-Liste. Es kann immer nur einer sein; der
 						bisherige wird zum normalen Händler.
 					</span>
@@ -141,7 +141,7 @@
 				/>
 			</div>
 			<p class="text-xs text-on-surface-variant">
-				Alle anderen Lieferanten bekommen einfach nur die Bestellmail.
+				Alle anderen Lieferanten bekommen einfach nur die Bestellmail
 			</p>
 			<Button type="submit" size="lg" class="w-full" disabled={legtAn}>
 				{legtAn ? 'Wird gespeichert …' : 'Lieferanten speichern'}
@@ -162,7 +162,7 @@
 			<LadeFehler titel="Lieferanten nicht geladen" text={ladefehler} onerneut={onErneut} />
 		{:else if !suppliers.length}
 			<div class="py-12 text-center text-on-surface-variant text-base">
-				Keine Lieferanten angelegt.
+				Keine Lieferanten angelegt
 			</div>
 		{:else}
 			<div class="overflow-x-auto">

@@ -28,6 +28,6 @@ test('Abgelaufene Sitzung führt zur Anmeldung statt zu stillen Fehlern', async 
 		.click({ timeout: 3000 })
 		.catch(() => {});
 
-	await expect(page.getByText('Sitzung abgelaufen — bitte neu anmelden.')).toBeVisible();
+	await expect(page.getByText('Sitzung abgelaufen, bitte neu anmelden')).toBeVisible();
 	await expect(page.locator('#login-email')).toBeVisible();
 });

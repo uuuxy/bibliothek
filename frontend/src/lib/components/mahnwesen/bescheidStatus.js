@@ -36,7 +36,7 @@ export function bescheidStatus(b, datum) {
 			ton: 'warten',
 			icon: TriangleAlert,
 			text: 'Rückgabe nach Übergabe',
-			tip: 'Das Buch kam zurück, nachdem der Fall abgegeben war — die Aufsicht ist zu informieren.'
+			tip: 'Das Buch kam zurück, nachdem der Fall abgegeben war, die Aufsicht ist zu informieren'
 		};
 	}
 	if (b.status === 'uebergeben') {
@@ -44,7 +44,7 @@ export function bescheidStatus(b, datum) {
 			ton: 'neutral',
 			text: 'übergeben',
 			detail: b.uebergeben_am ? datum(b.uebergeben_am) : undefined,
-			tip: 'Der Fall liegt bei der Aufsicht; die Schule veranlasst nichts mehr.'
+			tip: 'Der Fall liegt bei der Aufsicht; die Schule veranlasst nichts mehr'
 		};
 	}
 	if (b.status === 'erledigt') {
@@ -55,7 +55,7 @@ export function bescheidStatus(b, datum) {
 			ton: 'fehler',
 			icon: TriangleAlert,
 			text: 'Frist abgelaufen',
-			tip: 'Original und Buchungsbeleg gehen jetzt an die Aufsicht.'
+			tip: 'Original und Buchungsbeleg gehen jetzt an die Aufsicht'
 		};
 	}
 	return {

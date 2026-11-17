@@ -63,7 +63,7 @@ describe('Bestellberichte als eigener Bildschirm', () => {
 
 		// Gegenprobe zum „leer ist auch grün": Ohne geladene Liste stünde hier der Satz
 		// „Keine Lieferanten vorhanden." — dann wäre der Umzug halb erledigt.
-		expect(screen.queryByText('Keine Lieferanten vorhanden.')).toBeNull();
+		expect(screen.queryByText('Keine Lieferanten vorhanden')).toBeNull();
 	});
 
 	it('holt den Preis-Schalter selbst — ohne Preise heißt das Blatt Übersicht', async () => {
@@ -89,7 +89,7 @@ describe('Bestellberichte: Zeitraum der Lieferantenabrechnung', () => {
 		const bis = screen.getByLabelText('Bis');
 		expect(bis.getAttribute('aria-invalid')).toBe('true');
 		const hinweis = document.getElementById(bis.getAttribute('aria-describedby') ?? '');
-		expect(hinweis?.textContent?.trim()).toBe('Das Von-Datum liegt nach dem Bis-Datum.');
+		expect(hinweis?.textContent?.trim()).toBe('Das Von-Datum liegt nach dem Bis-Datum');
 
 		const download = screen.getByText('Als PDF').closest('a');
 		expect(download?.getAttribute('aria-disabled')).toBe('true');

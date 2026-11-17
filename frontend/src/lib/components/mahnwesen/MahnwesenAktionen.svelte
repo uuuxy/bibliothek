@@ -113,7 +113,7 @@
 			variant="danger"
 			onclick={() => onMahnlauf()}
 			disabled={mahnwesenStore.mahnlauf.laeuft}
-			aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
+			aria-label="Alle anmahnen: Mahnlauf konfigurieren und per E-Mail versenden"
 			class="shrink-0"
 		>
 			{#if mahnwesenStore.mahnlauf.laeuft}

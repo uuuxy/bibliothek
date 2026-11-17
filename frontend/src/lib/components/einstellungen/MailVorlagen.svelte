@@ -48,11 +48,11 @@
 					gewaehlteKennung = vorlagen[0].id;
 				}
 			} else {
-				fehler = await leseApiFehler(res, 'Fehler beim Laden der Vorlagen.');
+				fehler = await leseApiFehler(res, 'Fehler beim Laden der Vorlagen');
 			}
 		} catch (error) {
 			console.error(error);
-			fehler = 'Netzwerkfehler beim Laden.';
+			fehler = 'Netzwerkfehler beim Laden';
 		} finally {
 			laedt = false;
 		}
@@ -73,13 +73,13 @@
 
 			if (res.ok) {
 				merke(vorlage);
-				snackbars.addToast('Vorlage gespeichert.', 'success');
+				snackbars.addToast('Vorlage gespeichert', 'success');
 			} else {
-				fehler = await leseApiFehler(res, 'Fehler beim Speichern der Vorlage.');
+				fehler = await leseApiFehler(res, 'Fehler beim Speichern der Vorlage');
 			}
 		} catch (error) {
 			console.error(error);
-			fehler = 'Netzwerkfehler beim Speichern.';
+			fehler = 'Netzwerkfehler beim Speichern';
 		} finally {
 			speichert = false;
 		}
@@ -172,7 +172,7 @@
 				<div
 					class="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant"
 				>
-					<p class="text-sm">Wähle links eine Vorlage aus.</p>
+					<p class="text-sm">Wähle links eine Vorlage aus</p>
 				</div>
 			{/if}
 		</div>

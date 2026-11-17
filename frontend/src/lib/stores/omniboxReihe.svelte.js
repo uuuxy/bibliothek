@@ -62,7 +62,7 @@ export function erzeugeOmniboxReihe({
 			leuchteBildschirm('error');
 			spieleFehlerton();
 			zeigeFehlerBanner(
-				'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen.'
+				'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen'
 			);
 			return reiheGebucht;
 		}

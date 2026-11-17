@@ -34,14 +34,11 @@
 		try {
 			const r = await importiereListe(datei, schluessel);
 			const fehl = r.failed > 0 ? `, ${r.failed} fehlgeschlagen` : '';
-			snackbars.addToast(`${r.imported} Titel importiert${fehl}.`, 'success');
+			snackbars.addToast(`${r.imported} Titel importiert${fehl}`, 'success');
 			datei = null;
 			schluessel = crypto.randomUUID();
 		} catch (err) {
-			snackbars.addToast(
-				(err instanceof Error && err.message) || 'Import fehlgeschlagen.',
-				'error'
-			);
+			snackbars.addToast((err instanceof Error && err.message) || 'Import fehlgeschlagen', 'error');
 		} finally {
 			laeuft = false;
 		}
@@ -52,7 +49,7 @@
 	<div class="pt-6 border-t border-outline-variant">
 		<h4 class="text-sm font-bold text-on-surface mb-1">Listenimport (ISBN + Stückzahl)</h4>
 		<p class="text-sm text-on-surface-variant mb-4">
-			CSV oder Excel mit den Spalten ISBN (Pflicht), Titel, Autor, Fach, Klasse und Bestand — ohne
+			CSV oder Excel mit den Spalten ISBN (Pflicht), Titel, Autor, Fach, Klasse und Bestand. Ohne
 			Kopfzeile werden die Spalten am Inhalt erkannt. Je Zeile entsteht ein Titel mit so vielen
 			Exemplaren, wie im Bestand steht, jedes mit einer neuen B-Nummer; die Etiketten stehen danach
 			im Druck-Center unter „Fehlende Etiketten". Für Bücher, die schon eine Nummer tragen, ist der

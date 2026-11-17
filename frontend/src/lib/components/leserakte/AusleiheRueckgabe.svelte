@@ -36,13 +36,13 @@
 				const daten = await response.json();
 				ausleihe.rueckgabe_frist = daten.faellig_am;
 				bearbeitet = false;
-				melde(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
+				melde(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt`, 'success');
 			} else {
-				melde(await leseApiFehler(response, 'Datum konnte nicht gespeichert werden.'), 'error');
+				melde(await leseApiFehler(response, 'Datum konnte nicht gespeichert werden'), 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			melde('Netzwerkfehler beim Speichern des Datums.', 'error');
+			melde('Netzwerkfehler beim Speichern des Datums', 'error');
 		} finally {
 			speichert = false;
 		}

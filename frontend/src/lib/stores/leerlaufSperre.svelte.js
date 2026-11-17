@@ -266,14 +266,14 @@ export class LeerlaufSperre {
 	 */
 	async entsperren(passwort) {
 		if (!passwort) {
-			this.entsperrFehler = 'Bitte Passwort eingeben.';
+			this.entsperrFehler = 'Bitte Passwort eingeben';
 			return false;
 		}
 		// Gesperrt wurde noch mit Netz, verloren ging es danach. „Netzwerkfehler" sagte
 		// weder, dass Warten hilft, noch dass die gescannten Vorgänge gespeichert bleiben.
 		if (offlineSync.ohneNetz) {
 			this.entsperrFehler =
-				'Ohne Netz lässt sich das Passwort nicht prüfen — die Anmeldung läuft über den Schulserver. ' +
+				'Ohne Netz lässt sich das Passwort nicht prüfen, die Anmeldung läuft über den Schulserver. ' +
 				'Sobald die Verbindung zurück ist, geht es hier weiter; gescannte Vorgänge bleiben gespeichert.';
 			return false;
 		}
@@ -367,10 +367,10 @@ export class LeerlaufSperre {
 
 /** @param {Response} res */
 async function fehlertext(res) {
-	if (res.status === 401) return 'Passwort falsch.';
-	if (res.status === 429) return 'Zu viele Versuche — bitte kurz warten.';
-	if (res.status === 503) return 'Anmeldedienst nicht erreichbar.';
-	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen (${res.status}).`);
+	if (res.status === 401) return 'Passwort falsch';
+	if (res.status === 429) return 'Zu viele Versuche, bitte kurz warten';
+	if (res.status === 503) return 'Anmeldedienst nicht erreichbar';
+	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen (${res.status})`);
 }
 
 export const leerlaufSperre = new LeerlaufSperre();

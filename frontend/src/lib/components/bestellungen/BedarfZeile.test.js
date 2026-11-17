@@ -119,7 +119,7 @@ describe('Bestellbedarf: Kopf und Leerzustand', () => {
 		const screen = render(Bestellbedarf, { vorschlaege: [buch, einzeln], onAddToCart: vi.fn() });
 		expect(
 			screen.getByText(
-				'3 Exemplare fehlen für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder.'
+				'3 Exemplare fehlen für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder'
 			)
 		).toBeTruthy();
 	});
@@ -128,7 +128,7 @@ describe('Bestellbedarf: Kopf und Leerzustand', () => {
 		const screen = render(Bestellbedarf, { vorschlaege: [einzeln], onAddToCart: vi.fn() });
 		expect(
 			screen.getByText(
-				'1 Exemplar fehlt für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder.'
+				'1 Exemplar fehlt für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder'
 			)
 		).toBeTruthy();
 	});

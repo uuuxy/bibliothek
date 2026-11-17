@@ -4,6 +4,7 @@
 // der Theke und die Rückmeldung behält er und reicht sie als Funktionen herein.
 
 import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
+import { verbindeSaetze } from '../utils/format.js';
 import { ausgabeHinweiseAus, ohneExemplar } from '../utils/ausgabeHinweise.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe, ob Schüler oder Kollege.
@@ -60,9 +61,12 @@ export function erzeugeOmniboxAntwort({
 		const prevName = formatVorbesitzerName(daten);
 		setzeFremdrueckgabe({ vorbesitzerName: prevName });
 		const aktiv = leseLeser()?.vorname;
-		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
+		const nachsatz = aktiv ? `Erneut scannen, um es an ${aktiv} auszuleihen` : '';
 		melde(
-			`„${daten.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
+			verbindeSaetze(
+				`„${daten.book.titel}" war auf ${prevName} verbucht und wurde dort zurückgegeben`,
+				nachsatz
+			),
 			'warning'
 		);
 	}
@@ -82,8 +86,8 @@ export function erzeugeOmniboxAntwort({
 			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
 			melde(
 				leseSchnellrueckgabe() && daten.student
-					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}.`
-					: `„${titel}" erfolgreich zurückgegeben.`
+					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}`
+					: `„${titel}" erfolgreich zurückgegeben`
 			);
 		}
 		if (daten.has_vormerkung) {
@@ -134,13 +138,13 @@ export function erzeugeOmniboxAntwort({
 		spieleErfolgston('ausleihe');
 		leuchteRand(mitHinweis ? 'orange' : 'green');
 		melde(
-			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${leseLeser()?.vorname}.`
+			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${leseLeser()?.vorname}`
 		);
 		// Der Schüler hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen: Das
 		// reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
 		if (daten.regalfreigabe_barcode) {
 			melde(
-				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
+				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen`,
 				'warning'
 			);
 		}
@@ -187,7 +191,7 @@ export function erzeugeOmniboxAntwort({
 			setzePrueflisteAnfrage({ query: q, geraet: daten.geraet, overrideBlock });
 		} else if (daten.type === 'search_results') {
 			wackle();
-			melde('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
+			melde('Bitte wähle ein Ergebnis aus der Liste', 'warning');
 		}
 		return false;
 	}

@@ -205,23 +205,23 @@ describe('LmfPlanReihenfolge', () => {
 		// Absprache vom 06.09.2026: „einfach anklicken um es zu ändern … statt immer über die 3
 		// Punkte rechts". Die Zelle ist der Weg; vorbelegt bleibt der Platz der Zeile.
 		const { getByLabelText, queryByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Stunde Zeile 2: 4. Std. — festlegen'));
+		await fireEvent.click(getByLabelText('Stunde Zeile 2: 4. Std., festlegen'));
 		const datum = /** @type {HTMLInputElement} */ (getByLabelText('Fester Tag Zeile 2'));
 		expect(datum.value).toBe('2027-06-28');
 		const stunde = getByLabelText('Feste Stunde Zeile 2');
 		expect(stunde.textContent).toContain('4. Std.');
 		await Promise.resolve();
 		expect(document.activeElement).toBe(stunde);
-		expect(queryByLabelText('Stunde Zeile 2: 4. Std. — festlegen')).toBeNull();
+		expect(queryByLabelText('Stunde Zeile 2: 4. Std., festlegen')).toBeNull();
 
 		await fireEvent.click(getByLabelText('Festen Platz Zeile 2 lösen'));
 		expect(queryByLabelText('Fester Tag Zeile 2')).toBeNull();
-		expect(getByLabelText('Stunde Zeile 2: 4. Std. — festlegen')).toBeTruthy();
+		expect(getByLabelText('Stunde Zeile 2: 4. Std., festlegen')).toBeTruthy();
 	});
 
 	it('legt per Klick auf das Datum fest — Fokus im Datumsfeld', async () => {
 		const { getByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Datum Zeile 1: 28.06.2027 — festlegen'));
+		await fireEvent.click(getByLabelText('Datum Zeile 1: 28.06.2027, festlegen'));
 		await Promise.resolve();
 		expect(document.activeElement).toBe(getByLabelText('Fester Tag Zeile 1'));
 	});

@@ -96,7 +96,7 @@ describe('Theke: Ausleihe', () => {
 		const neuLaden = await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
 
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
-		expect(snackbars.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida', 'success');
 		expect(neuLaden).toHaveBeenCalledTimes(1);
 		expect(store.rueckmeldung.randLeuchten).toBe('green');
 		expect(spieleErfolgston).toHaveBeenCalledTimes(1);
@@ -132,7 +132,7 @@ describe('Theke: Ausleihe', () => {
 
 		await scanne(store, { type: 'ausleihe', geraet: { modellname: 'Tablet 9' } });
 
-		expect(snackbars.addToast).toHaveBeenCalledWith('„Tablet 9" ausgeliehen an Ida.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('„Tablet 9" ausgeliehen an Ida', 'success');
 	});
 
 	// Der Leser hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen.
@@ -147,7 +147,7 @@ describe('Theke: Ausleihe', () => {
 
 		expect(snackbars.addToast).toHaveBeenCalledTimes(2);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Hinweis: Reserviertes Exemplar B-518-2 zurück ins Regal räumen.',
+			'Hinweis: Reserviertes Exemplar B-518-2 zurück ins Regal räumen',
 			'warning'
 		);
 	});
@@ -191,7 +191,7 @@ describe('Theke: Suchtreffer statt Buchung', () => {
 		expect(store.rueckmeldung.wackelt).toBe(true);
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Bitte wähle ein Ergebnis aus der Liste.',
+			'Bitte wähle ein Ergebnis aus der Liste',
 			'warning'
 		);
 		expect(neuLaden).not.toHaveBeenCalled();

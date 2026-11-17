@@ -86,7 +86,7 @@ export function erzeugeSchuelerSuche() {
 			if (nr === ladeNr) {
 				schueler = [];
 				grenze = 0;
-				ladefehler = 'Die Leserdatei konnte nicht geladen werden (Netzwerkfehler).';
+				ladefehler = 'Die Leserdatei konnte nicht geladen werden (Netzwerkfehler)';
 			}
 			console.error('Fehler beim Laden der Leserdatei:', err);
 		} finally {

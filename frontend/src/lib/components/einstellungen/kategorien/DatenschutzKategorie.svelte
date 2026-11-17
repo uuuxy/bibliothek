@@ -95,7 +95,7 @@
 
 <KategorieRahmen
 	titel="Datenschutz & Sitzung"
-	kurz="Wann eine Ausleihe ihren Namen verliert und wann der Arbeitsplatz sich selbst schließt."
+	kurz="Wann eine Ausleihe ihren Namen verliert und wann der Arbeitsplatz sich selbst schließt"
 	{eingabe}
 	{onSaved}
 >
@@ -116,12 +116,12 @@
 		<p>
 			Abgänger-Karenzzeit: Tage nach dem letzten Vorgang (Abgang im LUSD-Import, letzte Rückgabe
 			oder Schadensregulierung), die ein Abgänger ohne offene Vorgänge nur gesperrt bleibt, bevor er
-			anonymisiert wird. In dieser Zeit lässt sich eine falsche Zuordnung noch reparieren — etwa ein
+			anonymisiert wird. In dieser Zeit lässt sich eine falsche Zuordnung noch reparieren, etwa ein
 			umbenannter Schüler, den der Export ohne Schüler-ID nicht wiedererkannt hat (Zusammenführen in
 			der Leserakte). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur
 			Datensätze, die die Karenz durchlaufen haben.
 		</p>
-		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort.</p>
+		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort</p>
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
@@ -131,7 +131,7 @@
 			etikett="Lesehistorie Schülerbücherei (Tage)"
 			min={0}
 			max={3650}
-			hint="Vorgabe 1 (einen Tag nach der Rückgabe)."
+			hint="Vorgabe 1 (einen Tag nach der Rückgabe)"
 		/>
 		<Feld
 			type="number"
@@ -139,7 +139,7 @@
 			etikett="Lesehistorie Lernmittel (Tage)"
 			min={0}
 			max={3650}
-			hint="Vorgabe 730 (zwei Schuljahre)."
+			hint="Vorgabe 730 (zwei Schuljahre)"
 		/>
 		<Feld
 			type="number"
@@ -147,7 +147,7 @@
 			etikett="Erledigte Anliegen aufbewahren (Tage)"
 			min={0}
 			max={3650}
-			hint="Vorgabe 365."
+			hint="Vorgabe 365"
 		/>
 		<Feld
 			type="number"
@@ -155,7 +155,7 @@
 			etikett="Prüfprotokoll aufbewahren (Monate)"
 			min={6}
 			max={120}
-			hint="Vorgabe 24. Mindestens 6 — darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
+			hint="Vorgabe 24. Mindestens 6, darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
 		/>
 		<Feld
 			type="number"
@@ -163,7 +163,7 @@
 			etikett="Theke leeren nach (Min.)"
 			min={0}
 			max={1440}
-			hint="Vorgabe 5."
+			hint="Vorgabe 5"
 		/>
 		<Feld
 			type="number"
@@ -171,7 +171,7 @@
 			etikett="Sperrbildschirm nach (Min.)"
 			min={0}
 			max={1440}
-			hint="Vorgabe 15."
+			hint="Vorgabe 15"
 		/>
 		<Feld
 			type="number"
@@ -179,7 +179,7 @@
 			etikett="Abgänger-Karenzzeit (Tage)"
 			min={0}
 			max={365}
-			hint="Vorgabe 90. 0 = sofort anonymisieren."
+			hint="Vorgabe 90. 0 = sofort anonymisieren"
 		/>
 	</div>
 </KategorieRahmen>

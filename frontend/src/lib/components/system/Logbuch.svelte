@@ -42,7 +42,7 @@
 			const res = await apiFetch('/api/audit');
 			if (!res.ok) {
 				if (res.status === 403) {
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
+					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
 				}
 				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Logbuchs'));
 			}
@@ -77,7 +77,7 @@
 		<LadeFehler onerneut={fetchLogs} titel="Logbuch nicht geladen" text={fehler} />
 	{:else if logs.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">
-			Keine Audit-Einträge vorhanden.
+			Keine Audit-Einträge vorhanden
 		</div>
 	{:else}
 		<div class="w-full">

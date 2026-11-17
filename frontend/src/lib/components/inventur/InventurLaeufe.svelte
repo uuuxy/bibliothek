@@ -7,7 +7,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Menue from '../ui/Menue.svelte';
 	import { bestaetigen, loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
-	import { formatDatum } from '../../utils/format.js';
+	import { formatDatum, verbindeSaetze } from '../../utils/format.js';
 
 	/**
 	 * Die Felder der Inventur-Fassade (useInventur), die diese Abschnitte lesen.
@@ -46,13 +46,13 @@
 				? 'Das eine fehlende Buch bleibt'
 				: `Die ${inventur.verluste} fehlenden Bücher bleiben`;
 		const folge = inventur.verworfen
-			? 'Sie wurde verworfen und hat nichts gebucht.'
+			? 'Sie wurde verworfen und hat nichts gebucht'
 			: inventur.verluste > 0
 				? `Ihr Fehlbestandsbericht wird mit gelöscht. ${fehlende} als verloren gebucht; ein Buch, das sich findet, bucht ein Scan an der Theke zurück.`
-				: 'Sie war vollständig und hat keinen Fehlbestand.';
+				: 'Sie war vollständig und hat keinen Fehlbestand';
 		const ja = await loeschenBestaetigen(
 			`Inventur „${inventur.label}“ löschen?`,
-			`${folge} Das lässt sich nicht rückgängig machen.`
+			verbindeSaetze(folge, 'Das lässt sich nicht rückgängig machen')
 		);
 		if (ja) ablauf.frueher.loesche(inventur);
 	}

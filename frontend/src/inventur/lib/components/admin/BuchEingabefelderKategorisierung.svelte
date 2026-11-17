@@ -94,7 +94,7 @@
 						aria-describedby="buch-schulzweig-hinweis"
 					/>
 					<span id="buch-schulzweig-hinweis" class="text-xs text-on-surface-variant">
-						Nur setzen, wenn das Buch wirklich einem Zweig gehört — leer heißt „gilt für alle".
+						Nur setzen, wenn das Buch wirklich einem Zweig gehört. Leer heißt „gilt für alle".
 					</span>
 				</div>
 			{/if}

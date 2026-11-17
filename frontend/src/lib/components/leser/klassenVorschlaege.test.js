@@ -57,12 +57,12 @@ describe('erzeugeKlassenVorschlaege', () => {
 	});
 
 	it('meldet auch einen Netzfehler', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 
 		const vorschlaege = erzeugeKlassenVorschlaege();
 		await vorschlaege.lade();
 
-		expect(vorschlaege.ladefehler).toBe('Keine Verbindung zum Server.');
+		expect(vorschlaege.ladefehler).toBe('Keine Verbindung zum Server');
 	});
 
 	it('behält eine geladene Liste, wenn ein späterer Abruf scheitert, und nimmt den Fehler zurück, sobald einer gelingt', async () => {
@@ -102,7 +102,7 @@ describe('klassenLadefehler', () => {
 		expect(klassenLadefehler('Datenbank nicht erreichbar')).toBe(
 			'Die Klassen ließen sich nicht laden: Datenbank nicht erreichbar. Bitte neu öffnen.'
 		);
-		expect(klassenLadefehler('Keine Verbindung zum Server.')).toBe(
+		expect(klassenLadefehler('Keine Verbindung zum Server')).toBe(
 			'Die Klassen ließen sich nicht laden: Keine Verbindung zum Server. Bitte neu öffnen.'
 		);
 	});

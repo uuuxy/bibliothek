@@ -107,7 +107,7 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		expect(await screen.findByRole('button', { name: 'Veröffentlichen' })).toBeTruthy();
 		// Ohne Datum: oben stünde der gespeicherte Beginn, unter „Zeitraum" der gerechnete.
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent.trim()).toBe(
-			'Entwurf, noch nicht veröffentlicht.'
+			'Entwurf, noch nicht veröffentlicht'
 		);
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain(
 			'noch nicht veröffentlicht'
@@ -130,7 +130,7 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Veröffentlichen' })).toBeNull();
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent.trim()).toBe(
-			'Veröffentlicht am 20.05.2027.'
+			'Veröffentlicht am 20.05.2027'
 		);
 		// Ohne Schüler in 09H1 (klassen leer): die Zeile sagt es.
 		expect(screen.getByText('ohne Schüler')).toBeTruthy();

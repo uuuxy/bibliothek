@@ -111,7 +111,7 @@ export function erzeugeOmniboxOhneNetz({
 			leuchteBildschirm('error');
 			spieleFehlerton();
 			zeigeFehlerBanner(
-				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
+				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden. Buch zurücklegen und den Vorgang notieren.`
 			);
 			offlineSync.zaehleNeu();
 			return false;
@@ -119,7 +119,7 @@ export function erzeugeOmniboxOhneNetz({
 		offlineSync.zaehleNeu();
 		leuchteBildschirm('warning');
 		spieleErfolgston();
-		melde(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
+		melde(`Offline: Aktion für „${eintrag.barcode}“ gespeichert`, 'warning');
 		return true;
 	}
 
@@ -146,21 +146,21 @@ export function erzeugeOmniboxOhneNetz({
 		const meldungen = {
 			// Geräte gehen ohne Netz nicht: Sie hängen an einer Checkliste, die es nur online gibt.
 			geraet:
-				`Geräte lassen sich ohne Netz nicht ausgeben oder zurücknehmen — die Checkliste dazu gibt es nur online. ` +
+				`Geräte lassen sich ohne Netz nicht ausgeben oder zurücknehmen, die Checkliste dazu gibt es nur online. ` +
 				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
 			// Ohne Netz gibt es keine Namenssuche, weil auf dem Rechner der Theke keine
 			// Personendaten liegen sollen.
 			suche:
-				`Ohne Netz lässt sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
+				`Ohne Netz lässt sich nicht nach Namen suchen, auf diesem Rechner stehen keine Personendaten. ` +
 				`Bitte den Ausweis scannen oder den Vorgang notieren.`,
 			// Die sichere Seite: Wer hier rät, schreibt das nächste Buch einer fremden Person zu.
 			unklar:
-				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
+				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig, die Nummer steht nicht in der Buchliste dieses Rechners. ` +
 				`NICHT gebucht; bitte notieren.`
 		};
 		leuchteBildschirm('error');
 		spieleFehlerton();
-		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht.');
+		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht');
 	}
 
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der

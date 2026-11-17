@@ -19,7 +19,7 @@
 		<p class="text-sm text-on-surface-variant">
 			{anzahl}
 			{anzahl === 1 ? 'Exemplar wird' : 'Exemplare werden'} unwiderruflich aus dem Katalog entfernt. Der
-			Fehlbestandsbericht selbst bleibt erhalten — nur die Datensätze der Exemplare sind danach weg, das
+			Fehlbestandsbericht selbst bleibt erhalten, nur die Datensätze der Exemplare sind danach weg, das
 			lässt sich nicht rückgängig machen.
 		</p>
 		<div class="flex justify-end gap-2 pt-2">

@@ -53,7 +53,7 @@ describe('FehlbestandBericht', () => {
 		await fireEvent.click(bericht.getByRole('button', { name: 'Liste drucken' }));
 
 		const html = fenster.document.write.mock.calls[0][0];
-		expect(html).toContain('<h1>Fehlbestand — Lehrbuchsammlung</h1>');
+		expect(html).toContain('<h1>Fehlbestand: Lehrbuchsammlung</h1>');
 		expect(html).toContain('10004200');
 		// Gefundenes und endgültig Gelöschtes steht nur als Zahl auf dem Blatt.
 		expect(html).not.toContain('10004201');

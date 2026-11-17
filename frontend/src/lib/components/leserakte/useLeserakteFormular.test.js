@@ -334,7 +334,7 @@ describe('useLeserakteFormular.save', () => {
 
 			expect(patchMock).not.toHaveBeenCalled();
 			expect(onSave).toHaveBeenCalledTimes(1);
-			expect(showSnackbar).toHaveBeenCalledWith('Änderungen gespeichert.', 'success');
+			expect(showSnackbar).toHaveBeenCalledWith('Änderungen gespeichert', 'success');
 		});
 
 		it('schickt ein Feld nicht, das getippt und wieder zurückgestellt wurde', async () => {

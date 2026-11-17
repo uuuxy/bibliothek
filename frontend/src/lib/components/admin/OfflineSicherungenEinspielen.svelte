@@ -61,8 +61,8 @@
 	<h3 class="text-base font-semibold text-on-surface">Offline-Sicherungen einspielen</h3>
 	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		Fällt an einem Kiosk-Rechner das Netz aus, werden Rückgaben dort zwischengespeichert und die
-		Kraft speichert vor dem Ausschalten eine Sicherungsdatei. Diese Dateien werden hier eingespielt
-		— mehrere auf einmal, eine je Rechner.
+		Kraft speichert vor dem Ausschalten eine Sicherungsdatei. Diese Dateien werden hier eingespielt,
+		mehrere auf einmal, eine je Rechner.
 	</p>
 	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		<span class="font-medium">Wann:</span> immer dann, wenn an einem Arbeitsplatz eine Sicherung gespeichert
@@ -70,7 +70,7 @@
 	</p>
 	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		Zweimaliges Einspielen derselben Datei ist unschädlich: Jeder Vorgang trägt einen Schlüssel, den
-		der Server wiedererkennt.
+		der Server wiedererkennt
 	</p>
 
 	<div class="mt-6 flex items-center gap-4">
@@ -102,8 +102,8 @@
 			</p>
 			<p class="mt-1">
 				{bericht.vorgaenge === 1
-					? 'Er wird jetzt an den Server übertragen und ist danach an allen Arbeitsplätzen sichtbar.'
-					: 'Sie werden jetzt an den Server übertragen und sind danach an allen Arbeitsplätzen sichtbar.'}
+					? 'Er wird jetzt an den Server übertragen und ist danach an allen Arbeitsplätzen sichtbar'
+					: 'Sie werden jetzt an den Server übertragen und sind danach an allen Arbeitsplätzen sichtbar'}
 			</p>
 		</div>
 	{/if}

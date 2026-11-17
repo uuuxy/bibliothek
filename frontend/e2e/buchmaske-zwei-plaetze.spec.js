@@ -36,7 +36,7 @@ async function speichern(page) {
 	);
 	await page.getByRole('button', { name: 'Speichern' }).click();
 	const rumpf = JSON.parse((await anfrage).postData() || 'null');
-	await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+	await expect(page.getByText('Buch gespeichert')).toBeVisible();
 	return rumpf;
 }
 

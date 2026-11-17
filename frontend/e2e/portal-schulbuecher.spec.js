@@ -65,7 +65,7 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		// Freihand-Titel trägt, lässt KEINE Karte übrig (er ist kein Lernmittel).
 		const suche = page.getByLabel('Schulbücher durchsuchen');
 		await suche.fill(`Freihand ${s}`);
-		await expect(page.getByText('Keine Schulbücher passen zu dieser Auswahl.')).toBeVisible();
+		await expect(page.getByText('Keine Schulbücher passen zu dieser Auswahl')).toBeVisible();
 
 		// Der eigene Titel dagegen bleibt — und nur er.
 		await suche.fill(TITEL);

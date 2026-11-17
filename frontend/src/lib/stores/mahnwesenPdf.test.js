@@ -121,7 +121,7 @@ describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 
 		expect(apiFetch).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
+			'Keine überfälligen Medien für die ausgewählten Schüler gefunden',
 			'info'
 		);
 		expect(store.drucktPdf).toBe(false);

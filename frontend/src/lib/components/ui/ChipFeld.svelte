@@ -54,7 +54,7 @@
 		werte = $bindable([]),
 		id = undefined,
 		etikett = undefined,
-		hint = 'Mit Enter oder Komma übernehmen.',
+		hint = 'Mit Enter oder Komma übernehmen',
 		placeholder = '',
 		vorschlaege = [],
 		ontippen = undefined,
@@ -150,7 +150,7 @@
 		{disabled}
 		maxlength={maxZeichen}
 		ungueltig={voll}
-		hint={voll ? `Höchstens ${max} — zuerst einen entfernen.` : hint}
+		hint={voll ? `Höchstens ${max}, zuerst einen entfernen` : hint}
 		onkeydown={taste}
 		oninput={(e) => ontippen?.(e.currentTarget.value)}
 		onwaehlen={gewaehlt}

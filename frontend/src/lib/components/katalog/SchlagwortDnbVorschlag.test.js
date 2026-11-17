@@ -60,7 +60,7 @@ describe('SchlagwortDnbVorschlag', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		await vi.waitFor(() =>
-			expect(screen.getByRole('status').textContent).toMatch(/Die DNB kennt diese ISBN nicht\./)
+			expect(screen.getByRole('status').textContent).toMatch(/Die DNB kennt diese ISBN nicht$/)
 		);
 	});
 
@@ -76,7 +76,7 @@ describe('SchlagwortDnbVorschlag', () => {
 
 		await vi.waitFor(() =>
 			expect(screen.getByRole('status').textContent).toMatch(
-				/Keine weiteren Schlagworte aus der DNB\./
+				/Keine weiteren Schlagworte aus der DNB$/
 			)
 		);
 	});
@@ -109,11 +109,11 @@ describe('SchlagwortDnbVorschlag', () => {
 		);
 		expect(screen.getByRole('alert').textContent).not.toMatch(/nicht erreichbar/);
 
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		await vi.waitFor(() =>
-			expect(screen.getByRole('alert').textContent).toMatch(/Keine Verbindung zum Server\./)
+			expect(screen.getByRole('alert').textContent).toMatch(/Keine Verbindung zum Server$/)
 		);
 	});
 

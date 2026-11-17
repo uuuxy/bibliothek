@@ -47,7 +47,7 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	// darunter läuft in einen Timeout mit einer Meldung, die vom falschen Ort erzählt.
 	// Schlimmer noch andersherum — griffe die Bremse eines Tages NICHT mehr, liefe der
 	// Test genauso durch und behauptete, alles sei in Ordnung.
-	const erfolgsmeldung = page.getByText('LUSD-Import erfolgreich übernommen.');
+	const erfolgsmeldung = page.getByText('LUSD-Import erfolgreich übernommen');
 	const overrideButton = page.getByRole('button', {
 		name: 'Ja, Import trotz hoher Abgängerquote erzwingen'
 	});
@@ -129,7 +129,7 @@ test('LUSD-Import: LANIS-Klassenliste ohne ID und Geburtsdatum (Nur-Name-Stufe)'
 
 	await page.getByRole('button', { name: 'Import finalisieren' }).click();
 	// Erst auf eines von beidem warten, dann verzweigen — siehe oben.
-	const erfolg = page.getByText('LUSD-Import erfolgreich übernommen.');
+	const erfolg = page.getByText('LUSD-Import erfolgreich übernommen');
 	const bremse = page.getByRole('button', { name: /Massenabgang bestätigen/ });
 	await expect(erfolg.or(bremse)).toBeVisible();
 	if (await bremse.isVisible()) {

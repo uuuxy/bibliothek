@@ -132,7 +132,7 @@ describe('BuchExemplareListe', () => {
 		expect(screen.getByLabelText('Zähldatum')).toBeTruthy();
 		expect(apiFetch).not.toHaveBeenCalled();
 		expect(screen.queryByText(/Lade Exemplare/)).toBeNull();
-		expect(screen.queryByText('Kein Exemplar im Bestand.')).toBeNull();
+		expect(screen.queryByText('Kein Exemplar im Bestand')).toBeNull();
 	});
 
 	it('ohne Exemplar im Bestand sagt die Liste das', async () => {
@@ -141,7 +141,7 @@ describe('BuchExemplareListe', () => {
 		);
 		const screen = render(BuchExemplareListe, { formular: { id: 't-1', stock: 0 } });
 
-		expect(await screen.findByText('Kein Exemplar im Bestand.')).toBeTruthy();
+		expect(await screen.findByText('Kein Exemplar im Bestand')).toBeTruthy();
 		expect(screen.getByText(/Nicht im Bestand: 1 ausgesondert\./)).toBeTruthy();
 	});
 });

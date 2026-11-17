@@ -19,7 +19,7 @@
 	import Button from '../ui/Button.svelte';
 	import NachbuchMeldungen from './NachbuchMeldungen.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
-	import { anzahlText } from '../../utils/format.js';
+	import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 
 	// Der Herzschlag kommt von außen (App.svelte), und sein Ausfall steht in derselben Zeile
 	// wie jeder andere Verbindungsverlust: dieselbe Lage, eine Anzeige.
@@ -49,7 +49,7 @@
 		} catch (err) {
 			console.error('Sicherung nicht möglich:', err);
 			snackbars.addToast(
-				'Sicherung nicht möglich: Die Warteschlange auf diesem Rechner ist nicht lesbar.',
+				'Sicherung nicht möglich: Die Warteschlange auf diesem Rechner ist nicht lesbar',
 				'error'
 			);
 		}
@@ -107,16 +107,16 @@
 
 			<p class="min-w-0 flex-1 truncate text-sm font-semibold">
 				{#if offlineSync.warteschlangeFehler}
-					Warteschlange nicht lesbar — Offline-Scans werden auf diesem Rechner NICHT gespeichert.
+					Warteschlange nicht lesbar: Offline-Scans werden auf diesem Rechner NICHT gespeichert.
 					Bitte an einem anderen Rechner weiterarbeiten.
 				{:else if offlineSync.abgelehnt?.status === 401 || offlineSync.abgelehnt?.status === 403}
 					<!-- Warten hilft hier nicht: Die Vorgänge sind gespeichert, aber diese Anmeldung
 					     darf sie nicht buchen. Ohne diesen Satz lief der Versuch jede Minute ins
 					     Leere, und das Band zeigte weiter nur „noch nicht im System". -->
 					{offlineSync.wartendeAnzahl}
-					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang wartet' : 'Vorgänge warten'} — diese Anmeldung
-					darf an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert bleibt
-					alles.
+					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang wartet' : 'Vorgänge warten'}, diese Anmeldung
+					darf an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert
+					bleibt alles.
 				{:else if offlineSync.abgelehnt !== null}
 					<!-- Der Grund des Servers steht da: Wer die Bibliothek verständigt, kann ihn nennen. -->
 					{offlineSync.wartendeAnzahl}
@@ -125,23 +125,20 @@
 					Bibliothek verständigen.
 				{:else if offlineSync.wartendeAnzahl > 0}
 					<!-- Die Mehrzahl ausgeschrieben: Ein angehängtes „e" ergäbe „Vorgange". -->
-					{offlineSync.wartendeAnzahl}
-					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang' : 'Vorgänge'} nur auf diesem Rechner — noch nicht
-					im System.
-					{#if offlineSync.gleichtAb}
-						Wird übertragen …
-					{:else if ohneNetz}
-						Sobald die Verbindung zurück ist, geschieht das von selbst. Vorher bitte sichern.
-					{/if}
+					{verbindeSaetze(
+						`${offlineSync.wartendeAnzahl} ${offlineSync.wartendeAnzahl === 1 ? 'Vorgang' : 'Vorgänge'} nur auf diesem Rechner, noch nicht im System`,
+						offlineSync.gleichtAb
+							? 'Wird übertragen …'
+							: ohneNetz &&
+									'Sobald die Verbindung zurück ist, geschieht das von selbst. Vorher bitte sichern.'
+					)}
 				{:else if nachbuchMeldungen.offen > 0}
-					{nachbuchMeldungen.offen}
-					{nachbuchMeldungen.offen === 1 ? 'Buchung' : 'Buchungen'} aus dem Nachbuchen
-					{nachbuchMeldungen.offen === 1 ? 'braucht' : 'brauchen'} einen Blick.
-					{#if !darfMeldungenSehen}
-						Bitte die Bibliothek ansprechen.
-					{/if}
+					{verbindeSaetze(
+						`${nachbuchMeldungen.offen} ${nachbuchMeldungen.offen === 1 ? 'Buchung' : 'Buchungen'} aus dem Nachbuchen ${nachbuchMeldungen.offen === 1 ? 'braucht' : 'brauchen'} einen Blick`,
+						!darfMeldungenSehen && 'Bitte die Bibliothek ansprechen'
+					)}
 				{:else}
-					Keine Verbindung — Scannen geht weiter, die Buchungen folgen von selbst.
+					Keine Verbindung. Scannen geht weiter, die Buchungen folgen von selbst.
 				{/if}
 			</p>
 

@@ -34,7 +34,7 @@
 			<p class="text-sm font-medium text-on-surface">Problem melden</p>
 		{/if}
 		<p class="text-sm text-on-surface-variant">
-			Die Bibliothek arbeitet die Liste ab — beim Erledigen bekommst du eine Mail.
+			Die Bibliothek arbeitet die Liste ab, beim Erledigen bekommst du eine Mail
 		</p>
 	</div>
 	{#if mitWorum}

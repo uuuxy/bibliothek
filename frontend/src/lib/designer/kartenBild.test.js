@@ -49,7 +49,7 @@ describe('leseKartenBild', () => {
 	it('nennt die Datei, die der Browser nicht als Bild lesen kann', async () => {
 		vi.mocked(verkleinereBild).mockRejectedValue(new Error('Invalid image'));
 		await expect(leseKartenBild(datei(400_000, 'image/png', 'kaputt.png'))).rejects.toThrow(
-			'„kaputt.png“ ist kein Bild, das der Browser lesen kann.'
+			'„kaputt.png“ ist kein Bild, das der Browser lesen kann'
 		);
 	});
 

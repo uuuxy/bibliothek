@@ -35,7 +35,7 @@
 		/>
 	{:else if reservierungen.length === 0}
 		<p class="text-sm text-on-surface-variant">
-			Zurzeit wartet keine Reservierung — suche oben einen Titel, um einen Klassensatz zu
+			Zurzeit wartet keine Reservierung. Suche oben einen Titel, um einen Klassensatz zu
 			reservieren.
 		</p>
 	{:else}
@@ -55,7 +55,7 @@
 				{/each}
 			</ul>
 			<p class="text-xs text-on-surface-variant">
-				Reservieren sperrt nichts — wer denselben Titel will, stellt sich an.
+				Reservieren sperrt nichts, wer denselben Titel will, stellt sich an
 			</p>
 		{/if}
 		{#if bereitgestellte.length > 0}

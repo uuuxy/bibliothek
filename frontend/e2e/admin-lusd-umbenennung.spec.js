@@ -42,7 +42,7 @@ test('LUSD-Import: umbenannter Schüler wird als Paar erkannt und behält seinen
 	await expect(paar).toBeChecked();
 
 	await page.getByRole('button', { name: 'Import finalisieren' }).click();
-	const erfolg = page.getByText('LUSD-Import erfolgreich übernommen.');
+	const erfolg = page.getByText('LUSD-Import erfolgreich übernommen');
 	const bremse = page.getByRole('button', { name: /Massenabgang bestätigen/ });
 	await expect(erfolg.or(bremse)).toBeVisible();
 	if (await bremse.isVisible()) {

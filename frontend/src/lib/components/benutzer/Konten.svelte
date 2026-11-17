@@ -49,7 +49,7 @@
 			const res = await apiFetch('/api/benutzer');
 			if (!res.ok) {
 				if (res.status === 403)
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
+					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
 				throw new Error(await leseApiFehler(res));
 			}
 			konten = await res.json();
@@ -80,7 +80,7 @@
 			if (!res.ok) throw new Error(await leseApiFehler(res));
 			formularOffen = false;
 			snackbars.addToast(
-				istAenderung ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
+				istAenderung ? 'Benutzer erfolgreich aktualisiert' : 'Benutzer erfolgreich angelegt',
 				'success'
 			);
 			ladeKonten();

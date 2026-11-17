@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
+import { verbindeSaetze } from '../../lib/utils/format.js';
 import { bestaetigen, fragen } from '../../lib/stores/bestaetigung.svelte.js';
 import { DubletteFehler, speichereBuch } from './buch_speichern.js';
 import { appState, melde } from './store.svelte.js';
@@ -22,7 +23,7 @@ export async function vorhandenerTitel(isbn) {
 	});
 	if (!res.ok)
 		throw new Error(
-			await leseApiFehler(res, 'Der Katalog ließ sich nicht nach dieser ISBN fragen.')
+			await leseApiFehler(res, 'Der Katalog ließ sich nicht nach dieser ISBN fragen')
 		);
 	const antwort = await res.json();
 	return antwort?.vorhanden ? { meldung: antwort.meldung, vorhanden: antwort.vorhanden } : null;
@@ -37,7 +38,7 @@ export async function vorhandenerTitel(isbn) {
 export async function frageVorhandenenOeffnen(meldung, vorhanden) {
 	const oeffnen = await bestaetigen({
 		titel: 'Vorhandenen Titel öffnen?',
-		text: `${meldung} Die Eingaben dieser Maske werden dabei verworfen.`,
+		text: verbindeSaetze(meldung, 'Die Eingaben dieser Maske werden dabei verworfen'),
 		aktion: 'Titel öffnen'
 	});
 	if (oeffnen) appState.bookToEdit = { id: vorhanden.id };
@@ -55,7 +56,7 @@ export async function frageVorhandenenOeffnen(meldung, vorhanden) {
 async function frageGleichenTitel(meldung, vorhanden) {
 	const oeffnen = await fragen({
 		titel: 'Ist es dasselbe Medium?',
-		text: `${meldung} Beim Öffnen werden die Eingaben dieser Maske verworfen.`,
+		text: verbindeSaetze(meldung, 'Beim Öffnen werden die Eingaben dieser Maske verworfen'),
 		aktion: 'Titel öffnen',
 		abbruch: 'Anderes Medium'
 	});
@@ -92,7 +93,7 @@ export async function frageWennVergeben(isbn) {
 	try {
 		treffer = await vorhandenerTitel(isbn);
 	} catch {
-		melde('Ob es diese ISBN schon gibt, ließ sich nicht prüfen.', 'warning');
+		melde('Ob es diese ISBN schon gibt, ließ sich nicht prüfen', 'warning');
 		return false;
 	}
 	if (!treffer) return false;

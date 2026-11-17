@@ -91,7 +91,7 @@ describe('druckeBogen', () => {
 			'bei einer Ablehnung',
 			async () => serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
 		],
-		['ohne Antwort', () => Promise.reject(new Error('Keine Verbindung zum Server.'))]
+		['ohne Antwort', () => Promise.reject(new Error('Keine Verbindung zum Server'))]
 	])('warnt %s des Vermerks, dass die Etiketten als fehlend gelten', async (_, vermerk) => {
 		vi.mocked(apiFetch)
 			.mockResolvedValueOnce(antwort(200))

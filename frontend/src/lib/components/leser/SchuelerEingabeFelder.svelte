@@ -44,7 +44,7 @@
 	type="date"
 	required
 	bind:value={geburtsdatum}
-	hint="Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder — ohne Datum würde er beim nächsten Import doppelt angelegt."
+	hint="Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder. Ohne Datum würde er beim nächsten Import doppelt angelegt."
 />
 
 <div class="grid gap-y-1.5">
@@ -58,7 +58,7 @@
 	{#if klassenFehler}
 		<span role="alert" class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
 	{:else if !klassen.length}
-		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich.</span>
+		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich</span>
 	{/if}
 </div>
 

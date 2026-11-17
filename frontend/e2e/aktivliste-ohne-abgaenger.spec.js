@@ -40,7 +40,7 @@ test('Aktive Schüler zeigt keine Ehemaligen — die stehen im Archiv-Reiter', a
 
 	// Der Leerzustand ist die Aussage: kein Treffer unter den Aktiven. Auf ihn
 	// warten (statt sofort zu prüfen), damit die Suche sicher geantwortet hat.
-	await expect(page.getByText('Keine Leser im Verzeichnis gefunden.')).toBeVisible();
+	await expect(page.getByText('Keine Leser im Verzeichnis gefunden')).toBeVisible();
 	await expect(page.locator('tr').filter({ hasText: `Weggegangen-${suffix}` })).toHaveCount(0);
 
 	// Gegenprobe, damit der Filter nicht zu viel löscht: Im Reiter der Ehemaligen steht er —

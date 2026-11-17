@@ -167,7 +167,7 @@
 	<LadeFehler
 		onerneut={ladeNeu}
 		titel="Akte nicht geladen"
-		text={st.ladefehler || 'Die Daten dieses Lesers konnten nicht abgerufen werden.'}
+		text={st.ladefehler || 'Die Daten dieses Lesers konnten nicht abgerufen werden'}
 	/>
 {/if}
 

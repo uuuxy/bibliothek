@@ -89,7 +89,7 @@ describe('veroeffentlichePlan: die Meldung', () => {
 
 		expect(await veroeffentlichePlan('rueckgabe')).toEqual({
 			ok: true,
-			meldung: 'Plan veröffentlicht · Frist von 3 Ausleihen angepasst.'
+			meldung: 'Plan veröffentlicht · Frist von 3 Ausleihen angepasst'
 		});
 	});
 

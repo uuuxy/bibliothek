@@ -37,7 +37,7 @@ describe('LeserKontoStatus', () => {
 			screen.getByRole('button', { name: /Kollegen sperren/ })
 		);
 		expect(knopf.disabled).toBe(true);
-		expect(screen.getByText('Kollegen werden nicht gesperrt.')).toBeTruthy();
+		expect(screen.getByText('Kollegen werden nicht gesperrt')).toBeTruthy();
 		expect(screen.getByText('Aktiv')).toBeTruthy();
 		// click() statt fireEvent: Wie im Browser erreicht ein Klick auf einen verschlossenen
 		// Knopf keinen Handler; fireEvent schickt das Ereignis in jsdom trotzdem durch.

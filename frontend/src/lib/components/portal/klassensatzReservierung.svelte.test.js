@@ -121,12 +121,12 @@ describe('Klassensatz reservieren ohne Antwort', () => {
 		);
 		reservierung.toggle('titel-1');
 		reservierung.form('titel-1').klasse = '9b';
-		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 
 		await reservierung.senden('titel-1');
 
 		expect(nachSenden).toHaveBeenCalledTimes(1);
-		expect(reservierung.form('titel-1').error).toBe('Keine Verbindung zum Server.');
+		expect(reservierung.form('titel-1').error).toBe('Keine Verbindung zum Server');
 		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ (ok({ id: 'r1' })));
 		await reservierung.senden('titel-1');
 		const schluessel = vi

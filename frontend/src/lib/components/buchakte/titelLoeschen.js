@@ -7,7 +7,7 @@
  */
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { loeschenMitGrund } from '../../stores/bestaetigung.svelte.js';
-import { anzahlText } from '../../utils/format.js';
+import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 
 /** Mehr Namen stehen nicht im Dialog; der Rest heißt „und n weitere". */
 const MAX_NAMEN = 5;
@@ -51,11 +51,11 @@ export function baueLoeschfrage(anzahlTitel, name, folgen) {
 	const imHaus = folgen.im_haus;
 	const verliehen = folgen.verliehen;
 	const titel = frageTitel(anzahlTitel, name);
-	let text = 'Das lässt sich nicht rückgängig machen.';
-	if (imHaus === 1) text = 'Das Exemplar im Haus kommt mit diesem Grund ins Abgangsbuch.';
+	let text = 'Das lässt sich nicht rückgängig machen';
+	if (imHaus === 1) text = 'Das Exemplar im Haus kommt mit diesem Grund ins Abgangsbuch';
 	else if (imHaus > 1)
-		text = `Die ${imHaus} Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch.`;
-	else if (verliehen.length > 0) text = 'Im Haus ist kein Exemplar.';
+		text = `Die ${imHaus} Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch`;
+	else if (verliehen.length > 0) text = 'Im Haus ist kein Exemplar';
 	if (verliehen.length === 0) return { titel, text };
 
 	const eines = verliehen.length === 1;
@@ -74,8 +74,8 @@ export function baueLoeschfrage(anzahlTitel, name, folgen) {
 				: `${verliehen.length} Exemplare sind verliehen:`,
 			liste: namen,
 			nachsatz: eines
-				? `Es bleibt beim Leser, und ${bleibt}, bis es zurück ist.`
-				: `Sie bleiben bei den Lesern, und ${bleibt}, bis sie zurück sind.`,
+				? `Es bleibt beim Leser, und ${bleibt}, bis es zurück ist`
+				: `Sie bleiben bei den Lesern, und ${bleibt}, bis sie zurück sind`,
 			kaestchen: eines
 				? 'Auch dieses Exemplar löschen und aus dem Leserkonto austragen'
 				: `Auch diese ${verliehen.length} Exemplare löschen und aus den Leserkonten austragen`,
@@ -100,7 +100,7 @@ export function meldungZumErgebnis(ergebnis) {
 	const rest = 'bis die verliehenen Exemplare zurück sind';
 	const mehrere = `${b} Titel bleiben`;
 	if (g === 0) return `${b > 1 ? mehrere : 'Der Titel bleibt'}, ${rest}`;
-	return `${g} Titel gelöscht. ${b > 1 ? mehrere : '1 Titel bleibt'}, ${rest}`;
+	return verbindeSaetze(`${g} Titel gelöscht`, `${b > 1 ? mehrere : '1 Titel bleibt'}, ${rest}`);
 }
 
 /**
@@ -117,7 +117,7 @@ export async function loescheTitelMitRueckfrage(ids, name) {
 	);
 	if (!vorschau.ok)
 		throw new Error(
-			await leseApiFehler(vorschau, 'Die Vorschau zum Löschen ließ sich nicht laden.')
+			await leseApiFehler(vorschau, 'Die Vorschau zum Löschen ließ sich nicht laden')
 		);
 	/** @type {Loeschfolgen} */
 	const folgen = await vorschau.json();
@@ -131,6 +131,6 @@ export async function loescheTitelMitRueckfrage(ids, name) {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ ids, grund: wahl.grund, verliehene })
 	});
-	if (!res.ok) throw new Error(await leseApiFehler(res, 'Der Titel ließ sich nicht löschen.'));
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Der Titel ließ sich nicht löschen'));
 	return await res.json();
 }

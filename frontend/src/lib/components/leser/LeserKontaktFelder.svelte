@@ -74,12 +74,12 @@
 			disabled={!nachtragbar && !(kollege && kontoVorhanden)}
 			readonly={kollege && kontoVorhanden}
 			hint={!kollege
-				? 'Ein Schüler hat keinen Zugang.'
+				? 'Ein Schüler hat keinen Zugang'
 				: kontoVorhanden
-					? 'Der Zugang besteht. Die Adresse ist die Anmeldung selbst — ändern in der Benutzerverwaltung.'
+					? 'Der Zugang besteht. Die Adresse ist die Anmeldung selbst, geändert wird sie in der Benutzerverwaltung.'
 					: nachtragbar
 						? 'Damit entsteht der Zugang zu „Mein Portal“. Meldet sich die Person später selbst an, findet die Anmeldung diesen Eintrag statt einen zweiten anzulegen.'
-						: 'Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“.'}
+						: 'Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“'}
 		/>
 		<Feld
 			id="eltern_email"
@@ -89,7 +89,7 @@
 			bind:value={eingaben.eltern_email}
 			placeholder={kollege ? '' : 'eltern@schule.de'}
 			disabled={kollege}
-			hint={kollege ? 'Gehört zum Schüler.' : undefined}
+			hint={kollege ? 'Gehört zum Schüler' : undefined}
 		/>
 	</div>
 </section>

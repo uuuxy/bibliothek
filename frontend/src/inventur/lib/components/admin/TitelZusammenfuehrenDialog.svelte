@@ -77,13 +77,13 @@
 			}
 			const erg = await res.json();
 			snackbars.addToast(
-				`Zusammengeführt: „${erg.titel}“ hat jetzt ${exemplare(erg.exemplare_danach)}.`,
+				`Zusammengeführt: „${erg.titel}“ hat jetzt ${exemplare(erg.exemplare_danach)}`,
 				'success'
 			);
 			if (lauf.nochOffen()) open = false;
 			onZusammengefuehrt(erg.titel_id);
 		} catch {
-			lauf.fehler('Netzwerkfehler beim Zusammenführen.', zeigeFehler);
+			lauf.fehler('Netzwerkfehler beim Zusammenführen', zeigeFehler);
 		} finally {
 			laeuft = false;
 		}
@@ -98,7 +98,7 @@
 		</h3>
 	{/snippet}
 	<div class="space-y-5 px-6 py-6 text-on-surface">
-		<p class="text-sm text-on-surface-variant">Für ein Buch, das zweimal im Katalog steht.</p>
+		<p class="text-sm text-on-surface-variant">Für ein Buch, das zweimal im Katalog steht</p>
 
 		<div class="space-y-2">
 			<Suchfeld
@@ -131,7 +131,7 @@
 					{/each}
 				</ul>
 			{:else if s.suche.trim().length >= 2}
-				<p class="text-xs text-on-surface-variant">Kein anderer Titel gefunden.</p>
+				<p class="text-xs text-on-surface-variant">Kein anderer Titel gefunden</p>
 			{/if}
 		</div>
 

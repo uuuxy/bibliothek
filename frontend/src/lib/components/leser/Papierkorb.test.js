@@ -105,7 +105,7 @@ describe('Papierkorb', () => {
 		render(Papierkorb, { props: {} });
 
 		await waitFor(() => expect(screen.getByText('Datenbank nicht erreichbar')).toBeTruthy());
-		expect(screen.queryByText('Der Papierkorb ist leer.')).toBeNull();
+		expect(screen.queryByText('Der Papierkorb ist leer')).toBeNull();
 	});
 
 	it('meldet ein abgelehntes Wiederherstellen, statt es zu verschlucken', async () => {

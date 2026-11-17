@@ -78,9 +78,9 @@
 		     wer Geändertes verlassen will, wird gefragt (verlassenSchutz). -->
 		<p class="mt-3 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
 			{#if veroeffentlicht}
-				Veröffentlicht am {datumKurz(stand.plan.veroeffentlicht_am.slice(0, 10))}.
+				Veröffentlicht am {datumKurz(stand.plan.veroeffentlicht_am.slice(0, 10))}
 			{:else}
-				Entwurf, noch nicht veröffentlicht.
+				Entwurf, noch nicht veröffentlicht
 			{/if}
 		</p>
 	{/if}

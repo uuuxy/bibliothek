@@ -6,7 +6,7 @@ import { expect } from '@playwright/test';
 import { apiPost, querySQL, seedSQL, uiLogin, uniqueSuffix } from './helpers.js';
 
 /** Das Band, solange kein Vorgang wartet (OfflineAnzeige.svelte). */
-export const OHNE_NETZ = /Keine Verbindung — Scannen geht weiter/;
+export const OHNE_NETZ = /Keine Verbindung. Scannen geht weiter/;
 
 /** Lädt die Warteschlange aus IndexedDB. Läuft im Browser (page.evaluate), deshalb ohne Import. */
 const LADE_WARTESCHLANGE = async () => {

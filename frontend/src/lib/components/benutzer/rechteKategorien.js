@@ -31,7 +31,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'delete_students',
 				label: 'Leser löschen',
-				desc: 'Schüler und Kollegen in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen. Mit einem Kollegen fällt sein Zugang zu „Mein Portal"; hat er einen, nur zusammen mit „Benutzer & Rechte verwalten", ein Administrator-Konto nur als Administrator'
+				desc: 'Schüler und Kollegen in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen. Mit einem Kollegen fällt sein Zugang zu „Mein Portal"; hat er einen, nur zusammen mit „Benutzer & Rechte verwalten", ein Administrator-Konto nur als Administrator.'
 			},
 			{
 				key: 'import_students',
@@ -67,7 +67,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'inventory_scan',
 				label: 'Inventur durchführen',
-				desc: 'Laufende Inventur einsehen und Exemplare einscannen — öffnet den Menüpunkt „Inventur"'
+				desc: 'Laufende Inventur einsehen und Exemplare einscannen. Öffnet den Menüpunkt „Inventur".'
 			},
 			{
 				key: 'manage_inventory',
@@ -83,17 +83,17 @@ export const rechteBeschreibungen = [
 			{
 				key: 'perform_actions',
 				label: 'Kiosk bedienen',
-				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk — die Kernfunktion der Helfer-Rolle (ohne Leserdatei und Mahnwesen)'
+				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk, die Kernfunktion der Helfer-Rolle (ohne Leserdatei und Mahnwesen)'
 			},
 			{
 				key: 'create_reservations',
 				label: 'Klassensatz reservieren',
-				desc: 'Erlaubt das Absenden einer Klassensatz-Reservierung im Kollegiums-Portal. Öffnet keine Schülerdaten — das Portal sucht über den öffentlichen OPAC.'
+				desc: 'Erlaubt das Absenden einer Klassensatz-Reservierung im Kollegiums-Portal. Öffnet keine Schülerdaten, das Portal sucht über den öffentlichen OPAC.'
 			},
 			{
 				key: 'manage_vormerkungen',
 				label: 'Vormerkungen verwalten (Warteliste)',
-				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse — als enges Theken-Recht für Helfer zuschaltbar, ohne die Leserdatei zu öffnen.'
+				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse, als enges Theken-Recht für Helfer zuschaltbar, ohne die Leserdatei zu öffnen.'
 			},
 			{
 				key: 'view_orders',
@@ -129,27 +129,27 @@ export const rechteBeschreibungen = [
 			{
 				key: 'audit_details',
 				label: 'Theken-Auskunft (gelöschte Exemplare)',
-				desc: 'Zu einem Buch-Barcode die protokollierte Ausleihhistorie nachschlagen — auch wenn das Exemplar längst gelöscht ist. Nennt Entleiher mit Namen; jeder Abruf wird selbst protokolliert. Der Reiter erscheint unter System-Logs.'
+				desc: 'Zu einem Buch-Barcode die protokollierte Ausleihhistorie nachschlagen, auch wenn das Exemplar längst gelöscht ist. Nennt Entleiher mit Namen; jeder Abruf wird selbst protokolliert. Der Reiter erscheint unter System-Logs.'
 			},
 			{
 				key: 'manage_settings',
 				label: 'Einstellungen verwalten',
-				desc: 'Alle Systemeinstellungen (Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz, Erreichbarkeit), Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft — öffnet den Menüpunkt „Einstellungen"'
+				desc: 'Alle Systemeinstellungen (Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz, Erreichbarkeit), Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft. Öffnet den Menüpunkt „Einstellungen".'
 			},
 			{
 				key: 'manage_students_admin',
 				label: 'Leserdatei: Sonderrechte',
-				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig'
+				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig.'
 			},
 			{
 				key: 'merge_students',
 				label: 'Leser zusammenführen',
-				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Leserakte, Reiter Stammdaten & Adresse) — unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar'
+				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Leserakte, Reiter Stammdaten & Adresse). Unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar.'
 			},
 			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Verwaltungsprotokoll einsehen — öffnet den Menüpunkt „Benutzer & Rechte". Zusammen mit „Leserdatei: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Leser löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
+				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Verwaltungsprotokoll einsehen. Öffnet den Menüpunkt „Benutzer & Rechte". Zusammen mit „Leserdatei: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Leser löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei.'
 			}
 		]
 	}

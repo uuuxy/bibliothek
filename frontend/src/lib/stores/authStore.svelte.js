@@ -302,7 +302,7 @@ class AuthStore {
 	sitzungAbgelaufen() {
 		if (!this.isLoggedIn) return;
 		this.handleLogout();
-		snackbars.addToast('Sitzung abgelaufen — bitte neu anmelden.', 'warning');
+		snackbars.addToast('Sitzung abgelaufen, bitte neu anmelden', 'warning');
 	}
 
 	handleLogout(onLogoutCallback) {

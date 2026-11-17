@@ -32,7 +32,7 @@ describe('Klassenleitungen', () => {
 		const screen = render(Klassenleitungen);
 
 		await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
-		expect(screen.queryByText('Noch keine Zuordnungen vorhanden.')).toBeNull();
+		expect(screen.queryByText('Noch keine Zuordnungen vorhanden')).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Hinzufügen' })).toBeNull();
 	});
 
@@ -110,7 +110,7 @@ describe('Klassenleitungen: Löschen', () => {
 
 	it('lädt die Liste auch nach einem Fehler neu', async () => {
 		vi.mocked(apiGet).mockResolvedValueOnce([ZEILE]).mockResolvedValueOnce([]);
-		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 		const screen = render(Klassenleitungen);
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' }));
@@ -124,8 +124,8 @@ describe('Klassenleitungen: Löschen', () => {
 	it('lässt Liste und Formular stehen, wenn nach dem Löschen auch das Neuladen scheitert', async () => {
 		vi.mocked(apiGet)
 			.mockResolvedValueOnce([ZEILE])
-			.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
-		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+			.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
+		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 		const screen = render(Klassenleitungen);
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' }));

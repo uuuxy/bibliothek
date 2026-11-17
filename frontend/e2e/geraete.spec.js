@@ -55,13 +55,13 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 	await expect(page.getByRole('heading', { name: 'Zubehör prüfen' })).toBeVisible();
 
 	// 4. Bestätigen → Ausleihe geht durch.
-	await page.getByRole('button', { name: 'Alles vollständig — weiter' }).click();
-	await expect(page.getByText(`„E2E-Tablet ${s}" ausgeliehen an E2E.`)).toBeVisible();
+	await page.getByRole('button', { name: 'Alles vollständig, weiter' }).click();
+	await expect(page.getByText(`„E2E-Tablet ${s}" ausgeliehen an E2E`)).toBeVisible();
 
 	// 5. Rückgabe: derselbe Scan, wieder über die Checkliste.
 	await scan.fill(BARCODE);
 	await scan.press('Enter');
 	await expect(page.getByRole('heading', { name: 'Zubehör prüfen' })).toBeVisible();
-	await page.getByRole('button', { name: 'Alles vollständig — weiter' }).click();
-	await expect(page.getByText(`„E2E-Tablet ${s}" erfolgreich zurückgegeben.`)).toBeVisible();
+	await page.getByRole('button', { name: 'Alles vollständig, weiter' }).click();
+	await expect(page.getByText(`„E2E-Tablet ${s}" erfolgreich zurückgegeben`)).toBeVisible();
 });

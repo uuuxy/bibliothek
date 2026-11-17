@@ -26,7 +26,7 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 		await useFehlbestand().fehlbestandGefunden('ex-1');
 
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über 1.234,50\u00a0€ wurde storniert.',
+			'Als gefunden verbucht, das Exemplar ist wieder verfügbar. Die Forderung über 1.234,50\u00a0€ wurde storniert.',
 			'success'
 		);
 	});
@@ -39,7 +39,7 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 		await useFehlbestand().fehlbestandGefunden('ex-1');
 
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
+			'Als gefunden verbucht, das Exemplar ist wieder verfügbar',
 			'success'
 		);
 	});

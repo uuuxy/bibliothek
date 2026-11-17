@@ -214,7 +214,7 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 		for (const form of [
 			"const daten = await res.json();\nmelde(daten.message, 'success');",
 			"const { meldung, daten } = await leseApiFehlerMitDaten(res, 'Fehler');",
-			"f.error = await leseApiFehler(res, 'Fehler beim Senden.');",
+			"f.error = await leseApiFehler(res, 'Fehler beim Senden');",
 			"const json = await res.json();\nformular.error = 'Pflichtfeld';"
 		]) {
 			expect(liestErrorAusJson(form), form).toBe(false);

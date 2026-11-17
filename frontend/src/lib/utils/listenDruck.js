@@ -25,7 +25,7 @@ const STIL = `
 `;
 
 /** Die Meldung, wenn der Browser das Druckfenster nicht öffnet. */
-export const FENSTER_BLOCKIERT = 'Bitte erlaube Popups, um die Liste zu drucken.';
+export const FENSTER_BLOCKIERT = 'Bitte erlaube Popups, um die Liste zu drucken';
 
 /**
  * @typedef {string | { text: string, klasse?: string }} Zelle

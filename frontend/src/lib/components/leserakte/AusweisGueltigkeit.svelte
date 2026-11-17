@@ -60,7 +60,7 @@
 	>
 		{#snippet vorlaufend()}
 			<CalendarClock class="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>Gültig bis 31.07.</span>
+			<span>Gültig bis 31.07</span>
 		{/snippet}
 		{#snippet nachlaufend()}
 			{#if abweichend}
@@ -81,7 +81,7 @@
 		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-warning">
 			<TriangleAlert class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
-				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten — bitte eintragen.
+				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten, bitte eintragen.
 				Geraten wird hier nichts: Ein falsches Datum fällt erst auf, wenn die Karte an der Ausleihe abgewiesen
 				wird.
 			</span>

@@ -129,7 +129,7 @@
 						{/each}
 					</ul>
 				{:else if s.suche.trim().length >= 2}
-					<p class="text-xs text-on-surface-variant">Kein Lernmittel gefunden.</p>
+					<p class="text-xs text-on-surface-variant">Kein Lernmittel gefunden</p>
 				{/if}
 			</div>
 		{:else}
@@ -149,7 +149,7 @@
 			{#if mitgebracht > 1}
 				<p class="text-sm text-on-surface-variant">
 					Dieser Titel ist schon mit {mitgebracht - 1}
-					{mitgebracht === 2 ? 'anderen Auflage' : 'anderen Auflagen'} zusammengefasst; alle kommen mit.
+					{mitgebracht === 2 ? 'anderen Auflage' : 'anderen Auflagen'} zusammengefasst; alle kommen mit
 				</p>
 			{:else if mitgebracht < 0}
 				<p class="text-sm text-on-surface-variant">

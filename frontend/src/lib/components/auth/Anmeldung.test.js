@@ -38,14 +38,14 @@ describe('Anmeldung: leeres Feld', () => {
 
 		await klicke(anmelden);
 		expect(email.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(email)).toBe('Bitte deine Schul-E-Mail eintragen.');
+		expect(beschreibung(email)).toBe('Bitte deine Schul-E-Mail eintragen');
 		expect(document.activeElement).toBe(email);
 
 		await fireEvent.input(email, { target: { value: 'lehrkraft@example.org' } });
 		await klicke(anmelden);
 		expect(email.getAttribute('aria-invalid')).toBeNull();
 		expect(passwort.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(passwort)).toBe('Bitte dein Passwort eintragen.');
+		expect(beschreibung(passwort)).toBe('Bitte dein Passwort eintragen');
 		expect(document.activeElement).toBe(passwort);
 		// Hinaus geht nur die Frage nach der Domain der Schule, keine Anmeldung.
 		expect(vi.mocked(globalThis.fetch).mock.calls.map(([adresse]) => adresse)).toEqual([
@@ -80,12 +80,12 @@ describe('Anmeldung: Domain der Schule', () => {
 		expect(feld.getAttribute('type')).toBe('text');
 		expect(feld.getAttribute('autocomplete')).toBe('username');
 		expect(beschreibung(feld)).toBe(
-			'Der Name vor dem @ genügt – @schule.example ergänzt das Programm.'
+			'Der Name vor dem @ genügt, @schule.example ergänzt das Programm'
 		);
 
 		await klicke(k.getByRole('button', { name: 'Anmelden' }));
 		expect(feld.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(feld)).toBe('Bitte deinen Namen oder deine Schul-E-Mail eintragen.');
+		expect(beschreibung(feld)).toBe('Bitte deinen Namen oder deine Schul-E-Mail eintragen');
 	});
 
 	it('bleibt ohne Domain bei der vollen Adresse', async () => {
@@ -105,12 +105,10 @@ describe('Anmeldung: Domain der Schule', () => {
 		const feld = await k.findByLabelText('E-Mail oder Benutzername');
 		expect(feld.getAttribute('type')).toBe('text');
 		expect(feld.getAttribute('autocomplete')).toBe('username');
-		expect(k.getByText('Mit den Zugangsdaten deiner Schule.')).toBeTruthy();
+		expect(k.getByText('Mit den Zugangsdaten deiner Schule')).toBeTruthy();
 
 		await klicke(k.getByRole('button', { name: 'Anmelden' }));
-		expect(beschreibung(feld)).toBe(
-			'Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen.'
-		);
+		expect(beschreibung(feld)).toBe('Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen');
 	});
 });
 

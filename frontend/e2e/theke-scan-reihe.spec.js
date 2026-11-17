@@ -204,7 +204,7 @@ test('Nach einem gescheiterten Scan wird das eingereihte Buch nicht gebucht und 
 
 		await expect(page.getByText(/ist nicht registriert/)).toBeVisible({ timeout: 10_000 });
 		await expect(
-			page.getByText(new RegExp(`Gescannt und NICHT gebucht: „${buch.p}“`)),
+			page.getByText(new RegExp(`Gescannt und NICHT gebucht, bitte erneut scannen: „${buch.p}“`)),
 			'das Banner nennt das Buch, das nicht gebucht wurde'
 		).toBeVisible();
 		await page.waitForTimeout(500);

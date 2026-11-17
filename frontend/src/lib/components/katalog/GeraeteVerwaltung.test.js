@@ -31,13 +31,13 @@ describe('GeraeteVerwaltung', () => {
 		const { findByText, queryByText } = render(GeraeteVerwaltung);
 
 		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
-		expect(queryByText('Noch keine Geräte erfasst.')).toBeNull();
+		expect(queryByText('Noch keine Geräte erfasst')).toBeNull();
 	});
 
 	it('leer bleibt leer', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(GeraeteVerwaltung);
-		expect(await findByText('Noch keine Geräte erfasst.')).toBeTruthy();
+		expect(await findByText('Noch keine Geräte erfasst')).toBeTruthy();
 	});
 });
 
@@ -48,7 +48,7 @@ describe('GeraeteVerwaltung: Speichern', () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: true }));
 		const screen = render(GeraeteVerwaltung);
-		await screen.findByText('Noch keine Geräte erfasst.');
+		await screen.findByText('Noch keine Geräte erfasst');
 
 		await fireEvent.click(screen.getByRole('button', { name: /anlegen|erfassen|Neues Gerät/i }));
 		const modell = screen.getByLabelText(/Modell/);

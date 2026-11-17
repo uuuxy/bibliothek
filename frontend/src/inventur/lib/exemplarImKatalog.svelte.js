@@ -104,8 +104,8 @@ export function mitTitelDesExemplars(titel, treffer) {
  */
 export function satzZumExemplar(exemplar, titel) {
 	return exemplar.ausgesondert
-		? `Exemplar ${exemplar.barcode} ist ausgesondert und gehört zu „${titel.title}“.`
-		: `Exemplar ${exemplar.barcode} gehört zu „${titel.title}“.`;
+		? `Exemplar ${exemplar.barcode} ist ausgesondert und gehört zu „${titel.title}“`
+		: `Exemplar ${exemplar.barcode} gehört zu „${titel.title}“`;
 }
 
 /**
@@ -121,6 +121,6 @@ export function hinweisOhneTreffer(text, exemplar) {
 		return `Exemplar ${exemplar.barcode} ist ausgesondert. Sein Titel hat kein Exemplar mehr im Bestand und steht in der Titelliste unter „Ohne Exemplare“.`;
 	if (exemplar.titelId)
 		return `Exemplar ${exemplar.barcode} gehört zu einem Titel, der in dieser Liste noch fehlt. Neu laden zeigt ihn.`;
-	if (siehtAusWieNummer(text)) return `Weder ein Titel noch ein Exemplar passt zu „${text}“.`;
-	return `Kein Titel passt zu „${text}“.`;
+	if (siehtAusWieNummer(text)) return `Weder ein Titel noch ein Exemplar passt zu „${text}“`;
+	return `Kein Titel passt zu „${text}“`;
 }

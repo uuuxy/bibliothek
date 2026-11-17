@@ -43,14 +43,14 @@ describe('Sachgruppen: leeres Feld', () => {
 
 		await klicke(anlegen);
 		expect(kuerzel.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(kuerzel)).toBe('Bitte ein Kürzel eintragen.');
+		expect(beschreibung(kuerzel)).toBe('Bitte ein Kürzel eintragen');
 		expect(document.activeElement).toBe(kuerzel);
 
 		await fireEvent.input(kuerzel, { target: { value: 'Mat' } });
 		await klicke(anlegen);
 		expect(kuerzel.getAttribute('aria-invalid')).toBeNull();
 		expect(bezeichnung.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(bezeichnung)).toBe('Bitte eine Bezeichnung eintragen.');
+		expect(beschreibung(bezeichnung)).toBe('Bitte eine Bezeichnung eintragen');
 		expect(document.activeElement).toBe(bezeichnung);
 		expect(apiPost).not.toHaveBeenCalled();
 	});
@@ -78,7 +78,7 @@ describe('Sachgruppen: leeres Feld', () => {
 
 		await klicke(k.getByRole('button', { name: 'Speichern' }));
 		expect(kuerzel.getAttribute('aria-invalid')).toBe('true');
-		expect(beschreibung(kuerzel)).toBe('Bitte ein Kürzel eintragen.');
+		expect(beschreibung(kuerzel)).toBe('Bitte ein Kürzel eintragen');
 		expect(document.activeElement).toBe(kuerzel);
 		expect(apiPut).not.toHaveBeenCalled();
 	});

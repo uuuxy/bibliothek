@@ -58,8 +58,8 @@
 			const n = antwort?.geaendert ?? 0;
 			snackbars.addToast(
 				n === 0
-					? 'Der Standort war schon so eingetragen.'
-					: `Standort ${weg ? 'entfernt' : 'geändert'}: ${exemplare(n)}.`,
+					? 'Der Standort war schon so eingetragen'
+					: `Standort ${weg ? 'entfernt' : 'geändert'}: ${exemplare(n)}`,
 				'success'
 			);
 			await onGeaendert();
@@ -80,7 +80,7 @@
 	{onclose}
 	onbestaetigen={speichern}
 >
-	<p class="text-sm text-on-surface-variant">Gilt für {exemplare(anzahl)}.</p>
+	<p class="text-sm text-on-surface-variant">Gilt für {exemplare(anzahl)}</p>
 	<!-- Ein Scan in das offene Feld wäre sonst der Standort der markierten Exemplare. -->
 	<div use:scanSchutz={() => {}}>
 		<VorschlagFeld

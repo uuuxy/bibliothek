@@ -67,7 +67,7 @@
 			<div
 				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-on-surface-variant text-center text-sm"
 			>
-				Keine Klasse gefunden.
+				Keine Klasse gefunden
 			</div>
 		{/if}
 	</div>

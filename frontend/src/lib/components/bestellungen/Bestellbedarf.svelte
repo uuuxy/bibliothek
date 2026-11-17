@@ -70,7 +70,7 @@
 				{#if vorschlaege.length}
 					<p class="text-sm text-on-surface-variant mt-1">
 						{fehlenSumme}
-						{fehlenSumme === 1 ? 'Exemplar fehlt' : 'Exemplare fehlen'} für das nächste Schuljahr, {grundlageText}.
+						{fehlenSumme === 1 ? 'Exemplar fehlt' : 'Exemplare fehlen'} für das nächste Schuljahr, {grundlageText}
 					</p>
 				{/if}
 			</div>
@@ -112,17 +112,17 @@
 		>
 			{#if grundlage.ausgeschaltet}
 				<p class="text-sm font-semibold">Bestellbedarf ausgeschaltet</p>
-				<p class="text-xs mt-1">Einschalten unter Einstellungen, Bestellwesen.</p>
+				<p class="text-xs mt-1">Einschalten unter Einstellungen, Bestellwesen</p>
 			{:else if !grundlage.kinder_mit_schulbuch}
 				<p class="text-sm font-semibold">Noch keine Grundlage</p>
 				<p class="text-xs mt-1">
 					In diesem Schuljahr wurde noch kein Schulbuch ausgegeben; der Bedarf ergibt sich aus den
-					Ausleihen.
+					Ausleihen
 				</p>
 			{:else}
 				<CircleCheck class="h-5 w-5" aria-hidden="true" />
 				<p class="text-sm font-semibold">Kein Schulbuch fehlt</p>
-				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}.</p>
+				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}</p>
 			{/if}
 		</div>
 	{:else if !gefiltert.length}

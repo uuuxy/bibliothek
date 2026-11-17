@@ -42,7 +42,7 @@
 
 <KategorieRahmen
 	titel="Mahnwesen"
-	kurz="Ab wann überfällige Medien die Ausleihe am Kiosk sperren."
+	kurz="Ab wann überfällige Medien die Ausleihe am Kiosk sperren"
 	{eingabe}
 	{onSaved}
 >
@@ -51,7 +51,7 @@
 			Gesperrt wird, wenn mindestens die eingetragene Anzahl Medien länger als die eingetragenen
 			Tage überfällig ist. Geräte und Dauerleihen (Laptops) sind ausgenommen.
 		</p>
-		<p>Null Tage sperrt am ersten Tag nach Fristablauf — die 0 schaltet hier nichts ab.</p>
+		<p>Null Tage sperrt am ersten Tag nach Fristablauf, die 0 schaltet hier nichts ab</p>
 	{/snippet}
 
 	<div class="grid max-w-xl grid-cols-2 gap-x-8 gap-y-6">

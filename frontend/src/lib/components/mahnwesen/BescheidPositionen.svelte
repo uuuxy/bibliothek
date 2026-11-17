@@ -68,7 +68,7 @@
 						{/if}
 						{#if p.topf !== 'land'}
 							<div class="text-xs text-on-surface-variant">
-								Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes.
+								Buch der Schülerbücherei, gehört nicht auf den Bescheid des Landes
 							</div>
 						{/if}
 					</div>

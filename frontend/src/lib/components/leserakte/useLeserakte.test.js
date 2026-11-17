@@ -160,7 +160,7 @@ describe('useLeserakte.ladeAkte', () => {
 	// geladen". Wie bei einer Fehlantwort steht die Akte jetzt da, und nur die Liste fehlt.
 	it('zeigt die Akte, wenn nur eine Liste ohne Antwort bleibt', async () => {
 		antwortenJe({});
-		const ohneNetz = new Error('Keine Verbindung zum Server.');
+		const ohneNetz = new Error('Keine Verbindung zum Server');
 		const vorher = /** @type {(url: any, o: any) => Promise<any>} */ (
 			vi.mocked(apiFetch).getMockImplementation()
 		);
@@ -173,7 +173,7 @@ describe('useLeserakte.ladeAkte', () => {
 		expect(st.akte?.id).toBe('A');
 		expect(st.ladefehler).toBe('');
 		expect(st.fehlendeListen).toEqual([
-			{ name: 'Bescheide', grund: 'Keine Verbindung zum Server.' }
+			{ name: 'Bescheide', grund: 'Keine Verbindung zum Server' }
 		]);
 	});
 
@@ -195,10 +195,10 @@ describe('useLeserakte.ladeAkte', () => {
 		await st.ladeAkte('A');
 		// Der Netzwerkfehler wird im Hook protokolliert (console.error) — hier stumm, wie in liveEvents.test.js.
 		vi.spyOn(console, 'error').mockImplementation(() => {});
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		await st.ladeAkte('B');
 		expect(st.fehlendeListen.map((l) => l.name)).toEqual(['Vormerkungen', 'Gebühren', 'Bescheide']);
-		expect(st.ladefehler).toBe('Keine Verbindung zum Server.');
+		expect(st.ladefehler).toBe('Keine Verbindung zum Server');
 	});
 
 	// Ein Rumpf, der sich nicht lesen lässt, ist ein Ladefehler: Die Akte des vorigen Lesers bleibt

@@ -93,7 +93,7 @@
 			role="status"
 		>
 			<p class="text-sm text-on-surface-variant">
-				Der Plan wurde an einem anderen Platz geändert. Hier stehen ungespeicherte Änderungen —
+				Der Plan wurde an einem anderen Platz geändert. Hier stehen ungespeicherte Änderungen,
 				deshalb wurde nichts überschrieben.
 			</p>
 			<Button variant="secondary" onclick={planer.lade}>Neu laden und verwerfen</Button>
@@ -108,7 +108,7 @@
 		<LadeFehler
 			onerneut={planer.lade}
 			titel="Plan nicht geladen"
-			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
+			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen, sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
 	{:else}
 		<div class="space-y-8">

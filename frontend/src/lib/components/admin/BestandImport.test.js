@@ -52,7 +52,7 @@ describe('BestandImport: Ergebnis in der Meldung', () => {
 		await importiere(serverAntwort(200, { new_titles_count: 1, imported_copies_count: 5 }));
 		await vi.waitFor(() =>
 			expect(snackbars.addToast).toHaveBeenCalledWith(
-				'Bestand übernommen: 1 neuer Titel, 5 Exemplare.',
+				'Bestand übernommen: 1 neuer Titel, 5 Exemplare',
 				'success'
 			)
 		);

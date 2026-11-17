@@ -169,7 +169,7 @@ describe('SchuelerZusammenfuehrenDialog: Kandidatensuche', () => {
 		await stillhalten();
 
 		expect(screen.getByText('Fehler 500')).toBeTruthy();
-		expect(screen.queryByText('Kein anderer Datensatz gefunden.')).toBeNull();
+		expect(screen.queryByText('Kein anderer Datensatz gefunden')).toBeNull();
 	});
 
 	it('fängt einen Netzwerkfehler in der Suche ab und sagt es', async () => {
@@ -180,7 +180,7 @@ describe('SchuelerZusammenfuehrenDialog: Kandidatensuche', () => {
 		await stillhalten();
 
 		expect(screen.getByText(/Netzwerkfehler/)).toBeTruthy();
-		expect(screen.queryByText('Kein anderer Datensatz gefunden.')).toBeNull();
+		expect(screen.queryByText('Kein anderer Datensatz gefunden')).toBeNull();
 	});
 
 	it('lässt eine Antwort, die nach dem Schließen eintrifft, nicht im neu geöffneten Dialog landen', async () => {

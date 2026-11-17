@@ -1,4 +1,5 @@
 import { snackbars } from '../stores/snackbars.svelte.js';
+import { verbindeSaetze } from './format.js';
 
 /**
  * Schreibt in die Zwischenablage und sagt, ob es gelungen ist. Ohne sichere Verbindung gibt es sie
@@ -13,10 +14,7 @@ export async function kopiere(text, hinweis = '') {
 		await navigator.clipboard.writeText(text);
 		return true;
 	} catch {
-		snackbars.addToast(
-			hinweis ? `Kopieren nicht möglich. ${hinweis}` : 'Kopieren nicht möglich.',
-			'error'
-		);
+		snackbars.addToast(verbindeSaetze('Kopieren nicht möglich', hinweis), 'error');
 		return false;
 	}
 }

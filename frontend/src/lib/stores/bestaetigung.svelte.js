@@ -84,7 +84,7 @@ export function bestaetigen(frage) {
  * @param {string} titel
  * @param {string} [text]
  */
-export function loeschenBestaetigen(titel, text = 'Das lässt sich nicht rückgängig machen.') {
+export function loeschenBestaetigen(titel, text = 'Das lässt sich nicht rückgängig machen') {
 	return bestaetigen({ titel, text, aktion: 'Löschen', gefaehrlich: true });
 }
 
@@ -120,7 +120,7 @@ export function loeschenMitGrund(frage) {
 export function verwerfenFrage(aktion = 'Verwerfen') {
 	return {
 		titel: 'Ungespeicherte Änderungen',
-		text: 'Die Eingaben in der Maske sind nicht gespeichert und gehen dabei verloren.',
+		text: 'Die Eingaben in der Maske sind nicht gespeichert und gehen dabei verloren',
 		aktion,
 		abbruch: 'Bleiben',
 		gefaehrlich: true

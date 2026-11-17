@@ -97,7 +97,7 @@ describe('NeueAuflageDialog', () => {
 	// Meldung nennt den Fehler, und ein zweiter Versuch legt nichts doppelt an.
 	it('sagt nach einem Netzfehler nicht, die ISBN-Abfrage habe den Server nicht erreicht', async () => {
 		vi.mocked(apiClient.post).mockRejectedValueOnce(
-			new Error('Der Server hat nicht rechtzeitig geantwortet.')
+			new Error('Der Server hat nicht rechtzeitig geantwortet')
 		);
 		const screen = render(NeueAuflageDialog, { zeile, onschliessen: vi.fn(), onbestellt: vi.fn() });
 		await fireEvent.input(screen.getByLabelText('ISBN der neuen Auflage'), {
@@ -106,7 +106,7 @@ describe('NeueAuflageDialog', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
 		await vi.waitFor(() =>
 			expect(screen.getByRole('alert').textContent).toContain(
-				'Der Server hat nicht rechtzeitig geantwortet.'
+				'Der Server hat nicht rechtzeitig geantwortet'
 			)
 		);
 		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');
@@ -115,12 +115,12 @@ describe('NeueAuflageDialog', () => {
 	it('sagt nach einem Netzfehler beim Zuordnen nicht, es habe den Server nicht erreicht', async () => {
 		const { screen, onbestellt } = await bisZumVorschlag({ ...neu, ist_lernmittel: true });
 		vi.mocked(apiClient.post).mockRejectedValueOnce(
-			new Error('Der Server hat nicht rechtzeitig geantwortet.')
+			new Error('Der Server hat nicht rechtzeitig geantwortet')
 		);
 		await fireEvent.click(screen.getByRole('button', { name: 'Zuordnen und bestellen' }));
 		await vi.waitFor(() =>
 			expect(screen.getByRole('alert').textContent).toContain(
-				'Der Server hat nicht rechtzeitig geantwortet.'
+				'Der Server hat nicht rechtzeitig geantwortet'
 			)
 		);
 		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');

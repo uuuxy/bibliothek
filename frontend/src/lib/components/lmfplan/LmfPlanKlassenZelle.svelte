@@ -18,7 +18,7 @@
 	let { klassen, i, vorrat, marker, onklasseraus, ontausch } = $props();
 
 	const OHNE_SCHUELER_TIP =
-		'Noch kein Schüler in dieser Klasse — sie kommt mit dem LUSD-Import oder gehört aus dem Plan';
+		'Noch kein Schüler in dieser Klasse, sie kommt mit dem LUSD-Import oder gehört aus dem Plan';
 
 	/** Die Klasse, die gerade getauscht wird — oder null. @type {string | null} */
 	let tauscht = $state(null);

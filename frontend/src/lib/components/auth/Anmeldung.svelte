@@ -8,7 +8,7 @@
 
 	// Ein Scan im Passwortfeld ginge als Anmeldeversuch zum Server und zählte als Fehlversuch.
 	function beiScan() {
-		authStore.loginError = 'Scan erkannt: Bitte erst anmelden, dann scannen.';
+		authStore.loginError = 'Scan erkannt: Bitte erst anmelden, dann scannen';
 	}
 
 	// „Anmelden" bleibt bei leerem Feld bedienbar: Der Klick nennt am Feld, was fehlt, und führt
@@ -40,12 +40,12 @@
 	// Ein Text unter dem Feld: Der Fehler ersetzt den Hinweis, statt unter ihm zu stehen.
 	const emailHinweis = $derived.by(() => {
 		if (emailFehlt) {
-			if (ldap) return 'Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen.';
+			if (ldap) return 'Bitte deine Schul-E-Mail oder deinen Benutzernamen eintragen';
 			return domain
-				? 'Bitte deinen Namen oder deine Schul-E-Mail eintragen.'
-				: 'Bitte deine Schul-E-Mail eintragen.';
+				? 'Bitte deinen Namen oder deine Schul-E-Mail eintragen'
+				: 'Bitte deine Schul-E-Mail eintragen';
 		}
-		return domain ? `Der Name vor dem @ genügt – @${domain} ergänzt das Programm.` : '';
+		return domain ? `Der Name vor dem @ genügt, @${domain} ergänzt das Programm` : '';
 	});
 
 	/** @param {SubmitEvent} e */
@@ -75,7 +75,7 @@
 		<div class="text-center space-y-1.5">
 			<h2 class="text-base font-bold text-on-surface">Anmelden</h2>
 			<p class="text-sm text-on-surface-variant">
-				{ldap ? 'Mit den Zugangsdaten deiner Schule.' : 'Mit den Zugangsdaten deiner Schul-E-Mail.'}
+				{ldap ? 'Mit den Zugangsdaten deiner Schule' : 'Mit den Zugangsdaten deiner Schul-E-Mail'}
 			</p>
 		</div>
 		<!-- Die Beschriftung steht über dem Feld wie in jeder Maske: Ein Platzhalter verschwände beim
@@ -99,7 +99,7 @@
 				autocomplete="current-password"
 				bind:value={authStore.loginPassword}
 				ungueltig={passwortFehlt}
-				hint={passwortFehlt ? 'Bitte dein Passwort eintragen.' : ''}
+				hint={passwortFehlt ? 'Bitte dein Passwort eintragen' : ''}
 			/>
 		</div>
 		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full">

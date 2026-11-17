@@ -12,7 +12,7 @@ import {
 
 /**
  * Startet das Server-Programm neu (Update, Absturz), antwortet der Proxy davor mit 502. Das Band
- * sagt dann „Keine Verbindung — Scannen geht weiter, die Buchungen folgen von selbst". Die Theke
+ * sagt dann „Keine Verbindung. Scannen geht weiter, die Buchungen folgen von selbst". Die Theke
  * legt den Scan deshalb ab wie bei einem Netzausfall, und die Minutenuhr bucht ihn nach, sobald
  * der Server wieder arbeitet (omniboxBuchung.svelte.js, nichtErreicht).
  */

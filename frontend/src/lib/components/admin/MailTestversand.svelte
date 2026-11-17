@@ -35,9 +35,9 @@
 		try {
 			// Der Testversand wartet auf den Mailserver; seine Diagnose kommt erst nach dessen Frist.
 			await apiPost('/api/admin/settings/mail/test', rumpf, { timeoutMs: FRIST_MAILVERSAND_MS });
-			ergebnisse.push({ absender, ok: true, message: `Test-E-Mail an ${testEmail} versendet.` });
+			ergebnisse.push({ absender, ok: true, message: `Test-E-Mail an ${testEmail} versendet` });
 		} catch (e) {
-			const message = /** @type {Error} */ (e)?.message || 'Unbekannter Fehler beim Testversand.';
+			const message = /** @type {Error} */ (e)?.message || 'Unbekannter Fehler beim Testversand';
 			ergebnisse.push({ absender, ok: false, message });
 		}
 	}
@@ -59,8 +59,8 @@
 	<div class="flex flex-col gap-1">
 		<h3 class="text-base font-semibold text-on-surface">Verbindung testen</h3>
 		<p class="text-sm text-on-surface-variant">
-			Verschickt je Absender eine Test-E-Mail mit den zuletzt <em>gespeicherten</em> Zugangsdaten — nicht
-			mit dem, was gerade in den Feldern steht.
+			Verschickt je Absender eine Test-E-Mail mit den zuletzt <em>gespeicherten</em> Zugangsdaten, nicht
+			mit dem, was gerade in den Feldern steht
 		</p>
 	</div>
 

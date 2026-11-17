@@ -124,7 +124,7 @@
 		{:else}
 			<div class="flex-1 flex items-center gap-2 text-on-surface-variant text-sm">
 				<CircleCheck class="w-5 h-5 shrink-0 text-success" aria-hidden="true" />
-				Keine überfälligen Ausleihen.
+				Keine überfälligen Ausleihen
 			</div>
 		{/if}
 

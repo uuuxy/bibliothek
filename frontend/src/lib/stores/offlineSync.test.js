@@ -521,7 +521,7 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 		vi.clearAllMocks();
 	});
 
-	const HAND = '— bitte von Hand prüfen.';
+	const HAND = 'Bitte von Hand prüfen.';
 	const AUFGABE = 'Die Forderung steht auf einem Bescheid, der schon abgegeben ist.';
 
 	/**
@@ -543,7 +543,7 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 	])('„%s“ mit dem Grund „%s“ heißt „%s“', async (ergebnis, grund, text) => {
 		const meldungen = await meldungenNach(rueckgabe('B-10243'), { ergebnis, grund });
 
-		expect(meldungen).toEqual([[`Offline-Scan „B-10243“: ${text} ${HAND}`, 'error']]);
+		expect(meldungen).toEqual([[`Offline-Scan „B-10243“: ${text}. ${HAND}`, 'error']]);
 		expect(await ladeWarteschlange(), 'endgültig entschieden, also ausgebucht').toHaveLength(0);
 	});
 
@@ -554,7 +554,10 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 		});
 
 		expect(meldungen).toEqual([
-			[`Offline-Scan „B-10234“: als Rückgabe gescannt, der Server buchte Ausleihe ${HAND}`, 'error']
+			[
+				`Offline-Scan „B-10234“: als Rückgabe gescannt, der Server buchte Ausleihe. ${HAND}`,
+				'error'
+			]
 		]);
 	});
 

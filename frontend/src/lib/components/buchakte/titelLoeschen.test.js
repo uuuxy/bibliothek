@@ -35,20 +35,20 @@ describe('baueLoeschfrage', () => {
 		const frage = baueLoeschfrage(1, 'Mathematik 7', { titel: 1, im_haus: 9, verliehen: [] });
 		expect(frage).toEqual({
 			titel: '„Mathematik 7“ löschen?',
-			text: 'Die 9 Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch.'
+			text: 'Die 9 Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch'
 		});
 	});
 
 	it('ein Exemplar im Haus, Einzahl', () => {
 		expect(baueLoeschfrage(1, 'X', { titel: 1, im_haus: 1, verliehen: [] }).text).toBe(
-			'Das Exemplar im Haus kommt mit diesem Grund ins Abgangsbuch.'
+			'Das Exemplar im Haus kommt mit diesem Grund ins Abgangsbuch'
 		);
 	});
 
 	it('ohne jedes Exemplar bleibt der Hinweis, dass es endgültig ist', () => {
 		expect(baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: [] })).toEqual({
 			titel: '„X“ löschen?',
-			text: 'Das lässt sich nicht rückgängig machen.'
+			text: 'Das lässt sich nicht rückgängig machen'
 		});
 	});
 
@@ -65,8 +65,8 @@ describe('baueLoeschfrage', () => {
 				im_haus: 2,
 				verliehen: verliehene(1)
 			}).zusatz?.nachsatz;
-		expect(nachsatz(1)).toBe('Es bleibt beim Leser, und der Titel bleibt, bis es zurück ist.');
-		expect(nachsatz(3)).toBe('Es bleibt beim Leser, und sein Titel bleibt, bis es zurück ist.');
+		expect(nachsatz(1)).toBe('Es bleibt beim Leser, und der Titel bleibt, bis es zurück ist');
+		expect(nachsatz(3)).toBe('Es bleibt beim Leser, und sein Titel bleibt, bis es zurück ist');
 	});
 
 	it('genau fünf Namen stehen alle da, ohne Zählzeile', () => {
@@ -90,7 +90,7 @@ describe('baueLoeschfrage', () => {
 		expect(frage.zusatz).toEqual({
 			hinweis: '3 Exemplare sind verliehen:',
 			liste: ['Leser 1', 'Leser 2 (7b)', 'Leser 3 (7b)'],
-			nachsatz: 'Sie bleiben bei den Lesern, und der Titel bleibt, bis sie zurück sind.',
+			nachsatz: 'Sie bleiben bei den Lesern, und der Titel bleibt, bis sie zurück sind',
 			kaestchen: 'Auch diese 3 Exemplare löschen und aus den Leserkonten austragen',
 			aktionMit: 'Alle 12 Exemplare löschen',
 			noetig: false
@@ -99,7 +99,7 @@ describe('baueLoeschfrage', () => {
 
 	it('alle verliehen: ohne Kästchen gibt es nichts zu löschen', () => {
 		const frage = baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: verliehene(1) });
-		expect(frage.text).toBe('Im Haus ist kein Exemplar.');
+		expect(frage.text).toBe('Im Haus ist kein Exemplar');
 		expect(frage.aktion).toBe('Löschen');
 		expect(frage.zusatz?.noetig).toBe(true);
 		expect(frage.zusatz?.kaestchen).toBe(
@@ -118,7 +118,7 @@ describe('baueLoeschfrage', () => {
 		expect(frage.zusatz?.liste).toHaveLength(6);
 		expect(frage.zusatz?.liste?.[5]).toBe('und 2 weitere');
 		expect(frage.zusatz?.nachsatz).toBe(
-			'Sie bleiben bei den Lesern, und ihre Titel bleiben, bis sie zurück sind.'
+			'Sie bleiben bei den Lesern, und ihre Titel bleiben, bis sie zurück sind'
 		);
 	});
 });
@@ -133,7 +133,7 @@ describe('meldungZumErgebnis', () => {
 		],
 		[
 			{ geloescht: ['a'], geblieben: ['b'] },
-			'1 Titel gelöscht. 1 Titel bleibt, bis die verliehenen Exemplare zurück sind'
+			'1 Titel gelöscht. 1 Titel bleibt, bis die verliehenen Exemplare zurück sind.'
 		],
 		[
 			{ geloescht: [], geblieben: ['a', 'b'] },
@@ -141,7 +141,7 @@ describe('meldungZumErgebnis', () => {
 		],
 		[
 			{ geloescht: ['a'], geblieben: ['b', 'c'] },
-			'1 Titel gelöscht. 2 Titel bleiben, bis die verliehenen Exemplare zurück sind'
+			'1 Titel gelöscht. 2 Titel bleiben, bis die verliehenen Exemplare zurück sind.'
 		]
 	])('%o', (ergebnis, meldung) => {
 		expect(meldungZumErgebnis(ergebnis)).toBe(meldung);

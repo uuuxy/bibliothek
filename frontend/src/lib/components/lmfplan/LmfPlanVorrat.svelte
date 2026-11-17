@@ -99,6 +99,6 @@
 		etikett="Klasse"
 		bind:value={neue}
 		placeholder="z. B. 07G1"
-		hint="Eine Klasse, die es im Programm noch nicht gibt — sie kommt mit dem LUSD-Import."
+		hint="Eine Klasse, die es im Programm noch nicht gibt, sie kommt mit dem LUSD-Import"
 	/>
 </EingabeDialog>

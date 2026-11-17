@@ -53,7 +53,7 @@ test.describe.serial('Titel ohne ISBN', () => {
 		await page.locator('#buch-signatur').fill(`OI ${s}`);
 		await page.getByRole('button', { name: 'Speichern', exact: true }).click();
 
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert')).toBeVisible();
 		expect(
 			querySQL(
 				`SELECT count(*) FILTER (WHERE signatur = 'OI ${s}') || ' von ' || count(*) || ', mit ISBN ' || count(isbn) FROM buecher_titel WHERE titel = '${BESTAND}'`
@@ -89,7 +89,7 @@ test.describe.serial('Titel ohne ISBN', () => {
 		await neuesHeft(page);
 		await page.getByRole('button', { name: 'Speichern', exact: true }).click();
 
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert')).toBeVisible();
 		expect(
 			querySQL(
 				`SELECT coalesce(t.isbn, 'keine') || '|' || t.autor || '|' || count(e.id) FROM buecher_titel t LEFT JOIN buecher_exemplare e ON e.titel_id = t.id WHERE t.titel = '${HEFT}' GROUP BY t.id`
@@ -116,7 +116,7 @@ test.describe.serial('Titel ohne ISBN', () => {
 
 		await page.getByRole('button', { name: 'Speichern', exact: true }).click();
 		await frage.getByRole('button', { name: 'Anderes Medium' }).click();
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert')).toBeVisible();
 		expect(zaehle(HEFT)).toBe('2');
 	});
 

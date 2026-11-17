@@ -72,7 +72,7 @@
 				'success'
 			);
 		} else {
-			snackbars.addToast('Sachgruppe geändert.', 'success');
+			snackbars.addToast('Sachgruppe geändert', 'success');
 		}
 	}
 
@@ -81,7 +81,7 @@
 		if (loescht) return;
 		if (
 			!(await loeschenBestaetigen(
-				`Sachgruppe „${eintrag.kuerzel} – ${eintrag.bezeichnung}“ löschen?`
+				`Sachgruppe ${eintrag.kuerzel} „${eintrag.bezeichnung}“ löschen?`
 			))
 		)
 			return;
@@ -89,7 +89,7 @@
 		try {
 			await apiDelete(`/api/systematics/${eintrag.id}`);
 			await onGeaendert();
-			snackbars.addToast('Sachgruppe gelöscht.', 'success');
+			snackbars.addToast('Sachgruppe gelöscht', 'success');
 		} catch {
 			// Meldung kam bereits aus apiDelete (z. B. "hängt noch an Büchern").
 		} finally {
@@ -120,7 +120,7 @@
 								aria-label="Kürzel bearbeiten"
 								feld="w-24"
 								ungueltig={kuerzelFehlt}
-								hint={kuerzelFehlt ? 'Bitte ein Kürzel eintragen.' : ''}
+								hint={kuerzelFehlt ? 'Bitte ein Kürzel eintragen' : ''}
 							/>
 						</td>
 						<td class="align-top">
@@ -129,7 +129,7 @@
 								bind:value={bearbeiteBezeichnung}
 								aria-label="Bezeichnung bearbeiten"
 								ungueltig={bezeichnungFehlt}
-								hint={bezeichnungFehlt ? 'Bitte eine Bezeichnung eintragen.' : ''}
+								hint={bezeichnungFehlt ? 'Bitte eine Bezeichnung eintragen' : ''}
 							/>
 						</td>
 						<td class="align-top">

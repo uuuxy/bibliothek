@@ -85,7 +85,7 @@ describe('Löschen in der Akte: der Dialog sagt, was geschieht', () => {
 		const text = saetze(lehrkraft);
 		expect(text).toContain(
 			'Lena Lehr kommt in den Papierkorb der Leserdatei und lässt sich dort bis zu 180 Tage ' +
-				'lang wiederherstellen. Danach wird der Eintrag endgültig gelöscht.'
+				'lang wiederherstellen. Danach wird der Eintrag endgültig gelöscht'
 		);
 		expect(text).not.toMatch(/anonymisiert/);
 	});

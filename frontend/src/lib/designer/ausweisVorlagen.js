@@ -73,7 +73,7 @@ const BESTIMMUNGEN =
 	'Der Ausweis ist Eigentum der Schule und nicht übertragbar.\n' +
 	'Verlust bitte sofort im Sekretariat oder in der Bibliothek melden.\n' +
 	'Nur gültig mit Lichtbild und Unterschrift.';
-const FUNDHINWEIS = 'Fundhinweis: Bitte im Sekretariat abgeben.';
+const FUNDHINWEIS = 'Fundhinweis: Bitte im Sekretariat abgeben';
 
 /**
  * @param {number} fontSize pt
@@ -301,7 +301,7 @@ function reisWelle() {
 				el(
 					'text',
 					'welle-text',
-					'Philipp Reis baute in Friedrichsdorf das erste Telefon (1861).',
+					'Philipp Reis baute in Friedrichsdorf das erste Telefon (1861)',
 					[29, 20.1, 53.6, 2.4],
 					1,
 					stil(4.5, '#7a8474', 'normal', 'right')

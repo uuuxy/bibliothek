@@ -56,7 +56,7 @@ describe('leseApiFehler', () => {
 	});
 
 	it('nimmt die Vorgabe des Aufrufers, wo die Antwort keine Meldung trägt', async () => {
-		const vorgabe = 'Der Papierkorb konnte nicht geladen werden.';
+		const vorgabe = 'Der Papierkorb konnte nicht geladen werden';
 		expect(await leseApiFehler(fakeResponse('', 502), vorgabe)).toBe(vorgabe);
 		expect(await leseApiFehler(fakeResponse('{"error":"Kein Recht"}', 403), vorgabe)).toBe(
 			'Kein Recht'
@@ -159,7 +159,7 @@ describe('apiFetch error handling', () => {
 		});
 
 		await expect(apiFetch('/api/test')).rejects.toThrow(
-			'Der Server hat nicht rechtzeitig geantwortet.'
+			'Der Server hat nicht rechtzeitig geantwortet'
 		);
 	});
 
@@ -169,7 +169,7 @@ describe('apiFetch error handling', () => {
 		'übersetzt den Netzfehler „%s"',
 		async (text) => {
 			vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError(text));
-			await expect(apiFetch('/api/test')).rejects.toThrow(/^Keine Verbindung zum Server\.$/);
+			await expect(apiFetch('/api/test')).rejects.toThrow(/^Keine Verbindung zum Server$/);
 		}
 	);
 });
@@ -240,8 +240,8 @@ describe('apiGet, apiPost, apiPut und apiDelete melden jeden Fehler', () => {
 	it.each(huellen)('%s ohne Netz und nach der Frist', async (_, rufe) => {
 		const meldung = vi.spyOn(snackbars, 'addToast');
 		for (const [wurf, text] of [
-			[new TypeError('Failed to fetch'), 'Keine Verbindung zum Server.'],
-			[abbruch, 'Der Server hat nicht rechtzeitig geantwortet.']
+			[new TypeError('Failed to fetch'), 'Keine Verbindung zum Server'],
+			[abbruch, 'Der Server hat nicht rechtzeitig geantwortet']
 		]) {
 			vi.spyOn(globalThis, 'fetch').mockRejectedValue(wurf);
 			const fehler = await rufe().catch((/** @type {any} */ e) => e);

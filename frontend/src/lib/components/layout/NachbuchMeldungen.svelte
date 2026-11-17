@@ -81,7 +81,7 @@
 			<Ladekreis />
 		{:else if m.liste.length === 0}
 			<p class="py-6 text-center text-sm text-on-surface-variant">
-				{m.auchQuittierte ? 'Keine Meldungen.' : 'Nichts offen.'}
+				{m.auchQuittierte ? 'Keine Meldungen' : 'Nichts offen'}
 			</p>
 		{:else}
 			<Tabelle beschriftung="Meldungen aus dem Nachbuchen">

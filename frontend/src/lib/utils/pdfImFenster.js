@@ -6,7 +6,7 @@
 // die Knöpfe des Browsers.
 
 /** Die Meldung, wenn der Browser den Tab nicht öffnet. */
-export const PDF_BLOCKIERT = 'Bitte erlaube Popups, um das PDF zu öffnen.';
+export const PDF_BLOCKIERT = 'Bitte erlaube Popups, um das PDF zu öffnen';
 
 /** So oft sieht die Seite nach, ob der Tab geschlossen ist. */
 const PRUEFTAKT_MS = 10_000;

@@ -142,7 +142,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
 	await zeile.getByRole('button', { name: 'Endgültig löschen' }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Endgültig löschen' }).click();
 
-	await expect(page.getByText('Schüler endgültig gelöscht.')).toBeVisible();
+	await expect(page.getByText('Schüler endgültig gelöscht')).toBeVisible();
 	await expect(zeile).not.toBeVisible();
 
 	// Beleg an der DB: der Datensatz ist weg, nicht nur die Bildschirmzeile.

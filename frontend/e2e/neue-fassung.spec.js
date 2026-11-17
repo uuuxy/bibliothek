@@ -6,7 +6,7 @@ import { menuepunkt, uiLogin } from './helpers.js';
 // er von dem des Fensters ab, steht über dem Inhalt der Hinweis „Neu laden". Geprüft am gebauten
 // Stack, weil nur dort Server und Oberfläche aus demselben Bau stammen.
 
-const HINWEIS = 'Eine neue Fassung des Programms ist eingespielt.';
+const HINWEIS = 'Eine neue Fassung des Programms ist eingespielt';
 
 test('der Server nennt den Stand, mit dem die Seite geladen ist', async ({ page }) => {
 	await uiLogin(page);

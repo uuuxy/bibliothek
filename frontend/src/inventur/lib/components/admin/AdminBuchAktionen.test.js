@@ -122,7 +122,7 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('PUT');
 		// Die leere ISBN hindert das Speichern nicht; hinaus geht nur das geänderte Feld.
 		expect(rumpf(0)).toEqual({ signatur: 'Z 1' });
-		expect(melde).toHaveBeenCalledWith('Buch gespeichert.', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch gespeichert', 'success');
 	});
 
 	it('ein neuer Titel ohne ISBN wird angelegt', async () => {
@@ -136,7 +136,7 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 
 		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('POST');
 		expect(rumpf(0).isbn).toBe('');
-		expect(melde).toHaveBeenCalledWith('Buch gespeichert.', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch gespeichert', 'success');
 	});
 });
 
@@ -185,7 +185,7 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 		expect('anderesMedium' in rumpf(0)).toBe(false);
 		expect(rumpf(1)).toMatchObject({ title: 'Bild der Wissenschaft', anderesMedium: true });
 		expect(appState.bookToEdit).toBeNull();
-		expect(melde).toHaveBeenCalledWith('Buch gespeichert.', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch gespeichert', 'success');
 	});
 
 	it('den Dialog nur zu schließen ist keine Antwort: nichts wird angelegt', async () => {
@@ -229,7 +229,7 @@ describe('AdminBuchAktionen: neuer Titel ohne Exemplar', () => {
 			title: 'Mit Buch',
 			stock: 1
 		}).speichereAenderungen();
-		expect(melde).toHaveBeenCalledWith('Buch gespeichert.', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch gespeichert', 'success');
 	});
 });
 
@@ -309,7 +309,7 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 		await aktionen.speichereAenderungen();
 
 		expect(apiFetch).toHaveBeenCalledTimes(2);
-		expect(melde).toHaveBeenLastCalledWith('Buch gespeichert.', 'success');
+		expect(melde).toHaveBeenLastCalledWith('Buch gespeichert', 'success');
 	});
 });
 

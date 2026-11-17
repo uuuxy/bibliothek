@@ -63,7 +63,7 @@
 				exemplar_ids: gewaehlteExemplare
 			});
 			snackbars.addToast(
-				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} eingebucht.`,
+				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} eingebucht`,
 				'success'
 			);
 			gewaehlteExemplare = [];
@@ -82,7 +82,7 @@
 	<div class="pb-4 border-b border-outline-variant space-y-1">
 		<h2 class="sr-only">Wareneingang</h2>
 		<p class="text-sm text-on-surface-variant">
-			Wähle die Positionen aus, die eingetroffen sind und ins System aufgenommen werden sollen.
+			Wähle die Positionen aus, die eingetroffen sind und ins System aufgenommen werden sollen
 		</p>
 		<!-- Der Hinweis steht hier und nicht in einer Meldung nach dem Einbuchen: Er erklärt,
 		     warum das Einbuchen überhaupt nötig ist. Seit Migration 129 ist das Datum im

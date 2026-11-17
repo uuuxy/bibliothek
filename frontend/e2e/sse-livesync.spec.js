@@ -44,7 +44,7 @@ test('Livesync: Rückgabe an PC A aktualisiert das offene Konto an PC B', async 
 		await scanA.fill(`B-${suffix}`);
 		await scanA.press('Enter');
 		await expect(
-			pageA.getByText(`„E2E-Syncbuch-${suffix}" erfolgreich zurückgegeben.`)
+			pageA.getByText(`„E2E-Syncbuch-${suffix}" erfolgreich zurückgegeben`)
 		).toBeVisible();
 
 		// PC B: Buch verschwindet OHNE Reload (SSE → ladeNeu)

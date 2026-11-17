@@ -29,6 +29,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { verweisWahl, dialogHinweis } from './schlagwortPflege.js';
 	import { erzeugeSchlagwortPflegeListe } from './schlagwortPflegeListe.svelte.js';
+	import { verbindeSaetze } from '../../utils/format.js';
 
 	/** @type {{ auftrag: { art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null, onclose: () => void, onfertig: () => Promise<void> }} */
 	let { auftrag, onclose, onfertig } = $props();
@@ -95,20 +96,20 @@
 					wort: neu,
 					alte_als_verweis: wahl && behalten
 				});
-				const rest = r?.verweise ? ` „${zeile.wort}“ bleibt als Verweis.` : '';
-				snackbars.addToast(`Umbenannt in „${r?.wort ?? neu}“.${rest}`, 'success');
+				const rest = r?.verweise ? `„${zeile.wort}“ bleibt als Verweis` : '';
+				snackbars.addToast(verbindeSaetze(`Umbenannt in „${r?.wort ?? neu}“`, rest), 'success');
 			} else if (art === 'zusammenfuehren' && ziel) {
 				const r = await apiPost(`/api/schlagworte/${zeile.id}/zusammenfuehren`, {
 					ziel_id: ziel.id,
 					alte_als_verweis: behalten
 				});
 				snackbars.addToast(
-					`Zusammengeführt: ${r?.titel ?? 0} Titel ${r?.titel === 1 ? 'trägt' : 'tragen'} jetzt „${ziel.wort}“.`,
+					`Zusammengeführt: ${r?.titel ?? 0} Titel ${r?.titel === 1 ? 'trägt' : 'tragen'} jetzt „${ziel.wort}“`,
 					'success'
 				);
 			} else {
 				await apiPost('/api/schlagworte/verweise', { wort: neu, ziel_id: zeile.id });
-				snackbars.addToast(`„${neu}“ verweist jetzt auf „${zeile.wort}“.`, 'success');
+				snackbars.addToast(`„${neu}“ verweist jetzt auf „${zeile.wort}“`, 'success');
 			}
 		} catch {
 			return; // Meldung kam bereits aus apiFetch; der Dialog bleibt offen.

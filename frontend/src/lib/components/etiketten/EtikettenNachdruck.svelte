@@ -146,7 +146,7 @@
 			autor: e.autor
 		}));
 		snackbars.addToast(
-			`${auswahl.length} ${auswahl.length === 1 ? 'Etikett' : 'Etiketten'} im Druck übernommen.`,
+			`${auswahl.length} ${auswahl.length === 1 ? 'Etikett' : 'Etiketten'} im Druck übernommen`,
 			'success'
 		);
 		onUebergeben?.();
@@ -163,7 +163,7 @@
 		await vermerken(
 			'/api/exemplare/etiketten-gedruckt',
 			gewaehltOffen.map((e) => e.barcode_id),
-			(n) => `${n} als erledigt vermerkt.`
+			(n) => `${n} als erledigt vermerkt`
 		);
 	}
 
@@ -178,7 +178,7 @@
 		await vermerken(
 			'/api/exemplare/etiketten-zuruecksetzen',
 			gewaehltErledigt.map((e) => e.barcode_id),
-			(n) => `${n} wieder als offen vermerkt.`
+			(n) => `${n} wieder als offen vermerkt`
 		);
 	}
 
@@ -270,7 +270,7 @@
 					size="lg"
 					disabled={arbeitet}
 					onclick={alsGedrucktMarkieren}
-					data-tip="Etikett ist schon am Buch — z. B. vom Lieferanten oder aus dem Altsystem"
+					data-tip="Etikett ist schon am Buch, z. B. vom Lieferanten oder aus dem Altsystem"
 				>
 					<Eraser class="h-4 w-4" aria-hidden="true" />
 					{formatZahl(gewaehltOffen.length)} als erledigt vermerken
@@ -282,7 +282,7 @@
 					size="lg"
 					disabled={arbeitet}
 					onclick={wiederOeffnen}
-					data-tip="Etikett fehlt doch — z. B. nach einem Papierstau"
+					data-tip="Etikett fehlt doch, z. B. nach einem Papierstau"
 				>
 					<Undo2 class="h-4 w-4" aria-hidden="true" />
 					{formatZahl(gewaehltErledigt.length)} wieder als offen vermerken
@@ -305,17 +305,17 @@
 	{:else if offen.length === 0}
 		<div class="py-16 text-center text-on-surface-variant">
 			{#if suche.trim() && status === 'erledigt'}
-				Kein erledigtes Exemplar passt zu „{suche.trim()}".
+				Kein erledigtes Exemplar passt zu „{suche.trim()}"
 			{:else if suche.trim() && status === 'alle'}
-				Kein Exemplar passt zu „{suche.trim()}".
+				Kein Exemplar passt zu „{suche.trim()}"
 			{:else if suche.trim()}
-				Kein Exemplar ohne Etikett passt zu „{suche.trim()}".
+				Kein Exemplar ohne Etikett passt zu „{suche.trim()}"
 			{:else if status === 'erledigt'}
-				Noch kein Exemplar als erledigt vermerkt.
+				Noch kein Exemplar als erledigt vermerkt
 			{:else if status === 'alle'}
-				Keine Exemplare im Bestand.
+				Keine Exemplare im Bestand
 			{:else}
-				Für alle Exemplare wurden Etiketten gedruckt.
+				Für alle Exemplare wurden Etiketten gedruckt
 			{/if}
 		</div>
 	{:else}
@@ -328,7 +328,7 @@
 				zuerst. Suche nach Titel oder Barcode, um die übrigen zu finden.
 			{:else}
 				{formatZahl(offen.length)}
-				{offen.length === 1 ? 'Exemplar' : 'Exemplare'}, neueste zuerst.
+				{offen.length === 1 ? 'Exemplar' : 'Exemplare'}, neueste zuerst
 			{/if}
 		</p>
 		<EtikettenListe

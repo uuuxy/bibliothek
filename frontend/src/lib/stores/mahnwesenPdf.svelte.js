@@ -31,7 +31,7 @@ export function useMahnwesenPdf() {
 
 			if (ausleihIds.length === 0) {
 				snackbars.addToast(
-					'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
+					'Keine überfälligen Medien für die ausgewählten Schüler gefunden',
 					'info'
 				);
 				return;
@@ -49,7 +49,7 @@ export function useMahnwesenPdf() {
 				return;
 			}
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, 'Die Mahnbriefe ließen sich nicht erzeugen.'));
+				throw new Error(await leseApiFehler(res, 'Die Mahnbriefe ließen sich nicht erzeugen'));
 
 			gewaehlteKennungen.clear();
 			await refreshData();

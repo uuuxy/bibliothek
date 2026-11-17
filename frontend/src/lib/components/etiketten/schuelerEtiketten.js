@@ -40,13 +40,13 @@ export async function oeffneEtikettenbogen({
 			// Die Meldung des Servers durchreichen statt sie durch ein allgemeines
 			// „Fehler beim Drucken" zu ersetzen: Sie nennt den Grund, den die Theke
 			// beheben kann (Startposition außerhalb des Bogens, zu viele Markierte).
-			const meldung = await leseApiFehler(res, 'Etikettenbogen konnte nicht erzeugt werden.');
+			const meldung = await leseApiFehler(res, 'Etikettenbogen konnte nicht erzeugt werden');
 			snackbars.addToast(meldung, 'error');
 			return false;
 		}
 		return true;
 	} catch {
-		snackbars.addToast('Netzwerkfehler beim Erzeugen des Etikettenbogens.', 'error');
+		snackbars.addToast('Netzwerkfehler beim Erzeugen des Etikettenbogens', 'error');
 		return false;
 	}
 }

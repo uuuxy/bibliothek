@@ -85,7 +85,7 @@ describe('OpacSuche: neue Fassung', () => {
 
 		await suche(screen, 'Buch');
 		expect(screen.getByRole('status').textContent).toContain(
-			'Eine neue Fassung des Programms ist eingespielt.'
+			'Eine neue Fassung des Programms ist eingespielt'
 		);
 		expect(screen.getByText('3 Treffer')).toBeTruthy();
 	});
@@ -132,7 +132,7 @@ describe('OpacSuche: die Suche scheitert', () => {
 		const screen = render(OpacSuche);
 		await suche(screen, 'Buch');
 
-		expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy();
+		expect(screen.getByText('Keine Verbindung zum Server')).toBeTruthy();
 		expect(screen.queryByText(/Failed to fetch/)).toBeNull();
 		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});

@@ -48,7 +48,7 @@
 			>Zweiter Absender</span
 		>
 		<span class="text-sm text-on-surface-variant"
-			>Die angehakten Mails gehen über diesen Absender, alle anderen über den Postausgang darüber.</span
+			>Die angehakten Mails gehen über diesen Absender, alle anderen über den Postausgang darüber</span
 		>
 	</div>
 	<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
@@ -57,21 +57,21 @@
 			etikett="Absender-E-Mail"
 			type="email"
 			placeholder="post@bibliothek-schule.de"
-			hint="Leer lassen: Alle Mails gehen über den Postausgang."
+			hint="Leer lassen: Alle Mails gehen über den Postausgang"
 		/>
 		<Feld
 			bind:value={benutzername}
 			etikett="Benutzername"
 			type="text"
 			placeholder="Benutzername oder E-Mail"
-			hint="Leer lassen, um mit dem Zugang oben zu senden."
+			hint="Leer lassen, um mit dem Zugang oben zu senden"
 		/>
 		<Feld
 			bind:value={password}
 			etikett="Passwort"
 			type="password"
 			placeholder={hatPasswort ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
-			hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
+			hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern"
 			class="md:col-span-2"
 		/>
 	</div>

@@ -35,7 +35,7 @@
 		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span
 			>Fremdrückgabe: Buch war auf {omniboxStore.letzteFremdrueckgabe.vorbesitzerName} verbucht und wurde
-			dort zurückgegeben —
+			dort zurückgegeben und
 			<strong class="font-medium">nicht auf {omniboxStore.aktiverLeser.vorname} gebucht</strong>.
 			Erneut scannen, um es auszuleihen.</span
 		>
@@ -62,13 +62,12 @@
 	>
 		<PackageCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span>
-			Abholfach: Für {omniboxStore.aktiverLeser.vorname} liegt bereit —
+			Für {omniboxStore.aktiverLeser.vorname} liegt im Abholfach bereit, bitte direkt mitgeben:
 			{#each omniboxStore.abholbereit as v, i (i)}
 				{i > 0 ? ' · ' : ''}<strong class="font-medium">„{v.titel}"</strong>{v.bereitgestellt_bis
 					? ` (bis ${formatDatum(v.bereitgestellt_bis)})`
 					: ''}
 			{/each}
-			— bitte direkt mitgeben.
 		</span>
 	</div>
 {/if}
@@ -79,8 +78,8 @@
 	>
 		<GraduationCap class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span>
-			{leserArtText(omniboxStore.aktiverLeser.art)} geladen — gescannte Bücher gehen auf
-			<strong class="font-medium">{omniboxStore.aktiverLeser.vorname}</strong>, Frist ein Jahr.
+			{leserArtText(omniboxStore.aktiverLeser.art)} geladen, gescannte Bücher gehen auf
+			<strong class="font-medium">{omniboxStore.aktiverLeser.vorname}</strong>, Frist ein Jahr
 		</span>
 	</div>
 {/if}

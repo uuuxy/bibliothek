@@ -39,10 +39,10 @@ describe('Leserakte: Akte nicht geladen', () => {
 
 	it('nennt ohne Verbindung den Satz der Verbindung', async () => {
 		vi.spyOn(console, 'error').mockImplementation(() => {});
-		apiFetchMock.mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		apiFetchMock.mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		render(Leserakte, { leser: { id: 'A' }, onDeselect: vi.fn() });
 
-		await waitFor(() => expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy());
+		await waitFor(() => expect(screen.getByText('Keine Verbindung zum Server')).toBeTruthy());
 	});
 });
 

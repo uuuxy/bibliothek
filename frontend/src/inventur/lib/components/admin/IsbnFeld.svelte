@@ -34,7 +34,7 @@
 
 	function aufKnopf() {
 		if (!formular.isbn) {
-			melde('Bitte zuerst eine ISBN eingeben.', 'error');
+			melde('Bitte zuerst eine ISBN eingeben', 'error');
 			return;
 		}
 		return abfrage.nachschlagen(true);

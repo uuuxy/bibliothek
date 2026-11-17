@@ -106,7 +106,7 @@ describe('Problem melden', () => {
 	// an (Probe in Chromium, Firefox und WebKit, OFFEN.md 5.106); die eigenen Meldungen zeigen
 	// es vorher. Die Eingabe bleibt, falls sie nicht angekommen ist.
 	it('liest nach einem Fehler ohne Antwort die eigenen Meldungen neu', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		const nachSenden = vi.fn();
 		const meldung = erzeugeProblemMeldung(nachSenden);
 		meldung.oeffne('titel-1');
@@ -117,7 +117,7 @@ describe('Problem melden', () => {
 		expect(nachSenden).toHaveBeenCalledTimes(1);
 		expect(meldung.form('titel-1')).toMatchObject({ open: true, text: 'Seiten fehlen' });
 		expect(vi.mocked(snackbars.addToast)).toHaveBeenCalledWith(
-			'Keine Verbindung zum Server.',
+			'Keine Verbindung zum Server',
 			'error'
 		);
 	});

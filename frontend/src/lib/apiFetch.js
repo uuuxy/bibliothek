@@ -107,11 +107,11 @@ export async function apiFetch(url, options = {}) {
 	} catch (error) {
 		clearTimeout(id);
 		if (error instanceof Error && error.name === 'AbortError') {
-			throw new Error('Der Server hat nicht rechtzeitig geantwortet.');
+			throw new Error('Der Server hat nicht rechtzeitig geantwortet');
 		}
 		// Ohne Antwort wirft fetch einen TypeError mit englischem Text des Browsers („Load failed").
 		if (error instanceof TypeError)
-			throw new Error('Keine Verbindung zum Server.', { cause: error });
+			throw new Error('Keine Verbindung zum Server', { cause: error });
 		throw error;
 	}
 }

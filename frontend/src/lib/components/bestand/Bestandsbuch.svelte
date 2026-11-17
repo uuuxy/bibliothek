@@ -78,14 +78,14 @@
 					: `/api/bestand/${pfad}`;
 			const res = await apiFetch(adresse);
 			if (!res.ok) {
-				fehler = await leseApiFehler(res, `Das ${buchname} konnte nicht geladen werden.`);
+				fehler = await leseApiFehler(res, `Das ${buchname} konnte nicht geladen werden`);
 				return;
 			}
 			buch = await res.json();
 			von = String(buch.von).slice(0, 10);
 			bis = String(buch.bis).slice(0, 10);
 		} catch (e) {
-			fehler = `Das ${buchname} konnte nicht geladen werden.`;
+			fehler = `Das ${buchname} konnte nicht geladen werden`;
 			console.error(`${buchname}:`, e);
 		} finally {
 			laeuft = false;
@@ -159,21 +159,21 @@
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
 				{#if buch.aus_katalog_geloescht !== 1}
 					{formatZahl(buch.aus_katalog_geloescht)} Exemplare wurden in diesem Zeitraum aus dem Katalog
-					gelöscht, statt ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust.
+					gelöscht, statt ausgesondert zu werden, mit ihrem Titel oder als endgültig entfernter Verlust.
 					Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen deshalb in keiner
 					Liste oben. Ihre Nummern sind in den System-Logs nachschlagbar.
 				{:else}
-					1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht, statt ausgesondert zu werden
-					— mit seinem Titel oder als endgültig entfernter Verlust. Titel, Signatur und Abgangsgrund
-					sind mit ihm gelöscht worden; es steht deshalb in keiner Liste oben. Seine Nummer ist in
-					den System-Logs nachschlagbar.
+					1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht, statt ausgesondert zu
+					werden, mit seinem Titel oder als endgültig entfernter Verlust. Titel, Signatur und
+					Abgangsgrund sind mit ihm gelöscht worden; es steht deshalb in keiner Liste oben. Seine
+					Nummer ist in den System-Logs nachschlagbar.
 				{/if}
 			</p>
 		{/if}
 		<!-- Der Satz erklärt die Liste „ohne Zuordnung"; ist sie nicht zu sehen, erklärt er nichts. -->
 		{#if gezeigt.some((a) => a.topf === '' && a.zeilen.length > 0)}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
-				Zu den Exemplaren unter „ohne Zuordnung" ist keine Bestellung hinterlegt — Altbestand,
+				Zu den Exemplaren unter „ohne Zuordnung" ist keine Bestellung hinterlegt: Altbestand,
 				Handanlage oder Bestandskorrektur. Aus welchen Mitteln sie bezahlt wurden, ist deshalb nicht
 				belegt, und ihr Zugangsdatum ist der Tag, an dem sie im Programm angelegt wurden.
 			</p>

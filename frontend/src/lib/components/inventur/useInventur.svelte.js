@@ -98,7 +98,7 @@ export function useInventur() {
 			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label, lauf.laufKennung);
 			await zurueckZumStart();
 		} else {
-			snackbars.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
+			snackbars.addToast(r.error || 'Fehler beim Abschließen der Inventur', 'error');
 			// Ohne Antwort (status 0) oder mit „kein laufender Lauf" (404) kann der Server schon
 			// abgeschlossen haben; die Seite zeigt dann seinen Stand statt des Scanfelds.
 			if (r.status === 0 || r.status === 404) await zurueckZumStart();

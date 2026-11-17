@@ -219,7 +219,7 @@ describe('Scan während der laufenden Buchung', () => {
 describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 	/** Was das Banner über nicht gebuchte Scans sagt. @param {string[]} nummern */
 	const genannt = (nummern) =>
-		`Gescannt und NICHT gebucht: ${nummern.map((n) => `„${n}“`).join(', ')} — bitte erneut scannen.`;
+		`Gescannt und NICHT gebucht, bitte erneut scannen: ${nummern.map((n) => `„${n}“`).join(', ')}`;
 
 	it('nach einem gescheiterten Scan: Das Buch geht nicht an den Leser davor', async () => {
 		const theke = neueTheke();
@@ -453,7 +453,7 @@ describe('Bei Ungespeichertem in der Akte', () => {
 		expect(theke.aktiverLeser?.id, 'der Leser bleibt').toBe('leser-1');
 		expect(theke.eingabe).toBe('');
 		expect(theke.rueckmeldung.fehler).toBe(
-			'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen.'
+			'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen'
 		);
 		expect(spieleFehlerton, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(2);
 		expect(theke.rueckmeldung.bildschirmLeuchten).toBe('error');
@@ -476,7 +476,9 @@ describe('Bei Ungespeichertem in der Akte', () => {
 		await laeuft;
 
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.rueckmeldung.fehler).toContain('Gescannt und NICHT gebucht: „S-2“');
+		expect(theke.rueckmeldung.fehler).toContain(
+			'Gescannt und NICHT gebucht, bitte erneut scannen: „S-2“'
+		);
 	});
 });
 

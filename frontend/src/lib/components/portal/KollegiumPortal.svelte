@@ -124,7 +124,7 @@
 
 		{#if suche.fehler}
 			<p class="text-sm font-semibold text-error" role="alert">
-				Die Suche ist fehlgeschlagen. Bitte erneut versuchen — es werden keine Treffer angezeigt,
+				Die Suche ist fehlgeschlagen. Bitte erneut versuchen. Es werden keine Treffer angezeigt,
 				damit hier nichts Falsches steht.
 			</p>
 		{/if}
@@ -158,8 +158,8 @@
 				symbol={Search}
 				titel="Keine Titel gefunden"
 				hinweis={suche.schlagwort
-					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück.'
-					: 'Versuche es mit einem anderen Titel oder Autor.'}
+					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück'
+					: 'Versuche es mit einem anderen Titel oder Autor'}
 			/>
 		{:else if suche.leer}
 			<!-- Solange nichts gesucht wird: was die Lehrkraft geschickt hat und was daraus

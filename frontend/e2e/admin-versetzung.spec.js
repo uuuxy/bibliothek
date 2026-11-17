@@ -33,5 +33,5 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	await page.getByRole('button', { name: 'Ja, unwiderruflich ausführen' }).click();
 
 	// 7. Erfolg verifizieren
-	await expect(page.getByText('Schuljahreswechsel abgeschlossen.')).toBeVisible();
+	await expect(page.getByText('Schuljahreswechsel abgeschlossen')).toBeVisible();
 });

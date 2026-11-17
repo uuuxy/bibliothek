@@ -61,7 +61,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Exemplare' });
 	await leiste.getByRole('button', { name: 'Standort ändern' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Standort ändern' });
-	await expect(dialog).toContainText('Gilt für 1 Exemplar.');
+	await expect(dialog).toContainText('Gilt für 1 Exemplar');
 	const bestaetigen = dialog.getByRole('button', { name: 'Standort ändern' });
 	await expect(bestaetigen).toBeDisabled();
 	// Der vorhandene Standort steht im Menü des Felds; der Pfeil im Feld zeigt es ohne Tippen.
@@ -101,7 +101,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	await leiste.getByRole('button', { name: 'Alle auswählen' }).click();
 	await expect(leiste).toContainText('3 markiert');
 	await leiste.getByRole('button', { name: 'Standort ändern' }).click();
-	await expect(dialog).toContainText('Gilt für 3 Exemplare.');
+	await expect(dialog).toContainText('Gilt für 3 Exemplare');
 	await dialog.getByLabel('Standort entfernen').check();
 	await expect(dialog.getByLabel('Standort', { exact: true })).toBeDisabled();
 	await bestaetigen.click();

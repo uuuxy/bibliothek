@@ -163,7 +163,7 @@ describe('IsbnFeld: neue Maske, die ISBN ist frei', () => {
 		await fertig();
 
 		expect(melde).toHaveBeenCalledWith(
-			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen.',
+			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen',
 			'warning'
 		);
 		expect(bestaetigen).not.toHaveBeenCalled();
@@ -192,7 +192,7 @@ describe('IsbnFeld: vorhandener Titel', () => {
 		const { knopf } = feld({ id: null, isbn: '', title: '' });
 		await fireEvent.click(knopf);
 		await fertig();
-		expect(melde).toHaveBeenCalledWith('Bitte zuerst eine ISBN eingeben.', 'error');
+		expect(melde).toHaveBeenCalledWith('Bitte zuerst eine ISBN eingeben', 'error');
 		expect(vi.mocked(apiFetch)).not.toHaveBeenCalled();
 	});
 });

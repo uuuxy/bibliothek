@@ -49,13 +49,13 @@
 				snackbars.addToast(PDF_BLOCKIERT, 'warning');
 			} else if (!res.ok) {
 				snackbars.addToast(
-					await leseApiFehler(res, 'Die Auskunft ließ sich nicht erzeugen.'),
+					await leseApiFehler(res, 'Die Auskunft ließ sich nicht erzeugen'),
 					'error'
 				);
 			}
 		} catch (e) {
 			console.error(e);
-			snackbars.addToast('Netzwerkfehler beim Erzeugen der Auskunft.', 'error');
+			snackbars.addToast('Netzwerkfehler beim Erzeugen der Auskunft', 'error');
 		} finally {
 			auskunftLaedt = false;
 		}
@@ -88,7 +88,7 @@
 	<span
 		class="inline-flex"
 		data-tip={!leser.has_open_damages
-			? 'Kein offener Schadensfall — eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
+			? 'Kein offener Schadensfall: Eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
 			: 'Ersatzforderung über offene Schäden drucken'}
 	>
 		<Button

@@ -49,7 +49,7 @@ describe('baueFehlbestandDruckHtml', () => {
 			`<td class="schmal">Ma 7.1</td><td>${LANG}</td><td>Griesel, Heinz</td>` +
 				'<td class="mono schmal">10004200</td><td class="kaestchen schmal"></td>'
 		]);
-		expect(html).toContain('<h1>Fehlbestand — Lehrbuchsammlung</h1>');
+		expect(html).toContain('<h1>Fehlbestand: Lehrbuchsammlung</h1>');
 		// Das Kästchen zeichnet das Gerüst; ohne die Regel bliebe die Spalte leer.
 		expect(html).toContain('.kaestchen::before');
 	});

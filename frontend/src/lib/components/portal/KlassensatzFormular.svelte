@@ -30,8 +30,8 @@
 	     nicht erst aus der Bestätigung. -->
 	{#if reichtNicht}
 		<p class="text-xs text-on-surface-variant" role="status">
-			Reicht aktuell nicht: {rechnerischFrei} rechnerisch frei — du stellst dich hinter
-			{warteschlange.map((o) => o.klasse).join(', ')} an.
+			Reicht aktuell nicht: {rechnerischFrei} rechnerisch frei, du stellst dich hinter
+			{warteschlange.map((o) => o.klasse).join(', ')} an
 		</p>
 	{/if}
 	{#if formular.error}

@@ -107,7 +107,7 @@
 			<span
 				class="inline-flex"
 				data-tip={ohneAusweis
-					? 'Ohne Ausweisnummer lässt sich keine Karte drucken — eingetragen wird sie unter „Stammdaten & Adresse“'
+					? 'Ohne Ausweisnummer lässt sich keine Karte drucken, eingetragen wird sie unter „Stammdaten & Adresse“'
 					: undefined}
 			>
 				<Button variant="primary" onclick={() => druckeAusweis('both')} disabled={ohneAusweis}>

@@ -75,8 +75,8 @@
 			bind:art={eingaben.art}
 			gesperrt={gesperrteArten}
 			hint={kollege
-				? 'Innerhalb des Kollegiums wechselbar. Ein Schüler kommt aus der LUSD — dorthin führt kein Weg.'
-				: 'Ein Schüler kommt aus der LUSD und bleibt Schüler.'}
+				? 'Innerhalb des Kollegiums wechselbar. Ein Schüler kommt aus der LUSD, dorthin führt kein Weg.'
+				: 'Ein Schüler kommt aus der LUSD und bleibt Schüler'}
 		/>
 	</div>
 
@@ -88,7 +88,7 @@
 			etikett="Geburtsdatum{schuelerPflicht}"
 			type="date"
 			bind:value={eingaben.geburtsdatum}
-			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt.'}
+			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt'}
 		/>
 	</div>
 </section>
@@ -111,7 +111,7 @@
 				disabled={kollege}
 			/>
 			{#if kollege}
-				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse.</span>
+				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse</span>
 			{:else if klassenFehler}
 				<!-- Zur Wahl steht dann nur die eigene Klasse; der Fehlertext sagt, warum. -->
 				<span role="alert" class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
@@ -124,7 +124,7 @@
 			bind:value={eingaben.abgaenger_jahr}
 			feld="font-semibold"
 			disabled={kollege}
-			hint={kollege ? 'Gehört zur Klasse.' : undefined}
+			hint={kollege ? 'Gehört zur Klasse' : undefined}
 		/>
 		<!-- Die LUSD-ID ist beim Schüler kontrolliert nachtragbar: nur setzbar, solange sie
 		     leer ist (Waise adoptieren). Ist sie gesetzt, bleibt sie schreibgeschützt — der
@@ -136,10 +136,10 @@
 			feld="font-mono"
 			disabled={kollege || lusdVerknuepft}
 			hint={kollege
-				? 'Durch die LUSD kommen nur Schüler.'
+				? 'Durch die LUSD kommen nur Schüler'
 				: lusdVerknuepft
-					? 'Bereits mit der LUSD verknüpft — Änderung nur über den Import.'
-					: 'Nachtragbar: verknüpft diesen Schüler mit der LUSD.'}
+					? 'Bereits mit der LUSD verknüpft, Änderung nur über den Import'
+					: 'Nachtragbar: verknüpft diesen Schüler mit der LUSD'}
 		/>
 		<Feld
 			id="barcode"

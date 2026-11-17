@@ -51,7 +51,7 @@ export function bestandsAngabe(formular) {
 	if (feld === null || feld === undefined || feld === '') return {};
 	const soll = Number(feld);
 	if (!Number.isInteger(soll) || soll < 0) {
-		throw new Error('Der Bestand muss eine ganze Zahl ab 0 sein.');
+		throw new Error('Der Bestand muss eine ganze Zahl ab 0 sein');
 	}
 	if (!formular.id) return { stock: soll };
 	if (soll === formular.stockGesehen) return {};

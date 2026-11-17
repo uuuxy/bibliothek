@@ -70,11 +70,11 @@
 				<LadeFehler titel="Signaturen nicht geladen" text={ladefehler} onerneut={ladeSignaturen} />
 			{:else if signaturen.length === 0}
 				<p class="text-sm text-on-surface-variant">
-					Noch kein Buch trägt eine Signatur. Sie entsteht am Buch selbst — im Buchformular,
+					Noch kein Buch trägt eine Signatur. Sie entsteht am Buch selbst, im Buchformular,
 					vorgeschlagen aus den Sachgruppen.
 				</p>
 			{:else if gefiltert.length === 0}
-				<p class="text-sm text-on-surface-variant">Keine Signatur passt zu „{suche}“.</p>
+				<p class="text-sm text-on-surface-variant">Keine Signatur passt zu „{suche}“</p>
 			{:else}
 				<ul class="max-h-112 overflow-y-auto -mx-1">
 					{#each gefiltert as sig (sig.signatur)}

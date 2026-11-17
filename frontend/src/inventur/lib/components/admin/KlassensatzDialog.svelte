@@ -120,11 +120,11 @@
 				});
 				onClose();
 			} else {
-				snackbars.addToast(await leseApiFehler(res, 'Zuweisung nicht gespeichert.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Zuweisung nicht gespeichert'), 'error');
 			}
 		} catch (e) {
 			console.error('Netzwerkfehler', e);
-			snackbars.addToast('Fehler beim Speichern der Zuweisung.', 'error');
+			snackbars.addToast('Fehler beim Speichern der Zuweisung', 'error');
 		} finally {
 			speichert = false;
 		}
@@ -144,7 +144,7 @@
 				<div class="shrink-0">
 					<h2 id="zuweisung-titel" class="dialog-titel-vollbild">Klasse & Bücher zuweisen</h2>
 					<p class="mt-1 text-sm text-on-surface-variant">
-						Wähle Zielklassen und die entsprechenden Schulbücher aus.
+						Wähle Zielklassen und die entsprechenden Schulbücher aus
 					</p>
 				</div>
 

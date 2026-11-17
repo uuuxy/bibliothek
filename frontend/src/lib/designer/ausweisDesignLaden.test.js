@@ -140,19 +140,19 @@ describe('designFuerDruck', () => {
 		);
 		await ladeAusweisDesign();
 
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		expect(await designFuerDruck()).toBe(true);
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
 	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).
 	it('druckt nicht mit den Standardwerten: Scheitert der Abruf, steht die Meldung mit dem Grund da', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 
 		expect(await designFuerDruck()).toBe(false);
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server.',
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server',
 			'error'
 		);
 	});
@@ -164,7 +164,7 @@ describe('designFuerDruck', () => {
 
 		expect(await designFuerDruck()).toBe(false);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Die Datenbank antwortet nicht.',
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Die Datenbank antwortet nicht',
 			'error'
 		);
 	});
@@ -231,7 +231,7 @@ describe('designFuerDruck: Musterschule auf der Karte', () => {
 
 describe('meldeDesignNichtGeladen', () => {
 	it('sagt mit dem Grund, dass ohne das Design nicht gedruckt wird', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		await ladeAusweisDesign();
 
 		meldeDesignNichtGeladen();

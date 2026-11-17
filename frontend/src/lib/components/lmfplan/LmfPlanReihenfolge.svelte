@@ -87,7 +87,7 @@
 	     der erste Tag fehlt; eine Klasse ohne Schüler zeigt ihr Chip in der Zeile. -->
 	{#if !bereit}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-reihenfolge-hinweis">
-			Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
+			Ersten Tag wählen, dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile
 		</p>
 	{/if}
 	<LmfPlanVorrat klassen={ausgelassen} {draussen} {marker} onhinein={(k) => onhinein(k)} />
@@ -135,7 +135,7 @@
 		</Tabelle>
 		{#if zeilen.length === 0}
 			<p class="px-4 py-6 text-sm text-on-surface-variant">
-				Noch keine Zeile — eine Klasse aus „Noch nicht im Plan" einplanen.
+				Noch keine Zeile. Eine Klasse aus „Noch nicht im Plan" einplanen.
 			</p>
 		{/if}
 		<div class="px-2 pt-2">

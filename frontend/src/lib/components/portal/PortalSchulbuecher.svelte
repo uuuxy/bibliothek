@@ -83,7 +83,7 @@
 			const res = await apiFetch(`/api/portal/lernmittel${parameter ? `?${parameter}` : ''}`);
 			if (seq !== lauf) return;
 			if (!res.ok) {
-				const grund = await leseApiFehler(res, 'Schulbücher konnten nicht geladen werden.');
+				const grund = await leseApiFehler(res, 'Schulbücher konnten nicht geladen werden');
 				if (seq === lauf) fehler = grund;
 				return;
 			}
@@ -92,7 +92,7 @@
 			faecher = daten.faecher ?? [];
 			titel = daten.titel ?? [];
 		} catch {
-			if (seq === lauf) fehler = 'Schulbücher konnten nicht geladen werden.';
+			if (seq === lauf) fehler = 'Schulbücher konnten nicht geladen werden';
 		} finally {
 			// Auch „Wird geladen …" gehört dem neuesten Lauf: Ein überholter Lauf darf die Anzeige
 			// nicht auf „fertig" stellen, während der aktuelle noch unterwegs ist.
@@ -159,8 +159,8 @@
 	{:else if faecher.length === 0}
 		<p class="py-4 text-sm text-on-surface-variant">
 			{suche.trim() || jahrgang || zweig
-				? 'Keine Schulbücher passen zu dieser Auswahl.'
-				: 'Noch keine Schulbücher markiert — die Angabe „Lernmittel“ am Titel entscheidet.'}
+				? 'Keine Schulbücher passen zu dieser Auswahl'
+				: 'Noch keine Schulbücher markiert, die Angabe „Lernmittel“ am Titel entscheidet'}
 		</p>
 	{:else}
 		<div data-testid="schulbuecher-faecher">

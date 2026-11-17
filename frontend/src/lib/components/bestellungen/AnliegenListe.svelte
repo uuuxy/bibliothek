@@ -51,7 +51,7 @@
 			}
 		} catch {
 			anliegen = [];
-			ladefehler = 'Die Meldungen konnten nicht geladen werden (Netzwerkfehler).';
+			ladefehler = 'Die Meldungen konnten nicht geladen werden (Netzwerkfehler)';
 		} finally {
 			laedt = false;
 		}
@@ -81,11 +81,11 @@
 				anliegen = anliegen.filter((a) => a.id !== id);
 				if (confirmingId === id) confirmingId = null;
 				uiStore.fetchOffeneAnliegen();
-				snackbars.addToast('Meldung war bereits erledigt.', 'success');
+				snackbars.addToast('Meldung war bereits erledigt', 'success');
 				return;
 			}
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, 'Meldung konnte nicht abgehakt werden.'));
+				throw new Error(await leseApiFehler(res, 'Meldung konnte nicht abgehakt werden'));
 			anliegen = anliegen.filter((a) => a.id !== id);
 			if (confirmingId === id) confirmingId = null;
 			uiStore.fetchOffeneAnliegen();
@@ -95,13 +95,13 @@
 			const mail = (await res.json().catch(() => null))?.mail;
 			if (mail === 'fehlgeschlagen') {
 				snackbars.addToast(
-					'Erledigt, aber die Mail an die Lehrkraft konnte nicht versendet werden — bitte selbst Bescheid geben.',
+					'Erledigt, aber die Mail an die Lehrkraft konnte nicht versendet werden. Bitte selbst Bescheid geben.',
 					'warning'
 				);
 			} else if (mail === 'keine_adresse') {
-				snackbars.addToast('Erledigt — zum Konto ist keine Mail-Adresse hinterlegt.', 'warning');
+				snackbars.addToast('Erledigt, zum Konto ist keine Mail-Adresse hinterlegt', 'warning');
 			} else {
-				snackbars.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
+				snackbars.addToast('Erledigt, die Lehrkraft bekommt eine Mail', 'success');
 			}
 		} catch (err) {
 			snackbars.addToast(fehlertext(err), 'error');
@@ -163,7 +163,7 @@
 		<h2 class="sr-only">Meldungen</h2>
 		<p class="text-sm text-on-surface-variant">
 			Meldungen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
-			die Meldung ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine schreibst.
+			die Meldung ab und schickt der Lehrkraft eine Mail, mit deiner Notiz, wenn du eine schreibst.
 		</p>
 	</div>
 

@@ -70,7 +70,7 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 		expect(await frageWennVergeben('9783791504544')).toBe(false);
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect(melde).toHaveBeenCalledWith(
-			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen.',
+			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen',
 			'warning'
 		);
 	});

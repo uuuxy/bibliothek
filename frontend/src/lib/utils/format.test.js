@@ -9,9 +9,26 @@ import {
 	bestandKurz,
 	bestandLage,
 	zulaufSatz,
-	jahrgangSpanne
+	jahrgangSpanne,
+	verbindeSaetze
 } from './format.js';
 import jahrgangFaelle from './jahrgangSpanne.faelle.json';
+
+describe('verbindeSaetze: ein Satz ohne Punkt, mehrere mit', () => {
+	it('lässt einen einzelnen Satz ohne Punkt', () => {
+		expect(verbindeSaetze('Kopieren nicht möglich', '', null)).toBe('Kopieren nicht möglich');
+	});
+	it('setzt hinter jeden von mehreren Sätzen einen Punkt, auch hinter den Satz des Servers', () => {
+		expect(verbindeSaetze('Titel schon vorhanden', 'Die Eingaben werden verworfen')).toBe(
+			'Titel schon vorhanden. Die Eingaben werden verworfen.'
+		);
+	});
+	it('setzt keinen zweiten Punkt hinter einen Satz, der schon endet', () => {
+		expect(verbindeSaetze('Erster Satz. Zweiter Satz.', 'Dritter')).toBe(
+			'Erster Satz. Zweiter Satz. Dritter.'
+		);
+	});
+});
 
 describe('format.js — eine deutsche Schreibweise', () => {
 	it('Datum und Zeitpunkt: immer zweistellig, Zeitpunkt ohne Sekunden', () => {

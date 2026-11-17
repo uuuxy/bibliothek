@@ -33,7 +33,7 @@
 			const res = await apiFetch('/api/admin/permissions');
 			if (!res.ok) {
 				if (res.status === 403)
-					throw new Error('Zugriff verweigert: Das Recht „Benutzer & Rechte verwalten" fehlt.');
+					throw new Error('Zugriff verweigert: Das Recht „Benutzer & Rechte verwalten" fehlt');
 				throw new Error(await leseApiFehler(res, 'Fehler beim Laden der Berechtigungen'));
 			}
 			const daten = await res.json();
@@ -76,10 +76,10 @@
 			// Die Begründung des Servers durchreichen statt eines Einheitssatzes: Sie nennt, wer
 			// die Matrix ändern darf, und ein 400 die unbekannte Rolle oder das unbekannte Recht.
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, 'Fehler beim Speichern der Berechtigung.'));
+				throw new Error(await leseApiFehler(res, 'Fehler beim Speichern der Berechtigung'));
 			rechteJeRolle[role][permission] = newVal;
 
-			snackbars.addToast('Rechte erfolgreich aktualisiert.', 'success');
+			snackbars.addToast('Rechte erfolgreich aktualisiert', 'success');
 		} catch (err) {
 			snackbars.addToast(fehlertext(err), 'error');
 		} finally {
@@ -111,7 +111,7 @@
 			<!-- Der Satz zur Tragweite gilt dieser Tabelle: Sie steuert Menü und API, und die
 			     Drift-Warnung der Betriebsbereitschaft zeigt hierher. -->
 			<p class="mb-6 max-w-2xl text-sm text-on-surface-variant">
-				Rollen-Rechte. Was hier steht, steuert Menü und API — Abweichungen von der Code-Vorgabe
+				Rollen-Rechte. Was hier steht, steuert Menü und API. Abweichungen von der Code-Vorgabe
 				meldet die Betriebsbereitschaft.
 			</p>
 			{#if laedt}

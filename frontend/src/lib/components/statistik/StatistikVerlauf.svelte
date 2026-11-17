@@ -132,7 +132,7 @@
 		<div
 			class="mt-2 flex-1 flex flex-col items-center justify-center text-center text-xs text-on-surface-variant font-medium"
 		>
-			Noch keine Ausleih-Aktivität im letzten Jahr.
+			Noch keine Ausleih-Aktivität im letzten Jahr
 		</div>
 	{:else}
 		<div class="relative mt-2 flex-1 min-h-0" bind:clientWidth={boxW} bind:clientHeight={boxH}>

@@ -81,7 +81,7 @@
 			});
 			if (!res.ok)
 				throw new Error(
-					await leseApiFehler(res, 'Die Klassensätze konnten nicht abgerufen werden.')
+					await leseApiFehler(res, 'Die Klassensätze konnten nicht abgerufen werden')
 				);
 			gruppen = await res.json();
 		} catch (err) {
@@ -171,8 +171,8 @@
 				symbol={BookOpen}
 				titel="Noch keine Klassen angelegt"
 				hinweis={darfPflegen
-					? 'Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen.'
-					: 'Sobald Bücher einer Klasse zugewiesen sind, erscheinen die Klassensätze hier.'}
+					? 'Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen'
+					: 'Sobald Bücher einer Klasse zugewiesen sind, erscheinen die Klassensätze hier'}
 			/>
 		{/if}
 	{:else}

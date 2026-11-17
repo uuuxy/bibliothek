@@ -66,13 +66,13 @@ export function useInventurlauf(opts = {}) {
 		const payload = { type: bereichArt };
 		if (bereichArt === 'signature') {
 			if (!gewaehlteSignatur.trim()) {
-				fehler = 'Bitte wähle eine Signatur aus.';
+				fehler = 'Bitte wähle eine Signatur aus';
 				return;
 			}
 			payload.signatur = gewaehlteSignatur.trim();
 		} else if (bereichArt === 'filter') {
 			if (!gewaehltesFach && !gewaehlterJahrgang) {
-				fehler = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
+				fehler = 'Bitte wähle mindestens ein Fach oder eine Klasse';
 				return;
 			}
 			if (gewaehltesFach) payload.subject = gewaehltesFach;
@@ -96,7 +96,7 @@ export function useInventurlauf(opts = {}) {
 			startOffen = false;
 			return;
 		}
-		fehler = r.error || 'Fehler beim Starten der Inventur.';
+		fehler = r.error || 'Fehler beim Starten der Inventur';
 	}
 
 	/** @param {any} session laufende Session aus offeneLaeufe */
@@ -113,7 +113,7 @@ export function useInventurlauf(opts = {}) {
 		fehler = '';
 		const r = await brichAb(session.session_id);
 		// Der Grund steht über der Liste; ohne ihn blieb die Inventur stehen, und nichts sagte, warum.
-		if (!r.ok) fehler = r.error || 'Fehler beim Verwerfen der Inventur.';
+		if (!r.ok) fehler = r.error || 'Fehler beim Verwerfen der Inventur';
 		await ladeOffeneLaeufe();
 	}
 

@@ -100,7 +100,7 @@
 			<p>
 				<span class="font-semibold">E-Mail-Adresse, Rolle und Freischaltung</span> stehen nicht
 				hier, sondern in <span class="font-semibold">Benutzer &amp; Rechte</span>. Die Anmeldung
-				erkennt eine Person an ihrer E-Mail-Adresse — darum wird sie an genau einer Stelle gepflegt.
+				erkennt eine Person an ihrer E-Mail-Adresse, darum wird sie an genau einer Stelle gepflegt.
 			</p>
 		</div>
 	{/if}

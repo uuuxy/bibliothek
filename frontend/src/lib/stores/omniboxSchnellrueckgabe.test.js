@@ -86,7 +86,7 @@ describe('Schnellrückgabe', () => {
 		expect(theke.aktiverLeser, 'die Rückgabe hat einen Leser geladen').toBeNull();
 		expect(theke.schnellrueckgabe).toBe(true);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'„Natura 2" zurückgegeben, war bei Mia Muster (07B).',
+			'„Natura 2" zurückgegeben, war bei Mia Muster (07B)',
 			'success'
 		);
 	});
@@ -117,7 +117,7 @@ describe('Schnellrückgabe', () => {
 		expect(theke.aktiverLeser?.id).toBe('leser-1');
 		expect(letzteAnfrage().active_leser_id).toBe('leser-1');
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'„Natura 2" erfolgreich zurückgegeben.',
+			'„Natura 2" erfolgreich zurückgegeben',
 			'success'
 		);
 	});

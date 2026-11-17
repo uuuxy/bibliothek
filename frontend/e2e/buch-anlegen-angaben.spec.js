@@ -52,7 +52,7 @@ test('die ISBN-Abfrage zeigt Untertitel, Listenpreis und Jahrgang; gespeichert w
 	await page.locator('#buch-listenpreis').fill('15');
 	await page.locator('#buch-signatur').fill('Ang 1');
 	await page.getByRole('button', { name: 'Speichern' }).click();
-	await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+	await expect(page.getByText('Buch gespeichert')).toBeVisible();
 
 	expect(
 		querySQL(

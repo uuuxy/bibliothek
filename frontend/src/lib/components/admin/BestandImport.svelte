@@ -29,13 +29,13 @@
 			if (!res.ok) throw new Error(await leseApiFehler(res, 'Bestands-Import fehlgeschlagen'));
 			const daten = await res.json();
 			snackbars.addToast(
-				`Bestand übernommen: ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')}, ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')}.`,
+				`Bestand übernommen: ${anzahlText(daten.new_titles_count, 'neuer Titel', 'neue Titel')}, ${anzahlText(daten.imported_copies_count, 'Exemplar', 'Exemplare')}`,
 				'success'
 			);
 			datei = null;
 		} catch (err) {
 			snackbars.addToast(
-				(err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.',
+				(err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten',
 				'error'
 			);
 		} finally {

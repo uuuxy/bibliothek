@@ -33,7 +33,7 @@
 {#if exemplare.length === 0}
 	<p class="text-sm text-on-surface-variant italic">
 		Zu dieser Bestellung sind keine Exemplare hinterlegt. Bei Bestellungen aus der Zeit vor der
-		Exemplar-Zuordnung ist das normal — die bestellten Titel stehen oben.
+		Exemplar-Zuordnung ist das normal. Die bestellten Titel stehen oben.
 	</p>
 {:else}
 	<div class="space-y-4">

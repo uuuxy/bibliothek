@@ -65,7 +65,7 @@ test('abgemeldet in einem anderen Fenster: Die Theke zeigt von selbst die Anmeld
 	await expect(nebenan.locator('#login-email')).toBeVisible();
 
 	await expect(page.locator('#login-email')).toBeVisible({ timeout: 20_000 });
-	await expect(page.getByText('Sitzung abgelaufen — bitte neu anmelden.')).toBeVisible();
+	await expect(page.getByText('Sitzung abgelaufen, bitte neu anmelden')).toBeVisible();
 	await expect(page.getByText(/Keine Verbindung/)).toHaveCount(0);
 	expect(abgewiesen).toEqual([]);
 });

@@ -28,7 +28,7 @@ export function baueFehlbestandDruckHtml(offene, { label = '', gebucht }, jetzt 
 		.join(' | ');
 
 	return baueListenDruckHtml({
-		ueberschrift: label ? `Fehlbestand — ${label}` : 'Fehlbestand',
+		ueberschrift: label ? `Fehlbestand: ${label}` : 'Fehlbestand',
 		meta,
 		// Titel und Autor teilen sich die Breite; die kurzen Spalten nehmen die ihres Inhalts.
 		spalten: [

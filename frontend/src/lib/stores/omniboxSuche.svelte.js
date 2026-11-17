@@ -60,7 +60,7 @@ export function erzeugeOmniboxSuche({ leseEingabe, setzeEingabe, fuehreAktionAus
 					// Dieselbe Gefahr beim Fehlschlag: Bliebe die Liste des vorigen Suchtextes stehen,
 					// buchte der nächste Klick auf einen Treffer, der zum Feld nicht mehr passt.
 					verwirfTreffer();
-					const grund = await leseApiFehler(res, 'Suche fehlgeschlagen — bitte erneut versuchen.');
+					const grund = await leseApiFehler(res, 'Suche fehlgeschlagen, bitte erneut versuchen');
 					if (seq === suchLauf) melde(grund, 'error');
 					return;
 				}

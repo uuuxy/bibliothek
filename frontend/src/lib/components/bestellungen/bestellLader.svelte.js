@@ -31,7 +31,7 @@ export function erzeugeBestellLader(bestellungId) {
 			// Ein veralteter Verweis liefert 404. Die Meldung nennt den Rückweg, statt eine
 			// leere Seite stehen zu lassen, die aussieht wie eine leere Bestellung.
 			if (ersterAbruf && nr === ladeNr) {
-				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
+				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden';
 			}
 			return false;
 		} finally {

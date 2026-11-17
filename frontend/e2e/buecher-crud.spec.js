@@ -120,7 +120,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 		await expect(page.locator('#buch-signatur')).toHaveValue('E2E SIG', { timeout: 15000 });
 
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible({
+		await expect(page.getByText('Buch gespeichert')).toBeVisible({
 			timeout: 15000
 		});
 

@@ -31,13 +31,13 @@ describe('KlassensatzReservierungen', () => {
 		const { findByText, queryByText } = render(KlassensatzReservierungen);
 
 		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
-		expect(queryByText('Keine offenen Klassensatz-Reservierungen.')).toBeNull();
+		expect(queryByText('Keine offenen Klassensatz-Reservierungen')).toBeNull();
 	});
 
 	it('leer bleibt leer', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(KlassensatzReservierungen);
-		expect(await findByText('Keine offenen Klassensatz-Reservierungen.')).toBeTruthy();
+		expect(await findByText('Keine offenen Klassensatz-Reservierungen')).toBeTruthy();
 	});
 });
 
@@ -87,14 +87,14 @@ describe('KlassensatzReservierungen: Abschließen', () => {
 			status: 200,
 			json: async () => ({ mail: 'versendet' })
 		});
-		expect(snackbars.addToast).toHaveBeenCalledWith('Reservierung abgeschlossen.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Reservierung abgeschlossen', 'success');
 		expect(screen.queryByRole('button', { name: /Abschließen & Mail senden/ })).toBeNull();
 	});
 
 	it('schließt die Rückfrage auch, wenn jemand anderes schon abgeschlossen hat', async () => {
 		const screen = await schliesseAb({ ok: false, status: 404, json: async () => ({}) });
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Reservierung war bereits abgeschlossen.',
+			'Reservierung war bereits abgeschlossen',
 			'success'
 		);
 		expect(screen.queryByRole('button', { name: /Abschließen & Mail senden/ })).toBeNull();

@@ -49,7 +49,7 @@
 			await apiPut(`/api/bestellungen/${bestellungId}/positionen/${position.id}/einzelpreis`, {
 				einzelpreis: Math.round(zahl * 100) / 100
 			});
-			snackbars.addToast('Preis geändert.', 'success');
+			snackbars.addToast('Preis geändert', 'success');
 			await onAktualisieren();
 			onclose();
 		} catch {
@@ -79,6 +79,6 @@
 			position?.menge,
 			'Exemplar',
 			'Exemplare'
-		)} von „{position?.titel_name ?? ''}“ aus dieser Bestellung."
+		)} von „{position?.titel_name ?? ''}“ aus dieser Bestellung"
 	/>
 </EingabeDialog>

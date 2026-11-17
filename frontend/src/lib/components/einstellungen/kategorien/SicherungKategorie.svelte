@@ -32,7 +32,7 @@
 
 <KategorieRahmen
 	titel="Sicherung"
-	kurz="Ob die Bibliothek ihre Datenbank jede Nacht selbst sichert."
+	kurz="Ob die Bibliothek ihre Datenbank jede Nacht selbst sichert"
 	{eingabe}
 	onSaved={nachDemSpeichern}
 >
@@ -55,7 +55,7 @@
 			<span class="text-sm font-medium text-on-surface">Jede Nacht selbst sichern</span>
 			<span class="text-sm text-on-surface-variant"
 				>Verschlüsselt und mit wöchentlicher Probe; einschalten, wenn der Server der Schule nicht
-				selbst gesichert wird.</span
+				selbst gesichert wird</span
 			>
 		</div>
 		<Switch bind:checked={gesichert} etikett="Nächtliche Sicherung umschalten" />

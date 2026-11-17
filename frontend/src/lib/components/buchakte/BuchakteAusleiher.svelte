@@ -43,7 +43,7 @@
 	<SuchZustand
 		symbol={Users}
 		titel="Keine Ausleihen"
-		hinweis="Kein Exemplar dieses Titels ist ausgeliehen."
+		hinweis="Kein Exemplar dieses Titels ist ausgeliehen"
 	/>
 {:else}
 	<!-- Filters -->

@@ -58,11 +58,11 @@ describe('inventurApi: ohne Antwort des Servers', () => {
 		['Fehlbestand', () => ladeFehlbestand('s1')],
 		['Löschen einer früheren Inventur', () => loescheAbgeschlosseneInventur('s1')]
 	])('liefert beim %s den Fehler als Ergebnis, statt zu werfen', async (_name, anfrage) => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		await expect(anfrage()).resolves.toEqual({
 			ok: false,
 			status: 0,
-			error: 'Keine Verbindung zum Server.',
+			error: 'Keine Verbindung zum Server',
 			data: {}
 		});
 	});

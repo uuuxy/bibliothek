@@ -355,7 +355,7 @@ describe('Problem melden im Portal', () => {
 });
 
 /**
- * Das Warteschlangen-Modell (16.08.2026): Reservieren sperrt nichts — wer denselben
+ * Das Warteschlangen-Modell (16.08.2026): Reservieren sperrt nichts, wer denselben
  * Titel reserviert, stellt sich an. Das Portal muss beides leisten: die bestehende
  * Reservierung VOR dem Klick zeigen und nach dem Absenden sagen, hinter wem man steht.
  */
@@ -394,7 +394,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
 	// Die Warnung steht im Formular, bevor irgendetwas gesendet wird.
 	expect((await screen.findByRole('status')).textContent?.replace(/\s+/g, ' ').trim()).toBe(
-		'Reicht aktuell nicht: 0 rechnerisch frei — du stellst dich hinter 8a an.'
+		'Reicht aktuell nicht: 0 rechnerisch frei, du stellst dich hinter 8a an'
 	);
 	await fireEvent.input(await screen.findByLabelText('Klasse / Kurs *'), {
 		target: { value: '9b' }

@@ -17,8 +17,8 @@ export async function frageGrundFuerExemplare(barcodes) {
 	const wahl = await loeschenMitGrund({
 		titel: eines ? `Exemplar ${barcodes[0]} löschen?` : `${barcodes.length} Exemplare löschen?`,
 		text: eines
-			? 'Es kommt mit diesem Grund ins Abgangsbuch.'
-			: 'Sie kommen mit diesem Grund ins Abgangsbuch.'
+			? 'Es kommt mit diesem Grund ins Abgangsbuch'
+			: 'Sie kommen mit diesem Grund ins Abgangsbuch'
 	});
 	return wahl?.grund ?? null;
 }
@@ -36,5 +36,5 @@ export async function loescheExemplarMitGrund(id, grund) {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ grund })
 	});
-	if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'));
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars'));
 }

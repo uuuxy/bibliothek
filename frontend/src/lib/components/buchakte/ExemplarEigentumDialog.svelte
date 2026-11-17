@@ -50,8 +50,8 @@
 			const n = antwort?.geaendert ?? 0;
 			snackbars.addToast(
 				n === 0
-					? 'Eigentum war schon so eingetragen.'
-					: `Eigentum geändert: ${anzahlText(n, 'Exemplar', 'Exemplare')}.`,
+					? 'Eigentum war schon so eingetragen'
+					: `Eigentum geändert: ${anzahlText(n, 'Exemplar', 'Exemplare')}`,
 				'success'
 			);
 			await onGeaendert();

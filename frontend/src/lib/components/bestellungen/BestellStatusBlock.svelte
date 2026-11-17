@@ -12,7 +12,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import { CircleCheck, Clock, Copy, Check } from '@lucide/svelte';
-	import { formatDatum } from '../../utils/format.js';
+	import { formatDatum, verbindeSaetze } from '../../utils/format.js';
 
 	let { b, onAktualisieren } = $props();
 
@@ -55,9 +55,9 @@
 	// wenn er auf anderem Weg geliefert hat und der Hinweis zur Mail deshalb fehlt.
 	let linkSatz = $derived.by(() => {
 		if (b.link_nicht_erhalten) {
-			return 'Der Händler hat den Bestätigungs-Link nicht erhalten: Die Bestellmail ist nicht rausgegangen.';
+			return 'Der Händler hat den Bestätigungs-Link nicht erhalten: Die Bestellmail ist nicht rausgegangen';
 		}
-		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs.';
+		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs';
 		const frist = b.link_gueltig_bis ? ` und gilt bis zum ${formatDatum(b.link_gueltig_bis)}` : '';
 		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`;
 	});
@@ -78,7 +78,7 @@
 	}
 
 	async function kopieren() {
-		kopiert = await kopiere(neuerLink, 'Link bitte von Hand markieren.');
+		kopiert = await kopiere(neuerLink, 'Link bitte von Hand markieren');
 	}
 
 	/** @param {'klein'|'gross'} groesse */
@@ -143,9 +143,11 @@
 		{#if neuerLink}
 			<div class="mx-4 mb-3 rounded-lg bg-primary-container px-3 py-2.5 text-on-primary-container">
 				<p class="text-xs font-medium">
-					Nur jetzt sichtbar — gespeichert wird der Link nicht. Ein früherer ist ab sofort ungültig.{neuerLinkBis
-						? ` Gültig bis zum ${formatDatum(neuerLinkBis)}.`
-						: ''}
+					{verbindeSaetze(
+						'Der Link ist nur jetzt sichtbar und wird nicht gespeichert',
+						'Ein früherer ist ab sofort ungültig',
+						neuerLinkBis && `Gültig bis zum ${formatDatum(neuerLinkBis)}`
+					)}
 				</p>
 				<div class="mt-1.5 flex items-center gap-2">
 					<Feld readonly value={neuerLink} aria-label="Bestätigungs-Link" feld="font-mono" />

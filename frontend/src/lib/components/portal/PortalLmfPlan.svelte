@@ -98,7 +98,7 @@
 	<SuchZustand
 		symbol={CalendarDays}
 		titel="Der nächste Plan folgt"
-		hinweis="Sobald die Bibliothek ihn veröffentlicht, steht er hier."
+		hinweis="Sobald die Bibliothek ihn veröffentlicht, steht er hier"
 	/>
 {:else}
 	<LmfPlanTabelle {termine} {eingangsjahrgaenge} {heute}>

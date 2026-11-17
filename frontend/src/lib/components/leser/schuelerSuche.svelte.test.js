@@ -241,9 +241,9 @@ describe('Leserdatei-Suche', () => {
 			[() => fehler('Datenbank nicht erreichbar'), 'Datenbank nicht erreichbar'],
 			[
 				() => {
-					throw new Error('Keine Verbindung zum Server.');
+					throw new Error('Keine Verbindung zum Server');
 				},
-				'Keine Verbindung zum Server.'
+				'Keine Verbindung zum Server'
 			]
 		];
 		for (const [antwort, grund] of faelle) {

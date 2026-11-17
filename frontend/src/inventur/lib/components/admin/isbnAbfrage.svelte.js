@@ -4,20 +4,20 @@ import { frageWennVergeben } from '../../buch_vorhanden.js';
 
 /** @typedef {{ text: string, fehler: boolean }} Ausgang */
 
-const VON_HAND = 'Angaben von Hand eintragen oder später erneut abfragen.';
+const VON_HAND = 'Angaben von Hand eintragen oder später erneut abfragen';
 /** @type {Ausgang} */
 const NICHTS_BEKANNT = {
-	text: 'Zu dieser ISBN ist bei den Katalogdiensten nichts bekannt.',
+	text: 'Zu dieser ISBN ist bei den Katalogdiensten nichts bekannt',
 	fehler: false
 };
 /** @type {Ausgang} */
-const GESCHEITERT = { text: `Die ISBN-Abfrage ist fehlgeschlagen. ${VON_HAND}`, fehler: true };
+const GESCHEITERT = { text: `Die ISBN-Abfrage ist fehlgeschlagen. ${VON_HAND}.`, fehler: true };
 /** Was eine Abfrage ohne Treffer bedeutet, je Status der Antwort.
  * @type {Record<number, Ausgang>} */
 const AUSGAENGE = {
-	400: { text: 'Die Nummer hat nicht die Form einer ISBN (10 oder 13 Stellen).', fehler: true },
+	400: { text: 'Die Nummer hat nicht die Form einer ISBN (10 oder 13 Stellen)', fehler: true },
 	404: NICHTS_BEKANNT,
-	502: { text: `Die Katalogdienste sind nicht erreichbar. ${VON_HAND}`, fehler: true }
+	502: { text: `Die Katalogdienste sind nicht erreichbar. ${VON_HAND}.`, fehler: true }
 };
 
 /**

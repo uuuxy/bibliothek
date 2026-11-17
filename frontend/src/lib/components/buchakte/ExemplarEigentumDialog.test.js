@@ -29,7 +29,7 @@ describe('ExemplarEigentumDialog', () => {
 			onclose: () => {},
 			onGeaendert: () => {}
 		});
-		expect(text(getByRole)).toContain('Gilt für 2 Exemplare.');
+		expect(text(getByRole)).toContain('Gilt für 2 Exemplare');
 		expect(aendern(getByRole).disabled).toBe(true);
 
 		await fireEvent.click(getByLabelText('Land'));
@@ -75,7 +75,7 @@ describe('ExemplarEigentumDialog', () => {
 			onclose: () => {},
 			onGeaendert: () => {}
 		});
-		expect(text(getByRole)).toContain('Gilt für 1 Exemplar.');
+		expect(text(getByRole)).toContain('Gilt für 1 Exemplar');
 		await fireEvent.click(getByLabelText('Vorgabe'));
 		await fireEvent.input(getByLabelText(/Grund der Änderung/), {
 			target: { value: 'irrtümlich gesetzt' }

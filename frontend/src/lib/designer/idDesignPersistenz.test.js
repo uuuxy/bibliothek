@@ -120,14 +120,14 @@ describe('Ausweis-Design speichern', () => {
 
 	it('nennt auch ohne Antwort den Grund', async () => {
 		vi.mocked(apiFetch).mockImplementationOnce(() =>
-			Promise.reject(new Error('Keine Verbindung zum Server.'))
+			Promise.reject(new Error('Keine Verbindung zum Server'))
 		);
 		const ablage = erzeugeDesignAblage();
 
 		await ablage.speichern('{}');
 
 		expect(ablage.zustand).toBe('error');
-		expect(ablage.speicherfehler).toBe('Keine Verbindung zum Server.');
+		expect(ablage.speicherfehler).toBe('Keine Verbindung zum Server');
 	});
 
 	it('lässt einen älteren Stand, der scheitert, den wartenden neueren nicht überschreiben', async () => {
@@ -137,7 +137,7 @@ describe('Ausweis-Design speichern', () => {
 			.mockImplementationOnce(
 				() =>
 					new Promise((_, nein) => {
-						scheitereAlt = () => nein(new Error('Keine Verbindung zum Server.'));
+						scheitereAlt = () => nein(new Error('Keine Verbindung zum Server'));
 					})
 			)
 			.mockResolvedValueOnce(serverAntwort(200, {}));

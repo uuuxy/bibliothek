@@ -325,7 +325,7 @@ describe('Abschluss ohne Antwort', () => {
 	});
 
 	it.each([
-		['ohne Antwort', { ok: false, status: 0, error: 'Keine Verbindung zum Server.' }],
+		['ohne Antwort', { ok: false, status: 0, error: 'Keine Verbindung zum Server' }],
 		[
 			'auf „kein laufender Lauf"',
 			{ ok: false, status: 404, error: 'Keine laufende Inventur mit dieser Kennung' }

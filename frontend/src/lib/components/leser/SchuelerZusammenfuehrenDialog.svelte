@@ -65,14 +65,14 @@
 			}
 			const erg = await res.json();
 			snackbars.addToast(
-				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}) — ${anzahlText(erg.ausleihen, 'Ausleihe', 'Ausleihen')}, ${anzahlText(erg.schaeden, 'Gebühr', 'Gebühren')}, ${anzahlText(erg.vormerkungen, 'Vormerkung', 'Vormerkungen')} übernommen.`,
+				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}), ${anzahlText(erg.ausleihen, 'Ausleihe', 'Ausleihen')}, ${anzahlText(erg.schaeden, 'Gebühr', 'Gebühren')}, ${anzahlText(erg.vormerkungen, 'Vormerkung', 'Vormerkungen')} übernommen`,
 				'success'
 			);
 			if (lauf.nochOffen()) open = false;
 			// Wer inzwischen einen anderen Leser geöffnet hat, bleibt dort.
 			if (leser?.id === von) onMerged(erg.ziel_id);
 		} catch {
-			lauf.fehler('Netzwerkfehler beim Zusammenführen.', zeigeFehler);
+			lauf.fehler('Netzwerkfehler beim Zusammenführen', zeigeFehler);
 		} finally {
 			laeuft = false;
 		}
@@ -88,12 +88,13 @@
 	{/snippet}
 	<div class="px-6 py-6 space-y-5 text-on-surface">
 		<p class="text-sm text-on-surface-variant leading-relaxed">
-			Zwei Datensätze für dieselbe Person — etwa nach einer Namensänderung in der LUSD, die der
+			Zwei Datensätze für dieselbe Person, etwa nach einer Namensänderung in der LUSD, die der
 			Export ohne Schüler-ID nicht wiedererkannt hat. Der bleibende Datensatz behält Kennung und
 			Ausweisnummer; Ausleihen, Gebühren, Vormerkungen und Foto des anderen wandern hinüber.
 			Stammdaten kommen von dem Datensatz, den die LUSD zuletzt bestätigt hat.
-			<strong class="font-bold">Der andere Datensatz wird endgültig gelöscht</strong> — das lässt sich
-			nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im Protokoll.
+			<strong class="font-bold">Der andere Datensatz wird endgültig gelöscht</strong>. Das lässt
+			sich nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im
+			Protokoll.
 		</p>
 
 		<ZusammenfuehrenKandidat kandidat={leser} etikett="Dieser Datensatz" />
@@ -124,7 +125,7 @@
 					{/each}
 				</ul>
 			{:else if s.suche.trim().length >= 2 && !anderer}
-				<p class="text-xs text-on-surface-variant">Kein anderer Datensatz gefunden.</p>
+				<p class="text-xs text-on-surface-variant">Kein anderer Datensatz gefunden</p>
 			{/if}
 		</div>
 
@@ -144,7 +145,7 @@
 					</label>
 				{/each}
 				<p class="text-xs text-on-surface-variant">
-					Faustregel: Es bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat.
+					Faustregel: Es bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat
 				</p>
 			</fieldset>
 		{/if}

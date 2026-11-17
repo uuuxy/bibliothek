@@ -25,7 +25,7 @@
 					<p class="mt-1 text-sm leading-relaxed font-medium">
 						<!-- Ohne Herkunft: Die Übergabe kommt aus dem Wareneingang, dem Nachdruck oder
 						     der Buchakte — „aus der freigegebenen Lieferung" stimmte nur für den ersten. -->
-						{anzahl === 1 ? '1 Etikett' : `${anzahl} Etiketten`} zum Drucken übernommen.
+						{anzahl === 1 ? '1 Etikett' : `${anzahl} Etiketten`} zum Drucken übernommen
 					</p>
 				</div>
 			</div>

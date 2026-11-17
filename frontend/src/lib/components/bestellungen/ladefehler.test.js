@@ -68,7 +68,7 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 
 		expect(screen.getByText('Zulauf nicht geladen')).toBeTruthy();
 		expect(screen.getByText(GRUND)).toBeTruthy();
-		expect(screen.queryByText('Keine Positionen im Zulauf.')).toBeNull();
+		expect(screen.queryByText('Keine Positionen im Zulauf')).toBeNull();
 	});
 
 	it('die Lieferanten in den Einstellungen zeigen den Grund statt „Keine Lieferanten angelegt"', () => {
@@ -85,7 +85,7 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 
 		expect(screen.getByText('Lieferanten nicht geladen')).toBeTruthy();
 		expect(screen.getByText(GRUND)).toBeTruthy();
-		expect(screen.queryByText('Keine Lieferanten angelegt.')).toBeNull();
+		expect(screen.queryByText('Keine Lieferanten angelegt')).toBeNull();
 	});
 
 	// Der Store frischt im Hintergrund auf (init nach 60 Sekunden). Scheitert das, ist die Liste
@@ -151,6 +151,6 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 		);
 
 		await vi.waitFor(() => expect(screen.getByText('Lieferanten nicht geladen')).toBeTruthy());
-		expect(screen.queryByText('Keine Lieferanten vorhanden.')).toBeNull();
+		expect(screen.queryByText('Keine Lieferanten vorhanden')).toBeNull();
 	});
 });

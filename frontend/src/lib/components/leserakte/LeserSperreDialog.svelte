@@ -41,7 +41,7 @@
 	async function bestaetige() {
 		if (!leser) return;
 		if (wirdGesperrt && reason.trim() === '') {
-			fehler = 'Bitte einen Grund für die Sperre angeben.';
+			fehler = 'Bitte einen Grund für die Sperre angeben';
 			return;
 		}
 		const name = `${leser.vorname} ${leser.nachname}`;
@@ -57,14 +57,14 @@
 
 			if (res.ok) {
 				const updated = await res.json();
-				lauf.erfolg(sperren ? `Ausleihe für ${name} gesperrt.` : `Sperre für ${name} aufgehoben.`);
+				lauf.erfolg(sperren ? `Ausleihe für ${name} gesperrt` : `Sperre für ${name} aufgehoben`);
 				onsuccess(updated);
 				if (lauf.nochOffen()) open = false;
 			} else {
-				lauf.fehler(await leseApiFehler(res, 'Fehler beim Aktualisieren der Sperre.'), zeigeFehler);
+				lauf.fehler(await leseApiFehler(res, 'Fehler beim Aktualisieren der Sperre'), zeigeFehler);
 			}
 		} catch {
-			lauf.fehler('Netzwerkfehler beim Aktualisieren der Sperre.', zeigeFehler);
+			lauf.fehler('Netzwerkfehler beim Aktualisieren der Sperre', zeigeFehler);
 		} finally {
 			laeuft = false;
 		}

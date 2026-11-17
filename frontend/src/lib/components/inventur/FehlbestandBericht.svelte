@@ -83,7 +83,7 @@
 				<p class="mt-0.5 text-sm text-on-surface-variant">
 					{eintraege.length}
 					{eintraege.length === 1 ? 'Exemplar wurde' : 'Exemplare wurden'} als Verlust gebucht. Die Liste
-					ist nach Signatur sortiert — in der Reihenfolge lässt sich das Regal absuchen.
+					ist nach Signatur sortiert, in dieser Reihenfolge lässt sich das Regal absuchen.
 					{#if offene.length !== eintraege.length}
 						<span class="font-medium text-success">
 							{eintraege.length - offene.length} bereits geklärt.
@@ -125,7 +125,7 @@
 
 	{#if eintraege.length === 0}
 		<p class="py-6 text-center text-sm text-on-surface-variant">
-			Kein Fehlbestand — jedes erwartete Exemplar wurde erfasst.
+			Kein Fehlbestand: Jedes erwartete Exemplar wurde erfasst
 		</p>
 	{:else}
 		<div class="overflow-x-auto">

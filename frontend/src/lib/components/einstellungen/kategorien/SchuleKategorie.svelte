@@ -61,24 +61,24 @@
 
 <KategorieRahmen
 	titel="Schule"
-	kurz="Name und Anschrift der Schule — sie erscheinen auf jedem Etikett, Ausweis und Briefkopf."
+	kurz="Name und Anschrift der Schule, sie erscheinen auf jedem Etikett, Ausweis und Briefkopf"
 	{eingabe}
 	{onSaved}
 >
 	{#snippet mehr()}
 		<p>
 			Der Name ist die erste Zeile des Buchetiketts und die Kopfzeile des Schülerausweises; die
-			Anschrift bildet den Briefkopf von Mahnungen, Bestellungen und Berichten.
+			Anschrift bildet den Briefkopf von Mahnungen, Bestellungen und Berichten
 		</p>
 		<p>
 			Welcher Eigentumsvermerk auf ein Etikett kommt, richtet sich danach, woraus das Buch bezahlt
 			wurde: nach der Zuordnung seiner Bestellung, und bei Büchern ohne Bestellung danach, ob der
-			Titel ein Lernmittel ist. Für die Schülerbücherei gibt es keine Vorgabe — bleibt das Feld
-			leer, tragen diese Bücher keinen Vermerk.
+			Titel ein Lernmittel ist. Für die Schülerbücherei gibt es keine Vorgabe. Bleibt das Feld leer,
+			tragen diese Bücher keinen Vermerk.
 		</p>
 		<p>
 			Grauer Text im Feld ist ein Beispiel, kein gespeicherter Wert. Ein Feld, das du leerst, wird
-			auch gespeichert geleert — der Ausweis fällt dann auf seinen Musterkopf zurück.
+			auch gespeichert geleert, der Ausweis fällt dann auf seinen Musterkopf zurück.
 		</p>
 	{/snippet}
 

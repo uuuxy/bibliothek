@@ -88,7 +88,7 @@
 		{#if akte.fehlendeListen.length > 0}
 			<p class="text-sm font-semibold text-error" role="alert">
 				Nicht geladen: {nenneFehlende(akte.fehlendeListen)}. Diese Reiter sind leer, weil der Abruf
-				gescheitert ist — nicht, weil nichts da wäre.
+				gescheitert ist und nicht, weil nichts da wäre.
 			</p>
 		{/if}
 
@@ -130,7 +130,7 @@
 	{:else}
 		<div class="py-24 flex flex-col items-center text-on-surface-variant gap-3">
 			<FaceSlightlyFrowning class="w-12 h-12" aria-hidden="true" />
-			<p class="font-semibold">Buch nicht gefunden.</p>
+			<p class="font-semibold">Buch nicht gefunden</p>
 			<button
 				onclick={onBack}
 				class="text-primary text-sm font-semibold hover:underline cursor-pointer"

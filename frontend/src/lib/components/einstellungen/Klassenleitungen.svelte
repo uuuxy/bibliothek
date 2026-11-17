@@ -59,7 +59,7 @@
 			newMappingKlasse = '';
 			newMappingEmail = '';
 			await fetchMapping();
-			snackbars.addToast('Zuordnung gespeichert.', 'success');
+			snackbars.addToast('Zuordnung gespeichert', 'success');
 		} catch {
 			// Toast already shown by apiPost
 		} finally {
@@ -78,12 +78,12 @@
 	async function loescheZuordnung(klasse) {
 		if (loeschtKlasse) return;
 		const folge =
-			'Mahnlisten und Kontoauszüge dieser Klasse werden danach beim Versand übersprungen.';
+			'Mahnlisten und Kontoauszüge dieser Klasse werden danach beim Versand übersprungen';
 		if (!(await loeschenBestaetigen(`Zuordnung für ${klasse} löschen?`, folge))) return;
 		loeschtKlasse = klasse;
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
-			snackbars.addToast(`Zuordnung für ${klasse} gelöscht.`, 'success');
+			snackbars.addToast(`Zuordnung für ${klasse} gelöscht`, 'success');
 		} catch {
 			// Toast already shown by apiDelete
 		} finally {
@@ -100,7 +100,7 @@
 		<h3 class="text-base font-bold text-on-surface">E-Mail Routing für Mahnungen</h3>
 		<p class="mt-1 max-w-2xl text-sm text-on-surface-variant">
 			Von Hand eingetragen, die LUSD liefert es nicht; die Versetzung rückt jede Zuordnung eine
-			Stufe hoch, außer vor Klasse 7 und vor der Oberstufe.
+			Stufe hoch, außer vor Klasse 7 und vor der Oberstufe
 		</p>
 	</div>
 
@@ -112,10 +112,10 @@
 		<LadeFehler
 			onerneut={fetchMapping}
 			titel="Zuordnungen nicht geladen"
-			text="Die Klassenleitungen konnten nicht abgerufen werden. Das Formular bleibt geschlossen — ein neuer Eintrag ersetzte sonst die Zuordnung derselben Klasse, ohne dass sie zu sehen war."
+			text="Die Klassenleitungen konnten nicht abgerufen werden. Das Formular bleibt geschlossen, ein neuer Eintrag ersetzte sonst die Zuordnung derselben Klasse, ohne dass sie zu sehen war."
 		/>
 	{:else if mappingRows.length === 0}
-		<p class="text-sm text-on-surface-variant py-4">Noch keine Zuordnungen vorhanden.</p>
+		<p class="text-sm text-on-surface-variant py-4">Noch keine Zuordnungen vorhanden</p>
 	{:else}
 		<Tabelle beschriftung="Klassenleitungen und ihre E-Mail-Adressen">
 			<thead>

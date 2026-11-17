@@ -21,7 +21,7 @@ const klassen = [
 // weiter den echten Aufrufer abbilden.
 const texte = {
 	titel: 'Mahnlauf konfigurieren',
-	beschreibung: 'Wähle die Klassen aus, für die Mahnungen generiert werden sollen.',
+	beschreibung: 'Wähle die Klassen aus, für die Mahnungen generiert werden sollen',
 	aktion: 'anmahnen',
 	hinweis: 'Bleibt das Feld leer, gehen die Mahnungen an die regulären Klassenleitungen.'
 };

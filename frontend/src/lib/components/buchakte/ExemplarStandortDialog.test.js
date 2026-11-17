@@ -44,7 +44,7 @@ describe('ExemplarStandortDialog', () => {
 
 	it('gibt die Aktion erst mit einem Standort oder mit „Standort entfernen" frei', async () => {
 		const { getByRole, getByLabelText } = dialog();
-		expect(getByRole('dialog').textContent).toContain('Gilt für 2 Exemplare.');
+		expect(getByRole('dialog').textContent).toContain('Gilt für 2 Exemplare');
 		expect(feld(getByLabelText).value).toBe('');
 		expect(aendern(getByRole).disabled).toBe(true);
 
@@ -75,20 +75,20 @@ describe('ExemplarStandortDialog', () => {
 		});
 		await waitFor(() => expect(onclose).toHaveBeenCalledTimes(1));
 		expect(onGeaendert).toHaveBeenCalledTimes(1);
-		expect(snackbars.addToast).toHaveBeenCalledWith('Standort geändert: 2 Exemplare.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Standort geändert: 2 Exemplare', 'success');
 	});
 
 	it('schickt „entfernen" als leeren Standort, auch wenn im Feld noch etwas steht', async () => {
 		vi.mocked(apiPut).mockResolvedValue({ geaendert: 1 });
 		const { getByRole, getByLabelText } = dialog({ exemplarIds: ['e1'] });
-		expect(getByRole('dialog').textContent).toContain('Gilt für 1 Exemplar.');
+		expect(getByRole('dialog').textContent).toContain('Gilt für 1 Exemplar');
 		await fireEvent.input(feld(getByLabelText), { target: { value: 'Keller' } });
 		await fireEvent.click(getByLabelText('Standort entfernen'));
 		await fireEvent.click(aendern(getByRole));
 
 		expect(vi.mocked(apiPut).mock.calls[0][1]).toEqual({ exemplar_ids: ['e1'], standort: '' });
 		await waitFor(() =>
-			expect(snackbars.addToast).toHaveBeenCalledWith('Standort entfernt: 1 Exemplar.', 'success')
+			expect(snackbars.addToast).toHaveBeenCalledWith('Standort entfernt: 1 Exemplar', 'success')
 		);
 	});
 

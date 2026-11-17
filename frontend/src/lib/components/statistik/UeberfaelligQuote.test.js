@@ -33,7 +33,7 @@ describe('UeberfaelligQuote: der Weg ins Mahnwesen', () => {
 		melde(['view_stats']);
 		const screen = render(UeberfaelligQuote);
 
-		await screen.findByText('Keine überfälligen Ausleihen.');
+		await screen.findByText('Keine überfälligen Ausleihen');
 		expect(screen.queryByRole('button', { name: 'Im Mahnwesen bearbeiten' })).toBeNull();
 	});
 
@@ -41,7 +41,7 @@ describe('UeberfaelligQuote: der Weg ins Mahnwesen', () => {
 		melde(['view_stats', 'view_students']);
 		const screen = render(UeberfaelligQuote);
 
-		await screen.findByText('Keine überfälligen Ausleihen.');
+		await screen.findByText('Keine überfälligen Ausleihen');
 		expect(screen.getByRole('button', { name: 'Im Mahnwesen bearbeiten' })).toBeTruthy();
 	});
 });

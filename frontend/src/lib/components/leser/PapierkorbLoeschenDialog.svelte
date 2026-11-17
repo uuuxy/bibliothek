@@ -19,7 +19,7 @@
 	<div class="p-6 space-y-4">
 		<p class="text-sm text-on-surface-variant">
 			<span class="font-semibold text-on-surface">{name}</span> wird sofort, endgültig und unwiderruflich
-			gelöscht — samt Ausleihhistorie und Protokollspur (Art. 17 DSGVO). Das ist der Weg für ein Löschverlangen
+			gelöscht, samt Ausleihhistorie und Protokollspur (Art. 17 DSGVO). Das ist der Weg für ein Löschverlangen
 			der Eltern; ohne Verlangen räumt die nächtliche Frist den Papierkorb von selbst.
 		</p>
 		<div class="flex justify-end gap-2 pt-2">

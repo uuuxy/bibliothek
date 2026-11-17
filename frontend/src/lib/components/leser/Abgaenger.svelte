@@ -188,7 +188,7 @@
 <KlassenVersandDialog
 	open={versandOffen}
 	titel="Kontoauszüge versenden"
-	beschreibung="Wähle die Klassen aus, deren Abgänger-Kontoauszüge an die Klassenleitung gehen sollen."
+	beschreibung="Wähle die Klassen aus, deren Abgänger-Kontoauszüge an die Klassenleitung gehen sollen"
 	aktion="senden"
 	hinweis="Leer lassen = jede Klasse an ihre eigene Klassenleitung. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
 	klassen={klassenFuerVersand}

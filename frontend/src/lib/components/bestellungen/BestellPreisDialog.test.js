@@ -32,7 +32,7 @@ describe('BestellPreisDialog', () => {
 		);
 		expect(knopf.disabled).toBe(true);
 		expect(
-			screen.getByText('Gilt für 2 Exemplare von „Mathe 7“ aus dieser Bestellung.')
+			screen.getByText('Gilt für 2 Exemplare von „Mathe 7“ aus dieser Bestellung')
 		).toBeTruthy();
 
 		await fireEvent.input(feld, { target: { value: '12.4' } });

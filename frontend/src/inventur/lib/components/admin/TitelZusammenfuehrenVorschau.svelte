@@ -27,7 +27,7 @@
 			{vorschau.titel} · {vorschau.isbn || 'ohne ISBN'} · {exemplare(vorschau.exemplare_danach)}
 		</p>
 		<p class="text-on-surface-variant">
-			„{vorschau.quelle_titel}“ ({vorschau.quelle_isbn || 'ohne ISBN'}) wird gelöscht.
+			„{vorschau.quelle_titel}“ ({vorschau.quelle_isbn || 'ohne ISBN'}) wird gelöscht
 		</p>
 	</div>
 {/if}

@@ -35,7 +35,7 @@ test('Theke: Hinweis, wenn eine Klasse gemischte Auflagen bekommt', async ({ pag
 
 		await scan.fill(`B-AUFN${s}`);
 		await scan.press('Enter');
-		await expect(page.getByText(`„E2E-Auflagen-Theke ${s}" ausgeliehen an Ben.`)).toBeVisible();
+		await expect(page.getByText(`„E2E-Auflagen-Theke ${s}" ausgeliehen an Ben`)).toBeVisible();
 		await expect(page.getByRole('status').filter({ hasText: 'andere Auflage' })).toHaveText(
 			`„E2E-Auflagen-Theke ${s}" ist 4. Aufl. · 2023, eine andere Auflage als in der 07B: 1 Kind hat 3. Aufl. · 2019`
 		);
@@ -96,7 +96,7 @@ test('Theke: Hinweise beim Bücherstapel stehen, bis das nächste Kind kommt', a
 		for (let i = 0; i < 5; i++) {
 			await ladeKind(i);
 			await scanne(`B-STP8-${i}${s}`);
-			await expect(page.getByText(`„${mathe8}" ausgeliehen an ${namen[i]}.`)).toBeVisible();
+			await expect(page.getByText(`„${mathe8}" ausgeliehen an ${namen[i]}`)).toBeVisible();
 		}
 		await expect(fremdZeile).toHaveCount(0);
 
@@ -108,7 +108,7 @@ test('Theke: Hinweise beim Bücherstapel stehen, bis das nächste Kind kommt', a
 
 		// Der nächste Scan nimmt die Zeile nicht weg: Fia bekommt Mathe 8 wie alle.
 		await scanne(`B-STP8-5${s}`);
-		await expect(page.getByText(`„${mathe8}" ausgeliehen an Fia.`)).toBeVisible();
+		await expect(page.getByText(`„${mathe8}" ausgeliehen an Fia`)).toBeVisible();
 		await expect(fremdZeile).toHaveText(fremd);
 		await expect(doppeltZeile).toHaveCount(0);
 
@@ -119,7 +119,7 @@ test('Theke: Hinweise beim Bücherstapel stehen, bis das nächste Kind kommt', a
 
 		// Zurückgenommen (erneuter Scan): Die Zeile dieses Buchs fällt weg, die andere bleibt.
 		await scanne(`B-STP8-6${s}`);
-		await expect(page.getByText(`„${mathe8}" erfolgreich zurückgegeben.`)).toBeVisible();
+		await expect(page.getByText(`„${mathe8}" erfolgreich zurückgegeben`)).toBeVisible();
 		await expect(doppeltZeile).toHaveCount(0);
 		await expect(fremdZeile).toHaveText(fremd);
 

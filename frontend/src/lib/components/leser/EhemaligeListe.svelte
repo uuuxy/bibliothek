@@ -57,7 +57,7 @@
 			if (nr === ladeNr) {
 				zeilen = [];
 				grenze = 0;
-				ladefehler = 'Die Ehemaligen konnten nicht geladen werden (Netzwerkfehler).';
+				ladefehler = 'Die Ehemaligen konnten nicht geladen werden (Netzwerkfehler)';
 			}
 			console.error('Fehler beim Laden der Ehemaligen:', err);
 		} finally {
@@ -112,7 +112,7 @@
 			<Archive class="h-8 w-8" aria-hidden="true" />
 		</div>
 		<h3 class="font-bold text-on-surface">
-			{suche.trim() ? 'Keine Ehemaligen gefunden.' : 'Keine Ehemaligen im Archiv.'}
+			{suche.trim() ? 'Keine Ehemaligen gefunden' : 'Keine Ehemaligen im Archiv'}
 		</h3>
 	</div>
 {:else}

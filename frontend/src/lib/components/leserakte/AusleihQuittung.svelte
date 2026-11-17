@@ -77,7 +77,7 @@
 				</tbody>
 			</table>
 		{:else}
-			<p class="text-on-surface-variant italic">Keine offenen Ausleihen.</p>
+			<p class="text-on-surface-variant italic">Keine offenen Ausleihen</p>
 		{/if}
 	</div>
 </div>

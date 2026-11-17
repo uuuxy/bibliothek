@@ -44,7 +44,7 @@
 			auflagen = (await res.json()).auflagen ?? [];
 			fehler = '';
 		} catch {
-			fehler = 'Netzwerkfehler — die Auflagen ließen sich nicht laden.';
+			fehler = 'Netzwerkfehler: Die Auflagen ließen sich nicht laden';
 		} finally {
 			geladen = true;
 		}
@@ -132,7 +132,7 @@
 			</div>
 		{/if}
 		<p class="mt-1.5 text-xs text-on-surface-variant">
-			Andere Auflagen desselben Buchs — jede behält ihre ISBN und ihre Exemplare.
+			Andere Auflagen desselben Buchs, jede behält ihre ISBN und ihre Exemplare
 		</p>
 	</div>
 

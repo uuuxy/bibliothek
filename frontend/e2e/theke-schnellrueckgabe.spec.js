@@ -100,7 +100,7 @@ test('Schnellrückgabe: ein Stapel wird nur zurückgenommen', async ({ page }) =
 		// Erstes Buch: zurück, die Meldung nennt den Leser, sein Konto erscheint nicht.
 		await scanneWieScanner(page, buch.x);
 		await expect.poll(() => ausleihen(buch.x)).toBe('1/0');
-		await expect(page.getByText(`zurückgegeben, war bei Anna Schnell-${s} (07A).`)).toBeVisible();
+		await expect(page.getByText(`zurückgegeben, war bei Anna Schnell-${s} (07A)`)).toBeVisible();
 		await expect(page.getByRole('heading', { name: new RegExp(`Schnell-${s}`) })).toHaveCount(0);
 		await expect(knopf).toHaveAttribute('aria-pressed', 'true');
 
@@ -119,7 +119,7 @@ test('Schnellrückgabe: ein Stapel wird nur zurückgenommen', async ({ page }) =
 		await expect.poll(() => fokus(page)).toBe('omnibox-input');
 		await scanneWieScanner(page, buch.y);
 		await expect.poll(() => ausleihen(buch.y)).toBe('1/0');
-		await expect(page.getByText(`zurückgegeben, war bei Ben Schnell-${s} (07A).`)).toBeVisible();
+		await expect(page.getByText(`zurückgegeben, war bei Ben Schnell-${s} (07A)`)).toBeVisible();
 
 		// Ein Ausweis beendet den Modus; danach leiht die Theke wieder aus.
 		await expect.poll(() => fokus(page)).toBe('omnibox-input');

@@ -77,7 +77,7 @@
 			if (nr === ladeNr && geladenerTopf !== topf) {
 				bestellungen = [];
 				ladefehler =
-					/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
+					/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden';
 			}
 			return false;
 		} finally {
@@ -182,8 +182,8 @@
 				symbol={ShoppingBag}
 				titel={mittel ? 'Keine Bestellungen in diesem Topf' : 'Noch keine Bestellungen aufgegeben'}
 				hinweis={mittel
-					? 'Den Filter aufheben, um alle zu sehen.'
-					: 'Bestellungen werden hier automatisch gespeichert.'}
+					? 'Den Filter aufheben, um alle zu sehen'
+					: 'Bestellungen werden hier automatisch gespeichert'}
 			/>
 		{:else}
 			<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine

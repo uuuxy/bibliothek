@@ -56,8 +56,7 @@
 
 	/** Die Pflichtangaben — an die Art gepaart, wie im Backend. @returns {string} leer = in Ordnung */
 	function fehlendeAngabe() {
-		if (!newVorname.trim() || !newNachname.trim())
-			return 'Vorname und Nachname sind Pflichtfelder.';
+		if (!newVorname.trim() || !newNachname.trim()) return 'Vorname und Nachname sind Pflichtfelder';
 		if (kollege) {
 			// Die Schuladresse ist bei einer Lehrkraft Pflicht, und zwar nicht als
 			// Kontaktangabe: Aus ihr entsteht das Anmeldekonto, und weil sie eindeutig ist,
@@ -67,9 +66,9 @@
 				return 'Die Schul-E-Mail-Adresse fehlt. Ohne sie steht die Person doppelt in der Leserdatei, sobald sie sich über „Mein Portal“ selbst anmeldet.';
 			return '';
 		}
-		if (!newKlasse.trim()) return 'Klasse ist ein Pflichtfeld.';
+		if (!newKlasse.trim()) return 'Klasse ist ein Pflichtfeld';
 		if (!newGeburtsdatum.trim())
-			return 'Geburtsdatum fehlt. Ohne Geburtsdatum kann der LUSD-Import diesen Schüler später nicht wiedererkennen — er würde doppelt angelegt.';
+			return 'Geburtsdatum fehlt. Ohne Geburtsdatum kann der LUSD-Import diesen Schüler später nicht wiedererkennen, er würde doppelt angelegt.';
 		return '';
 	}
 
@@ -97,7 +96,7 @@
 				email: mitKonto ? newEmail.trim() : ''
 			});
 			if (res.ok) {
-				lauf.erfolg(`${name} ist angelegt.`);
+				lauf.erfolg(`${name} ist angelegt`);
 				onsuccess?.();
 				return;
 			}
@@ -107,12 +106,12 @@
 			const doppelt = res.status === 409;
 			const meldung = await leseApiFehler(
 				res,
-				doppelt ? 'Diese Person gibt es bereits.' : `Fehler beim Anlegen (${artText}).`
+				doppelt ? 'Diese Person gibt es bereits' : `Fehler beim Anlegen (${artText})`
 			);
 			if (doppelt) lauf.fehler(meldung, (t) => (duplicateConflict = t));
 			else lauf.fehler(meldung, (t) => (fehler = t));
 		} catch (err) {
-			lauf.fehler('Netzwerkfehler beim Anlegen.', (t) => (fehler = t));
+			lauf.fehler('Netzwerkfehler beim Anlegen', (t) => (fehler = t));
 			console.error(err);
 		} finally {
 			speichert = false;

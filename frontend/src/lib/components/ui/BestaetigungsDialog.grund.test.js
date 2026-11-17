@@ -9,7 +9,7 @@ import { loeschenMitGrund } from '../../stores/bestaetigung.svelte.js';
 const VERLIEHEN = {
 	hinweis: '2 Exemplare sind verliehen:',
 	liste: ['Anna Muster (7b)', 'Ben Beispiel (8a)'],
-	nachsatz: 'Sie bleiben bei den Lesern, und der Titel bleibt, bis sie zurück sind.',
+	nachsatz: 'Sie bleiben bei den Lesern, und der Titel bleibt, bis sie zurück sind',
 	kaestchen: 'Auch diese 2 Exemplare löschen und aus den Leserkonten austragen',
 	aktionMit: 'Alle 5 Exemplare löschen'
 };

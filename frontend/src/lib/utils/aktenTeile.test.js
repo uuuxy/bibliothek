@@ -19,9 +19,9 @@ describe('leseTeil', () => {
 	it('liefert ohne Antwort den Satz des Abrufs', async () => {
 		const teil = await leseTeil({
 			status: 'rejected',
-			reason: new Error('Keine Verbindung zum Server.')
+			reason: new Error('Keine Verbindung zum Server')
 		});
-		expect(teil).toEqual({ wert: null, grund: 'Keine Verbindung zum Server.' });
+		expect(teil).toEqual({ wert: null, grund: 'Keine Verbindung zum Server' });
 	});
 });
 
@@ -40,8 +40,8 @@ describe('nenneFehlende', () => {
 		expect(
 			nenneFehlende([
 				{ name: 'Ausleiher', grund: 'Fehler 500' },
-				{ name: 'Historie', grund: 'Keine Verbindung zum Server.' }
+				{ name: 'Historie', grund: 'Keine Verbindung zum Server' }
 			])
-		).toBe('Ausleiher (Fehler 500), Historie (Keine Verbindung zum Server.)');
+		).toBe('Ausleiher (Fehler 500), Historie (Keine Verbindung zum Server)');
 	});
 });

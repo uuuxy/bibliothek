@@ -26,7 +26,7 @@
 
 <KategorieRahmen
 	titel="Lieferanten"
-	kurz="Händler mit E-Mail und Kundennummer; einer davon ist Hauptlieferant."
+	kurz="Händler mit E-Mail und Kundennummer; einer davon ist Hauptlieferant"
 >
 	{#if darfLesen}
 		<Lieferanten
@@ -46,7 +46,7 @@
 		/>
 	{:else}
 		<p class="text-sm text-on-surface-variant">
-			Die Liste der Lieferanten braucht zusätzlich das Recht „Bestellungen anzeigen“.
+			Die Liste der Lieferanten braucht zusätzlich das Recht „Bestellungen anzeigen“
 		</p>
 	{/if}
 </KategorieRahmen>

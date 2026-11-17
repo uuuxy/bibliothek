@@ -95,7 +95,7 @@
 				return;
 			}
 			snackbars.addToast(
-				`„${gefunden.titel}" als neue Auflage zugeordnet und in den Warenkorb gelegt.`,
+				`„${gefunden.titel}" als neue Auflage zugeordnet und in den Warenkorb gelegt`,
 				'success'
 			);
 			onbestellt({ ...gefunden, id: gefunden.titel_id, ist_lernmittel: true });
@@ -146,11 +146,11 @@
 			</div>
 			{#if schonDabei}
 				<p class="text-sm text-on-surface-variant">
-					Dieser Titel gehört schon zu diesem Buch — er lässt sich mit dem Plus der Zeile bestellen.
+					Dieser Titel gehört schon zu diesem Buch, er lässt sich mit dem Plus der Zeile bestellen
 				</p>
 			{:else if !gefunden.ist_lernmittel}
 				<p class="text-sm text-on-surface-variant">
-					Er wird wie die bisherige Auflage als Lernmittel geführt.
+					Er wird wie die bisherige Auflage als Lernmittel geführt
 				</p>
 			{/if}
 		{/if}

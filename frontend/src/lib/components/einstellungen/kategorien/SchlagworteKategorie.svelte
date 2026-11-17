@@ -93,7 +93,7 @@
 
 <KategorieRahmen
 	titel="Schlagworte"
-	kurz="Die Wörter am Titel: umbenennen, zusammenführen, Schreibweisen umleiten und die Filter im Portal wählen."
+	kurz="Die Wörter am Titel: umbenennen, zusammenführen, Schreibweisen umleiten und die Filter im Portal wählen"
 >
 	{#snippet mehr()}
 		<p>
@@ -103,7 +103,7 @@
 		</p>
 		<p>
 			Die als Filter markierten Wörter stehen in „Mein Portal“ unter „Reservieren & Melden“ als
-			Filter, sobald ein Titel mit dem Wort im öffentlichen Katalog steht — Lernmittel stehen dort
+			Filter, sobald ein Titel mit dem Wort im öffentlichen Katalog steht. Lernmittel stehen dort
 			nicht. Gesucht wird über alle Wörter und Verweise, markiert oder nicht.
 		</p>
 	{/snippet}
@@ -141,10 +141,10 @@
 			/>
 
 			{#if liste.treffer === 0}
-				<p class="text-sm text-on-surface-variant">Kein Schlagwort passt zur Suche.</p>
+				<p class="text-sm text-on-surface-variant">Kein Schlagwort passt zur Suche</p>
 			{:else if liste.treffer > sichtbar.length}
 				<p class="text-sm text-on-surface-variant">
-					{sichtbar.length} von {liste.treffer} angezeigt — die Suche grenzt ein.
+					{sichtbar.length} von {liste.treffer} angezeigt, die Suche grenzt ein
 				</p>
 			{/if}
 			{#if markiert.length > 0}

@@ -269,7 +269,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
 	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveText(
-		'Entwurf, noch nicht veröffentlicht.'
+		'Entwurf, noch nicht veröffentlicht'
 	);
 
 	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung —
@@ -432,7 +432,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveText(
-		'Entwurf, noch nicht veröffentlicht.'
+		'Entwurf, noch nicht veröffentlicht'
 	);
 	try {
 		const stand = await (await page.request.get('/api/lmf-plan/ausgabe')).json();

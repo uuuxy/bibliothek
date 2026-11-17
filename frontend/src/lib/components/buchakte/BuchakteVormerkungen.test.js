@@ -93,7 +93,7 @@ describe('BuchakteVormerkungen', () => {
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => t.message)).toContain(
-				'Vormerkung angelegt — die Liste konnte nicht neu geladen werden: Ein interner Serverfehler ist aufgetreten'
+				'Vormerkung angelegt, die Liste konnte nicht neu geladen werden: Ein interner Serverfehler ist aufgetreten'
 			)
 		);
 	});
@@ -141,7 +141,7 @@ describe('BuchakteVormerkungen', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
 
 		expect(await screen.findByText('Keine Berechtigung für diese Aktion')).toBeTruthy();
-		expect(screen.queryByText('Keine Schüler gefunden.')).toBeNull();
+		expect(screen.queryByText('Keine Schüler gefunden')).toBeNull();
 	});
 
 	it('schreibt das Datum der Vormerkung als TT.MM.JJJJ', () => {

@@ -63,7 +63,7 @@ describe('Frühere Inventuren: löschen', () => {
 	});
 
 	it.each([
-		['gelöscht', { ok: true, status: 204, data: {} }, 'Inventur „Lauf a“ gelöscht.', 'success'],
+		['gelöscht', { ok: true, status: 204, data: {} }, 'Inventur „Lauf a“ gelöscht', 'success'],
 		[
 			'schon weg',
 			{

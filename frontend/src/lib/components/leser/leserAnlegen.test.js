@@ -156,9 +156,7 @@ describe('Neuen Leser anlegen', () => {
 		const screen = await anlegen('lehrkraft', 'Katrin', '');
 
 		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
-		expect(screen.container.textContent ?? '').toContain(
-			'Vorname und Nachname sind Pflichtfelder.'
-		);
+		expect(screen.container.textContent ?? '').toContain('Vorname und Nachname sind Pflichtfelder');
 	});
 
 	// UMGEKEHRT seit dem 16.09.2026 : Aus der Schul-E-Mail entsteht der Zugang gleich
@@ -267,7 +265,7 @@ describe('Neuen Leser anlegen', () => {
 		});
 		const text = screen.baseElement.textContent ?? '';
 
-		expect(text).toMatch(/Die Klassen kommen mit dem LUSD-Abgleich\./);
+		expect(text).toMatch(/Die Klassen kommen mit dem LUSD-Abgleich/);
 		expect(text).toMatch(/Keine Klassen/);
 		expect(text).not.toMatch(/ließen sich nicht laden/);
 	});

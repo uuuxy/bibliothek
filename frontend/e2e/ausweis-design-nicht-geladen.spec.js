@@ -6,7 +6,7 @@ import { uiLogin, gehZu, seedSQL, uniqueSuffix, scanneWieScanner } from './helpe
 // still, solange dort nur ein Leser geladen wird.
 
 // Mit dem Grund aus designFaelltAus („Lesefehler").
-const DRUCKEN_GESPERRT = 'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Lesefehler.';
+const DRUCKEN_GESPERRT = 'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Lesefehler';
 const SEITE_OHNE_DESIGN =
 	'Ausweis-Design nicht geladen: Lesefehler. Ausweise lassen sich gerade nicht drucken.';
 

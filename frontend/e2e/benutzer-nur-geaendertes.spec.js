@@ -38,7 +38,7 @@ test('Benutzer bearbeiten: das Speichern überschreibt nicht, was inzwischen ein
 			(await gesendet).postDataJSON(),
 			'Die Maske schickt mehr als das geänderte Feld'
 		).toEqual({ nachname: 'Nachher' });
-		await expect(page.getByText('Benutzer erfolgreich aktualisiert.')).toBeVisible();
+		await expect(page.getByText('Benutzer erfolgreich aktualisiert')).toBeVisible();
 
 		expect(
 			stand(),

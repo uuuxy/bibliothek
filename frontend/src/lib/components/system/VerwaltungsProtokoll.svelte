@@ -28,7 +28,7 @@
 			const res = await apiFetch('/api/admin/auditlog');
 			if (!res.ok) {
 				if (res.status === 403) {
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
+					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
 				}
 				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Admin-Logbuchs'));
 			}

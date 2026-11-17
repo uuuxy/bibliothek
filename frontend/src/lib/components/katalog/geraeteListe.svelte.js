@@ -29,7 +29,7 @@ export function erzeugeGeraeteListe() {
 			ladefehler =
 				err instanceof Error && err.message
 					? err.message
-					: 'Die Geräte konnten nicht geladen werden.';
+					: 'Die Geräte konnten nicht geladen werden';
 		} finally {
 			laedt = false;
 		}

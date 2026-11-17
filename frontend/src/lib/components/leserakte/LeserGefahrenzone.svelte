@@ -51,7 +51,7 @@
 				Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer &amp;
 				Rechte verwalten“ darf.
 			{:else if mitZugang}
-				Das Löschen entfernt die Person aus dem regulären System — und mit ihr den Zugang zu „Mein
+				Das Löschen entfernt die Person aus dem regulären System und mit ihr den Zugang zu „Mein
 				Portal“. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
 			{:else if kollege}
 				Das Löschen entfernt den Eintrag aus dem regulären System. Offene Ausleihen oder Forderungen

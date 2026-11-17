@@ -174,7 +174,7 @@ function erzeugeEtikettenStore() {
 					treffer = [];
 					const grund = await leseApiFehler(
 						res,
-						'Titelsuche fehlgeschlagen — bitte erneut versuchen.'
+						'Titelsuche fehlgeschlagen, bitte erneut versuchen'
 					);
 					if (lauf === suchLauf) snackbars.addToast(grund, 'error');
 				}

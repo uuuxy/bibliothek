@@ -49,7 +49,7 @@
 				schliessenEtikett="Leser schließen"
 			/>
 			<p class="px-6 pt-4 text-sm text-on-surface-variant">
-				Die Akte mit Ausleihen und Gebühren braucht das Recht „Leserdatei anzeigen“.
+				Die Akte mit Ausleihen und Gebühren braucht das Recht „Leserdatei anzeigen“
 			</p>
 		</div>
 	{/if}

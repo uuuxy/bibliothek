@@ -37,7 +37,7 @@ describe('Meldungen aus dem Nachbuchen: die Liste kommt nicht', () => {
 
 		await vi.waitFor(() => expect(screen.getByText('Meldungen nicht geladen')).toBeTruthy());
 		expect(screen.getByText('Liste vom Server abgelehnt')).toBeTruthy();
-		expect(screen.queryByText('Nichts offen.')).toBeNull();
+		expect(screen.queryByText('Nichts offen')).toBeNull();
 
 		fetchMock.mockResolvedValueOnce(serverAntwort(200, [zeile]));
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
@@ -60,7 +60,7 @@ describe('Meldungen aus dem Nachbuchen: die Liste kommt nicht', () => {
 		fetchMock.mockResolvedValueOnce(serverAntwort(200, []));
 		await nachbuchMeldungen.lade();
 
-		await screen.findByText('Nichts offen.');
+		await screen.findByText('Nichts offen');
 		await vi.waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
 	});
 
@@ -70,11 +70,11 @@ describe('Meldungen aus dem Nachbuchen: die Liste kommt nicht', () => {
 		nachbuchMeldungen.oeffne();
 		await vi.waitFor(() => expect(screen.getByText('Ausweis unbekannt')).toBeTruthy());
 
-		fetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		fetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Auch erledigte zeigen' }));
 
 		await vi.waitFor(() => expect(screen.getByText('Meldungen nicht geladen')).toBeTruthy());
-		expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy();
+		expect(screen.getByText('Keine Verbindung zum Server')).toBeTruthy();
 		expect(screen.queryByText('Ausweis unbekannt')).toBeNull();
 	});
 });

@@ -1,5 +1,5 @@
 import { Pencil, Merge, CornerDownRight, Trash } from '@lucide/svelte';
-import { anzahlText } from '../../utils/format.js';
+import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 
 // Die Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was das
 // Menü einer Zeile anbietet, was die Löschen-Rückfrage sagt, die Zählzeile
@@ -31,9 +31,9 @@ export function menueEintraege(z) {
  */
 export function loeschFolgen(z) {
 	const folgen = z.verweis_auf_id
-		? `Wer „${z.wort}“ einträgt, landet danach nicht mehr bei „${z.verweis_auf}“.`
+		? `Wer „${z.wort}“ einträgt, landet danach nicht mehr bei „${z.verweis_auf}“`
 		: titelFolge(z);
-	return `${folgen} Das lässt sich nicht rückgängig machen.`;
+	return verbindeSaetze(folgen, 'Das lässt sich nicht rückgängig machen');
 }
 
 /** Was das Löschen eines Worts an den Titeln und an den Verweisen darauf ändert.
@@ -91,17 +91,17 @@ export function dialogHinweis(art, z, neu) {
 		// Die neue Schreibweise ist ein Verweis auf dieses Wort: Der Server tauscht die beiden.
 		const eigener = z.verweise.find((v) => v.toLowerCase() === neu.toLowerCase());
 		if (eigener)
-			return `„${eigener}“ ist bisher ein Verweis auf „${z.wort}“ und wird zum Schlagwort.`;
-		if (z.titel === 1) return 'Der Titel trägt danach die neue Schreibweise.';
-		return z.titel > 1 ? `Alle ${z.titel} Titel tragen danach die neue Schreibweise.` : '';
+			return `„${eigener}“ ist bisher ein Verweis auf „${z.wort}“ und wird zum Schlagwort`;
+		if (z.titel === 1) return 'Der Titel trägt danach die neue Schreibweise';
+		return z.titel > 1 ? `Alle ${z.titel} Titel tragen danach die neue Schreibweise` : '';
 	}
 	if (art === 'zusammenfuehren') {
 		if (z.titel === 0) return '';
 		const titel =
 			z.titel === 1
-				? 'Der Titel bekommt das gewählte Wort.'
-				: `Die ${z.titel} Titel bekommen das gewählte Wort.`;
-		return `${titel} Das lässt sich nicht rückgängig machen.`;
+				? 'Der Titel bekommt das gewählte Wort'
+				: `Die ${z.titel} Titel bekommen das gewählte Wort`;
+		return verbindeSaetze(titel, 'Das lässt sich nicht rückgängig machen');
 	}
 	return `Wer diese Schreibweise am Titel einträgt, bekommt „${z.wort}“. Trägt sie schon Titel, werden sie umgestellt.`;
 }
@@ -133,14 +133,14 @@ export function loeschFrage(gewaehlt) {
 	const mit = woerter
 		.flatMap((z) => z.verweise)
 		.filter((v) => !markiert.has(v.toLowerCase())).length;
-	const saetze = [`${liste}.`];
-	if (vergeben > 0) saetze.push(`Sie stehen zusammen ${vergeben}-mal an Titeln.`);
+	const saetze = [liste];
+	if (vergeben > 0) saetze.push(`Sie stehen zusammen ${vergeben}-mal an Titeln`);
 	if (mit > 0)
-		saetze.push(mit === 1 ? '1 Verweis darauf fällt mit.' : `${mit} Verweise darauf fallen mit.`);
-	saetze.push('Das lässt sich nicht rückgängig machen.');
+		saetze.push(mit === 1 ? '1 Verweis darauf fällt mit' : `${mit} Verweise darauf fallen mit`);
+	saetze.push('Das lässt sich nicht rückgängig machen');
 	return {
 		titel: `${anzahlText(gewaehlt.length, 'Schlagwort', 'Schlagworte')} löschen?`,
-		text: saetze.join(' ')
+		text: verbindeSaetze(...saetze)
 	};
 }
 
@@ -150,9 +150,9 @@ export function loeschFrage(gewaehlt) {
  * @param {{ woerter: number, titel: number }} antwort
  */
 export function loeschErgebnis(gewaehlt, antwort) {
-	if (gewaehlt.length === 1) return `„${gewaehlt[0].wort}“ gelöscht.`;
-	const geloescht = `${anzahlText(antwort.woerter, 'Schlagwort', 'Schlagworte')} gelöscht.`;
+	if (gewaehlt.length === 1) return `„${gewaehlt[0].wort}“ gelöscht`;
+	const geloescht = `${anzahlText(antwort.woerter, 'Schlagwort', 'Schlagworte')} gelöscht`;
 	if (antwort.titel === 0) return geloescht;
 	const haben = antwort.titel === 1 ? 'Titel hat' : 'Titel haben';
-	return `${geloescht} ${antwort.titel} ${haben} Schlagworte verloren.`;
+	return verbindeSaetze(geloescht, `${antwort.titel} ${haben} Schlagworte verloren`);
 }

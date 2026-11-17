@@ -11,6 +11,7 @@
      ein Satz zur Folge, ein Knopf, der genau dorthin führt, wo es zu beheben ist. -->
 <script>
 	import { TriangleAlert, ArrowRight } from '@lucide/svelte';
+	import { verbindeSaetze } from '../../utils/format.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
@@ -53,12 +54,11 @@
 				Bestellungen gehen ohne Bestätigungs-Link raus
 			</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
-				Der Hauptlieferant soll die Etikettengröße selbst wählen und damit bestätigen — dafür
-				braucht das System die öffentliche Adresse, unter der er es von außen erreicht
-				(Einstellungen → Erreichbarkeit & Alarme).
-				{#if !istAdmin}
-					Ein Administrator kann sie hinterlegen.
-				{/if}
+				{verbindeSaetze(
+					'Der Hauptlieferant soll die Etikettengröße selbst wählen und damit bestätigen',
+					'Dafür braucht das System die öffentliche Adresse, unter der er es von außen erreicht (Einstellungen → Erreichbarkeit & Alarme)',
+					!istAdmin && 'Ein Administrator kann sie hinterlegen'
+				)}
 			</p>
 		</div>
 		{#if istAdmin}
@@ -80,7 +80,7 @@
 			<p class="text-sm font-semibold text-on-surface">Bestell-Einstellungen nicht geladen</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
 				Ob die Bestellmails einen Bestätigungs-Link tragen, konnte gerade nicht geprüft werden.
-				Seite neu laden — bleibt der Hinweis, vor dem Bestellen nachsehen.
+				Seite neu laden. Bleibt der Hinweis, vor dem Bestellen nachsehen.
 			</p>
 		</div>
 	</div>

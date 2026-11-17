@@ -53,9 +53,9 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		await fireEvent.click(abbrechen);
 		expect(screen.queryByRole('dialog')).toBeNull();
 
-		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb' }));
 		await stillhalten();
-		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb.', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb', 'error');
 	});
 
 	it('meldet einen späten Erfolg in der Snackbar und gibt ihn an die Akte weiter', async () => {
@@ -66,7 +66,7 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		const antwort = { ...LESER, is_manually_blocked: true, ist_gesperrt: true };
 		schicke({ ok: true, json: async () => antwort });
 		await stillhalten();
-		expect(snackbars.addToast).toHaveBeenCalledWith('Ausleihe für Mia Muster gesperrt.', 'success');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Ausleihe für Mia Muster gesperrt', 'success');
 		expect(onsuccess).toHaveBeenCalledWith(antwort);
 	});
 
@@ -76,19 +76,19 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
 		await screen.rerender({ open: true });
 
-		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb' }));
 		await stillhalten();
 		expect(screen.queryByRole('alert')).toBeNull();
-		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb.', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb', 'error');
 	});
 
 	it('zeigt den Fehler im Dialog, solange er offen ist', async () => {
 		const schicke = spaeteAntwort();
 		const { screen } = await sperreMitGrund();
 
-		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb' }));
 		await stillhalten();
-		expect(screen.getByRole('alert').textContent).toContain('Der Leser liegt im Papierkorb.');
+		expect(screen.getByRole('alert').textContent).toContain('Der Leser liegt im Papierkorb');
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 });

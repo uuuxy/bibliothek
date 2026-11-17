@@ -39,7 +39,7 @@
 	// Zeigt auf die Einstellung, nicht auf ein Programm-Update; die Selbstprüfung sagt dasselbe.
 	const ferienText = $derived(
 		sommerferien && !sommerferien.bekannt
-			? `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt — unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`
+			? `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt. Unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`
 			: ''
 	);
 </script>

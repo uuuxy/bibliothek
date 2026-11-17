@@ -48,7 +48,7 @@
 	async function erstellen() {
 		const bescheid = await formular.erstellen();
 		if (!bescheid) return;
-		snackbars.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt.`, 'success', {
+		snackbars.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt`, 'success', {
 			label: 'Brief öffnen',
 			onClick: () => {
 				if (!zeigePdfAdresse(`/api/bescheide/${bescheid.id}/pdf`))
@@ -91,16 +91,16 @@
 			<div
 				class="rounded-xl border border-error bg-error-container p-4 text-sm text-on-error-container"
 			>
-				<p class="font-semibold">Es fehlen Angaben für den Bescheid.</p>
+				<p class="font-semibold">Es fehlen Angaben für den Bescheid</p>
 				<ul class="mt-1 list-inside list-disc">
 					{#each formular.fehlt as f (f)}<li>{f}</li>{/each}
 				</ul>
-				<p class="mt-2">Einzutragen in den Einstellungen unter „Schadensersatz".</p>
+				<p class="mt-2">Einzutragen in den Einstellungen unter „Schadensersatz"</p>
 			</div>
 		{:else if formular.positionen.length === 0}
 			<p class="py-8 text-sm text-on-surface-variant">
 				Für dieses Kind gibt es weder ein überfälliges Buch noch eine offene Forderung, die noch auf
-				keinem Bescheid steht.
+				keinem Bescheid steht
 			</p>
 		{:else}
 			<BescheidPositionen

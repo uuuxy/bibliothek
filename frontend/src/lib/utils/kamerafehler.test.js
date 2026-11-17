@@ -27,20 +27,20 @@ describe('kamerafehlertext', () => {
 			'Die Kamera lässt sich nicht starten, vermutlich nutzt sie ein anderes Programm. Bitte dieses schließen und erneut versuchen.'
 		);
 		expect(kamerafehlertext(new DOMException('Not supported', 'NotSupportedError'))).toBe(
-			'Dieser Browser gibt hier keine Kamera frei.'
+			'Dieser Browser gibt hier keine Kamera frei'
 		);
 	});
 
 	it('sagt bei allem anderen, dass die Kamera nicht startet, ohne den Text des Browsers', () => {
 		expect(kamerafehlertext(new DOMException('Starting videoinput failed', 'AbortError'))).toBe(
-			'Die Kamera lässt sich nicht starten.'
+			'Die Kamera lässt sich nicht starten'
 		);
 		expect(
 			kamerafehlertext(
 				new TypeError("Cannot read properties of undefined (reading 'getUserMedia')")
 			)
-		).toBe('Die Kamera lässt sich nicht starten.');
-		expect(kamerafehlertext('kaputt')).toBe('Die Kamera lässt sich nicht starten.');
-		expect(kamerafehlertext(null)).toBe('Die Kamera lässt sich nicht starten.');
+		).toBe('Die Kamera lässt sich nicht starten');
+		expect(kamerafehlertext('kaputt')).toBe('Die Kamera lässt sich nicht starten');
+		expect(kamerafehlertext(null)).toBe('Die Kamera lässt sich nicht starten');
 	});
 });

@@ -9,6 +9,7 @@ import { apiClient, leseApiFehler } from '../apiFetch.js';
 import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
+import { verbindeSaetze } from '../utils/format.js';
 
 // Endgueltige Ergebnisse: Der Eintrag ist erledigt und fliegt aus der Warteschlange.
 // „wiederholen" ist das einzige, das NICHT endgueltig ist (Server nicht erreichbar, oder
@@ -142,12 +143,9 @@ async function exportiereWarteschlange() {
 function meldeZuPruefende(pruefen) {
 	if (pruefen.length === 0) return;
 	const liste = pruefen.map((p) => `„${p.barcode}“: ${p.meldung}`).join('; ');
-	melde(
-		pruefen.length === 1
-			? `Offline-Scan ${liste} — bitte von Hand prüfen.`
-			: `${pruefen.length} Offline-Scans brauchen Prüfung: ${liste} — bitte von Hand prüfen.`,
-		'error'
-	);
+	const n = pruefen.length;
+	const satz = n === 1 ? `Offline-Scan ${liste}` : `${n} Offline-Scans brauchen Prüfung: ${liste}`;
+	melde(verbindeSaetze(satz, 'Bitte von Hand prüfen'), 'error');
 }
 
 function erzeugeOfflineSync() {
@@ -327,7 +325,7 @@ function erzeugeOfflineSync() {
 	function warneVorDemSchliessen(e) {
 		if (wartendeAnzahl > 0) {
 			e.preventDefault();
-			const msg = `${wartendeAnzahl === 1 ? '1 Vorgang ist' : `${wartendeAnzahl} Vorgänge sind`} nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
+			const msg = `${wartendeAnzahl === 1 ? '1 Vorgang ist' : `${wartendeAnzahl} Vorgänge sind`} nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern", danach darf der Rechner aus.`;
 			e.returnValue = msg;
 			return msg;
 		}

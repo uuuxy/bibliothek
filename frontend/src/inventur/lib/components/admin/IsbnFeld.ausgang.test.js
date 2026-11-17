@@ -68,7 +68,7 @@ describe('IsbnFeld: der Ausgang einer Abfrage ohne Treffer', () => {
 		await fireEvent.blur(eingabe);
 		await fertig();
 
-		expect(hinweis()).toBe('Zu dieser ISBN ist bei den Katalogdiensten nichts bekannt.');
+		expect(hinweis()).toBe('Zu dieser ISBN ist bei den Katalogdiensten nichts bekannt');
 		expect(eingabe.getAttribute('aria-invalid')).toBeNull();
 		expect(melde).toHaveBeenCalledWith(hinweis(), 'info');
 	});

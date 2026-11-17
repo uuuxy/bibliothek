@@ -21,7 +21,7 @@ describe('adressabgleichText', () => {
 
 	it('nennt den Grund, wenn der letzte Lauf scheiterte', () => {
 		const text = letzterLaufText({ ...stand, fehler: 'Das Webmail hat die Anmeldung abgelehnt' });
-		expect(text).toMatch(/: gescheitert\. Das Webmail hat die Anmeldung abgelehnt$/);
+		expect(text).toMatch(/: gescheitert\. Das Webmail hat die Anmeldung abgelehnt\.$/);
 	});
 
 	it('spricht im Probelauf im Konjunktiv und zählt in Ein- und Mehrzahl', () => {

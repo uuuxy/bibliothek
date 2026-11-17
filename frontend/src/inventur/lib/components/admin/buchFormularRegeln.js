@@ -32,7 +32,7 @@ export function mehrjahresbandHinweis(an, von, bis) {
 		return 'Ohne Haken: Das Buch kommt wie jedes Schulbuch am Rückgabetermin der Klasse zurück. Mit Haken: Es bleibt über die Spanne beim Kind.';
 	}
 	if (!spanneOk) {
-		return 'Braucht eine Spanne über mehr als einen Jahrgang: „bis" muss über „von" liegen, sonst lässt sich der Titel nicht speichern.';
+		return 'Braucht eine Spanne über mehr als einen Jahrgang: „bis" muss über „von" liegen, sonst lässt sich der Titel nicht speichern';
 	}
 	return `Bleibt beim Kind bis zum Ende von Jahrgang ${b}. Ein Kind der ${v} gibt es nach ${anzahlText(b - v + 1, 'Schuljahr', 'Schuljahren')} zurück; die Frist ist der Stichtag dieses Schuljahres.`;
 }
@@ -67,9 +67,9 @@ export function signaturFehlt(formular) {
  */
 export function bestandHinweis(id, bestand) {
 	const leer = bestand === null || bestand === undefined || bestand === '';
-	if (id) return leer ? 'Ohne Zahl bleibt der Bestand, wie er ist.' : '';
+	if (id) return leer ? 'Ohne Zahl bleibt der Bestand, wie er ist' : '';
 	if (Number(bestand) > 0) return '';
-	return 'Ohne Exemplar steht der Titel in keinem Katalog, nur in der Titelliste unter „Ohne Exemplare“.';
+	return 'Ohne Exemplar steht der Titel in keinem Katalog, nur in der Titelliste unter „Ohne Exemplare“';
 }
 
 /**

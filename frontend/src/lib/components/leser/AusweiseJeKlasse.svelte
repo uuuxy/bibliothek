@@ -78,7 +78,7 @@
 	const druckbar = $derived(mitAusweisnummer(schueler));
 	const zeile = $derived(
 		schueler.length === 0
-			? 'In dieser Klasse steht kein Schüler.'
+			? 'In dieser Klasse steht kein Schüler'
 			: `${schueler.length} Schüler` +
 					(druckbar.length < schueler.length
 						? `, ${schueler.length - druckbar.length} ohne Ausweisnummer`

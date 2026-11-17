@@ -43,7 +43,7 @@
 		}
 	}
 
-	const NACHLADEN_GESCHEITERT = 'Vormerkung angelegt — die Liste konnte nicht neu geladen werden';
+	const NACHLADEN_GESCHEITERT = 'Vormerkung angelegt, die Liste konnte nicht neu geladen werden';
 	/** @param {string} studentId */
 	async function legeVormerkungAn(studentId) {
 		if (legtAn) return;
@@ -88,7 +88,7 @@
 		{#if !rechte.einsehen}
 			<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
 			<p class="text-sm text-on-surface-variant">
-				Die Suche nach Schülern braucht das Recht „Leserdatei anzeigen“.
+				Die Suche nach Schülern braucht das Recht „Leserdatei anzeigen“
 			</p>
 		{:else}
 			<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht. -->
@@ -147,7 +147,7 @@
 			{:else if suchFehler}
 				<p role="alert" class="text-sm text-error mt-2">{suchFehler}</p>
 			{:else if suche && !isSearching && treffer.length === 0}
-				<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden.</p>
+				<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden</p>
 			{/if}
 		{/if}
 	</div>

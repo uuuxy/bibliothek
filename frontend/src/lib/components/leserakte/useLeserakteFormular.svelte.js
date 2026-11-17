@@ -158,13 +158,13 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	async function speichere() {
 		const leser = getStudent();
 		if (!leser?.id) {
-			showSnackbar('Kein Schüler ausgewählt.', 'error');
+			showSnackbar('Kein Schüler ausgewählt', 'error');
 			return;
 		}
 		const payload = mitVereinheitlichterNummer(geaendert());
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
-			showSnackbar('Änderungen gespeichert.', 'success');
+			showSnackbar('Änderungen gespeichert', 'success');
 			onSave();
 			return;
 		}
@@ -172,7 +172,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		try {
 			const res = await apiClient.patch(`/api/schueler/${leser.id}`, payload);
 			if (!res.ok) throw new Error(await leseApiFehler(res, 'Speichern fehlgeschlagen'));
-			showSnackbar('Änderungen gespeichert.', 'success');
+			showSnackbar('Änderungen gespeichert', 'success');
 			onSave();
 		} catch (e) {
 			showSnackbar(fehlertext(e), 'error');

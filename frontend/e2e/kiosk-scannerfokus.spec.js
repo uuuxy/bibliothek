@@ -194,7 +194,7 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 
 		// Der Knopf verschwindet mit der Zahlung, der Fokus fällt auf die Seite.
 		await page.getByRole('button', { name: 'Bezahlt' }).click();
-		await expect(page.getByText('Zahlung verbucht.')).toBeVisible();
+		await expect(page.getByText('Zahlung verbucht')).toBeVisible();
 		await scanne(2, 'nach „Bezahlt"');
 
 		await page.getByRole('heading', { name: new RegExp(`Reiter-${suffix}`) }).click();

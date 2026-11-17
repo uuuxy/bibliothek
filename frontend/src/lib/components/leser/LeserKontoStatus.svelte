@@ -78,7 +78,7 @@
 			{/if}
 		</Button>
 		{#if kollege}
-			<p class="text-sm text-on-surface-variant">Kollegen werden nicht gesperrt.</p>
+			<p class="text-sm text-on-surface-variant">Kollegen werden nicht gesperrt</p>
 		{/if}
 	{/if}
 </div>

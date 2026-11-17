@@ -73,10 +73,10 @@ describe('Schlagwort-Pflege: Anzeige-Regeln', () => {
 
 	it('sagt im Dialog, was mit den Titeln geschieht', () => {
 		expect(dialogHinweis('umbenennen', wort, 'Fantastik')).toBe(
-			'Alle 12 Titel tragen danach die neue Schreibweise.'
+			'Alle 12 Titel tragen danach die neue Schreibweise'
 		);
 		expect(dialogHinweis('umbenennen', wort, 'tierfantasy')).toBe(
-			'„Tierfantasy“ ist bisher ein Verweis auf „Fantasy“ und wird zum Schlagwort.'
+			'„Tierfantasy“ ist bisher ein Verweis auf „Fantasy“ und wird zum Schlagwort'
 		);
 		expect(dialogHinweis('zusammenfuehren', wort, '')).toBe(
 			'Die 12 Titel bekommen das gewählte Wort. Das lässt sich nicht rückgängig machen.'
@@ -87,7 +87,7 @@ describe('Schlagwort-Pflege: Anzeige-Regeln', () => {
 			'Der Titel bekommt das gewählte Wort. Das lässt sich nicht rückgängig machen.'
 		);
 		expect(dialogHinweis('umbenennen', { ...wort, titel: 1 }, 'Fantastik')).toBe(
-			'Der Titel trägt danach die neue Schreibweise.'
+			'Der Titel trägt danach die neue Schreibweise'
 		);
 		expect(loeschFolgen({ ...wort, titel: 1 })).toMatch(/^1 Titel verliert das Schlagwort, /);
 		expect(dialogHinweis('verweis', wort, 'Fantasie')).toMatch(/bekommt „Fantasy“/);
@@ -129,12 +129,12 @@ describe('Schlagwort-Pflege: mehrere löschen', () => {
 	});
 
 	it('meldet danach die Zahlen des Servers', () => {
-		expect(loeschErgebnis([wort], { woerter: 1, titel: 12 })).toBe('„Fantasy“ gelöscht.');
+		expect(loeschErgebnis([wort], { woerter: 1, titel: 12 })).toBe('„Fantasy“ gelöscht');
 		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 1 })).toBe(
 			'2 Schlagworte gelöscht. 1 Titel hat Schlagworte verloren.'
 		);
 		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 0 })).toBe(
-			'2 Schlagworte gelöscht.'
+			'2 Schlagworte gelöscht'
 		);
 		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 5 })).toBe(
 			'2 Schlagworte gelöscht. 5 Titel haben Schlagworte verloren.'

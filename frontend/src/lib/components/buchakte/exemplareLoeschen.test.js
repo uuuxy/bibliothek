@@ -30,7 +30,7 @@ describe('frageGrundFuerExemplare', () => {
 		expect(await frageGrundFuerExemplare(['B-7'])).toBe('BESCHAEDIGUNG');
 		expect(loeschenMitGrund).toHaveBeenCalledWith({
 			titel: 'Exemplar B-7 löschen?',
-			text: 'Es kommt mit diesem Grund ins Abgangsbuch.'
+			text: 'Es kommt mit diesem Grund ins Abgangsbuch'
 		});
 	});
 
@@ -39,7 +39,7 @@ describe('frageGrundFuerExemplare', () => {
 		expect(await frageGrundFuerExemplare(['B-1', 'B-2'])).toBeNull();
 		expect(loeschenMitGrund).toHaveBeenCalledWith({
 			titel: '2 Exemplare löschen?',
-			text: 'Sie kommen mit diesem Grund ins Abgangsbuch.'
+			text: 'Sie kommen mit diesem Grund ins Abgangsbuch'
 		});
 	});
 });

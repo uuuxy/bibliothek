@@ -37,7 +37,7 @@
 			if (response.status === 409) {
 				const { meldung, daten } = await leseApiFehlerMitDaten(
 					response,
-					'Verlängerung nicht möglich.'
+					'Verlängerung nicht möglich'
 				);
 				if (daten?.rueckgabe_frist) book.rueckgabe_frist = daten.rueckgabe_frist;
 				melde(meldung, 'info');
@@ -47,14 +47,14 @@
 				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts
 				// passieren.
 				const neu = formatDatum(daten.neues_rueckgabe_datum);
-				melde(`Verlängert bis ${neu}.`, 'success');
+				melde(`Verlängert bis ${neu}`, 'success');
 			} else {
 				// Die Begründung des Servers („Ausleihe gesperrt (Grund)") sagt, was zu tun ist.
-				melde(await leseApiFehler(response, 'Verlängerung nicht möglich.'), 'error');
+				melde(await leseApiFehler(response, 'Verlängerung nicht möglich'), 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			melde('Netzwerkfehler bei der Verlängerung.', 'error');
+			melde('Netzwerkfehler bei der Verlängerung', 'error');
 		} finally {
 			extendingIds.delete(id);
 		}

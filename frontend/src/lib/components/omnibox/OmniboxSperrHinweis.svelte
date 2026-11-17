@@ -64,7 +64,7 @@
 				is_locked: false
 			});
 			if (!res.ok) {
-				fehler = await leseApiFehler(res, 'Die Sperre ließ sich nicht aufheben.');
+				fehler = await leseApiFehler(res, 'Die Sperre ließ sich nicht aufheben');
 				return;
 			}
 			const neu = await res.json();
@@ -105,7 +105,7 @@
 				{/if}
 				{#if !darf}
 					<p class="text-sm text-on-surface-variant">
-						{amLeser ? 'Aufheben' : 'Übergehen'} kann nur, wer Schülerdaten bearbeiten darf.
+						{amLeser ? 'Aufheben' : 'Übergehen'} kann nur, wer Schülerdaten bearbeiten darf
 					</p>
 				{:else if amLeser}
 					<Button variant="success" size="lg" onclick={hebeSperreAuf} class="w-full text-lg">

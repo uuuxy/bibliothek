@@ -186,14 +186,14 @@ describe('Fehlerantwort: der Grund des Servers statt eines eigenen Satzes', () =
 			'if (!res.ok) throw new Error(String(res.status));',
 			"if (res.ok) {\n\tdaten = await res.json();\n} else {\n\tmelde('Fehler beim Speichern', 'error');\n}",
 			"if (res.ok) return res.json();\nsnackbars.addToast('Ein Fehler ist aufgetreten.', 'error');",
-			"if (!antwort.ok) {\n\tfehler = 'Schulbücher konnten nicht geladen werden.';\n\treturn;\n}",
+			"if (!antwort.ok) {\n\tfehler = 'Schulbücher konnten nicht geladen werden';\n\treturn;\n}",
 			"if (!res.ok) this.fehler = res.status === 403 ? 'Kein Recht.' : `Nicht abrufbar (${res.status}).`;",
 			"return apiFetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error('Laden gescheitert'))));",
 			"if (!res?.ok || lauf !== meinLauf) {\n\tladefehler = 'Fehler ' + res.status;\n\treturn;\n}",
 			"if (res.ok === false) throw 'Abruf fehlgeschlagen';",
-			"if (res.ok && daten) zeige(daten);\nelse return { ok: false, meldung: 'Speichern fehlgeschlagen.' };",
+			"if (res.ok && daten) zeige(daten);\nelse return { ok: false, meldung: 'Speichern fehlgeschlagen' };",
 			"if (!res.ok) {\n\tif (res.status === 404) melde('Nicht da', 'info');\n\telse melde('Fehler', 'error');\n}",
-			'if (!res.ok && res.status !== 404) {\n\tthis.fehler = `Quittieren fehlgeschlagen (${res.status}).`;\n\treturn;\n}',
+			'if (!res.ok && res.status !== 404) {\n\tthis.fehler = `Quittieren fehlgeschlagen (${res.status})`;\n\treturn;\n}',
 			"if (res.ok || zwischengespeichert) zeige();\nelse melde('Laden gescheitert', 'error');"
 		]) {
 			expect(probe(form).funde, form).not.toEqual([]);
@@ -206,7 +206,7 @@ describe('Fehlerantwort: der Grund des Servers statt eines eigenen Satzes', () =
 			"if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden'));",
 			"if (!res.ok) {\n\tif (res.status === 401) throw new Error('UNAUTHORIZED');\n\tthrow new Error(await leseApiFehler(res));\n}",
 			"if (!res.ok) this.fehler = res.status === 403 ? 'Kein Recht.' : await leseApiFehler(res, 'Nicht abrufbar.');",
-			"if (!r.ok) {\n\tsnackbars.addToast(r.error || 'Fund konnte nicht verbucht werden.', 'error');\n\treturn;\n}",
+			"if (!r.ok) {\n\tsnackbars.addToast(r.error || 'Fund konnte nicht verbucht werden', 'error');\n\treturn;\n}",
 			'if (!res.ok) throw new Error(meldung);',
 			'if (!res.ok) {\n\tfehler = true;\n\treturn;\n}',
 			"if (res.ok) melde('Gespeichert', 'success');",

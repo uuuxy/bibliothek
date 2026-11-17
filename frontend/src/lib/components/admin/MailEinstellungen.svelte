@@ -114,7 +114,7 @@
 				<h3 class="text-base font-semibold text-on-surface">Postausgang (SMTP)</h3>
 				<p class="text-sm text-on-surface-variant">
 					Gilt für alle E-Mails der Bibliothek, die unten nicht angehakt sind; wirkt sofort, ohne
-					Neustart.
+					Neustart
 				</p>
 			</div>
 
@@ -138,7 +138,7 @@
 					etikett="Passwort"
 					type="password"
 					placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
-					hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
+					hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern"
 					class="md:col-span-2"
 				/>
 			</div>

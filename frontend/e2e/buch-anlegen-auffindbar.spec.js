@@ -60,7 +60,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await expect(page.locator('#buch-bestand')).toHaveValue('1');
 		await expect(page.locator('#buch-bestand-hinweis')).toHaveCount(0);
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert')).toBeVisible();
 		expect(exemplare(ISBN_MIT)).toBe('1');
 
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_MIT)).toHaveText(
@@ -117,7 +117,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await expect(page.locator('#buch-titel')).toHaveValue(`Nur Titel ${s}`);
 		await page.locator('#buch-bestand').fill('1');
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert')).toBeVisible();
 
 		expect(unnoetig).toEqual([]);
 		expect(exemplare(ISBN_OHNE)).toBe('1');

@@ -151,7 +151,7 @@ test('Das Etikett aus der Buchakte druckt das Druck-Center und bucht es gegen', 
 	await page
 		.getByRole('button', { name: `Etikett für ${barcode} im Druck-Center drucken` })
 		.click();
-	await expect(page.getByText('1 Etikett zum Drucken übernommen.', { exact: true })).toBeVisible();
+	await expect(page.getByText('1 Etikett zum Drucken übernommen', { exact: true })).toBeVisible();
 
 	// BEWEIS am Druckauftrag: derselbe Weg wie jeder Bogen im Druck-Center, genau dieses Exemplar.
 	const auftrag = page.waitForRequest(

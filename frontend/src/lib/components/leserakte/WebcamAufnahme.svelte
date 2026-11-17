@@ -183,7 +183,7 @@
 
 			<div class="flex items-center justify-between gap-4">
 				<p class="text-sm text-on-surface-variant">
-					Gespeichert wird der helle Ausschnitt im Hochformat 3:4.
+					Gespeichert wird der helle Ausschnitt im Hochformat 3:4
 				</p>
 				<Button onclick={nehmeFotoAuf} disabled={isCapturing} class="shrink-0">
 					{#if isCapturing}

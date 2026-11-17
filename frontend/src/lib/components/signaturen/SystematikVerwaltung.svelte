@@ -57,7 +57,7 @@
 			bezeichnung = '';
 			await laden();
 			onChanged?.();
-			snackbars.addToast('Sachgruppe angelegt.', 'success');
+			snackbars.addToast('Sachgruppe angelegt', 'success');
 		} catch {
 			// Meldung kam bereits aus apiPost.
 		} finally {
@@ -95,7 +95,7 @@
 			bind:value={kuerzel}
 			placeholder="Deu"
 			ungueltig={kuerzelFehlt}
-			hint={kuerzelFehlt ? 'Bitte ein Kürzel eintragen.' : ''}
+			hint={kuerzelFehlt ? 'Bitte ein Kürzel eintragen' : ''}
 		/>
 		<Feld
 			id="sys-bezeichnung"
@@ -103,7 +103,7 @@
 			bind:value={bezeichnung}
 			placeholder="Deutsch"
 			ungueltig={bezeichnungFehlt}
-			hint={bezeichnungFehlt ? 'Bitte eine Bezeichnung eintragen.' : ''}
+			hint={bezeichnungFehlt ? 'Bitte eine Bezeichnung eintragen' : ''}
 		/>
 		<Button type="submit" disabled={speichert} class="col-start-3 row-start-2">Anlegen</Button>
 	</form>

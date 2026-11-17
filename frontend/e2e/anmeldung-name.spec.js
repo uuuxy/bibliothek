@@ -23,7 +23,7 @@ test('Anmeldung nur mit dem Namen: Hinweis am Feld, Anmeldung mit der Adresse de
 		const feld = page.getByLabel('Name oder E-Mail');
 		await expect(feld).toBeVisible();
 		await expect(
-			page.getByText('Der Name vor dem @ genügt – @test.local ergänzt das Programm.')
+			page.getByText('Der Name vor dem @ genügt, @test.local ergänzt das Programm')
 		).toBeVisible();
 
 		// Wie uiLogin: erst fokussieren, dann füllen, dann prüfen.

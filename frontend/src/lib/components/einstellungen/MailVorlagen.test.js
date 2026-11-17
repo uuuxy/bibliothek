@@ -38,7 +38,7 @@ describe('Mail-Vorlagen', () => {
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => [t.message, t.type])).toEqual([
-				['Vorlage gespeichert.', 'success']
+				['Vorlage gespeichert', 'success']
 			])
 		);
 		expect(apiClient.put).toHaveBeenCalledWith('/api/mail-templates/1', {
@@ -88,7 +88,7 @@ describe('Mail-Vorlagen', () => {
 		vi.mocked(apiClient.get).mockResolvedValue(antwort({}, false));
 		const screen = render(MailVorlagen);
 		const meldung = await screen.findByRole('alert');
-		expect(meldung.textContent).toContain('Fehler beim Laden der Vorlagen.');
+		expect(meldung.textContent).toContain('Fehler beim Laden der Vorlagen');
 		// Neben dem Fehler behauptet die Liste nicht, sie lade noch.
 		expect(screen.queryByText(/Lade Vorlagen/)).toBeNull();
 	});

@@ -24,7 +24,7 @@
 	const statusChip = {
 		im_bestand: { ton: 'erfolg', text: 'Im Bestand' },
 		ausgesondert: { ton: 'warten', text: 'Ausgesondert' },
-		geloescht: { ton: 'fehler', text: 'Gelöscht — nur noch im Protokoll' }
+		geloescht: { ton: 'fehler', text: 'Gelöscht, nur noch im Protokoll' }
 	};
 	const aktionsText = { CHECKOUT: 'Ausleihe', RETURN: 'Rückgabe' };
 
@@ -52,7 +52,7 @@
 	<div class="space-y-1">
 		<h2 class="text-base font-semibold text-on-surface">Wem gehörte dieses Buch?</h2>
 		<p class="text-sm text-on-surface-variant">
-			Schlägt zu einem Buch-Barcode die protokollierte Ausleihhistorie nach — auch für längst
+			Schlägt zu einem Buch-Barcode die protokollierte Ausleihhistorie nach, auch für längst
 			gelöschte Exemplare. Jeder Abruf steht im Verwaltungsprotokoll.
 		</p>
 	</div>
@@ -88,7 +88,7 @@
 				class="rounded-xl border border-dashed border-outline-variant p-8 text-center text-sm text-on-surface-variant"
 			>
 				Zum Barcode <span class="font-mono font-semibold">{auskunft.barcode}</span> gibt es weder ein
-				Exemplar noch eine Spur im Protokoll — er war nie vergeben oder liegt vor der Aufbewahrungsfrist.
+				Exemplar noch eine Spur im Protokoll. Er war nie vergeben oder liegt vor der Aufbewahrungsfrist.
 			</div>
 		{:else}
 			<div class="space-y-2">
@@ -107,8 +107,8 @@
 
 			{#if auskunft.ereignisse.length === 0}
 				<p class="text-sm text-on-surface-variant">
-					Keine Ausleihvorgänge im Protokoll — vergeben, aber nie verliehen, oder die Einträge
-					liegen außerhalb der Aufbewahrungsfrist.
+					Keine Ausleihvorgänge im Protokoll: vergeben, aber nie verliehen, oder die Einträge liegen
+					außerhalb der Aufbewahrungsfrist
 				</p>
 			{:else}
 				<div class="overflow-x-auto">

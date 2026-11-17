@@ -119,7 +119,7 @@
 				etikett="Webmail-Adresse"
 				type="url"
 				placeholder="https://webmail.schule.de"
-				hint="Leer lassen, um den Abgleich abzuschalten."
+				hint="Leer lassen, um den Abgleich abzuschalten"
 				class="md:col-span-2"
 			/>
 			<Feld
@@ -133,7 +133,7 @@
 				etikett="Passwort"
 				type="password"
 				placeholder={hatPasswort ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
-				hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
+				hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern"
 			/>
 		</div>
 

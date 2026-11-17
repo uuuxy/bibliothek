@@ -180,7 +180,7 @@ test('Im Haus einen neuen Link erzeugen: Er steht da und trägt, der alte ist to
 
 		const feld = page.getByLabel('Bestätigungs-Link');
 		await expect(feld).toHaveValue(new RegExp(`^${baseURL}/bestellung/.+`));
-		await expect(page.getByText(/^Nur jetzt sichtbar/)).toBeVisible();
+		await expect(page.getByText(/^Der Link ist nur jetzt sichtbar/)).toBeVisible();
 		const neuerPfad = new URL(await feld.inputValue()).pathname;
 
 		await page.goto(`/bestellung/${alterToken}`);

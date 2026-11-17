@@ -34,7 +34,7 @@ describe('Statistik-Detailseite: Auswahl der Übersicht', () => {
 			'/api/statistiken?limit=100&zeitraum=monat&type=lmf'
 		);
 		expect(
-			screen.getByText('Nach Anzahl der Ausleihen in den letzten 30 Tagen, nur LMF.')
+			screen.getByText('Nach Anzahl der Ausleihen in den letzten 30 Tagen, nur LMF')
 		).toBeTruthy();
 	});
 
@@ -42,7 +42,7 @@ describe('Statistik-Detailseite: Auswahl der Übersicht', () => {
 		const screen = render(StatistikDetail);
 		await screen.findByText('Brücke nach Terabithia');
 		expect(String(vi.mocked(apiFetch).mock.calls.at(-1)?.[0])).toBe('/api/statistiken?limit=100');
-		expect(screen.getByText('Nach Anzahl der Ausleihen, alle Zeiträume.')).toBeTruthy();
+		expect(screen.getByText('Nach Anzahl der Ausleihen, alle Zeiträume')).toBeTruthy();
 	});
 
 	it('nennt bei den Ladenhütern nur den Bestand', async () => {
@@ -50,7 +50,7 @@ describe('Statistik-Detailseite: Auswahl der Übersicht', () => {
 		uiStore.statsDetailFilter = { zeitraum: 'monat', medientyp: 'freihand' };
 		const screen = render(StatistikDetail);
 		expect(
-			await screen.findByText('Seit über 2 Jahren nicht ausgeliehen — oder noch nie, nur Freihand.')
+			await screen.findByText('Seit über 2 Jahren nicht ausgeliehen oder noch nie, nur Freihand')
 		).toBeTruthy();
 	});
 });
@@ -83,7 +83,7 @@ describe('Statistik-Detailseite', () => {
 		);
 		const screen = render(StatistikDetail);
 		expect(await screen.findByText('Statistik nicht geladen')).toBeTruthy();
-		expect(screen.queryByText('Noch keine Daten vorhanden.')).toBeNull();
+		expect(screen.queryByText('Noch keine Daten vorhanden')).toBeNull();
 		expect(screen.queryByText('0 von 0 Einträgen')).toBeNull();
 	});
 });
@@ -92,13 +92,13 @@ describe('Statistik-Detailseite', () => {
 describe('Statistik-Detailseite: Hinweis je Liste', () => {
 	it('nennt je Liste ihren eigenen Maßstab', async () => {
 		const renner = render(StatistikDetail);
-		expect(await renner.findByText('Nach Anzahl der Ausleihen, alle Zeiträume.')).toBeTruthy();
+		expect(await renner.findByText('Nach Anzahl der Ausleihen, alle Zeiträume')).toBeTruthy();
 		renner.unmount();
 
 		uiStore.statsDetailKind = 'ladenhueter';
 		const ladenhueter = render(StatistikDetail);
 		expect(
-			await ladenhueter.findByText('Seit über 2 Jahren nicht ausgeliehen — oder noch nie.')
+			await ladenhueter.findByText('Seit über 2 Jahren nicht ausgeliehen oder noch nie')
 		).toBeTruthy();
 	});
 });

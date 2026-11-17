@@ -48,7 +48,7 @@ export function erzeugeAuflagenSuche(bekannte, passt = istLernmittel) {
 		} catch {
 			if (meine !== nr) return;
 			treffer = [];
-			fehler = 'Netzwerkfehler — die Suche hat den Server nicht erreicht.';
+			fehler = 'Netzwerkfehler: Die Suche hat den Server nicht erreicht';
 		}
 	}
 

@@ -25,7 +25,7 @@
 				timeoutMs: FRIST_MAILVERSAND_MS
 			});
 			snackbars.addToast(
-				antwort?.message ?? 'Bestellmail gesendet.',
+				antwort?.message ?? 'Bestellmail gesendet',
 				antwort?.status === 'warning' ? 'error' : 'success'
 			);
 		} catch {
@@ -51,7 +51,7 @@
 		laeuft = true;
 		try {
 			const antwort = await apiDelete(`/api/bestellungen/${b.id}/mail`);
-			snackbars.addToast(antwort?.message ?? 'Der Hinweis ist entfernt.', 'success');
+			snackbars.addToast(antwort?.message ?? 'Der Hinweis ist entfernt', 'success');
 		} catch {
 			// Die Meldung des Servers hat apiFetch schon gezeigt.
 		} finally {

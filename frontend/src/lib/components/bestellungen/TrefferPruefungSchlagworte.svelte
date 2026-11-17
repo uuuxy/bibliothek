@@ -67,7 +67,7 @@
 			await setzeTitelSchlagworte(titelId, schlagworte);
 		} catch {
 			snackbars.addToast(
-				'Schlagworte konnten nicht gespeichert werden — Titel wird trotzdem bestellt.',
+				'Schlagworte konnten nicht gespeichert werden, der Titel wird trotzdem bestellt',
 				'error'
 			);
 		}
@@ -90,7 +90,7 @@
 		angeboteNeuEtikett="Neue Schlagworte aus der DNB"
 		disabled={beiStart === null}
 		hint={fehlen
-			? 'Konnten nicht geladen werden — bitte später im Buchformular eintragen.'
+			? 'Konnten nicht geladen werden, bitte später im Buchformular eintragen'
 			: undefined}
 	/>
 	{#if mitDnbKnopf}

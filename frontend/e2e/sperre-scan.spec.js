@@ -67,7 +67,7 @@ test('Anmeldung: ein Scan wird nicht abgeschickt, und die Felder stehen wie davo
 	await expect(page.locator('#login-email')).toBeFocused();
 	await page.locator('#login-email').fill(ADMIN_EMAIL);
 	await scanneWieScanner(page, '5896800039556');
-	const hinweis = page.getByText('Scan erkannt: Bitte erst anmelden, dann scannen.');
+	const hinweis = page.getByText('Scan erkannt: Bitte erst anmelden, dann scannen');
 	await expect(hinweis).toBeVisible();
 	await expect(page.locator('#login-email')).toHaveValue(ADMIN_EMAIL);
 

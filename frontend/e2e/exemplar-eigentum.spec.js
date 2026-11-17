@@ -43,7 +43,7 @@ test('Eigentum: Karte zeigt die Herkunft, markierte Exemplare werden mit Grund g
 	// Ändern: erst mit Auswahl und Grund frei.
 	await leiste.getByRole('button', { name: 'Eigentum ändern' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Eigentum ändern' });
-	await expect(dialog).toContainText('Gilt für 2 Exemplare.');
+	await expect(dialog).toContainText('Gilt für 2 Exemplare');
 	const bestaetigen = dialog.getByRole('button', { name: 'Eigentum ändern' });
 	await dialog.getByLabel('Land', { exact: true }).check();
 	await expect(bestaetigen).toBeDisabled();

@@ -89,8 +89,8 @@ export function erzeugeProblemMeldung(nachSenden) {
 					})
 				});
 				if (!res.ok)
-					throw new Error(await leseApiFehler(res, 'Die Meldung konnte nicht gesendet werden.'));
-				snackbars.addToast('Meldung ist bei der Bibliothek.', 'success');
+					throw new Error(await leseApiFehler(res, 'Die Meldung konnte nicht gesendet werden'));
+				snackbars.addToast('Meldung ist bei der Bibliothek', 'success');
 				forms[key] = leer();
 				await nachSenden();
 				return true;

@@ -84,7 +84,7 @@ describe('AusweiseJeKlasse: der Reiter druckt die Ausweise einer ganzen Klasse',
 		const k = render(AusweiseJeKlasse);
 		await waehle(k, '05B');
 
-		await k.findByText('In dieser Klasse steht kein Schüler.');
+		await k.findByText('In dieser Klasse steht kein Schüler');
 		expect(
 			/** @type {HTMLButtonElement} */ (k.getByRole('button', { name: 'Etiketten drucken' }))
 				.disabled
@@ -142,8 +142,8 @@ describe('AusweiseJeKlasse: die Klassenliste kommt nicht', () => {
 		],
 		[
 			'ohne Antwort',
-			() => Promise.reject(new Error('Keine Verbindung zum Server.')),
-			'Keine Verbindung zum Server.'
+			() => Promise.reject(new Error('Keine Verbindung zum Server')),
+			'Keine Verbindung zum Server'
 		]
 	])('nennt %s den Grund und lädt auf Wunsch neu', async (_, antwort, grund) => {
 		vi.mocked(apiFetch).mockImplementationOnce(/** @type {any} */ (antwort));

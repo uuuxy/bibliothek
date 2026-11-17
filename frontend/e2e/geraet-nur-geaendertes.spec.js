@@ -41,7 +41,7 @@ test('Gerät: Maske und Defekt-Knopf überschreiben nicht, was inzwischen ein an
 			(await gesendet).postDataJSON(),
 			'Die Maske schickt mehr als das geänderte Feld'
 		).toEqual({ zustand_notiz: 'Display gesprungen' });
-		await expect(page.getByText('Gerät gespeichert.')).toBeVisible();
+		await expect(page.getByText('Gerät gespeichert')).toBeVisible();
 		expect(
 			stand(),
 			'Das Speichern der Notiz hat Modell oder Defekt-Kennzeichen des anderen Platzes zurückgeschrieben'

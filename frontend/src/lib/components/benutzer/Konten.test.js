@@ -66,7 +66,7 @@ describe('Benutzerliste: Meldungen', () => {
 		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
 
 		await waitFor(() =>
-			expect(meldungen()).toEqual([['Benutzer erfolgreich angelegt.', 'success']])
+			expect(meldungen()).toEqual([['Benutzer erfolgreich angelegt', 'success']])
 		);
 		expect(screen.queryByRole('dialog')).toBeNull();
 	});
@@ -79,7 +79,7 @@ describe('Benutzerliste: Meldungen', () => {
 		);
 
 		await waitFor(() =>
-			expect(meldungen()).toEqual([['Benutzer erfolgreich gelöscht.', 'success']])
+			expect(meldungen()).toEqual([['Benutzer erfolgreich gelöscht', 'success']])
 		);
 		expect(screen.queryByRole('dialog')).toBeNull();
 	});
@@ -269,7 +269,7 @@ describe('Benutzerliste: nach einem Fehler neu laden', () => {
 		const abrufe = { n: 0 };
 		vi.mocked(apiFetch).mockImplementation(async (adresse, optionen) => {
 			if (adresse === '/api/benutzer' && !optionen) return antwort(listen[abrufe.n++] ?? []);
-			throw new Error('Keine Verbindung zum Server.');
+			throw new Error('Keine Verbindung zum Server');
 		});
 		return abrufe;
 	}
@@ -289,7 +289,7 @@ describe('Benutzerliste: nach einem Fehler neu laden', () => {
 
 		await waitFor(() => expect(abrufe.n).toBe(2));
 		expect(await screen.findByText(NEU.email)).toBeTruthy();
-		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server.');
+		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server');
 	});
 
 	it('lädt die Liste nach einem gescheiterten Löschen neu und lässt den Grund im Dialog', async () => {
@@ -301,6 +301,6 @@ describe('Benutzerliste: nach einem Fehler neu laden', () => {
 
 		await waitFor(() => expect(abrufe.n).toBe(2));
 		await waitFor(() => expect(screen.queryByText(KONTO.email)).toBeNull());
-		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server.');
+		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server');
 	});
 });

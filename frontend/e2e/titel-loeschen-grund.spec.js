@@ -62,7 +62,7 @@ test.describe.serial('Titel löschen mit Grund', () => {
 	}) => {
 		const dialog = await oeffneMaske(page);
 		await expect(
-			dialog.getByText('Die 2 Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch.')
+			dialog.getByText('Die 2 Exemplare im Haus kommen mit diesem Grund ins Abgangsbuch')
 		).toBeVisible();
 		await expect(dialog.getByRole('radio', { name: 'Alter Bestand' })).toBeChecked();
 		await expect(dialog.getByText('Ein Exemplar ist verliehen:')).toBeVisible();
@@ -86,7 +86,7 @@ test.describe.serial('Titel löschen mit Grund', () => {
 		page
 	}) => {
 		const dialog = await oeffneMaske(page);
-		await expect(dialog.getByText('Im Haus ist kein Exemplar.')).toBeVisible();
+		await expect(dialog.getByText('Im Haus ist kein Exemplar')).toBeVisible();
 		await expect(dialog.getByRole('button', { name: 'Löschen' })).toBeDisabled();
 
 		await dialog

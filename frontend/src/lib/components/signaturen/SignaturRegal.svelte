@@ -61,7 +61,7 @@
 
 {#if !signatur}
 	<div class="text-sm text-on-surface-variant p-6 text-center">
-		Wähle links eine Signatur, um das Regal zu sehen.
+		Wähle links eine Signatur, um das Regal zu sehen
 	</div>
 {:else if laedt}
 	<div class="flex justify-center p-6"><Ladekreis etikett="Regal lädt" /></div>
@@ -69,7 +69,7 @@
 	<LadeFehler titel="Regal nicht geladen" text={ladefehler} onerneut={() => (versuch += 1)} />
 {:else if buecher.length === 0}
 	<div class="text-sm text-on-surface-variant p-6 text-center">
-		Unter „{signatur}“ steht kein Buch.
+		Unter „{signatur}“ steht kein Buch
 	</div>
 {:else}
 	<div class="space-y-3">
@@ -78,9 +78,7 @@
 				{signatur}
 				<span class="font-normal text-on-surface-variant text-sm">· {buecher.length} Titel</span>
 			</h2>
-			<p class="text-sm text-on-surface-variant">
-				In Regalreihenfolge — so läufst du das Regal ab.
-			</p>
+			<p class="text-sm text-on-surface-variant">In Regalreihenfolge, so läufst du das Regal ab</p>
 		</div>
 
 		{#if gekappt}

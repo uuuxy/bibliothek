@@ -52,8 +52,8 @@ export function artErklaerung(art, eingang) {
 		// Ohne bekannte Jahrgänge kein leeres Klammerpaar — dieselbe Regel wie in Go
 		// (internal/api/lernmittel/lmf_termine.go, lmfArtErklaerung; Prüfung: TestLMFTexte…).
 		return (eingang ?? []).length === 0
-			? 'Nur die neu gebildeten Klassen bekommen ihre Schulbücher.'
-			: `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.`;
+			? 'Nur die neu gebildeten Klassen bekommen ihre Schulbücher'
+			: `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher`;
 	return 'Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. „Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.';
 }
 
@@ -258,9 +258,9 @@ export function festePlaetzeVollstaendig(zeilen) {
  *  @param {string} art @param {PlanEntwurf} entwurf
  *  @returns {Promise<{ ok: boolean, konflikt?: boolean, meldung: string }>} */
 export async function speicherePlan(art, entwurf) {
-	const { res, json, meldung } = await sende(art, entwurf, false, 'Speichern fehlgeschlagen.');
+	const { res, json, meldung } = await sende(art, entwurf, false, 'Speichern fehlgeschlagen');
 	if (!res.ok) return { ok: false, konflikt: res.status === 409, meldung };
-	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert.' };
+	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert' };
 	return fristMeldung('Plan gespeichert', json);
 }
 
@@ -270,7 +270,7 @@ export async function speicherePlan(art, entwurf) {
 export async function veroeffentlichePlan(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}/veroeffentlichen`, { method: 'POST' });
 	if (!res.ok)
-		return { ok: false, meldung: await leseApiFehler(res, 'Veröffentlichen fehlgeschlagen.') };
+		return { ok: false, meldung: await leseApiFehler(res, 'Veröffentlichen fehlgeschlagen') };
 	const json = await res.json().catch(() => ({}));
 	return fristMeldung('Plan veröffentlicht', json);
 }
@@ -278,7 +278,7 @@ export async function veroeffentlichePlan(art) {
 /** @param {string} art @returns {Promise<{ ok: boolean, meldung: string }>} */
 export async function verwerfePlan(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`, { method: 'DELETE' });
-	if (!res.ok) return { ok: false, meldung: await leseApiFehler(res, 'Verwerfen fehlgeschlagen.') };
+	if (!res.ok) return { ok: false, meldung: await leseApiFehler(res, 'Verwerfen fehlgeschlagen') };
 	const json = await res.json().catch(() => ({}));
 	return fristMeldung('Plan verworfen', json, 'auf den Stichtag zurückgesetzt');
 }
@@ -291,7 +291,7 @@ function fristMeldung(satz, json, wie = 'angepasst') {
 	if (n <= 0) return { ok: true, meldung: `${satz}.` };
 	return {
 		ok: true,
-		meldung: `${satz} · Frist von ${anzahlText(n, 'Ausleihe', 'Ausleihen')} ${wie}.`
+		meldung: `${satz} · Frist von ${anzahlText(n, 'Ausleihe', 'Ausleihen')} ${wie}`
 	};
 }
 

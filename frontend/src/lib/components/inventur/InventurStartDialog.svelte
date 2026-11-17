@@ -20,16 +20,16 @@
 	];
 
 	const BEREICHE = [
-		{ wert: 'global', name: 'Komplette Bibliothek', text: 'Prüfe den gesamten Bestand ab.' },
+		{ wert: 'global', name: 'Komplette Bibliothek', text: 'Prüfe den gesamten Bestand ab' },
 		{
 			wert: 'signature',
 			name: 'Nur bestimmte Signatur',
-			text: 'Grenze die Inventur auf eine Kategorie ein.'
+			text: 'Grenze die Inventur auf eine Kategorie ein'
 		},
 		{
 			wert: 'filter',
 			name: 'Nach Fach / Klasse',
-			text: 'Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“.'
+			text: 'Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“'
 		}
 	];
 
@@ -99,7 +99,7 @@
 						zusatz: `${s.exemplare} ${s.exemplare === 1 ? 'Exemplar' : 'Exemplare'}`
 					}))}
 					placeholder="z. B. LMF Deu 7"
-					hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
+					hint="Erfasst alles, was mit dieser Signatur beginnt, „LMF Deu 7“ also auch „LMF Deu 7 / Bie“"
 				>
 					{#snippet vorschau(/** @type {string} */ wert)}
 						<SignaturCoverVorschau signatur={wert} />

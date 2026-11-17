@@ -39,7 +39,7 @@ async function speichern(page) {
 	// (docs/OFFEN.md 5.76: sie verschwand mit der Maske).
 	await expect(page.getByRole('button', { name: 'Bearbeiten' })).toBeVisible();
 	await expect(
-		page.getByRole('status').filter({ hasText: 'Änderungen gespeichert.' })
+		page.getByRole('status').filter({ hasText: 'Änderungen gespeichert' })
 	).toBeVisible();
 	return rumpf;
 }

@@ -252,7 +252,7 @@ describe('useBuchakte.ladeAlles: Kopf und überholte Läufe', () => {
 		await akte.ladeAlles('A');
 
 		expect(akte.buch).toBeNull();
-		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden (Netzwerkfehler).');
+		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden (Netzwerkfehler)');
 		expect(akte.laedt).toBe(false);
 		konsole.mockRestore();
 	});

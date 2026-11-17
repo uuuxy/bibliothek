@@ -138,7 +138,7 @@ test('„Liste drucken" im Fehlbestandsbericht: offene Exemplare, ganzer Titel, 
 	const fenster = page.waitForEvent('popup');
 	await page.getByRole('button', { name: 'Liste drucken' }).click();
 	const blatt = await fenster;
-	await expect(blatt.locator('h1')).toHaveText('Fehlbestand — Druckprobe');
+	await expect(blatt.locator('h1')).toHaveText('Fehlbestand: Druckprobe');
 	await expect(blatt.locator('p.meta')).toContainText(
 		'Als Verlust gebucht: 3 | bereits geklärt: 2 | noch offen: 1'
 	);

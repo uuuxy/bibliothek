@@ -55,7 +55,7 @@ test('Mahnlauf: Auswahl und Override-Adresse landen im Request', async ({ page }
 	await page.goto('/mahnwesen');
 	await page
 		.getByRole('button', {
-			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+			name: /Alle anmahnen: Mahnlauf konfigurieren und per E-Mail versenden/
 		})
 		.first()
 		.click();
@@ -106,7 +106,7 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 	await page.goto('/mahnwesen');
 	await page
 		.getByRole('button', {
-			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+			name: /Alle anmahnen: Mahnlauf konfigurieren und per E-Mail versenden/
 		})
 		.first()
 		.click();
@@ -125,7 +125,7 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 	// die fremde Adresse in den nächsten Lauf und verschickte still an jemand anderen.
 	await page
 		.getByRole('button', {
-			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+			name: /Alle anmahnen: Mahnlauf konfigurieren und per E-Mail versenden/
 		})
 		.first()
 		.click();
@@ -156,7 +156,7 @@ test('Mahnlauf: Solange er läuft, ist „Alle anmahnen" gesperrt', async ({ pag
 	await page.goto('/mahnwesen');
 	const knopf = page
 		.getByRole('button', {
-			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+			name: /Alle anmahnen: Mahnlauf konfigurieren und per E-Mail versenden/
 		})
 		.first();
 	await knopf.click();

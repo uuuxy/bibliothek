@@ -84,12 +84,12 @@ describe('EhemaligeListe', () => {
 	it('Suche läuft auf dem Server mit demselben Status', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort([]));
 		const { getByRole, findByText } = render(EhemaligeListe, { onSelect: () => {} });
-		await findByText('Keine Ehemaligen im Archiv.');
+		await findByText('Keine Ehemaligen im Archiv');
 
 		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
 			target: { value: 'Wera' }
 		});
-		await findByText('Keine Ehemaligen gefunden.');
+		await findByText('Keine Ehemaligen gefunden');
 		// Die Suche ist entprellt (250 ms) — auf den Aufruf warten, nicht auf den Text.
 		await vi.waitFor(() => {
 			const urls = vi.mocked(apiFetch).mock.calls.map((c) => c[0]);
@@ -102,7 +102,7 @@ describe('EhemaligeListe', () => {
 	it('liest in einer gescannten Nummer ein ß hinter der Vorsilbe als Bindestrich', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort([]));
 		const { getByRole, findByText } = render(EhemaligeListe, { onSelect: () => {} });
-		await findByText('Keine Ehemaligen im Archiv.');
+		await findByText('Keine Ehemaligen im Archiv');
 
 		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
 			target: { value: 'Sß10001' }

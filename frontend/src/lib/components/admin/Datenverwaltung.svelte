@@ -30,7 +30,7 @@
 			await exportiereCSV();
 		} catch (err) {
 			snackbars.addToast(
-				(err instanceof Error && err.message) || 'Der Katalog ließ sich nicht herunterladen.',
+				(err instanceof Error && err.message) || 'Der Katalog ließ sich nicht herunterladen',
 				'error'
 			);
 		} finally {
@@ -38,7 +38,7 @@
 		}
 	}
 
-	const COVER_NICHT_GESTARTET = 'Die Suche nach Covern ließ sich nicht starten.';
+	const COVER_NICHT_GESTARTET = 'Die Suche nach Covern ließ sich nicht starten';
 	let isSyncingCovers = $state(false);
 
 	async function gleicheCoverAb() {
@@ -125,7 +125,7 @@
 		{#if darfImport}
 			{@render adminCard(
 				'Daten importieren',
-				'Übernimmt Titel und Exemplare aus Littera oder aus einer Tabelle und lädt fehlende Cover.',
+				'Übernimmt Titel und Exemplare aus Littera oder aus einer Tabelle und lädt fehlende Cover',
 				Upload,
 				importContent
 			)}
@@ -133,7 +133,7 @@
 		{#if darfExport}
 			{@render adminCard(
 				'Daten exportieren',
-				'Lädt den ganzen Katalog als CSV-Datei herunter, zum Weiterbearbeiten in einer Tabelle oder zum Aufheben.',
+				'Lädt den ganzen Katalog als CSV-Datei herunter, zum Weiterbearbeiten in einer Tabelle oder zum Aufheben',
 				Download,
 				exportContent
 			)}

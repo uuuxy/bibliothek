@@ -45,7 +45,7 @@ test('Schlagwort-Pflege: mehrere Wörter auf einmal löschen', async ({ page }) 
 		const suche = page.getByRole('searchbox', { name: 'Schlagwort suchen' });
 		const alle = page.getByRole('checkbox', { name: 'Alle angezeigten Schlagworte markieren' });
 		await suche.fill(`${s}-kein-treffer`);
-		await expect(page.getByText('Kein Schlagwort passt zur Suche.')).toBeVisible();
+		await expect(page.getByText('Kein Schlagwort passt zur Suche')).toBeVisible();
 		await expect(alle).toBeDisabled();
 		await suche.fill(s);
 		await expect(alle).toBeEnabled();

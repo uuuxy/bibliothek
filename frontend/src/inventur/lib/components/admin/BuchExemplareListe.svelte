@@ -110,7 +110,7 @@
 				<div role="alert" class="text-sm text-error py-4">{fehler}</div>
 			{:else if exemplare.length === 0}
 				<div class="text-sm text-on-surface-variant py-4 italic text-center">
-					Kein Exemplar im Bestand.
+					Kein Exemplar im Bestand
 				</div>
 			{:else}
 				<!-- Ohne eigene Höhe: Die Liste zeigt alle Exemplare, gescrollt wird die Seite. -->

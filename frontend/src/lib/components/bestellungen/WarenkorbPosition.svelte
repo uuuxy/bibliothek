@@ -79,7 +79,7 @@
 					<StatusChip
 						ton="warten"
 						text="DNB"
-						tip="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis prüfen"
+						tip="Ladenpreis aus dem DNB-Datensatz, bitte gegen den Schulpreis prüfen"
 					/>
 				{/if}
 				<Feld

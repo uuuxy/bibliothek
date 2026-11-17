@@ -149,7 +149,7 @@
 						{/if}
 					</label>
 				{:else}
-					<p class="p-3 text-sm text-on-surface-variant">Keine Klassen vorhanden.</p>
+					<p class="p-3 text-sm text-on-surface-variant">Keine Klassen vorhanden</p>
 				{/each}
 			</div>
 
@@ -169,7 +169,7 @@
 			bind:value={overrideEmail}
 			placeholder="z. B. mueller"
 			ungueltig={!emailOk}
-			hint={emailOk ? hinweis : 'Keine gültige Adresse — Name oder vollständige E-Mail.'}
+			hint={emailOk ? hinweis : 'Keine gültige Adresse: Name oder vollständige E-Mail'}
 		/>
 	</div>
 

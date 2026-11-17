@@ -116,7 +116,7 @@ test('Ohne Netz geht ein Buch an die geladene Lehrkraft', async ({ page, context
 	await context.setOffline(true);
 	await expect(page.getByText(OHNE_NETZ)).toBeVisible();
 	await scanne(page, buch);
-	await expect(page.getByText(`Offline: Aktion für „${buch}“ gespeichert.`)).toBeVisible();
+	await expect(page.getByText(`Offline: Aktion für „${buch}“ gespeichert`)).toBeVisible();
 	await expect
 		.poll(() => warteschlange(page))
 		.toEqual([expect.objectContaining({ art: 'ausleihe', barcode: buch, leser_id: lena.id })]);
@@ -148,7 +148,7 @@ test('Lässt der Browser nichts ablegen, meldet die Theke den Scan als NICHT ges
 	await expect(
 		page.getByText(`NICHT gespeichert: „${buch}“ konnte nicht auf diesem Rechner abgelegt werden`)
 	).toBeVisible();
-	await expect(page.getByText(`Offline: Aktion für „${buch}“ gespeichert.`)).toHaveCount(0);
+	await expect(page.getByText(`Offline: Aktion für „${buch}“ gespeichert`)).toHaveCount(0);
 
 	await context.setOffline(false);
 	expect(verliehenAn(buch)).toBe('');

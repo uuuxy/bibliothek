@@ -72,12 +72,12 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 				} else {
 					liste = [];
 					grenze = 0;
-					ladefehler = await leseApiFehler(res, 'Der Papierkorb konnte nicht geladen werden.');
+					ladefehler = await leseApiFehler(res, 'Der Papierkorb konnte nicht geladen werden');
 				}
 			} catch (err) {
 				liste = [];
 				grenze = 0;
-				ladefehler = 'Der Papierkorb konnte nicht geladen werden (Netzwerkfehler).';
+				ladefehler = 'Der Papierkorb konnte nicht geladen werden (Netzwerkfehler)';
 				console.error('Fehler beim Laden des Papierkorbs:', err);
 			} finally {
 				laedt = false;
@@ -95,12 +95,12 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 					onRestoreSuccess();
 					return;
 				}
-				snackbars.addToast(await leseApiFehler(res, 'Wiederherstellen fehlgeschlagen.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Wiederherstellen fehlgeschlagen'), 'error');
 				// Der Grund kann in der Zwischenzeit entstanden sein (der nächtliche Lauf
 				// hat anonymisiert) — nachladen, damit die Liste die Wahrheit zeigt.
 				await this.laden();
 			} catch (err) {
-				snackbars.addToast('Netzwerkfehler bei der Wiederherstellung.', 'error');
+				snackbars.addToast('Netzwerkfehler bei der Wiederherstellung', 'error');
 				console.error('Fehler bei Wiederherstellung:', err);
 			} finally {
 				stelltHer.delete(id);
@@ -113,16 +113,16 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 			try {
 				const res = await apiFetch(`/api/schueler/deleted/${id}`, { method: 'DELETE' });
 				if (res.ok) {
-					snackbars.addToast('Schüler endgültig gelöscht.', 'success');
+					snackbars.addToast('Schüler endgültig gelöscht', 'success');
 					await this.laden();
 				} else {
 					snackbars.addToast(
-						await leseApiFehler(res, 'Endgültiges Löschen fehlgeschlagen.'),
+						await leseApiFehler(res, 'Endgültiges Löschen fehlgeschlagen'),
 						'error'
 					);
 				}
 			} catch (err) {
-				snackbars.addToast('Netzwerkfehler beim endgültigen Löschen.', 'error');
+				snackbars.addToast('Netzwerkfehler beim endgültigen Löschen', 'error');
 				console.error(err);
 			} finally {
 				loeschtGerade = false;

@@ -52,13 +52,13 @@
 		try {
 			const res = await apiFetch(`/api/schueler/${id}`, { method: 'DELETE' });
 			if (res.ok) {
-				lauf.erfolg(`${vorname} ${nachname} liegt im Papierkorb.`);
+				lauf.erfolg(`${vorname} ${nachname} liegt im Papierkorb`);
 				onsuccess?.(id);
 			} else {
-				lauf.fehler(await leseApiFehler(res, 'Fehler beim Löschen des Schülers.'), zeigeFehler);
+				lauf.fehler(await leseApiFehler(res, 'Fehler beim Löschen des Schülers'), zeigeFehler);
 			}
 		} catch (err) {
-			lauf.fehler('Netzwerkfehler beim Löschen des Schülers.', zeigeFehler);
+			lauf.fehler('Netzwerkfehler beim Löschen des Schülers', zeigeFehler);
 			console.error(err);
 		} finally {
 			laeuft = false;
@@ -98,7 +98,7 @@
 				{#if mitZugang}
 					<p class="mt-2 text-sm text-on-surface-variant leading-relaxed font-sans">
 						Der Zugang zu „Mein Portal“ erlischt dabei. Wird der Eintrag später wiederhergestellt,
-						kommt er ohne Zugang zurück — den legt die Schul-E-Mail in der Akte neu an.
+						kommt er ohne Zugang zurück, den legt die Schul-E-Mail in der Akte neu an.
 					</p>
 				{/if}
 

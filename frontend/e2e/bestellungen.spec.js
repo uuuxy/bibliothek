@@ -34,7 +34,7 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	// Von > Bis → Button disabled + Fehlermeldung (Client-Validierung)
 	await page.locator('#von').fill('2026-07-10');
 	await page.locator('#bis').fill('2026-07-01');
-	await expect(page.getByText('Das Von-Datum liegt nach dem Bis-Datum.')).toBeVisible();
+	await expect(page.getByText('Das Von-Datum liegt nach dem Bis-Datum')).toBeVisible();
 	await expect(download).toHaveAttribute('aria-disabled', 'true');
 
 	// Zurück in den gültigen Bereich → wieder aktiv

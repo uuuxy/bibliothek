@@ -67,7 +67,7 @@ export function erzeugeOmniboxRueckmeldung() {
 
 	function zeichneBanner() {
 		const nummern = nichtGebucht.map((nummer) => `„${nummer}“`).join(', ');
-		const rest = nummern ? `Gescannt und NICHT gebucht: ${nummern} — bitte erneut scannen.` : '';
+		const rest = nummern ? `Gescannt und NICHT gebucht, bitte erneut scannen: ${nummern}` : '';
 		fehler = [bannerMeldung, rest].filter(Boolean).join(' · ');
 	}
 

@@ -68,7 +68,7 @@ class BescheideStore {
 		this.uebergibt = id;
 		try {
 			await apiPost(`/api/bescheide/${id}/uebergeben`, {});
-			snackbars.addToast('Bescheid als übergeben gebucht.', 'success');
+			snackbars.addToast('Bescheid als übergeben gebucht', 'success');
 			await this.lade();
 		} catch {
 			/* apiPost meldet jeden Fehler selbst */

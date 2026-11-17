@@ -43,10 +43,12 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
-- [ ] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
-  kein langer Strich. Vorher entscheiden, ob der Durchgang gemacht wird. (5.185)
+- [x] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
+  kein langer Strich. (5.185)
 - [x] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
   die 23 Stellen angleichen. (5.186)
+- [ ] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
+  welche Regel für beide gilt. (5.187)
 
 ### Termin
 
@@ -99,22 +101,18 @@ Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
 
-### 5.185 Satzzeichen in den Texten der Oberfläche
+### 5.187 Doppelpunkt vor großem Anfang
 
-Die Meldungen des Servers folgen M3 (Content design, Grammar and punctuation): ein einzelner Satz
-ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich ([STIL.md](STIL.md) 11,
-`pruefung/meldung_ratsche_test.go`, Bestand 0). Für die Texte, die die Oberfläche selbst schreibt,
-gibt es keine Prüfung. Gemessen am 17.11.2026 an 4.683 Texten aus `frontend/src`: 465 einzelne
-Sätze enden mit Punkt, rund 60 ganze Sätze ohne; 184 Texte in 103 Dateien tragen den langen Strich
-„—“. Nebeneinander stehen so „Buch gespeichert.“ aus der Oberfläche und „Schadensfall wurde bereits
-bezahlt oder storniert“ vom Server.
+Die Prüfung am Server (`pruefung/meldung_ratsche_test.go`) zählt einen Doppelpunkt vor einem
+großen Anfang als Satzende. „Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary
+keinen Titel.“ gilt dort als zwei Sätze und trägt einen Punkt. Die Prüfung der Oberfläche
+(`frontend-hygiene-satzzeichen.test.js`) zählt ihn nicht: Sonst bräuchten Bezeichnungen wie
+„Leserdatei: Sonderrechte“ einen Punkt, weil jedes Hauptwort groß beginnt. „Netzwerkfehler: Die
+Auflagen ließen sich nicht laden“ steht dort ohne Punkt. M3 nennt den Doppelpunkt nur für Listen im
+Fließtext („Use colons for lists within body text“), nicht als Satzende.
 
-Offen ist die Entscheidung, ob der Durchgang gemacht wird: rund 600 Texte samt den Tests und
-Browser-Tests, die sie wörtlich erwarten. Der Punkt lässt sich mechanisch streichen; jeder Satz mit
-Strich braucht eine eigene Fassung (Komma, Punkt oder zwei Sätze).
-
-Nächster Schritt nach einem Ja: erst die Meldungen am unteren Rand, dann die Sätze mit Strich, je
-mit einer Prüfung, die den Stand hält wie am Server.
+Nächster Schritt: entscheiden, ob der Server die Regel der Oberfläche übernimmt; dann die Meldungen
+mit Doppelpunkt am Server und ihre Tests angleichen.
 
 ### 7.2 Frisches Littera-Backup
 

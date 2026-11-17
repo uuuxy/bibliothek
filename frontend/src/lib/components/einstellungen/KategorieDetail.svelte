@@ -46,7 +46,7 @@
 	{:else if aktiv === 'routing'}
 		<KategorieRahmen
 			titel="Klassenleitungen"
-			kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt."
+			kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt"
 		>
 			<Klassenleitungen />
 		</KategorieRahmen>
@@ -67,21 +67,21 @@
 	{:else if aktiv === 'lmf'}
 		<KategorieRahmen
 			titel="LMF-Aktionen"
-			kurz="Massenwerkzeuge für Lernmittel — sie verändern viele Ausleihen zugleich."
+			kurz="Massenwerkzeuge für Lernmittel, sie verändern viele Ausleihen zugleich"
 		>
 			<LMFVerlaengerung />
 		</KategorieRahmen>
 	{:else if aktiv === 'daten' && sichtbar.has('daten')}
 		<KategorieRahmen
 			titel="Datenverwaltung"
-			kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen."
+			kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen"
 		>
 			<Datenverwaltung />
 		</KategorieRahmen>
 	{:else if aktiv === 'schuljahr' && sichtbar.has('schuljahr')}
 		<KategorieRahmen
 			titel="LUSD & Versetzung"
-			kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres."
+			kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres"
 		>
 			<SchuljahreswechselBereich {daten} {onSaved} />
 		</KategorieRahmen>
@@ -90,14 +90,14 @@
 	{:else if aktiv === 'betrieb'}
 		<KategorieRahmen
 			titel="Betriebsbereitschaft"
-			kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur — geändert wird in den Kategorien daneben."
+			kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur, geändert wird in den Kategorien daneben."
 		>
 			<Betriebsbereitschaft />
 		</KategorieRahmen>
 	{:else if aktiv === 'fehler'}
 		<KategorieRahmen
 			titel="Fehler im Log"
-			kurz="Was in den letzten 24 Stunden im Betrieb schiefgegangen ist, je Meldung mit Ursache."
+			kurz="Was in den letzten 24 Stunden im Betrieb schiefgegangen ist, je Meldung mit Ursache"
 		>
 			<FehlerImLog />
 		</KategorieRahmen>

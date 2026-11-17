@@ -71,13 +71,13 @@ test('Medienkatalog: ein gescanntes Littera-Etikett und ein altes LMF-Etikett ze
 	await expect(feld).toBeFocused();
 
 	await scanneWieScanner(page, litteraEtikett(nummer));
-	await expect(page.getByText(`Exemplar ${nummer} gehört zu „${litteraTitel}“.`)).toBeVisible();
+	await expect(page.getByText(`Exemplar ${nummer} gehört zu „${litteraTitel}“`)).toBeVisible();
 	await expect(page.getByRole('button', { name: litteraTitel, exact: true })).toBeVisible();
 	await expect(page.getByText('Keine Titel gefunden')).toHaveCount(0);
 
 	// Das alte Etikett führt zum Exemplar, genannt wird die Nummer, die es jetzt trägt.
 	await feld.fill('');
 	await scanneWieScanner(page, altesEtikett);
-	await expect(page.getByText(`Exemplar ${kurz} gehört zu „${altTitel}“.`)).toBeVisible();
+	await expect(page.getByText(`Exemplar ${kurz} gehört zu „${altTitel}“`)).toBeVisible();
 	await expect(page.getByRole('button', { name: altTitel, exact: true })).toBeVisible();
 });

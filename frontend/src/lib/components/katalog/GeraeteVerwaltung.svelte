@@ -54,11 +54,11 @@
 				? await apiClient.put(`/api/geraete/${id}`, geraetNutzlast(gesendet, true))
 				: await apiClient.post('/api/geraete', geraetNutzlast(gesendet, false));
 			if (res.ok) {
-				snackbars.addToast(id ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
+				snackbars.addToast(id ? 'Gerät gespeichert' : 'Gerät angelegt', 'success');
 				if (formular === gesendet) schliesseFormular();
 				geraete.lade();
 			} else {
-				snackbars.addToast(await leseApiFehler(res, 'Speichern fehlgeschlagen.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Speichern fehlgeschlagen'), 'error');
 			}
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');
@@ -77,7 +77,7 @@
 			if (res.ok) {
 				geraete.lade();
 			} else {
-				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen'), 'error');
 			}
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');
@@ -91,8 +91,7 @@
 		<div>
 			<h2 class="text-base font-bold text-on-surface">Geräte ({geraete.liste.length})</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
-				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste
-				bestätigt.
+				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste bestätigt
 			</p>
 		</div>
 		<Button variant="primary" onclick={oeffneAnlegen}>
@@ -140,7 +139,7 @@
 	{:else if geraete.liste.length === 0}
 		<div class="flex flex-col items-center gap-3 py-16 text-on-surface-variant">
 			<MonitorSmartphone class="h-12 w-12" aria-hidden="true" />
-			<p class="text-sm font-semibold">Noch keine Geräte erfasst.</p>
+			<p class="text-sm font-semibold">Noch keine Geräte erfasst</p>
 		</div>
 	{:else}
 		<ul class="divide-y divide-outline-variant">

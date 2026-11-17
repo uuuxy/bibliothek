@@ -95,7 +95,7 @@ export async function erzeugeBarcodeErkenner() {
 					if (context) context.drawImage(source, 0, 0, canvas.width, canvas.height);
 
 					const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-					if (!blob) throw new Error('Der Browser liefert kein Bild aus der Kamera (toBlob).');
+					if (!blob) throw new Error('Der Browser liefert kein Bild aus der Kamera (toBlob)');
 					const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
 
 					try {

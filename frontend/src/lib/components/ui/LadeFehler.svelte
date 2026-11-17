@@ -22,7 +22,7 @@
 	let {
 		onerneut,
 		titel = 'Einstellungen nicht geladen',
-		text = 'Die gespeicherten Werte konnten nicht abgerufen werden. Die Formulare bleiben geschlossen — sonst würde ein Klick auf Speichern die echten Einstellungen mit Vorgabewerten überschreiben.',
+		text = 'Die gespeicherten Werte konnten nicht abgerufen werden. Die Formulare bleiben geschlossen, sonst würde ein Klick auf Speichern die echten Einstellungen mit Vorgabewerten überschreiben.',
 		knapp = false
 	} = $props();
 </script>

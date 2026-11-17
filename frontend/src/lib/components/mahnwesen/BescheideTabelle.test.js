@@ -106,7 +106,7 @@ describe('BescheideTabelle', () => {
 		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
 		expect(screen.getByText('Schadensersatz nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Die Datenbank antwortet nicht')).toBeTruthy();
-		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle.')).toBeNull();
+		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle')).toBeNull();
 	});
 
 	it('zeigt beim ersten Laden den Ladekreis statt der Entwarnung', () => {
@@ -116,7 +116,7 @@ describe('BescheideTabelle', () => {
 		bescheideStore.ladefehler = '';
 		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
 		expect(screen.getByRole('progressbar')).toBeTruthy();
-		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle.')).toBeNull();
+		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle')).toBeNull();
 	});
 
 	it('sagt nach gelungenem Laden, dass nichts offen ist', () => {
@@ -125,7 +125,7 @@ describe('BescheideTabelle', () => {
 		bescheideStore.geladen = true;
 		bescheideStore.ladefehler = '';
 		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
-		expect(screen.getByText('Keine offenen Schadensersatz-Fälle.')).toBeTruthy();
+		expect(screen.getByText('Keine offenen Schadensersatz-Fälle')).toBeTruthy();
 	});
 
 	/** Ein Brief nach Fristablauf, der übergeben werden kann. */

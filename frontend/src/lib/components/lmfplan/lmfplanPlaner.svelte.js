@@ -159,7 +159,7 @@ export function erzeugePlaner() {
 		if (
 			!(await bestaetigen({
 				titel: 'Plan veröffentlichen?',
-				text: `Das Kollegium sieht ihn dann im Portal${fristen}.`,
+				text: `Das Kollegium sieht ihn dann im Portal${fristen}`,
 				aktion: 'Veröffentlichen'
 			}))
 		)

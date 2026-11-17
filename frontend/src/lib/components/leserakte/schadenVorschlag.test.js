@@ -93,7 +93,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	it.each([
 		[
 			'ohne Antwort',
-			() => Promise.reject(new Error('Keine Verbindung zum Server.')),
+			() => Promise.reject(new Error('Keine Verbindung zum Server')),
 			'Vorschlag konnte nicht berechnet werden: Keine Verbindung zum Server. Bitte Betrag selbst eintragen.'
 		],
 		[

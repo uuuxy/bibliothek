@@ -27,7 +27,7 @@
 
 	async function verlaengereAlle() {
 		if (!klasse.trim() || !neuesDatum) {
-			snackbars.addToast('Bitte Klasse wählen und neues Rückgabedatum eingeben.', 'warning');
+			snackbars.addToast('Bitte Klasse wählen und neues Rückgabedatum eingeben', 'warning');
 			return;
 		}
 
@@ -49,7 +49,7 @@
 			if (res.ok) {
 				const daten = await res.json();
 				snackbars.addToast(
-					`${anzahlText(daten.updated_count, 'Ausleihe wurde', 'Ausleihen wurden')} verlängert.`,
+					`${anzahlText(daten.updated_count, 'Ausleihe wurde', 'Ausleihen wurden')} verlängert`,
 					'success'
 				);
 				klasse = '';
@@ -59,7 +59,7 @@
 			}
 		} catch (e) {
 			console.error(e);
-			snackbars.addToast('Netzwerkfehler beim Senden der Anfrage.', 'error');
+			snackbars.addToast('Netzwerkfehler beim Senden der Anfrage', 'error');
 		} finally {
 			isExtending = false;
 		}
@@ -73,7 +73,7 @@
 		<h3 class="text-base font-bold text-on-surface">LMF-Massenverlängerung (Klasse)</h3>
 		<p class="text-sm text-on-surface-variant mt-1 leading-relaxed max-w-lg">
 			Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
-			fixes Rückgabedatum.
+			fixes Rückgabedatum
 		</p>
 	</div>
 

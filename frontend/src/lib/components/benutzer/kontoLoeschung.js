@@ -9,5 +9,5 @@
 export function meldungNachLoeschung(antwort) {
 	return antwort?.leser_bleibt
 		? 'Zugang gelöscht. Der Eintrag der Person in der Leserdatei bleibt; dort lässt er sich löschen.'
-		: 'Benutzer erfolgreich gelöscht.';
+		: 'Benutzer erfolgreich gelöscht';
 }

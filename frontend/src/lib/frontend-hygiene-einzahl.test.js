@@ -118,7 +118,7 @@ describe('Zahl vor Hauptwort nur mit anzahlText', () => {
 			'{buch.ohne_zeitpunkt} weitere Exemplare sind ausgesondert',
 			'von {gesamt}&nbsp;Treffern',
 			'`Die ${inventur.verluste} fehlenden Bücher bleiben als verloren gebucht`',
-			'`Eigentum geändert: ${n} Exemplar(e).`',
+			'`Eigentum geändert: ${n} Exemplar(e)`',
 			"n === 1 ? 'eine' : `${n} Datei(en) übernommen`",
 			'{wartend} ungesynchronisierte Offline-Ausleihe(n)/Rückgabe(n)',
 			'`${gesamt} Vorgang/Vorgänge aus`',

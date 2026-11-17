@@ -28,7 +28,7 @@ export function erzeugeKlassensatzListe() {
 			ladefehler =
 				err instanceof Error && err.message
 					? err.message
-					: 'Die Reservierungen konnten nicht geladen werden.';
+					: 'Die Reservierungen konnten nicht geladen werden';
 		} finally {
 			laedt = false;
 		}

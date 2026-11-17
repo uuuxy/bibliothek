@@ -53,7 +53,7 @@
 				<h2 class="text-lg">Mahnwesen blockiert</h2>
 				<p class="text-sm mt-1">
 					Auf diesem Rechner {offlineSync.wartendeAnzahl === 1 ? 'wartet' : 'warten'} noch
-					<strong>{anzahlText(offlineSync.wartendeAnzahl, 'Vorgang', 'Vorgänge')}</strong> auf Übertragung.
+					<strong>{anzahlText(offlineSync.wartendeAnzahl, 'Vorgang', 'Vorgänge')}</strong> auf Übertragung
 				</p>
 				<p class="text-xs mt-2">
 					Sobald die Verbindung zum Server zurück ist, geschieht das von selbst. Danach ist das
@@ -97,7 +97,7 @@
 	open={mahnlaufOffen}
 	titel="Mahnlauf konfigurieren"
 	variant="danger-solid"
-	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen."
+	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen"
 	aktion="anmahnen"
 	hinweis="Leer lassen = an die regulären Klassenleitungen. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
 	klassen={mahnwesenStore.versandKlassen}

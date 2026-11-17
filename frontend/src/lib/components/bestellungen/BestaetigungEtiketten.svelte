@@ -4,6 +4,7 @@
      ganz, statt deaktiviert stehen zu bleiben; die Tür liefert das Etikett auch nicht. -->
 <script>
 	import Button from '../ui/Button.svelte';
+	import { verbindeSaetze } from '../../utils/format.js';
 	import Select from '../ui/Select.svelte';
 	import { Check } from '@lucide/svelte';
 
@@ -36,10 +37,10 @@
 	<h2 class="text-on-surface text-base font-semibold">Etiketten drucken</h2>
 	<p class="text-on-surface-variant mt-1 text-sm">
 		{#if bestellung.grosses_etikett}
-			Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur das
+			Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail. Sie wählen nur das
 			Format.
 		{:else}
-			Der Bogen enthält dieselben Barcodes wie der Anhang der Bestellmail.
+			Der Bogen enthält dieselben Barcodes wie der Anhang der Bestellmail
 		{/if}
 	</p>
 
@@ -58,11 +59,11 @@
 				aria-label={rasterBeschriftung}
 			/>
 			<p class="text-on-surface-variant text-xs">
-				Passend zu den Etikettenbögen in Ihrem Drucker.
-				{#if bestellung.grosses_etikett}
-					Gilt nicht für die großen Lernmittel-Etiketten — die liegen zu viert auf einem A4-Blatt
-					und werden ausgeschnitten.
-				{/if}
+				{verbindeSaetze(
+					'Passend zu den Etikettenbögen in Ihrem Drucker',
+					bestellung.grosses_etikett &&
+						'Gilt nicht für die großen Lernmittel-Etiketten, die zu viert auf einem A4-Blatt liegen und ausgeschnitten werden'
+				)}
 			</p>
 		</div>
 	{/if}
@@ -82,7 +83,7 @@
 	{#if geoeffneteGroesse}
 		<p class="text-on-surface-variant mt-3 text-xs">
 			Der Bogen wurde in einem neuen Tab geöffnet. Erscheint er nicht, ist er vom Browser blockiert
-			worden — dann bitte den Knopf erneut drücken.
+			worden, dann bitte den Knopf erneut drücken.
 		</p>
 	{/if}
 </div>

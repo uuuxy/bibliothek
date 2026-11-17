@@ -88,7 +88,7 @@ async function pruefeAuslagerungsMangel(page) {
 	await expect(page.getByText('Anmeldung', { exact: false }).first()).toBeVisible();
 
 	// Und sie sagt, wie viel offen ist — die Zahl ist das, was man beim Öffnen sucht.
-	await expect(page.getByText(/Punkt(e)? offen\./)).toBeVisible();
+	await expect(page.getByText(/Punkt(e)? offen/)).toBeVisible();
 }
 
 test('Fehler im Log nennt den Stand des Zählers am Server', async ({ page }) => {

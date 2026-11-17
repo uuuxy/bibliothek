@@ -35,8 +35,8 @@
 	});
 	const ausgesondertText = $derived(
 		etikettenStore.ausgesondertAnzahl === 1
-			? '1 ausgesondertes Exemplar steht nicht in der Liste.'
-			: `${etikettenStore.ausgesondertAnzahl} ausgesonderte Exemplare stehen nicht in der Liste.`
+			? '1 ausgesondertes Exemplar steht nicht in der Liste'
+			: `${etikettenStore.ausgesondertAnzahl} ausgesonderte Exemplare stehen nicht in der Liste`
 	);
 </script>
 
@@ -58,7 +58,7 @@
 				/>
 			{:else if etikettenStore.vorhandeneExemplare.length === 0}
 				<p class="text-xs text-on-surface-variant">
-					Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.
+					Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann
 				</p>
 			{:else}
 				<!-- Ein Kästchen für alle (M3: „A parent checkbox allows for easy selection or
@@ -106,7 +106,7 @@
 						</label>
 					{:else}
 						<p class="p-1.5 text-xs text-on-surface-variant">
-							Kein Exemplar dieses Titels passt zu „{gesucht}“.
+							Kein Exemplar dieses Titels passt zu „{gesucht}“
 						</p>
 					{/each}
 				</div>
@@ -123,6 +123,6 @@
 	     inaktiven Schritts bei 2,5:1. -->
 	<div class="space-y-2 border-b border-outline-variant py-5">
 		<h3 class="text-base font-semibold text-on-surface-variant">{SCHRITT}</h3>
-		<p class="text-sm text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+		<p class="text-sm text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen</p>
 	</div>
 {/if}

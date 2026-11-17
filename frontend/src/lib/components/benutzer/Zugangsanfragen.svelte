@@ -156,7 +156,7 @@
 	>
 		<strong>{anfragen.length} Zugangsanfrage{anfragen.length === 1 ? '' : 'n'}</strong>
 		aus der Selbstanmeldung {anfragen.length === 1 ? 'wartet' : 'warten'} auf Freischaltung:
-		{namen} — Person prüfen, dann „Bearbeiten“ → Aktiv.
+		{namen}. Person prüfen, dann „Bearbeiten“ → Aktiv.
 		{#each dubletten as d (d.schluessel)}
 			<span class="mt-2 flex flex-wrap items-center gap-2">
 				<span>

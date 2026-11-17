@@ -133,7 +133,7 @@
 	<SuchZustand
 		symbol={BookOpen}
 		titel="Keine Exemplare"
-		hinweis="„Titel bearbeiten“ trägt den Bestand ein."
+		hinweis="„Titel bearbeiten“ trägt den Bestand ein"
 	/>
 {:else}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

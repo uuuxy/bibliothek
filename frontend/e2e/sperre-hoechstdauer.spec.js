@@ -58,7 +58,7 @@ test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Einga
 	const bildschirm = page.getByTestId('sperrbildschirm');
 	await expect(bildschirm).toBeVisible();
 	await expect(bildschirm.getByRole('heading', { name: 'Gesperrt nach 10 Stunden' })).toBeVisible();
-	await expect(bildschirm.getByText('Was nicht gespeichert ist, bleibt erhalten.')).toBeVisible();
+	await expect(bildschirm.getByText('Was nicht gespeichert ist, bleibt erhalten')).toBeVisible();
 	expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe('0');
 
 	await page.locator('#sperre-passwort').fill(ADMIN_PASSWORD);
@@ -73,7 +73,7 @@ test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Einga
 	).toBe('t');
 
 	await page.getByRole('button', { name: 'Speichern' }).click();
-	await expect(page.getByText('Buch gespeichert.')).toBeVisible();
+	await expect(page.getByText('Buch gespeichert')).toBeVisible();
 	expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe('1');
 });
 

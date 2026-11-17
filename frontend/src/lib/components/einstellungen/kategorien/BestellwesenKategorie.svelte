@@ -49,7 +49,7 @@
 
 <KategorieRahmen
 	titel="Bestellwesen"
-	kurz="Ob fehlende Lernmittel gemeldet werden und ob mit Preisen gearbeitet wird."
+	kurz="Ob fehlende Lernmittel gemeldet werden und ob mit Preisen gearbeitet wird"
 	{eingabe}
 	{onSaved}
 >
@@ -71,7 +71,7 @@
 			<div class="flex flex-col gap-1">
 				<span class="text-sm font-medium text-on-surface">Bestellbedarf-Warnung</span>
 				<span class="text-sm text-on-surface-variant"
-					>Meldet Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht.</span
+					>Meldet Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht</span
 				>
 			</div>
 			<Switch bind:checked={warnungAktiv} etikett="Bestellbedarf-Warnung umschalten" />
@@ -81,7 +81,7 @@
 			<div class="flex flex-col gap-1">
 				<span class="text-sm font-medium text-on-surface">Preise erfassen</span>
 				<span class="text-sm text-on-surface-variant"
-					>Aus: Bestellhistorie und Berichte zählen Exemplare statt Euro.</span
+					>Aus: Bestellhistorie und Berichte zählen Exemplare statt Euro</span
 				>
 			</div>
 			<Switch bind:checked={preiseErfassen} etikett="Preise im Bestellwesen umschalten" />

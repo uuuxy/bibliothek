@@ -98,7 +98,7 @@ async function bereiteDruckVor() {
 	const optionen = designWurdeGeladen() ? { timeoutMs: 3000 } : undefined;
 	if (!(await holeDesign(optionen)) && !designWurdeGeladen()) {
 		snackbars.addToast(
-			`Nicht gedruckt, das Ausweis-Design ist nicht geladen${mitGrund()}.`,
+			`Nicht gedruckt, das Ausweis-Design ist nicht geladen${mitGrund()}`,
 			'error'
 		);
 		return false;

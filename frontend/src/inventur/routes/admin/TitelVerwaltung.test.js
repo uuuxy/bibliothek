@@ -42,7 +42,7 @@ describe('TitelVerwaltung: die Liste lädt nicht', () => {
 
 		expect(await screen.findByText('Titel nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Ein interner Serverfehler ist aufgetreten')).toBeTruthy();
-		expect(screen.queryByText('Keine Titel gefunden.')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
 
@@ -131,7 +131,7 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => t.message)).toContain(
-				'Keine externen Cover mehr vorhanden.'
+				'Keine externen Cover mehr vorhanden'
 			)
 		);
 		expect(bestaetigen).not.toHaveBeenCalled();

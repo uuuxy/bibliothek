@@ -69,7 +69,7 @@
 	<div class="flex justify-center py-10"><Ladekreis etikett="Schadensersatz lädt" /></div>
 {:else if leer}
 	<div class="rounded-xl border border-outline-variant py-10 text-center">
-		<p class="font-semibold text-on-surface">Keine offenen Schadensersatz-Fälle.</p>
+		<p class="font-semibold text-on-surface">Keine offenen Schadensersatz-Fälle</p>
 		<p class="mt-1 text-sm text-on-surface-variant">
 			Ein Fall beginnt in der Leserakte mit „Verlust/Schaden melden" an der Ausleihzeile. Er steht
 			dann hier, bis der Bescheid erstellt, die Frist abgelaufen und der Fall übergeben ist.
@@ -114,7 +114,7 @@
 									<StatusChip
 										ton="neutral"
 										text="Bücherei-Buch, kein Bescheid"
-										tip="Für Bestände der Schülerbücherei gibt es keinen Bescheid des Landes; bezahlt wird in der Akte."
+										tip="Für Bestände der Schülerbücherei gibt es keinen Bescheid des Landes; bezahlt wird in der Akte"
 									/>
 								{/if}
 							</td>

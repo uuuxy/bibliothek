@@ -156,7 +156,7 @@
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Titel gefunden"
-				hinweis="Versuche es mit einem anderen Titel oder Autor."
+				hinweis="Versuche es mit einem anderen Titel oder Autor"
 			/>
 		{:else if !searched}
 			<SuchZustand

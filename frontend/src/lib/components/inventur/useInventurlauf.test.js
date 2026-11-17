@@ -53,6 +53,6 @@ describe('Inventur starten: nach Fach oder Klasse', () => {
 		await lauf.starteInventur();
 
 		expect(starteLauf).not.toHaveBeenCalled();
-		expect(lauf.fehler).toBe('Bitte wähle mindestens ein Fach oder eine Klasse.');
+		expect(lauf.fehler).toBe('Bitte wähle mindestens ein Fach oder eine Klasse');
 	});
 });

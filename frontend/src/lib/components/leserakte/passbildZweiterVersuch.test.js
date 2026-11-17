@@ -45,7 +45,7 @@ describe('Passbild: der zweite Versuch nach einem gescheiterten Speichern', () =
 
 	it('hält die erste Kamera an, bevor es die zweite holt', async () => {
 		vi.mocked(apiClient.post)
-			.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'))
+			.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'))
 			.mockResolvedValueOnce(serverAntwort(200, { url: '/api/schueler/s1/photo' }));
 		const onCapture = vi.fn();
 		const { unmount } = render(WebcamAufnahme, {
@@ -55,7 +55,7 @@ describe('Passbild: der zweite Versuch nach einem gescheiterten Speichern', () =
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Foto aufnehmen' }));
 		await vi.advanceTimersByTimeAsync(50);
-		expect(screen.getByText('Aufnahme fehlgeschlagen: Keine Verbindung zum Server.')).toBeTruthy();
+		expect(screen.getByText('Aufnahme fehlgeschlagen: Keine Verbindung zum Server')).toBeTruthy();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
 		await vi.advanceTimersByTimeAsync(50);

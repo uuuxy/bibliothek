@@ -26,10 +26,10 @@ export function modusInfo(modus) {
 		case 'name':
 			return {
 				warn: true,
-				text: 'Zuordnung nur über Vor- und Nachname — die Datei enthält weder Schüler-ID noch Geburtsdatum. Namensgleiche Schüler werden nicht zugeordnet, sondern unten als „mehrdeutig“ gemeldet. Sicherer: das Geburtsdatum mit exportieren.'
+				text: 'Zuordnung nur über Vor- und Nachname, die Datei enthält weder Schüler-ID noch Geburtsdatum. Namensgleiche Schüler werden nicht zugeordnet, sondern unten als „mehrdeutig“ gemeldet. Sicherer: das Geburtsdatum mit exportieren.'
 			};
 		default:
-			return { warn: false, text: 'Zuordnung über die LUSD-ID.' };
+			return { warn: false, text: 'Zuordnung über die LUSD-ID' };
 	}
 }
 
@@ -39,8 +39,8 @@ export function modusInfo(modus) {
  */
 export function abgaengerHinweis(karenzTage) {
 	return karenzTage > 0
-		? `Fehlen in der Datei — werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
-		: 'Fehlen in der Datei — werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert (Karenzzeit 0)';
+		? `Fehlen in der Datei und werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
+		: 'Fehlen in der Datei und werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert (Karenzzeit 0)';
 }
 
 /**
@@ -52,8 +52,8 @@ export function abgaengerHinweis(karenzTage) {
  */
 export function dublettenHinweis(modus) {
 	return modus === 'lusd_id'
-		? 'Dieselbe LUSD-ID zweimal mit verschiedenen Klassen — die spätere Zeile gilt'
-		: 'Gleicher Name und Geburtsdatum zweimal, in verschiedenen Klassen — die spätere Zeile gilt. Sind es zwei Schüler, Geburtsdatum in der Datei prüfen';
+		? 'Dieselbe LUSD-ID zweimal mit verschiedenen Klassen, die spätere Zeile gilt'
+		: 'Gleicher Name und Geburtsdatum zweimal, in verschiedenen Klassen, die spätere Zeile gilt. Sind es zwei Schüler, das Geburtsdatum in der Datei prüfen.';
 }
 
 /**
@@ -100,7 +100,7 @@ export function rubriken(r) {
 		{
 			key: 'adoptions',
 			label: 'Zusammengeführt',
-			hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID (Handanlage/Littera) bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen — kein Duplikat',
+			hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID (Handanlage/Littera) bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen, kein Duplikat',
 			items: (r.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
 			valueClass: 'text-primary'
 		},
@@ -114,7 +114,7 @@ export function rubriken(r) {
 		{
 			key: 'returners',
 			label: 'Rückkehrer',
-			hint: 'Abgänger, die wieder im Export stehen — werden reaktiviert',
+			hint: 'Abgänger, die wieder im Export stehen, werden reaktiviert',
 			items: r.rueckkehrer || [],
 			valueClass: 'text-primary'
 		},
@@ -130,14 +130,14 @@ export function rubriken(r) {
 		{
 			key: 'notInExport',
 			label: 'Nicht im Export',
-			hint: 'Standen noch nie in einem LUSD-Export (Handanlagen, Gastschüler) — bleiben unverändert',
+			hint: 'Standen noch nie in einem LUSD-Export (Handanlagen, Gastschüler), bleiben unverändert',
 			items: r.nicht_im_export || [],
 			valueClass: 'text-on-surface-variant'
 		},
 		{
 			key: 'unmatchable',
 			label: 'Nicht abgleichbar',
-			hint: 'Ohne Geburtsdatum im Bestand und nicht eindeutig über den Namen zuzuordnen — bleiben unverändert; Geburtsdatum im Profil nachtragen',
+			hint: 'Ohne Geburtsdatum im Bestand und nicht eindeutig über den Namen zuzuordnen, bleiben unverändert; Geburtsdatum im Profil nachtragen',
 			items: r.nicht_abgleichbar || [],
 			valueClass: 'text-on-surface-variant'
 		},
@@ -151,7 +151,7 @@ export function rubriken(r) {
 		{
 			key: 'ambiguous',
 			label: 'Mehrdeutig',
-			hint: 'Gleicher Name mehrfach (in der Datei oder im Bestand) — wird nicht angefasst, bitte von Hand klären',
+			hint: 'Gleicher Name mehrfach (in der Datei oder im Bestand), wird nicht angefasst, bitte von Hand klären',
 			items: r.mehrdeutig || [],
 			valueClass: 'text-error'
 		}

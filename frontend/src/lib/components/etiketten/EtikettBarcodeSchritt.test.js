@@ -17,7 +17,7 @@ import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
 import { serverAntwort } from '../../serverAntwort.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
-const KEIN_EXEMPLAR = 'Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.';
+const KEIN_EXEMPLAR = 'Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann';
 
 // Schritt 2 unterscheidet „nicht geladen“ von „kein Exemplar“: Der zweite Satz sagt, der Titel
 // habe nichts zu drucken, und darf nach einem gescheiterten Abruf nicht dastehen.

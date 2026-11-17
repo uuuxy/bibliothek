@@ -317,13 +317,13 @@ describe('bestellStore.addSupplier', () => {
 	});
 
 	it('lädt die Liste auch nach einem Fehler neu und gibt den Fehler weiter', async () => {
-		apiPostMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		apiPostMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 		vi.mocked(apiGet).mockResolvedValueOnce([
 			{ id: 'l1', name: 'Neu', email: 'n@example.invalid', customerNumber: 'K1' }
 		]);
 
 		await expect(bestellStore.addSupplier('Neu', 'n@example.invalid', 'K1')).rejects.toThrow(
-			'Keine Verbindung zum Server.'
+			'Keine Verbindung zum Server'
 		);
 
 		expect(bestellStore.suppliers.map((s) => s.name)).toEqual(['Neu']);
@@ -658,7 +658,7 @@ describe('bestellStore: Lieferant anlegen und ändern', () => {
 		);
 		vi.mocked(apiPut).mockRejectedValueOnce(new Error('abgelehnt'));
 		await expect(bestellStore.editSupplier('s1', { name: 'Neu' })).rejects.toThrow('abgelehnt');
-		expect(snackbars.addToast).not.toHaveBeenCalledWith('Lieferant aktualisiert.', 'success');
+		expect(snackbars.addToast).not.toHaveBeenCalledWith('Lieferant aktualisiert', 'success');
 	});
 
 	it('lädt nach dem Anlegen die Liste neu', async () => {

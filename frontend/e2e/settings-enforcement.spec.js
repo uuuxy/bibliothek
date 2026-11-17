@@ -48,7 +48,7 @@ test('Ausleihlimit 1: zweiter Checkout blockt sofort', async ({ page }) => {
 		// Buch 1: geht durch
 		await scanInput.fill(`B-Limit1-${suffix}`);
 		await scanInput.press('Enter');
-		await expect(page.getByText(`„E2E-Limit1-${suffix}" ausgeliehen an E2E.`)).toBeVisible();
+		await expect(page.getByText(`„E2E-Limit1-${suffix}" ausgeliehen an E2E`)).toBeVisible();
 
 		// Buch 2: Limit von 1 erreicht → sofortiger Block mit klarer Meldung
 		await scanInput.fill(`B-Limit2-${suffix}`);

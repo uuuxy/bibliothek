@@ -21,7 +21,7 @@
 		<LadeFehler
 			onerneut={onaktualisiert}
 			titel="Deine Meldungen konnten nicht geladen werden"
-			text="Bitte später noch einmal versuchen. Schon abgeschickte Meldungen sind nicht verloren — sie sind bei der Bibliothek."
+			text="Bitte später noch einmal versuchen. Schon abgeschickte Meldungen sind nicht verloren, sie sind bei der Bibliothek."
 		/>
 	{:else if eigene.length > 0}
 		<h2 class="text-base font-semibold text-on-surface">Deine Meldungen</h2>

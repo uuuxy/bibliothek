@@ -27,7 +27,7 @@ describe('NeueFassung', () => {
 		render(NeueFassung);
 
 		expect(screen.getByRole('status').textContent).toContain(
-			'Eine neue Fassung des Programms ist eingespielt.'
+			'Eine neue Fassung des Programms ist eingespielt'
 		);
 		expect(ladeNeu).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Neu laden' }));

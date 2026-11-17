@@ -48,7 +48,7 @@
 			if (res.ok) {
 				snackbars.addToast(erfolgsMeldung, 'success');
 			} else {
-				snackbars.addToast(await leseApiFehler(res, 'Aktion fehlgeschlagen.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Aktion fehlgeschlagen'), 'error');
 			}
 			// Auch nach einem Fehler-STATUS neu laden (nur bei Netzwerkfehler nicht):
 			// 409 heisst am Mehrplatz-System "eine Kollegin war schneller" — die Akte
@@ -121,7 +121,7 @@
 						<div class="flex items-center gap-2 shrink-0">
 							<Button
 								variant="secondary"
-								onclick={() => erledige(`/api/schadensfaelle/${f.id}/bezahlt`, 'Zahlung verbucht.')}
+								onclick={() => erledige(`/api/schadensfaelle/${f.id}/bezahlt`, 'Zahlung verbucht')}
 								disabled={laeuft}
 							>
 								<CircleCheck class="h-4 w-4" aria-hidden="true" />
@@ -171,7 +171,7 @@
 				<Button
 					variant="danger"
 					onclick={() =>
-						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert.')}
+						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert')}
 					disabled={laeuft || stornoGrund.trim() === ''}
 				>
 					<ReceiptEuro class="h-4 w-4" aria-hidden="true" />

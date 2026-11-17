@@ -33,7 +33,7 @@ export function erzeugeZusammenfuehrenVorschau() {
 			const daten = await res.json();
 			if (meine === nr) vorschau = daten;
 		} catch {
-			if (meine === nr) fehler = 'Netzwerkfehler — die Vorschau hat den Server nicht erreicht.';
+			if (meine === nr) fehler = 'Netzwerkfehler: Die Vorschau hat den Server nicht erreicht';
 		} finally {
 			if (meine === nr) laedt = false;
 		}

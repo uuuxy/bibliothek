@@ -46,7 +46,7 @@ test('Lieferant bearbeiten: das Speichern nimmt einem anderen Händler nicht das
 	expect((await gesendet).postDataJSON(), 'Die Maske schickt mehr als das geänderte Feld').toEqual({
 		email: `korrigiert${s}@example.invalid`
 	});
-	await expect(page.getByText('Lieferant aktualisiert.')).toBeVisible();
+	await expect(page.getByText('Lieferant aktualisiert')).toBeVisible();
 
 	expect(stand(), 'Das Korrigieren der E-Mail hat das Merkmal Hauptlieferant zurückgeholt').toBe(
 		`${alt}|korrigiert${s}@example.invalid|false ; ${neu}|neu${s}@example.invalid|true`

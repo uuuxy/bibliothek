@@ -114,6 +114,20 @@ export function zulaufSatz(imZulauf) {
 }
 
 /**
+ * Verbindet Sätze zu einem Text. Ein einzelner Satz steht ohne Punkt, mehrere tragen je einen
+ * (M3, Content design: „Avoid using periods to end single sentences“, „Use periods on: Multiple
+ * sentences“). Die Teile kommen ohne Punkt, auch die Meldungen des Servers (STIL.md 11).
+ *
+ * @param {...(string | false | null | undefined)} saetze leere Teile fallen weg
+ * @returns {string}
+ */
+export function verbindeSaetze(...saetze) {
+	const teile = saetze.map((s) => (s || '').trim()).filter(Boolean);
+	if (teile.length === 1) return teile[0];
+	return teile.map((s) => (/[.!?:…]$/.test(s) ? s : `${s}.`)).join(' ');
+}
+
+/**
  * Der Bestand für einen Chip: „27 / 28". Ohne Exemplare bleibt es bei den Worten aus
  * bestandSatz („Keine Exemplare", „2 bestellt"), sonst stünde dort „0 / 0".
  *

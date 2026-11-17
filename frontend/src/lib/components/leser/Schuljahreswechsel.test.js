@@ -56,7 +56,7 @@ describe('Schuljahreswechsel: die Bestätigung', () => {
 	])('führt %s aus (detail %i)', async (_weg, detail) => {
 		const { k, ja } = await bisZurBestaetigung();
 		await fireEvent.click(ja, { detail });
-		await k.findByText('Schuljahreswechsel abgeschlossen.');
+		await k.findByText('Schuljahreswechsel abgeschlossen');
 		expect(ausfuehrungen()).toHaveLength(1);
 	});
 });
@@ -65,7 +65,7 @@ const vorschauen = () =>
 	apiFetchMock.mock.calls.filter(([, o]) => JSON.parse(String(o?.body)).dry_run === true);
 const vorschau = () => serverAntwort(200, { ...zahlen, dry_run: true });
 const keineVerbindung = () => {
-	throw new Error('Keine Verbindung zum Server.');
+	throw new Error('Keine Verbindung zum Server');
 };
 const lief =
 	'Der Schuljahreswechsel lief am 27.10.2026 um 22:15 Uhr. Ein zweiter Lauf würde alle Schüler ' +
@@ -111,7 +111,7 @@ describe('Schuljahreswechsel: nach einem Fehler beim Ausführen', () => {
 		antworte(keineVerbindung, keineVerbindung);
 		const { k, ja } = await bisZurBestaetigung();
 		await fireEvent.click(ja, { detail: 1 });
-		await k.findByText('Keine Verbindung zum Server.');
+		await k.findByText('Keine Verbindung zum Server');
 		expect(vorschauen()).toHaveLength(2);
 		expect(k.queryByText(/es wurde noch nichts geändert/)).toBeNull();
 		expect(k.getByRole('button', { name: 'Vorschau berechnen' })).toBeTruthy();

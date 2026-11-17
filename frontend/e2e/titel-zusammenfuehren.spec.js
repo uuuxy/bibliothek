@@ -38,7 +38,7 @@ test('Titel zusammenführen: der Titel mit ISBN bleibt und hat danach alle Exemp
 
 	await expect(dialog.getByText(`E2E Zwilling ${s} · ${isbn} · 2 Exemplare`)).toBeVisible();
 	await expect(
-		dialog.getByText(`„E2E Zwilling ${s} Liste“ (ohne ISBN) wird gelöscht.`)
+		dialog.getByText(`„E2E Zwilling ${s} Liste“ (ohne ISBN) wird gelöscht`)
 	).toBeVisible();
 	await dialog.getByRole('button', { name: 'Zusammenführen' }).click();
 

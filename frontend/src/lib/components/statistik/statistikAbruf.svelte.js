@@ -31,9 +31,8 @@ const BESTAND_SATZ = /** @type {Record<string, string>} */ ({
  */
 export function statistikSatz(art, { zeitraum, medientyp }) {
 	const bestand = BESTAND_SATZ[medientyp] ?? '';
-	if (art === 'ladenhueter')
-		return `Seit über 2 Jahren nicht ausgeliehen — oder noch nie${bestand}.`;
-	return `Nach Anzahl der Ausleihen${ZEITRAUM_SATZ[zeitraum] ?? ', alle Zeiträume'}${bestand}.`;
+	if (art === 'ladenhueter') return `Seit über 2 Jahren nicht ausgeliehen oder noch nie${bestand}`;
+	return `Nach Anzahl der Ausleihen${ZEITRAUM_SATZ[zeitraum] ?? ', alle Zeiträume'}${bestand}`;
 }
 
 /**

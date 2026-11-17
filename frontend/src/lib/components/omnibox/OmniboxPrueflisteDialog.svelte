@@ -47,7 +47,7 @@
 			</div>
 			<p class="text-sm text-on-surface-variant mb-4">
 				<strong>{omniboxStore.prueflisteAnfrage.geraet?.modellname}</strong>
-				({omniboxStore.prueflisteAnfrage.geraet?.barcode_id}) — bitte prüfen, ob alles dabei ist:
+				({omniboxStore.prueflisteAnfrage.geraet?.barcode_id}), bitte prüfen, ob alles dabei ist:
 			</p>
 
 			<ul class="mb-6 space-y-2">
@@ -64,7 +64,7 @@
 
 			<div class="flex justify-end gap-2">
 				<Button variant="secondary" onclick={abbrechen}>Abbrechen</Button>
-				<Button variant="primary" onclick={bestaetigen}>Alles vollständig — weiter</Button>
+				<Button variant="primary" onclick={bestaetigen}>Alles vollständig, weiter</Button>
 			</div>
 		</div>
 	</Dialog>

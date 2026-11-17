@@ -12,8 +12,8 @@
 
 {#if listen.length > 0}
 	<p class="text-sm font-semibold text-error" role="alert">
-		Nicht geladen: {nenneFehlende(listen)}. Diese Karten sind leer, weil der Abruf gescheitert ist —
-		nicht, weil nichts vorläge.
+		Nicht geladen: {nenneFehlende(listen)}. Diese Karten sind leer, weil der Abruf gescheitert ist
+		und nicht, weil nichts vorläge.
 		<Button variant="ghost" size="sm" onclick={onErneut}>Erneut versuchen</Button>
 	</p>
 {/if}

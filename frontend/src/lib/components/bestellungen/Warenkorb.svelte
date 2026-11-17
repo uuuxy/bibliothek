@@ -33,8 +33,8 @@
 			class="py-10 px-4 border border-dashed border-outline-variant rounded-xl text-center text-sm text-on-surface-variant"
 		>
 			<div class="text-2xl mb-1.5">🛒</div>
-			Noch nichts ausgewählt.<br />
-			Tippe links bei einem Titel auf <span class="font-bold">+</span> oder suche oben.
+			Noch nichts ausgewählt<br />
+			Tippe links bei einem Titel auf <span class="font-bold">+</span> oder suche oben
 		</div>
 	{:else}
 		{#each bestellStore.gruppen as gruppe (gruppe.mittel)}
@@ -98,12 +98,12 @@
 				     Händler bekommt zwei Mails und stellt zwei Rechnungen — so will es die
 				     getrennte Finanzierung von Land und Schulträger. -->
 				<p class="text-label-small text-center text-on-surface-variant">
-					Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler.
+					Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler
 				</p>
 			{/if}
 			{#if !bestellStore.selectedSupplier}
 				<p class="text-label-small text-center text-warning">
-					Bitte zuerst einen Lieferanten wählen.
+					Bitte zuerst einen Lieferanten wählen
 				</p>
 			{/if}
 		</div>

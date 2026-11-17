@@ -87,14 +87,14 @@
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Kein Buch ausgewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"
-				>Suche links einen Titel, dann erscheint hier die Vorschau.</span
+				>Suche links einen Titel, dann erscheint hier die Vorschau</span
 			>
 		</div>
 	{:else if etikettenStore.bogen.length === 0}
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Keine Etiketten gewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"
-				>Wähle mindestens ein Exemplar oder erhöhe die Menge.</span
+				>Wähle mindestens ein Exemplar oder erhöhe die Menge</span
 			>
 		</div>
 	{:else}

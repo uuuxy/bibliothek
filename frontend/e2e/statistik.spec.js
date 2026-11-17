@@ -37,7 +37,7 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 	// Regex statt 'text=A|text=B': Letzteres ist KEINE gültige Playwright-Syntax
 	// (wird als ein einziger Textstring gesucht) und matchte deshalb nie.
 	await expect(
-		page.getByText(/Keine Einträge für diese Filter\.|Noch keine Daten vorhanden\./)
+		page.getByText(/Keine Einträge für diese Filter|Noch keine Daten vorhanden/)
 	).toBeVisible();
 	await expect(page.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
 

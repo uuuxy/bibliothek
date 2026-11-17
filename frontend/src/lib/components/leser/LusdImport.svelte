@@ -84,7 +84,7 @@
 
 		const res = await apiFetch(url, { method: 'POST', body: formulardaten });
 		if (!res.ok) {
-			const meldung = await leseApiFehler(res, 'Fehler bei der Verarbeitung der LUSD-Datei.');
+			const meldung = await leseApiFehler(res, 'Fehler bei der Verarbeitung der LUSD-Datei');
 			throw Object.assign(new Error(meldung), { status: res.status });
 		}
 		return res.json();
@@ -117,7 +117,7 @@
 			importErgebnis = await submitLusdFile('/api/lusd/import', confirmGraduates);
 			stage = 'done';
 			needsGraduateConfirm = false;
-			snackbars.addToast('LUSD-Import erfolgreich übernommen.', 'success');
+			snackbars.addToast('LUSD-Import erfolgreich übernommen', 'success');
 			onImported(/** @type {LusdPreviewResult} */ (importErgebnis));
 		} catch (err) {
 			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.
@@ -213,7 +213,7 @@
 			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
 			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>Import abgeschlossen — der Bestand ist aktuell.</span>
+			<span>Import abgeschlossen, der Bestand ist aktuell</span>
 		</div>
 		{@render ergebnis(true)}
 		<Button onclick={resetFlow}>Weitere Datei importieren</Button>
@@ -269,7 +269,7 @@
 					>
 						<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span
 							>Auffällig viele Abgänger ({probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
-							aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
+							aktiven Schülern). Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span
 						>
 					</div>

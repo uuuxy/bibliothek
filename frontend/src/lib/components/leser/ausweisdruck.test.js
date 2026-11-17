@@ -117,7 +117,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 	// Ohne das gespeicherte Design gälte der Kartendruck mit den Standardwerten, auch wenn
 	// die Schule Etiketten eingestellt hat.
 	it('druckt nicht, solange das Design nicht zu laden ist', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 		const drucken = vi.fn();
 		vi.stubGlobal('print', drucken);
 		const druck = erzeugeAusweisdruck();
@@ -128,7 +128,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 
 		expect(drucken).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server.',
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server',
 			'error'
 		);
 	});

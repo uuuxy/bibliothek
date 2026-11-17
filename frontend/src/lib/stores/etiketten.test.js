@@ -117,10 +117,10 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 	});
 
 	it('meldet einen Fehler ohne Antwort ebenso, mit seinem Grund', async () => {
-		apiFetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		apiFetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
 		await etikettenStore.waehleTitel(titel);
 
-		expect(etikettenStore.exemplarFehler).toBe('Keine Verbindung zum Server.');
+		expect(etikettenStore.exemplarFehler).toBe('Keine Verbindung zum Server');
 	});
 
 	it('lädt erneut und zeigt danach die Exemplare', async () => {
@@ -250,12 +250,12 @@ describe('etikettenStore: Titelsuche, späte Antwort', () => {
 		// mockImplementationOnce: Ein abgelehntes Promise aus dem Aufsetzen gälte bis zum Ablauf der
 		// Wartezeit als unbehandelt.
 		apiFetchMock.mockImplementationOnce(() =>
-			Promise.reject(new Error('Keine Verbindung zum Server.'))
+			Promise.reject(new Error('Keine Verbindung zum Server'))
 		);
 
 		await tippe('Faust');
 
-		expect(snackbars.addToast).toHaveBeenCalledWith('Keine Verbindung zum Server.', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Keine Verbindung zum Server', 'error');
 		expect(etikettenStore.treffer).toEqual([]);
 		expect(etikettenStore.sucht).toBe(false);
 		vi.useRealTimers();

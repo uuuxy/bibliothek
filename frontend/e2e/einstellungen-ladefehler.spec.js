@@ -55,7 +55,7 @@ test('Klassenleitungen: Ladefehler zeigt den Fehler statt einer leeren Liste', a
 	await einstellungsKategorie(page, 'Klassenleitungen').click();
 
 	await expect(page.getByText('Zuordnungen nicht geladen')).toBeVisible();
-	await expect(page.getByText('Noch keine Zuordnungen vorhanden.')).toHaveCount(0);
+	await expect(page.getByText('Noch keine Zuordnungen vorhanden')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Hinzufügen' })).toHaveCount(0);
 
 	await page.unroute('**/api/klassen-mapping');

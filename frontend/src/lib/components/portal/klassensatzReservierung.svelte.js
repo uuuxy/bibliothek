@@ -117,7 +117,7 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 			const f = ensure(titelId);
 			if (f.loading) return; // Doppelklick abfangen, bevor die Anfrage überhaupt rausgeht
 			if (!f.klasse.trim()) {
-				f.error = 'Bitte Klasse oder Kurs angeben.';
+				f.error = 'Bitte Klasse oder Kurs angeben';
 				return;
 			}
 			f.loading = true;
@@ -144,14 +144,14 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 					const vorher = warteschlangeFuer(titelId);
 					f.success =
 						vorher.length > 0
-							? `Reservierungsanfrage gesendet — dein Satz ist nach ${vorher.map((o) => o.klasse).join(', ')} an der Reihe.`
-							: 'Reservierungsanfrage gesendet.';
+							? `Reservierungsanfrage gesendet, dein Satz ist nach ${vorher.map((o) => o.klasse).join(', ')} an der Reihe`
+							: 'Reservierungsanfrage gesendet';
 					f.open = false;
 					nachSenden();
 				} else {
 					// Die Antwort ist apierrors-JSON ({"error": "nur 2 Exemplare im Bestand …"}) —
 					// roh angezeigt las die Lehrkraft Klammern statt der Meldung.
-					f.error = await leseApiFehler(res, 'Fehler beim Senden.');
+					f.error = await leseApiFehler(res, 'Fehler beim Senden');
 				}
 			} catch (e) {
 				f.error = fehlertext(e);

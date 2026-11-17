@@ -71,7 +71,7 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 	it('nennt ohne Rumpf die Vorgabe, keinen Satz des Browsers', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
 		await versand.sende({ klassen: ['09H1'] });
-		expect(melde).toHaveBeenCalledWith('Versand fehlgeschlagen.', 'error');
+		expect(melde).toHaveBeenCalledWith('Versand fehlgeschlagen', 'error');
 	});
 });
 

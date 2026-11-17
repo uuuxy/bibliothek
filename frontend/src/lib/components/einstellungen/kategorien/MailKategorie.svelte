@@ -14,11 +14,11 @@
 	import MailVorlagen from '../MailVorlagen.svelte';
 </script>
 
-<KategorieRahmen titel="Mail" kurz="Der Postausgang der Schule und die Texte, die er verschickt.">
+<KategorieRahmen titel="Mail" kurz="Der Postausgang der Schule und die Texte, die er verschickt">
 	{#snippet mehr()}
 		<p>
-			Die Zugangsdaten kommen aus der Datenbank, nicht aus der .env — die Datei füllt sie beim
-			ersten Start nur vor. Wer eine Störung sucht, sieht sich also diese Seite an.
+			Die Zugangsdaten kommen aus der Datenbank, nicht aus der .env. Die Datei füllt sie beim ersten
+			Start nur vor. Wer eine Störung sucht, sieht sich also diese Seite an.
 		</p>
 	{/snippet}
 
@@ -30,7 +30,7 @@
 				<h3 class="text-base font-semibold text-on-surface">Mail-Vorlagen</h3>
 				<p class="text-sm text-on-surface-variant">
 					Texte für den gedruckten Eltern-Mahnbrief und die Bestellmail an den Händler. Welche
-					Platzhalter gelten, hängt von der Vorlage ab — siehe Hinweis unter dem Text.
+					Platzhalter gelten, hängt von der Vorlage ab, siehe Hinweis unter dem Text.
 				</p>
 			</div>
 			<MailVorlagen />

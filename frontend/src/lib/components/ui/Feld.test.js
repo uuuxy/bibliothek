@@ -20,7 +20,7 @@ describe('Feld: Fehlerzustand', () => {
 		expect(symbol(k.container)).toBeNull();
 		expect(beschriftung.className).toContain('text-on-surface-variant');
 
-		await k.rerender({ ungueltig: true, hint: 'Bitte ein Kürzel eintragen.' });
+		await k.rerender({ ungueltig: true, hint: 'Bitte ein Kürzel eintragen' });
 		expect(symbol(k.container)).not.toBeNull();
 		expect(symbol(k.container)?.getAttribute('aria-hidden')).toBe('true');
 		expect(beschriftung.className).toContain('text-error');

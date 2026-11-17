@@ -122,7 +122,7 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 	await expect(alle).toBeChecked();
 	await expect.poll(zuletzt).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(nummer));
 	await expect(page.getByText(ausgesondert)).toHaveCount(0);
-	await expect(page.getByText('1 ausgesondertes Exemplar steht nicht in der Liste.')).toBeVisible();
+	await expect(page.getByText('1 ausgesondertes Exemplar steht nicht in der Liste')).toBeVisible();
 
 	// Ein Klick nimmt alle vom Bogen; ohne Etikett gibt es nichts zu drucken.
 	await alle.uncheck();
@@ -144,7 +144,7 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 	await page.keyboard.type(ausgesondert, { delay: 5 });
 	await page.keyboard.press('Enter');
 	await expect(
-		page.getByText(`Kein Exemplar dieses Titels passt zu „${ausgesondert}“.`)
+		page.getByText(`Kein Exemplar dieses Titels passt zu „${ausgesondert}“`)
 	).toBeVisible();
 	await expect(page.getByText('Exemplare auswählen: 1 von 8')).toBeVisible();
 	await feld.fill('');

@@ -47,7 +47,7 @@
 			const erkennung = await erzeugeBarcodeErkenner();
 			if (meiner !== lauf) return;
 			if (!erkennung) {
-				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt.');
+				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt');
 				return;
 			}
 			erkenner = erkennung.detector;

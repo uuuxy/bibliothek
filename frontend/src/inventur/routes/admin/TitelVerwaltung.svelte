@@ -98,7 +98,7 @@
 			geholt = await titelFuerMaske(buch);
 		} catch {
 			if (meine !== oeffnung) return;
-			melde('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
+			melde('Buch konnte nicht vollständig geladen werden, Bearbeiten abgebrochen', 'error');
 			return;
 		}
 		if (meine !== oeffnung) return;
@@ -123,7 +123,7 @@
 		try {
 			const externe = await holeExterneCover();
 			if (!externe.length) {
-				melde('Keine externen Cover mehr vorhanden.', 'info');
+				melde('Keine externen Cover mehr vorhanden', 'info');
 				return;
 			}
 			if (
@@ -138,7 +138,7 @@
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
 			melde(
-				`Cover heruntergeladen. Gespeichert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
+				`Cover heruntergeladen: ${ergebnis.updated} gespeichert, ${ergebnis.skipped} übersprungen, ${ergebnis.failed} Fehler`,
 				'info'
 			);
 		} catch (fehler) {

@@ -41,7 +41,7 @@ describe('kopiere', () => {
 	it('sagt nein und meldet es, wenn es keine Zwischenablage gibt', async () => {
 		Reflect.deleteProperty(navigator, 'clipboard');
 		expect(await kopiere('978')).toBe(false);
-		expect(snackbars.addToast).toHaveBeenCalledWith('Kopieren nicht möglich.', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Kopieren nicht möglich', 'error');
 	});
 });
 
@@ -74,7 +74,7 @@ describe('Der Knopf „ISBN kopieren“', () => {
 		await new Promise((fertig) => setTimeout(fertig, 0));
 		await tick();
 		expect(queryByText('Kopiert')).toBeNull();
-		expect(snackbars.addToast).toHaveBeenCalledWith('Kopieren nicht möglich.', 'error');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Kopieren nicht möglich', 'error');
 	});
 });
 

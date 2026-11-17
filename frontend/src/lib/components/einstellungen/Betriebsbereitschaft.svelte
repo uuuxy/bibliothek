@@ -56,7 +56,7 @@
 	<div class="flex items-start justify-between gap-4">
 		<p class="max-w-2xl text-sm text-on-surface-variant">
 			Was ist eingerichtet, aber nicht in Betrieb? Funktionen, die fertig sind und nichts tun, weil
-			eine Einstellung fehlt, melden sich nirgends — hier stehen sie.
+			eine Einstellung fehlt, melden sich nirgends. Hier stehen sie.
 		</p>
 		<Button variant="secondary" onclick={laden} disabled={laedt} class="shrink-0">
 			<RefreshCw class="h-4 w-4 {laedt ? 'animate-spin' : ''}" aria-hidden="true" />
@@ -73,10 +73,10 @@
 	{:else if bericht}
 		<p class="text-sm font-medium text-on-surface-variant">
 			{#if offen === 0}
-				Alles eingerichtet — nichts liegt still.
+				Alles eingerichtet, nichts liegt still
 			{:else}
 				{offen}
-				{offen === 1 ? 'Punkt' : 'Punkte'} offen.
+				{offen === 1 ? 'Punkt' : 'Punkte'} offen
 			{/if}
 		</p>
 

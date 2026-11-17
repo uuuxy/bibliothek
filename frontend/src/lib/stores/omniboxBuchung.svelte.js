@@ -108,8 +108,8 @@ export function erzeugeOmniboxBuchung({
 		leuchteBildschirm('error');
 		spieleFehlerton();
 		zeigeFehlerBanner(
-			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c ließ sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
-				`bitte den Ausweis erneut scannen.`
+			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c ließ sich nicht laden. Dieser Scan wurde NICHT gebucht. ` +
+				`Bitte den Ausweis erneut scannen.`
 		);
 		return false;
 	}

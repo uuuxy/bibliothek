@@ -75,7 +75,7 @@
 			/>
 		{:else if incomingShipments.length === 0}
 			<div class="py-12 text-center text-sm font-medium text-on-surface-variant">
-				Keine Positionen im Zulauf.
+				Keine Positionen im Zulauf
 			</div>
 		{:else}
 			<!-- Die Liste lädt neu, während jemand sie liest: Die Schlüssel halten jede Bestellung an ihren

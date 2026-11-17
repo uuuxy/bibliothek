@@ -119,7 +119,7 @@ describe('Exemplarnummer im Medienkatalog', () => {
 		);
 		await sucheNach('1016340039562');
 
-		expect(await screen.findByText('Exemplar 101634 gehört zu „Ganz anderes Buch“.')).toBeTruthy();
+		expect(await screen.findByText('Exemplar 101634 gehört zu „Ganz anderes Buch“')).toBeTruthy();
 		expect(screen.getByText('Ganz anderes Buch')).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
 		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();

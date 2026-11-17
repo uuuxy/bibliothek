@@ -27,7 +27,7 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 		// Ohne Auswahl gar nicht erst losschicken: Der Server wiese den Rumpf mit 400 ab
 		// (klassenVersandAnfrage), hier kommt dieselbe Meldung ohne den Umweg.
 		if (!auswahl?.klassen?.length) {
-			melde('Keine Klasse ausgewählt.', 'error');
+			melde('Keine Klasse ausgewählt', 'error');
 			return;
 		}
 		laeuft = true;
@@ -45,7 +45,7 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 					(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
 				);
 			} else {
-				melde(await leseApiFehler(res, 'Versand fehlgeschlagen.'), 'error');
+				melde(await leseApiFehler(res, 'Versand fehlgeschlagen'), 'error');
 			}
 		} catch (e) {
 			melde(`Netzwerkfehler beim Versand: ${fehlertext(e)}`, 'error');

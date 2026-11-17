@@ -10,7 +10,7 @@
 	<div class="text-4xl mb-3">🧭</div>
 	<h2 class="text-lg text-on-surface">Ansicht nicht gefunden</h2>
 	<p class="mt-1 text-sm text-on-surface-variant">
-		Dieser Bereich ist unbekannt oder nicht verfügbar.
+		Dieser Bereich ist unbekannt oder nicht verfügbar
 	</p>
 	<Button onclick={() => (uiStore.activeTab = 'kiosk')} class="mt-5">Zur Startseite</Button>
 </div>

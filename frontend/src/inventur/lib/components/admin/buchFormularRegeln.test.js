@@ -77,7 +77,7 @@ describe('buchFormularRegeln: Bestand eines neuen Buchs', () => {
 
 	it('vorhandener Titel mit geleertem Feld: Der Bestand bleibt, und der Hinweis sagt es', () => {
 		for (const leer of ['', null, undefined]) {
-			expect(bestandHinweis('titel-1', leer)).toBe('Ohne Zahl bleibt der Bestand, wie er ist.');
+			expect(bestandHinweis('titel-1', leer)).toBe('Ohne Zahl bleibt der Bestand, wie er ist');
 		}
 	});
 });

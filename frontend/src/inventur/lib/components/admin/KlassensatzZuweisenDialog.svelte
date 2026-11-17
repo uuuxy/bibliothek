@@ -53,7 +53,7 @@
 	async function weiseZu() {
 		const name = klassenName.trim();
 		if (!name) {
-			fehler = 'Bitte eine Klasse wählen.';
+			fehler = 'Bitte eine Klasse wählen';
 			return;
 		}
 		speichert = true;
@@ -63,7 +63,7 @@
 				classNames: [name],
 				bookIds: titelIds
 			});
-			if (!res.ok) throw new Error(await leseApiFehler(res, 'Zuweisung fehlgeschlagen.'));
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Zuweisung fehlgeschlagen'));
 			onAssigned();
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message;
@@ -80,7 +80,7 @@
 		<h3 class="dialog-titel">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-on-surface-variant">
 			{titelIds.length}
-			{titelIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
+			{titelIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen
 		</p>
 
 		<div class="grid gap-y-1.5">

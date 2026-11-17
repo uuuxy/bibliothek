@@ -55,7 +55,7 @@ describe('Ausweis-Designer: Bild hochladen', () => {
 
 		await waitFor(() =>
 			expect(melden).toHaveBeenCalledWith(
-				'„plakat.png“ ist kein Bild, das der Browser lesen kann.',
+				'„plakat.png“ ist kein Bild, das der Browser lesen kann',
 				'error'
 			)
 		);

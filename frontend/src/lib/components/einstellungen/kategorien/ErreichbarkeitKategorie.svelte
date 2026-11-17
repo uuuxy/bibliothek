@@ -59,7 +59,7 @@
 	let kopiert = $state('');
 	/** @param {string} url */
 	async function kopiereAdresse(url) {
-		if (!(await kopiere(url, 'Adresse bitte von Hand markieren.'))) return;
+		if (!(await kopiere(url, 'Adresse bitte von Hand markieren'))) return;
 		kopiert = url;
 		setTimeout(() => (kopiert = ''), 1800);
 	}
@@ -76,7 +76,7 @@
 
 <KategorieRahmen
 	titel="Erreichbarkeit & Alarme"
-	kurz="Unter welcher Adresse Dritte das System erreichen und wer die Alarm-Mails bekommt."
+	kurz="Unter welcher Adresse Dritte das System erreichen und wer die Alarm-Mails bekommt"
 	{eingabe}
 	{onSaved}
 >
@@ -88,11 +88,11 @@
 		<p>
 			Alarm-Empfänger bekommen täglich die Kritisch-Meldungen der Betriebsbereitschaft und die
 			Fehler im Log (mehrere Adressen mit Komma). Bleibt das Feld leer, gehen sie an alle aktiven
-			Admin-Konten — ein Alarm, der niemanden erreicht, ist keiner.
+			Admin-Konten. Ein Alarm, der niemanden erreicht, ist keiner.
 		</p>
 		<p>
 			Mit „Auch Warnungen mailen" nennt die Mail zusätzlich die Warnungen: im Log, in der
-			Betriebsbereitschaft, einen abgewiesenen LUSD-Abgleich und das Ergebnis der Littera-Übernahme.
+			Betriebsbereitschaft, einen abgewiesenen LUSD-Abgleich und das Ergebnis der Littera-Übernahme
 		</p>
 	{/snippet}
 
@@ -103,7 +103,7 @@
 			type="text"
 			maxlength={200}
 			placeholder="https://bibliothek.schule.de"
-			hint="Leer = keine Bestätigungs-Links verschicken."
+			hint="Leer = keine Bestätigungs-Links verschicken"
 		/>
 		<Feld
 			bind:value={alarmEmpfaenger}
@@ -111,7 +111,7 @@
 			type="text"
 			maxlength={300}
 			placeholder="it@schule.de, leitung@schule.de"
-			hint="Leer = alle aktiven Admin-Konten."
+			hint="Leer = alle aktiven Admin-Konten"
 		/>
 	</div>
 
@@ -119,7 +119,7 @@
 		<div class="flex flex-col gap-1">
 			<span class="text-sm font-medium text-on-surface">Auch Warnungen mailen</span>
 			<span class="text-sm text-on-surface-variant"
-				>Die tägliche Alarm-Mail nennt dann auch Warnungen, nicht nur Fehler.</span
+				>Die tägliche Alarm-Mail nennt dann auch Warnungen, nicht nur Fehler</span
 			>
 		</div>
 		<Switch bind:checked={alarmWarnungen} etikett="Warnungen mailen umschalten" />
@@ -130,7 +130,7 @@
 			Öffentliche Seiten
 		</h3>
 		<p class="text-on-surface-variant text-sm mt-1">
-			Ohne Anmeldung erreichbar, ohne Personendaten. Sie haben keinen Menüpunkt — diese Adressen
+			Ohne Anmeldung erreichbar, ohne Personendaten. Sie haben keinen Menüpunkt, diese Adressen
 			weitergeben oder auf dem Flur-Bildschirm eintragen.
 		</p>
 		<ul class="mt-3 space-y-2">
@@ -159,7 +159,7 @@
 		</ul>
 		{#if !basis}
 			<p class="text-on-surface-variant text-sm mt-2">
-				Sobald die öffentliche Adresse oben eingetragen ist, stehen hier die echten Adressen.
+				Sobald die öffentliche Adresse oben eingetragen ist, stehen hier die echten Adressen
 			</p>
 		{/if}
 	</section>

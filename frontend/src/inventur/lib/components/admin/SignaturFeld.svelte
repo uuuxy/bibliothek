@@ -44,10 +44,10 @@
 	required={pflicht}
 	ungueltig={fehlt}
 	hint={fehlt
-		? 'Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen. Gespeichert wird erst mit ihr.'
+		? 'Ohne Signatur kein Etikett, bitte Systematik-Kürzel eintragen. Gespeichert wird erst mit ihr.'
 		: formular.istLernmittel
-			? 'Lernmittel tragen kein Rückenetikett — die Signatur ist hier nur eine Notiz.'
-			: 'Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse.'}
+			? 'Lernmittel tragen kein Rückenetikett, die Signatur ist hier nur eine Notiz'
+			: 'Wird 1:1 auf das Rücken-Etikett gedruckt, am besten eine vorhandene Regaladresse'}
 >
 	{#snippet vorschau(/** @type {string} */ wert)}
 		<SignaturCoverVorschau signatur={wert} />

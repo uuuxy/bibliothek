@@ -61,13 +61,11 @@
 				// Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
 				reservierungen.entferne(id);
 				if (confirmingId === id) confirmingId = null;
-				snackbars.addToast('Reservierung war bereits abgeschlossen.', 'success');
+				snackbars.addToast('Reservierung war bereits abgeschlossen', 'success');
 				return;
 			}
 			if (!res.ok)
-				throw new Error(
-					await leseApiFehler(res, 'Reservierung konnte nicht abgeschlossen werden.')
-				);
+				throw new Error(await leseApiFehler(res, 'Reservierung konnte nicht abgeschlossen werden'));
 			// Kein Reload: Die Zeile wandert lokal samt Notiz in „Zuletzt bereitgestellt".
 			// Vorher wurde sie entfernt — die Zusage war bis zum nächsten Laden unauffindbar.
 			const heute = new Date().toLocaleDateString('de-DE', { dateStyle: 'medium' });
@@ -82,16 +80,16 @@
 			const mail = (await res.json().catch(() => null))?.mail;
 			if (mail === 'fehlgeschlagen') {
 				snackbars.addToast(
-					'Abgeschlossen, aber die Bereit-Mail konnte nicht versendet werden — bitte die Lehrkraft selbst benachrichtigen.',
+					'Abgeschlossen, aber die Bereit-Mail konnte nicht versendet werden. Bitte die Lehrkraft selbst benachrichtigen.',
 					'warning'
 				);
 			} else if (mail === 'keine_adresse') {
 				snackbars.addToast(
-					'Abgeschlossen — zum Konto ist keine Mail-Adresse hinterlegt, bitte die Lehrkraft selbst benachrichtigen.',
+					'Abgeschlossen. Zum Konto ist keine Mail-Adresse hinterlegt, bitte die Lehrkraft selbst benachrichtigen.',
 					'warning'
 				);
 			} else {
-				snackbars.addToast('Reservierung abgeschlossen.', 'success');
+				snackbars.addToast('Reservierung abgeschlossen', 'success');
 			}
 			uiStore.fetchPendingReservierungen();
 		} catch (err) {
@@ -161,8 +159,8 @@
 		<h2 class="text-base font-bold text-on-surface">Klassensatz-Reservierungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
 			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
-			Reservieren sperrt keinen Bestand — „Abschließen" schließt den Vorgang nach der Übergabe ab
-			und schickt der Lehrkraft die Bereit-Mail — mit deiner Notiz, wenn du eine schreibst.
+			Reservieren sperrt keinen Bestand. „Abschließen" schließt den Vorgang nach der Übergabe ab und
+			schickt der Lehrkraft die Bereit-Mail, mit deiner Notiz, wenn du eine schreibst.
 		</p>
 	</div>
 
@@ -178,7 +176,7 @@
 		/>
 	{:else if reservierungen.offene.length === 0}
 		<div class="py-16 text-center text-on-surface-variant text-base">
-			Keine offenen Klassensatz-Reservierungen.
+			Keine offenen Klassensatz-Reservierungen
 		</div>
 	{:else}
 		<ul class="divide-y divide-outline-variant">

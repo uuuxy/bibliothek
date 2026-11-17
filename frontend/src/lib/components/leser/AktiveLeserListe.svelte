@@ -82,7 +82,7 @@
 		<LadeFehler onerneut={onErneut} titel="Verzeichnis nicht geladen" text={ladefehler} />
 	{:else if leserListe.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">
-			Keine Leser im Verzeichnis gefunden.
+			Keine Leser im Verzeichnis gefunden
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">

@@ -90,7 +90,7 @@
 				{grund === 'hoechstdauer' ? 'Gesperrt nach 10 Stunden' : 'Gesperrt wegen Inaktivität'}
 			</h2>
 			{#if leerlaufSperre.anwendungSteht}
-				<p class="text-sm text-on-surface-variant">Was nicht gespeichert ist, bleibt erhalten.</p>
+				<p class="text-sm text-on-surface-variant">Was nicht gespeichert ist, bleibt erhalten</p>
 			{/if}
 			<p class="text-xs text-on-surface-variant">
 				Angemeldet als <span class="font-semibold text-on-surface"

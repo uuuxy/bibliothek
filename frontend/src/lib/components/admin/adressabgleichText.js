@@ -1,6 +1,6 @@
 // Die Sätze zum Abgleich der Adressen mit dem Webmail, getrennt vom Abschnitt, damit sie ohne
 // Oberfläche prüfbar sind (adressabgleichText.test.js).
-import { formatZeitpunkt } from '../../utils/format.js';
+import { formatZeitpunkt, verbindeSaetze } from '../../utils/format.js';
 
 /**
  * @typedef {{ zeitpunkt: string, eintraege: number, uebernommen: number, uebergangen: number, fehler?: string }} AbgleichStand
@@ -22,7 +22,7 @@ function anzahl(n, eins, viele) {
 export function letzterLaufText(stand) {
 	if (!stand) return 'Noch kein Abgleich gelaufen';
 	const wann = `Zuletzt am ${formatZeitpunkt(stand.zeitpunkt)}`;
-	if (stand.fehler) return `${wann}: gescheitert. ${stand.fehler}`;
+	if (stand.fehler) return verbindeSaetze(`${wann}: gescheitert`, stand.fehler);
 	return `${wann}: ${ergebnisZahlen(stand, false)}`;
 }
 

@@ -123,11 +123,11 @@
 		<LadeFehler
 			onerneut={fetchListe}
 			titel="Statistik nicht geladen"
-			text="Die Liste konnte nicht abgerufen werden."
+			text="Die Liste konnte nicht abgerufen werden"
 		/>
 	{:else if gefiltert.length === 0}
 		<div class="py-20 text-center text-on-surface-variant text-sm">
-			{items.length === 0 ? 'Noch keine Daten vorhanden.' : 'Keine Einträge für diese Filter.'}
+			{items.length === 0 ? 'Noch keine Daten vorhanden' : 'Keine Einträge für diese Filter'}
 		</div>
 	{:else}
 		<ul class="divide-y divide-outline-variant border-t border-outline-variant">

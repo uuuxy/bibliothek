@@ -68,7 +68,7 @@
 			</button>
 		</div>
 	{:else if papierkorb.liste.length === 0}
-		<div class="py-16 text-center text-base text-on-surface-variant">Der Papierkorb ist leer.</div>
+		<div class="py-16 text-center text-base text-on-surface-variant">Der Papierkorb ist leer</div>
 	{:else}
 		<!-- Der Server zeigt die jüngsten Löschungen bis zu seiner Grenze (Kopf X-Grenze); eine Suche
 		     gibt es hier nicht, der Satz sagt deshalb nur, dass Ältere fehlen, wie im Logbuch. -->

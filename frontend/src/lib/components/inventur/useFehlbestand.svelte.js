@@ -43,7 +43,7 @@ export function useFehlbestand() {
 	async function fehlbestandGefunden(exemplarId) {
 		const r = await meldeVerlustGefunden(exemplarId);
 		if (!r.ok) {
-			snackbars.addToast(r.error || 'Fund konnte nicht verbucht werden.', 'error');
+			snackbars.addToast(r.error || 'Fund konnte nicht verbucht werden', 'error');
 			return;
 		}
 		// Nur ein Wahrheitswert nötig — die Karte zeigt "Gefunden" statt Datum an, ein
@@ -58,8 +58,8 @@ export function useFehlbestand() {
 		const storniert = Number(r.data?.stornierte_forderungen) || 0;
 		snackbars.addToast(
 			storniert > 0
-				? `Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über ${formatEuro(r.data.stornierter_betrag)} wurde storniert.`
-				: 'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
+				? `Als gefunden verbucht, das Exemplar ist wieder verfügbar. Die Forderung über ${formatEuro(r.data.stornierter_betrag)} wurde storniert.`
+				: 'Als gefunden verbucht, das Exemplar ist wieder verfügbar',
 			'success'
 		);
 		if (r.data?.hinweis) snackbars.addToast(r.data.hinweis, 'warning');
@@ -69,7 +69,7 @@ export function useFehlbestand() {
 	async function fehlbestandEndgueltigLoeschen(exemplarIds) {
 		const r = await loescheVerlustEndgueltig(exemplarIds);
 		if (!r.ok) {
-			snackbars.addToast(r.error || 'Löschen fehlgeschlagen.', 'error');
+			snackbars.addToast(r.error || 'Löschen fehlgeschlagen', 'error');
 			return;
 		}
 		// Entfernt wird, was der Server WIRKLICH gelöscht hat — nicht, was angefragt
@@ -88,17 +88,17 @@ export function useFehlbestand() {
 		const uebersprungen = exemplarIds.length - geloeschteIds.length;
 		if (geloeschteIds.length === 0) {
 			snackbars.addToast(
-				'Nichts gelöscht — keines der ausgewählten Exemplare ist (noch) als Verlust gebucht.',
+				'Nichts gelöscht, keines der ausgewählten Exemplare ist (noch) als Verlust gebucht',
 				'warning'
 			);
 		} else if (uebersprungen > 0) {
 			snackbars.addToast(
-				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen (nicht mehr als Verlust gebucht).`,
+				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen (nicht mehr als Verlust gebucht)`,
 				'warning'
 			);
 		} else {
 			snackbars.addToast(
-				`${anzahlText(geloeschteIds.length, 'Exemplar', 'Exemplare')} endgültig gelöscht.`,
+				`${anzahlText(geloeschteIds.length, 'Exemplar', 'Exemplare')} endgültig gelöscht`,
 				'success'
 			);
 		}
@@ -110,12 +110,12 @@ export function useFehlbestand() {
 		try {
 			const r = await ladeFehlbestand(inventur.session_id);
 			if (!r.ok) {
-				snackbars.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
+				snackbars.addToast(r.error || 'Fehlbestand konnte nicht geladen werden', 'error');
 				return;
 			}
 			setzeFehlbestand(r.data ?? [], inventur.label, inventur.session_id);
 			if (fehlbestand.length === 0) {
-				snackbars.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
+				snackbars.addToast('Diese Inventur war vollständig, kein Fehlbestand', 'success');
 			}
 		} finally {
 			ladeFruehereLaeuft = false;

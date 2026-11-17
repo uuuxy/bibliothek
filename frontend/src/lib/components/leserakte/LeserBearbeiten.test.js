@@ -44,7 +44,7 @@ describe('Stammdaten bearbeiten: die Meldung nach dem Speichern', () => {
 
 		expect(apiClient.patch).toHaveBeenCalledWith('/api/schueler/leser-1', { vorname: 'Mila' });
 		expect(snackbars.toasts.map((t) => [t.message, t.type])).toEqual([
-			['Änderungen gespeichert.', 'success']
+			['Änderungen gespeichert', 'success']
 		]);
 	});
 });

@@ -25,7 +25,7 @@
 </script>
 
 {#if positionen.length === 0}
-	<p class="text-sm text-on-surface-variant italic">Keine Positionen gespeichert.</p>
+	<p class="text-sm text-on-surface-variant italic">Keine Positionen gespeichert</p>
 {:else}
 	<ul class="divide-y divide-outline-variant">
 		{#each positionen as p (p.titel_name + p.isbn)}
@@ -62,7 +62,7 @@
 									p.etiketten_offen,
 									'Exemplar dieses Titels hat',
 									'Exemplare dieses Titels haben'
-								)} kein Etikett — im Druck-Center nachdrucken"
+								)} kein Etikett, im Druck-Center nachdrucken"
 								aria-label="{anzahlText(
 									p.etiketten_offen,
 									'Etikett',

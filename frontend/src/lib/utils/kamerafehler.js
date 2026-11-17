@@ -21,8 +21,8 @@ export function kamerafehlertext(e) {
 		case 'NotReadableError':
 			return 'Die Kamera lässt sich nicht starten, vermutlich nutzt sie ein anderes Programm. Bitte dieses schließen und erneut versuchen.';
 		case 'NotSupportedError':
-			return 'Dieser Browser gibt hier keine Kamera frei.';
+			return 'Dieser Browser gibt hier keine Kamera frei';
 		default:
-			return 'Die Kamera lässt sich nicht starten.';
+			return 'Die Kamera lässt sich nicht starten';
 	}
 }

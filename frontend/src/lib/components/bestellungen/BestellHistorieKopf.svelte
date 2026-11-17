@@ -53,7 +53,7 @@
 	<div>
 		<h2 class="sr-only">Bestellhistorie</h2>
 		<p class="text-sm text-on-surface-variant">
-			Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
+			Alle aufgegebenen Bestellungen, automatisch erfasst beim Bestellen
 		</p>
 		<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
 		     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz

@@ -34,7 +34,7 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
 		});
-		if (!res.ok) throw new Error(await leseApiFehler(res, 'Schuljahreswechsel fehlgeschlagen.'));
+		if (!res.ok) throw new Error(await leseApiFehler(res, 'Schuljahreswechsel fehlgeschlagen'));
 		return res.json();
 	}
 
@@ -129,7 +129,7 @@
 			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
 			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>Schuljahreswechsel abgeschlossen.</span>
+			<span>Schuljahreswechsel abgeschlossen</span>
 		</div>
 		{@render summaryRows(ergebnis)}
 		<Button onclick={reset}>Fertig</Button>
@@ -150,7 +150,7 @@
 			class="flex items-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm text-on-primary-container"
 		>
 			<Info class="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>Unverbindliche Vorschau — es wurde noch nichts geändert.</span>
+			<span>Unverbindliche Vorschau, es wurde noch nichts geändert</span>
 		</div>
 		{@render summaryRows(probe)}
 
@@ -160,7 +160,7 @@
 			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span
 				>Dieser Vorgang ist <strong>irreversibel</strong> und betrifft alle aktiven Schüler gleichzeitig.
-				Es gibt keinen automatischen Rückweg — nur ein erneuter LUSD-Import kann einzelne Datensätze danach
+				Es gibt keinen automatischen Rückweg, nur ein erneuter LUSD-Import kann einzelne Datensätze danach
 				noch korrigieren.</span
 			>
 		</div>

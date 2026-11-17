@@ -39,7 +39,7 @@ describe('Statistik', () => {
 		antworte([]);
 		const screen = render(Statistik);
 		expect(await screen.findByText('Gesamtbestand')).toBeTruthy();
-		expect(screen.getByText('Noch keine Ausleih-Aktivität im letzten Jahr.')).toBeTruthy();
+		expect(screen.getByText('Noch keine Ausleih-Aktivität im letzten Jahr')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Ladenhüter' }));
 		expect(screen.getByText(/Keine Ladenhüter/)).toBeTruthy();
 	});
