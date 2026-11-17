@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
 	ETIKETT_FORMATE,
+	LERNMITTEL_ETIKETT,
 	felderProBogen,
 	startfeldAufBogen
 } from './components/etiketten/etikettformate.js';
@@ -102,6 +103,19 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 		expect(startfeldAufBogen(30, 'standard_52')).toBe(30);
 		expect(startfeldAufBogen(0, 'avery_3475')).toBe(1);
 		expect(startfeldAufBogen(Number(''), 'avery_3475')).toBe(1);
+	});
+
+	it('das große Lernmittel-Etikett heißt wie beim Server und druckt ab dem ersten Feld', () => {
+		// Die Tür erkennt es an pdf.LernmittelEtikettFormat; eine andere Kennung landete bei den
+		// Bögen und brach dort als unbekanntes Format ab.
+		const goLernmittel = readFileSync(
+			join(repoRoot, 'internal', 'pdf', 'etikett_lernmittel.go'),
+			'utf8'
+		);
+		expect(goLernmittel).toContain(`LernmittelEtikettFormat = "${LERNMITTEL_ETIKETT.value}"`);
+		// Ein Startfeld aus einem Bogen davor schöbe sonst leere Felder vor das erste Etikett.
+		expect(startfeldAufBogen(3, LERNMITTEL_ETIKETT.value)).toBe(1);
+		expect(felderProBogen(LERNMITTEL_ETIKETT.value)).toBe(4);
 	});
 
 	it('keine zweite Formatliste im Frontend', () => {

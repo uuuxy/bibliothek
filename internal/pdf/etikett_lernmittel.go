@@ -35,8 +35,13 @@ const (
 	lernmittelProSeite   = 4
 )
 
+// LernmittelEtikettFormat ist die Kennung, unter der das Druck-Center das große Etikett neben
+// den Bögen anbietet (frontend: etikettformate.js). Es steht nicht in etikettFormate: Es hat
+// kein Startfeld und keinen QR-Code, die vier Felder eines Blatts werden ausgeschnitten.
+const LernmittelEtikettFormat = "lernmittel_gross"
+
 // ErzeugeLernmittelEtiketten erzeugt die großen Lernmittel-Etiketten für Lieferanten,
-// die selbst etikettieren. Sie tragen die Kopfangaben des kleinen Etiketts
+// die selbst etikettieren, und für das Druck-Center der Schule. Sie tragen die Kopfangaben des kleinen Etiketts
 // (zeichneBarcodeEtikett) und dazu eine Tabelle für die Ausleihhistorie über mehrere Jahre,
 // für die das kleine Format keinen Platz hat.
 //

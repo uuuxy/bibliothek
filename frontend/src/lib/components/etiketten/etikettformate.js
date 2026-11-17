@@ -15,7 +15,7 @@
  * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin. Die Maße in
  * Millimetern kennt nur der Server: Die Vorschau zeigt sein Druck-PDF.
  *
- * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number }} EtikettFormat
+ * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number, ohneStartfeld?: boolean }} EtikettFormat
  * @type {EtikettFormat[]}
  */
 export const ETIKETT_FORMATE = [
@@ -43,6 +43,26 @@ export const ETIKETT_FORMATE = [
 ];
 
 /**
+ * Das große Lernmittel-Etikett, nur bei den Buch-Etiketten des Druck-Centers. Es ist kein
+ * vorgestanzter Bogen: Vier Felder liegen auf einem A4-Blatt und werden ausgeschnitten, ein
+ * Startfeld gibt es deshalb nicht. Erzeuger und Topf-Regel liegen beim Server
+ * (pdf.LernmittelEtikettFormat).
+ *
+ * @type {EtikettFormat}
+ */
+export const LERNMITTEL_ETIKETT = {
+	value: 'lernmittel_gross',
+	label: 'Große Lernmittel-Etiketten (2x2, 4 Etiketten)',
+	kurz: 'Große Lernmittel-Etiketten',
+	spalten: 2,
+	zeilen: 2,
+	ohneStartfeld: true
+};
+
+/** Die Auswahl der Buch-Etiketten im Druck-Center: die Bögen und das große Etikett. */
+export const BUCH_ETIKETT_FORMATE = [...ETIKETT_FORMATE, LERNMITTEL_ETIKETT];
+
+/**
  * Das Format zu einer Kennung. Unbekanntes liefert den ersten Eintrag, damit Überschrift und
  * Startposition bedienbar bleiben.
  *
@@ -50,7 +70,7 @@ export const ETIKETT_FORMATE = [
  * @returns {EtikettFormat}
  */
 export function etikettFormat(formatId) {
-	return ETIKETT_FORMATE.find((f) => f.value === formatId) ?? ETIKETT_FORMATE[0];
+	return BUCH_ETIKETT_FORMATE.find((f) => f.value === formatId) ?? ETIKETT_FORMATE[0];
 }
 
 /**
@@ -78,5 +98,6 @@ export function felderProBogen(formatId) {
  * @returns {number}
  */
 export function startfeldAufBogen(startFeld, formatId) {
+	if (etikettFormat(formatId).ohneStartfeld) return 1;
 	return Math.min(Math.max(1, Math.trunc(Number(startFeld)) || 1), felderProBogen(formatId));
 }

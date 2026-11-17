@@ -296,7 +296,8 @@ Vorschlag zeigt, sieht daneben bis zu zwei Cover von Titeln unter dieser Signatu
 ## Druck-Center
 
 Vier Reiter: **Buch-Etiketten** (Format, Startposition auf dem Bogen, Titel aus dem Katalog
-oder aus einer Klasse) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
+oder aus einer Klasse; als Format auch das große Lernmittel-Etikett mit der Ausleihtabelle, vier
+je A4-Blatt zum Ausschneiden, nicht für Bücher der Schülerbücherei) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
 Zahl steht als Badge in der Navigation) · **Ausweis-Design** (Designer für Vorder- und
 Rückseite; bis zur gestrichelten Linie druckt der Kartendrucker sicher, Text, Bilder und
 Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand. Beim Ziehen rastet ein Element
