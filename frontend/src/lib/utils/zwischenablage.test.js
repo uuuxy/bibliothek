@@ -59,26 +59,26 @@ describe('Der Knopf „ISBN kopieren“', () => {
 		verfuegbar: 1
 	};
 
-	it('sagt „Kopiert!“ erst, wenn es gelungen ist', async () => {
+	it('sagt „Kopiert“ erst, wenn es gelungen ist', async () => {
 		writeText.mockResolvedValue(undefined);
 		const { getByRole, findByText } = render(NummerKopieren, { nummer: buch.isbn });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
-		expect(await findByText('Kopiert!')).toBeTruthy();
+		expect(await findByText('Kopiert')).toBeTruthy();
 	});
 
-	it('sagt nicht „Kopiert!“, wenn es scheitert', async () => {
+	it('sagt nicht „Kopiert“, wenn es scheitert', async () => {
 		writeText.mockRejectedValue(new Error('Write permission denied.'));
 		const { getByRole, queryByText } = render(NummerKopieren, { nummer: buch.isbn });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
 		await tick();
 		await new Promise((fertig) => setTimeout(fertig, 0));
 		await tick();
-		expect(queryByText('Kopiert!')).toBeNull();
+		expect(queryByText('Kopiert')).toBeNull();
 		expect(snackbars.addToast).toHaveBeenCalledWith('Kopieren nicht möglich.', 'error');
 	});
 });
 
-// Vier Stellen schrieben selbst in die Zwischenablage; zwei davon sagten „Kopiert!“, ohne das Ergebnis
+// Vier Stellen schrieben selbst in die Zwischenablage; zwei davon sagten „Kopiert“, ohne das Ergebnis
 // abzuwarten, eine schwieg beim Scheitern.
 describe('Tür zur Zwischenablage', () => {
 	it('nur dieser Helfer fasst sie an', () => {

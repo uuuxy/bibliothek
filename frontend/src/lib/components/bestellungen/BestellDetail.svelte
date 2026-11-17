@@ -26,7 +26,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { ArrowLeft } from '@lucide/svelte';
-	import { formatEuro, anzahlText } from '../../utils/format.js';
+	import { formatEuro, anzahlText, formatDatum } from '../../utils/format.js';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
 	let { bestellungId, onBack } = $props();
@@ -59,15 +59,6 @@
 		void laden();
 		return abonniereNeuladen('bestellstand', laden);
 	});
-
-	/** @param {string} iso */
-	function langdatum(iso) {
-		return new Date(iso).toLocaleDateString('de-DE', {
-			day: '2-digit',
-			month: 'long',
-			year: 'numeric'
-		});
-	}
 
 	/** @param {any} pos */
 	function zumNachdruck(pos) {
@@ -117,7 +108,7 @@
 					{/if}
 				</div>
 				<p class="mt-0.5 text-sm text-on-surface-variant">
-					{langdatum(bestellung.bestelldatum)}
+					{formatDatum(bestellung.bestelldatum)}
 					{#if bestellung.kundennummer}· Kd.-Nr. {bestellung.kundennummer}{/if}
 				</p>
 				<p class="text-sm text-on-surface-variant">{bestellung.lieferant_email}</p>

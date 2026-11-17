@@ -92,7 +92,7 @@ describe('AusweisDesigner: bis zur Antwort des Servers', () => {
 		expect(queryByRole('progressbar')).toBeNull();
 	});
 
-	// „Erneut laden" steht auf derselben Fläche.
+	// „Erneut versuchen" steht auf derselben Fläche.
 	it('bleibt nach einem gescheiterten Laden bedienbar', async () => {
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.mocked(apiFetch).mockImplementation(async () => {
@@ -100,7 +100,7 @@ describe('AusweisDesigner: bis zur Antwort des Servers', () => {
 		});
 		const { getByRole, queryByRole } = render(AusweisDesigner);
 		await stillhalten();
-		expect(getByRole('button', { name: 'Erneut laden' })).toBeTruthy();
+		expect(getByRole('button', { name: 'Erneut versuchen' })).toBeTruthy();
 		expect(leinwandTraege()).toBe(false);
 		expect(queryByRole('progressbar')).toBeNull();
 	});

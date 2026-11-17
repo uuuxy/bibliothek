@@ -84,7 +84,7 @@ test.describe.serial('Buch anlegen mit dem Handscanner', () => {
 
 		await page.locator('#buch-signatur').fill('Sca 2');
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect(
 			querySQL(
 				`SELECT t.titel || '/' || count(e.id) FROM buecher_titel t LEFT JOIN buecher_exemplare e ON e.titel_id = t.id WHERE t.isbn = '${ISBN_NEU}' GROUP BY t.titel`

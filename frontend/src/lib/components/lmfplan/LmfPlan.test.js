@@ -130,7 +130,7 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Veröffentlichen' })).toBeNull();
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent.trim()).toBe(
-			'Veröffentlicht am 20.05.27.'
+			'Veröffentlicht am 20.05.2027.'
 		);
 		// Ohne Schüler in 09H1 (klassen leer): die Zeile sagt es.
 		expect(screen.getByText('ohne Schüler')).toBeTruthy();
@@ -252,7 +252,7 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		// Jede Angabe einmal: Den Beginn zeigt die erste Zeile der Reihenfolge; über dem Raster
 		// des Zeitraums steht kein Satz, solange die Sommerferien bekannt sind.
 		const erste = () => screen.getByTestId('lmf-reihenfolge').querySelector('tbody tr');
-		await vi.waitFor(() => expect(erste()?.textContent).toContain('24.06.27'));
+		await vi.waitFor(() => expect(erste()?.textContent).toContain('24.06.2027'));
 		expect(erste()?.textContent).toContain('4. Std.');
 		expect(screen.queryByTestId('lmf-zeitraum-hinweis')).toBeNull();
 	});

@@ -21,7 +21,7 @@ describe('LmfPlanFreieTage', () => {
 		// Ohne Eintrag kein Dialog — nur der Chip.
 		expect(r.queryByRole('dialog')).toBeNull();
 		await freihalten(r, '2026-06-05', 'Brückentag');
-		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('05.06.26 Brückentag');
+		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('05.06.2026 Brückentag');
 		// Der Dialog ist nach dem Eintragen zu.
 		expect(r.queryByRole('dialog')).toBeNull();
 
@@ -30,7 +30,7 @@ describe('LmfPlanFreieTage', () => {
 		expect(r.getByTestId('lmf-freie-tage').querySelectorAll('span')).toHaveLength(1);
 		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('Studientag');
 
-		await fireEvent.click(r.getByLabelText('05.06.26 Studientag aus dem Plan nehmen'));
+		await fireEvent.click(r.getByLabelText('05.06.2026 Studientag aus dem Plan nehmen'));
 		expect(r.queryByTestId('lmf-freie-tage')).toBeNull();
 	});
 
@@ -51,7 +51,7 @@ describe('LmfPlanFreieTage', () => {
 			]
 		});
 		const text = getByTestId('lmf-ausfaelle').textContent?.replace(/\s+/g, ' ');
-		expect(text).toContain('Donnerstag 04.06.26 (Fronleichnam)');
-		expect(text).toContain('Freitag 05.06.26 (Brückentag)');
+		expect(text).toContain('Donnerstag 04.06.2026 (Fronleichnam)');
+		expect(text).toContain('Freitag 05.06.2026 (Brückentag)');
 	});
 });

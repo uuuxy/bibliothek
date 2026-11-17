@@ -10,6 +10,17 @@ export function formatZahl(wert) {
 	return (wert ?? 0).toLocaleString('de-DE');
 }
 
+/**
+ * „12,3 kB“, „1,4 MB“: eine Dateigröße in SI-Einheiten wie bei Android (kB = 1000 Bytes), mit
+ * Komma und höchstens einer Nachkommastelle.
+ * @param {number | null | undefined} bytes
+ */
+export function formatDateigroesse(bytes) {
+	const b = bytes ?? 0;
+	const [wert, einheit] = b >= 1_000_000 ? [b / 1_000_000, 'MB'] : [b / 1000, 'kB'];
+	return `${wert.toLocaleString('de-DE', { maximumFractionDigits: 1 })} ${einheit}`;
+}
+
 const mehrzahlRegel = new Intl.PluralRules('de-DE');
 
 /**

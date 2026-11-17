@@ -63,7 +63,7 @@
 				exemplar_ids: gewaehlteExemplare
 			});
 			snackbars.addToast(
-				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} erfolgreich eingebucht!`,
+				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} eingebucht.`,
 				'success'
 			);
 			gewaehlteExemplare = [];

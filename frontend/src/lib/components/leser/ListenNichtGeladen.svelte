@@ -14,6 +14,6 @@
 	<p class="text-sm font-semibold text-error" role="alert">
 		Nicht geladen: {nenneFehlende(listen)}. Diese Karten sind leer, weil der Abruf gescheitert ist —
 		nicht, weil nichts vorläge.
-		<Button variant="ghost" size="sm" onclick={onErneut}>Erneut laden</Button>
+		<Button variant="ghost" size="sm" onclick={onErneut}>Erneut versuchen</Button>
 	</p>
 {/if}

@@ -82,7 +82,7 @@
 							<button
 								type="button"
 								onclick={() => (gewaehlt = sig.signatur)}
-								class="w-full text-left px-3 py-2 rounded-lg flex items-baseline justify-between gap-2 transition-colors {gewaehlt ===
+								class="w-full text-left px-3 py-2 rounded-2xl flex items-baseline justify-between gap-2 transition-colors {gewaehlt ===
 								sig.signatur
 									? 'bg-secondary-container text-on-secondary-container'
 									: 'text-on-surface'}"

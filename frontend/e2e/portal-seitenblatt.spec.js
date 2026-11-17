@@ -82,7 +82,7 @@ test('Mein Portal: Ein Klick auf die Kachel zeigt die ISBN im Seitenblatt, der K
 	).toBe(true);
 
 	await blatt.getByRole('button', { name: `ISBN: ${ISBN}` }).click();
-	await expect(blatt.getByText('Kopiert!')).toBeVisible();
+	await expect(blatt.getByText('Kopiert')).toBeVisible();
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ISBN);
 
 	await blatt.getByRole('button', { name: 'Schließen' }).click();

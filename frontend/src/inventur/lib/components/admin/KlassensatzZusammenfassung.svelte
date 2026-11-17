@@ -77,6 +77,6 @@
 		<Save class="h-4 w-4" aria-hidden="true" />
 		<!-- Kurz halten: In der 340 px schmalen Spalte bräche „Auswahl speichern" auf zwei
 		     Zeilen um. Was gespeichert wird, sagt die Überschrift des Dialogs. -->
-		<span class="whitespace-nowrap">{speichert ? 'Speichert …' : 'Speichern'}</span>
+		<span class="whitespace-nowrap">{speichert ? 'Wird gespeichert …' : 'Speichern'}</span>
 	</Button>
 </footer>

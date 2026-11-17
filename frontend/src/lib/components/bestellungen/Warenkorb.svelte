@@ -12,7 +12,7 @@
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import WarenkorbPosition from './WarenkorbPosition.svelte';
-	import { formatEuro } from '../../utils/format.js';
+	import { formatEuro, anzahlText } from '../../utils/format.js';
 
 	const anzahlBestellungen = $derived(bestellStore.gruppen.length);
 </script>
@@ -23,7 +23,7 @@
 		{#if bestellStore.cart.length}
 			<span
 				class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
-				>{bestellStore.totalQty} Expl.</span
+				>{anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare')}</span
 			>
 		{/if}
 	</div>
@@ -47,7 +47,7 @@
 						<span class="font-normal text-on-surface-variant">({gruppe.traeger})</span>
 					</h3>
 					<span class="text-xs text-on-surface-variant tabular-nums">
-						{gruppe.menge} Expl.{#if bestellStore.preiseErfassen}
+						{anzahlText(gruppe.menge, 'Exemplar', 'Exemplare')}{#if bestellStore.preiseErfassen}
 							· {formatEuro(gruppe.summe)}{/if}
 					</span>
 				</div>
@@ -84,9 +84,13 @@
 					<Ladekreis size="sm" farbe="aktuell" />
 					Wird gesendet …
 				{:else if anzahlBestellungen > 1}
-					{anzahlBestellungen} Bestellungen auslösen · {bestellStore.totalQty} Expl.
+					{anzahlBestellungen} Bestellungen auslösen · {anzahlText(
+						bestellStore.totalQty,
+						'Exemplar',
+						'Exemplare'
+					)}
 				{:else}
-					Bestellung auslösen · {bestellStore.totalQty} Expl.
+					Bestellung auslösen · {anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare')}
 				{/if}
 			</Button>
 			{#if anzahlBestellungen > 1}

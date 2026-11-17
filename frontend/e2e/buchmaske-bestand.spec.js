@@ -70,12 +70,12 @@ test.describe.serial('Buchmaske: Bestand', () => {
 
 		await platz2.locator('#buch-bestand').fill('6');
 		await speichern(platz2);
-		await expect(platz2.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(platz2.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('6/0/0');
 
 		await platz1.locator('#buch-signatur').fill('Bes 2');
 		await speichern(platz1);
-		await expect(platz1.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(platz1.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('6/0/0');
 		expect(signatur()).toBe('Bes 2');
 		await platz1.context().close();
@@ -127,7 +127,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 
 		await speichern(page);
 		await frage.getByRole('button', { name: 'Verringern' }).click();
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('5/0/2');
 	});
 
@@ -137,7 +137,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await oeffneTitel(page, '5');
 		await page.locator('#buch-signatur').fill('Bes 5');
 		await speichern(page);
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		const zellen = page.locator('tr', { hasText: TITEL }).first().locator('td');
 		await expect(zellen.nth((await zellen.count()) - 2)).toHaveText('5');
 	});
@@ -149,7 +149,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 			'Ohne Zahl bleibt der Bestand, wie er ist.'
 		);
 		await speichern(page);
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('5/0/2');
 	});
 
@@ -159,7 +159,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await oeffneTitel(page, '5');
 		await page.locator('#buch-signatur').fill('Bes 4');
 		await speichern(page);
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('5/2/2');
 		expect(signatur()).toBe('Bes 4');
 	});
@@ -186,7 +186,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		expect(stand()).toBe('4/2/3');
 
 		await speichern(page);
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect(stand()).toBe('4/2/3');
 	});
 });

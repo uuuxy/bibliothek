@@ -92,7 +92,7 @@ export function useInventur() {
 		const r = await schliesseAb(lauf.laufKennung);
 		if (r.ok) {
 			const verloren = anzahlText(r.data.verloren_gemeldet, 'Buch wurde', 'Bücher wurden');
-			snackbars.addToast(`Inventur abgeschlossen! ${verloren} als verloren markiert.`, 'success');
+			snackbars.addToast(`Inventur abgeschlossen. ${verloren} als verloren markiert.`, 'success');
 			// Die Liste vor dem Zurücksetzen sichern: Mit der Zahl allein geht niemand ins Regal, und
 			// nach der Aussonderung fallen die Exemplare aus dem Bereich der Inventur.
 			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label, lauf.laufKennung);

@@ -221,7 +221,7 @@ describe('LmfPlanReihenfolge', () => {
 
 	it('legt per Klick auf das Datum fest — Fokus im Datumsfeld', async () => {
 		const { getByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Datum Zeile 1: 28.06.27 — festlegen'));
+		await fireEvent.click(getByLabelText('Datum Zeile 1: 28.06.2027 — festlegen'));
 		await Promise.resolve();
 		expect(document.activeElement).toBe(getByLabelText('Fester Tag Zeile 1'));
 	});

@@ -61,7 +61,7 @@
 				<p class="text-on-surface font-semibold">{formatDate(leser.geburtsdatum)}</p>
 			</div>
 			<div>
-				<p class="text-xs font-medium text-on-surface-variant mb-1">LUSD ID</p>
+				<p class="text-xs font-medium text-on-surface-variant mb-1">LUSD-ID</p>
 				<p class="text-on-surface font-semibold">{leser.lusd_id || 'Keine Angabe'}</p>
 			</div>
 		</div>

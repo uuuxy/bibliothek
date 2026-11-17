@@ -89,7 +89,7 @@ test.describe('Titel anlegen: die ISBN in der anderen Länge ist dieselbe Nummer
 		await page.locator('#buch-signatur').fill('Lit 3');
 
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 		expect([titelAnzahl(ZEHN_FALSCH), titelAnzahl(EAN_ANDERES)]).toEqual(['1', '1']);
 	});
 });

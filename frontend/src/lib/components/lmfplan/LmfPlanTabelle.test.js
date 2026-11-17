@@ -26,7 +26,7 @@ describe('LmfPlanTabelle', () => {
 		expect(getByRole('region', { name: 'Bücherausgabe nach den Sommerferien' })).toBeTruthy();
 		expect(getAllByRole('table')).toHaveLength(2);
 		expect(getByText('Montag')).toBeTruthy(); // 28.06.2027
-		expect(getByText('28.06.27')).toBeTruthy();
+		expect(getByText('28.06.2027')).toBeTruthy();
 		expect(getByText('3. Std.')).toBeTruthy();
 		expect(getByText('10R2 / 10R3')).toBeTruthy();
 		expect(getByText('erst zur 2. Hälfte')).toBeTruthy();

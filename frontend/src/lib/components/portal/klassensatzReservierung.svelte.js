@@ -145,7 +145,7 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 					f.success =
 						vorher.length > 0
 							? `Reservierungsanfrage gesendet — dein Satz ist nach ${vorher.map((o) => o.klasse).join(', ')} an der Reihe.`
-							: 'Reservierungsanfrage wurde gesendet!';
+							: 'Reservierungsanfrage gesendet.';
 					f.open = false;
 					nachSenden();
 				} else {

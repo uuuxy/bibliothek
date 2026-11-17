@@ -73,7 +73,7 @@ test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Einga
 	).toBe('t');
 
 	await page.getByRole('button', { name: 'Speichern' }).click();
-	await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+	await expect(page.getByText('Buch gespeichert.')).toBeVisible();
 	expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe('1');
 });
 

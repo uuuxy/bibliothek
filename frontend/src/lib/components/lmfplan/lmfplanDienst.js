@@ -63,7 +63,7 @@ const wochentagFormat = new Intl.DateTimeFormat('de-DE', { weekday: 'long' });
 const datumFormat = new Intl.DateTimeFormat('de-DE', {
 	day: '2-digit',
 	month: '2-digit',
-	year: '2-digit'
+	year: 'numeric'
 });
 
 /** @param {string} iso JJJJ-MM-TT */

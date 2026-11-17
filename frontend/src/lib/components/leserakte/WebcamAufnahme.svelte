@@ -188,7 +188,7 @@
 				<Button onclick={nehmeFotoAuf} disabled={isCapturing} class="shrink-0">
 					{#if isCapturing}
 						<Ladekreis size="sm" farbe="aktuell" />
-						Speichert …
+						Wird gespeichert …
 					{:else}
 						<Camera class="h-4 w-4" aria-hidden="true" />
 						Foto aufnehmen

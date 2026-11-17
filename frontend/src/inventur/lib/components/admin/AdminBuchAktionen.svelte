@@ -75,7 +75,7 @@
 			melde(
 				neu && bestand === 0
 					? 'Titel ohne Exemplar gespeichert. Er steht unter „Ohne Exemplare“.'
-					: 'Buch erfolgreich gespeichert!',
+					: 'Buch gespeichert.',
 				'success'
 			);
 		} catch (e) {

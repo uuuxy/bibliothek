@@ -3,6 +3,7 @@
 // Megabyte je Speichern. Deshalb wird ein großes Bild vor dem Einbetten verkleinert.
 
 import { verkleinereBild } from '../utils/bildVerkleinern.js';
+import { formatDateigroesse } from '../utils/format.js';
 
 // Bis hierher bleibt die Datei, wie sie ist: Ein kleines Logo verliert so nichts.
 const UNVERAENDERT_BIS_BYTES = 300_000;
@@ -22,10 +23,6 @@ function alsDatenAdresse(blob) {
 		leser.readAsDataURL(blob);
 	});
 }
-
-/** @param {number} bytes */
-const megabyte = (bytes) =>
-	(bytes / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 1 });
 
 /**
  * Liest eine Bilddatei als Data-URL für ein Element der Karte. Der Fehler nennt die Datei,
@@ -51,7 +48,7 @@ export async function leseKartenBild(datei) {
 	}
 	if (bild.size > HOECHSTENS_BYTES) {
 		throw new Error(
-			`„${datei.name}“ ist auch verkleinert zu groß (${megabyte(bild.size)} MB). Bitte kleiner zuschneiden oder als JPEG speichern.`
+			`„${datei.name}“ ist auch verkleinert zu groß (${formatDateigroesse(bild.size)}). Bitte kleiner zuschneiden oder als JPEG speichern.`
 		);
 	}
 	return alsDatenAdresse(bild);

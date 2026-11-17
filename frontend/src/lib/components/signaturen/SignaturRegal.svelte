@@ -113,7 +113,7 @@
 								<button
 									type="button"
 									onclick={() => oeffneBuch(buch.titel_id)}
-									class="cursor-pointer text-left hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+									class="cursor-pointer text-left hover:underline focus-visible:outline-2 focus-visible:outline-primary"
 								>
 									{buch.titel}
 								</button>

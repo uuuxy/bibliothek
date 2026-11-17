@@ -4,6 +4,7 @@ import {
 	formatZeitpunkt,
 	formatZahl,
 	anzahlText,
+	formatDateigroesse,
 	bestandSatz,
 	bestandKurz,
 	bestandLage,
@@ -23,6 +24,12 @@ describe('format.js — eine deutsche Schreibweise', () => {
 
 	it('Zahl: Tausenderpunkt', () => {
 		expect(formatZahl(12345)).toBe('12.345');
+	});
+
+	it('Dateigröße: SI-Einheiten, Komma, eine Nachkommastelle', () => {
+		expect(formatDateigroesse(12_345)).toBe('12,3 kB');
+		expect(formatDateigroesse(1_400_000)).toBe('1,4 MB');
+		expect(formatDateigroesse(null)).toBe('0 kB');
 	});
 
 	it('Anzahl: Einzahl nur bei 1, Zahl mit Tausenderpunkt', () => {

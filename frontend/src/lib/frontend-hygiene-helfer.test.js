@@ -24,7 +24,7 @@ const FEHLERTEXT =
 const ZAHL_VON_HAND = /\.toLocaleString\(\s*['"`]de-DE['"`]\s*\)/;
 // Ohne Angaben schreibt toLocaleDateString „T.M.JJJJ" neben „TT.MM.JJJJ" aus formatDatum, ebenso
 // toLocaleString an einem neuen Date. Sieht nicht: toLocaleString an einem Datum aus einer
-// Variablen und eine eigene Form mit Angaben (der LMF-Plan schreibt „TT.MM.JJ").
+// Variablen und eine eigene Form mit Angaben.
 const DATUM_OHNE_ANGABEN =
 	/\.toLocaleDateString\(\s*[^,()]*\)|new\s+Date\([^()]*\)\s*\.toLocaleString\(\s*[^,()]*\)/;
 

@@ -94,7 +94,7 @@
 		} catch {
 			if (seq === lauf) fehler = 'Schulbücher konnten nicht geladen werden.';
 		} finally {
-			// Auch „Lädt …" gehört dem neuesten Lauf: Ein überholter Lauf darf die Anzeige
+			// Auch „Wird geladen …" gehört dem neuesten Lauf: Ein überholter Lauf darf die Anzeige
 			// nicht auf „fertig" stellen, während der aktuelle noch unterwegs ist.
 			if (seq === lauf) laedt = false;
 		}
@@ -155,7 +155,7 @@
 	{#if fehler}
 		<p role="alert" class="text-sm font-bold text-error">{fehler}</p>
 	{:else if laedt && faecher.length === 0}
-		<p class="py-4 text-sm text-on-surface-variant">Lädt …</p>
+		<p class="py-4 text-sm text-on-surface-variant">Wird geladen …</p>
 	{:else if faecher.length === 0}
 		<p class="py-4 text-sm text-on-surface-variant">
 			{suche.trim() || jahrgang || zweig

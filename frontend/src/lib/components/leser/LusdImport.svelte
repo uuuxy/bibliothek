@@ -24,6 +24,7 @@
 		umbenennungenFormwert,
 		vorausgewaehlteZeilen
 	} from './lusdVorschauRubriken.js';
+	import { formatDateigroesse as groesse } from '../../utils/format.js';
 
 	/** @typedef {import('./lusdVorschauRubriken.js').LusdPreviewResult} LusdPreviewResult */
 
@@ -41,7 +42,6 @@
 	 *  place geändert — SvelteSet ist selbst reaktiv, ein $state-Umschlag wäre doppelt. */
 	const gewaehltePaare = new SvelteSet();
 
-	const dateiGroesse = $derived(`${((gewaehlteDatei?.size ?? 0) / 1024).toFixed(1)} KB`);
 	const angezeigtesErgebnis = $derived(stage === 'done' ? importErgebnis : probeErgebnis);
 	const info = $derived(modusInfo(angezeigtesErgebnis?.modus));
 	const uebersichtZeilen = $derived(angezeigtesErgebnis ? rubriken(angezeigtesErgebnis) : []);
@@ -232,7 +232,7 @@
 			{#if gewaehlteDatei}
 				<div class="space-y-1">
 					<p class="text-xs font-bold text-on-surface max-w-xs truncate">{gewaehlteDatei.name}</p>
-					<p class="text-label-small text-on-surface-variant">{dateiGroesse}</p>
+					<p class="text-label-small text-on-surface-variant">{groesse(gewaehlteDatei.size)}</p>
 				</div>
 			{:else}
 				<div class="space-y-1">
