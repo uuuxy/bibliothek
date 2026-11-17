@@ -13,13 +13,18 @@
    Lizenz: SIL Open Font License 1.1 — Selbst-Hosten, Bündeln und Weitergabe
    ausdrücklich erlaubt.
 
-   Drei Schnitte, je rund 22 KB: Googles Skala benutzt Regular (400) und Medium (500),
-   Bold (700) nur für das aktive Ziel der Navigation (label-large-prominent in
-   styles/theme-mass.css). Kursiv und die übrigen Stärken bleiben ungebündelt. */
+   Drei Schnitte: Googles Skala benutzt Regular (400) und Medium (500), Bold (700) nur für
+   das aktive Ziel der Navigation (label-large-prominent in styles/theme-mass.css). Kursiv
+   und die übrigen Stärken bleiben ungebündelt.
+
+   Jeder Schnitt mit allen Zeichenbereichen von Roboto, je Bereich eine Datei mit
+   unicode-range: Der Browser lädt einen Bereich nur, wenn ein Zeichen daraus auf der Seite
+   steht. Nur der westeuropäische Bereich ließe Namen nach DIN 91379 („Ayşe“, „Łukasz“)
+   mit Buchstaben aus der Systemschrift stehen. */
 @import 'tailwindcss';
-@import '@fontsource/roboto/latin-400.css';
-@import '@fontsource/roboto/latin-500.css';
-@import '@fontsource/roboto/latin-700.css';
+@import '@fontsource/roboto/400.css';
+@import '@fontsource/roboto/500.css';
+@import '@fontsource/roboto/700.css';
 @import './styles/theme-mass.css';
 @import './styles/rollen.css';
 @import './styles/basis.css';

@@ -208,3 +208,27 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 	expect(geprueftGesamt, 'gemessene Textknoten').toBeGreaterThan(300);
 	expect(alle, `${alle.length}+ Typografie-Verstöße:\n  ${alle.join('\n  ')}`).toEqual([]);
 });
+
+// Namen nach DIN 91379 tragen Buchstaben jenseits des westeuropäischen Bereichs. Roboto hat sie,
+// gebündelt war aber nur der westeuropäische Teil, und der Browser nahm diese Buchstaben aus der
+// Systemschrift. Gemessen wird am Zeichen: Kommt es aus Roboto, ist es mit jeder Ersatzschrift
+// gleich breit; fehlt es dort, setzt der Browser es einmal aus monospace und einmal aus serif.
+test('Namen mit ş, ł, đ und ễ stehen in Roboto, nicht in der Systemschrift', async ({ page }) => {
+	await uiLogin(page);
+	const breiten = await page.evaluate(async () => {
+		const zeichen = ['ş', 'ğ', 'ł', 'đ', 'č', 'ễ'];
+		await document.fonts.load('400 32px Roboto', zeichen.join(''));
+		const leinwand = /** @type {CanvasRenderingContext2D} */ (
+			document.createElement('canvas').getContext('2d')
+		);
+		return zeichen.map((z) => {
+			leinwand.font = '400 32px Roboto, monospace';
+			const mitMonospace = leinwand.measureText(z).width;
+			leinwand.font = '400 32px Roboto, serif';
+			return { z, mitMonospace, mitSerif: leinwand.measureText(z).width };
+		});
+	});
+	for (const { z, mitMonospace, mitSerif } of breiten) {
+		expect(mitMonospace, `„${z}“ kommt aus Roboto`).toBe(mitSerif);
+	}
+});
