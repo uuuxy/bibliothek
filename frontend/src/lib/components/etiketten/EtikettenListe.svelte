@@ -5,6 +5,7 @@
 <script>
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
+	import { formatDatum } from '../../utils/format.js';
 	/** @type {{
 	 *   zeilen: { barcode_id: string, titel: string, autor: string, zugang_am: string, etikett_gedruckt: boolean }[],
 	 *   gewaehlt: string[],
@@ -18,7 +19,7 @@
 
 	/** @param {string} iso */
 	function datum(iso) {
-		return iso ? new Date(iso).toLocaleDateString('de-DE') : '—';
+		return formatDatum(iso) || '—';
 	}
 </script>
 

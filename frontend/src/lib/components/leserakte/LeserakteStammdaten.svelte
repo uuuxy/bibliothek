@@ -20,17 +20,12 @@
 	import SchuelerZusammenfuehren from '../leser/SchuelerZusammenfuehren.svelte';
 	import { istKollegium, leserArtText } from '../leser/leserArt.js';
 	import { Info, SquarePen } from '@lucide/svelte';
+	import { formatDatum } from '../../utils/format.js';
 
 	const kollege = $derived(istKollegium(leser));
 
 	function formatDate(dateString) {
-		if (!dateString) return 'Keine Angabe';
-		try {
-			const d = new Date(dateString);
-			return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-		} catch {
-			return dateString;
-		}
+		return formatDatum(dateString) || 'Keine Angabe';
 	}
 </script>
 

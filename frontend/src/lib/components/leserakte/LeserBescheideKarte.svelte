@@ -12,15 +12,12 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Button from '../ui/Button.svelte';
 	import { Printer } from '@lucide/svelte';
-	import { formatEuro } from '../../utils/format.js';
+	import { formatDatum as datum, formatEuro } from '../../utils/format.js';
 	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {{ bescheide: any[] }} */
 	let { bescheide = [] } = $props();
-
-	/** @param {string} iso */
-	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
 	/** @param {any} b */
 	function nachdruck(b) {

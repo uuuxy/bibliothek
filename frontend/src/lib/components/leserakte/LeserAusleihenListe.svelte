@@ -10,6 +10,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { istUeberfaellig } from '../../utils/ueberfaellig.js';
+	import { formatDatum } from '../../utils/format.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { schuelerRechte } from '../leser/schuelerRechte.js';
 
@@ -45,7 +46,7 @@
 				book.rueckgabe_frist = daten.neues_rueckgabe_datum;
 				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts
 				// passieren.
-				const neu = new Date(daten.neues_rueckgabe_datum).toLocaleDateString('de-DE');
+				const neu = formatDatum(daten.neues_rueckgabe_datum);
 				melde(`Verlängert bis ${neu}.`, 'success');
 			} else {
 				// Die Begründung des Servers („Ausleihe gesperrt (Grund)") sagt, was zu tun ist.

@@ -25,9 +25,9 @@ describe('LeserBescheideKarte', () => {
 		expect(screen.getByText('4801-2026-1234-0001')).toBeTruthy();
 		expect(screen.getByText(/2 Positionen/)).toBeTruthy();
 		expect(screen.getByText(/24,50\s€/)).toBeTruthy();
-		// Datumsform wie in der Arbeitsliste des Mahnwesens (toLocaleDateString('de-DE')):
-		// ohne führende Null. Zwei Formen für dasselbe Datum wären zwei Wahrheiten.
-		expect(screen.getByText(/Frist: 29\.9\.2026/)).toBeTruthy();
+		// Datumsform wie in der Arbeitsliste des Mahnwesens (formatDatum): Tag und Monat
+		// zweistellig. Zwei Formen für dasselbe Datum wären zwei Wahrheiten.
+		expect(screen.getByText(/Frist: 29\.09\.2026/)).toBeTruthy();
 		expect(screen.getByText('Frist läuft')).toBeTruthy();
 	});
 

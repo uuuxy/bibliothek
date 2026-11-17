@@ -20,15 +20,12 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { bescheidStatus } from './bescheidStatus.js';
 	import { FileText, Printer } from '@lucide/svelte';
-	import { formatEuro } from '../../utils/format.js';
+	import { formatDatum as datum, formatEuro } from '../../utils/format.js';
 	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {{ darfSchreiben: boolean, onBescheid: (schuelerId: string) => void }} */
 	let { darfSchreiben, onBescheid } = $props();
-
-	/** @param {string} iso */
-	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
 	/** Öffnet die Akte auf „Gebühren & Schäden" — dort wird bezahlt und storniert. @param {string} id */
 	function oeffneAkte(id) {

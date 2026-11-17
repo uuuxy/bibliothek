@@ -13,9 +13,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { gemahntSatz } from './mahnungen.js';
 	import { betragGueltig } from './bescheidFormular.svelte.js';
-
-	/** @param {string} iso */
-	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
+	import { formatDatum as datum } from '../../utils/format.js';
 
 	/**
 	 * @type {{

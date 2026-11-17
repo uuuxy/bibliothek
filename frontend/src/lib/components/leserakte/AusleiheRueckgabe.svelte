@@ -12,6 +12,7 @@
 	import { Check, Pencil, X } from '@lucide/svelte';
 	import Feld from '../ui/Feld.svelte';
 	import UeberfaelligZeichen from '../buchakte/UeberfaelligZeichen.svelte';
+	import { formatDatum as datum } from '../../utils/format.js';
 
 	/** @type {{ ausleihe: any, ueberfaellig: boolean, darfAendern: boolean }} */
 	let { ausleihe, ueberfaellig, darfAendern } = $props();
@@ -20,8 +21,6 @@
 	let neuesDatum = $state('');
 	let speichert = $state(false);
 
-	/** @param {string} wert */
-	const datum = (wert) => new Date(wert).toLocaleDateString('de-DE');
 	const geliehenAm = $derived(datum(ausleihe.ausgeliehen_am));
 
 	async function speichere() {

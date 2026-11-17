@@ -64,8 +64,7 @@ describe('backupMessage', () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-30T18:00:00'));
 		const got = backupMessage(status('2026-07-28T02:30:00'));
-		expect(got).toContain('Letztes Backup: ');
-		expect(got).not.toContain('heute');
+		expect(got).toBe('Letztes Backup: 28.07.2026 02:30');
 	});
 
 	// Die drei folgenden Fälle sind die aufgelöste Ternäroperation. Genau hier stand

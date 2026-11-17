@@ -1,6 +1,7 @@
 <script>
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { istUeberfaellig } from '../../utils/ueberfaellig.js';
+	import { formatDatum } from '../../utils/format.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -10,13 +11,7 @@
 	let { leser } = $props();
 
 	function formatDate(dateString) {
-		if (!dateString) return 'Keine Angabe';
-		try {
-			const d = new Date(dateString);
-			return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-		} catch {
-			return dateString;
-		}
+		return formatDatum(dateString) || 'Keine Angabe';
 	}
 </script>
 
@@ -35,7 +30,7 @@
 		</div>
 		<div class="text-right">
 			<p class="text-sm text-on-surface-variant">Datum</p>
-			<p class="font-bold">{new Date().toLocaleDateString('de-DE')}</p>
+			<p class="font-bold">{formatDatum(new Date())}</p>
 		</div>
 	</div>
 

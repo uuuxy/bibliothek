@@ -119,13 +119,13 @@ describe('baueMahnlisteDruckHtml', () => {
 		const meta = (/** @type {string} */ html) => html.match(/<p class="meta">(.*?)<\/p>/)?.[1];
 
 		expect(meta(baueMahnlisteDruckHtml(kinder, ALLES, TAG))).toBe(
-			'Erstellt am: 5.10.2026 | Ansicht: Alle | alle Klassen | 2 Kinder, 3 Bücher'
+			'Erstellt am: 05.10.2026 | Ansicht: Alle | alle Klassen | 2 Kinder, 3 Bücher'
 		);
 		expect(
 			meta(
 				baueMahnlisteDruckHtml([kinder[1]], { ansicht: 'Mahnung', klasse: '5a', suche: ' b ' }, TAG)
 			)
-		).toBe('Erstellt am: 5.10.2026 | Ansicht: Eskaliert | Klasse 5a | Suche: b | 1 Kind, 1 Buch');
+		).toBe('Erstellt am: 05.10.2026 | Ansicht: Eskaliert | Klasse 5a | Suche: b | 1 Kind, 1 Buch');
 	});
 
 	it('nennt im Fenstertitel dasselbe wie in der Überschrift des Blatts', () => {

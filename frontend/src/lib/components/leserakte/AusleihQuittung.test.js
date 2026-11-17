@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import AusleihQuittung from './AusleihQuittung.svelte';
 
@@ -6,6 +6,24 @@ import AusleihQuittung from './AusleihQuittung.svelte';
 // (repository.LaufendeAusleihe: barcode_id, ausgeliehen_am, rueckgabe_frist). Mit anderen
 // Feldnamen stand je Buch „-" und zweimal „Keine Angabe" auf dem Ausdruck.
 describe('AusleihQuittung', () => {
+	afterEach(() => vi.useRealTimers());
+
+	// Das Datum oben steht wie die Daten darunter; ein unlesbares wird nicht zu „Invalid Date".
+	it('schreibt das Datum oben zweistellig und ein unlesbares als „Keine Angabe"', () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-03-05T10:00:00'));
+		const { container } = render(AusleihQuittung, {
+			leser: {
+				vorname: 'Emil',
+				nachname: 'Tischbein',
+				entliehene_buecher: [{ titel: 'Momo', barcode_id: 'B-2', ausgeliehen_am: 'kaputt' }]
+			}
+		});
+		const text = container.textContent ?? '';
+		expect(text).toContain('05.03.2026');
+		expect(text).not.toContain('Invalid Date');
+	});
+
 	it('nennt je Ausleihe Nummer, Ausleihdatum und Frist', () => {
 		const { container } = render(AusleihQuittung, {
 			leser: {

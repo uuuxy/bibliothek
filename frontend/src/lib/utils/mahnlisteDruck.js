@@ -4,6 +4,7 @@
 // Blatt zählt keine Mahnung.
 
 import { baueListenDruckHtml } from './listenDruck.js';
+import { formatDatum } from './format.js';
 import { ANSICHTEN, gemahntSatz } from '../components/mahnwesen/mahnungen.js';
 
 // Zahlen in der Klasse zählen als Zahl: 9A steht vor 10R.
@@ -36,7 +37,7 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 	// Die Zeile unter der Überschrift nennt den Ausschnitt: Ein Blatt aus „Eskaliert" oder
 	// aus einer Klasse sähe sonst aus wie die ganze Liste.
 	const meta = [
-		`Erstellt am: ${jetzt.toLocaleDateString('de-DE')}`,
+		`Erstellt am: ${formatDatum(jetzt)}`,
 		`Ansicht: ${ANSICHTEN[sicht.ansicht] ?? sicht.ansicht}`,
 		sicht.klasse ? `Klasse ${sicht.klasse}` : 'alle Klassen',
 		sicht.suche.trim() ? `Suche: ${sicht.suche.trim()}` : '',

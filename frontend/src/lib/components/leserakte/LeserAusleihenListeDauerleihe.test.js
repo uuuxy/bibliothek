@@ -28,7 +28,7 @@ describe('Ausleihliste: Dauerleihe', () => {
 		const screen = render(LeserAusleihenListe, { ausleihen: [buch(true)] });
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('ohne Frist');
-		expect(text, 'das Fristdatum steht trotzdem da').not.toContain('1.2.2025');
+		expect(text, 'das Fristdatum steht trotzdem da').not.toContain('01.02.2025');
 		expect(text).not.toContain('Überfällig');
 		// „In Frist" wäre bei etwas, das keine Frist hat, genauso falsch wie „Überfällig".
 		expect(text).toContain('Dauerleihe');
@@ -41,6 +41,6 @@ describe('Ausleihliste: Dauerleihe', () => {
 		const screen = render(LeserAusleihenListe, { ausleihen: [buch(false)] });
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('Überfällig');
-		expect(text).toContain('1.2.2025');
+		expect(text).toContain('01.02.2025');
 	});
 });

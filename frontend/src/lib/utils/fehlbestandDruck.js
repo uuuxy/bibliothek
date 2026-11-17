@@ -4,6 +4,7 @@
 // statt gekürzt zu werden: Auf dem Papier führt kein Weg zum abgeschnittenen Rest.
 
 import { baueListenDruckHtml } from './listenDruck.js';
+import { formatDatum } from './format.js';
 
 /**
  * @param {any[]} offene Die Exemplare, die noch fehlen, in der Reihenfolge des Berichts
@@ -17,7 +18,7 @@ export function baueFehlbestandDruckHtml(offene, { label = '', gebucht }, jetzt 
 	// Die Zeile unter der Überschrift nennt, was nicht auf dem Blatt steht: Ein Blatt mit
 	// weniger Zeilen, als der Bericht zählt, sähe sonst aus wie ein unvollständiger Ausdruck.
 	const meta = [
-		`Erstellt am: ${jetzt.toLocaleDateString('de-DE')}`,
+		`Erstellt am: ${formatDatum(jetzt)}`,
 		`Als Verlust gebucht: ${gebucht}`,
 		geklaert > 0 ? `bereits geklärt: ${geklaert}` : '',
 		`noch offen: ${offene.length}`,

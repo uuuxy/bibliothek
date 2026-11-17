@@ -48,7 +48,7 @@ describe('Ausleihliste: Verlängern', () => {
 
 		expect(screen.queryByRole('button', { name: 'Ausleihe verlängern' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Rückgabedatum bearbeiten' })).toBeNull();
-		expect(screen.getByText('28.9.2026'), 'das Datum bleibt lesbar').toBeTruthy();
+		expect(screen.getByText('28.09.2026'), 'das Datum bleibt lesbar').toBeTruthy();
 	});
 
 	it('bietet mit edit_books beides an', () => {

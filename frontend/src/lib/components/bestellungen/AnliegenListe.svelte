@@ -14,6 +14,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { Check, Inbox } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { formatDatum } from '../../utils/format.js';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
 
@@ -114,7 +115,7 @@
 	<ArbeitsZeile
 		klasse={a.klasse || '–'}
 		titel={a.titel_text}
-		neben={[a.von, new Date(a.erstellt_am).toLocaleDateString('de-DE')].filter(Boolean).join(' · ')}
+		neben={[a.von, formatDatum(a.erstellt_am)].filter(Boolean).join(' · ')}
 		notiz={a.kommentar ?? ''}
 		art={a.art === 'wunsch'
 			? { text: 'Wunsch', ton: 'neutral' }

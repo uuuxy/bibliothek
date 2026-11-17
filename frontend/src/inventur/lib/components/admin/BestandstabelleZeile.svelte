@@ -4,7 +4,7 @@
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { standortZeile } from '../../../../lib/utils/standorte.js';
-	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
+	import { formatDatum, jahrgangSpanne } from '../../../../lib/utils/format.js';
 
 	/**
 	 * @type {{
@@ -101,7 +101,7 @@
 
 	<td class="text-right tabular-nums">
 		{#if titel.lastCounted}
-			{new Date(titel.lastCounted).toLocaleDateString('de-DE')}
+			{formatDatum(titel.lastCounted)}
 		{:else}
 			<span class="text-on-surface-variant">–</span>
 		{/if}

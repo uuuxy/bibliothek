@@ -75,7 +75,7 @@ describe('baueFehlbestandDruckHtml', () => {
 			{ signatur: 'Ma 7.1', titel: 'B', barcode_id: '2' }
 		];
 		expect(baueFehlbestandDruckHtml(zwei, { gebucht: 5 }, TAG)).toContain(
-			'Erstellt am: 5.10.2026 | Als Verlust gebucht: 5 | bereits geklärt: 3 | noch offen: 2 | nach Signatur sortiert'
+			'Erstellt am: 05.10.2026 | Als Verlust gebucht: 5 | bereits geklärt: 3 | noch offen: 2 | nach Signatur sortiert'
 		);
 		// Ist nichts geklärt, entfällt der Teil: „bereits geklärt: 0" wäre eine Zeile ohne Aussage.
 		expect(baueFehlbestandDruckHtml(zwei, { gebucht: 2 }, TAG)).toContain(

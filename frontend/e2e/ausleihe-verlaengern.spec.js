@@ -36,7 +36,7 @@ test('Einzel-Verlängerung: verschiebt die Frist und meldet es zurück', async (
 	// 1. Die Frist wandert sichtbar.
 	await expect(zelle).not.toHaveText(vorher, { timeout: 5000 });
 	// 2. Und die Aktion sagt, was sie getan hat — mit dem neuen Datum.
-	await expect(page.getByText(/Verlängert bis \d{1,2}\.\d{1,2}\.\d{4}/)).toBeVisible();
+	await expect(page.getByText(/Verlängert bis \d{2}\.\d{2}\.\d{4}/)).toBeVisible();
 
 	expect(antworten.some((a) => a.startsWith('200'))).toBe(true);
 });
@@ -67,7 +67,7 @@ test('Verlängerung einer lange überfälligen Ausleihe endet in der Zukunft', a
 	await oeffneSchuelerProfil(page, `Spaet${s}`);
 
 	await page.getByRole('button', { name: 'Ausleihe verlängern' }).first().click();
-	await expect(page.getByText(/Verlängert bis \d{1,2}\.\d{1,2}\.\d{4}/)).toBeVisible();
+	await expect(page.getByText(/Verlängert bis \d{2}\.\d{2}\.\d{4}/)).toBeVisible();
 
 	// Am Zustand belegt, nicht am Text: Eine Verlängerung, die in der Vergangenheit endet,
 	// ist keine. Der Nutzer soll das Buch danach weiter ausleihen dürfen.

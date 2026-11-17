@@ -23,6 +23,7 @@
 	import { TriangleAlert, BookAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import { leserArtText, istKollegium } from '../leser/leserArt.js';
+	import { formatDatum } from '../../utils/format.js';
 </script>
 
 {#if omniboxStore.letzteFremdrueckgabe}
@@ -64,7 +65,7 @@
 			Abholfach: Für {omniboxStore.aktiverLeser.vorname} liegt bereit —
 			{#each omniboxStore.abholbereit as v, i (i)}
 				{i > 0 ? ' · ' : ''}<strong class="font-medium">„{v.titel}"</strong>{v.bereitgestellt_bis
-					? ` (bis ${new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE')})`
+					? ` (bis ${formatDatum(v.bereitgestellt_bis)})`
 					: ''}
 			{/each}
 			— bitte direkt mitgeben.

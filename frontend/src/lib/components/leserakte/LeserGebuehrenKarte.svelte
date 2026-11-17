@@ -5,7 +5,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Dialog from '../ui/Dialog.svelte';
-	import { formatEuro as euro } from '../../utils/format.js';
+	import { formatDatum, formatEuro as euro } from '../../utils/format.js';
 	import BescheidDialog from '../mahnwesen/BescheidDialog.svelte';
 
 	/**
@@ -90,7 +90,7 @@
 								>{euro(f.betrag)}</span
 							>
 							<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant"
-								>{new Date(f.erstellt_am).toLocaleDateString('de-DE')}</span
+								>{formatDatum(f.erstellt_am)}</span
 							>
 							{#if f.storniert_am}
 								<span

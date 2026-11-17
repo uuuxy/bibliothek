@@ -55,7 +55,7 @@ describe('Titel-Verwaltung: Zeile', () => {
 			'Friedrich Schiller',
 			'Deutsch',
 			'Raum 12 (10) · Lehrerschrank (2)',
-			'1.9.2026',
+			'01.09.2026',
 			'12'
 		])
 			expect(text, wort).toContain(wort);

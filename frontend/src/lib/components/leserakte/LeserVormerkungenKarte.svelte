@@ -5,6 +5,7 @@
 	import { Trash } from '@lucide/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import { formatDatum } from '../../utils/format.js';
 
 	/** @type {{ vormerkungen: any[] }} */
 	let { vormerkungen = $bindable() } = $props();
@@ -53,8 +54,8 @@
 							     der DB erlaubte Nicht-Default-Status hier vorkommt. -->
 						<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary-container">
 							{v.status === 'abholbereit'
-								? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE') : ''}`
-								: `Wartet seit: ${new Date(v.erstellt_am).toLocaleDateString('de-DE')}`}
+								? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + formatDatum(v.bereitgestellt_bis) : ''}`
+								: `Wartet seit: ${formatDatum(v.erstellt_am)}`}
 						</span>
 					</div>
 					{#if v.notiz}

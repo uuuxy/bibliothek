@@ -44,6 +44,8 @@ describe('Meldungen aus dem Nachbuchen: die Liste kommt nicht', () => {
 
 		await vi.waitFor(() => expect(screen.getByText('Ausweis unbekannt')).toBeTruthy());
 		expect(screen.queryByText('Meldungen nicht geladen')).toBeNull();
+		// Der Zeitpunkt wie überall (formatZeitpunkt): Jahr vierstellig, ohne Sekunden.
+		expect(screen.getByText(/^26\.10\.2026, \d{2}:00$/)).toBeTruthy();
 	});
 
 	// Ohne den Knopf fiele der Fokus aus dem Dialog, und die nächste Tab-Taste ginge auf die Seite dahinter.

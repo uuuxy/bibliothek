@@ -158,6 +158,24 @@ describe('Akte eines Lesers', () => {
 		expect(schueler).not.toContain('Mein Portal');
 	});
 
+	// toLocaleDateString wirft nicht, es liefert „Invalid Date"; ein Fang darum griffe nie.
+	it('schreibt ein unlesbares Geburtsdatum als „Keine Angabe"', () => {
+		/** @param {string} geburtsdatum */
+		const feld = (geburtsdatum) => {
+			const { container } = render(LeserakteStammdaten, {
+				leser: { ...akte('schueler'), geburtsdatum },
+				onEdit: vi.fn()
+			});
+			const kopf = [...container.querySelectorAll('p')].find(
+				(p) => p.textContent === 'Geburtsdatum'
+			);
+			return kopf?.nextElementSibling?.textContent;
+		};
+
+		expect(feld('2014-03-05')).toBe('05.03.2014');
+		expect(feld('kaputt')).toBe('Keine Angabe');
+	});
+
 	it('lässt die Akte eines Schülers, wie sie war', () => {
 		const screen = render(LeserakteStammdaten, {
 			leser: { ...akte('schueler'), klasse: '07A', strasse: 'Hauptstraße' },

@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-quellen.js';
 
-// Zwei Schreibweisen haben einen Helfer: der Betrag in Euro (formatEuro in utils/format.js) und
-// der Text eines gefangenen Fehlers (fehlertext in utils/fehlertext.js). Von Hand geschrieben
-// laufen die Stellen auseinander, etwa im Leerzeichen vor dem Zeichen und im Tausenderpunkt. Wer
-// eine der beiden außerhalb ihres Helfers schreibt, wird hier rot.
+// Drei Schreibweisen haben einen Helfer: der Betrag in Euro (formatEuro in utils/format.js), das
+// Datum (formatDatum, ebenda) und der Text eines gefangenen Fehlers (fehlertext in
+// utils/fehlertext.js). Von Hand geschrieben laufen die Stellen auseinander, etwa im Leerzeichen
+// vor dem Zeichen, im Tausenderpunkt oder in der Null vor Tag und Monat. Wer eine der drei
+// außerhalb ihres Helfers schreibt, wird hier rot.
 //
 // Ebenso der Vergleich einer Maske mit ihrem Stand vom Öffnen (nurGeaendertes in
 // utils/geaendert.js): Er stand in vier Masken von Hand. Der Titel vergleicht in
@@ -18,6 +19,11 @@ const FORMAT = 'src/lib/utils/format.js';
 const BETRAG = /\+\s*['"`](?:\s|\\u00a0)*€|\}(?:\s|\\u00a0|&nbsp;)+€|currency\s*:\s*['"`]EUR/;
 const FEHLERTEXT =
 	/instanceof\s+Error\s*\?\s*[\w$.]+\.message\s*:\s*String\(|String\(\s*[\w$.]+\s+instanceof\s+Error\s*\?|\.message\s*\|\|\s*String\(/;
+// Ohne Angaben schreibt toLocaleDateString „T.M.JJJJ" neben „TT.MM.JJJJ" aus formatDatum, ebenso
+// toLocaleString an einem neuen Date. Sieht nicht: toLocaleString an einem Datum aus einer
+// Variablen und eine eigene Form mit Angaben (der LMF-Plan schreibt „TT.MM.JJ").
+const DATUM_OHNE_ANGABEN =
+	/\.toLocaleDateString\(\s*[^,()]*\)|new\s+Date\([^()]*\)\s*\.toLocaleString\(\s*[^,()]*\)/;
 
 // Ein gefangener Wert roh in einem Text (`${e}`, String(e), '…' + e) wird zu „Error: …", ein
 // Netzfehler zu „TypeError: Failed to fetch"; seine message direkt in der Meldung ist der
@@ -73,6 +79,29 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 			von_hand.filter((f) => f !== FORMAT),
 			'Betrag von Hand geschrieben — formatEuro aus utils/format.js nehmen'
 		).toEqual([]);
+	});
+
+	it('keine Quelldatei schreibt ein Datum ohne Angaben, also mit einstelligem Tag und Monat', () => {
+		expect(
+			treffer(DATUM_OHNE_ANGABEN),
+			'Datum ohne Angaben geschrieben („2.1.2026") — formatDatum aus utils/format.js nehmen'
+		).toEqual([]);
+		for (const form of [
+			"{new Date(titel.lastCounted).toLocaleDateString('de-DE')}",
+			'`Erstellt am: ${jetzt.toLocaleDateString("de-DE")}`',
+			'const text = last.toLocaleDateString();',
+			'd.toLocaleDateString( undefined )',
+			"new Date(iso).toLocaleString('de-DE')"
+		]) {
+			expect(DATUM_OHNE_ANGABEN.test(form), form).toBe(true);
+		}
+		for (const form of [
+			"d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })",
+			"(wert ?? 0).toLocaleString('de-DE')",
+			'formatDatum(titel.lastCounted)'
+		]) {
+			expect(DATUM_OHNE_ANGABEN.test(form), form).toBe(false);
+		}
 	});
 
 	it('keine Quelldatei schreibt den Text eines gefangenen Fehlers von Hand', () => {

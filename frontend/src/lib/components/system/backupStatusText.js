@@ -6,6 +6,7 @@
  *
  * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, encryption_key_weak?: boolean, status: 'ok'|'warning'|'critical'|'aus' }} BackupStatus
  */
+import { formatDatum } from '../../utils/format.js';
 
 /**
  * Kurzmeldung: im ok-Fall der Zeitpunkt, sonst was fehlt.
@@ -29,9 +30,7 @@ export function backupMessage(s) {
 	if (s.status === 'ok') {
 		const zeit = last.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 		const heute = new Date().toDateString() === last.toDateString();
-		return heute
-			? `Letztes Backup: heute ${zeit}`
-			: `Letztes Backup: ${last.toLocaleDateString('de-DE')} ${zeit}`;
+		return heute ? `Letztes Backup: heute ${zeit}` : `Letztes Backup: ${formatDatum(last)} ${zeit}`;
 	}
 
 	const ageH = (Date.now() - lastMs) / 3600000;

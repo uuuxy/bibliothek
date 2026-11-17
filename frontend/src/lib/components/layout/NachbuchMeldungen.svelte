@@ -17,6 +17,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import { nachbuchMeldungen as m } from '../../stores/nachbuchMeldungen.svelte.js';
+	import { formatZeitpunkt as zeit } from '../../utils/format.js';
 
 	/** @type {HTMLElement | undefined} */
 	let inhalt = $state();
@@ -38,10 +39,6 @@
 		zurueckgegeben: 'zurückgegeben',
 		bereits_gebucht: 'war schon gebucht'
 	};
-
-	/** @param {string} iso */
-	const zeit = (iso) =>
-		iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }) : '';
 
 	/** @param {any} z */
 	const person = (z) =>
