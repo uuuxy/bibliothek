@@ -96,9 +96,7 @@
 			use:escapeSchliesst={schliessen}
 		>
 			<div class="text-6xl mb-4">⛔️</div>
-			<h2 id="omnibox-block-titel" class="text-2xl font-extrabold text-error mb-2">
-				Ausleihe blockiert
-			</h2>
+			<h2 id="omnibox-block-titel" class="text-2xl text-error mb-2">Ausleihe blockiert</h2>
 			<p class="text-on-surface-variant font-medium mb-6">{omniboxStore.sperrHinweis.message}</p>
 
 			<div class="space-y-3">

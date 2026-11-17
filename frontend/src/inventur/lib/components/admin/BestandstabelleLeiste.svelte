@@ -41,7 +41,7 @@
 	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
-		<h2 class="shrink-0 text-lg font-bold text-on-surface">
+		<h2 class="shrink-0 text-lg text-on-surface">
 			Titel ({titelAnzahl})
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,

@@ -45,7 +45,7 @@ Nur, was kein Test leisten kann.
   Treffer ansehen. (5.182)
 - [ ] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
   kein langer Strich. Vorher entscheiden, ob der Durchgang gemacht wird. (5.185)
-- [ ] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
+- [x] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
   die 23 Stellen angleichen. (5.186)
 
 ### Termin
@@ -115,26 +115,6 @@ Strich braucht eine eigene Fassung (Komma, Punkt oder zwei Sätze).
 
 Nächster Schritt nach einem Ja: erst die Meldungen am unteren Rand, dann die Sätze mit Strich, je
 mit einer Prüfung, die den Stand hält wie am Server.
-
-### 5.186 Große Überschriften in zwei Stärken
-
-Überschriften in 22 px stehen an 13 Stellen halbfett und an 5 normal, in 24 px an 4 halbfett und an
-1 normal (gezählt am 17.11.2026 an den Überschriften mit `text-lg` oder `text-xl`). Google kennt
-beide Formen (Googles material-components-android, Seite „Typography“): die Grundform normal,
-„textAppearanceTitleLarge | Regular 22sp“ und „textAppearanceHeadlineSmall | Regular 24sp“, und
-die betonte halbfett, „textAppearanceTitleLargeEmphasized | Medium 22sp“, mit dem Satz „Emphasized
-styles are used to create hierarchy and are recommended for showing selection, actions, headlines,
-or other editorial treatments“. Eine Regel des Hauses, welche Überschrift welche Form trägt, gibt
-es nicht.
-
-Auf der Seite Datenverwaltung stehen beide untereinander: die Abschnitte aus `adminCard`
-halbfett, „Offline-Sicherungen einspielen“ normal, der Titel der Kategorie darüber normal
-(`einstellungen/KategorieRahmen.svelte`). Die übrigen Kategorien setzen ihre Abschnitte in 16 px
-halbfett (`ui/Abschnitt`).
-
-Nächster Schritt: die Regel festlegen, die Stellen angleichen und
-`frontend-hygiene-schrift.test.js` um sie erweitern. Vorschlag: der Titel einer Seite oder
-Kategorie in der Grundform, Abschnitte darunter in 16 px halbfett wie `ui/Abschnitt`.
 
 ### 7.2 Frisches Littera-Backup
 

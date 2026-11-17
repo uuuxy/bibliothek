@@ -50,7 +50,7 @@
 		>
 			<TriangleAlert class="mt-0.5 h-8 w-8 shrink-0" aria-hidden="true" />
 			<div>
-				<h2 class="text-lg font-bold">Mahnwesen blockiert</h2>
+				<h2 class="text-lg">Mahnwesen blockiert</h2>
 				<p class="text-sm mt-1">
 					Auf diesem Rechner {offlineSync.wartendeAnzahl === 1 ? 'wartet' : 'warten'} noch
 					<strong>{anzahlText(offlineSync.wartendeAnzahl, 'Vorgang', 'Vorgänge')}</strong> auf Übertragung.

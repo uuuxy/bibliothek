@@ -79,7 +79,7 @@
 			<div class="min-w-0">
 				<!-- Der Titel nennt die Art statt fest „Schüler": Hier wird jeder Leser bearbeitet,
 				     auch eine Lehrkraft. -->
-				<h2 class="text-xl font-black text-on-surface leading-tight">
+				<h2 class="text-xl text-on-surface leading-tight">
 					{leserArtText(leser?.art)} bearbeiten
 				</h2>
 				<p class="text-sm text-on-surface-variant font-medium mt-0.5">

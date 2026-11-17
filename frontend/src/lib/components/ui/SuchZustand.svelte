@@ -21,7 +21,7 @@
 	<!-- mx-auto ist nötig: Tailwinds Preflight setzt svg auf display:block, damit greift
 	     das text-center des Containers nicht — das Symbol klebte sonst links. -->
 	<Symbol class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
-	<p class="text-xl font-semibold">{titel}</p>
+	<p class="text-xl">{titel}</p>
 	{#if hinweis}
 		<p class="text-sm mt-1 max-w-md mx-auto">{hinweis}</p>
 	{/if}

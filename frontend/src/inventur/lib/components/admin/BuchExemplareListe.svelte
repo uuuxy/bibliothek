@@ -87,7 +87,7 @@
 </script>
 
 <div class="mt-8 border-t border-outline-variant pt-6">
-	<h3 class="text-lg font-semibold text-on-surface">
+	<h3 class="text-base font-semibold text-on-surface">
 		{formular.id ? `Exemplare (${exemplare.length})` : 'Exemplare'}
 	</h3>
 	{#if nichtImBestand}

@@ -65,7 +65,7 @@
 		<div class="flex items-center gap-3">
 			<BookOpen class="h-5 w-5" aria-hidden="true" />
 			<div>
-				<h1 class="text-lg font-semibold text-on-surface leading-tight">Schulbibliothek</h1>
+				<h1 class="text-lg text-on-surface leading-tight">Schulbibliothek</h1>
 				<p class="text-sm text-on-surface-variant">Öffentlicher Medienkatalog</p>
 			</div>
 		</div>

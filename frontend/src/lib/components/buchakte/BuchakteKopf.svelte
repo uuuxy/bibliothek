@@ -61,7 +61,7 @@
 
 <div class="flex flex-col-reverse gap-8 sm:flex-row sm:items-start">
 	<div class="min-w-0 flex-1">
-		<h1 class="text-3xl leading-tight font-semibold wrap-break-word text-on-surface">
+		<h1 class="text-3xl leading-tight wrap-break-word text-on-surface">
 			{titel.title}
 		</h1>
 		{#if titel.untertitel}

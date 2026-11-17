@@ -53,7 +53,7 @@
 		<div>
 			<div class="pb-3 mb-1 border-b border-outline-variant flex items-center gap-3">
 				<cat.icon class="text-on-surface-variant h-5 w-5" aria-hidden="true" />
-				<h3 class="font-bold text-on-surface text-lg tracking-tight">{cat.category}</h3>
+				<h3 class="text-on-surface text-lg tracking-tight">{cat.category}</h3>
 			</div>
 
 			<div class="divide-y divide-outline-variant">

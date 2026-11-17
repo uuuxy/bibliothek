@@ -8,7 +8,7 @@
 
 <div class="w-full flex flex-col items-center justify-center py-24 text-center animate-fade-in">
 	<div class="text-4xl mb-3">🧭</div>
-	<h2 class="text-lg font-bold text-on-surface">Ansicht nicht gefunden</h2>
+	<h2 class="text-lg text-on-surface">Ansicht nicht gefunden</h2>
 	<p class="mt-1 text-sm text-on-surface-variant">
 		Dieser Bereich ist unbekannt oder nicht verfügbar.
 	</p>

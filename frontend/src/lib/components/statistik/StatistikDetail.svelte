@@ -83,7 +83,7 @@
 
 	<header class="space-y-4">
 		<div>
-			<h1 class="text-xl font-bold text-on-surface">{title}</h1>
+			<h1 class="text-xl text-on-surface">{title}</h1>
 			<p class="mt-1 text-sm text-on-surface-variant">{hint}</p>
 		</div>
 

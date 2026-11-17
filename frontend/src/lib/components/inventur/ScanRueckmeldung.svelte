@@ -51,7 +51,7 @@
 		</div>
 
 		<div class="flex-1">
-			<h4 class="text-lg font-bold">{scan.title}</h4>
+			<h4 class="text-lg">{scan.title}</h4>
 			<p class="text-sm font-medium mt-1">Barcode: {scan.barcode}</p>
 
 			{#if scan.warnings.length > 0}

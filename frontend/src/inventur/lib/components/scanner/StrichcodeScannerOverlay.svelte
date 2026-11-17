@@ -33,7 +33,7 @@
 			>
 				<X class="w-6 h-6" aria-hidden="true" />
 			</button>
-			<h3 class="text-lg font-bold mb-4 text-center">ISBN scannen</h3>
+			<h3 class="text-lg mb-4 text-center">ISBN scannen</h3>
 			<KameraScanner
 				onDecode={beiScan}
 				onStatusChange={(/** @type {string} */ s) => (scanStatus = s)}

@@ -61,7 +61,7 @@
 	<header class="border-b border-outline-variant pb-4">
 		<div class="flex items-start justify-between gap-4">
 			<div class="min-w-0">
-				<h2 class="text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
+				<h2 class="text-lg text-on-surface tracking-tight flex items-center gap-2">
 					Bestellbedarf
 					<!-- Die Zahl in Klammern wie bei „Titel (4440)“: Ein Badge gehört in M3 an Navigation
 					     und Symbole, nicht an eine Überschrift. -->

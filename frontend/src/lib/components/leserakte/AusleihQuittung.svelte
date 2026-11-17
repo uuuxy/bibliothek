@@ -18,7 +18,7 @@
 <!-- Print Container für Ausleihen -->
 <div class="print-receipt-section" style="display:none">
 	<div class="text-center mb-8 border-b border-outline-variant pb-4">
-		<h1 class="text-2xl font-bold">Ausleih-Quittung</h1>
+		<h1 class="text-2xl">Ausleih-Quittung</h1>
 		<h2 class="text-lg text-on-surface-variant">Schulbibliothek</h2>
 	</div>
 
@@ -35,7 +35,9 @@
 	</div>
 
 	<div class="mb-4">
-		<h3 class="font-bold text-lg mb-2 border-b border-outline-variant pb-2">Offene Ausleihen</h3>
+		<h3 class="text-base font-semibold mb-2 border-b border-outline-variant pb-2">
+			Offene Ausleihen
+		</h3>
 		{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}
 			<table class="w-full text-left text-sm border-collapse">
 				<thead>

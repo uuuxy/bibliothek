@@ -50,7 +50,7 @@
 </script>
 
 <div class="mt-8 border-t border-outline-variant pt-6">
-	<h3 class="text-lg font-semibold text-on-surface">An der Schule</h3>
+	<h3 class="text-base font-semibold text-on-surface">An der Schule</h3>
 	<div class="mt-4 space-y-5">
 		<!-- Zwei Möglichkeiten, die einander ausschließen, sind eine Auswahl und kein Schalter:
 		     Ein Schalter wirkt sofort, diese Angabe gilt erst mit „Speichern". -->

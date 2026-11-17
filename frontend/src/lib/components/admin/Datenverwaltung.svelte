@@ -68,7 +68,7 @@
 				<Symbol class="h-6 w-6" aria-hidden="true" />
 			</div>
 			<div>
-				<h3 class="text-lg font-bold text-on-surface">{title}</h3>
+				<h3 class="text-base font-semibold text-on-surface">{title}</h3>
 				<p class="mt-1 max-w-lg text-sm leading-relaxed text-on-surface-variant">{description}</p>
 			</div>
 		</div>

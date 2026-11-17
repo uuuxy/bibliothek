@@ -19,7 +19,7 @@
      statt fuer diesen einen Block. -->
 <div>
 	<div class="pb-4 border-b border-outline-variant flex items-center justify-between gap-2">
-		<h2 class="text-lg font-bold text-on-surface tracking-tight">Deine Bestellung</h2>
+		<h2 class="text-lg text-on-surface tracking-tight">Deine Bestellung</h2>
 		<div class="flex items-center gap-2 shrink-0">
 			<StatusChip ton="neutral" text="Entwurf" />
 			{#if onCollapse}

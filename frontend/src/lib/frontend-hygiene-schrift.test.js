@@ -162,3 +162,42 @@ describe('Überschrift und kleinste Beschriftung in Medium', () => {
 		expect(z(LABEL_SMALL_REGULAR, 'class="text-label-small text-on-surface-variant"')).toBe(0);
 	});
 });
+
+// Titel ab 22 px setzt Google in der Grundform: „textAppearanceTitleLarge | Regular 22sp“,
+// „textAppearanceHeadlineSmall | Regular 24sp“ (material-components-android, Typography.md) und
+// „Material components don’t use emphasized type styles by default“ (m3.material.io, Type scale
+// tokens), wie .dialog-titel in komponenten.css. Ein Abschnitt darunter steht in 16 px wie
+// ui/Abschnitt. Die Folie des Monitors bleibt betont: Google empfiehlt die betonten Stile für
+// „headlines, and other editorial treatments“.
+//
+// Sieht nicht: Titel ohne h-Element (ui/SuchZustand) und Klassen aus Variablen.
+const TITEL_BETONT =
+	/<h[1-6]\b[^>]*?\bclass="(?=[^"]*\btext-(?:lg|[2-9]?xl)\b)[^"]*\bfont-(?:semibold|bold|extrabold|black)\b/g;
+const REDAKTIONELL = 'src/lib/monitor/FolieBuchDesMonats.svelte';
+
+describe('Titel ab 22 px in der Grundform', () => {
+	it('keine Überschrift ab 22 px in 500', () => {
+		const funde = sammleQuelldateien(srcRoot)
+			.filter((f) => f.endsWith('.svelte'))
+			.flatMap((f) =>
+				[...ohneKommentare(readFileSync(f, 'utf8')).matchAll(TITEL_BETONT)].map(() => relPfad(f))
+			);
+		expect(
+			funde.filter((f) => f !== REDAKTIONELL),
+			'Titel ab 22 px ohne Gewicht (400) wie .dialog-titel; ein Abschnitt darunter text-base font-semibold'
+		).toEqual([]);
+		expect(
+			funde.filter((f) => f === REDAKTIONELL),
+			'Ausnahme ohne Fundstelle'
+		).toHaveLength(1);
+	});
+
+	it('Selbstprobe: der Detektor fasst die Formen', () => {
+		const z = (/** @type {string} */ s) => [...s.matchAll(TITEL_BETONT)].length;
+		expect(z('<h2 class="text-lg font-bold text-on-surface">')).toBe(1);
+		expect(z('<h1 class="font-semibold text-3xl">')).toBe(1);
+		expect(z('<h3\n\tclass="text-xl font-black">')).toBe(1);
+		expect(z('<h3 class="text-base font-semibold">')).toBe(0);
+		expect(z('<h2 class="text-lg text-on-surface">')).toBe(0);
+	});
+});
