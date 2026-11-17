@@ -11,19 +11,19 @@ func pruefeBescheidAngaben(l Lage) Befund {
 	b := Befund{Bereich: "Schadensersatz-Bescheid"}
 	if l.BescheidFehlend == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Pflichtangaben wurden nicht erhoben — die Einstellungen waren nicht lesbar."
-		b.Folge = "Unklar, ob sich ein Bescheid erstellen lässt."
+		b.Befund = "Die Pflichtangaben wurden nicht erhoben. Die Einstellungen waren nicht lesbar."
+		b.Folge = "Unklar, ob sich ein Bescheid erstellen lässt"
 		b.Abhilfe = abhilfeDBNeuLaden
 		return b
 	}
 	if len(l.BescheidFehlend) > 0 {
 		b.Stufe = StufeWarnung
-		b.Befund = "Es fehlen: " + strings.Join(l.BescheidFehlend, ", ") + "."
-		b.Folge = "Ein Bescheid lässt sich erst erstellen, wenn diese Angaben stehen — das Erstellen weist bis dahin ab."
-		b.Abhilfe = "Einstellungen → Schadensersatz: die fehlenden Angaben eintragen; die Anschrift der Schule steht unter Einstellungen → Schule."
+		b.Befund = "Es fehlen: " + strings.Join(l.BescheidFehlend, ", ")
+		b.Folge = "Ein Bescheid lässt sich erst erstellen, wenn diese Angaben stehen. Das Erstellen weist bis dahin ab."
+		b.Abhilfe = "Einstellungen → Schadensersatz: die fehlenden Angaben eintragen; die Anschrift der Schule steht unter Einstellungen → Schule"
 		return b
 	}
 	b.Stufe = StufeOK
-	b.Befund = "Alle Pflichtangaben für den Bescheid stehen."
+	b.Befund = "Alle Pflichtangaben für den Bescheid stehen"
 	return b
 }

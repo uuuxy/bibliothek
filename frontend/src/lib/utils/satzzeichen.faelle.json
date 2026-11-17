@@ -1,0 +1,46 @@
+{
+	"abkuerzungen": [
+		"Max.",
+		"usw.",
+		"etc.",
+		"bzw.",
+		"ggf.",
+		"evtl.",
+		"inkl.",
+		"zzgl.",
+		"vgl.",
+		"ca.",
+		"Nr.",
+		"Hrsg.",
+		"Aufl.",
+		"Bd.",
+		"Chr.",
+		"Str.",
+		"Tel.",
+		"Jh.",
+		"Mio.",
+		"Mrd.",
+		"max.",
+		"min.",
+		"Std.",
+		"Min.",
+		"Sek.",
+		"Kl.",
+		"Jg."
+	],
+	"faelle": [
+		{ "text": "Kein Cover: Zu dieser ISBN kennt niemand einen Titel", "mehrere": false },
+		{ "text": "Leserdatei: Sonderrechte", "mehrere": false },
+		{ "text": "Der Leser liegt im Papierkorb. Erst wiederherstellen", "mehrere": true },
+		{ "text": "Wirklich löschen? Das lässt sich nicht zurücknehmen", "mehrere": true },
+		{ "text": "Gespeichert (vorläufig). Bitte prüfen", "mehrere": true },
+		{ "text": "Die Sortierung „Titel“. Möglich sind a und b", "mehrere": true },
+		{
+			"text": "Mahnlisten erreichen keine Lehrkraft bzw. Listen zeigen ins Leere",
+			"mehrere": false
+		},
+		{ "text": "Der Barcode muss mit G- beginnen, z. B. G-IPAD-01", "mehrere": false },
+		{ "text": "Ab Version 2. Neu ist nur der Name", "mehrere": false },
+		{ "text": "Stand 2026. Neu ist nur der Name", "mehrere": true }
+	]
+}

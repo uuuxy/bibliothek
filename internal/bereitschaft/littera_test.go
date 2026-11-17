@@ -21,7 +21,7 @@ func TestPruefeLitteraUebernahme(t *testing.T) {
 		stufe string
 		muss  []string
 	}{
-		{"nie gelaufen", nil, StufeOK, []string{"Keine Littera-Übernahme verzeichnet."}},
+		{"nie gelaufen", nil, StufeOK, []string{"Keine Littera-Übernahme verzeichnet"}},
 		{"abgebrochen", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Abgebrochen: true, Fehler: 1, Protokoll: protokoll},
 			StufeKritisch, []string{"am 18.01.2027 13:00 ist abgebrochen (1 Fehler, 0 Warnungen", protokoll}},
 		{"unvollständig", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Fehler: 3, Warnungen: 5, Protokoll: protokoll},
@@ -29,11 +29,11 @@ func TestPruefeLitteraUebernahme(t *testing.T) {
 		{"vollständig mit Warnungen", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Vollstaendig: true, Warnungen: 3812, Protokoll: protokoll},
 			StufeWarnung, []string{"ist vollständig, mit 3812 Warnungen", protokoll}},
 		{"vollständig ohne Warnung", &littera.Ergebnis{Zeitpunkt: vorZweiTagen, Vollstaendig: true, Protokoll: protokoll},
-			StufeOK, []string{"ist vollständig, ohne Warnung."}},
+			StufeOK, []string{"ist vollständig, ohne Warnung"}},
 		{"genau eine Woche her: noch ein Befund", &littera.Ergebnis{Zeitpunkt: jetzt.Add(-litteraBefundDauer), Fehler: 1, Protokoll: protokoll},
 			StufeKritisch, []string{"unvollständig"}},
 		{"länger als eine Woche her: erledigt", &littera.Ergebnis{Zeitpunkt: jetzt.Add(-8 * 24 * time.Hour), Fehler: 3, Warnungen: 2, Protokoll: protokoll},
-			StufeOK, []string{"Letzte Übernahme am 12.01.2027 13:00: unvollständig, 3 Fehler und 2 Warnungen."}},
+			StufeOK, []string{"Letzte Übernahme am 12.01.2027 13:00: unvollständig, 3 Fehler und 2 Warnungen"}},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {

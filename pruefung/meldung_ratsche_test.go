@@ -1,11 +1,13 @@
 package pruefung_test
 
 import (
+	"encoding/json"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -39,6 +41,9 @@ import (
 // eine Funktion mit meldung oder Meldung im Namen zurückgibt, und den Wert des Schlüssels
 // "message" in einer Antwort (Sätze einer erfolgreichen Antwort).
 //
+// Die Sätze der Betriebsbereitschaft und der Seite „Fehler im Log“ (Felder Befund, Folge und
+// Abhilfe) prüft sie nur auf die Satzzeichen: Dort stehen mit Absicht Namen aus der .env.
+//
 // Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen), einen Status aus
 // einer Variablen, eigene Helfer außer katalog.schreibeFehler und Antworten, die {"error": …}
 // selbst schreiben.
@@ -60,11 +65,56 @@ var meldungEnglisch = map[string]bool{
 	"with": true, "type": true,
 }
 
-// meldungSatzende erkennt das Ende eines Satzes mitten im Text: ein Wort aus zwei Zeichen, eine
-// Klammer, ein schließendes Anführungszeichen oder ein Platzhalter von fmt (%s), dann . ! ?, dann
-// ein großer Anfang. „z. B. G" ist so kein Satzende, ein Doppelpunkt auch nicht: Googles developer
-// documentation style guide führt ihn unter „Colons within sentences".
-var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|[)“"]|%[a-zA-Z])[.!?]\s+[\p{Lu}„"]`)
+// meldungSatzende findet ein mögliches Satzende mitten im Text: ein Wort, eine Klammer, ein
+// schließendes Anführungszeichen oder ein Platzhalter von fmt (%s), dann . ! ?, dann ein großer
+// Anfang oder ein Platzhalter. Ein Doppelpunkt endet keinen Satz: Googles developer documentation
+// style guide führt ihn unter „Colons within sentences".
+var meldungSatzende = regexp.MustCompile(`(?:([\p{L}\p{N}]+)|[)“"]|%[a-zA-Z])[.!?]\s+[\p{Lu}„"%]`)
+
+// satzzeichenGeteilt ist die Datei, die diese Prüfung mit frontend-hygiene-satzzeichen.test.js
+// teilt: die Abkürzungen, nach denen kein Satz endet, und Fälle für das Satzende.
+type satzzeichenGeteilt struct {
+	Abkuerzungen []string `json:"abkuerzungen"`
+	Faelle       []struct {
+		Text    string `json:"text"`
+		Mehrere bool   `json:"mehrere"`
+	} `json:"faelle"`
+}
+
+// leseSatzzeichen liest die geteilte Datei unter wurzel; die Abkürzungen kommen als Menge zurück.
+func leseSatzzeichen(t *testing.T, wurzel string) (satzzeichenGeteilt, map[string]bool) {
+	t.Helper()
+	roh, err := os.ReadFile(filepath.Join(wurzel, "frontend", "src", "lib", "utils", "satzzeichen.faelle.json"))
+	if err != nil {
+		t.Fatalf("os.ReadFile(satzzeichen.faelle.json): %v", err)
+	}
+	var geteilt satzzeichenGeteilt
+	if err := json.Unmarshal(roh, &geteilt); err != nil {
+		t.Fatalf("json.Unmarshal(satzzeichen.faelle.json): %v", err)
+	}
+	// Untergrenze: Ohne die Liste zählte jede Abkürzung vor einem großen Anfang als Satzende.
+	if len(geteilt.Abkuerzungen) < 20 || len(geteilt.Faelle) < 5 {
+		t.Fatalf("satzzeichen.faelle.json: %d Abkürzungen und %d Fälle, erwartet mindestens 20 und 5",
+			len(geteilt.Abkuerzungen), len(geteilt.Faelle))
+	}
+	abkuerzungen := map[string]bool{}
+	for _, a := range geteilt.Abkuerzungen {
+		abkuerzungen[a] = true
+	}
+	return geteilt, abkuerzungen
+}
+
+// meldungMehrereSaetze sagt, ob der Text mehr als einen Satz hat. Nach einem einzelnen Zeichen
+// („z. B. G") und nach einer Abkürzung der geteilten Liste endet keiner, wie in der Oberfläche.
+func meldungMehrereSaetze(text string, abkuerzungen map[string]bool) bool {
+	for _, treffer := range meldungSatzende.FindAllStringSubmatch(text, -1) {
+		if wort := treffer[1]; wort != "" && (utf8.RuneCountInString(wort) < 2 || abkuerzungen[wort+"."]) {
+			continue
+		}
+		return true
+	}
+	return false
+}
 
 // meldungStatus löst die Namen der Status aus net/http auf (StatusBadRequest → 400).
 func meldungStatus() map[string]int {
@@ -85,17 +135,23 @@ type meldungAufruf struct {
 	text        string
 	alsFehler   bool // der Text kam als errors.New oder fmt.Errorf
 	gelesenFest bool
+	// nurSatzzeichen: ein Satz aus einem Feld (satzFelder), geprüft nur auf die Satzzeichen.
+	nurSatzzeichen bool
 }
 
 func TestMeldungen_SaetzeFuerDieOberflaeche(t *testing.T) {
 	wechsleInDieWurzel(t)
+	_, abkuerzungen := leseSatzzeichen(t, ".")
 	aufrufe := sammleMeldungen(t, ".")
-	fest := 0
+	fest, felder := 0, 0
 	gezaehlt := map[string]int{}
 	var neu []string
 	for _, a := range aufrufe {
 		fest++
-		if grund := meldungVerstoss(a); grund != "" {
+		if a.nurSatzzeichen {
+			felder++
+		}
+		if grund := meldungVerstoss(a, abkuerzungen); grund != "" {
 			gezaehlt[a.pos.Filename]++
 			if gezaehlt[a.pos.Filename] > meldungBestand[a.pos.Filename] {
 				neu = append(neu, a.pos.String()+": "+grund+": "+strconv.Quote(a.text))
@@ -105,6 +161,9 @@ func TestMeldungen_SaetzeFuerDieOberflaeche(t *testing.T) {
 	// Untergrenze: Liest der Durchlauf kaum feste Meldungen, prüft er nichts.
 	if fest < 250 {
 		t.Fatalf("nur %d feste Meldungen gelesen, erwartet mindestens 250 — der Detektor läuft leer", fest)
+	}
+	if felder < 100 {
+		t.Fatalf("nur %d Sätze aus Befund, Folge und Abhilfe gelesen, erwartet mindestens 100 — satzFelder läuft leer", felder)
 	}
 	sort.Strings(neu)
 	if len(neu) > 0 {
@@ -127,6 +186,7 @@ func TestMeldungen_SaetzeFuerDieOberflaeche(t *testing.T) {
 
 // Gegenprobe am Detektor: verbotene und erlaubte Formen.
 func TestMeldungVerstoss_Formen(t *testing.T) {
+	_, abkuerzungen := leseSatzzeichen(t, "..")
 	verboten := []meldungAufruf{
 		{text: "rate limit exceeded"},
 		{text: "leser nicht gefunden"},
@@ -138,9 +198,12 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 		{text: "Leser nicht gefunden", alsFehler: true},
 		{text: "Zeile %d. Bitte prüfen"},
 		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen."},
+		{text: "Keine öffentliche Adresse hinterlegt.", nurSatzzeichen: true},
+		{text: "Nicht erhoben — die Zählung ist fehlgeschlagen", nurSatzzeichen: true},
+		{text: "Kein Ziel eingerichtet. %s", nurSatzzeichen: true},
 	}
 	for _, a := range verboten {
-		if meldungVerstoss(a) == "" {
+		if meldungVerstoss(a, abkuerzungen) == "" {
 			t.Errorf("meldungVerstoss(%q, alsFehler=%v) = \"\", erwartet ein Verstoß", a.text, a.alsFehler)
 		}
 	}
@@ -152,14 +215,28 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 		{text: "ID fehlt"},
 		{text: "Unbekannte Art %q. Möglich sind: %s."},
 		{text: "Die Sortierung „%s“. Möglich sind a und b."},
+		{text: "Listen erreichen keine Lehrkraft bzw. Mahnlisten zeigen ins Leere"},
+		{text: "Die Angaben stehen im Blatt, Abschnitt 3 usw."},
+		{text: "INITIAL_ADMIN_EMAIL in der .env setzen", nurSatzzeichen: true},
+		{text: "%s Demo-Schüler im Bestand", nurSatzzeichen: true},
 	}
 	for _, a := range erlaubt {
-		if grund := meldungVerstoss(a); grund != "" {
+		if grund := meldungVerstoss(a, abkuerzungen); grund != "" {
 			t.Errorf("meldungVerstoss(%q) = %q, erwartet kein Verstoß", a.text, grund)
 		}
 	}
 	if diff := cmp.Diff(400, meldungStatus()["StatusBadRequest"]); diff != "" {
 		t.Errorf("meldungStatus()[StatusBadRequest] (-erwartet +ist):\n%s", diff)
+	}
+}
+
+// Server und Oberfläche finden das Satzende an denselben Fällen (satzzeichen.faelle.json).
+func TestSatzende_GoUndJavaScriptTeilenDieFaelle(t *testing.T) {
+	geteilt, abkuerzungen := leseSatzzeichen(t, "..")
+	for _, f := range geteilt.Faelle {
+		if got := meldungMehrereSaetze(f.Text, abkuerzungen); got != f.Mehrere {
+			t.Errorf("meldungMehrereSaetze(%q) = %v, erwartet %v", f.Text, got, f.Mehrere)
+		}
 	}
 }
 
@@ -187,8 +264,11 @@ func TestFesterText_FormattextIstMeldung(t *testing.T) {
 }
 
 // meldungVerstoss nennt den Grund, aus dem ein Text keine Meldung nach der Regel ist, sonst "".
-func meldungVerstoss(a meldungAufruf) string {
+func meldungVerstoss(a meldungAufruf, abkuerzungen map[string]bool) string {
 	text := a.text
+	if a.nurSatzzeichen {
+		return satzzeichenVerstoss(text, abkuerzungen)
+	}
 	if a.alsFehler {
 		return "als Fehlertext übergeben"
 	}
@@ -208,15 +288,23 @@ func meldungVerstoss(a meldungAufruf) string {
 			return "der Filter für Datenbanktexte schlägt an („" + muster + "“)"
 		}
 	}
+	return satzzeichenVerstoss(text, abkuerzungen)
+}
+
+// satzzeichenVerstoss nennt den Verstoß gegen die Satzzeichen nach M3, sonst "": Gedankenstrich,
+// ein Satz mit Punkt, mehrere ohne. Wie in frontend-hygiene-satzzeichen.test.js behält eine
+// Abkürzung am Ende ihren Punkt („usw.“), und mehrere Sätze dürfen mit … oder : enden.
+func satzzeichenVerstoss(text string, abkuerzungen map[string]bool) string {
 	if strings.Contains(text, "—") || strings.Contains(text, " – ") {
 		return "Gedankenstrich"
 	}
-	mehrere := meldungSatzende.MatchString(text)
-	endetMitPunkt := strings.HasSuffix(text, ".") || strings.HasSuffix(text, "!") || strings.HasSuffix(text, "?")
-	switch {
-	case mehrere && !endetMitPunkt:
+	letztes := []rune(text[strings.LastIndex(text, " ")+1:])
+	abkuerzung := abkuerzungen[string(letztes)] || (len(letztes) == 2 && unicode.IsLetter(letztes[0]) && letztes[1] == '.')
+	ende, _ := utf8.DecodeLastRuneInString(text)
+	switch mehrere := meldungMehrereSaetze(text, abkuerzungen); {
+	case mehrere && !strings.ContainsRune(".!?…:", ende):
 		return "mehrere Sätze ohne Punkt am Ende"
-	case !mehrere && strings.HasSuffix(text, "."):
+	case !mehrere && ende == '.' && !strings.HasSuffix(text, "..") && !abkuerzung:
 		return "ein Satz mit Punkt am Ende"
 	}
 	return ""
@@ -269,6 +357,7 @@ func sammleMeldungen(t *testing.T, wurzel string) []meldungAufruf {
 			aufrufe = append(aufrufe, meldungsKonstanten(fset, datei)...)
 			aufrufe = append(aufrufe, meldungsRueckgaben(fset, datei, konstanten)...)
 			aufrufe = append(aufrufe, meldungsSchluessel(fset, datei, konstanten)...)
+			aufrufe = append(aufrufe, satzFelder(fset, datei, konstanten)...)
 			ast.Inspect(datei, func(n ast.Node) bool {
 				aufruf, ok := n.(*ast.CallExpr)
 				if !ok {
@@ -359,6 +448,48 @@ func meldungsSchluessel(fset *token.FileSet, datei *ast.File, konstanten meldung
 		return true
 	})
 	return gefunden
+}
+
+// satzFeld sind die Felder, deren Satz die Betriebsbereitschaft und die Seite „Fehler im Log“
+// unverändert zeigen.
+var satzFeld = map[string]bool{"Befund": true, "Folge": true, "Abhilfe": true}
+
+// satzFelder liest den Wert, den eine Zuweisung oder ein Literal einem Feld aus satzFeld gibt.
+func satzFelder(fset *token.FileSet, datei *ast.File, konstanten meldungKonstanten) []meldungAufruf {
+	var gefunden []meldungAufruf
+	lies := func(wert ast.Expr) {
+		if text := satzMitPlatzhaltern(wert, konstanten); text != "%s" {
+			gefunden = append(gefunden, meldungAufruf{pos: fset.Position(wert.Pos()), text: text, nurSatzzeichen: true})
+		}
+	}
+	ast.Inspect(datei, func(n ast.Node) bool {
+		switch v := n.(type) {
+		case *ast.AssignStmt:
+			for i, links := range v.Lhs {
+				if feld, ok := links.(*ast.SelectorExpr); ok && satzFeld[feld.Sel.Name] && i < len(v.Rhs) {
+					lies(v.Rhs[i])
+				}
+			}
+		case *ast.KeyValueExpr:
+			if feld, ok := v.Key.(*ast.Ident); ok && satzFeld[feld.Name] {
+				lies(v.Value)
+			}
+		}
+		return true
+	})
+	return gefunden
+}
+
+// satzMitPlatzhaltern liest einen Satz wie festerText; was erst zur Laufzeit entsteht, steht darin
+// als Platzhalter %s, so wie im Formattext von fmt.Sprintf.
+func satzMitPlatzhaltern(e ast.Expr, konstanten meldungKonstanten) string {
+	if v, ok := e.(*ast.BinaryExpr); ok && v.Op == token.ADD {
+		return satzMitPlatzhaltern(v.X, konstanten) + satzMitPlatzhaltern(v.Y, konstanten)
+	}
+	if text, alsFehler, ok := festerText(e, konstanten); ok && !alsFehler {
+		return text
+	}
+	return "%s"
 }
 
 // istMeldungsName sagt, ob eine Konstante nach ihrem Namen eine Meldung trägt.

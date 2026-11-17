@@ -44,7 +44,7 @@ func TestBaueFehlerImLog_Wortlaut(t *testing.T) {
 	if a.Stufe != bereitschaft.StufeKritisch || a.Anzahl != 10 {
 		t.Errorf("Stufe %q mit Anzahl %d, erwartet %q mit 10", a.Stufe, a.Anzahl, bereitschaft.StufeKritisch)
 	}
-	if want := "10 Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 11:47."; a.Befund != want {
+	if want := "10 Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 11:47"; a.Befund != want {
 		t.Errorf("Befund = %q, erwartet %q", a.Befund, want)
 	}
 	want := []fehlerZeile{
@@ -71,7 +71,7 @@ func TestBaueFehlerImLog_EineZeileVorgestern(t *testing.T) {
 	a := baueFehlerImLog([]logger.Fehlergruppe{
 		{Meldung: "A", Anzahl: 1, Zuletzt: time.Date(2026, 10, 24, 23, 58, 0, 0, time.UTC)},
 	}, jetzt, 0)
-	if want := "1 Fehlermeldung in den letzten 24 Stunden, am 24.10. um 23:58."; a.Befund != want {
+	if want := "1 Fehlermeldung in den letzten 24 Stunden, am 24.10. um 23:58"; a.Befund != want {
 		t.Errorf("Befund = %q, erwartet %q", a.Befund, want)
 	}
 	if want := "1 × · 24.10. 23:58"; len(a.Meldungen) != 1 || a.Meldungen[0].Zusatz != want {
@@ -105,7 +105,7 @@ func TestBaueFehlerImLog_HoechstzahlNurInDerMail(t *testing.T) {
 		t.Errorf("letzte Zeile = %+v, erwartet %+v", got, want)
 	}
 	n := len(gruppen)
-	if want := fmt.Sprintf("%d Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 12:00.", n*(n+1)/2); mail.Befund != want {
+	if want := fmt.Sprintf("%d Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 12:00", n*(n+1)/2); mail.Befund != want {
 		t.Errorf("Befund = %q, erwartet %q", mail.Befund, want)
 	}
 }
@@ -113,7 +113,7 @@ func TestBaueFehlerImLog_HoechstzahlNurInDerMail(t *testing.T) {
 // Gezählt und nichts gefunden ist in Ordnung; zählt der Server nicht, sagt die Seite das.
 func TestBaueFehlerImLog_OhneZeileUndNichtErhoben(t *testing.T) {
 	leer := baueFehlerImLog([]logger.Fehlergruppe{}, time.Now(), 0)
-	if leer.Stufe != bereitschaft.StufeOK || leer.Befund != "Keine Fehlermeldung in den letzten 24 Stunden." || len(leer.Meldungen) != 0 {
+	if leer.Stufe != bereitschaft.StufeOK || leer.Befund != "Keine Fehlermeldung in den letzten 24 Stunden" || len(leer.Meldungen) != 0 {
 		t.Errorf("ohne Zeile = %+v, erwartet ok ohne Meldungen", leer)
 	}
 	nicht := baueFehlerImLog(nil, time.Now(), 0)
@@ -191,7 +191,7 @@ func TestBaueWarnungenImLog_UndTrennung(t *testing.T) {
 	if a.Stufe != bereitschaft.StufeWarnung || a.Anzahl != 2 {
 		t.Errorf("Stufe %q, Anzahl %d; erwartet warnung und 2", a.Stufe, a.Anzahl)
 	}
-	if want := "2 Warnungen in den letzten 24 Stunden, zuletzt heute um 11:59."; a.Befund != want {
+	if want := "2 Warnungen in den letzten 24 Stunden, zuletzt heute um 11:59"; a.Befund != want {
 		t.Errorf("Befund = %q, erwartet %q", a.Befund, want)
 	}
 	if len(a.Meldungen) != 1 || a.Meldungen[0].Text != "LUSD-Abgleich abgewiesen: POST /api/lusd/import" ||

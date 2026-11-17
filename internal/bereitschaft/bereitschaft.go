@@ -27,12 +27,12 @@ const (
 
 // Mehrere Prüfungen nennen diese Abhilfe wörtlich gleich; sie steht einmal, damit die
 // Selbstprüfung nicht in verschiedenen Tonfällen spricht.
-const abhilfeDBNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden."
+const abhilfeDBNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden"
 
 // befundNichtImEchtbetrieb formuliert den Befund für einen Bereich, den es außerhalb des
 // echten Betriebs mit Absicht nicht gibt: kein Mangel, sondern die Umgebung.
 func befundNichtImEchtbetrieb(was, umgebung string) string {
-	return was + " — in " + umgebung + " ist das richtig so."
+	return was + ". In " + umgebung + " ist das richtig so."
 }
 
 // Befund ist eine Zeile der Selbstprüfung. Neben dem Befund stehen die Folge und die

@@ -56,20 +56,20 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 	switch {
 	case !beispielAktiv && l.GeheimnisSchutzScharf:
 		b.Stufe = StufeOK
-		b.Befund = "Eigene Geheimnisse gesetzt, die harte Absicherung ist scharf."
+		b.Befund = "Eigene Geheimnisse gesetzt, die harte Absicherung ist scharf"
 	case !beispielAktiv:
 		b.Stufe = StufeWarnung
-		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber ausdrücklich auf false."
-		b.Folge = "Der Server würde auch mit einem Beispiel-Geheimnis starten — " +
-			"ein versehentliches Zurückfallen fiele nicht auf."
-		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen (Vorgabe ist scharf)."
+		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber ausdrücklich auf false"
+		b.Folge = "Der Server würde auch mit einem Beispiel-Geheimnis starten. " +
+			"Ein versehentliches Zurückfallen fiele nicht auf."
+		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen (Vorgabe ist scharf)"
 	case echt:
 		b.Stufe = StufeKritisch
-		b.Befund = "Es laufen mitgelieferte Beispiel-Geheimnisse."
+		b.Befund = "Es laufen mitgelieferte Beispiel-Geheimnisse"
 		b.Folge = "JWT_SECRET und APP_ENCRYPTION_KEY stehen öffentlich im Repository. " +
 			"Wer sie kennt, kann Sitzungen fälschen und verschlüsselte Ablagen lesen."
 		b.Abhilfe = "Eigene Werte setzen (JWT_SECRET ≥32 Zeichen, APP_ENCRYPTION_KEY genau 32 Byte) " +
-			"und die Zeile ENFORCE_PROD_SECRETS=false entfernen."
+			"und die Zeile ENFORCE_PROD_SECRETS=false entfernen"
 	default:
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Beispiel-Geheimnisse", l.Umgebung)
@@ -87,13 +87,13 @@ func pruefeSchluesselPasstZumBestand(l Lage) Befund {
 	switch {
 	case l.SchluesselProbe == nil:
 		b.Stufe = StufeWarnung
-		b.Befund = "Ob APP_ENCRYPTION_KEY zum Bestand passt, ließ sich nicht prüfen."
-		b.Folge = "Ein falscher Schlüssel bliebe unbemerkt, bis ein Foto leer bleibt oder der Mailversand scheitert."
+		b.Befund = "Ob APP_ENCRYPTION_KEY zum Bestand passt, ließ sich nicht prüfen"
+		b.Folge = "Ein falscher Schlüssel bliebe unbemerkt, bis ein Foto leer bleibt oder der Mailversand scheitert"
 		b.Abhilfe = abhilfeDBNeuLaden
 	case len(l.SchluesselProbe.NichtLesbar) > 0:
 		b.Stufe = StufeKritisch
-		b.Befund = "APP_ENCRYPTION_KEY passt nicht zum Bestand — nicht entschlüsselbar: " +
-			strings.Join(l.SchluesselProbe.NichtLesbar, ", ") + "."
+		b.Befund = "APP_ENCRYPTION_KEY passt nicht zum Bestand, nicht entschlüsselbar: " +
+			strings.Join(l.SchluesselProbe.NichtLesbar, ", ")
 		b.Folge = "Schülerfotos bleiben leer, und ohne lesbares SMTP-Passwort geht keine Mail hinaus. " +
 			"Die Daten sind nicht verloren, solange der ursprüngliche Schlüssel noch existiert."
 		b.Abhilfe = "Den APP_ENCRYPTION_KEY der Anlage, von der die Daten stammen, in die .env eintragen " +
@@ -101,10 +101,10 @@ func pruefeSchluesselPasstZumBestand(l Lage) Befund {
 			"eingeben, Fotos neu einspielen."
 	case l.SchluesselProbe.Geprueft == 0:
 		b.Stufe = StufeOK
-		b.Befund = "Es liegt noch nichts verschlüsselt in der Datenbank — der Schlüssel kann nichts verfehlen."
+		b.Befund = "Es liegt noch nichts verschlüsselt in der Datenbank. Der Schlüssel kann nichts verfehlen."
 	default:
 		b.Stufe = StufeOK
-		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand (Stichprobe je verschlüsselter Spalte)."
+		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand (Stichprobe je verschlüsselter Spalte)"
 	}
 	return b
 }

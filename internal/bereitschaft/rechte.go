@@ -16,22 +16,25 @@ func pruefeAdminKonten(l Lage) Befund {
 	switch {
 	case l.AdminKonten == nil:
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Admin-Konten konnten nicht gelesen werden."
-		b.Folge = "Unbekannt, wer Vollzugriff hat und die Alarm-Mails erhält."
+		b.Befund = "Die Admin-Konten konnten nicht gelesen werden"
+		b.Folge = "Unbekannt, wer Vollzugriff hat und die Alarm-Mails erhält"
 		b.Abhilfe = abhilfeDBNeuLaden
 	case len(l.AdminKonten) == 0:
 		b.Stufe = StufeKritisch
-		b.Befund = "Kein aktives Admin-Konto vorhanden."
-		b.Folge = "Niemand kann das System verwalten, und die Kritisch-Alarme erreichen niemanden."
-		b.Abhilfe = "Über die Datenbank bzw. INITIAL_ADMIN_EMAIL ein Admin-Konto herstellen."
+		b.Befund = "Kein aktives Admin-Konto vorhanden"
+		b.Folge = "Niemand kann das System verwalten, und die Kritisch-Alarme erreichen niemanden"
+		b.Abhilfe = "Über die Datenbank bzw. INITIAL_ADMIN_EMAIL ein Admin-Konto herstellen"
 	default:
 		b.Stufe = StufeOK
-		ziel := "Die Kritisch-Alarme gehen an alle diese Konten."
-		if strings.TrimSpace(l.AlarmEmpfaenger) != "" {
-			ziel = "Die Kritisch-Alarme gehen an die konfigurierten Empfänger: " + l.AlarmEmpfaenger + "."
+		konten, ziel := "Admin-Konten", "Die Kritisch-Alarme gehen an alle diese Konten"
+		if len(l.AdminKonten) == 1 {
+			konten, ziel = "Admin-Konto", "Die Kritisch-Alarme gehen an dieses Konto"
 		}
-		b.Befund = fmt.Sprintf("%d Admin-Konto/-Konten mit Vollzugriff: %s. %s",
-			len(l.AdminKonten), strings.Join(l.AdminKonten, "; "), ziel)
+		if strings.TrimSpace(l.AlarmEmpfaenger) != "" {
+			ziel = "Die Kritisch-Alarme gehen an die konfigurierten Empfänger: " + l.AlarmEmpfaenger
+		}
+		b.Befund = fmt.Sprintf("%d %s mit Vollzugriff: %s. %s.",
+			len(l.AdminKonten), konten, strings.Join(l.AdminKonten, "; "), ziel)
 	}
 	return b
 }
@@ -46,8 +49,8 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	b := Befund{Bereich: "Rechte-Vorgabe"}
 	if l.RechteLive == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Live-Rechte (role_permissions) konnten nicht gelesen werden."
-		b.Folge = "Ob Menü und API der aktuellen Vorgabe folgen, ist unbekannt."
+		b.Befund = "Die Live-Rechte (role_permissions) konnten nicht gelesen werden"
+		b.Folge = "Ob Menü und API der aktuellen Vorgabe folgen, ist unbekannt"
 		b.Abhilfe = abhilfeDBNeuLaden
 		return b
 	}
@@ -55,7 +58,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	abweichungen := rechteAbweichungen(l.RechteLive)
 	if len(abweichungen) == 0 {
 		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("Live-Rechte decken sich mit der Code-Vorgabe (%d Zeilen).", len(db.RechteVorgabe))
+		b.Befund = fmt.Sprintf("Live-Rechte decken sich mit der Code-Vorgabe (%d Zeilen)", len(db.RechteVorgabe))
 		return b
 	}
 
@@ -68,10 +71,10 @@ func pruefeRechteVorgabe(l Lage) Befund {
 			fmt.Sprintf("… und %d weitere", len(abweichungen)-zeigeMax))
 	}
 	b.Stufe = StufeWarnung
-	b.Befund = fmt.Sprintf("%s von der Code-Vorgabe: %s.",
+	b.Befund = fmt.Sprintf("%s von der Code-Vorgabe: %s",
 		abweichungenText(len(abweichungen)), strings.Join(gezeigt, "; "))
 	b.Folge = "Menü und API richten sich nach der Live-Tabelle, nicht nach dem Code. " +
-		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen — eine Rolle sieht " +
+		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen. Eine Rolle sieht " +
 		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
 	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
 		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."

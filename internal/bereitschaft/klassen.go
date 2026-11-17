@@ -62,8 +62,8 @@ func pruefeKlassenDrift(l Lage) Befund {
 	b := Befund{Bereich: "Klassen-Zuordnung"}
 	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)."
-		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt."
+		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)"
+		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt"
 		b.Abhilfe = abhilfeDBNeuLaden
 		return b
 	}
@@ -80,12 +80,12 @@ func pruefeKlassenDrift(l Lage) Befund {
 	}
 	if len(probleme) == 0 {
 		b.Stufe = StufeOK
-		b.Befund = "Alle Klassennamen sind zwischen Schülern, Lehrkraft-Zuordnung und Bücherlisten verbunden."
+		b.Befund = "Alle Klassennamen sind zwischen Schülern, Lehrkraft-Zuordnung und Bücherlisten verbunden"
 		return b
 	}
 	b.Stufe = StufeWarnung
-	b.Befund = strings.Join(probleme, " — ")
-	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
+	b.Befund = strings.Join(probleme, "; ")
+	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere, ohne Fehlermeldung"
 	b.Abhilfe = "Einstellungen → Klassenleitungen: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
 		"Eine Buchliste ohne Klasse unter Klassensätze löschen."
 	return b

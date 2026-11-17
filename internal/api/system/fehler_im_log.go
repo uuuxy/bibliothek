@@ -25,7 +25,7 @@ import (
 const hoechstzahlMeldungenInDerMail = 30
 
 // befehlImHandbuch führt zu jeder einzelnen Zeile: Seite und Mail nennen je Meldung nur die letzte.
-const befehlImHandbuch = "Jede Zeile mit Uhrzeit zeigt der Befehl im Betriebshandbuch (docs/DEPLOYMENT.md), Abschnitt „Fehler im Log finden“."
+const befehlImHandbuch = "Jede Zeile mit Uhrzeit zeigt der Befehl im Betriebshandbuch (docs/DEPLOYMENT.md), Abschnitt „Fehler im Log finden“"
 
 // fehlerImLogAntwort ist die Lage im Log: ein Satz dazu, die Meldungen, Folge und Abhilfe.
 type fehlerImLogAntwort struct {
@@ -94,8 +94,8 @@ func baueFehlerImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechstens 
 	if gruppen == nil {
 		return fehlerImLogAntwort{
 			Stufe: bereitschaft.StufeWarnung, Meldungen: []fehlerZeile{},
-			Befund:  "Nicht erhoben: Der Server zählt seine Fehlermeldungen nicht.",
-			Folge:   "Ein Fehler fällt nur auf, wenn jemand das Log liest.",
+			Befund:  "Nicht erhoben: Der Server zählt seine Fehlermeldungen nicht",
+			Folge:   "Ein Fehler fällt nur auf, wenn jemand das Log liest",
 			Abhilfe: befehlImHandbuch,
 		}
 	}
@@ -107,7 +107,7 @@ func baueFehlerImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechstens 
 	}
 	stunden := int(logger.FehlerZeitraum.Hours())
 	if a.Anzahl == 0 {
-		a.Befund = fmt.Sprintf("Keine Fehlermeldung in den letzten %d Stunden.", stunden)
+		a.Befund = fmt.Sprintf("Keine Fehlermeldung in den letzten %d Stunden", stunden)
 		return a
 	}
 
@@ -116,11 +116,11 @@ func baueFehlerImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechstens 
 	if a.Anzahl == 1 {
 		zuletzt = ""
 	}
-	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s.",
+	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s",
 		fehlermeldungen(a.Anzahl), stunden, zuletzt, zeitpunkt(gruppen[0].Zuletzt, jetzt))
 	a.Meldungen = fehlerZeilen(gruppen, jetzt, hoechstens, weitereFehlermeldungen)
-	a.Folge = "Eine Fehlermeldung heißt: Etwas ist schiefgegangen, und das Programm konnte sich nicht selbst helfen."
-	a.Abhilfe = "Die Ursache steht unter jeder Meldung. " + befehlImHandbuch
+	a.Folge = "Eine Fehlermeldung heißt: Etwas ist schiefgegangen, und das Programm konnte sich nicht selbst helfen"
+	a.Abhilfe = "Die Ursache steht unter jeder Meldung. " + befehlImHandbuch + "."
 	return a
 }
 
@@ -142,7 +142,7 @@ func baueWarnungenImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechste
 		zuletzt = ""
 	}
 	a.Stufe = bereitschaft.StufeWarnung
-	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s.",
+	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s",
 		warnungenText(a.Anzahl), int(logger.FehlerZeitraum.Hours()), zuletzt, zeitpunkt(gruppen[0].Zuletzt, jetzt))
 	a.Meldungen = fehlerZeilen(gruppen, jetzt, hoechstens, weitereWarnungen)
 	a.Folge = "Eine Warnung heißt: Das Programm hat sich selbst geholfen. Häuft sich eine, steckt oft ein Fehler dahinter."

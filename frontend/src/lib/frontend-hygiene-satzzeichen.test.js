@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parse } from 'svelte/compiler';
 import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
+import geteilt from './utils/satzzeichen.faelle.json';
 
 // Ratsche: Die Texte der Oberfläche setzen ihre Satzzeichen wie die Meldungen des Servers
 // (STIL.md 11, pruefung/meldung_ratsche_test.go): ein einzelner Satz ohne Punkt, mehrere Sätze
@@ -17,11 +18,10 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 //
 // Sieht den Punkt am Ende nicht bei einem Satz, den ein Block ({#if}) im selben Element
 // fortsetzt, und bei einem String, der mit Leerzeichen beginnt: Beide hängen an einem Satz davor.
-const ABK = new Set(
-	'Max. usw. etc. bzw. ggf. evtl. inkl. zzgl. vgl. ca. Nr. Hrsg. Aufl. Bd. Chr. Str. Tel. Jh. Mio. Mrd. max. min. Std. Min. Sek. Kl. Jg.'.split(
-		' '
-	)
-);
+//
+// Die Abkürzungen und die Fälle für das Satzende teilt die Prüfung mit dem Server
+// (utils/satzzeichen.faelle.json, pruefung/meldung_ratsche_test.go): eine Regel für beide.
+const ABK = new Set(geteilt.abkuerzungen);
 const INLINE = new Set(
 	'a abbr b bdi code em i kbd mark q s small span strong sub sup time u'.split(' ')
 );
@@ -220,5 +220,11 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 		expect(texte("const a = 'Erster Teil. ' + b + ' Ende.';", false).map(([t]) => t)).toContain(
 			'Erster Teil. {…} Ende.'
 		);
+	});
+
+	it('findet das Satzende wie der Server (satzzeichen.faelle.json)', () => {
+		expect(ABK.size, 'Die geteilte Liste ist leer').toBeGreaterThan(20);
+		expect(geteilt.faelle.length, 'Die geteilten Fälle fehlen').toBeGreaterThan(5);
+		for (const { text, mehrere } of geteilt.faelle) expect(satzende(text), text).toBe(mehrere);
 	});
 });
