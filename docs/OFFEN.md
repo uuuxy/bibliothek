@@ -51,7 +51,9 @@ Nur, was kein Test leisten kann.
   welche Regel für beide gilt. (5.187)
 - [ ] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
   Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
-- [ ] Große Lernmittel-Etiketten auch im Druck-Center der Schule anbieten? (5.190)
+- [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
+- [ ] Die offenen Seiten der Abdeckungsliste gegen den Code halten: Date pickers, Toolbars,
+  Motion, Icons, Alt text ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
 
@@ -125,16 +127,17 @@ Nächster Schritt: je Gruppe nach Google entscheiden: Einheiten wie „Frist (Ta
 Feld (M3, Text fields), Zahlen als Zählerpille statt in Klammern, die übrigen Nebengedanken in den
 Satz. Danach eine Prüfung für neue Klammern mit Wortlaut. Aufwand: etwa fünf Stunden.
 
-### 5.190 Große Lernmittel-Etiketten im Druck-Center
+### 5.191 Offene Seiten der Abdeckungsliste
 
-Das große Lernmittel-Etikett (vier je A4-Blatt, `pdf.ErzeugeLernmittelEtiketten`) erzeugt nur
-der Weg des Händlers: die Seite hinter dem Bestelllink und der Mailanhang. Das Druck-Center der
-Schule bietet nur die kleinen Bögen (Zweckform L4760, Avery 3475, Standard 52). Die Schule kann
-das große Etikett deshalb nicht selbst drucken.
+Fünf Seiten von Material 3 hat niemand gegen den Code gehalten ([sweeps.md](sweeps.md),
+Abdeckung der Google-Seiten): Date pickers (16 Felder mit dem Kalender des Browsers), Toolbars
+(`ui/AuswahlLeiste`, Werkzeugleiste des Ausweis-Designers), Motion (Übergänge an rund 100
+Stellen), Icons und Alt text (17 Stellen mit `alt`).
 
-Nächster Schritt, falls gewünscht: im Druck-Center das große Etikett als weiteres Format, mit
-demselben Erzeuger und derselben Regel wie beim Händler (nicht für den Topf Schülerbücherei,
-`mitteltopf.HatGrossesLernmittelEtikett`). Aufwand: etwa zwei Stunden.
+Icons ist die größte Abweichung: M3 nennt die Material Symbols („Use the Material Symbols variable
+font“, Styles, Icons), das Programm zeichnet mit Lucide (179 Dateien, 96 Symbole). Ein Wechsel
+tauscht jedes Symbol und liefert die Symbolschrift selbst aus wie Roboto; vor dem Bau braucht es
+ein Ja. Die übrigen vier: je Seite lesen, Befund in die Liste, Abweichungen beheben.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -12,6 +12,13 @@ und `**.css` daran.
 Das Designziel ist der echte Material-3-Look (Google). Oberste Anforderung ist Konsistenz,
 nicht der Einzelfall.
 
+**Maßstab ist Google, auch für den Bestand.** Was Google regelt (Material 3, sonst Googles
+eigene Apps), gilt für jede Stelle des Programms, nicht nur für die gerade geänderte. Eine
+Abweichung braucht den Beleg, dass Google schweigt; eine eigene Entscheidung ersetzt ihn nicht.
+Welche Google-Seite gegen den ganzen Code gehalten ist, steht in `docs/sweeps.md` (Abdeckung der
+Google-Seiten); eine Seite, die dort fehlt oder offen steht, ist ungeprüft. Prüfrunden laufen
+entlang dieser Liste.
+
 **Vor jeder Oberflächen-Änderung die zuständige M3-Seite lesen** — auch vor einer einzelnen
 Zeile Hinweistext. Nicht aus dem Gedächtnis entscheiden: Eine Einschätzung „aus dem Kopf" lag
 hier schon nachweislich falsch.
@@ -56,6 +63,8 @@ Segmente · Seitenblatt · Select · SelectListe · StatusChip · SuchZustand ·
 Tabelle · TabelleSortierKopf · VorschlagFeld · Zaehlerpille.
 
 - Eine vorhandene Tür erweitern statt eine zweite anzulegen: Ein Zustand hat einen Schreibpfad.
+- Wiederholtes Markup: `{#snippet}`/`{@render}` innerhalb einer Datei, ein Bauteil in `ui/` über
+  Dateien hinweg (ARCHITEKTUR.md 5.3).
 - Ein neues Bauteil braucht in der Commit-Nachricht die Begründung, warum keins der
   vorhandenen passt.
 - Gilt genauso für Endpunkte: Erst `docs/api_inventar.md` lesen.

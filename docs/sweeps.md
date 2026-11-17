@@ -69,7 +69,7 @@ der Commit-Nachricht, zu finden etwa mit `git log -S'Fehler-Kollaps' -- docs/swe
 | **Barriere im Bauteil** | Ein Container ist Knopf und enthält Knöpfe (nested-interactive), ein Dialog hält den Fokus nicht, eine Tabelle hat keinen Namen, ein Text steht auf zu wenig Kontrast — für Maus und Auge unsichtbar, für Tastatur und Screenreader eine Wand | `e2e/barrierefreiheit-axe.spec.js` (axe WCAG A/AA über alle Routen + Gerüst), `e2e/barrierefreiheit-dialog.spec.js` (Fokusfalle, Tabellen, Bewegung), Ratsche `frontend-hygiene-tabellen` (`beschriftung` Pflicht) | Regeln: [FACHKONZEPT.md](FACHKONZEPT.md) §19 |
 | **Zwei Sprechblasen** | Ein Knopf oder Link trägt die Sprechblase des Browsers (`title`), andere Bauteile die eigene (`data-tip`): andere Optik, rund eine Sekunde später, bei Bedienung mit der Tastatur gar nicht. Achtzehn Knöpfe und ein Link, sieben davon im LMF-Planer | `frontend-hygiene-sprechblasen.test.js` (kein `title` an `<button>`, `<Button>` und `<a>`; am Rückbau rot in 14 Dateien) | Die Ziele der Seitenleiste behalten `title`, an ihm hängt `menuepunkt()` (ARCHITEKTUR 11.5) |
 | **Beschriftung in zwei Größen** | Eine Maske baut die Beschriftung eines Auswahlfelds selbst, in 12 px neben den 14 px, die ui/Feld.svelte seinen Textfeldern gibt; dreizehn Hinweiszeilen unter einer Überschrift standen in 12 statt 14 px | `frontend-hygiene-schrift.test.js` (kein `<label>` und keine Hinweiszeile direkt unter einer Überschrift in `text-xs`; am Rückbau rot an 28 Stellen in 21 Dateien) | Die Zeile unter dem Titel eines Buchs in einer Liste oder Karte ist eine Angabe, keine Hinweiszeile (drei Ausnahmen im Test) |
-| **Gewicht unter falschem Namen** | In diesem Haus zeigt `font-medium` auf 400 und `font-semibold` auf 500 (`theme-mass.css`). Wer „Medium“ schreibt und Googles Medium meint, bekommt normale Schrift: 31 Überschriften in 16 px, Zähler, Kopf der Navigation und 15 Beschriftungen in 11 px standen in 400, wo Googles Skala 500 nennt | `frontend-hygiene-schrift.test.js` (keine Überschrift `text-base` und keine `text-label-small` mit `font-medium` oder `font-normal`; `--text-label-small--font-weight: 500` in `theme-mass.css`; am Rückbau rot an 46 Stellen) | Der fette Schnitt (700), den Googles Token dem aktiven Ziel der Navigation geben, ist nicht gebündelt (`app.css`: nur 400 und 500) |
+| **Gewicht unter falschem Namen** | In diesem Haus zeigt `font-medium` auf 400 und `font-semibold` auf 500 (`theme-mass.css`). Wer „Medium“ schreibt und Googles Medium meint, bekommt normale Schrift: 31 Überschriften in 16 px, Zähler, Kopf der Navigation und 15 Beschriftungen in 11 px standen in 400, wo Googles Skala 500 nennt | `frontend-hygiene-schrift.test.js` (keine Überschrift `text-base` und keine `text-label-small` mit `font-medium` oder `font-normal`; `--text-label-small--font-weight: 500` in `theme-mass.css`; am Rückbau rot an 46 Stellen) | 700 trägt nur die Rolle `text-label-large-prominent`, das aktive Ziel der Navigation nach Googles Token (`app.css` bündelt 400, 500 und 700); `font-bold` bleibt 500 |
 | **Titel betont statt in der Grundform** | Überschriften ab 22 px standen mal in 500, mal in 400 (gleich groß, 17 zu 6), obwohl Googles Skala title-large und headline-small Regular setzt und `.dialog-titel` es schon tat; in Datenverwaltung und Buchformular waren die Abschnitte so groß wie der Titel darüber | `frontend-hygiene-schrift.test.js` (keine Überschrift ab `text-lg` mit `font-semibold`, `font-bold`, `font-extrabold` oder `font-black`; am Rückbau rot an 22 Stellen) | Die Folie „Buch des Monats“ bleibt betont: Für Überschriften als redaktionelle Gestaltung empfiehlt Google die betonten Stile |
 | **Laufweite der Rollen mit Gewicht 500** | `font-semibold` neben `text-xs`, `text-sm` oder `text-base` gab Größe, Zeilenhöhe und Gewicht richtig, die Laufweite aber von der body-Rolle: 0,5 statt 0,15 px bei 16 px, 0,25 statt 0,1 px auf Knöpfen, Chips und Reitern; `text-xs` trug 0,5 statt 0,4 px. Fetter Feldinhalt kam bei Google nicht vor (input text body-large, 400) | `frontend-hygiene-schrift.test.js` (Gewicht nur neben einer Größe ab 22 px oder einer frei gesetzten; am Rückbau rot an 328 Klassenlisten); Rollen in `theme-mass.css` mit Googles Werten (material-web, material-components-android) | Welche Rolle gilt, entscheidet die Aufgabe: Knopf, Chip, Badge label, Überschrift, Reiter und Tabellenkopf title, betonter Inhalt body-emphasized. Das prüft kein Gate |
 | **Satzzeichen der Oberfläche nach Gefühl** | Der Server setzte seine Meldungen nach M3, die Oberfläche ihre eigenen Texte nicht: 512 einzelne Sätze endeten mit Punkt, 183 Texte trugen den Gedankenstrich, 11 Texte aus mehreren Sätzen hatten keinen Schlusspunkt. Ein Satz, den die Oberfläche an eine Meldung des Servers hängte, stand ohne Punkt dazwischen („Server-Satz Die Eingaben dieser Maske …“) | `frontend-hygiene-satzzeichen.test.js` (Strings im Code, Attributwerte und Textläufe im Markup; am Rückbau rot an 706 Stellen); Sätze aus Teilen über `verbindeSaetze` (`utils/format.js`) | Den Schlusspunkt nicht bei einem Satz, den ein `{#if}` im selben Element fortsetzt, und bei einem String mit Leerzeichen am Anfang. Der Doppelpunkt zählt hier wie am Server nicht als Satzende |
@@ -434,6 +434,60 @@ kein Hook). **Nur im Hook vor dem Push, nicht in CI:** der Trivy-Scan der Konfig
 Regel 7 daraus: **Jede neue Ratsche trägt ihre Blindheit im Kopfkommentar und eine Zeile
 hier.** Ein Gate ohne benannte Blindheit wird beim nächsten Fund zur falschen Spur.
 
+
+## Abdeckung der Google-Seiten
+
+Maßstab für alles Sichtbare ist Google (CLAUDE.md, Abschnitt 1), auch für den Bestand. Diese
+Liste sagt je Seite von Material 3, wie weit sie gegen den ganzen Code gehalten ist: **Gate**
+heißt, eine Prüfung meldet neue Abweichungen; **gelesen** heißt, die Seite wurde für einzelne
+Änderungen gelesen (jüngster Commit, der sie nennt), ohne Prüfung über alle Stellen; **offen**
+heißt, niemand hat sie gegen den Code gehalten. Von dort kommen die nächsten Funde. Die Seiten
+stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/foundations` und
+`/styles`, gezählt im November 2026. Wer eine Seite prüft, trägt hier Commit und Gate nach.
+
+| Seite | bei uns | Stand |
+| --- | --- | --- |
+| Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen` |
+| Segmented buttons | `ui/Segmente` | gelesen (f5b85aca) |
+| Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip` | gelesen (b78dbb84) |
+| Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
+| Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
+| Menus | `ui/Menue`, `ui/Select` | gelesen (b78dbb84); Gate `menue-fuehrt-irgendwohin` prüft nur das Ziel |
+| Navigation drawer, Navigation rail | `layout/Seitenleiste`, aufgeklappt und schmal | Gate: `navigation-m3`; Gewicht nach Googles Token: Ziel 500, aktives Ziel 700 |
+| Progress indicators, Loading indicator | `ui/Ladekreis` | Gate: `frontend-hygiene-ladekreis` |
+| Switch | `ui/Switch` | Gate: `frontend-hygiene-schalter`, `schalter` |
+| Checkbox, Radio button | `ui/Kaestchen`, `ui/Radio` | gelesen (5c520e06, 5e6eaeb1) |
+| Search | `ui/Suchfeld`, `ui/Suchpille` | Gate: `frontend-hygiene-suchfelder`, `suchpille-einheitlich` |
+| Side sheets | `ui/Seitenblatt` | gelesen (efd17472) |
+| Snackbar | `layout/SnackbarAnzeige` | gelesen (96f4a497) |
+| Tabs | `ui/Reiter` | Gate: `frontend-hygiene-reiter`, `bestell-reiter-eine-zeile` |
+| Text fields | `ui/Feld` | Gate: `frontend-hygiene-felder`, `frontend-hygiene-fehlerzeile-rolle`, `feld-fehlersymbol`, `feldbreite` |
+| Tooltips | `actions/tooltip` | Gate: `frontend-hygiene-sprechblasen`, `icon-tooltips` |
+| Badges | `ui/Zaehlerpille`, Punkt an der schmalen Leiste | gelesen (dd6b67e5) |
+| Cards | umrandete Karte (ARCHITEKTUR 5.3) | Gate: `frontend-hygiene-karten` |
+| Divider | Trennlinie `border-outline-variant` | gelesen (2bbda2dd) |
+| App bars | Kopfzeile der Seiten | gelesen (aea2a6b9) |
+| Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
+| Split button | „Ausweis drucken“ mit Menü in der Leserakte | gelesen (6a5a1562) |
+| Date pickers | 16 Felder `type="date"` mit dem Kalender des Browsers | **offen** |
+| Toolbars | `ui/AuswahlLeiste`, Werkzeugleiste des Ausweis-Designers | **offen** |
+| Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |
+| Typography | `styles/theme-mass.css` | Gate: `frontend-hygiene-schrift`, `typo-rollen` |
+| Shape | Ecken der Bauteile | gelesen (ec88f9ae) |
+| Elevation | Schatten von Dialog, Menü, Snackbar | Gate: `m3-bauform` (Rahmen oder Erhebung, nie beides) |
+| Motion | Übergänge und `animate-`-Klassen an rund 100 Stellen | **offen** |
+| Icons | Lucide (`@lucide/svelte`, 179 Dateien); Google: „Use the Material Symbols variable font“ | **offen**, Abweichung |
+| Layout, Spacing | Raster und Abstände (ARCHITEKTUR 5.3) | gelesen (e95fd674) |
+| Interaction states | Hover, Fokus, gedrückt | gelesen (d1273fcf) |
+| Accessibility | Rollen, Namen, Fokus | Gate: `frontend-hygiene-fehlerzeile-rolle`, `frontend-hygiene-namen` |
+| Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`; offen: Klammern und Schrägstriche (OFFEN 5.188) |
+| Alt text | 17 Stellen mit `alt` | **offen** |
+| Global writing | Sätze für alle Leser | gelesen (a71a5dd0) |
+
+Gilt hier nicht: FAB, Extended FAB und FAB menu (das Programm hat keinen schwebenden Knopf),
+Bottom sheets und Navigation bar (Bauteile für schmale Bildschirme), Time pickers (kein Feld
+mit Uhrzeit), Carousel (die Folien des Monitors laufen von selbst und werden nicht geblättert),
+Button groups (nicht verwendet), XR und Watches.
 
 ## Prüfung der Prüfungen
 
