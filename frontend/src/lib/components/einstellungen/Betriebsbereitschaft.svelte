@@ -87,7 +87,7 @@
 				<div class="flex gap-4 py-4 {stil.flaeche}">
 					<Symbol class="mt-0.5 h-5 w-5 shrink-0 {stil.farbe}" aria-hidden="true" />
 					<div class="min-w-0">
-						<p class="font-semibold text-on-surface">{b.bereich}</p>
+						<p class="text-on-surface text-body-large-emphasized">{b.bereich}</p>
 						<p class="mt-0.5 text-sm text-on-surface">{b.befund}</p>
 						{#if b.folge}
 							<p class="mt-1 text-sm text-on-surface-variant">{b.folge}</p>

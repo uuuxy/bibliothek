@@ -21,7 +21,7 @@
 			<div class="flex items-start gap-2.5">
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
-					<h3 class="text-base font-semibold">Aktiver Druckauftrag</h3>
+					<h3 class="text-title-medium">Aktiver Druckauftrag</h3>
 					<p class="mt-1 text-sm leading-relaxed font-medium">
 						<!-- Ohne Herkunft: Die Übergabe kommt aus dem Wareneingang, dem Nachdruck oder
 						     der Buchakte — „aus der freigegebenen Lieferung" stimmte nur für den ersten. -->
@@ -36,7 +36,7 @@
 	{:else}
 		<!-- Step 1: Selection -->
 		<div class="space-y-4 border-b border-outline-variant py-5">
-			<h3 class="text-base font-semibold text-on-surface-variant">1. Titel / Klassensatz wählen</h3>
+			<h3 class="text-title-medium text-on-surface-variant">1. Titel / Klassensatz wählen</h3>
 
 			<!-- Tab selector for search vs class set -->
 			<div class="space-y-3">
@@ -69,7 +69,7 @@
 										onclick={() => etikettenStore.waehleTitel(r)}
 										class="flex w-full cursor-pointer flex-col gap-0.5 px-3.5 py-2.5 text-left"
 									>
-										<span class="text-xs font-bold text-on-surface">{r.titel}</span>
+										<span class="text-body-small-emphasized text-on-surface">{r.titel}</span>
 										<span class="text-label-small text-on-surface-variant"
 											>{r.autor || 'Unbekannt'} · {r.verlag || 'Kein Verlag'}</span
 										>

@@ -44,7 +44,7 @@
 			<div class="min-w-0 flex items-center gap-2">
 				<UserRoundPen class="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
 				<div class="min-w-0">
-					<p class="text-sm font-bold text-on-surface">Vermutlich dieselbe Person</p>
+					<p class="text-label-large text-on-surface">Vermutlich dieselbe Person</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">
 						{#if abgeschlossen}
 							{bestaetigte} von {anzahlText(paare.length, 'Paar', 'Paaren')} bestätigt. Bestätigte Schüler
@@ -77,36 +77,36 @@
 						{/if}
 						<span class="min-w-0 flex-1 space-y-0.5">
 							<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-								<span class="font-semibold text-on-surface"
+								<span class="text-on-surface text-body-small-emphasized"
 									>{p.alt_vorname}
 									{p.alt_nachname}
 									<span class="font-mono text-on-surface-variant">{p.alt_klasse}</span></span
 								>
 								<ArrowRight class="w-3 h-3 text-on-surface-variant shrink-0" aria-hidden="true" />
-								<span class="font-semibold text-on-surface"
+								<span class="text-on-surface text-body-small-emphasized"
 									>{p.neu_vorname}
 									{p.neu_nachname}
 									<span class="font-mono text-on-surface-variant">{p.neu_klasse}</span></span
 								>
 								{#if p.sicher}
 									<span
-										class="rounded-full bg-primary-container text-on-primary-container px-2 py-0.5 text-label-small font-semibold"
+										class="rounded-full bg-primary-container text-on-primary-container px-2 py-0.5 text-label-small"
 										>sicher</span
 									>
 								{:else}
 									<span
-										class="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-label-small font-semibold"
+										class="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-label-small"
 										>vermutlich</span
 									>
 								{/if}
 								{#if p.war_abgaenger}
 									<span
-										class="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-label-small font-semibold"
+										class="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-label-small"
 										>früherer Abgänger</span
 									>
 								{/if}
 								{#if abgeschlossen && p.bestaetigt}
-									<span class="text-primary font-semibold">bestätigt</span>
+									<span class="text-primary text-body-small-emphasized">bestätigt</span>
 								{/if}
 							</span>
 							<span class="block text-on-surface-variant">

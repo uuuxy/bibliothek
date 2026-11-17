@@ -71,7 +71,7 @@
      beides zu gleichrangigen Objekten machte. -->
 <section class="space-y-4 border-t border-outline-variant pt-6">
 	<div>
-		<h2 class="font-bold text-on-surface">Sachgruppen</h2>
+		<h2 class="text-on-surface text-title-medium">Sachgruppen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
 			Das Fach-Vokabular des Katalogs. Die Signatur am Regal schlägt es nicht mehr vor: Dort gelten
 			die Adressen aus dem Bestand.

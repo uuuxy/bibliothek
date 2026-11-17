@@ -81,8 +81,8 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<Feld id="vorname" etikett="Vorname *" bind:value={eingaben.vorname} feld="font-semibold" />
-		<Feld id="nachname" etikett="Nachname *" bind:value={eingaben.nachname} feld="font-semibold" />
+		<Feld id="vorname" etikett="Vorname *" bind:value={eingaben.vorname} />
+		<Feld id="nachname" etikett="Nachname *" bind:value={eingaben.nachname} />
 		<Feld
 			id="geburtsdatum"
 			etikett="Geburtsdatum{schuelerPflicht}"
@@ -122,7 +122,6 @@
 			etikett="Abgangsjahr"
 			type="number"
 			bind:value={eingaben.abgaenger_jahr}
-			feld="font-semibold"
 			disabled={kollege}
 			hint={kollege ? 'Gehört zur Klasse' : undefined}
 		/>

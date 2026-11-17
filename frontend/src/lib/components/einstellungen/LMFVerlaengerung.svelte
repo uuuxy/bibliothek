@@ -70,7 +70,7 @@
      „LMF-Aktionen" — das Seitengerüst stellt Einstellungen. -->
 <div class="space-y-5">
 	<div>
-		<h3 class="text-base font-bold text-on-surface">LMF-Massenverlängerung (Klasse)</h3>
+		<h3 class="text-title-medium text-on-surface">LMF-Massenverlängerung (Klasse)</h3>
 		<p class="text-sm text-on-surface-variant mt-1 leading-relaxed max-w-lg">
 			Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
 			fixes Rückgabedatum

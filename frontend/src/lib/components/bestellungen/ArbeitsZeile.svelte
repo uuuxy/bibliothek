@@ -39,11 +39,11 @@
 	<!-- Führendes Element: 48 px, wie der M3-Avatar. Die Klasse ist kurz (≤ 5 Zeichen),
 	     Schrift label-large-Äquivalent (text-sm/500), damit auch „10g1" in den Kreis passt. -->
 	<span
-		class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
+		class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-container text-label-large text-on-secondary-container"
 		aria-label="Klasse {klasse}">{klasse}</span
 	>
 	<div class="min-w-0 flex-1">
-		<p class="flex items-center gap-2 text-base font-bold text-on-surface">
+		<p class="flex items-center gap-2 text-body-large-emphasized text-on-surface">
 			<span class="truncate">{titel}</span>
 			{#if art}<StatusChip text={art.text} ton={art.ton ?? 'neutral'} />{/if}
 		</p>

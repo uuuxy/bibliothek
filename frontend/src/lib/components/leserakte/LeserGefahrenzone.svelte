@@ -42,7 +42,7 @@
 	class="mt-8 border border-error-container bg-error-container/20 rounded-xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
 >
 	<div>
-		<h3 class="text-error font-bold text-base flex items-center gap-2">
+		<h3 class="text-error text-title-medium flex items-center gap-2">
 			<TriangleAlert class="w-5 h-5" />
 			Gefahrenzone
 		</h3>

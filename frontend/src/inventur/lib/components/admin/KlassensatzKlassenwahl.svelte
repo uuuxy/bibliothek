@@ -45,7 +45,7 @@
 	<div class="flex flex-wrap items-center gap-2">
 		{#each gewaehlteKlassen as selectedClass (selectedClass)}
 			<span
-				class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold"
+				class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-label-large"
 			>
 				{selectedClass}
 				<button

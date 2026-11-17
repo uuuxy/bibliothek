@@ -43,7 +43,7 @@
 
 	   M3 definiert je Stufe DREI Werte: Größe, Zeilenhöhe und Laufweite. Die
 	   Laufweite ist der unscheinbarste und wirksamste — kleine Schrift bekommt
-	   mehr Luft (0,5 px bei 12 px), große weniger. Ohne sie wirkt M3-Typografie
+	   mehr Luft (0,4 px bei 12 px), große weniger. Ohne sie wirkt M3-Typografie
 	   „fast richtig", und genau das war hier der Fall.
 
 	   Zuordnung auf die vorhandenen Klassennamen (wieder die Skala statt der
@@ -56,7 +56,7 @@
 	   Arbeit und steht noch aus. */
 	--text-xs: 0.75rem; /* 12 px — body-small */
 	--text-xs--line-height: 1rem;
-	--text-xs--letter-spacing: 0.03125rem;
+	--text-xs--letter-spacing: 0.025rem;
 	/* label-small — die KLEINSTE Stufe, die Material 3 kennt: 11 px, 16 px Zeilenhöhe,
 	   0,5 px Laufweite. Sie ersetzt die 9-, 10- und 11-px-Größen, die vorher als
 	   `text-[10px]` an neunzig Stellen von Hand standen — drei Größen für dieselbe
@@ -71,6 +71,41 @@
 	/* Gewicht wie bei Google: „textAppearanceLabelSmall | Medium 11sp“ (material-components-android,
 	   Typography.md); ohne Angabe erbte die Rolle 400. */
 	--text-label-small--font-weight: 500;
+	/* Die Rollen mit dem Gewicht 500 tragen eine eigene Laufweite, enger als die body-Rolle
+	   derselben Größe. Werte aus Googles Tokens (material-web,
+	   tokens/versions/v0_192/_md-sys-typescale.scss); Knöpfe, Chips, Segmente und die
+	   Seitenleiste nehmen label-large, Reiter und Tabellenköpfe title-small. */
+	--text-label-medium: 0.75rem; /* 12 px */
+	--text-label-medium--line-height: 1rem;
+	--text-label-medium--letter-spacing: 0.03125rem;
+	--text-label-medium--font-weight: 500;
+	--text-label-large: 0.875rem; /* 14 px */
+	--text-label-large--line-height: 1.25rem;
+	--text-label-large--letter-spacing: 0.00625rem;
+	--text-label-large--font-weight: 500;
+	--text-title-small: 0.875rem; /* 14 px */
+	--text-title-small--line-height: 1.25rem;
+	--text-title-small--letter-spacing: 0.00625rem;
+	--text-title-small--font-weight: 500;
+	--text-title-medium: 1rem; /* 16 px */
+	--text-title-medium--line-height: 1.5rem;
+	--text-title-medium--letter-spacing: 0.009375rem;
+	--text-title-medium--font-weight: 500;
+	/* Betonter Text in Absätzen, Zellen und Listen nimmt die betonten body-Rollen (Expressive):
+	   „TextAppearance.M3.Sys.Typescale.BodyMedium.Emphasized“ 14/20 sp, Medium, 0,25 px
+	   (material-components-android, typography/res/values/styles.xml). */
+	--text-body-large-emphasized: 1rem; /* 16 px */
+	--text-body-large-emphasized--line-height: 1.5rem;
+	--text-body-large-emphasized--letter-spacing: 0.009375rem;
+	--text-body-large-emphasized--font-weight: 500;
+	--text-body-medium-emphasized: 0.875rem; /* 14 px */
+	--text-body-medium-emphasized--line-height: 1.25rem;
+	--text-body-medium-emphasized--letter-spacing: 0.015625rem;
+	--text-body-medium-emphasized--font-weight: 500;
+	--text-body-small-emphasized: 0.75rem; /* 12 px */
+	--text-body-small-emphasized--line-height: 1rem;
+	--text-body-small-emphasized--letter-spacing: 0.025rem;
+	--text-body-small-emphasized--font-weight: 500;
 	--text-sm: 0.875rem; /* 14 px — body-medium */
 	--text-sm--line-height: 1.25rem;
 	--text-sm--letter-spacing: 0.015625rem;

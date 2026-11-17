@@ -75,7 +75,7 @@
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
-		class="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
+		class="inline-flex items-center gap-1.5 text-label-large text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
 	>
 		<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 		Statistik
@@ -143,7 +143,9 @@
 						dekorativ
 					/>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-bold text-on-surface truncate" title={row.titel}>{row.titel}</p>
+						<p class="text-body-medium-emphasized text-on-surface truncate" title={row.titel}>
+							{row.titel}
+						</p>
 						<p class="text-xs text-on-surface-variant truncate">
 							{row.autor || '–'}
 							{#if row.fachbereich}· {row.fachbereich}{/if}
@@ -153,10 +155,12 @@
 					</div>
 					<div class="shrink-0 text-right">
 						{#if kind === 'renner'}
-							<span class="text-sm font-black text-on-surface tabular-nums">{row.count}×</span>
-							<span class="block text-xs text-on-surface-variant font-semibold">geliehen</span>
+							<span class="text-body-medium-emphasized text-on-surface tabular-nums"
+								>{row.count}×</span
+							>
+							<span class="block text-body-small-emphasized text-on-surface-variant">geliehen</span>
 						{:else}
-							<span class="text-xs font-bold text-warning">{row.letzte_aus}</span>
+							<span class="text-body-small-emphasized text-warning">{row.letzte_aus}</span>
 						{/if}
 					</div>
 				</li>

@@ -1,12 +1,7 @@
-<!-- @component LusdImport — Preview-to-Commit Flow für den LUSD-Schuljahreswechsel-Import.
-     Go-Handler sind zustandslos (keine Preview-Session), daher wird dieselbe Datei bei
-     „Import finalisieren“ erneut an /api/lusd/import gesendet — samt der bestätigten
-     Umbenennungs-Paare (LusdUmbenennungen).
-
-     Drei Zuordnungsstufen, die Datei entscheidet (Backend: internal/lusd/datei.go):
-     LUSD-ID → Name + Geburtsdatum → nur Name. Der Export der Schule hat keine Schüler-ID;
-     die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. Texte und Rubriken
-     stehen in lusdVorschauRubriken.js. -->
+<!-- @component LusdImport — Vorschau, dann Import des LUSD-Schuljahreswechsels. Der Server hält
+     keine Vorschau, deshalb geht dieselbe Datei beim Finalisieren samt bestätigten Umbenennungen
+     erneut an /api/lusd/import. Die Zuordnung (LUSD-ID → Name + Geburtsdatum → nur Name) wählt
+     die Datei (internal/lusd/datei.go); Texte stehen in lusdVorschauRubriken.js. -->
 <script>
 	import { TriangleAlert, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -140,7 +135,7 @@
 					aria-hidden="true"
 				/>
 				<div class="min-w-0">
-					<p class="text-sm font-bold text-on-surface">{section.label}</p>
+					<p class="text-label-large text-on-surface">{section.label}</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">{section.hint}</p>
 				</div>
 			</div>
@@ -151,7 +146,8 @@
 		<ul class="pb-2">
 			{#each section.items as item (item.id)}
 				<li class="py-2 pl-5 flex items-center justify-between gap-3 text-xs">
-					<span class="font-semibold text-on-surface truncate">{item.vorname} {item.nachname}</span
+					<span class="text-on-surface truncate text-body-small-emphasized"
+						>{item.vorname} {item.nachname}</span
 					><span class="text-on-surface-variant font-mono shrink-0"
 						>{item.alte_klasse && item.neue_klasse
 							? `${item.alte_klasse} → ${item.neue_klasse}`
@@ -166,7 +162,7 @@
 {#snippet ergebnis(abgeschlossen)}
 	{#if angezeigtesErgebnis}
 		<p
-			class="text-xs font-semibold rounded-xl p-3 {info.warn
+			class="text-body-small-emphasized rounded-xl p-3 {info.warn
 				? 'bg-error-container text-on-error-container'
 				: 'text-on-surface-variant'}"
 		>
@@ -192,7 +188,7 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h3 class="text-base font-semibold text-on-surface">LUSD-Import</h3>
+		<h3 class="text-title-medium text-on-surface">LUSD-Import</h3>
 		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Lade die LUSD-Exportdatei hoch, um die Änderungen zu prüfen, bevor sie verbindlich in die
 			Datenbank übernommen werden. Kein Datensatz wird ohne Bestätigung überschrieben.
@@ -231,12 +227,14 @@
 			<FolderOpen class="h-8 w-8 text-on-surface-variant" aria-hidden="true" />
 			{#if gewaehlteDatei}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-on-surface max-w-xs truncate">{gewaehlteDatei.name}</p>
+					<p class="text-body-small-emphasized text-on-surface max-w-xs truncate">
+						{gewaehlteDatei.name}
+					</p>
 					<p class="text-label-small text-on-surface-variant">{groesse(gewaehlteDatei.size)}</p>
 				</div>
 			{:else}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-on-surface">
+					<p class="text-body-small-emphasized text-on-surface">
 						LUSD-CSV oder -Excel auswählen oder reinziehen
 					</p>
 					<p class="text-label-small text-on-surface-variant">

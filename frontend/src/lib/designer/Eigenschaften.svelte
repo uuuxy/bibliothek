@@ -73,7 +73,7 @@
 		<EigenschaftenLeer {side} {gesperrt} />
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-base font-semibold text-on-surface">{elementName(el)}</h3>
+			<h3 class="text-title-medium text-on-surface">{elementName(el)}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={loesche}
@@ -138,13 +138,13 @@
 			<span class="text-xs font-medium text-on-surface-variant flex-1">Ebene (z={el.zIndex})</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
-				class="icon-btn text-label-small bg-surface-container text-on-surface font-bold"
+				class="icon-btn text-label-small bg-surface-container text-on-surface"
 				data-tip="Nach vorne"
 				aria-label="Ebene nach vorne verschieben">▲</button
 			>
 			<button
 				onclick={() => sendBackward(side, el.id)}
-				class="icon-btn text-label-small bg-surface-container text-on-surface font-bold"
+				class="icon-btn text-label-small bg-surface-container text-on-surface"
 				data-tip="Nach hinten"
 				aria-label="Ebene nach hinten verschieben">▼</button
 			>
@@ -188,7 +188,7 @@
 					type="file"
 					accept="image/*"
 					onchange={ladeBildHoch}
-					class="w-full text-xs text-on-surface-variant file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-surface-container file:text-on-surface hover:file:bg-surface-container-highest cursor-pointer"
+					class="w-full text-xs text-on-surface-variant file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:bg-surface-container file:text-on-surface hover:file:bg-surface-container-highest cursor-pointer"
 				/>
 				<Kaestchen bind:checked={el.proportional} etikett="Proportionale Skalierung" />
 			</div>

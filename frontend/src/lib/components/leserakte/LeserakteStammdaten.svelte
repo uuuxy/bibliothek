@@ -54,15 +54,15 @@
 			     Lehrkräfte in einer Tabelle. -->
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Art</p>
-				<p class="text-on-surface font-semibold">{leserArtText(leser.art)}</p>
+				<p class="text-on-surface text-body-large-emphasized">{leserArtText(leser.art)}</p>
 			</div>
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Geburtsdatum</p>
-				<p class="text-on-surface font-semibold">{formatDate(leser.geburtsdatum)}</p>
+				<p class="text-on-surface text-body-large-emphasized">{formatDate(leser.geburtsdatum)}</p>
 			</div>
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">LUSD-ID</p>
-				<p class="text-on-surface font-semibold">{leser.lusd_id || 'Keine Angabe'}</p>
+				<p class="text-on-surface text-body-large-emphasized">{leser.lusd_id || 'Keine Angabe'}</p>
 			</div>
 		</div>
 
@@ -70,8 +70,11 @@
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Postanschrift</p>
 				{#if leser.strasse}
-					<p class="text-on-surface font-semibold">{leser.strasse} {leser.hausnummer}</p>
-					<p class="text-on-surface font-semibold">{leser.plz} {leser.ort}</p>
+					<p class="text-on-surface text-body-large-emphasized">
+						{leser.strasse}
+						{leser.hausnummer}
+					</p>
+					<p class="text-on-surface text-body-large-emphasized">{leser.plz} {leser.ort}</p>
 				{:else}
 					<p class="text-on-surface-variant italic text-sm">Keine Adresse hinterlegt</p>
 				{/if}
@@ -79,8 +82,9 @@
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Eltern E-Mail</p>
 				{#if leser.eltern_email}
-					<a href="mailto:{leser.eltern_email}" class="text-primary hover:underline font-semibold"
-						>{leser.eltern_email}</a
+					<a
+						href="mailto:{leser.eltern_email}"
+						class="text-primary hover:underline text-body-large-emphasized">{leser.eltern_email}</a
 					>
 				{:else}
 					<p class="text-on-surface-variant italic text-sm">Keine E-Mail hinterlegt</p>
@@ -98,8 +102,9 @@
 		>
 			<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
 			<p>
-				<span class="font-semibold">E-Mail-Adresse, Rolle und Freischaltung</span> stehen nicht
-				hier, sondern in <span class="font-semibold">Benutzer &amp; Rechte</span>. Die Anmeldung
+				<span class="text-body-medium-emphasized">E-Mail-Adresse, Rolle und Freischaltung</span>
+				stehen nicht hier, sondern in
+				<span class="text-body-medium-emphasized">Benutzer &amp; Rechte</span>. Die Anmeldung
 				erkennt eine Person an ihrer E-Mail-Adresse, darum wird sie an genau einer Stelle gepflegt.
 			</p>
 		</div>

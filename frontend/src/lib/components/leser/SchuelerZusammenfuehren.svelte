@@ -19,7 +19,7 @@
 	class="mt-8 rounded-xl border border-outline-variant p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
 >
 	<div>
-		<h3 class="text-on-surface font-bold text-base flex items-center gap-2">
+		<h3 class="text-on-surface text-title-medium flex items-center gap-2">
 			<Merge class="w-5 h-5 text-primary" aria-hidden="true" />
 			Doppelter Datensatz?
 		</h3>

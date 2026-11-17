@@ -71,7 +71,7 @@
 	<div class="flex items-start gap-3">
 		<MailWarning size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
 		<div>
-			<p class="text-sm font-semibold">Die Bestellmail ist nicht rausgegangen</p>
+			<p class="text-body-medium-emphasized">Die Bestellmail ist nicht rausgegangen</p>
 			<p class="mt-0.5 text-xs">
 				Letzter Versuch: {formatZeitpunkt(b.mail_gescheitert_am)}. Der Händler hat die Bestellung
 				nicht erhalten.

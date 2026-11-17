@@ -77,7 +77,7 @@
 			<button
 				onclick={() => onSave(aenderung())}
 				aria-label="Änderungen für Lieferant {s.name} speichern"
-				class="text-primary font-bold cursor-pointer text-sm mr-3">Speichern</button
+				class="text-primary cursor-pointer text-label-large mr-3">Speichern</button
 			>
 			<button
 				onclick={onCancel}
@@ -89,12 +89,15 @@
 {:else}
 	<tr>
 		<td>
-			<span class="block max-w-52 truncate font-bold text-on-surface" title={s.name}>{s.name}</span>
+			<span
+				class="block max-w-52 truncate text-on-surface text-body-medium-emphasized"
+				title={s.name}>{s.name}</span
+			>
 			<!-- Nur die Abweichung wird benannt: „Bestellmail" in jeder Zeile wäre
 			     Rauschen. Auffallen soll die eine Zeile, die anders ist. -->
 			{#if s.ist_hauptlieferant}
 				<span
-					class="block text-xs font-semibold text-on-surface"
+					class="block text-body-small-emphasized text-on-surface"
 					data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
 					>Hauptlieferant</span
 				>

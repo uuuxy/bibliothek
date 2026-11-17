@@ -67,7 +67,7 @@
 	<div class="w-full pt-2">
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
 			<!-- „Gebühren & Schäden" heißt der Reiter; die Liste darunter nennt, was sie zählt. -->
-			<h3 class="text-base font-semibold text-on-surface-variant">
+			<h3 class="text-title-medium text-on-surface-variant">
 				Forderungen ({gebuehren.length})
 			</h3>
 			{#if bescheidMoeglich}
@@ -82,10 +82,10 @@
 			{#each gebuehren as f (f.id)}
 				<div class="border-b border-outline-variant py-4 flex items-start justify-between gap-4">
 					<div class="flex flex-col gap-1 min-w-0">
-						<h4 class="font-bold text-on-surface truncate">
+						<h4 class="text-on-surface truncate text-title-medium">
 							{f.titel || f.beschreibung}
 						</h4>
-						<div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+						<div class="flex flex-wrap items-center gap-2 text-body-small-emphasized">
 							<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant"
 								>{euro(f.betrag)}</span
 							>

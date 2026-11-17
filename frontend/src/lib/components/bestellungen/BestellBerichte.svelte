@@ -88,7 +88,7 @@
 		<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
 		<section class="space-y-3">
 			<div class="border-b border-outline-variant pb-3">
-				<h2 class="text-base font-bold text-on-surface">Bestellbericht erstellen</h2>
+				<h2 class="text-title-medium text-on-surface">Bestellbericht erstellen</h2>
 			</div>
 			<div class="divide-y divide-outline-variant">
 				{#each berichtOptionen as opt, _i (_i)}
@@ -100,7 +100,7 @@
 					>
 						<Radio bind:group={typ} value={opt.value} />
 						<div>
-							<div class="font-bold text-sm text-on-surface">{opt.label}</div>
+							<div class="text-body-medium-emphasized text-on-surface">{opt.label}</div>
 							<div class="text-xs text-on-surface-variant">{opt.desc}</div>
 						</div>
 					</label>
@@ -171,7 +171,7 @@
 				target="_blank"
 				rel="noopener"
 				aria-disabled={!canDownload}
-				class="inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-semibold {canDownload
+				class="inline-flex h-9 items-center gap-2 rounded-full px-4 text-label-large {canDownload
 					? 'm3-state bg-primary text-on-primary'
 					: 'pointer-events-none bg-on-surface/12 text-on-surface/38'}"
 			>

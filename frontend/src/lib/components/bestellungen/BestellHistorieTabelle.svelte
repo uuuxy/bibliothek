@@ -62,13 +62,15 @@
 					}}
 					class="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
 				>
-					<td class="font-semibold whitespace-nowrap tabular-nums">
+					<td class="whitespace-nowrap tabular-nums text-body-medium-emphasized">
 						{datum(b.bestelldatum)}
 					</td>
 					<!-- max-w-0 mit w-full: Die Zelle nimmt den Rest der Breite, und der Name kürzt sich
 					     erst, wenn sie nicht reicht. Ganz steht er in der Bestellung, die die Zeile öffnet. -->
 					<td class="w-full max-w-0">
-						<span class="block truncate font-semibold text-on-surface">{b.lieferant_name}</span>
+						<span class="block truncate text-on-surface text-body-medium-emphasized"
+							>{b.lieferant_name}</span
+						>
 						<span class="block truncate text-sm text-on-surface-variant">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
 						</span>
@@ -87,7 +89,7 @@
 						{b.anzahl_exemplare}
 					</td>
 					{#if bestellStore.preiseErfassen}
-						<td class="text-right font-bold whitespace-nowrap tabular-nums">
+						<td class="text-right whitespace-nowrap tabular-nums text-body-medium-emphasized">
 							{euro(b.gesamtbetrag)}
 						</td>
 					{/if}

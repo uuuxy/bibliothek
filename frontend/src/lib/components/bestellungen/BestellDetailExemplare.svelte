@@ -39,7 +39,7 @@
 	<div class="space-y-4">
 		{#each gruppen as g (g.titelId)}
 			<div>
-				<p class="mb-1.5 text-sm font-semibold text-on-surface">
+				<p class="mb-1.5 text-body-medium-emphasized text-on-surface">
 					{g.titel}
 					<span class="ml-1 font-normal text-on-surface-variant">({g.stuecke.length})</span>
 				</p>

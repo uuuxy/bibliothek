@@ -77,7 +77,7 @@
 		<div class="flex items-start gap-3">
 			<PackageSearch class="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
 			<div>
-				<h2 class="text-base font-bold text-on-surface">
+				<h2 class="text-title-medium text-on-surface">
 					Fehlbestand{etikett ? ` — ${etikett}` : ''}
 				</h2>
 				<p class="mt-0.5 text-sm text-on-surface-variant">
@@ -149,7 +149,7 @@
 							     Gekürzt stünde der Rest nur in einer Sprechblase, die ohne Maus nicht erscheint. -->
 							<td class="w-full">
 								<span
-									class="block font-semibold {istGefunden
+									class="block text-body-medium-emphasized {istGefunden
 										? 'text-on-surface-variant line-through'
 										: 'text-on-surface'}">{e.titel}</span
 								>

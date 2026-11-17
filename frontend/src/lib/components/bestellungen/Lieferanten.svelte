@@ -103,7 +103,7 @@
      abgeschnitten, ein Scrollbalken erschien. -->
 <div class="flex flex-col gap-10">
 	<div class="space-y-4 max-w-md">
-		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">
+		<h2 class="text-title-medium text-on-surface border-b border-outline-variant pb-3">
 			Lieferant anlegen
 		</h2>
 		<form onsubmit={speichere} class="space-y-4 text-sm">
@@ -125,7 +125,9 @@
 			     die Bibliothek druckt trotzdem noch einmal. Siehe Migration 066. -->
 			<div class="flex items-start justify-between gap-4 border-t border-outline-variant pt-4">
 				<label for="ist-hauptlieferant" class="cursor-pointer text-sm">
-					<span class="block font-semibold text-on-surface">Hauptlieferant der Schule</span>
+					<span class="block text-on-surface text-body-medium-emphasized"
+						>Hauptlieferant der Schule</span
+					>
 					<span class="mt-0.5 block text-xs text-on-surface-variant">
 						Beim Bestellen vorausgewählt. Bekommt statt der reinen Bestellmail einen Link: wählt
 						darüber große oder kleine Etiketten, beklebt die Bücher selbst und bestätigt damit die
@@ -155,7 +157,7 @@
 	     1072 px in einer 909-px-Zelle, "Bearbeiten" landete bei 1760 px — ausserhalb des
 	     Fensters und damit unerreichbar. Die Spalte war da, nur nicht anklickbar. -->
 	<div class="space-y-4 min-w-0">
-		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">
+		<h2 class="text-title-medium text-on-surface border-b border-outline-variant pb-3">
 			Aktive Lieferanten
 		</h2>
 		{#if ladefehler && !suppliers.length}

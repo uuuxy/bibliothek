@@ -80,7 +80,7 @@
 				oninput={(e) => onZoom(parseInt(/** @type {HTMLInputElement} */ (e.currentTarget).value))}
 				class="accent-primary h-1 bg-secondary-container rounded-lg cursor-pointer flex-1"
 			/>
-			<span class="text-sm font-bold text-primary w-10 text-right">{zoom}%</span>
+			<span class="text-body-medium-emphasized text-primary w-10 text-right">{zoom}%</span>
 		</div>
 	</div>
 </div>

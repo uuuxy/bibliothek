@@ -72,10 +72,11 @@
 	{#if mitKonto}
 		<p>
 			Es entstehen ein Eintrag in der Leserdatei, über den an der Theke Bücher auf diese Person
-			gehen, <span class="font-semibold">und ihr Zugang zu „Mein Portal“</span>. Anmelden wird sie
-			sich mit ihrer Schuladresse und ihrem Mail-Passwort; ein Passwort speichern wir nicht. Eine
-			<span class="font-semibold">Rolle</span> bekommt sie hier nicht, die vergibt der Administrator eigens
-			in Benutzer &amp; Rechte.
+			gehen, <span class="text-body-medium-emphasized">und ihr Zugang zu „Mein Portal“</span>.
+			Anmelden wird sie sich mit ihrer Schuladresse und ihrem Mail-Passwort; ein Passwort speichern
+			wir nicht. Eine
+			<span class="text-body-medium-emphasized">Rolle</span> bekommt sie hier nicht, die vergibt der Administrator
+			eigens in Benutzer &amp; Rechte.
 		</p>
 	{:else}
 		<p>

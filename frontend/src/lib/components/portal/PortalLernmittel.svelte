@@ -58,7 +58,7 @@
 	     Ebene unter Reiter und Abschnitt. -->
 	<div class="pt-2 {gewaehlt ? SEITENBLATT_PLATZ : ''}">
 		{#if ladefehler}
-			<p class="py-4 text-sm font-semibold text-error" role="alert">
+			<p class="py-4 text-body-medium-emphasized text-error" role="alert">
 				Die Klassensätze konnten nicht geladen werden. Bitte die Seite neu laden. Das hier bedeutet
 				NICHT, dass keine zugeordnet sind.
 			</p>

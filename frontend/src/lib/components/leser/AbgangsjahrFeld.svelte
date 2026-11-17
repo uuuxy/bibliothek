@@ -58,7 +58,7 @@
 			max="2100"
 			bind:value={eingabe}
 			aria-label="Abgangsjahr"
-			feld="w-24 text-center font-bold"
+			feld="w-24 text-center"
 		/>
 		<Button
 			variant="secondary"
@@ -82,11 +82,11 @@
 {:else if darfBearbeiten}
 	<button
 		onclick={starte}
-		class="text-base text-on-surface-variant font-semibold hover:underline cursor-pointer"
+		class="text-body-large-emphasized text-on-surface-variant hover:underline cursor-pointer"
 		data-tip="Abgangsjahr bearbeiten"
 	>
 		Abgang {leser.abgaenger_jahr} ✎
 	</button>
 {:else}
-	<p class="text-base text-on-surface-variant font-semibold">Abgang {leser.abgaenger_jahr}</p>
+	<p class="text-body-large-emphasized text-on-surface-variant">Abgang {leser.abgaenger_jahr}</p>
 {/if}

@@ -112,7 +112,7 @@
 		>
 			<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
 			<div>
-				<p class="text-sm font-semibold">
+				<p class="text-body-medium-emphasized">
 					{b.bestaetigt_durch === 'lieferant'
 						? 'Der Lieferant hat die Bestellung bestätigt'
 						: 'Bestätigung in der Bibliothek nachgetragen'}
@@ -131,7 +131,7 @@
 			<div class="flex items-start gap-3">
 				<Clock size={20} class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
 				<div>
-					<p class="text-sm font-semibold text-on-surface">Warten auf den Händler</p>
+					<p class="text-body-medium-emphasized text-on-surface">Warten auf den Händler</p>
 					<p class="mt-0.5 text-xs text-on-surface-variant">{linkSatz}</p>
 				</div>
 			</div>

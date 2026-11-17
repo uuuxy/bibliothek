@@ -29,7 +29,7 @@
 {#if collapsed}
 	<div class="no-print flex shrink-0 flex-col items-center gap-3 p-4">
 		<div
-			class="bg-surface-container-highest text-on-surface-variant flex h-8 w-8 cursor-default items-center justify-center rounded-full text-xs font-bold"
+			class="bg-surface-container-highest text-on-surface-variant flex h-8 w-8 cursor-default items-center justify-center rounded-full text-label-medium"
 			title="{benutzer?.vorname} {benutzer?.nachname} ({rollenName(benutzer?.rolle)})"
 		>
 			{initialen}
@@ -64,7 +64,7 @@
 		</div>
 		{#if benutzer}
 			<div class="flex flex-col">
-				<span class="text-on-surface truncate text-xs font-bold">
+				<span class="text-on-surface truncate text-body-small-emphasized">
 					{benutzer.vorname}
 					{benutzer.nachname}
 				</span>

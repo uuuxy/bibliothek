@@ -58,7 +58,7 @@
 	/>
 
 	{#if buecherFehler}
-		<p class="mt-2 px-1 text-sm font-semibold text-error" role="alert">
+		<p class="mt-2 px-1 text-body-medium-emphasized text-error" role="alert">
 			Die Titelliste konnte nicht geladen werden. Deshalb steht hier nichts; das heißt nicht, dass
 			der Bestand leer ist.
 		</p>
@@ -74,7 +74,7 @@
 
 {#snippet nachlaufend()}
 	<span
-		class="shrink-0 whitespace-nowrap rounded-full bg-on-surface/5 px-3 py-1 text-xs font-bold text-on-surface-variant"
+		class="shrink-0 whitespace-nowrap rounded-full bg-on-surface/5 px-3 py-1 text-label-medium text-on-surface-variant"
 		>{gefilterteTitel.length} Treffer</span
 	>
 {/snippet}
@@ -124,20 +124,20 @@
 				<div class="flex flex-wrap gap-1.5 items-start">
 					{#if book.subject}
 						<span
-							class="px-2.5 py-0.5 bg-primary-container text-on-primary-container text-xs font-black rounded-lg"
+							class="px-2.5 py-0.5 bg-primary-container text-on-primary-container text-label-medium rounded-lg"
 							>{book.subject}</span
 						>
 					{/if}
 					{#if jahrgang}
 						<span
-							class="px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-lg"
+							class="px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-label-medium rounded-lg"
 						>
 							Jg. {jahrgang}
 						</span>
 					{/if}
 				</div>
 				<div>
-					<h3 class="font-bold text-on-surface leading-tight line-clamp-2">
+					<h3 class="text-on-surface leading-tight line-clamp-2 text-title-medium">
 						{book.title}
 					</h3>
 				</div>

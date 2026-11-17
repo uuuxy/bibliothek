@@ -35,23 +35,25 @@
 
 {#if ex.standort}
 	<p class="text-xs text-on-surface-variant">
-		<span class="font-semibold">Standort:</span>
-		<span class="font-semibold text-on-surface">{ex.standort}</span>
+		<span class="text-body-small-emphasized">Standort:</span>
+		<span class="text-on-surface text-body-small-emphasized">{ex.standort}</span>
 	</p>
 {/if}
 {#if notiz || prozent > 0}
 	<p class="text-xs text-on-surface-variant">
-		<span class="font-semibold">Zustand:</span>
+		<span class="text-body-small-emphasized">Zustand:</span>
 		{notiz}
 		{#if prozent > 0}
-			<span class="font-semibold text-on-surface">{notiz ? '· ' : ''}{prozent} % Wertverlust</span>
+			<span class="text-on-surface text-body-small-emphasized"
+				>{notiz ? '· ' : ''}{prozent} % Wertverlust</span
+			>
 		{/if}
 	</p>
 {/if}
 {#if zeigeWert}
 	<p class="text-xs text-on-surface-variant">
-		<span class="font-semibold">Ersatzwert heute:</span>
-		<span class="font-semibold text-on-surface">{formatEuro(ex.ersatzwert ?? 0)}</span>
+		<span class="text-body-small-emphasized">Ersatzwert heute:</span>
+		<span class="text-on-surface text-body-small-emphasized">{formatEuro(ex.ersatzwert ?? 0)}</span>
 	</p>
 {/if}
 <ExemplarEigentum {ex} />

@@ -121,18 +121,18 @@
 			class="rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
 			role="alert"
 		>
-			<p class="font-semibold">{ablage.ladefehler}</p>
+			<p class="text-body-medium-emphasized">{ablage.ladefehler}</p>
 			<button
 				type="button"
 				onclick={() => ablage.laden()}
-				class="mt-1 font-semibold underline underline-offset-2 cursor-pointer"
+				class="mt-1 underline underline-offset-2 cursor-pointer text-body-medium-emphasized"
 			>
 				Erneut versuchen
 			</button>
 		</div>
 	{/if}
 
-	<div class="flex items-center justify-end gap-3 text-sm font-semibold min-h-4">
+	<div class="flex items-center justify-end gap-3 text-body-medium-emphasized min-h-4">
 		{#if ablage.ladekreis}
 			<Ladekreis size="sm" etikett="Ausweis-Design lädt" />
 		{:else if ablage.zustand === 'saving'}

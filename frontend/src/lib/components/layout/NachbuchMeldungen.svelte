@@ -70,7 +70,7 @@
 		</div>
 
 		{#if m.fehler}
-			<p class="mb-3 text-sm font-semibold text-error">{m.fehler}</p>
+			<p class="mb-3 text-body-medium-emphasized text-error">{m.fehler}</p>
 		{/if}
 
 		<!-- Kam die Liste nicht, steht an ihrer Stelle der Grund: „Nichts offen" hieße, es sei

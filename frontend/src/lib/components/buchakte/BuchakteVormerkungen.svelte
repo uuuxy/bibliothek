@@ -58,7 +58,7 @@
 				{#each vormerkungen as v, _i (_i)}
 					<tr>
 						<td class="font-medium">{formatDatum(v.erstellt_am)}</td>
-						<td class="font-semibold text-primary">
+						<td class="text-primary text-body-medium-emphasized">
 							{v.schueler_name || 'Unbekannt'}
 						</td>
 						<td>

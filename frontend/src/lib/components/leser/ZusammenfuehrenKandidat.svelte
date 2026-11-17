@@ -29,11 +29,11 @@
 >
 	<div class="min-w-0 space-y-0.5">
 		{#if etikett}
-			<p class="text-label-small font-semibold text-on-surface-variant">
+			<p class="text-label-small text-on-surface-variant">
 				{etikett}
 			</p>
 		{/if}
-		<p class="text-sm font-semibold text-on-surface">
+		<p class="text-body-medium-emphasized text-on-surface">
 			{kandidat.vorname}
 			{kandidat.nachname}
 			<span class="font-mono font-normal text-on-surface-variant">{kandidat.klasse}</span>
@@ -41,8 +41,9 @@
 		<p class="text-xs text-on-surface-variant flex flex-wrap gap-x-3 gap-y-0.5">
 			<span class="font-mono">{kandidat.barcode_id}</span>
 			{#if kandidat.geburtsdatum}<span>geb. {datum(kandidat.geburtsdatum)}</span>{/if}
-			{#if kandidat.ist_abgaenger}<span class="font-semibold">Abgänger</span>{/if}
-			{#if kandidat.ist_gesperrt}<span class="font-semibold text-error">gesperrt</span>{/if}
+			{#if kandidat.ist_abgaenger}<span class="text-body-small-emphasized">Abgänger</span>{/if}
+			{#if kandidat.ist_gesperrt}<span class="text-error text-body-small-emphasized">gesperrt</span
+				>{/if}
 			{#if offene > 0}<span>{offene} offene {offene === 1 ? 'Ausleihe' : 'Ausleihen'}</span>{/if}
 		</p>
 	</div>

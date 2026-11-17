@@ -13,7 +13,7 @@
 
 {#if istGekappt(anzahl, grenze)}
 	<p class="mr-auto text-sm text-on-surface-variant">
-		Die <strong class="font-semibold">{grenze}</strong> jüngsten Einträge. Ältere Vorgänge sind protokolliert,
-		aber hier nicht sichtbar.
+		Die <strong class="text-body-medium-emphasized">{grenze}</strong> jüngsten Einträge. Ältere Vorgänge
+		sind protokolliert, aber hier nicht sichtbar.
 	</p>
 {/if}

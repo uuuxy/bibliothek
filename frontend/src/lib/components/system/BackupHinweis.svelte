@@ -42,7 +42,7 @@
 			aria-hidden="true"
 		/>
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-on-surface">{backupStatus.message}</p>
+			<p class="text-body-medium-emphasized text-on-surface">{backupStatus.message}</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">{backupStatus.hint}</p>
 		</div>
 		<Button

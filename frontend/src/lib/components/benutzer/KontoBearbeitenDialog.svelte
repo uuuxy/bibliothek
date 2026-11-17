@@ -99,7 +99,7 @@
 				/>
 				<label
 					for="benutzer-aktiv"
-					class="cursor-pointer text-sm font-bold text-on-surface-variant"
+					class="cursor-pointer text-body-medium-emphasized text-on-surface-variant"
 				>
 					Benutzerkonto ist aktiv
 				</label>

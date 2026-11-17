@@ -95,7 +95,7 @@
 
 			<div class="space-y-4">
 				<fieldset class="space-y-2">
-					<legend class="text-sm font-semibold text-on-surface">Was ist passiert?</legend>
+					<legend class="text-title-small text-on-surface">Was ist passiert?</legend>
 					<Radio
 						bind:group={art}
 						value="nicht_zurueckgegeben"

@@ -52,7 +52,7 @@
 
 <div>
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-base font-semibold text-on-surface-variant">
+		<h3 class="text-title-medium text-on-surface-variant">
 			Erwartete Positionen ({anzahlText(totalItems, 'Exemplar', 'Exemplare')})
 		</h3>
 		{#if incomingShipments.length > 0}
@@ -88,10 +88,10 @@
 					role="status"
 					class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-outline-variant bg-surface/80 px-6 py-3 backdrop-blur-sm"
 				>
-					<div class="font-bold text-on-surface">{group.supplierName}</div>
+					<div class="text-on-surface text-body-large-emphasized">{group.supplierName}</div>
 					<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
 						<BestellStandChip bestellung={group} />
-						<div class="text-xs font-semibold text-on-surface-variant">
+						<div class="text-body-small-emphasized text-on-surface-variant">
 							Bestellt am {group.date}
 						</div>
 					</div>
@@ -118,7 +118,7 @@
 										groesse="gross"
 									/>
 								</td>
-								<td class="font-semibold">{item.titel}</td>
+								<td class="text-body-medium-emphasized">{item.titel}</td>
 								<td class="text-right">
 									<span
 										class="inline-flex h-14 min-w-14 items-center justify-center rounded-xl bg-primary-container px-2 text-3xl font-extrabold text-on-primary-container"

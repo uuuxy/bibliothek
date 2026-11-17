@@ -72,7 +72,7 @@
 		<Ladekreis size="md" />
 	</div>
 {:else if fehler}
-	<h3 class="text-base font-semibold text-on-surface-variant">Überfällige Ausleihen</h3>
+	<h3 class="text-title-medium text-on-surface-variant">Überfällige Ausleihen</h3>
 	<div class="flex-1 flex justify-center items-center">
 		<LadeFehler knapp titel="Überfällige Ausleihen nicht geladen" />
 	</div>
@@ -83,7 +83,7 @@
 	     Layout: vertikal gestapelt, weil das Widget in der schmalen 1/3-Spalte der
 	     Bento-Reihe sitzt — nebeneinander bräche es dort um. -->
 	<div class="h-full flex flex-col">
-		<h3 class="text-base font-semibold text-on-surface-variant">Überfällige Ausleihen</h3>
+		<h3 class="text-title-medium text-on-surface-variant">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
 			<span class="text-4xl font-light text-on-surface tabular-nums leading-none"
 				>{formatZahl(uebersicht.total_overdue)}</span
@@ -109,7 +109,9 @@
 							<span class="text-xs font-medium text-on-surface-variant truncate"
 								>{bucket.label}</span
 							>
-							<span class="text-sm font-semibold tabular-nums text-on-surface">{bucket.count}</span>
+							<span class="text-body-medium-emphasized tabular-nums text-on-surface"
+								>{bucket.count}</span
+							>
 						</div>
 						<!-- Grau; nur die längst-überfällige Gruppe steht in der Warnrolle. -->
 						<div class="h-1.5 w-full rounded-full bg-surface-container-highest overflow-hidden">
@@ -132,7 +134,7 @@
 			<button
 				type="button"
 				onclick={() => (uiStore.activeTab = 'mahnwesen')}
-				class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-sm font-semibold text-primary cursor-pointer"
+				class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-label-large text-primary cursor-pointer"
 			>
 				Im Mahnwesen bearbeiten
 				<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />

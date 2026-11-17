@@ -73,8 +73,7 @@
 			{/if}
 			{#if frage.auswahl}
 				<fieldset class="space-y-2">
-					<legend class="text-sm font-semibold text-on-surface">{frage.auswahl.beschriftung}</legend
-					>
+					<legend class="text-title-small text-on-surface">{frage.auswahl.beschriftung}</legend>
 					<div class="flex flex-col gap-1">
 						{#each frage.auswahl.optionen as option (option.wert)}
 							<Radio bind:group={grund} value={option.wert} etikett={option.text} />

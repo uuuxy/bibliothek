@@ -40,7 +40,7 @@
 
 <!-- data-chip: Marker für das Typo-Gate — Chips dürfen 12 px (dense), Zellen-Text nicht. -->
 <span
-	class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-semibold whitespace-nowrap {kuerzen
+	class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-label-medium whitespace-nowrap {kuerzen
 		? 'min-w-0'
 		: 'shrink-0'} {toene[ton]}"
 	data-chip

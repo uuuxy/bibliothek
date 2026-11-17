@@ -47,7 +47,7 @@
 	<button
 		type="button"
 		onclick={() => oeffneAkte(id)}
-		class="font-semibold text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
+		class="text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-large-emphasized"
 		aria-label="Akte von {name} öffnen"
 	>
 		{name || '(Angaben getilgt)'}
@@ -69,7 +69,7 @@
 	<div class="flex justify-center py-10"><Ladekreis etikett="Schadensersatz lädt" /></div>
 {:else if leer}
 	<div class="rounded-xl border border-outline-variant py-10 text-center">
-		<p class="font-semibold text-on-surface">Keine offenen Schadensersatz-Fälle</p>
+		<p class="text-on-surface text-body-large-emphasized">Keine offenen Schadensersatz-Fälle</p>
 		<p class="mt-1 text-sm text-on-surface-variant">
 			Ein Fall beginnt in der Leserakte mit „Verlust/Schaden melden" an der Ausleihzeile. Er steht
 			dann hier, bis der Bescheid erstellt, die Frist abgelaufen und der Fall übergeben ist.
@@ -135,7 +135,7 @@
 								{#if b.schueler_id}
 									{@render schueler(b.schueler_id, b.schueler_name, b.klasse)}
 								{:else}
-									<span class="font-semibold text-on-surface">(Angaben getilgt)</span>
+									<span class="text-on-surface text-body-medium-emphasized">(Angaben getilgt)</span>
 								{/if}
 								<span class="block text-sm text-on-surface-variant">
 									{b.anzahl_positionen}

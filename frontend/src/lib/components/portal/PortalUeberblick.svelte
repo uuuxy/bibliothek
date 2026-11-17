@@ -40,7 +40,7 @@
 		</p>
 	{:else}
 		{#if offene.length > 0}
-			<h2 class="text-base font-semibold text-on-surface">Deine Reservierungen</h2>
+			<h2 class="text-title-medium text-on-surface">Deine Reservierungen</h2>
 			<ul class="divide-y divide-outline-variant">
 				{#each offene as r (r.id)}
 					<li class="flex items-center justify-between gap-4 py-2.5 text-sm">
@@ -59,7 +59,7 @@
 			</p>
 		{/if}
 		{#if bereitgestellte.length > 0}
-			<h2 class="text-base font-semibold text-on-surface">Bereitgestellt</h2>
+			<h2 class="text-title-medium text-on-surface">Bereitgestellt</h2>
 			<ul class="divide-y divide-outline-variant">
 				{#each bereitgestellte as r (r.id)}
 					<li class="flex items-start justify-between gap-4 py-2.5 text-sm">
@@ -75,7 +75,7 @@
 							{/if}
 						</div>
 						<span
-							class="shrink-0 inline-flex items-center rounded-full bg-secondary-container px-2 py-0.5 text-label-small font-semibold text-on-secondary-container"
+							class="shrink-0 inline-flex items-center rounded-full bg-secondary-container px-2 py-0.5 text-label-small text-on-secondary-container"
 						>
 							bereit{r.erledigt_am ? ` · ${r.erledigt_am}` : ''}
 						</span>

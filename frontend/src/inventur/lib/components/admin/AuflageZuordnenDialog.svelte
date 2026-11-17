@@ -102,7 +102,7 @@
 					autofokus
 				/>
 				{#if s.fehler}
-					<p role="alert" class="text-xs font-bold text-error">{s.fehler}</p>
+					<p role="alert" class="text-body-small-emphasized text-error">{s.fehler}</p>
 				{:else if s.treffer.length > 0}
 					<ul
 						class="max-h-72 divide-y divide-outline-variant/40 overflow-y-auto rounded-xl border border-outline-variant"
@@ -165,7 +165,7 @@
 				class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 			>
 				<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-				<p class="text-xs font-bold leading-tight">{fehler}</p>
+				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}
 	</div>

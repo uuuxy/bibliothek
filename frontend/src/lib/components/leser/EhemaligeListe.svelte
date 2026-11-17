@@ -111,7 +111,7 @@
 		>
 			<Archive class="h-8 w-8" aria-hidden="true" />
 		</div>
-		<h3 class="font-bold text-on-surface">
+		<h3 class="text-on-surface text-title-medium">
 			{suche.trim() ? 'Keine Ehemaligen gefunden' : 'Keine Ehemaligen im Archiv'}
 		</h3>
 	</div>

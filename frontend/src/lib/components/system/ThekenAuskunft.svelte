@@ -50,7 +50,7 @@
 
 <div class="w-full max-w-3xl space-y-6 animate-fade-in no-print">
 	<div class="space-y-1">
-		<h2 class="text-base font-semibold text-on-surface">Wem gehörte dieses Buch?</h2>
+		<h2 class="text-title-medium text-on-surface">Wem gehörte dieses Buch?</h2>
 		<p class="text-sm text-on-surface-variant">
 			Schlägt zu einem Buch-Barcode die protokollierte Ausleihhistorie nach, auch für längst
 			gelöschte Exemplare. Jeder Abruf steht im Verwaltungsprotokoll.
@@ -87,8 +87,8 @@
 			<div
 				class="rounded-xl border border-dashed border-outline-variant p-8 text-center text-sm text-on-surface-variant"
 			>
-				Zum Barcode <span class="font-mono font-semibold">{auskunft.barcode}</span> gibt es weder ein
-				Exemplar noch eine Spur im Protokoll. Er war nie vergeben oder liegt vor der Aufbewahrungsfrist.
+				Zum Barcode <span class="font-mono text-body-medium-emphasized">{auskunft.barcode}</span> gibt
+				es weder ein Exemplar noch eine Spur im Protokoll. Er war nie vergeben oder liegt vor der Aufbewahrungsfrist.
 			</div>
 		{:else}
 			<div class="space-y-2">

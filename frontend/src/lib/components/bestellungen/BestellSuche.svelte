@@ -100,7 +100,7 @@
 						>
 							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />
 							<div class="min-w-0 flex-1">
-								<div class="font-bold text-on-surface truncate">{b.titel}</div>
+								<div class="text-on-surface truncate text-body-large-emphasized">{b.titel}</div>
 								<div class="text-sm text-on-surface-variant truncate">{b.autor} · {b.isbn}</div>
 							</div>
 							<span class="shrink-0 text-label-small text-on-surface-variant">
@@ -131,7 +131,7 @@
 						>
 							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />
 							<div class="min-w-0 flex-1">
-								<div class="font-bold text-on-surface truncate">{b.titel}</div>
+								<div class="text-on-surface truncate text-body-large-emphasized">{b.titel}</div>
 								<div class="text-sm text-on-surface-variant truncate">{b.autor} · {b.isbn}</div>
 							</div>
 							<span class="shrink-0 text-label-small text-on-surface-variant">

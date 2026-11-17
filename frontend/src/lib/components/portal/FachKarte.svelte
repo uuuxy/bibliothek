@@ -49,7 +49,7 @@
 				aria-hidden="true"
 			/>
 			<span
-				class="inline-flex min-w-26 shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-xs font-semibold tabular-nums text-on-secondary-container"
+				class="inline-flex min-w-26 shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-label-medium tabular-nums text-on-secondary-container"
 				>{anzahlText(fach.gesamt, 'Exemplar', 'Exemplare')}</span
 			>
 			<span class="truncate text-base font-medium text-on-surface">{name}</span>
@@ -64,7 +64,7 @@
 			href={exportUrl}
 			download
 			data-tip="{name}: Bestandsliste als PDF, mit Buchbildern"
-			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold text-on-surface-variant hover:bg-surface-container"
+			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-label-large text-on-surface-variant hover:bg-surface-container"
 		>
 			<Download size={18} aria-hidden="true" />
 			Als PDF

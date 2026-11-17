@@ -13,10 +13,8 @@
 	 *
 	 * Zwei M3-Maße, im Browser gemessen und nicht aus dem Klassennamen gelesen:
 	 *
-	 *   Label-Gewicht: M3 gibt dem Reiter `title-small`, dessen Gewicht ist `weight-medium`
-	 *   = 500. Die Klasse `font-medium` zeigt in diesem Haus aber auf 400, theme-mass.css
-	 *   biegt die Skala um (medium→400, semibold/bold→500). Wer hier 500 will, schreibt
-	 *   `font-semibold`.
+	 *   Label: M3 gibt dem Reiter `title-small` (14/20 px, Gewicht 500, Laufweite 0,1 px);
+	 *   die Klasse `text-title-small` aus theme-mass.css trägt alle vier Werte.
 	 *
 	 *   Indikator: primary-navigation-tab hat 3 px und `shape (3px 3px 0 0)`,
 	 *   secondary-navigation-tab 2 px ohne shape.
@@ -57,7 +55,7 @@
 			aria-selected={gewaehlt}
 			aria-controls={r.steuert}
 			onclick={() => onwahl(r.id)}
-			class="relative shrink-0 cursor-pointer text-sm font-semibold whitespace-nowrap transition-colors {sekundaer
+			class="relative shrink-0 cursor-pointer text-title-small whitespace-nowrap transition-colors {sekundaer
 				? 'pb-2.5'
 				: 'pb-3'} {gewaehlt
 				? sekundaer

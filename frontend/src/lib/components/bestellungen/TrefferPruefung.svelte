@@ -113,7 +113,7 @@
 			klasse="shrink-0"
 		/>
 		<div class="min-w-0">
-			<div class="font-bold text-on-surface text-sm truncate">{treffer.titel}</div>
+			<div class="text-on-surface text-body-medium-emphasized truncate">{treffer.titel}</div>
 			<div class="text-xs text-on-surface-variant truncate">{treffer.autor}</div>
 		</div>
 	</div>
@@ -162,7 +162,7 @@
 				type="number"
 				min="1"
 				bind:value={menge}
-				feld="w-16 text-center font-bold"
+				feld="w-16 text-center"
 			/>
 		</div>
 		<Kaestchen bind:checked={generateBarcodes} etikett="Barcodes generieren" />

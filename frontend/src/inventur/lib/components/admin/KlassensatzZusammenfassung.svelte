@@ -20,7 +20,7 @@
 	class="px-4 sm:px-6 py-4 sm:py-6 border-b border-outline-variant flex items-center justify-between"
 >
 	<h3 class="text-xl text-on-surface">Auswahl</h3>
-	<div class="bg-surface-container-high px-3 py-1.5 rounded-full text-sm font-bold text-on-surface">
+	<div class="bg-surface-container-high px-3 py-1.5 rounded-full text-label-large text-on-surface">
 		{gewaehlteKennungen.size}
 	</div>
 </div>

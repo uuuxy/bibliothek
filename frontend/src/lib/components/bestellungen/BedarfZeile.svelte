@@ -29,7 +29,7 @@
 	</CoverVorschau>
 
 	<div class="min-w-0 flex-1">
-		<h4 class="font-semibold text-on-surface text-sm truncate leading-snug">{r.titel}</h4>
+		<h4 class="text-on-surface text-title-small truncate leading-snug">{r.titel}</h4>
 		<p class="text-xs text-on-surface-variant truncate">
 			{#if r.isbn}<span class="font-mono">{r.isbn}</span>{/if}
 			{#if r.verlag}<span class="mx-1.5">·</span>{r.verlag}{/if}
@@ -45,7 +45,7 @@
 	<!-- Material 3, Lists: „Use trailing text for supplemental details, like a price, count, or
 	     date". Bestand gegen Bedarf; was fehlt, legt das Plus in den Warenkorb. -->
 	<div
-		class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums text-on-surface-variant"
+		class="text-right shrink-0 leading-tight text-body-medium-emphasized tabular-nums text-on-surface-variant"
 		title="Bestand / Bedarf im nächsten Schuljahr"
 	>
 		{r.gesamt_bestand}<span class="font-medium">/</span>{r.bedarf}

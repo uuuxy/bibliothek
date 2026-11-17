@@ -34,7 +34,9 @@
 					</div>
 					{#if i === coverIndex}
 						<div class="text-center max-w-32">
-							<p class="text-sm font-bold leading-tight text-on-surface truncate">{book.titel}</p>
+							<p class="text-body-medium-emphasized leading-tight text-on-surface truncate">
+								{book.titel}
+							</p>
 							{#if book.autor}
 								<p class="text-xs text-on-surface-variant truncate">{book.autor}</p>
 							{/if}

@@ -86,7 +86,9 @@
 
 	<div class="px-6 py-6 text-on-surface-variant space-y-4">
 		<p class="text-sm font-medium leading-relaxed">
-			<span class="font-bold text-on-surface">{leser?.vorname} {leser?.nachname}</span>
+			<span class="text-on-surface text-body-medium-emphasized"
+				>{leser?.vorname} {leser?.nachname}</span
+			>
 			{gesperrt
 				? 'kann danach wieder ausleihen.'
 				: 'kann danach nichts ausleihen, bis die Sperre aufgehoben ist.'}
@@ -109,7 +111,7 @@
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
 				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-				<p class="text-xs font-bold leading-tight">{fehler}</p>
+				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}
 	</div>

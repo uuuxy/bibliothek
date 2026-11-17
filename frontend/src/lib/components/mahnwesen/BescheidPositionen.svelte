@@ -41,7 +41,7 @@
 {#each gruppen as g (g.art)}
 	{#if g.items.length > 0}
 		<section class="space-y-2">
-			<h3 class="text-xs font-semibold text-on-surface">{g.titel}</h3>
+			<h3 class="text-label-medium text-on-surface">{g.titel}</h3>
 			{#each g.items as p (p.key)}
 				{@const ungueltig = gewaehlt[p.key] && !betragGueltig(betraege[p.key])}
 				<div class="flex items-start gap-3 border-b border-outline-variant py-2 last:border-0">
@@ -54,7 +54,7 @@
 						/>
 					</div>
 					<div class="min-w-0 flex-1">
-						<div class="truncate text-sm font-semibold text-on-surface">{p.titel}</div>
+						<div class="truncate text-body-medium-emphasized text-on-surface">{p.titel}</div>
 						<div class="text-xs text-on-surface-variant">
 							{p.isbn || 'ohne ISBN'} · {p.herleitung}
 						</div>

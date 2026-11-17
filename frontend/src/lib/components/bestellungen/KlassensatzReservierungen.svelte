@@ -156,7 +156,7 @@
 
 <div class="space-y-6">
 	<div>
-		<h2 class="text-base font-bold text-on-surface">Klassensatz-Reservierungen</h2>
+		<h2 class="text-title-medium text-on-surface">Klassensatz-Reservierungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
 			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
 			Reservieren sperrt keinen Bestand. „Abschließen" schließt den Vorgang nach der Übergabe ab und

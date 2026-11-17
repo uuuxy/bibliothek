@@ -66,7 +66,7 @@
 					onclick={() => onDruckArt(/** @type {'card'|'etikett'} */ (modus.value))}
 					aria-pressed={druckArt === modus.value}
 					disabled={gesperrt}
-					class="cursor-pointer rounded-lg px-3 py-1.5 font-bold transition-all disabled:cursor-not-allowed disabled:text-on-surface/38 {druckArt ===
+					class="cursor-pointer rounded-lg px-3 py-1.5 transition-all disabled:cursor-not-allowed disabled:text-on-surface/38 text-label-large {druckArt ===
 					modus.value
 						? 'bg-surface text-on-surface shadow-xs'
 						: 'text-on-surface-variant hover:text-on-surface'}">{modus.label}</button

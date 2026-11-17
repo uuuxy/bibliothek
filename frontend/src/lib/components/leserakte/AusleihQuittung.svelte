@@ -30,23 +30,21 @@
 		</div>
 		<div class="text-right">
 			<p class="text-sm text-on-surface-variant">Datum</p>
-			<p class="font-bold">{formatDatum(new Date())}</p>
+			<p class="text-body-large-emphasized">{formatDatum(new Date())}</p>
 		</div>
 	</div>
 
 	<div class="mb-4">
-		<h3 class="text-base font-semibold mb-2 border-b border-outline-variant pb-2">
-			Offene Ausleihen
-		</h3>
+		<h3 class="text-title-medium mb-2 border-b border-outline-variant pb-2">Offene Ausleihen</h3>
 		{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}
 			<table class="w-full text-left text-sm border-collapse">
 				<thead>
 					<tr class="border-b border-outline-variant">
-						<th class="py-2 px-2 font-semibold w-12">Cover</th>
-						<th class="py-2 px-2 font-semibold">Titel</th>
-						<th class="py-2 px-2 font-semibold text-center">Barcode/Signatur</th>
-						<th class="py-2 px-2 font-semibold text-center">Ausgeliehen am</th>
-						<th class="py-2 px-2 font-semibold text-right">Rückgabe bis</th>
+						<th class="py-2 px-2 w-12 text-title-small">Cover</th>
+						<th class="py-2 px-2 text-title-small">Titel</th>
+						<th class="py-2 px-2 text-center text-title-small">Barcode/Signatur</th>
+						<th class="py-2 px-2 text-center text-title-small">Ausgeliehen am</th>
+						<th class="py-2 px-2 text-right text-title-small">Rückgabe bis</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-outline-variant">
@@ -61,14 +59,16 @@
 								/>
 							</td>
 							<td class="py-3 px-2">
-								<div class="font-bold">{book.titel}</div>
+								<div class="text-body-medium-emphasized">{book.titel}</div>
 								<div class="text-xs text-on-surface-variant">{book.autor}</div>
 							</td>
 							<td class="py-3 px-2 text-center font-mono text-xs">{book.barcode_id || '–'}</td>
 							<td class="py-3 px-2 text-center">{formatDate(book.ausgeliehen_am)}</td>
 							<!-- Eine Dauerleihe hat keine Frist, wie in der Leserakte. -->
 							<td
-								class="py-3 px-2 text-right font-bold {istUeberfaellig(book) ? 'text-error' : ''}"
+								class="py-3 px-2 text-right text-body-medium-emphasized {istUeberfaellig(book)
+									? 'text-error'
+									: ''}"
 							>
 								{book.ist_dauerleihe ? 'ohne Frist' : formatDate(book.rueckgabe_frist)}
 							</td>

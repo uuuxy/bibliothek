@@ -108,7 +108,7 @@
 							     Kennzeichen, ragt es nicht in die Spalte daneben. -->
 							<div class="flex min-w-0 items-center gap-3 overflow-hidden">
 								<span
-									class="min-w-0 truncate font-semibold"
+									class="min-w-0 truncate text-body-medium-emphasized"
 									data-tip={[book.titel, book.autor, book.barcode_id].filter(Boolean).join(' · ')}
 								>
 									{book.titel}

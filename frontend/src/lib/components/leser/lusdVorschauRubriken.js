@@ -73,12 +73,12 @@ export function dateiZahlen(r) {
 	if (r.skipped_no_id > 0)
 		teile.push({
 			text: `${anzahlText(r.skipped_no_id, 'Zeile ohne LUSD-ID wird', 'Zeilen ohne LUSD-ID werden')} übersprungen`,
-			ton: 'text-warning font-semibold'
+			ton: 'text-warning text-body-small-emphasized'
 		});
 	if (r.dubletten_in_datei > 0)
 		teile.push({
 			text: `${anzahlText(r.dubletten_in_datei, 'doppelte Zeile', 'doppelte Zeilen')} zusammengelegt (letzte gewinnt)`,
-			ton: 'font-semibold'
+			ton: 'text-body-small-emphasized'
 		});
 	return teile;
 }

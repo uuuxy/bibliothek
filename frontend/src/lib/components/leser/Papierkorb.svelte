@@ -44,7 +44,7 @@
 
 <div class="w-full border-l-4 border-l-error">
 	<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
-		<h3 class="text-base font-bold text-error flex items-center gap-2">
+		<h3 class="text-title-medium text-error flex items-center gap-2">
 			<Trash class="h-5 w-5" aria-hidden="true" />
 			Gelöschte Leser (Papierkorb)
 		</h3>
@@ -59,10 +59,12 @@
 		     falsche Auskunft über gelöschte Schülerdaten. -->
 		<div class="py-16 flex flex-col items-center justify-center space-y-2 px-6 text-center">
 			<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
-			<span role="alert" class="text-sm font-semibold text-error">{papierkorb.ladefehler}</span>
+			<span role="alert" class="text-body-medium-emphasized text-error"
+				>{papierkorb.ladefehler}</span
+			>
 			<button
 				onclick={() => papierkorb.laden()}
-				class="text-sm font-semibold text-primary underline cursor-pointer"
+				class="text-body-medium-emphasized text-primary underline cursor-pointer"
 			>
 				Erneut versuchen
 			</button>
@@ -79,7 +81,7 @@
 		{/if}
 		<div class="overflow-x-auto w-full text-left">
 			<Tabelle beschriftung="Papierkorb">
-				<thead class="font-semibold">
+				<thead class="text-title-small">
 					<tr>
 						<th>Name</th>
 						<th class="w-24">Klasse</th>
@@ -90,7 +92,7 @@
 				<tbody>
 					{#each papierkorb.liste as s, _i (_i)}
 						<tr>
-							<td class="font-semibold">
+							<td class="text-body-medium-emphasized">
 								{s.vorname}
 								{s.nachname}
 								<div class="text-sm font-mono text-on-surface-variant font-normal mt-0.5">
@@ -116,7 +118,7 @@
 										     und ein Knopf, der nur scheitern kann, ist keine Aktion,
 										     sondern eine Falle. -->
 										<span
-											class="inline-flex items-center gap-1.5 rounded-lg bg-surface-container px-2 py-1 text-xs font-semibold text-on-surface-variant"
+											class="inline-flex items-center gap-1.5 rounded-lg bg-surface-container px-2 py-1 text-label-medium text-on-surface-variant"
 											title="Spätestens nach 180 Tagen im Papierkorb tilgt der nächtliche DSGVO-Lauf Name, Adresse und Geburtsdatum. Diese Zeile lässt sich nicht mehr wiederherstellen."
 										>
 											<ShieldOff class="h-4 w-4" aria-hidden="true" />

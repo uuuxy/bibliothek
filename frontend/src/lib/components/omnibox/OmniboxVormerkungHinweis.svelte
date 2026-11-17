@@ -25,12 +25,16 @@
 			<div class="text-6xl mb-4">🚨</div>
 			<h2 id="omnibox-vormerkung-titel" class="text-2xl text-error mb-2">Achtung! Vorgemerkt!</h2>
 			<p class="text-on-surface-variant mb-2">Dieses Medium wurde reserviert</p>
-			<p class="font-bold text-on-surface mb-6">Achtung: Exemplar nicht ins Regal stellen!</p>
+			<p class="text-on-surface mb-6 text-body-large-emphasized">
+				Achtung: Exemplar nicht ins Regal stellen!
+			</p>
 			{#if omniboxStore.vormerkungHinweis.titel}
 				<p class="text-sm text-on-surface-variant mb-2">„{omniboxStore.vormerkungHinweis.titel}"</p>
 			{/if}
 			{#if omniboxStore.vormerkungHinweis.user}
-				<p class="font-bold bg-error-container text-on-error-container py-3 px-4 rounded-xl mb-6">
+				<p
+					class="bg-error-container text-on-error-container py-3 px-4 rounded-xl mb-6 text-body-large-emphasized"
+				>
 					Vorgemerkt für: {omniboxStore.vormerkungHinweis.user}
 				</p>
 			{/if}

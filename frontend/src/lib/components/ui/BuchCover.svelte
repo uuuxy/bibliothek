@@ -5,8 +5,8 @@
 	 *  denn ohne Bild ist der Platzhalter die einzige Stelle, an der der Titel sichtbar steht. */
 	export const PLATZHALTER = {
 		flaeche: 'bg-surface-container-highest p-5',
-		fach: 'text-xs font-extrabold wrap-break-word text-on-surface-variant',
-		titel: 'mt-1.5 text-sm leading-snug font-extrabold wrap-break-word text-on-surface'
+		fach: 'text-label-medium wrap-break-word text-on-surface-variant',
+		titel: 'mt-1.5 text-title-small leading-snug wrap-break-word text-on-surface'
 	};
 </script>
 
@@ -139,7 +139,7 @@
 	<div
 		class="{MASSE[
 			groesse
-		]} bg-surface-container-highest text-on-surface-variant flex aspect-2/3 shrink-0 items-center justify-center text-sm font-semibold uppercase {klasse}"
+		]} bg-surface-container-highest text-on-surface-variant flex aspect-2/3 shrink-0 items-center justify-center text-body-medium-emphasized uppercase {klasse}"
 		aria-hidden="true"
 	>
 		{(titel || '?').charAt(0)}

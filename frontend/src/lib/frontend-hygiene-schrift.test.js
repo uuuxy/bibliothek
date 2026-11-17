@@ -22,11 +22,14 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // einer .css-Datei oder im style-Attribut sieht er nicht.
 //
 // Rot bewiesen am 23.09.2026 gegen den Bestand vor der Umstellung (12 Fundstellen).
-const ROLLE = /\btext-(?:display|headline|title|body|label)-(?:small|medium|large)\b/g;
+const ROLLE =
+	/\btext-(?:display|headline|title|body|label)-(?:small|medium|large)(?:-emphasized)?\b/g;
 
 function bekannteRollen() {
 	const theme = readFileSync(join(srcRoot, 'styles', 'theme-mass.css'), 'utf8');
-	const namen = [...theme.matchAll(/--text-([a-z]+-(?:small|medium|large)):/g)].map((m) => m[1]);
+	const namen = [...theme.matchAll(/--text-([a-z]+-(?:small|medium|large)(?:-emphasized)?):/g)].map(
+		(m) => m[1]
+	);
 	return new Set(namen.map((n) => `text-${n}`));
 }
 
@@ -55,7 +58,7 @@ describe('Schriftrollen nur aus der Skala', () => {
 			'Diese Schriftrolle gibt es nicht und wirkt nicht. Die Skala: text-xs = body-small, ' +
 				'text-sm = body-medium, text-base = body-large, text-lg = title-large, ' +
 				'text-xl = headline-small, dazu text-label-small (CLAUDE.md). Überschriften wie ' +
-				'ui/Abschnitt (text-base font-semibold), Knopftext wie ui/Button (text-sm font-semibold).'
+				'ui/Abschnitt (text-title-medium), Knopftext wie ui/Button (text-label-large).'
 		).toEqual([]);
 	});
 });
@@ -116,7 +119,7 @@ describe('Beschriftung und Hinweiszeile in body-medium', () => {
 // Googles Skala gibt Überschriften (title-medium, 16 px) und der kleinsten Beschriftung
 // (label-small, 11 px) das Gewicht Medium: „textAppearanceTitleMedium | Medium 16sp“,
 // „textAppearanceLabelSmall | Medium 11sp“ (material-components-android, Typography.md). In
-// diesem Haus zeigt font-medium auf 400 (theme-mass.css); Medium heißt font-semibold. Die Rolle
+// diesem Haus zeigt font-medium auf 400 (theme-mass.css); Medium tragen die Rollen. Die Rolle
 // label-small trägt ihr Gewicht selbst.
 //
 // Sieht nicht: Überschriften, deren Größe nicht text-base heißt, und Klassen aus Variablen.
@@ -139,7 +142,7 @@ describe('Überschrift und kleinste Beschriftung in Medium', () => {
 	it('keine Überschrift in 16 px mit 400', () => {
 		expect(
 			funde(UEBERSCHRIFT_REGULAR, UEBERSCHRIFT_REGULAR_VORN),
-			'Überschrift text-base mit font-medium (= 400) — font-semibold (= 500, M3 Medium)'
+			'Überschrift text-base mit font-medium (= 400) — die Rolle text-title-medium (500, M3 Medium)'
 		).toEqual([]);
 	});
 
@@ -184,7 +187,7 @@ describe('Titel ab 22 px in der Grundform', () => {
 			);
 		expect(
 			funde.filter((f) => f !== REDAKTIONELL),
-			'Titel ab 22 px ohne Gewicht (400) wie .dialog-titel; ein Abschnitt darunter text-base font-semibold'
+			'Titel ab 22 px ohne Gewicht (400) wie .dialog-titel; ein Abschnitt darunter text-title-medium'
 		).toEqual([]);
 		expect(
 			funde.filter((f) => f === REDAKTIONELL),
@@ -199,5 +202,61 @@ describe('Titel ab 22 px in der Grundform', () => {
 		expect(z('<h3\n\tclass="text-xl font-black">')).toBe(1);
 		expect(z('<h3 class="text-base font-semibold">')).toBe(0);
 		expect(z('<h2 class="text-lg text-on-surface">')).toBe(0);
+	});
+});
+
+// Gewicht 500 bei 12, 14 und 16 px nur über die Rolle. Google gibt jeder Rolle mit 500 eine eigene
+// Laufweite: title-medium 0,15 px, label-large und title-small 0,1 px, label-medium 0,5 px
+// (material-web, tokens/versions/v0_192/_md-sys-typescale.scss); betonter Inhalt nimmt
+// body-large-emphasized (0,15 px), body-medium-emphasized (0,25 px) und body-small-emphasized
+// (0,4 px) (material-components-android, typography/res/values/styles.xml). Welche Rolle gilt,
+// hängt an der Aufgabe, nicht an der Größe; `text-base font-semibold` trüge 0,5 px. Ein Gewicht
+// steht deshalb nur neben einer Größe ab 22 px oder einer frei gesetzten (`text-[6.5pt]` im
+// Ausweis-Designer).
+//
+// Sieht nicht: Klassenlisten über mehrere Zeilen und Gewichte, die per style oder CSS kommen.
+const GEWICHT = /\bfont-(?:semibold|bold|extrabold|black)\b/;
+const KLASSENLISTE =
+	/(["'`])((?:(?!\1)[^\n])*?\bfont-(?:semibold|bold|extrabold|black)\b(?:(?!\1)[^\n])*)\1/g;
+const GROSS = /(?:^|\s)text-(?:lg|[2-9]?xl|\[[^\]]+\])(?=\s|$)/;
+const DIREKTIVE = /\bclass:[a-z0-9:-]*font-(?:semibold|bold|extrabold|black)\b/g;
+
+/** @param {string} quelle @returns {string[]} */
+function gewichtOhneRolle(quelle) {
+	const funde = [...quelle.matchAll(KLASSENLISTE)]
+		.map((m) => m[2])
+		.filter((liste) => GEWICHT.test(liste) && !GROSS.test(liste));
+	return [...funde, ...[...quelle.matchAll(DIREKTIVE)].map((m) => m[0])];
+}
+
+describe('Gewicht 500 bei 12, 14 und 16 px nur über die Rolle', () => {
+	it('keine Klassenliste setzt das Gewicht neben einer kleinen oder geerbten Größe', () => {
+		const funde = sammleQuelldateien(srcRoot)
+			.filter((f) => /\.(svelte|js)$/.test(f))
+			.flatMap((f) =>
+				gewichtOhneRolle(ohneKommentare(readFileSync(f, 'utf8'))).map(
+					(liste) => `${relPfad(f)}: ${liste.trim().slice(0, 120)}`
+				)
+			);
+		expect(
+			funde,
+			'Statt Größe und font-semibold die Rolle nach der Aufgabe: Überschrift text-title-medium ' +
+				'(16 px) oder text-title-small (14 px, auch Reiter und Tabellenkopf); Knopf, Chip, Badge ' +
+				'text-label-large (14 px), text-label-medium (12 px), text-label-small (11 px); betonter ' +
+				'Inhalt text-body-large-emphasized, text-body-medium-emphasized, text-body-small-emphasized. ' +
+				'Feldinhalte stehen ohne Gewicht (M3: input text body-large).'
+		).toEqual([]);
+	});
+
+	it('Selbstprobe: der Detektor fasst die Formen', () => {
+		const z = (/** @type {string} */ s) => gewichtOhneRolle(s).length;
+		expect(z('<p class="text-sm font-semibold text-on-surface">')).toBe(1);
+		expect(z('<td class="font-bold">')).toBe(1);
+		expect(z("const k = 'px-3 text-xs font-extrabold';")).toBe(1);
+		expect(z('<span class:font-semibold={aktiv}>')).toBe(1);
+		expect(z('<Feld feld="w-20 text-right font-semibold" />')).toBe(1);
+		expect(z('<p class="text-lg font-semibold tabular-nums">')).toBe(0);
+		expect(z('<span class="font-bold text-[6.5pt]">')).toBe(0);
+		expect(z('<p class="text-label-large text-on-surface">')).toBe(0);
 	});
 });

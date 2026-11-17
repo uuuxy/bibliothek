@@ -54,7 +54,7 @@
 				{#each teile as teil, _i (_i)}
 					<li class="flex items-center gap-2 text-sm text-on-surface">
 						<span
-							class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold"
+							class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-secondary-container text-on-secondary-container text-label-medium"
 							aria-hidden="true">✓</span
 						>
 						<span>{teil}</span>

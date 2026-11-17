@@ -150,9 +150,7 @@
 		     Betrag dort, wo man ihn beeinflusst. Nach dem Speichern trägt die Antwort des
 		     Servers den neuen Wert — gerechnet wird nie in der Oberfläche. -->
 		<p class="text-label-small mb-2 text-on-surface-variant">
-			<span class="font-semibold text-on-surface"
-				>Ersatzwert heute: {formatEuro(ex.ersatzwert ?? 0)}</span
-			>
+			<span class="text-on-surface">Ersatzwert heute: {formatEuro(ex.ersatzwert ?? 0)}</span>
 			<span class="block">{ex.ersatzwert_herleitung}</span>
 		</p>
 	{/if}

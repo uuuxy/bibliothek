@@ -45,7 +45,7 @@
 </script>
 
 <div class="pt-6 border-t border-outline-variant">
-	<h4 class="text-sm font-bold text-on-surface mb-1">Bestand mit vorhandenen Nummern</h4>
+	<h4 class="text-title-small text-on-surface mb-1">Bestand mit vorhandenen Nummern</h4>
 	<p class="text-sm text-on-surface-variant mb-4">
 		Für Bücher, die schon eine Nummer tragen: eine CSV-Datei mit Semikolon als Trenner und einer
 		Kopfzeile mit den Spalten Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode und Zustand. Die
@@ -63,7 +63,7 @@
 				data-testid="bestandimport-datei"
 			/>
 			<div
-				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
+				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-medium-emphasized rounded-xl transition-colors border border-outline-variant inline-block"
 			>
 				{datei ? datei.name : 'CSV-Datei auswählen …'}
 			</div>

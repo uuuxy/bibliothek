@@ -94,7 +94,7 @@
 		{#each zeilen(r) as row (row.key)}
 			<li class="flex items-center justify-between py-3">
 				<div class="min-w-0">
-					<p class="text-sm font-bold text-on-surface">{row.label}</p>
+					<p class="text-body-medium-emphasized text-on-surface">{row.label}</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">{row.hint}</p>
 				</div>
 				<span class="text-lg font-black tabular-nums shrink-0 ml-4 {row.valueClass}"
@@ -107,7 +107,7 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h3 class="text-base font-semibold text-on-surface">Schuljahreswechsel</h3>
+		<h3 class="text-title-medium text-on-surface">Schuljahreswechsel</h3>
 		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Zählt die Klassenbezeichnung aller aktiven Schüler stur um eine Jahrgangsstufe hoch (z. B. 5a
 			→ 6a) und markiert Abschlussklassen automatisch als Abgänger. Ausnahmen wie Sitzenbleiber oder

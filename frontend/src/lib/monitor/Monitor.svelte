@@ -57,7 +57,7 @@
 
 	<!-- Beschriftung -->
 	<div
-		class="bg-surface-container-high px-6 py-3 flex items-center justify-between text-xs text-on-surface-variant font-semibold tracking-wide"
+		class="bg-surface-container-high px-6 py-3 flex items-center justify-between text-body-small-emphasized text-on-surface-variant tracking-wide"
 	>
 		<span data-testid="monitor-folie">{FOLIEN[takt.folie]}</span>
 		<span>Schulbibliothek</span>

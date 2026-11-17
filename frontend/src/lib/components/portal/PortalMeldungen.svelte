@@ -24,13 +24,15 @@
 			text="Bitte später noch einmal versuchen. Schon abgeschickte Meldungen sind nicht verloren, sie sind bei der Bibliothek."
 		/>
 	{:else if eigene.length > 0}
-		<h2 class="text-base font-semibold text-on-surface">Deine Meldungen</h2>
+		<h2 class="text-title-medium text-on-surface">Deine Meldungen</h2>
 		<ul class="divide-y divide-outline-variant">
 			{#each eigene as a (a.id)}
 				<li class="flex items-start justify-between gap-4 py-2.5">
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm text-on-surface">
-							<span class="font-semibold">{a.art === 'wunsch' ? 'Wunsch' : 'Meldung'}:</span>
+							<span class="text-body-medium-emphasized"
+								>{a.art === 'wunsch' ? 'Wunsch' : 'Meldung'}:</span
+							>
 							{a.titel_text}
 							{#if a.klasse}<span class="text-on-surface-variant">· {a.klasse}</span>{/if}
 						</p>
@@ -41,7 +43,7 @@
 						{/if}
 					</div>
 					<span
-						class="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-label-small font-semibold {a.erledigt_am
+						class="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-label-small {a.erledigt_am
 							? 'bg-secondary-container text-on-secondary-container'
 							: 'border border-outline-variant bg-surface text-on-surface-variant'}"
 					>

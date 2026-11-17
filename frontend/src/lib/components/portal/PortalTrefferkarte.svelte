@@ -84,7 +84,7 @@
 		/>
 
 		<div class="min-w-0 flex-1 basis-48">
-			<h3 class="truncate text-base leading-tight font-semibold text-on-surface">
+			<h3 class="truncate text-title-medium leading-tight text-on-surface">
 				{treffer.titel || treffer.title || 'Unbekannter Titel'}
 			</h3>
 			<p class="mt-0.5 text-xs text-on-surface-variant">{treffer.autor ?? treffer.author ?? ''}</p>

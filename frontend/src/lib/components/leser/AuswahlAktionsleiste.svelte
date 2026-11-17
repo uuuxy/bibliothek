@@ -42,7 +42,7 @@
 			use:meldungenWeichenAus
 		>
 			<span class="text-sm whitespace-nowrap">
-				<span class="font-semibold">{anzahl}</span>
+				<span class="text-body-medium-emphasized">{anzahl}</span>
 				{anzahl === 1 ? 'Schüler' : 'Schüler'} markiert
 			</span>
 

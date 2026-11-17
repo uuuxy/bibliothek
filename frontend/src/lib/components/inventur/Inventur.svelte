@@ -100,7 +100,9 @@
 			<div class="p-6">
 				<div class="flex justify-between items-end mb-4">
 					<div>
-						<span class="text-sm font-semibold text-on-surface-variant">Aktueller Fortschritt</span>
+						<span class="text-body-medium-emphasized text-on-surface-variant"
+							>Aktueller Fortschritt</span
+						>
 						<div class="text-2xl font-bold text-on-surface mt-1">
 							{formatZahl(gefunden)} / {formatZahl(ablauf.stand.erwartet)}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>

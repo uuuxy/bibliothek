@@ -27,7 +27,7 @@
 			klasse="shrink-0"
 		/>
 		<div class="min-w-0 flex-1">
-			<h4 class="truncate text-sm leading-snug font-semibold text-on-surface">
+			<h4 class="truncate text-title-small leading-snug text-on-surface">
 				{position.titel}
 			</h4>
 			<p class="truncate font-mono text-xs text-on-surface-variant">{position.isbn || '–'}</p>
@@ -60,14 +60,15 @@
 				aria-label="Menge verringern"
 				disabled={position.menge <= 1}
 				onclick={() => (position.menge = Math.max(1, position.menge - 1))}
-				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
+				class="cursor-pointer px-2.5 py-1 text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38 text-title-medium"
 				>−</button
-			><span class="min-w-6 px-2 text-center text-sm font-bold text-on-surface tabular-nums"
+			><span
+				class="min-w-6 px-2 text-center text-body-medium-emphasized text-on-surface tabular-nums"
 				>{position.menge}</span
 			><button
 				aria-label="Menge erhöhen"
 				onclick={() => (position.menge += 1)}
-				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">+</button
+				class="cursor-pointer px-2.5 py-1 text-on-surface-variant text-title-medium">+</button
 			>
 		</div>
 		{#if bestellStore.preiseErfassen}
@@ -87,9 +88,9 @@
 					step="0.01"
 					bind:value={position.preis}
 					aria-label="Preis"
-					feld="w-20 text-right font-semibold"
+					feld="w-20 text-right"
 				/>
-				<span class="text-sm font-semibold text-on-surface-variant">€</span>
+				<span class="text-body-medium-emphasized text-on-surface-variant">€</span>
 			</div>
 		{/if}
 	</div>

@@ -87,7 +87,7 @@
 
 <!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
 {#snippet cardTitel(label)}
-	<h3 class="text-base font-semibold text-on-surface-variant">{label}</h3>
+	<h3 class="text-title-medium text-on-surface-variant">{label}</h3>
 {/snippet}
 
 {#snippet drillDownButton()}
@@ -153,11 +153,13 @@
 								nurGespeichert
 								dekorativ
 							/>
-							<span class="truncate font-semibold" title={book.titel}>{book.titel}</span>
+							<span class="truncate text-body-medium-emphasized" title={book.titel}
+								>{book.titel}</span
+							>
 						</div>
 					</td>
 					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
-					<td class="font-semibold tabular-nums text-right">{num(book.count)}×</td>
+					<td class="tabular-nums text-right text-body-medium-emphasized">{num(book.count)}×</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -174,9 +176,13 @@
 		<tbody>
 			{#each topWarmers as book (book.id)}
 				<tr>
-					<td class="font-semibold truncate max-w-64" title={book.titel}>{book.titel}</td>
+					<td class="truncate max-w-64 text-body-medium-emphasized" title={book.titel}
+						>{book.titel}</td
+					>
 					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
-					<td class="font-semibold text-warning tabular-nums text-right">{book.letzte_aus}</td>
+					<td class="text-warning tabular-nums text-right text-body-medium-emphasized"
+						>{book.letzte_aus}</td
+					>
 				</tr>
 			{/each}
 		</tbody>
@@ -197,13 +203,9 @@
 	</div>
 {/snippet}
 
-<!-- Graue Fläche (Material-Kontrast): die weißen Cards heben sich davon ab (Bento-Struktur).
-     Das Dashboard ist eine Höhen-Flexbox: die Bento-Reihen oben haben feste Höhen, die
-     „Bestands-Analysen"-Card unten nimmt den Rest. Dadurch endet das Layout genau am
-     unteren Viewport-Rand statt in einen Scroll-Wurm auszulaufen.
-     flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
-     setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
-     hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
+<!-- Höhen-Flexbox: Die Reihen oben haben feste Höhen, die Card unten nimmt den Rest bis zum
+     Fensterrand. flex-1/min-h-0 statt min-h-full, weil nur eine feste Höhe aus der Flex-Kette
+     des Routers die Card deckelt; min-height ließe sie wachsen und die Seite scrollen. -->
 <Seitenrahmen>
 	<div class="flex-1 min-h-0 flex flex-col gap-4">
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
@@ -308,10 +310,8 @@
 					</div>
 				</div>
 
-				<!-- Die Liste bekommt exakt die Resthöhe (nie mehr) und scrollt INNERHALB der Box —
-				     die Kopfzeile bleibt dabei stehen. min-h-48 ist die Untergrenze: erst wenn das
-				     Fenster darunter schrumpft, scrollt überhaupt die Seite. Feste Höhe statt max-h,
-				     damit beim Umschalten Renner ↔ Ladenhüter nichts springt. -->
+				<!-- Feste Resthöhe statt max-h: Die Liste scrollt in der Box, und beim Umschalten
+				     Renner ↔ Ladenhüter springt nichts; erst unter min-h-48 scrollt die Seite. -->
 				<div class="flex-1 min-h-48 overflow-y-auto overflow-x-auto">
 					{#if abruf.fehlt(analyse)}
 						<div class="h-full flex items-center justify-center">

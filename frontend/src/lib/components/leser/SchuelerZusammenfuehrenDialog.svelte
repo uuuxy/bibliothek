@@ -92,9 +92,10 @@
 			Export ohne Schüler-ID nicht wiedererkannt hat. Der bleibende Datensatz behält Kennung und
 			Ausweisnummer; Ausleihen, Gebühren, Vormerkungen und Foto des anderen wandern hinüber.
 			Stammdaten kommen von dem Datensatz, den die LUSD zuletzt bestätigt hat.
-			<strong class="font-bold">Der andere Datensatz wird endgültig gelöscht</strong>. Das lässt
-			sich nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im
-			Protokoll.
+			<strong class="text-body-medium-emphasized"
+				>Der andere Datensatz wird endgültig gelöscht</strong
+			>. Das lässt sich nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach
+			nur noch im Protokoll.
 		</p>
 
 		<ZusammenfuehrenKandidat kandidat={leser} etikett="Dieser Datensatz" />
@@ -107,7 +108,7 @@
 				oninput={s.tippen}
 			/>
 			{#if s.fehler}
-				<p role="alert" class="text-xs font-bold text-error">{s.fehler}</p>
+				<p role="alert" class="text-body-small-emphasized text-error">{s.fehler}</p>
 			{:else if s.treffer.length > 0 && !anderer}
 				<ul
 					class="max-h-56 overflow-y-auto divide-y divide-outline-variant/40 rounded-xl border border-outline-variant"
@@ -137,7 +138,7 @@
 			/>
 
 			<fieldset class="space-y-2">
-				<legend class="text-xs font-bold text-on-surface">Welcher Datensatz bleibt?</legend>
+				<legend class="text-label-medium text-on-surface">Welcher Datensatz bleibt?</legend>
 				{#each [{ wert: 'dieser', text: `${leser.vorname} ${leser.nachname} (${leser.barcode_id})` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname} (${anderer.barcode_id})` }] as w (w.wert)}
 					<label class="flex items-center gap-2 text-sm cursor-pointer">
 						<Radio name="bleibt" value={w.wert} bind:group={bleibt} />
@@ -156,7 +157,7 @@
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
 				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-				<p class="text-xs font-bold leading-tight">{fehler}</p>
+				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}
 	</div>

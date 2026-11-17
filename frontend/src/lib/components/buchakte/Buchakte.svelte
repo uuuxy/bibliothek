@@ -60,7 +60,7 @@
 		<div class="flex items-center gap-3">
 			<button
 				onclick={onBack}
-				class="flex items-center gap-2 px-3 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors text-sm font-semibold cursor-pointer"
+				class="flex items-center gap-2 px-3 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors text-label-large cursor-pointer"
 			>
 				<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 				Zurück zum Katalog
@@ -86,7 +86,7 @@
 		/>
 
 		{#if akte.fehlendeListen.length > 0}
-			<p class="text-sm font-semibold text-error" role="alert">
+			<p class="text-body-medium-emphasized text-error" role="alert">
 				Nicht geladen: {nenneFehlende(akte.fehlendeListen)}. Diese Reiter sind leer, weil der Abruf
 				gescheitert ist und nicht, weil nichts da wäre.
 			</p>
@@ -130,10 +130,10 @@
 	{:else}
 		<div class="py-24 flex flex-col items-center text-on-surface-variant gap-3">
 			<FaceSlightlyFrowning class="w-12 h-12" aria-hidden="true" />
-			<p class="font-semibold">Buch nicht gefunden</p>
+			<p class="text-body-large-emphasized">Buch nicht gefunden</p>
 			<button
 				onclick={onBack}
-				class="text-primary text-sm font-semibold hover:underline cursor-pointer"
+				class="text-primary text-body-medium-emphasized hover:underline cursor-pointer"
 				>Zurück zum Katalog</button
 			>
 		</div>

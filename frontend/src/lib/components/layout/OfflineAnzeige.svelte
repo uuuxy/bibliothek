@@ -105,7 +105,7 @@
 				<CloudOff size={18} strokeWidth={2.5} class="shrink-0" />
 			{/if}
 
-			<p class="min-w-0 flex-1 truncate text-sm font-semibold">
+			<p class="min-w-0 flex-1 truncate text-body-medium-emphasized">
 				{#if offlineSync.warteschlangeFehler}
 					Warteschlange nicht lesbar: Offline-Scans werden auf diesem Rechner NICHT gespeichert.
 					Bitte an einem anderen Rechner weiterarbeiten.

@@ -72,7 +72,7 @@
 					{@const eigenes = user.id === authStore.currentUser?.user_id}
 					<tr>
 						<td>
-							<span class="font-semibold">{user.vorname} {user.nachname}</span>
+							<span class="text-body-medium-emphasized">{user.vorname} {user.nachname}</span>
 						</td>
 						<!-- Eine Adresse hat keine Leerzeichen; ohne Umbruch an beliebiger Stelle
 						     schöbe eine lange die Knöpfe aus dem Fenster. -->

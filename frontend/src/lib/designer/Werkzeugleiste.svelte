@@ -161,7 +161,8 @@
 			<button
 				onclick={() => onChange(opt.value)}
 				aria-pressed={active === opt.value}
-				class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer {active === opt.value
+				class="px-3 py-1.5 rounded-lg transition-all cursor-pointer text-label-large {active ===
+				opt.value
 					? 'bg-surface text-on-surface shadow-xs'
 					: 'text-on-surface-variant hover:text-on-surface'}">{opt.label}</button
 			>

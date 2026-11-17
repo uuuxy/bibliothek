@@ -182,7 +182,7 @@
 			</span>
 		{/each}
 		{#if fehler}
-			<span class="mt-2 block font-semibold text-error">{fehler}</span>
+			<span class="mt-2 block text-error text-body-medium-emphasized">{fehler}</span>
 		{/if}
 	</p>
 {/if}

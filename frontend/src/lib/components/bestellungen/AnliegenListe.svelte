@@ -180,7 +180,7 @@
 		{#each abschnitte as g (g.titel)}
 			<section class="space-y-1">
 				{#if g.titel}
-					<h3 class="text-base font-semibold text-on-surface">{g.titel}</h3>
+					<h3 class="text-title-medium text-on-surface">{g.titel}</h3>
 				{/if}
 				<ul class="divide-y divide-outline-variant">
 					{#each g.liste as a (a.id)}

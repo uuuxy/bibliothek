@@ -97,7 +97,7 @@
 <!-- Flach & edge-to-edge: keine umschließende Box, flaches Listen-Layout (divide-y) -->
 <div class="max-w-3xl space-y-8">
 	<div>
-		<h3 class="text-base font-bold text-on-surface">E-Mail Routing für Mahnungen</h3>
+		<h3 class="text-title-medium text-on-surface">E-Mail Routing für Mahnungen</h3>
 		<p class="mt-1 max-w-2xl text-sm text-on-surface-variant">
 			Von Hand eingetragen, die LUSD liefert es nicht; die Versetzung rückt jede Zuordnung eine
 			Stufe hoch, außer vor Klasse 7 und vor der Oberstufe
@@ -128,7 +128,7 @@
 			<tbody>
 				{#each mappingRows as row, _i (_i)}
 					<tr>
-						<td class="font-semibold">{row.klasse}</td>
+						<td class="text-body-medium-emphasized">{row.klasse}</td>
 						<td>{row.lehrer_email}</td>
 						<td class="text-right">
 							<Button

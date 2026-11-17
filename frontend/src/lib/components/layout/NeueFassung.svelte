@@ -18,7 +18,7 @@
 	>
 		<RefreshCw class="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-on-surface">
+			<p class="text-body-medium-emphasized text-on-surface">
 				Eine neue Fassung des Programms ist eingespielt
 			</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">

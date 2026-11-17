@@ -87,7 +87,7 @@
 			<span class="sr-only">, ohne Frist, geliehen am {geliehenAm}</span>
 		{:else}
 			<span
-				class={ueberfaellig ? 'font-semibold text-error' : ''}
+				class={ueberfaellig ? 'text-body-medium-emphasized text-error' : ''}
 				data-tip={ueberfaellig
 					? `Überfällig, geliehen am ${geliehenAm}`
 					: `Geliehen am ${geliehenAm}`}

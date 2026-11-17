@@ -22,7 +22,7 @@
 		<span class="text-xs font-medium text-on-surface-variant">Warenkorb</span>
 		{#if bestellStore.cart.length}
 			<span
-				class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
+				class="text-label-medium text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
 				>{anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare')}</span
 			>
 		{/if}
@@ -34,7 +34,7 @@
 		>
 			<div class="text-2xl mb-1.5">🛒</div>
 			Noch nichts ausgewählt<br />
-			Tippe links bei einem Titel auf <span class="font-bold">+</span> oder suche oben
+			Tippe links bei einem Titel auf <span class="text-body-medium-emphasized">+</span> oder suche oben
 		</div>
 	{:else}
 		{#each bestellStore.gruppen as gruppe (gruppe.mittel)}
@@ -42,7 +42,7 @@
 			     trotzdem da — er ist der Vermerk, den der Händler auf der Bestellung liest. -->
 			<section aria-label="Bestellung {gruppe.label}" class="space-y-2">
 				<div class="flex items-baseline justify-between gap-2 border-b border-outline-variant pb-1">
-					<h3 class="text-xs font-semibold text-on-surface">
+					<h3 class="text-label-medium text-on-surface">
 						{gruppe.label}
 						<span class="font-normal text-on-surface-variant">({gruppe.traeger})</span>
 					</h3>
@@ -63,12 +63,12 @@
 			     Betrag aussieht und keiner ist. Dann lieber die Menge, die feststeht. -->
 			<div class="flex items-center justify-between">
 				{#if bestellStore.preiseErfassen}
-					<span class="text-sm font-semibold text-on-surface-variant">Gesamt</span>
+					<span class="text-body-medium-emphasized text-on-surface-variant">Gesamt</span>
 					<span class="text-xl font-bold text-on-surface tabular-nums"
 						>{formatEuro(bestellStore.total)}</span
 					>
 				{:else}
-					<span class="text-sm font-semibold text-on-surface-variant">Exemplare</span>
+					<span class="text-body-medium-emphasized text-on-surface-variant">Exemplare</span>
 					<span class="text-xl font-bold text-on-surface tabular-nums">{bestellStore.totalQty}</span
 					>
 				{/if}

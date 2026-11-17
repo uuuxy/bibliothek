@@ -61,7 +61,7 @@
 	</div>
 	<!-- Eine Zeile, die den Zustand sagt, statt einer festen Aufschrift: Eine Kamera, die
 	     läuft und nichts findet, sähe sonst aus wie eine, die nicht gestartet ist. -->
-	<div class="px-4 pt-3 pb-1 text-xs text-primary font-semibold text-center">
+	<div class="px-4 pt-3 pb-1 text-body-small-emphasized text-primary text-center">
 		{meldung}
 	</div>
 	<div class="px-4 pb-4">

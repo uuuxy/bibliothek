@@ -76,7 +76,7 @@
 		     Namen unerklärlich. Die Kappung steht zuerst, vor `suchend`, denn auch eine
 		     Jahrgangsliste kann bei 500 abgeschnitten sein. Was gekappt ist, muss es sagen,
 		     egal warum die Liste eingegrenzt wurde. -->
-		<div class="ml-auto shrink-0 text-xs font-semibold text-on-surface-variant">
+		<div class="ml-auto shrink-0 text-body-small-emphasized text-on-surface-variant">
 			{#if gekuerzt}
 				<!-- Der Satz unter der Zeile sagt es. -->
 			{:else if suchend}

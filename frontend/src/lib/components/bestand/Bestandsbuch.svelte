@@ -110,7 +110,7 @@
 			     Die Form ist die von ui/Button. -->
 			<a
 				href={druckAdresse}
-				class="m3-state ml-auto inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary"
+				class="m3-state ml-auto inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-label-large text-on-primary"
 			>
 				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 				Ausdrucken

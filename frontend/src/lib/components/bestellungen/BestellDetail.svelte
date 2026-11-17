@@ -92,7 +92,7 @@
 		>
 			<div>
 				<div class="flex flex-wrap items-center gap-2">
-					<h2 class="text-base font-bold text-on-surface">{bestellung.lieferant_name}</h2>
+					<h2 class="text-title-medium text-on-surface">{bestellung.lieferant_name}</h2>
 					<!-- Der Topf gehört zum Beleg wie die Kundennummer: Er steht auf dem
 					     Anschreiben, das der Händler bekommen hat (Migration 109). „ohne
 					     Zuordnung" ist eine Alt-Bestellung, deren Topf nicht eindeutig war —
@@ -115,7 +115,7 @@
 			</div>
 			<div class="text-right">
 				{#if bestellStore.preiseErfassen}
-					<div class="text-xs font-semibold text-on-surface-variant">Bestellwert</div>
+					<div class="text-body-small-emphasized text-on-surface-variant">Bestellwert</div>
 					<div class="text-2xl font-black text-on-surface">
 						{formatEuro(bestellung.gesamtbetrag)}
 					</div>
@@ -145,7 +145,7 @@
 		/>
 
 		<section>
-			<h3 class="mb-2 text-base font-bold text-on-surface">Bestellte Titel</h3>
+			<h3 class="mb-2 text-title-medium text-on-surface">Bestellte Titel</h3>
 			<BestellDetailPositionen
 				positionen={bestellung.positionen}
 				euro={formatEuro}
@@ -164,7 +164,7 @@
 		/>
 
 		<section>
-			<h3 class="mb-2 text-base font-bold text-on-surface">
+			<h3 class="mb-2 text-title-medium text-on-surface">
 				Exemplare aus dieser Bestellung
 				{#if bestellung.exemplare.length > 0}
 					<span class="font-normal text-on-surface-variant">({bestellung.exemplare.length})</span>

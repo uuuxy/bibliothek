@@ -50,7 +50,7 @@
 	>
 		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-on-surface">
+			<p class="text-body-medium-emphasized text-on-surface">
 				Bestellungen gehen ohne Bestätigungs-Link raus
 			</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
@@ -77,7 +77,7 @@
 	>
 		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-on-surface">Bestell-Einstellungen nicht geladen</p>
+			<p class="text-body-medium-emphasized text-on-surface">Bestell-Einstellungen nicht geladen</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
 				Ob die Bestellmails einen Bestätigungs-Link tragen, konnte gerade nicht geprüft werden.
 				Seite neu laden. Bleibt der Hinweis, vor dem Bestellen nachsehen.

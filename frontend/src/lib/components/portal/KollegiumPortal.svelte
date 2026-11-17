@@ -123,7 +123,7 @@
 		</div>
 
 		{#if suche.fehler}
-			<p class="text-sm font-semibold text-error" role="alert">
+			<p class="text-body-medium-emphasized text-error" role="alert">
 				Die Suche ist fehlgeschlagen. Bitte erneut versuchen. Es werden keine Treffer angezeigt,
 				damit hier nichts Falsches steht.
 			</p>

@@ -62,13 +62,13 @@
 	<div class="inline-flex items-center justify-end gap-1.5 py-1">
 		{#if s.ueberfaellig_count > 0}
 			<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-error">Überfällig</span>
+			<span class="text-body-medium-emphasized text-error">Überfällig</span>
 		{:else if ausleiheGesperrt(s)}
 			<span class="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-warning">Gesperrt</span>
+			<span class="text-body-medium-emphasized text-warning">Gesperrt</span>
 		{:else}
 			<span class="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-success">Alles ok</span>
+			<span class="text-body-medium-emphasized text-success">Alles ok</span>
 		{/if}
 	</div>
 {/snippet}
@@ -87,7 +87,7 @@
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
 			<Tabelle beschriftung="Leserinnen und Leser">
-				<thead class="font-semibold">
+				<thead class="text-title-small">
 					<tr>
 						{#if auswaehlbar}
 							<th class="w-10">
@@ -137,14 +137,14 @@
 								</td>
 							{/if}
 							<td><LeserAvatar leser={s} /></td>
-							<td class="font-semibold">
+							<td class="text-body-medium-emphasized">
 								<button
 									type="button"
 									onclick={() => onSelectStudent(s)}
 									aria-label="Profil von {s.vorname} {s.nachname} ({istKollegium(s)
 										? leserArtText(s.art)
 										: `Klasse ${s.klasse || 'N/A'}`}) anzeigen"
-									class="text-left font-semibold text-on-surface hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
+									class="text-left text-on-surface hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-medium-emphasized"
 								>
 									{s.vorname}
 									{s.nachname}
@@ -170,7 +170,7 @@
 							</td>
 							<td class="text-right">
 								<span
-									class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {s.ausgeliehen_count >
+									class="inline-flex items-center px-2 py-0.5 rounded-full text-label-medium {s.ausgeliehen_count >
 									0
 										? 'bg-primary-container text-on-primary-container'
 										: 'bg-surface-container text-on-surface-variant'}"

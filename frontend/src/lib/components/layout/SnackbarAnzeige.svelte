@@ -98,7 +98,7 @@
 						toast.aktion?.onClick();
 						snackbars.removeToast(toast.id);
 					}}
-					class="ml-2 shrink-0 rounded-sm px-1 font-semibold whitespace-nowrap underline underline-offset-2 hover:opacity-80"
+					class="ml-2 shrink-0 rounded-sm px-1 whitespace-nowrap underline underline-offset-2 hover:opacity-80 text-label-large"
 				>
 					{toast.aktion.label}
 				</button>

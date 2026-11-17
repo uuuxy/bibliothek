@@ -73,7 +73,7 @@
 	>
 		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">
-			<h2 class="text-base font-bold text-on-surface">Anmelden</h2>
+			<h2 class="text-title-medium text-on-surface">Anmelden</h2>
 			<p class="text-sm text-on-surface-variant">
 				{ldap ? 'Mit den Zugangsdaten deiner Schule' : 'Mit den Zugangsdaten deiner Schul-E-Mail'}
 			</p>
@@ -111,14 +111,14 @@
 			{/if}
 		</Button>
 		{#if authStore.loginError}
-			<p role="alert" class="text-xs text-error font-semibold animate-slide-up">
+			<p role="alert" class="text-body-small-emphasized text-error animate-slide-up">
 				{authStore.loginError}
 			</p>
 		{/if}
 		{#if authStore.abmeldeHinweis}
 			<!-- Bleibt stehen bis zur nächsten Anmeldung: Ein Toast wäre nach Sekunden weg, und
 			     der Hinweis gilt, solange die Sitzung am Server noch nicht gesperrt ist. -->
-			<p role="status" class="text-xs text-error font-semibold text-center">
+			<p role="status" class="text-body-small-emphasized text-error text-center">
 				{authStore.abmeldeHinweis}
 			</p>
 		{/if}

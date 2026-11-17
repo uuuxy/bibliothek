@@ -163,12 +163,12 @@
 							>
 								<ChevronLeft class="h-4 w-4 text-on-surface-variant" aria-hidden="true" />
 								<span
-									class="text-xs font-bold text-on-surface-variant tracking-wide"
+									class="text-label-medium text-on-surface-variant tracking-wide"
 									style="writing-mode: vertical-rl">Deine Bestellung</span
 								>
 								{#if bestellStore.totalQty > 0}
 									<span
-										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary text-label-small font-bold px-1.5 tabular-nums"
+										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary text-label-small px-1.5 tabular-nums"
 										>{bestellStore.totalQty}</span
 									>
 								{/if}

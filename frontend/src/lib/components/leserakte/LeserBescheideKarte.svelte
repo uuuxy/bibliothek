@@ -33,7 +33,7 @@
 {#if bescheide.length > 0}
 	<div class="w-full h-full pt-2">
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
-			<h3 class="text-base font-semibold text-on-surface-variant">
+			<h3 class="text-title-medium text-on-surface-variant">
 				Schadensersatz-Bescheide ({bescheide.length})
 			</h3>
 		</div>
@@ -43,7 +43,7 @@
 				{@const stand = bescheidStatus(b, datum)}
 				<div class="border-b border-outline-variant py-4 flex items-start justify-between gap-4">
 					<div class="flex flex-col gap-1">
-						<h4 class="font-mono font-bold text-on-surface">{b.referenznummer}</h4>
+						<h4 class="font-mono text-on-surface text-title-medium">{b.referenznummer}</h4>
 						<span class="text-sm text-on-surface-variant">
 							{b.anzahl_positionen}
 							{b.anzahl_positionen === 1 ? 'Position' : 'Positionen'} · {formatEuro(b.gesamtbetrag)} ·

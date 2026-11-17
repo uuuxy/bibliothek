@@ -76,9 +76,10 @@
 	table :global(th) {
 		height: 2.5rem;
 		padding: 0 1rem;
-		font-size: var(--text-sm);
-		line-height: var(--text-sm--line-height);
-		font-weight: 500;
+		font-size: var(--text-title-small);
+		line-height: var(--text-title-small--line-height);
+		font-weight: var(--text-title-small--font-weight);
+		letter-spacing: var(--text-title-small--letter-spacing);
 		color: var(--color-on-surface-variant);
 		border-bottom: 1px solid var(--color-outline-variant);
 		white-space: nowrap;

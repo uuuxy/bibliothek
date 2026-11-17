@@ -18,12 +18,12 @@
 		class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 	>
 		<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-		<p class="text-xs font-bold leading-tight">{fehler}</p>
+		<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 	</div>
 {:else if vorschau}
 	<div class="space-y-1 rounded-xl bg-surface-container p-3 text-sm text-on-surface">
 		<p>
-			<span class="font-bold">Danach:</span>
+			<span class="text-body-medium-emphasized">Danach:</span>
 			{vorschau.titel} · {vorschau.isbn || 'ohne ISBN'} · {exemplare(vorschau.exemplare_danach)}
 		</p>
 		<p class="text-on-surface-variant">

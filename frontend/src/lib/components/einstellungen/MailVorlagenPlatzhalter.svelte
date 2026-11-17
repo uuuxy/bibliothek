@@ -19,12 +19,12 @@
 {#if info}
 	{#if info.platzhalter.length === 0}
 		<div class="border-l-2 border-error py-1 pl-4">
-			<h4 class="mb-1 text-sm font-bold text-on-surface">Ohne Wirkung</h4>
+			<h4 class="mb-1 text-title-small text-on-surface">Ohne Wirkung</h4>
 			<p class="text-sm leading-relaxed text-on-surface-variant">{info.verwendung}</p>
 		</div>
 	{:else}
 		<div class="border-l-2 border-primary py-1 pl-4">
-			<h4 class="mb-1 text-sm font-bold text-on-surface">Erlaubte Platzhalter</h4>
+			<h4 class="mb-1 text-title-small text-on-surface">Erlaubte Platzhalter</h4>
 			<p class="text-sm leading-relaxed text-on-surface-variant">
 				{info.verwendung}
 				<br />

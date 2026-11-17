@@ -89,7 +89,7 @@
 	<!-- Anlegen vorn bei der Liste wie in Leserdatei und Benutzern, nicht am fernen Rand. -->
 	<div class="space-y-3 border-b border-outline-variant pb-3">
 		<div>
-			<h2 class="text-base font-bold text-on-surface">Geräte ({geraete.liste.length})</h2>
+			<h2 class="text-title-medium text-on-surface">Geräte ({geraete.liste.length})</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
 				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste bestätigt
 			</p>
@@ -139,14 +139,14 @@
 	{:else if geraete.liste.length === 0}
 		<div class="flex flex-col items-center gap-3 py-16 text-on-surface-variant">
 			<MonitorSmartphone class="h-12 w-12" aria-hidden="true" />
-			<p class="text-sm font-semibold">Noch keine Geräte erfasst</p>
+			<p class="text-body-medium-emphasized">Noch keine Geräte erfasst</p>
 		</div>
 	{:else}
 		<ul class="divide-y divide-outline-variant">
 			{#each geraete.liste as g (g.id)}
 				<li class="flex items-center justify-between gap-4 py-4">
 					<div class="min-w-0 flex-1">
-						<p class="truncate text-sm font-bold text-on-surface">{g.modellname}</p>
+						<p class="truncate text-body-medium-emphasized text-on-surface">{g.modellname}</p>
 						<p class="mt-0.5 text-xs text-on-surface-variant">
 							{g.barcode_id}{#if g.seriennummer}&nbsp;· SN {g.seriennummer}{/if}
 							{#if g.zubehoer}&nbsp;· Zubehör: {g.zubehoer}{/if}
@@ -156,7 +156,7 @@
 						{/if}
 					</div>
 					<span
-						class="shrink-0 rounded-full px-2 py-0.5 text-label-small font-semibold {g.ausgeliehen_an
+						class="shrink-0 rounded-full px-2 py-0.5 text-label-small {g.ausgeliehen_an
 							? 'bg-secondary-container text-on-secondary-container'
 							: g.ist_ausleihbar
 								? 'bg-primary-container text-on-primary-container'

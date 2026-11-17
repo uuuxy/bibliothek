@@ -87,7 +87,7 @@
 </script>
 
 <div class="mt-8 border-t border-outline-variant pt-6">
-	<h3 class="text-base font-semibold text-on-surface">
+	<h3 class="text-title-medium text-on-surface">
 		{formular.id ? `Exemplare (${exemplare.length})` : 'Exemplare'}
 	</h3>
 	{#if nichtImBestand}
@@ -124,7 +124,7 @@
 						>
 							<div class="flex items-center gap-3">
 								<span
-									class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap bg-primary-container text-on-primary-container"
+									class="rounded-md px-2 py-0.5 font-mono text-label-medium whitespace-nowrap bg-primary-container text-on-primary-container"
 								>
 									{ex.barcode_id}
 								</span>

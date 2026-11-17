@@ -67,7 +67,7 @@
 				     weil „Barcode scannen" sonst wortweise umbrach. -->
 				<div class="flex flex-wrap items-center gap-2">
 					<span
-						class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap {platzhalter
+						class="rounded-md px-2 py-0.5 font-mono text-label-medium whitespace-nowrap {platzhalter
 							? 'bg-warning-container text-on-warning-container'
 							: 'bg-primary-container text-on-primary-container'}"
 					>
@@ -76,7 +76,7 @@
 					{#if darfBearbeiten}
 						{#if platzhalter}
 							<button
-								class="text-xs px-2 py-1 bg-warning-container text-on-warning-container font-semibold rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
+								class="text-label-medium px-2 py-1 bg-warning-container text-on-warning-container rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => (barcodeBearbeiten = true)}
 							>
 								<Plus class="w-3.5 h-3.5" aria-hidden="true" />

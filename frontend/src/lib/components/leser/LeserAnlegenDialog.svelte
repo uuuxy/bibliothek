@@ -128,7 +128,7 @@
 
 		{#if duplicateConflict}
 			<div
-				class="p-4 bg-warning-container rounded-xl flex items-start gap-3 text-sm font-semibold text-on-warning-container"
+				class="p-4 bg-warning-container rounded-xl flex items-start gap-3 text-body-medium-emphasized text-on-warning-container"
 			>
 				<TriangleAlert class="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
 				<p>{duplicateConflict}</p>
@@ -138,7 +138,7 @@
 		{#if fehler}
 			<div
 				role="alert"
-				class="p-3 bg-error-container rounded-xl text-xs font-semibold text-on-error-container"
+				class="p-3 bg-error-container rounded-xl text-body-small-emphasized text-on-error-container"
 			>
 				{fehler}
 			</div>

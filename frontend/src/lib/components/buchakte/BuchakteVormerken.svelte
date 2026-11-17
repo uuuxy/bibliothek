@@ -124,7 +124,7 @@
 							class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0 hover:bg-surface transition-colors"
 						>
 							<div>
-								<p class="font-semibold text-on-surface text-sm">{r.title}</p>
+								<p class="text-on-surface text-body-medium-emphasized">{r.title}</p>
 								<p class="text-xs text-on-surface-variant">{r.subtitle}</p>
 							</div>
 							<!-- Gesperrt, solange eine Vormerkung angelegt wird; der Ladekreis steht nur im

@@ -42,7 +42,7 @@
 
 {#if etikettenStore.gewaehlterTitel}
 	<div class="space-y-4 border-b border-outline-variant py-5">
-		<h3 class="text-base font-semibold text-on-surface-variant">{SCHRITT}</h3>
+		<h3 class="text-title-medium text-on-surface-variant">{SCHRITT}</h3>
 
 		<div class="space-y-2">
 			<span class="block text-xs font-medium text-on-surface-variant">{ueberschrift}</span>
@@ -96,7 +96,7 @@
 							class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-sm text-on-surface hover:bg-on-surface/8"
 						>
 							<Kaestchen bind:checked={copy.checked} />
-							<span class="font-bold">{copy.barcode_id}</span>
+							<span class="text-body-medium-emphasized">{copy.barcode_id}</span>
 							<!-- Ohne Notiz steht ein Wort für den Zustand; ein bestelltes Exemplar ist
 							     noch nicht eingetroffen und heißt wie in der Buchakte „Bestellt". -->
 							<span class="text-label-small text-on-surface-variant font-sans"
@@ -122,7 +122,7 @@
 	<!-- Gedämpft über die Textfarbe, nicht über opacity: Mit 60 % Deckung lag der Kontrast des
 	     inaktiven Schritts bei 2,5:1. -->
 	<div class="space-y-2 border-b border-outline-variant py-5">
-		<h3 class="text-base font-semibold text-on-surface-variant">{SCHRITT}</h3>
+		<h3 class="text-title-medium text-on-surface-variant">{SCHRITT}</h3>
 		<p class="text-sm text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen</p>
 	</div>
 {/if}

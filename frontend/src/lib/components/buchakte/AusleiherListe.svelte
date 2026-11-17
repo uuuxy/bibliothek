@@ -42,7 +42,7 @@
 			>
 				<div class="flex items-center gap-3 min-w-0">
 					<div
-						class="w-9 h-9 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold text-xs shrink-0"
+						class="w-9 h-9 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-label-medium shrink-0"
 					>
 						{b.schueler_name?.[0] ?? ''}{b.schueler_nachname?.[0] ?? ''}
 					</div>
@@ -53,12 +53,12 @@
 									appState.triggerStudentScan = b.schueler_barcode;
 									onBack();
 								}}
-								class="text-sm font-semibold text-on-surface hover:underline text-left cursor-pointer truncate block rounded focus-visible:outline-2 focus-visible:outline-primary"
+								class="text-body-medium-emphasized text-on-surface hover:underline text-left cursor-pointer truncate block rounded focus-visible:outline-2 focus-visible:outline-primary"
 							>
 								{@render leser(b)}
 							</button>
 						{:else}
-							<p class="text-sm font-semibold text-on-surface truncate">{@render leser(b)}</p>
+							<p class="text-body-medium-emphasized text-on-surface truncate">{@render leser(b)}</p>
 						{/if}
 						<p class="text-xs text-on-surface-variant font-mono mt-0.5">
 							Exemplar: {b.exemplar_barcode}
@@ -68,14 +68,14 @@
 				<div class="text-right shrink-0 ml-4 flex gap-6 items-center">
 					<div class="text-right hidden sm:block">
 						<p class="text-label-small text-on-surface-variant">Ausgeliehen</p>
-						<p class="text-sm font-semibold text-on-surface-variant">
+						<p class="text-body-medium-emphasized text-on-surface-variant">
 							{fmtDate(b.ausgeliehen_am)}
 						</p>
 					</div>
 					<div class="text-right">
 						<p class="text-label-small text-on-surface-variant">Rückgabe bis</p>
 						<p
-							class="flex items-center justify-end gap-1 text-sm font-bold {ueberfaellig
+							class="flex items-center justify-end gap-1 text-body-medium-emphasized {ueberfaellig
 								? 'text-error'
 								: 'text-on-surface'}"
 						>

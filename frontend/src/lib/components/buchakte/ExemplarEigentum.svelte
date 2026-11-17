@@ -15,8 +15,8 @@
 
 {#if zeile}
 	<p class="text-xs text-on-surface-variant">
-		<span class="font-semibold">Eigentum:</span>
-		<span class="font-semibold text-on-surface">{zeile.wer}</span>
+		<span class="text-body-small-emphasized">Eigentum:</span>
+		<span class="text-on-surface text-body-small-emphasized">{zeile.wer}</span>
 		· {zeile.herkunft}
 	</p>
 {/if}

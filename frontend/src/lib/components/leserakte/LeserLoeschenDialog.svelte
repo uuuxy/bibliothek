@@ -80,7 +80,7 @@
 			{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}
 				<div
 					role="alert"
-					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-sm font-semibold"
+					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-body-medium-emphasized"
 				>
 					Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher
 				</div>
@@ -123,7 +123,7 @@
 				{#if fehler}
 					<div
 						role="alert"
-						class="mt-4 p-3 bg-error-container text-on-error-container rounded-xl text-xs font-semibold"
+						class="mt-4 p-3 bg-error-container text-on-error-container rounded-xl text-body-small-emphasized"
 					>
 						{fehler}
 					</div>

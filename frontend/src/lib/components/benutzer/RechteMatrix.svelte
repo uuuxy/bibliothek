@@ -34,7 +34,7 @@
 		class="flex items-center gap-3"
 		title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
 	>
-		<span class="text-xs font-bold text-on-surface-variant tracking-wider w-24 text-right"
+		<span class="text-body-small-emphasized text-on-surface-variant tracking-wider w-24 text-right"
 			>{roleLabel}</span
 		>
 		{#key isUpdating}
@@ -60,7 +60,7 @@
 				{#each cat.items as item, _i (_i)}
 					<div class="py-6 px-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
 						<div class="max-w-xl space-y-1">
-							<span class="font-semibold text-on-surface text-base tracking-tight"
+							<span class="text-on-surface text-body-large-emphasized tracking-tight"
 								>{item.label}</span
 							>
 							<p class="text-sm text-on-surface-variant leading-relaxed font-medium">{item.desc}</p>
@@ -70,7 +70,7 @@
 							<!-- Admin (Read-only) -->
 							<div class="flex items-center gap-3">
 								<span
-									class="text-xs font-bold text-on-surface-variant tracking-wider w-24 text-right"
+									class="text-body-small-emphasized text-on-surface-variant tracking-wider w-24 text-right"
 									>ADMIN</span
 								>
 								<Switch checked disabled etikett="Administrator hat immer alle Rechte" />

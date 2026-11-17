@@ -82,7 +82,7 @@
 </script>
 
 <section aria-labelledby="lmf-reihenfolge-titel">
-	<h2 id="lmf-reihenfolge-titel" class="text-base font-semibold text-on-surface">Reihenfolge</h2>
+	<h2 id="lmf-reihenfolge-titel" class="text-title-medium text-on-surface">Reihenfolge</h2>
 	<!-- Kein Bedienungssatz, denn Erklärungstexte kosten Zeilen. Der Satz erscheint nur, wenn
 	     der erste Tag fehlt; eine Klasse ohne Schüler zeigt ihr Chip in der Zeile. -->
 	{#if !bereit}

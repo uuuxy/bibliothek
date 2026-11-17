@@ -39,7 +39,7 @@
 	// Feste Mindestbreite und Tabellenziffern: Sonst ist der Chip bei „28 Bücher" breiter als
 	// bei „5 Bücher", und der Klassenname rutscht je Zeile nach rechts.
 	const zaehlerChip =
-		'bg-secondary-container text-on-secondary-container inline-flex min-w-26 shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
+		'bg-secondary-container text-on-secondary-container inline-flex min-w-26 shrink-0 justify-center rounded-full px-3 py-0.5 text-label-medium tabular-nums';
 
 	let sortierteTitel = $derived([...group.books].sort(sortiereNachFachUndTitel));
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);

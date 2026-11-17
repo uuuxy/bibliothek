@@ -36,7 +36,7 @@
 
 <div class="w-full h-full pt-2">
 	<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
-		<h3 class="text-base font-semibold text-on-surface-variant">
+		<h3 class="text-title-medium text-on-surface-variant">
 			Vorgemerkte Bücher ({vormerkungen?.length || 0})
 		</h3>
 	</div>
@@ -47,8 +47,8 @@
 		{#each vormerkungen as v (v.id)}
 			<div class="border-b border-outline-variant py-4 flex items-start justify-between">
 				<div class="flex flex-col gap-1">
-					<h4 class="font-bold text-on-surface">{v.titel}</h4>
-					<div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+					<h4 class="text-on-surface text-title-medium">{v.titel}</h4>
+					<div class="flex items-center gap-2 text-body-small-emphasized text-on-surface-variant">
 						<!-- Ein Span, Text je Status: 'abholbereit' zeigt die Abholfrist,
 							     alles andere ('wartend' und Unbekanntes) die Wartezeit. Das Status-Konsistenz-Gate erzwingt, dass jeder von
 							     der DB erlaubte Nicht-Default-Status hier vorkommt. -->

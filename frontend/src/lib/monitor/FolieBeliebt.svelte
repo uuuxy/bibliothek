@@ -23,7 +23,7 @@
 						nurGespeichert
 					/>
 					<div class="flex-1 min-w-0">
-						<p class="font-bold truncate">{book.titel}</p>
+						<p class="truncate text-body-large-emphasized">{book.titel}</p>
 						{#if book.autor}
 							<p class="text-xs text-on-surface-variant truncate">{book.autor}</p>
 						{/if}

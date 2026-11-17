@@ -45,7 +45,7 @@
 </script>
 
 <section aria-labelledby="lmf-zeitraum-titel">
-	<h2 id="lmf-zeitraum-titel" class="text-base font-semibold text-on-surface">Zeitraum</h2>
+	<h2 id="lmf-zeitraum-titel" class="text-title-medium text-on-surface">Zeitraum</h2>
 	<!-- Ein Satz unter dem Titel nur, wenn die Sommerferien fehlen. Den Beginn zeigt die erste
 	     Zeile der Reihenfolge, die Regel („Donnerstag vor den Sommerferien") der Hinweis unter
 	     dem Datumsfeld: Jede Angabe steht einmal. -->

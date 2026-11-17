@@ -77,7 +77,7 @@
 			<a
 				href="/api/bestellungen/pdf"
 				download
-				class="m3-state shrink-0 flex items-center gap-2 text-xs font-bold text-on-surface-variant bg-surface-container-low border border-outline-variant px-3 py-2 rounded-xl"
+				class="m3-state shrink-0 flex items-center gap-2 text-label-medium text-on-surface-variant bg-surface-container-low border border-outline-variant px-3 py-2 rounded-xl"
 			>
 				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 				<span class="hidden sm:inline">PDF-Bestellliste</span>
@@ -111,17 +111,17 @@
 			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
 		>
 			{#if grundlage.ausgeschaltet}
-				<p class="text-sm font-semibold">Bestellbedarf ausgeschaltet</p>
+				<p class="text-body-medium-emphasized">Bestellbedarf ausgeschaltet</p>
 				<p class="text-xs mt-1">Einschalten unter Einstellungen, Bestellwesen</p>
 			{:else if !grundlage.kinder_mit_schulbuch}
-				<p class="text-sm font-semibold">Noch keine Grundlage</p>
+				<p class="text-body-medium-emphasized">Noch keine Grundlage</p>
 				<p class="text-xs mt-1">
 					In diesem Schuljahr wurde noch kein Schulbuch ausgegeben; der Bedarf ergibt sich aus den
 					Ausleihen
 				</p>
 			{:else}
 				<CircleCheck class="h-5 w-5" aria-hidden="true" />
-				<p class="text-sm font-semibold">Kein Schulbuch fehlt</p>
+				<p class="text-body-medium-emphasized">Kein Schulbuch fehlt</p>
 				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}</p>
 			{/if}
 		</div>

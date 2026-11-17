@@ -127,11 +127,11 @@
 							/>
 							<div class="absolute top-2 right-2">
 								{#if book.verfuegbar > 0}
-									<span class="px-2 py-1 rounded-lg bg-success text-on-success text-xs font-bold">
+									<span class="px-2 py-1 rounded-lg bg-success text-on-success text-label-medium">
 										✓ Verfügbar
 									</span>
 								{:else}
-									<span class="px-2 py-1 rounded-lg bg-error text-on-error text-xs font-bold">
+									<span class="px-2 py-1 rounded-lg bg-error text-on-error text-label-medium">
 										Ausgeliehen
 									</span>
 								{/if}
@@ -139,7 +139,7 @@
 						</div>
 						<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
 							<h3
-								class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
+								class="line-clamp-2 text-title-medium leading-snug wrap-break-word text-on-surface"
 								title={book.titel}
 							>
 								{book.titel}

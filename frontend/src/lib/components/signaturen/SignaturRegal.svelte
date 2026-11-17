@@ -74,7 +74,7 @@
 {:else}
 	<div class="space-y-3">
 		<div class="flex items-baseline justify-between gap-3 flex-wrap">
-			<h2 class="font-bold text-on-surface">
+			<h2 class="text-on-surface text-title-medium">
 				{signatur}
 				<span class="font-normal text-on-surface-variant text-sm">· {buecher.length} Titel</span>
 			</h2>

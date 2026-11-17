@@ -161,7 +161,7 @@
 				class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 			>
 				<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-				<p class="text-xs font-bold leading-tight">{fehler}</p>
+				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}
 	</div>

@@ -47,9 +47,9 @@
 	// Tabellenzeilen auf einer Linie. md = 36 px ist die gemeinsame Höhe der Bedienelemente.
 	const sizes = {
 		// M3 kennt keinen Knopf unter label-large (14 px).
-		sm: 'h-8 px-2.5 text-sm',
-		md: 'h-9 px-3 text-sm',
-		lg: 'h-10 px-4 text-sm'
+		sm: 'h-8 px-2.5 text-label-large',
+		md: 'h-9 px-3 text-label-large',
+		lg: 'h-10 px-4 text-label-large'
 	};
 
 	// rounded-full: In Material 3 ist der Button eine Pille (Shape-Skala: Menüs 4 px, Chips 8,
@@ -61,13 +61,13 @@
 	const disabledClasses =
 		'disabled:cursor-not-allowed disabled:bg-on-surface/12! disabled:text-on-surface/38! disabled:border-transparent! disabled:shadow-none!';
 
-	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`;
+	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`;
 
 	// Farb-Utilities des Aufrufers ersetzen die der Variante, statt mit ihnen zu konkurrieren:
 	// Tailwind-Utilities haben alle dieselbe Spezifität, also entschiede sonst die Reihenfolge
 	// im Stylesheet und nicht die im class-Attribut. Nur Basisfarben werden ersetzt;
 	// Zustandsvarianten (hover:, disabled:, focus-within:) bleiben stehen, und Größenangaben
-	// (text-label-small, text-sm) gelten nicht als Farbe.
+	// (text-label-small, text-label-large) gelten nicht als Farbe.
 	const FARBE =
 		/^(bg|border|ring|text)-(transparent|primary|secondary|error|success|warning|surface|outline|scrim|inverse-|on-)/;
 	const familie = (/** @type {string} */ c) => c.split('-')[0];

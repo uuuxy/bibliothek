@@ -107,7 +107,7 @@
 				<p class="text-sm text-on-surface-variant">{beschreibung}</p>
 				<button
 					type="button"
-					class="text-xs font-semibold text-primary shrink-0 cursor-pointer"
+					class="text-label-medium text-primary shrink-0 cursor-pointer"
 					onclick={() => (ausgewaehlt = alleGewaehlt ? [] : klassen.map((k) => k.klasse))}
 				>
 					{alleGewaehlt ? 'Keine' : 'Alle'}
@@ -123,7 +123,8 @@
 					{@const ziel = emailGetrimmt || k.lehrer_email}
 					<label class="m3-state flex items-center gap-3 px-3 py-3 cursor-pointer text-sm">
 						<Kaestchen checked={ausgewaehlt.includes(k.klasse)} onchange={() => toggle(k.klasse)} />
-						<span class="w-16 shrink-0 font-semibold text-on-surface">{k.klasse}</span>
+						<span class="w-16 shrink-0 text-on-surface text-body-medium-emphasized">{k.klasse}</span
+						>
 						<span class="w-20 shrink-0 text-xs text-on-surface-variant"
 							>{anzahlSchueler(k)} Schüler</span
 						>

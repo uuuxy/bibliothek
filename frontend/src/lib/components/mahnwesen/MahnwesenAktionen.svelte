@@ -66,7 +66,7 @@
 	>
 		<X class="h-4 w-4" aria-hidden="true" />
 	</Button>
-	<span class="text-sm font-semibold text-on-surface"
+	<span class="text-body-medium-emphasized text-on-surface"
 		>{mahnwesenStore.gewaehlteKennungen.size} ausgewählt</span
 	>
 	<!-- Der Druck zählt die Mahnung: nur mit dem Recht der Route dahinter (create_orders). -->

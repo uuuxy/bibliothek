@@ -93,7 +93,7 @@
 				<p class="text-sm text-on-surface-variant">Was nicht gespeichert ist, bleibt erhalten</p>
 			{/if}
 			<p class="text-xs text-on-surface-variant">
-				Angemeldet als <span class="font-semibold text-on-surface"
+				Angemeldet als <span class="text-on-surface text-body-small-emphasized"
 					>{authStore.currentUser?.email}</span
 				>
 			</p>
@@ -116,18 +116,18 @@
 			{/if}
 		</Button>
 		{#if scanErkannt}
-			<p class="text-xs text-error font-semibold text-center animate-slide-up" role="alert">
+			<p class="text-body-small-emphasized text-error text-center animate-slide-up" role="alert">
 				Scan erkannt: Die Anwendung ist gesperrt. Bitte erst das Passwort eintippen, dann scannen.
 			</p>
 		{:else if leerlaufSperre.entsperrFehler}
-			<p class="text-xs text-error font-semibold animate-slide-up" role="alert">
+			<p class="text-body-small-emphasized text-error animate-slide-up" role="alert">
 				{leerlaufSperre.entsperrFehler}
 			</p>
 		{/if}
 		<button
 			type="button"
 			onclick={abmelden}
-			class="text-xs font-semibold text-on-surface-variant underline-offset-2 hover:underline cursor-pointer"
+			class="text-body-small-emphasized text-on-surface-variant underline-offset-2 hover:underline cursor-pointer"
 		>
 			Abmelden und als andere Person anmelden
 		</button>

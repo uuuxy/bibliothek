@@ -80,10 +80,10 @@
 	{#if zeigeKennzahlen}
 		<div class="text-right">
 			{#if bestellStore.preiseErfassen}
-				<div class="text-xs text-on-surface-variant font-semibold">Gesamtausgaben</div>
+				<div class="text-body-small-emphasized text-on-surface-variant">Gesamtausgaben</div>
 				<div class="text-2xl font-black text-on-surface">{euro(gesamtsumme)}</div>
 			{:else}
-				<div class="text-xs text-on-surface-variant font-semibold">Bestellte Exemplare</div>
+				<div class="text-body-small-emphasized text-on-surface-variant">Bestellte Exemplare</div>
 				<div class="text-2xl font-black text-on-surface">{gesamtExemplare}</div>
 			{/if}
 			<!-- Woraus die Zahl darüber besteht: Für das Schulamt zählt der
@@ -93,7 +93,7 @@
 					{#each aufteilung as t (t.mittel)}
 						<div>
 							{topfName(t.mittel)}:
-							<span class="font-semibold">
+							<span class="text-body-small-emphasized">
 								{bestellStore.preiseErfassen ? euro(t.gesamtbetrag) : t.gesamt_exemplare}
 							</span>
 						</div>

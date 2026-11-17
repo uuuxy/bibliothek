@@ -1,8 +1,6 @@
-<!-- @component StatistikVerlauf — Aktivitäts-Zeitreihe (Ausleihen + Rückgaben je Monat,
-     letzte 12 Monate) als schlankes Inline-SVG. Zwei Serien derselben Einheit → EINE
-     gemeinsame Y-Achse (kein Dual-Axis). Farben: erste zwei validierte Kategorial-Slots
-     (Blau/Orange, CVD-geprüft). Legende immer vorhanden, Hover-Tooltip je Monat, und
-     eine visuell versteckte Tabelle als barrierefreier „Table-View". Keine Personendaten. -->
+<!-- @component StatistikVerlauf — Ausleihen und Rückgaben der letzten 12 Monate als Inline-SVG
+     auf einer gemeinsamen Y-Achse (eine Einheit), mit Legende, Tooltip je Monat und einer
+     versteckten Tabelle für Screenreader. Keine Personendaten. -->
 <script>
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { formatZahl } from '../../utils/format.js';
@@ -107,13 +105,12 @@
 	}
 </script>
 
-<!-- h-full + flex: der Chart füllt die feste Höhe seiner Bento-Card aus, statt sie zu
-     bestimmen. Die Card deckelt damit die Höhe hart — der SVG skaliert nach innen. -->
+<!-- h-full + flex: Der Chart füllt die feste Höhe seiner Card, statt sie zu bestimmen. -->
 <div class="w-full h-full flex flex-col">
 	<!-- Kopf: Titel + Legende (Legende immer vorhanden → Identität nie farb-only) -->
 	<div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-		<h3 class="text-base font-semibold text-on-surface-variant">Aktivität pro Monat</h3>
-		<div class="flex items-center gap-4 text-xs font-semibold">
+		<h3 class="text-title-medium text-on-surface-variant">Aktivität pro Monat</h3>
+		<div class="flex items-center gap-4 text-body-small-emphasized">
 			<span class="flex items-center gap-1.5 text-on-surface-variant">
 				<span class="w-2.5 h-2.5 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>Ausleihen
 			</span>
@@ -177,7 +174,6 @@
 					{/if}
 					<path d={barPath(g.barA)} fill={FARBE_AUSLEIHEN} />
 					<path d={barPath(g.barR)} fill={FARBE_RUECKGABEN} />
-					<!-- Monats-Label -->
 					<text
 						x={g.cx}
 						y={baselineY + 16}
@@ -187,7 +183,6 @@
 					>
 				{/each}
 
-				<!-- Baseline -->
 				<line
 					x1={M.left}
 					y1={baselineY}
@@ -203,14 +198,19 @@
 					class="pointer-events-none absolute z-10 -translate-x-1/2 -top-1 rounded-lg bg-inverse-surface text-inverse-on-surface px-3 py-2 shadow-lg text-xs whitespace-nowrap"
 					style="left:{(hovered.cx / VBW) * 100}%"
 				>
-					<div class="font-bold mb-1">{monatKurz(hovered.monat)} {jahr(hovered.monat)}</div>
+					<div class="mb-1 text-body-small-emphasized">
+						{monatKurz(hovered.monat)}
+						{jahr(hovered.monat)}
+					</div>
 					<div class="flex items-center gap-1.5">
 						<span class="w-2 h-2 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>
-						Ausleihen: <span class="font-bold tabular-nums">{hovered.ausleihen}</span>
+						Ausleihen:
+						<span class="tabular-nums text-body-small-emphasized">{hovered.ausleihen}</span>
 					</div>
 					<div class="flex items-center gap-1.5">
 						<span class="w-2 h-2 rounded-sm" style="background:{FARBE_RUECKGABEN}"></span>
-						Rückgaben: <span class="font-bold tabular-nums">{hovered.rueckgaben}</span>
+						Rückgaben:
+						<span class="tabular-nums text-body-small-emphasized">{hovered.rueckgaben}</span>
 					</div>
 				</div>
 			{/if}

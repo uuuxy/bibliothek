@@ -42,7 +42,7 @@
 				/>
 
 				<div class="min-w-0 flex-1">
-					<p class="font-semibold text-on-surface">{p.titel_name}</p>
+					<p class="text-on-surface text-body-large-emphasized">{p.titel_name}</p>
 					<p class="text-sm text-on-surface-variant">
 						{[p.autor, p.verlag].filter(Boolean).join(' · ') || 'Autor und Verlag nicht hinterlegt'}
 					</p>
@@ -68,7 +68,7 @@
 									'Etikett',
 									'Etiketten'
 								)} für {p.titel_name} nachdrucken"
-								class="icon-btn gap-1 px-1.5 text-xs font-semibold text-primary"
+								class="icon-btn gap-1 px-1.5 text-label-medium text-primary"
 							>
 								<Printer class="h-4 w-4" aria-hidden="true" />
 								{p.etiketten_offen}
@@ -89,10 +89,12 @@
 				</div>
 
 				<div class="shrink-0 text-right">
-					<p class="font-semibold text-on-surface tabular-nums">{p.menge}×</p>
+					<p class="text-on-surface tabular-nums text-body-large-emphasized">{p.menge}×</p>
 					{#if bestellStore.preiseErfassen}
 						<p class="text-xs text-on-surface-variant tabular-nums">{euro(p.einzelpreis)}</p>
-						<p class="mt-1 font-bold text-on-surface tabular-nums">{euro(p.gesamtpreis)}</p>
+						<p class="mt-1 text-on-surface tabular-nums text-body-large-emphasized">
+							{euro(p.gesamtpreis)}
+						</p>
 						{#if darfPreis}
 							<button
 								type="button"

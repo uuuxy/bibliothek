@@ -66,13 +66,13 @@
 	/>
 {:else if ablauf.offeneLaeufe.length > 0}
 	<div class="space-y-2 pt-4">
-		<h4 class="text-sm font-semibold text-on-surface-variant">Laufende Inventuren</h4>
+		<h4 class="text-title-small text-on-surface-variant">Laufende Inventuren</h4>
 		{#each ablauf.offeneLaeufe as session (session.session_id)}
 			<div
 				class="flex items-center justify-between gap-3 p-3 bg-warning-container text-on-warning-container rounded-lg"
 			>
 				<div class="min-w-0">
-					<div class="font-semibold truncate">{session.label}</div>
+					<div class="truncate text-body-large-emphasized">{session.label}</div>
 					<div class="text-xs">
 						{session.erwartet - session.fehlend} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
 							0,
@@ -105,19 +105,19 @@
 	/>
 {:else if ablauf.frueher.laeufe.length > 0}
 	<div class="space-y-2 pt-4">
-		<h4 class="text-sm font-semibold text-on-surface-variant">Frühere Inventuren</h4>
+		<h4 class="text-title-small text-on-surface-variant">Frühere Inventuren</h4>
 		{#each ablauf.frueher.laeufe as inventur (inventur.session_id)}
 			<div
 				class="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-outline-variant"
 			>
 				<div class="min-w-0">
-					<div class="font-semibold text-on-surface truncate">{inventur.label}</div>
+					<div class="text-on-surface truncate text-body-large-emphasized">{inventur.label}</div>
 					<div class="text-xs text-on-surface-variant">
 						{formatDatum(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
 						{#if inventur.verworfen}
 							verworfen
 						{:else if inventur.verluste > 0}
-							<span class="text-error font-semibold">{inventur.verluste} fehlend</span>
+							<span class="text-error text-body-small-emphasized">{inventur.verluste} fehlend</span>
 						{:else}
 							vollständig
 						{/if}

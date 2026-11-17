@@ -91,7 +91,7 @@
 			<div
 				class="rounded-xl border border-error bg-error-container p-4 text-sm text-on-error-container"
 			>
-				<p class="font-semibold">Es fehlen Angaben für den Bescheid</p>
+				<p class="text-body-medium-emphasized">Es fehlen Angaben für den Bescheid</p>
 				<ul class="mt-1 list-inside list-disc">
 					{#each formular.fehlt as f (f)}<li>{f}</li>{/each}
 				</ul>
@@ -120,7 +120,7 @@
 					feld="w-44"
 				/>
 				<div class="text-right">
-					<div class="text-xs font-semibold text-on-surface-variant">Gesamtbetrag</div>
+					<div class="text-body-small-emphasized text-on-surface-variant">Gesamtbetrag</div>
 					<div class="text-2xl font-bold text-on-surface tabular-nums">
 						{formatEuro(formular.summe)}
 					</div>

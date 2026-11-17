@@ -47,7 +47,7 @@
 <!-- Der erste Baustein der Gruppe, deshalb ohne Trennlinie darüber; sonst gebaut wie
      BestandImport und ListenImport. -->
 <div>
-	<h4 class="mb-1 text-sm font-bold text-on-surface">Katalog-Import (Littera)</h4>
+	<h4 class="mb-1 text-title-small text-on-surface">Katalog-Import (Littera)</h4>
 	<p class="mb-4 text-sm text-on-surface-variant">
 		Die Datei <strong>katalogisat.xml</strong> aus Littera ergänzt die Angaben vorhandener Titel.
 		Eine
@@ -64,7 +64,7 @@
 				class="sr-only"
 			/>
 			<div
-				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
+				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-medium-emphasized rounded-xl transition-colors border border-outline-variant inline-block"
 			>
 				{datei ? datei.name : 'Datei auswählen …'}
 			</div>

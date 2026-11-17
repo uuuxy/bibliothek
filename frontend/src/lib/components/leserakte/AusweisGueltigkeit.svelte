@@ -56,7 +56,7 @@
 		oninput={uebernehmen}
 		aria-label="Ablaufjahr des Ausweises"
 		ungueltig={fehlt}
-		feld="w-64 pl-36 font-semibold"
+		feld="w-64 pl-36"
 	>
 		{#snippet vorlaufend()}
 			<CalendarClock class="h-4 w-4 shrink-0" aria-hidden="true" />
