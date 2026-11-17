@@ -56,7 +56,7 @@
 		<button
 			type="button"
 			onclick={() => onsortiere(spalte)}
-			title={titel}
+			data-tip={titel}
 			aria-label={titel}
 			class="inline-flex cursor-pointer items-center gap-1 rounded-sm hover:text-on-surface focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
 		>

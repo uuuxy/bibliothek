@@ -107,7 +107,7 @@
 		variant="secondary"
 		onclick={zeigeDsgvoAuskunft}
 		disabled={auskunftLaedt}
-		title="DSGVO-Auskunft (Art. 15) als PDF anzeigen"
+		data-tip="DSGVO-Auskunft (Art. 15) als PDF anzeigen"
 	>
 		{#if auskunftLaedt}{@render spinner()}{:else}<ShieldCheck
 				class="w-4 h-4 text-on-surface-variant"

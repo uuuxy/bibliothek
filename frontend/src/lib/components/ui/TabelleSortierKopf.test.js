@@ -52,7 +52,7 @@ describe('TabelleSortierKopf', () => {
 			}
 		});
 		// Aufsteigend sortiert → der Klick macht absteigend.
-		expect(screen.getByRole('button').getAttribute('title')).toBe(
+		expect(screen.getByRole('button').getAttribute('data-tip')).toBe(
 			'Nach Klasse absteigend sortieren'
 		);
 	});

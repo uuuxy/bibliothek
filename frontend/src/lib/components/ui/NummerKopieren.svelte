@@ -21,7 +21,7 @@
 <button
 	class="flex w-fit cursor-pointer items-center gap-1.5 font-mono transition-colors hover:text-primary"
 	onclick={kopieren}
-	title="{art} kopieren"
+	data-tip="{art} kopieren"
 >
 	<span>{art}: {nummer || '–'}</span>
 	{#if kopiert}

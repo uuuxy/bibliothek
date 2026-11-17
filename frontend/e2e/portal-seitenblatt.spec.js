@@ -73,7 +73,7 @@ test('Mein Portal: Ein Klick auf die Kachel zeigt die ISBN im Seitenblatt, der K
 	// Das Blatt steht neben dem Inhalt, nicht darüber: „Als PDF" am rechten Ende der Fachzeile
 	// endet links vom Blatt.
 	const pdf = await page
-		.getByTitle(`${FACH}: Bestandsliste als PDF, mit Buchbildern`)
+		.locator(`[data-tip="${FACH}: Bestandsliste als PDF, mit Buchbildern"]`)
 		.boundingBox();
 	const b = await blatt.boundingBox();
 	expect(

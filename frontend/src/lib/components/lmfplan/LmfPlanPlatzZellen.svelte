@@ -71,7 +71,7 @@
 		<button
 			type="button"
 			class={ZELLE}
-			title="Datum und Stunde festlegen"
+			data-tip="Datum und Stunde festlegen"
 			aria-label="Wochentag Zeile {i + 1}: {wochentag(platz.datum)} — festlegen"
 			onclick={() => festlegen('datum')}>{wochentag(platz.datum)}</button
 		>
@@ -80,7 +80,7 @@
 		<button
 			type="button"
 			class={ZELLE}
-			title="Datum und Stunde festlegen"
+			data-tip="Datum und Stunde festlegen"
 			aria-label="Datum Zeile {i + 1}: {datumKurz(platz.datum)} — festlegen"
 			onclick={() => festlegen('datum')}>{datumKurz(platz.datum)}</button
 		>
@@ -89,7 +89,7 @@
 		<button
 			type="button"
 			class={ZELLE}
-			title="Datum und Stunde festlegen"
+			data-tip="Datum und Stunde festlegen"
 			aria-label="Stunde Zeile {i + 1}: {stundeText(platz.stunde)} — festlegen"
 			onclick={() => festlegen('stunde')}>{stundeText(platz.stunde)}</button
 		>

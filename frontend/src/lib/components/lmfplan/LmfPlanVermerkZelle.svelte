@@ -72,7 +72,7 @@
 			bind:this={knopf}
 			type="button"
 			class="flex h-9 w-full max-w-maske cursor-pointer items-center rounded-xl border border-transparent px-3 text-left text-on-surface hover:bg-surface-container"
-			title={vermerk.trim() || undefined}
+			data-tip={vermerk.trim() || undefined}
 			onclick={oeffnen}
 		>
 			<span class="sr-only">Besonderheiten Zeile {i + 1}:</span>

@@ -145,7 +145,7 @@
 								variant="secondary"
 								onclick={etikettenDrucken}
 								class="w-full"
-								title="Etiketten dieses Titels im Druck-Center drucken"
+								data-tip="Etiketten dieses Titels im Druck-Center drucken"
 							>
 								<Printer class="w-4 h-4" aria-hidden="true" />
 								Barcodes drucken
@@ -155,7 +155,7 @@
 							variant="secondary"
 							onclick={onAssignClass}
 							class="w-full"
-							title="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
+							data-tip="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
 						>
 							<BookOpen class="w-4 h-4" aria-hidden="true" />
 							Zum Klassensatz hinzufügen

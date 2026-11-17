@@ -37,7 +37,7 @@
 		draggable={ziehbar}
 		ondragstart={ziehbar ? ziehstart : undefined}
 		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
-		title="{name} {verb}{hinweis ? ` (${hinweis})` : ''}"
+		data-tip="{name} {verb}{hinweis ? ` (${hinweis})` : ''}"
 	>
 		<Plus class="h-4 w-4" aria-hidden="true" />
 		{name}
@@ -55,7 +55,7 @@
 				type="button"
 				onclick={onklick}
 				class="flex h-8 cursor-pointer items-center gap-1 rounded-l-md pl-3 pr-1 hover:bg-on-secondary-container/10"
-				title="{name} gegen eine andere Klasse tauschen"
+				data-tip="{name} gegen eine andere Klasse tauschen"
 			>
 				{name}
 				{#if hinweis}<span class="font-normal">· {hinweis}</span>{/if}

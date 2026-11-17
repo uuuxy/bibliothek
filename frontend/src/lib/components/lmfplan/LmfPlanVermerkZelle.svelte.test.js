@@ -84,7 +84,7 @@ describe('LmfPlanVermerkZelle', () => {
 		const lang = 'Nur Rückgabe — Abschlussklasse, Bücher bitte gebündelt in die Bibliothek';
 		const { getByRole, getByLabelText } = zeige([{ klassen: ['10R1'], vermerk: lang }]);
 		const knopf = getByRole('button', { name: /^Besonderheiten Zeile 1:/ });
-		expect(knopf.getAttribute('title')).toBe(lang);
+		expect(knopf.getAttribute('data-tip')).toBe(lang);
 		expect(knopf.querySelector('.truncate')?.textContent).toBe(lang);
 		await fireEvent.click(knopf);
 		expect(/** @type {HTMLInputElement} */ (getByLabelText('Besonderheiten Zeile 1')).value).toBe(
@@ -96,7 +96,7 @@ describe('LmfPlanVermerkZelle', () => {
 		const { getByRole } = zeige([{ klassen: ['10R1'], vermerk: '   ' }]);
 		const knopf = getByRole('button', { name: /^Besonderheiten Zeile 1:/ });
 		expect(knopf.textContent).toContain('Besonderheit eintragen');
-		expect(knopf.hasAttribute('title')).toBe(false);
+		expect(knopf.hasAttribute('data-tip')).toBe(false);
 	});
 	it('behält das Feld einer Zeile ohne Klasse auch nach Enter und Escape, solange ihr Text fehlt', async () => {
 		// Das Feld bleibt stehen und im Fokus: Schlösse die Taste es innerlich, verschwände es beim

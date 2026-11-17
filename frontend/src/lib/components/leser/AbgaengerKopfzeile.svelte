@@ -97,7 +97,7 @@
 					onclick={onMailen}
 					disabled={mailLaeuft || gesamt === 0}
 					class="no-print"
-					title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
+					data-tip="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
 				>
 					{#if mailLaeuft}
 						<Ladekreis size="sm" farbe="aktuell" etikett="Versand läuft" />

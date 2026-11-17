@@ -18,8 +18,8 @@ describe('AbgangsjahrFeld: Neu berechnen', () => {
 			darfBearbeiten: true
 		});
 
-		await fireEvent.click(feld.getByTitle('Abgangsjahr bearbeiten'));
-		await fireEvent.click(feld.getByTitle('Automatisch aus Klasse berechnen'));
+		await fireEvent.click(feld.getByRole('button', { name: /^Abgang 2000/ }));
+		await fireEvent.click(feld.getByRole('button', { name: 'Neu berechnen' }));
 
 		expect(/** @type {HTMLInputElement} */ (feld.getByLabelText('Abgangsjahr')).value).toBe(soll);
 	});

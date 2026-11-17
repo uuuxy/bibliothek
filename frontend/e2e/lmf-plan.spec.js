@@ -416,7 +416,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 		.replace(/\s*einplanen.*$/, '')
 		.trim();
 	await page.getByRole('button', { name: /Klassen bleiben draußen/ }).click();
-	await zeile.getByTitle(`${klasse} gegen eine andere Klasse tauschen`).click();
+	await zeile.locator(`[data-tip="${klasse} gegen eine andere Klasse tauschen"]`).click();
 	const auswahl = zeile.getByRole('combobox', { name: `Klasse Zeile ${nummer} tauschen` });
 	await expect(auswahl).toHaveAttribute('aria-expanded', 'true');
 	await page.getByRole('option', { name: andere, exact: true }).click();
@@ -426,7 +426,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(page.getByRole('button', { name: `${klasse} einplanen` })).toBeVisible();
 	// Und zurück, damit der Rest des Tests unsere Klasse wiederfindet — im Vorrat trägt
 	// sie den Zusatz „ohne Schüler", deshalb kein exakter Name.
-	await getauscht.getByTitle(`${andere} gegen eine andere Klasse tauschen`).click();
+	await getauscht.locator(`[data-tip="${andere} gegen eine andere Klasse tauschen"]`).click();
 	await page.getByRole('option', { name: `${klasse} · ohne Schüler` }).click();
 	await expect(zeile).toContainText('Freitag');
 

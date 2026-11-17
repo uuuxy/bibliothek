@@ -18,6 +18,11 @@ const PLAETZE = [
 const KEIN_MARKER = { ohneSchueler: () => false };
 
 /** @param {any} zeilen */
+/** Der Knopf mit dieser Sprechblase (data-tip, actions/tooltip.js).
+ * @param {Element} wurzel @param {string} text */
+const mitTipp = (wurzel, text) =>
+	/** @type {HTMLElement} */ (wurzel.querySelector(`[data-tip="${text}"]`));
+
 function zeige(zeilen, onklasseraus = vi.fn(), ausgelassen = [], ontausch = vi.fn()) {
 	return render(LmfPlanReihenfolge, {
 		zeilen,
@@ -225,13 +230,13 @@ describe('LmfPlanReihenfolge', () => {
 		// Die Zelle überschreiben wie im Excel: Klick auf „10R2" zeigt die Auswahl mit
 		// 10R2 selbst und dem Vorrat, sofort geöffnet; wählen meldet den Tausch.
 		const tausch = vi.fn();
-		const { getByRole, getByTitle, queryByRole } = zeige(
+		const { container, getByRole, queryByRole } = zeige(
 			start.map((z) => ({ ...z })),
 			vi.fn(),
 			['10R4', '12T1'],
 			tausch
 		);
-		await fireEvent.click(getByTitle('10R2 gegen eine andere Klasse tauschen'));
+		await fireEvent.click(mitTipp(container, '10R2 gegen eine andere Klasse tauschen'));
 		const feld = getByRole('combobox', { name: 'Klasse Zeile 2 tauschen' });
 		expect(feld.getAttribute('aria-expanded')).toBe('true');
 		expect(
@@ -243,7 +248,7 @@ describe('LmfPlanReihenfolge', () => {
 		expect(tausch).toHaveBeenCalledWith(1, '10R2', '10R4');
 		expect(queryByRole('combobox')).toBeNull();
 
-		await fireEvent.click(getByTitle('10R3 gegen eine andere Klasse tauschen'));
+		await fireEvent.click(mitTipp(container, '10R3 gegen eine andere Klasse tauschen'));
 		await fireEvent.keyDown(getByRole('combobox'), { key: 'Escape' });
 		expect(queryByRole('combobox')).toBeNull();
 		expect(tausch).toHaveBeenCalledTimes(1);
@@ -251,13 +256,13 @@ describe('LmfPlanReihenfolge', () => {
 
 	it('tauscht auch in einer geteilten Stunde je Chip', async () => {
 		const tausch = vi.fn();
-		const { getByRole, getByTitle } = zeige(
+		const { container, getByRole } = zeige(
 			[{ klassen: ['10R1', '10R2'], vermerk: '' }],
 			vi.fn(),
 			['10R4'],
 			tausch
 		);
-		await fireEvent.click(getByTitle('10R2 gegen eine andere Klasse tauschen'));
+		await fireEvent.click(mitTipp(container, '10R2 gegen eine andere Klasse tauschen'));
 		// Die Klasse daneben steht nicht zur Wahl — sie ist schon in der Zeile.
 		expect(
 			[...getByRole('listbox').querySelectorAll('[role="option"]')].map((o) =>
@@ -274,7 +279,7 @@ describe('LmfPlanReihenfolge', () => {
 describe('LmfPlanReihenfolge: Klasse tauschen', () => {
 	it('bricht beim Klick außerhalb der Zelle ab, nicht beim Klick in ihr', async () => {
 		const screen = zeige([{ klassen: ['10R1'], vermerk: '' }], vi.fn(), [], vi.fn());
-		await fireEvent.click(screen.getByTitle('10R1 gegen eine andere Klasse tauschen'));
+		await fireEvent.click(mitTipp(screen.container, '10R1 gegen eine andere Klasse tauschen'));
 		const feld = () => screen.queryByRole('combobox', { name: 'Klasse Zeile 1 tauschen' });
 		await vi.waitFor(() => expect(feld()).toBeTruthy());
 

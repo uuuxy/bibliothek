@@ -25,7 +25,7 @@
 	variant="secondary"
 	onclick={oeffnen}
 	class="w-full"
-	title="Ein Buch, das zweimal im Katalog steht, zu einem Titel machen"
+	data-tip="Ein Buch, das zweimal im Katalog steht, zu einem Titel machen"
 >
 	<Merge class="w-4 h-4" aria-hidden="true" />
 	Mit anderem Titel zusammenführen

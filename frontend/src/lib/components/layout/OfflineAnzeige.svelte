@@ -178,7 +178,7 @@
 				size="sm"
 				onclick={() => fileInput?.click()}
 				class="shrink-0"
-				title="Sicherung eines anderen Rechners übernehmen"
+				data-tip="Sicherung eines anderen Rechners übernehmen"
 			>
 				<Upload size={16} strokeWidth={2.5} />
 				Sicherung einspielen

@@ -65,7 +65,7 @@
 				class="py-1 rounded-lg text-sm transition-colors {el.style?.textAlign === a.wert
 					? 'bg-secondary-container text-on-secondary-container'
 					: 'bg-surface-container text-on-surface-variant'}"
-				title={a.name}
+				data-tip={a.name}
 				aria-label={a.name}>{a.zeichen}</button
 			>
 		{/each}

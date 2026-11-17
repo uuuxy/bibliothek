@@ -64,7 +64,7 @@
 			variant="secondary"
 			size="sm"
 			onclick={() => (eingabe = abgangsjahrAm(leser.klasse, new Date()))}
-			title="Automatisch aus Klasse berechnen"
+			data-tip="Automatisch aus Klasse berechnen"
 			><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
 		>
 		<Button size="sm" onclick={speichere} disabled={speichert}>
@@ -83,7 +83,7 @@
 	<button
 		onclick={starte}
 		class="text-base text-on-surface-variant font-semibold hover:underline cursor-pointer"
-		title="Abgangsjahr bearbeiten"
+		data-tip="Abgangsjahr bearbeiten"
 	>
 		Abgang {leser.abgaenger_jahr} ✎
 	</button>
