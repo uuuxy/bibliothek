@@ -10,7 +10,7 @@ import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } fr
 // Regeln (aus den M3-Rollen, Herleitung im Audit):
 //   - Zellen-Text (td):   >= 14 px (body-medium) — Klasse, Barcode, Datum, Status
 //     sind das, was man beim Arbeiten ABLIEST, kein Beiwerk.
-//   - Tabellenkopf (th):  >= 12 px
+//   - Tabellenkopf (th):  >= 14 px (title-small, Googles Token für den Kopf der Datentabelle)
 //   - Knopf-Text:         >= 14 px (M3 kennt keinen 12-px-Knopf)
 //   - h2/h3:              >= 16 px
 //   - Schriftgewicht:     <= 700 überall (800/900 gibt es in M3 nicht)
@@ -77,7 +77,7 @@ const MESSE_TYPO = () => {
 			mindest = 14;
 			rolle = 'td';
 		} else if (el.closest('th')) {
-			mindest = 12;
+			mindest = 14;
 			rolle = 'th';
 		} else if (el.closest('h2, h3')) {
 			mindest = 16;

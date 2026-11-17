@@ -3,8 +3,9 @@
      Ein Rezept, hier in <style> festgeschrieben, damit die Zellen nichts über ihr Aussehen
      sagen müssen und es auch nicht können sollen (Ratsche frontend-hygiene-tabellen.test.js):
      Tabellen mit eigenen Abständen und Farben lesen sich nebeneinander als drei Programme.
-       - Kopfzelle: 40 px hoch, label 12 px medium in `on-surface-variant`, Trennlinie
-         `outline-variant` (typo-rollen.spec.js: th 12, td 14).
+       - Kopfzelle: 40 px hoch, title-small 14 px medium in `on-surface-variant` (Googles Token
+         md.comp.data-table.header-headline-size und -weight = title-small), Trennlinie
+         `outline-variant` (typo-rollen.spec.js: th 14, td 14).
        - Zelle: 14 px in `on-surface`, py-2 → Zeilen von 36–40 px, unsere Dichte.
        - Trennlinien zwischen den Zeilen in `outline-variant` (M3 Divider), keine
          Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTabelle).
@@ -75,8 +76,8 @@
 	table :global(th) {
 		height: 2.5rem;
 		padding: 0 1rem;
-		font-size: var(--text-xs);
-		line-height: var(--text-xs--line-height);
+		font-size: var(--text-sm);
+		line-height: var(--text-sm--line-height);
 		font-weight: 500;
 		color: var(--color-on-surface-variant);
 		border-bottom: 1px solid var(--color-outline-variant);
