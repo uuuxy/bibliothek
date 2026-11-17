@@ -1,6 +1,6 @@
 <script>
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { formatEuro as euro, formatZahl as num } from '../../utils/format.js';
+	import { anzahlText, formatEuro as euro, formatZahl as num } from '../../utils/format.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import UeberfaelligQuote from './UeberfaelligQuote.svelte';
 	import StatistikVerlauf from './StatistikVerlauf.svelte';
@@ -253,7 +253,7 @@
 					{@render kpi(
 						'Aktuell verliehen',
 						num(kennzahlen.zirkulation?.aktuell_verliehen ?? 0),
-						`von ${num(kennzahlen.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
+						`von ${anzahlText(kennzahlen.zirkulation?.aktiver_bestand ?? 0, 'aktiven Exemplar', 'aktiven Exemplaren')}`,
 						'text-primary'
 					)}
 					<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit

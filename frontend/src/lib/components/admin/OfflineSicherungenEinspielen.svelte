@@ -21,6 +21,7 @@
 	import Button from '../ui/Button.svelte';
 	import { Upload } from '@lucide/svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {HTMLInputElement | null} */
 	let fileInput = $state(null);
@@ -79,7 +80,7 @@
 		</Button>
 		{#if offlineSync.wartendeAnzahl > 0}
 			<span class="text-sm text-on-surface-variant">
-				{offlineSync.wartendeAnzahl} Vorgang/Vorgänge warten noch auf Übertragung
+				{anzahlText(offlineSync.wartendeAnzahl, 'Vorgang wartet', 'Vorgänge warten')} noch auf Übertragung
 			</span>
 		{/if}
 	</div>
@@ -96,10 +97,13 @@
 	{#if bericht}
 		<div class="mt-6 rounded-xl bg-success-container p-4 text-sm text-on-success-container">
 			<p class="font-medium">
-				{bericht.vorgaenge} Vorgang/Vorgänge aus {bericht.dateien} Datei(en) übernommen
+				{anzahlText(bericht.vorgaenge, 'Vorgang', 'Vorgänge')} aus
+				{anzahlText(bericht.dateien, 'Datei', 'Dateien')} übernommen
 			</p>
 			<p class="mt-1">
-				Sie werden jetzt an den Server übertragen und sind danach an allen Arbeitsplätzen sichtbar.
+				{bericht.vorgaenge === 1
+					? 'Er wird jetzt an den Server übertragen und ist danach an allen Arbeitsplätzen sichtbar.'
+					: 'Sie werden jetzt an den Server übertragen und sind danach an allen Arbeitsplätzen sichtbar.'}
 			</p>
 		</div>
 	{/if}

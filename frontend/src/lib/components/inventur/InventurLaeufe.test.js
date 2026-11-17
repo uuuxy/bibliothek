@@ -153,4 +153,19 @@ describe('InventurLaeufe', () => {
 		await loeschen();
 		await vi.waitFor(() => expect(a.frueher.loesche).toHaveBeenCalledWith(fruehereInventur));
 	});
+
+	it('nennt ein einzelnes fehlendes Buch in der Einzahl', async () => {
+		const eines = { ...fruehereInventur, verluste: 1 };
+		const a = ablauf({ frueher: frueheres({ laeufe: [eines] }) });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
+		vi.mocked(loeschenBestaetigen).mockResolvedValueOnce(false);
+		await fireEvent.click(screen.getByRole('button', { name: 'Aktionen für „LMF Deu 7“' }));
+		await fireEvent.click(await screen.findByRole('menuitem', { name: 'Löschen' }));
+		await vi.waitFor(() =>
+			expect(loeschenBestaetigen).toHaveBeenCalledWith(
+				'Inventur „LMF Deu 7“ löschen?',
+				'Ihr Fehlbestandsbericht wird mit gelöscht. Das eine fehlende Buch bleibt als verloren gebucht; ein Buch, das sich findet, bucht ein Scan an der Theke zurück. Das lässt sich nicht rückgängig machen.'
+			)
+		);
+	});
 });

@@ -315,7 +315,7 @@ function erzeugeOfflineSync() {
 			return gelesen;
 		} catch (e) {
 			console.error(e);
-			throw new Error('Fehler beim Einlesen der Backup-Datei.');
+			throw new Error('Die Sicherungsdatei ist nicht lesbar');
 		}
 	}
 
@@ -327,7 +327,7 @@ function erzeugeOfflineSync() {
 	function warneVorDemSchliessen(e) {
 		if (wartendeAnzahl > 0) {
 			e.preventDefault();
-			const msg = `${wartendeAnzahl} Vorgang/Vorgänge sind nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
+			const msg = `${wartendeAnzahl === 1 ? '1 Vorgang ist' : `${wartendeAnzahl} Vorgänge sind`} nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
 			e.returnValue = msg;
 			return msg;
 		}

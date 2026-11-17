@@ -41,7 +41,7 @@ describe('Offline-Sicherungen einspielen: der Bericht', () => {
 		importiere.mockResolvedValueOnce(3).mockRejectedValueOnce(new Error('unlesbar'));
 		const { container, findByText } = render(OfflineSicherungenEinspielen);
 		await waehle(container, ['kiosk1.json', 'kaputt.json']);
-		expect(await findByText(/3 Vorgang\/Vorgänge aus 1 Datei\(en\) übernommen/)).toBeTruthy();
+		expect(await findByText(/3 Vorgänge aus\s+1 Datei übernommen/)).toBeTruthy();
 		expect(toast).toHaveBeenCalledWith(expect.stringContaining('kaputt.json'), 'error');
 	});
 });

@@ -13,6 +13,7 @@
 	import { scanSchutz } from '../../utils/scanErkennung.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { ladeStandorte } from '../../utils/standorte.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	/**
 	 * @type {{ open: boolean, exemplarIds: string[], onclose: () => void, onGeaendert: () => Promise<void> | void }}
@@ -43,7 +44,7 @@
 	const gueltig = $derived(!sendet && (entfernen || neu !== ''));
 
 	/** @param {number} n */
-	const anzahlText = (n) => `${n} ${n === 1 ? 'Exemplar' : 'Exemplare'}`;
+	const exemplare = (n) => anzahlText(n, 'Exemplar', 'Exemplare');
 
 	async function speichern() {
 		if (!gueltig) return;
@@ -58,7 +59,7 @@
 			snackbars.addToast(
 				n === 0
 					? 'Der Standort war schon so eingetragen.'
-					: `Standort ${weg ? 'entfernt' : 'geändert'}: ${anzahlText(n)}.`,
+					: `Standort ${weg ? 'entfernt' : 'geändert'}: ${exemplare(n)}.`,
 				'success'
 			);
 			await onGeaendert();
@@ -79,13 +80,13 @@
 	{onclose}
 	onbestaetigen={speichern}
 >
-	<p class="text-sm text-on-surface-variant">Gilt für {anzahlText(anzahl)}.</p>
+	<p class="text-sm text-on-surface-variant">Gilt für {exemplare(anzahl)}.</p>
 	<!-- Ein Scan in das offene Feld wäre sonst der Standort der markierten Exemplare. -->
 	<div use:scanSchutz={() => {}}>
 		<VorschlagFeld
 			etikett="Standort"
 			bind:value={standort}
-			vorschlaege={vorhandene.map((s) => ({ wert: s.standort, zusatz: anzahlText(s.anzahl) }))}
+			vorschlaege={vorhandene.map((s) => ({ wert: s.standort, zusatz: exemplare(s.anzahl) }))}
 			disabled={entfernen}
 		/>
 	</div>

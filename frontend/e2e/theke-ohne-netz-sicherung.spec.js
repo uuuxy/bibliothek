@@ -89,7 +89,7 @@ test('Zwei Sicherungen auf einmal: jeder Vorgang geht einmal hinaus, und eine Da
 	await page.goto('/einstellungen');
 	await einstellungsKategorie(page, 'Datenverwaltung').click();
 	await spieleEin(page, { 'rechner-a.json': rechnerA, 'rechner-b.json': rechnerB });
-	await expect(page.getByText('4 Vorgang/Vorgänge aus 2 Datei(en) übernommen')).toBeVisible();
+	await expect(page.getByText('4 Vorgänge aus 2 Dateien übernommen')).toBeVisible();
 
 	await expect.poll(() => warteschlange(page), { timeout: 10_000 }).toEqual([]);
 	expect(verliehenAn(b1)).toBe(anna.id);
@@ -110,7 +110,7 @@ test('Zwei Sicherungen auf einmal: jeder Vorgang geht einmal hinaus, und eine Da
 	// Server seine Antwort und bucht nichts (internal/api/theke/nachbuchen_schluessel.go).
 	lauf.ergebnisse.length = 0;
 	await spieleEin(page, { 'rechner-a.json': rechnerA });
-	await expect(page.getByText('2 Vorgang/Vorgänge aus 1 Datei(en) übernommen')).toBeVisible();
+	await expect(page.getByText('2 Vorgänge aus 1 Datei übernommen')).toBeVisible();
 	await expect.poll(() => warteschlange(page), { timeout: 10_000 }).toEqual([]);
 	await expect.poll(() => lauf.ergebnisse).toEqual(['ausgeliehen', 'ausgeliehen']);
 	expect(ausleihen(b1)).toBe('1/1');
@@ -147,7 +147,7 @@ test('Eine Sicherung in Format 1 eines anderen Rechners wird nachgebucht', async
 	await page.goto('/einstellungen');
 	await einstellungsKategorie(page, 'Datenverwaltung').click();
 	await spieleEin(page, { 'offline_scans_backup_alt.json': format1 });
-	await expect(page.getByText('2 Vorgang/Vorgänge aus 1 Datei(en) übernommen')).toBeVisible();
+	await expect(page.getByText('2 Vorgänge aus 1 Datei übernommen')).toBeVisible();
 
 	await expect.poll(() => verliehenAn(frei), { timeout: 10_000 }).toBe(anna.id);
 	await expect.poll(() => verliehenAn(verliehen)).toBe('');

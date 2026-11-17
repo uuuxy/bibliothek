@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Testdruck Vorderseite/ })).toBeVisible();
 	// Bis das Design geladen ist, ist der Designer inert, und die Antwort überschriebe ein Bild.
 	// setInputFiles prüft das nicht; der Probeklick wartet, bis der Designer Eingaben annimmt.
-	await page.getByRole('button', { name: '+ Bild(er)' }).click({ trial: true });
+	await page.getByRole('button', { name: '+ Bild', exact: true }).click({ trial: true });
 });
 
 test('Das Dateifeld ist nach dem Hochladen leer, ohne Fehler auf der Seite', async ({ page }) => {

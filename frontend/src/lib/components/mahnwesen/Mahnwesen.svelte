@@ -12,6 +12,7 @@
 	import KlassenVersandDialog from '../ui/KlassenVersandDialog.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	// Vor „Alle anmahnen" steht ein Dialog statt eines window.confirm, das nur alles oder
 	// nichts kennt. Er liegt auf oberster Ebene, nicht in der Aktionszeile: Ein Overlay hat in
@@ -51,14 +52,12 @@
 			<div>
 				<h2 class="text-lg font-bold">Mahnwesen blockiert</h2>
 				<p class="text-sm mt-1">
-					Es befinden sich noch <strong
-						>{offlineSync.wartendeAnzahl} ungesynchronisierte Offline-Ausleihe(n)/Rückgabe(n)</strong
-					> auf diesem Gerät.
+					Auf diesem Rechner {offlineSync.wartendeAnzahl === 1 ? 'wartet' : 'warten'} noch
+					<strong>{anzahlText(offlineSync.wartendeAnzahl, 'Vorgang', 'Vorgänge')}</strong> auf Übertragung.
 				</p>
 				<p class="text-xs mt-2">
-					Bitte stelle die Internetverbindung wieder her. Das System synchronisiert die Daten
-					automatisch im Hintergrund, sobald du wieder online bist. Danach wird das Mahnwesen
-					automatisch wieder freigegeben.
+					Sobald die Verbindung zum Server zurück ist, geschieht das von selbst. Danach ist das
+					Mahnwesen wieder frei.
 				</p>
 			</div>
 		</div>

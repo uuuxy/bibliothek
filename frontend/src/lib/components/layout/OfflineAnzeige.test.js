@@ -167,7 +167,7 @@ describe('Offline-Band', () => {
 		await waehle('gut.json');
 		await vi.waitFor(() =>
 			expect(snackbars.addToast).toHaveBeenCalledWith(
-				expect.stringContaining('3 Vorgang'),
+				'3 Vorgänge aus 1 Datei übernommen. Die Übertragung läuft.',
 				'success'
 			)
 		);

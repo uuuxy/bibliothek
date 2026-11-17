@@ -14,6 +14,7 @@
 	import Radio from '../ui/Radio.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { anzahlText } from '../../utils/format.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from '../bestellungen/mittel.js';
 
 	/**
@@ -48,7 +49,9 @@
 			});
 			const n = antwort?.geaendert ?? 0;
 			snackbars.addToast(
-				n === 0 ? 'Eigentum war schon so eingetragen.' : `Eigentum geändert: ${n} Exemplar(e).`,
+				n === 0
+					? 'Eigentum war schon so eingetragen.'
+					: `Eigentum geändert: ${anzahlText(n, 'Exemplar', 'Exemplare')}.`,
 				'success'
 			);
 			await onGeaendert();

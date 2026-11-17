@@ -683,7 +683,7 @@ describe('offlineSync: Sicherung der Warteschlange als Datei', () => {
 
 // Die zweite Sicherung eines Rechners trägt die Vorgänge der ersten noch einmal, solange sie
 // nicht übertragen sind. Das zweite Einreihen derselben ID wies IndexedDB ab (ConstraintError),
-// die Datei galt als unlesbar („Fehler beim Einlesen der Backup-Datei"), obwohl ihre übrigen
+// die Datei galt als unlesbar („Die Sicherungsdatei ist nicht lesbar"), obwohl ihre übrigen
 // Vorgänge eingereiht waren; gezählt und übertragen wurde danach nichts. Geprüft an der echten
 // Warteschlange: offlineImport.test.js ersetzt das Einreihen durch eine Attrappe, die immer
 // gelingt, und sah den Fall deshalb nicht.

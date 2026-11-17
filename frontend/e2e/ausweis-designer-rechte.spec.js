@@ -58,7 +58,7 @@ test('Ohne das Recht: gesperrt, kein Schreiben, keine Meldung; der Testdruck ble
 
 	expect(rumpfe).toEqual([]);
 	await expect(page.getByText(/Speichern fehlgeschlagen/)).toHaveCount(0);
-	for (const name of ['+ Text', '+ Fläche', '+ Bild(er)', 'Standardwerte wiederherstellen']) {
+	for (const name of ['+ Text', '+ Fläche', '+ Bild', 'Standardwerte wiederherstellen']) {
 		await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
 	}
 	await expect(page.getByRole('combobox', { name: 'Barcode-Typ' })).toBeDisabled();

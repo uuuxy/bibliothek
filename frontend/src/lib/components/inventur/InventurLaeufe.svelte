@@ -41,10 +41,14 @@
 	// Gelöscht werden Lauf und Bericht; was er an den Büchern gebucht hat, bleibt (Abgangsbuch).
 	/** @param {any} inventur */
 	async function loeschen(inventur) {
+		const fehlende =
+			inventur.verluste === 1
+				? 'Das eine fehlende Buch bleibt'
+				: `Die ${inventur.verluste} fehlenden Bücher bleiben`;
 		const folge = inventur.verworfen
 			? 'Sie wurde verworfen und hat nichts gebucht.'
 			: inventur.verluste > 0
-				? `Ihr Fehlbestandsbericht wird mit gelöscht. Die ${inventur.verluste} fehlenden Bücher bleiben als verloren gebucht; ein Buch, das sich findet, bucht ein Scan an der Theke zurück.`
+				? `Ihr Fehlbestandsbericht wird mit gelöscht. ${fehlende} als verloren gebucht; ein Buch, das sich findet, bucht ein Scan an der Theke zurück.`
 				: 'Sie war vollständig und hat keinen Fehlbestand.';
 		const ja = await loeschenBestaetigen(
 			`Inventur „${inventur.label}“ löschen?`,

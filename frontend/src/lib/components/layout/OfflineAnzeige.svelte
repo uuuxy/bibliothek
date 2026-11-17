@@ -19,6 +19,7 @@
 	import Button from '../ui/Button.svelte';
 	import NachbuchMeldungen from './NachbuchMeldungen.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { anzahlText } from '../../utils/format.js';
 
 	// Der Herzschlag kommt von außen (App.svelte), und sein Ausfall steht in derselben Zeile
 	// wie jeder andere Verbindungsverlust: dieselbe Lage, eine Anzeige.
@@ -76,7 +77,7 @@
 
 		if (gesamt > 0) {
 			snackbars.addToast(
-				`${gesamt} Vorgang/Vorgänge aus ${files.length - fehler.length} Datei(en) übernommen — werden jetzt übertragen.`,
+				`${anzahlText(gesamt, 'Vorgang', 'Vorgänge')} aus ${anzahlText(files.length - fehler.length, 'Datei', 'Dateien')} übernommen. Die Übertragung läuft.`,
 				'success'
 			);
 		}

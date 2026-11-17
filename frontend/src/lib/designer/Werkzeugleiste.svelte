@@ -130,7 +130,7 @@
 		     können); das <input type="file"> bleibt unsichtbar und wird nur programmatisch
 		     ausgelöst. -->
 		<Button variant="secondary" size="sm" disabled={gesperrt} onclick={() => bildUploadEl?.click()}>
-			+ Bild(er)
+			+ Bild
 		</Button>
 		<input
 			bind:this={bildUploadEl}

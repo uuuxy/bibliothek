@@ -155,7 +155,7 @@ describe('AusweisDesigner: ohne das Recht, die Einstellungen zu verwalten', () =
 		const knopf = (/** @type {string|RegExp} */ name) =>
 			/** @type {HTMLButtonElement} */ (screen.getByRole('button', { name }));
 
-		for (const name of ['+ Text', '+ Fläche', '+ Bild(er)', 'Standardwerte wiederherstellen']) {
+		for (const name of ['+ Text', '+ Fläche', '+ Bild', 'Standardwerte wiederherstellen']) {
 			expect(knopf(name).disabled, name).toBe(true);
 		}
 		expect(knopf('Kartendrucker').disabled).toBe(true);
