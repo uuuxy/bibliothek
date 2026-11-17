@@ -37,7 +37,7 @@ test('Datenverwaltung: gefüllt ist nur der Import einer gewählten Datei', asyn
 	await expect(page.getByRole('button', { name: 'Bestand importieren' })).toBeDisabled();
 	await expect(page.getByRole('button', { name: 'Import starten' })).toBeDisabled();
 	for (const werkzeug of [
-		'Fehlende Cover im Hintergrund laden',
+		'Fehlende Cover laden',
 		'Katalog als CSV herunterladen',
 		'Sicherungsdateien auswählen'
 	])
