@@ -53,7 +53,7 @@
 									appState.triggerStudentScan = b.schueler_barcode;
 									onBack();
 								}}
-								class="text-sm font-semibold text-on-surface hover:text-primary text-left cursor-pointer truncate block"
+								class="text-sm font-semibold text-on-surface hover:underline text-left cursor-pointer truncate block rounded focus-visible:outline-2 focus-visible:outline-primary"
 							>
 								{@render leser(b)}
 							</button>
