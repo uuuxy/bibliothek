@@ -49,6 +49,10 @@ Nur, was kein Test leisten kann.
   die 23 Stellen angleichen. (5.186)
 - [x] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
   welche Regel für beide gilt. (5.187)
+- [ ] Klammern und Schrägstriche in Texten der Oberfläche und Meldungen wie bei Google: Klammern
+  nur für Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten. (5.188)
+- [ ] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
+  Knöpfe, `text-xs`. (5.189)
 
 ### Termin
 
@@ -100,6 +104,38 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.188 Klammern und Schrägstriche wie bei Google
+
+M3 (Content design, Grammar and punctuation): „Parentheses can be used to define acronyms or
+jargon or when referencing a source. They shouldn’t be used when adding a side note or an
+afterthought of a sentence.“ Googles developer documentation style guide (Slashes): „Don't use
+slashes to separate alternatives.“ Keine der beiden Satzzeichen-Prüfungen sieht das. Am Server
+etwa: „Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein)
+…“ (`leser_anlegen.go`), „Der Bescheid ist nicht (mehr) offen …“ (`bescheid.go`), „Diese
+Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)“. Grob gezählt:
+67 feste Texte mit Klammer in `internal/` und `cmd/`, darunter erlaubte (`(IMAP)`,
+`(Art. 16)`); die Oberfläche ist nicht gezählt.
+
+Nächster Schritt: Die Prüfung der Oberfläche und die am Server zählen lassen, welche Texte
+Klammern und Schrägstriche tragen. Je Text: Erklärt die Klammer einen Begriff oder nennt eine
+Quelle, bleibt sie; sonst in den Satz ziehen oder streichen. Einen Schrägstrich zwischen
+Wahlmöglichkeiten ersetzt „oder“.
+
+### 5.189 Laufweite der Titel- und Label-Rollen
+
+Googles Werte (material-web, `tokens/versions/v0_192/_md-sys-typescale.scss`): title-medium
+16/24 px, Gewicht 500, Laufweite 0,15 px; label-large und title-small 14/20 px, 500, 0,1 px;
+body-small 12/16 px, 400, 0,4 px; label-medium 12/16 px, 500, 0,5 px. Das Programm setzt
+Abschnitte als `text-base font-semibold` und Knöpfe als `text-sm font-semibold`: Größe,
+Zeilenhöhe und Gewicht stimmen, die Laufweite kommt aber von body-large (0,5 px) und
+body-medium (0,25 px). `text-xs` trägt 0,5 px, den Wert von label-medium statt body-small.
+Gezählt: `font-semibold` neben `text-base` 46-mal, neben `text-sm` 67-mal, neben
+`text-xs` 31-mal. Die großen Überschriften (22 und 24 px, 5.186) stimmen in allen vier Werten.
+
+Nächster Schritt: title-medium, label-large und label-medium wie `text-label-small` als eigene
+Rollen in `theme-mass.css` anlegen, die Stellen umstellen und `text-xs` auf 0,4 px setzen; die
+Tabelle in CLAUDE.md nennt danach die neuen Klassen.
 
 ### 7.2 Frisches Littera-Backup
 
