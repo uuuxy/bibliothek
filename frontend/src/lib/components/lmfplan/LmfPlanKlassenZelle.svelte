@@ -78,7 +78,6 @@
 
 <td
 	bind:this={zelle}
-	class="px-4 py-1"
 	onfocusout={tauscht === null ? undefined : fokusWeg}
 	onkeydown={(e) => {
 		if (e.key === 'Escape' && tauscht !== null) {

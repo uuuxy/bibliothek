@@ -39,9 +39,7 @@
 		onentfernen
 	} = $props();
 
-	const flaeche = $derived(
-		markiert ? 'bg-secondary-container' : gezogen ? 'opacity-50' : 'hover:bg-surface-container-low'
-	);
+	const flaeche = $derived(markiert ? 'bg-secondary-container' : gezogen ? 'opacity-50' : '');
 </script>
 
 <tr
@@ -57,13 +55,11 @@
 		e.preventDefault();
 		onablegen(e);
 	}}
-	class="group h-12 transition-colors {flaeche} {ziel
-		? '[&>td]:border-t-2 [&>td]:border-primary'
-		: ''}"
+	class="group h-12 {flaeche} {ziel ? '[&>td]:border-t-2 [&>td]:border-primary' : ''}"
 >
 	<!-- Der Griff erscheint unter der Maus (wie in Google Keep und Google Formulare) und zeigt,
 	     dass man die Zeile ziehen kann; gezogen wird weiter an der ganzen Zeile. -->
-	<td class="text-right tabular-nums text-on-surface-variant">
+	<td class="text-right tabular-nums">
 		<span class="flex items-center justify-between gap-2">
 			<GripVertical
 				class="h-4 w-4 cursor-grab opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
@@ -75,7 +71,7 @@
 	<LmfPlanPlatzZellen bind:zeile {i} {platz} {onfest} />
 	<LmfPlanKlassenZelle klassen={zeile.klassen} {i} {vorrat} {marker} {onklasseraus} {ontausch} />
 	<LmfPlanVermerkZelle bind:vermerk={zeile.vermerk} {i} ohneKlasse={zeile.klassen.length === 0} />
-	<td class="px-4 py-1 text-right whitespace-nowrap">
+	<td class="text-right whitespace-nowrap">
 		<LmfPlanZeileAktionen
 			nummer={i + 1}
 			klassen={zeile.klassen.length}

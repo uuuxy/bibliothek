@@ -32,7 +32,7 @@
 </script>
 
 {#if zeile.fest}
-	<td class="px-4 py-1 whitespace-nowrap text-on-surface-variant">
+	<td class="whitespace-nowrap">
 		<span class="inline-flex items-center gap-1">
 			<Button
 				variant="symbol"
@@ -47,7 +47,7 @@
 			{zeile.fest.datum ? wochentag(zeile.fest.datum) : ''}
 		</span>
 	</td>
-	<td class="px-4 py-1">
+	<td>
 		<Feld
 			id="lmf-zeile-fest-datum-{i}"
 			aria-label="Fester Tag Zeile {i + 1}"
@@ -57,7 +57,7 @@
 			feld="w-40"
 		/>
 	</td>
-	<td class="px-4 py-1">
+	<td>
 		<Select
 			id="lmf-zeile-fest-stunde-{i}"
 			aria-label="Feste Stunde Zeile {i + 1}"
@@ -67,7 +67,7 @@
 		/>
 	</td>
 {:else if platz}
-	<td class="px-4 py-1 text-on-surface-variant">
+	<td>
 		<button
 			type="button"
 			class={ZELLE}
@@ -76,7 +76,7 @@
 			onclick={() => festlegen('datum')}>{wochentag(platz.datum)}</button
 		>
 	</td>
-	<td class="px-4 py-1 tabular-nums text-on-surface">
+	<td class="tabular-nums">
 		<button
 			type="button"
 			class={ZELLE}
@@ -85,7 +85,7 @@
 			onclick={() => festlegen('datum')}>{datumKurz(platz.datum)}</button
 		>
 	</td>
-	<td class="px-4 py-1 text-on-surface-variant">
+	<td>
 		<button
 			type="button"
 			class={ZELLE}
@@ -95,7 +95,7 @@
 		>
 	</td>
 {:else}
-	<td class="px-4 py-1"></td>
-	<td class="px-4 py-1"></td>
-	<td class="px-4 py-1"></td>
+	<td></td>
+	<td></td>
+	<td></td>
 {/if}

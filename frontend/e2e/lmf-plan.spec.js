@@ -113,6 +113,21 @@ async function linienDerTage(tabelle, datumSpalte) {
 	}, datumSpalte);
 }
 
+/** Die Schriftfarbe von `anzahl` Zellen ab `von`, gemessen am Element, das den Text trägt (im
+ *  Planer der Knopf in der Zelle). Wie jede Tabelle stehen Planer und Portal in einer Farbe.
+ *  @param {import('@playwright/test').Locator} zeile
+ *  @param {number} von
+ *  @param {number} anzahl */
+async function farbenDerZellen(zeile, von, anzahl) {
+	return zeile.evaluate(
+		(tr, [von, anzahl]) =>
+			[.../** @type {HTMLTableRowElement} */ (tr).cells]
+				.slice(von, von + anzahl)
+				.map((td) => getComputedStyle(td.querySelector('button') ?? td).color),
+		[von, anzahl]
+	);
+}
+
 /** Der Platz, den der Server der Zeile mit dieser Nummer geben muss (Mo–Fr, 6 je Tag,
  *  am ersten Tag ab der Startstunde). */
 function erwarteterPlatz(/** @type {number} */ nummer) {
@@ -192,6 +207,9 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	const linien = await linienDerTage(tabelle, 2);
 	expect(linien.innen, 'keine Linie innerhalb eines Tages').toBe('rgba(0, 0, 0, 0)');
 	expect(linien.ende, 'Linie am Tageswechsel').not.toBe('rgba(0, 0, 0, 0)');
+	// Nummer, Wochentag, Datum und Stunde in einer Farbe, wie in jeder anderen Tabelle.
+	const farbe = await farbenDerZellen(zeile, 0, 4);
+	expect(new Set(farbe).size, `Farben der Zeile im Planer: ${farbe.join(' / ')}`).toBe(1);
 
 	// Die Besonderheiten stehen als Text; ein Klick öffnet das Feld, Enter übernimmt.
 	await zeile.getByRole('button', { name: `Besonderheiten Zeile ${nummer}:` }).click();
@@ -295,6 +313,10 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 			'rgba(0, 0, 0, 0)'
 		);
 		expect(portalLinien.ende, 'Portal: Linie am Tageswechsel').not.toBe('rgba(0, 0, 0, 0)');
+		expect(
+			await farbenDerZellen(portalZeile, 0, 3),
+			'Portal: Wochentag, Datum und Stunde in der Farbe des Planers'
+		).toEqual([farbe[0], farbe[0], farbe[0]]);
 		await expect(portalZeile).toContainText(soll.wochentag);
 		await expect(portalZeile).toContainText(soll.stunde);
 		// Beide Klassen der geteilten Stunde stehen in EINER Zeile (Reihenfolge macht der

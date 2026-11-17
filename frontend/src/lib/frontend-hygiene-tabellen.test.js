@@ -23,7 +23,30 @@ const ROHE_TABELLE = /<table\b/g;
 // Aussehen in Zellen, Zeilen und Köpfen: Fläche, Linie, Farbe, Größe, Abstand, Hover.
 const OPTIK =
 	/\b(bg-|border(-[a-z]|\b)|divide-|text-(slate|on-surface|xs|sm|base|lg)|hover:|uppercase|tracking-|p[xy]?-[0-9.]+|transition)/;
-const ZELLE = /<(thead|tbody|tr|th|td)\b[^>]*\bclass="([^"]*)"/g;
+// Ein Ausdruck in Klammern darf vor `class` ein „>" tragen (`ondragover={(e) => …}`); eine
+// Ebene geschachtelter Klammern reicht für die Bauteile.
+const ZELLE = /<(thead|tbody|tr|th|td)\b(?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?\bclass="([^"]*)"/g;
+// Teil einer Tabelle ist auch ein Bauteil, das nur Zeilen oder Zellen liefert (LmfPlanZeile).
+const TABELLENTEIL = /<(?:Tabelle|table\b|thead\b|tbody\b|tr\b|th\b|td\b)/;
+// Benannte Ausnahme: Die Einfügelinie beim Ziehen ist Funktion, kein Aussehen der Zeile; ui/Tabelle
+// kennt kein Ziehen.
+const ERLAUBT = new Map([
+	['src/lib/components/lmfplan/LmfPlanZeile.svelte', ['[&>td]:border-t-2', '[&>td]:border-primary']]
+]);
+
+/** Die Klassen mit Aussehen an Zellen, Zeilen und Köpfen, je Tag ein Eintrag.
+ *  @param {string} quelle @param {string[]} [erlaubt] */
+function optikAn(quelle, erlaubt = []) {
+	const treffer = [];
+	for (const m of quelle.matchAll(ZELLE)) {
+		const boese = m[2]
+			.split(/\s+/)
+			.map((k) => k.replace(/^['"{]+|['"}]+$/g, ''))
+			.filter((k) => OPTIK.test(k) && !erlaubt.includes(k));
+		if (boese.length) treffer.push(`<${m[1]} …${boese.join(' ')}>`);
+	}
+	return treffer;
+}
 
 describe('Tabellen kommen aus ui/', () => {
 	it('kennt kein rohes <table> ausserhalb von ui/Tabelle.svelte', () => {
@@ -45,13 +68,25 @@ describe('Tabellen kommen aus ui/', () => {
 			const rel = relPfad(datei);
 			if (AUSNAHMEN.has(rel)) continue;
 			const quelle = ohneKommentare(readFileSync(datei, 'utf8'));
-			if (!quelle.includes('<Tabelle') && !quelle.includes('<table')) continue;
-			for (const m of quelle.matchAll(ZELLE)) {
-				const boese = m[2].split(/\s+/).filter((k) => OPTIK.test(k));
-				if (boese.length) treffer.push(`${rel}: <${m[1]} …${boese.join(' ')}>`);
-			}
+			if (!TABELLENTEIL.test(quelle)) continue;
+			for (const t of optikAn(quelle, ERLAUBT.get(rel))) treffer.push(`${rel}: ${t}`);
 		}
 		expect(treffer, 'Optik an Tabellenzellen — das Rezept steht in ui/Tabelle.svelte').toEqual([]);
+	});
+
+	it('Selbstprobe: der Detektor fasst die Formen', () => {
+		for (const form of [
+			'<td class="px-4 py-1 text-on-surface-variant">Montag</td>',
+			'<td\n\tbind:this={zelle}\n\tclass="px-4 py-1"\n\tonfocusout={weg}\n>',
+			'<tr ondragover={(e) => { e.preventDefault(); ziehe(); }} class="group transition-colors">',
+			"<tr class=\"h-12 {ziel ? '[&>td]:border-t-2 [&>td]:border-primary' : ''}\">",
+			'<th class="{breit} uppercase">'
+		]) {
+			expect(optikAn(form), form).not.toEqual([]);
+		}
+		expect(optikAn('<td class="w-px text-right whitespace-nowrap tabular-nums">')).toEqual([]);
+		expect(TABELLENTEIL.test('{#if platz}<td class="x">{/if}'), 'Zeilen-Bauteil').toBe(true);
+		expect(TABELLENTEIL.test('<div class="px-4"><Text /></div>'), 'keine Tabelle').toBe(false);
 	});
 
 	// Barrierefreiheit (09.09.2026): Jede Tabelle sagt, was in ihr steht — als unsichtbare
