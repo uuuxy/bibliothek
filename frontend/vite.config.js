@@ -59,6 +59,13 @@ export default defineConfig({
 			}
 		})
 	],
+	build: {
+		// Schriften immer als eigene Datei: Vite bettet Dateien unter 4 KB als data:-Adresse ins
+		// CSS ein, und die CSP lädt keine Schrift aus data: (font-src 'self',
+		// internal/middleware/sicherheitskopfzeilen.go). Die kleinen Zeichenbereiche von Roboto
+		// blieben sonst gesperrt, und die Konsole meldete jeden als Verstoß.
+		assetsInlineLimit: (datei) => (/\.woff2?$/.test(datei) ? false : undefined)
+	},
 	test: {
 		// Playwright-Specs (e2e/) laufen über `npm run test:e2e`, nicht über Vitest
 		exclude: [...configDefaults.exclude, 'e2e/**']
