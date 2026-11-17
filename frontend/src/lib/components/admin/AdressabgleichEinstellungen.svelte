@@ -104,7 +104,7 @@
 		class="flex w-full max-w-maske flex-col gap-6"
 	>
 		<div class="flex flex-col gap-1">
-			<h3 id="adressabgleich-titel" class="text-base font-medium text-on-surface">
+			<h3 id="adressabgleich-titel" class="text-base font-semibold text-on-surface">
 				Adressen aus dem Webmail
 			</h3>
 			<p class="text-sm text-on-surface-variant">

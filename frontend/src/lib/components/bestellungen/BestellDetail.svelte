@@ -101,7 +101,7 @@
 					{#if darfKorrigieren}
 						<button
 							onclick={() => (mittelDialogOffen = true)}
-							class="text-label-small font-medium text-primary hover:underline cursor-pointer"
+							class="text-label-small text-primary hover:underline cursor-pointer"
 						>
 							Topf ändern
 						</button>

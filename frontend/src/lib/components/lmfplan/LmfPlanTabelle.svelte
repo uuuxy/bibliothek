@@ -34,7 +34,7 @@
 {#each bloecke as block, i (block.art)}
 	<section class="mt-6" aria-label={block.label}>
 		<div class="flex flex-wrap items-center justify-between gap-3 pl-4">
-			<h2 class="text-base font-medium text-on-surface">{artBeschriftung(block.art)}</h2>
+			<h2 class="text-base font-semibold text-on-surface">{artBeschriftung(block.art)}</h2>
 			{#if i === 0}{@render aktion?.()}{/if}
 		</div>
 		<p class="px-4 pb-2 text-sm text-on-surface-variant max-w-3xl">

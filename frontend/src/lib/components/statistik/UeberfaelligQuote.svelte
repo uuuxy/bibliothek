@@ -72,7 +72,7 @@
 		<Ladekreis size="md" />
 	</div>
 {:else if fehler}
-	<h3 class="text-base font-medium text-on-surface-variant">Überfällige Ausleihen</h3>
+	<h3 class="text-base font-semibold text-on-surface-variant">Überfällige Ausleihen</h3>
 	<div class="flex-1 flex justify-center items-center">
 		<LadeFehler knapp titel="Überfällige Ausleihen nicht geladen" />
 	</div>
@@ -83,7 +83,7 @@
 	     Layout: vertikal gestapelt, weil das Widget in der schmalen 1/3-Spalte der
 	     Bento-Reihe sitzt — nebeneinander bräche es dort um. -->
 	<div class="h-full flex flex-col">
-		<h3 class="text-base font-medium text-on-surface-variant">Überfällige Ausleihen</h3>
+		<h3 class="text-base font-semibold text-on-surface-variant">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
 			<span class="text-4xl font-light text-on-surface tabular-nums leading-none"
 				>{formatZahl(uebersicht.total_overdue)}</span

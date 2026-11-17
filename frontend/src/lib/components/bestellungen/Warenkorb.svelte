@@ -102,7 +102,7 @@
 				</p>
 			{/if}
 			{#if !bestellStore.selectedSupplier}
-				<p class="text-label-small text-center text-warning font-medium">
+				<p class="text-label-small text-center text-warning">
 					Bitte zuerst einen Lieferanten wählen.
 				</p>
 			{/if}

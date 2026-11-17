@@ -33,7 +33,7 @@
 {#if bescheide.length > 0}
 	<div class="w-full h-full pt-2">
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
-			<h3 class="text-base font-medium text-on-surface-variant">
+			<h3 class="text-base font-semibold text-on-surface-variant">
 				Schadensersatz-Bescheide ({bescheide.length})
 			</h3>
 		</div>

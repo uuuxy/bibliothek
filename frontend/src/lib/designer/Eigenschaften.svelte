@@ -73,7 +73,7 @@
 		<EigenschaftenLeer {side} {gesperrt} />
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-base font-medium text-on-surface">{elementName(el)}</h3>
+			<h3 class="text-base font-semibold text-on-surface">{elementName(el)}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={loesche}

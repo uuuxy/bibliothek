@@ -21,7 +21,7 @@
 			<div class="flex items-start gap-2.5">
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
-					<h3 class="text-base font-medium">Aktiver Druckauftrag</h3>
+					<h3 class="text-base font-semibold">Aktiver Druckauftrag</h3>
 					<p class="mt-1 text-sm leading-relaxed font-medium">
 						<!-- Ohne Herkunft: Die Übergabe kommt aus dem Wareneingang, dem Nachdruck oder
 						     der Buchakte — „aus der freigegebenen Lieferung" stimmte nur für den ersten. -->

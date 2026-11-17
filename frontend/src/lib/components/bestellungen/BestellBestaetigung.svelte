@@ -168,7 +168,7 @@
 
 			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
 				{#if bestellung.bestaetigt_am}
-					<h2 class="text-primary text-base font-medium">Bestellung bestätigt</h2>
+					<h2 class="text-primary text-base font-semibold">Bestellung bestätigt</h2>
 					<p class="text-on-surface-variant mt-1 text-sm">
 						Eingegangen am {datum(bestellung.bestaetigt_am)}. Die Schulbibliothek sieht die
 						Bestätigung in ihrer Bestellhistorie — Sie müssen nichts weiter tun.{bestellung.link_gueltig_bis
@@ -176,7 +176,7 @@
 							: ''}
 					</p>
 				{:else}
-					<h2 class="text-on-surface text-base font-medium">Bestellung bestätigen</h2>
+					<h2 class="text-on-surface text-base font-semibold">Bestellung bestätigen</h2>
 					<p class="text-on-surface-variant mt-1 text-sm">
 						Damit meldet sich die Bestellung in der Schulbibliothek als von Ihnen bestätigt. Das ist
 						einmal möglich.{bestellung.link_gueltig_bis

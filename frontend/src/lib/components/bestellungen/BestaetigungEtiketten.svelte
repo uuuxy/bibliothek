@@ -33,7 +33,7 @@
 </script>
 
 <div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
-	<h2 class="text-on-surface text-base font-medium">Etiketten drucken</h2>
+	<h2 class="text-on-surface text-base font-semibold">Etiketten drucken</h2>
 	<p class="text-on-surface-variant mt-1 text-sm">
 		{#if bestellung.grosses_etikett}
 			Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur das

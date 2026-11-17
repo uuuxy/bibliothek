@@ -61,10 +61,10 @@
 {#snippet navItem(/** @type {any} */ item)}
 	<button
 		onclick={() => navigiere(item.id)}
-		class="relative flex w-full items-center rounded-full text-sm font-medium transition-colors
+		class="relative flex w-full items-center rounded-full text-sm font-semibold transition-colors
 			{zeile}
 			{uiStore.activeTab === item.id
-			? 'bg-secondary-container text-on-secondary-container font-semibold'
+			? 'bg-secondary-container text-on-secondary-container'
 			: 'text-on-surface-variant hover:bg-surface-container cursor-pointer'}"
 		title={item.label}
 		aria-current={uiStore.activeTab === item.id ? 'page' : undefined}
@@ -92,7 +92,7 @@
 				{#if group.name === 'System'}
 					<button
 						onclick={() => (systemOpen = !systemOpen)}
-						class="text-on-surface-variant hover:bg-surface-container flex w-full cursor-pointer items-center rounded-full text-sm font-medium transition-colors {zeile}"
+						class="text-on-surface-variant hover:bg-surface-container flex w-full cursor-pointer items-center rounded-full text-sm font-semibold transition-colors {zeile}"
 						aria-label={group.name}
 						aria-expanded={systemOpen}
 						aria-controls="seitenleiste-system"
@@ -122,7 +122,7 @@
 					     `textAppearanceTitleSmall`, `subheaderColor` = `colorOnSurfaceVariant`).
 					     Schmal bleibt die Zeile leer, wie bei Gmail die Zeile „Labels". -->
 					<span
-						class="text-on-surface-variant mb-2 block h-5 px-3 text-sm font-medium whitespace-nowrap"
+						class="text-on-surface-variant mb-2 block h-5 px-3 text-sm font-semibold whitespace-nowrap"
 						>{#if !schmal}<span class="animate-fade-in">{group.name}</span>{/if}</span
 					>
 					{#each group.items as item (item.id)}

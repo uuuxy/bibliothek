@@ -24,7 +24,7 @@
 			text="Bitte später noch einmal versuchen. Schon abgeschickte Meldungen sind nicht verloren — sie sind bei der Bibliothek."
 		/>
 	{:else if eigene.length > 0}
-		<h2 class="text-base font-medium text-on-surface">Deine Meldungen</h2>
+		<h2 class="text-base font-semibold text-on-surface">Deine Meldungen</h2>
 		<ul class="divide-y divide-outline-variant">
 			{#each eigene as a (a.id)}
 				<li class="flex items-start justify-between gap-4 py-2.5">

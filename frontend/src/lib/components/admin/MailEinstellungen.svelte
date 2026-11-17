@@ -111,7 +111,7 @@
 	<div class="animate-fade-in flex w-full max-w-maske flex-col gap-10">
 		<div class="flex flex-col gap-6">
 			<div class="flex flex-col gap-1">
-				<h3 class="text-base font-medium text-on-surface">Postausgang (SMTP)</h3>
+				<h3 class="text-base font-semibold text-on-surface">Postausgang (SMTP)</h3>
 				<p class="text-sm text-on-surface-variant">
 					Gilt für alle E-Mails der Bibliothek, die unten nicht angehakt sind; wirkt sofort, ohne
 					Neustart.

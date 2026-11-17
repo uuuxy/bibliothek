@@ -126,7 +126,7 @@
 	</div>
 
 	<section class="mt-6" aria-labelledby="oeffentliche-seiten">
-		<h3 id="oeffentliche-seiten" class="text-on-surface text-base font-medium">
+		<h3 id="oeffentliche-seiten" class="text-on-surface text-base font-semibold">
 			Öffentliche Seiten
 		</h3>
 		<p class="text-on-surface-variant text-sm mt-1">

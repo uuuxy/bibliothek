@@ -192,7 +192,7 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h3 class="text-base font-medium text-on-surface">LUSD-Import</h3>
+		<h3 class="text-base font-semibold text-on-surface">LUSD-Import</h3>
 		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Lade die LUSD-Exportdatei hoch, um die Änderungen zu prüfen, bevor sie verbindlich in die
 			Datenbank übernommen werden. Kein Datensatz wird ohne Bestätigung überschrieben.
@@ -239,7 +239,7 @@
 					<p class="text-xs font-bold text-on-surface">
 						LUSD-CSV oder -Excel auswählen oder reinziehen
 					</p>
-					<p class="text-label-small text-on-surface-variant font-medium">
+					<p class="text-label-small text-on-surface-variant">
 						CSV (Komma oder Semikolon) oder Excel · Pflichtspalten: Vorname, Nachname, Klasse ·
 						Zuordnung über die LUSD-ID, sonst das Geburtsdatum (empfohlen), sonst nur den Namen ·
 						die Spalte Eintritt (Schuleintritt) hilft bei Umbenennungen

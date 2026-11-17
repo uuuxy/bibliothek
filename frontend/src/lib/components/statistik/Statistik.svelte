@@ -87,7 +87,7 @@
 
 <!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
 {#snippet cardTitel(label)}
-	<h3 class="text-base font-medium text-on-surface-variant">{label}</h3>
+	<h3 class="text-base font-semibold text-on-surface-variant">{label}</h3>
 {/snippet}
 
 {#snippet drillDownButton()}

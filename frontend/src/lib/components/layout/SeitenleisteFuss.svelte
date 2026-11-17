@@ -68,7 +68,7 @@
 					{benutzer.vorname}
 					{benutzer.nachname}
 				</span>
-				<span class="text-on-surface-variant text-label-small mt-0.5 font-medium">
+				<span class="text-on-surface-variant text-label-small mt-0.5">
 					Rolle: {rollenName(benutzer.rolle)}
 				</span>
 			</div>

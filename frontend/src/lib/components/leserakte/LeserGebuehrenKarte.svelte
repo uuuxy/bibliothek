@@ -67,7 +67,7 @@
 	<div class="w-full pt-2">
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
 			<!-- „Gebühren & Schäden" heißt der Reiter; die Liste darunter nennt, was sie zählt. -->
-			<h3 class="text-base font-medium text-on-surface-variant">
+			<h3 class="text-base font-semibold text-on-surface-variant">
 				Forderungen ({gebuehren.length})
 			</h3>
 			{#if bescheidMoeglich}

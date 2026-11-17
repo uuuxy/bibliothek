@@ -57,7 +57,7 @@
 
 <div class="flex flex-col gap-6 border-t border-outline-variant pt-10">
 	<div class="flex flex-col gap-1">
-		<h3 class="text-base font-medium text-on-surface">Verbindung testen</h3>
+		<h3 class="text-base font-semibold text-on-surface">Verbindung testen</h3>
 		<p class="text-sm text-on-surface-variant">
 			Verschickt je Absender eine Test-E-Mail mit den zuletzt <em>gespeicherten</em> Zugangsdaten — nicht
 			mit dem, was gerade in den Feldern steht.

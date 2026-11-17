@@ -134,7 +134,7 @@
 				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-on-surface-variant"
 			>
 				<Slash class="w-6 h-6" aria-hidden="true" />
-				<span class="text-label-small leading-tight font-medium">Kein Coverbild hinterlegt</span>
+				<span class="text-label-small leading-tight">Kein Coverbild hinterlegt</span>
 			</div>
 		{:else}
 			{#if status === 'laedt'}

@@ -84,7 +84,7 @@
 		/>
 
 		<div class="min-w-0 flex-1 basis-48">
-			<h3 class="truncate text-base leading-tight font-medium text-on-surface">
+			<h3 class="truncate text-base leading-tight font-semibold text-on-surface">
 				{treffer.titel || treffer.title || 'Unbekannter Titel'}
 			</h3>
 			<p class="mt-0.5 text-xs text-on-surface-variant">{treffer.autor ?? treffer.author ?? ''}</p>
@@ -98,7 +98,7 @@
 			{#if treffer.verfuegbar != null}
 				<p class="mt-1.5 text-xs">
 					<span
-						class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {nurBestellt
+						class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small {nurBestellt
 							? 'bg-surface-container-high text-on-surface-variant'
 							: treffer.verfuegbar > 0
 								? 'bg-secondary-container text-on-secondary-container'
@@ -114,14 +114,14 @@
 					</span>
 					{#if zulaufDazu}
 						<span
-							class="ml-1 inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small font-medium text-on-surface-variant"
+							class="ml-1 inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small text-on-surface-variant"
 						>
 							{zulaufSatz(treffer.im_zulauf)}
 						</span>
 					{/if}
 					{#if vorgemerkt > 0 && rechnerischFrei != null}
 						<span
-							class="ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {rechnerischFrei >
+							class="ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small {rechnerischFrei >
 							0
 								? 'bg-surface-container-high text-on-surface-variant'
 								: 'bg-error-container text-on-error-container'}"
@@ -138,7 +138,7 @@
 			{#each warteschlange as o, _i (_i)}
 				<p class="mt-1 text-xs">
 					<span
-						class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small font-medium text-on-surface-variant"
+						class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small text-on-surface-variant"
 					>
 						{o.anzahl} reserviert für {o.klasse} (seit {o.erstellt_am})
 					</span>

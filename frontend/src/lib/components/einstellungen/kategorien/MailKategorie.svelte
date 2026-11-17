@@ -27,7 +27,7 @@
 		<AdressabgleichEinstellungen />
 		<div class="flex flex-col gap-6">
 			<div class="flex flex-col gap-1">
-				<h3 class="text-base font-medium text-on-surface">Mail-Vorlagen</h3>
+				<h3 class="text-base font-semibold text-on-surface">Mail-Vorlagen</h3>
 				<p class="text-sm text-on-surface-variant">
 					Texte für den gedruckten Eltern-Mahnbrief und die Bestellmail an den Händler. Welche
 					Platzhalter gelten, hängt von der Vorlage ab — siehe Hinweis unter dem Text.

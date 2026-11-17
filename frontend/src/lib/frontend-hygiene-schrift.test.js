@@ -55,7 +55,7 @@ describe('Schriftrollen nur aus der Skala', () => {
 			'Diese Schriftrolle gibt es nicht und wirkt nicht. Die Skala: text-xs = body-small, ' +
 				'text-sm = body-medium, text-base = body-large, text-lg = title-large, ' +
 				'text-xl = headline-small, dazu text-label-small (CLAUDE.md). Überschriften wie ' +
-				'ui/Abschnitt (text-base font-medium), Knopftext wie ui/Button (text-sm font-semibold).'
+				'ui/Abschnitt (text-base font-semibold), Knopftext wie ui/Button (text-sm font-semibold).'
 		).toEqual([]);
 	});
 });
@@ -110,5 +110,55 @@ describe('Beschriftung und Hinweiszeile in body-medium', () => {
 			zaehl(HINWEIS_KLEIN, '<h3 class="x">Titel</h3>\n\t<p class="mt-1 text-xs">Satz</p>')
 		).toBe(1);
 		expect(zaehl(HINWEIS_KLEIN, '<h3>Titel</h3>\n<p class="text-sm">Satz</p>')).toBe(0);
+	});
+});
+
+// Googles Skala gibt Überschriften (title-medium, 16 px) und der kleinsten Beschriftung
+// (label-small, 11 px) das Gewicht Medium: „textAppearanceTitleMedium | Medium 16sp“,
+// „textAppearanceLabelSmall | Medium 11sp“ (material-components-android, Typography.md). In
+// diesem Haus zeigt font-medium auf 400 (theme-mass.css); Medium heißt font-semibold. Die Rolle
+// label-small trägt ihr Gewicht selbst.
+//
+// Sieht nicht: Überschriften, deren Größe nicht text-base heißt, und Klassen aus Variablen.
+const UEBERSCHRIFT_REGULAR =
+	/<h[1-6]\b[^>]*?\bclass="[^"]*\btext-base\b[^"]*\bfont-(?:medium|normal)\b/g;
+const UEBERSCHRIFT_REGULAR_VORN =
+	/<h[1-6]\b[^>]*?\bclass="[^"]*\bfont-(?:medium|normal)\b[^"]*\btext-base\b/g;
+const LABEL_SMALL_REGULAR =
+	/class="(?=[^"]*\btext-label-small\b)[^"]*\bfont-(?:medium|normal)\b[^"]*"/g;
+
+describe('Überschrift und kleinste Beschriftung in Medium', () => {
+	const dateien = sammleQuelldateien(srcRoot).filter((f) => /\.(svelte|js)$/.test(f));
+	/** @param {RegExp[]} muster */
+	const funde = (...muster) =>
+		dateien.flatMap((f) => {
+			const q = ohneKommentare(readFileSync(f, 'utf8'));
+			return muster.flatMap((m) => [...q.matchAll(m)].map(() => relPfad(f)));
+		});
+
+	it('keine Überschrift in 16 px mit 400', () => {
+		expect(
+			funde(UEBERSCHRIFT_REGULAR, UEBERSCHRIFT_REGULAR_VORN),
+			'Überschrift text-base mit font-medium (= 400) — font-semibold (= 500, M3 Medium)'
+		).toEqual([]);
+	});
+
+	it('keine kleinste Beschriftung mit 400', () => {
+		expect(
+			funde(LABEL_SMALL_REGULAR),
+			'text-label-small mit font-medium (= 400) — das Gewicht weglassen, die Rolle trägt 500'
+		).toEqual([]);
+	});
+
+	it('Selbstprobe: die Detektoren fassen die Formen', () => {
+		const z = (/** @type {RegExp} */ m, /** @type {string} */ s) => [...s.matchAll(m)].length;
+		expect(z(UEBERSCHRIFT_REGULAR, '<h3 class="mb-4 text-base font-medium text-on-surface">')).toBe(
+			1
+		);
+		expect(z(UEBERSCHRIFT_REGULAR_VORN, '<h2 class="font-medium text-base">')).toBe(1);
+		expect(z(UEBERSCHRIFT_REGULAR, '<h3 class="text-base font-semibold">')).toBe(0);
+		expect(z(LABEL_SMALL_REGULAR, 'class="text-label-small font-medium text-on-error"')).toBe(1);
+		expect(z(LABEL_SMALL_REGULAR, 'class="font-medium text-label-small"')).toBe(1);
+		expect(z(LABEL_SMALL_REGULAR, 'class="text-label-small text-on-surface-variant"')).toBe(0);
 	});
 });

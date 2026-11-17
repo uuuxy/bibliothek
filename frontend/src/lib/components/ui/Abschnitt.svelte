@@ -9,4 +9,4 @@
 	let { titel, class: className = '' } = $props();
 </script>
 
-<h3 class="mb-4 text-base font-medium text-on-surface {className}">{titel}</h3>
+<h3 class="mb-4 text-base font-semibold text-on-surface {className}">{titel}</h3>

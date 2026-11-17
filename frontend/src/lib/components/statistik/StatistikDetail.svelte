@@ -109,7 +109,7 @@
 			/>
 		</div>
 		{#if !abruf.loading && !nichtGeladen}
-			<p class="text-label-small text-on-surface-variant font-medium">
+			<p class="text-label-small text-on-surface-variant">
 				{gefiltert.length} von {anzahlText(items.length, 'Eintrag', 'Einträgen')}
 			</p>
 		{/if}

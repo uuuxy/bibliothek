@@ -67,13 +67,13 @@
 				</div>
 				<div class="text-right shrink-0 ml-4 flex gap-6 items-center">
 					<div class="text-right hidden sm:block">
-						<p class="text-label-small font-medium text-on-surface-variant">Ausgeliehen</p>
+						<p class="text-label-small text-on-surface-variant">Ausgeliehen</p>
 						<p class="text-sm font-semibold text-on-surface-variant">
 							{fmtDate(b.ausgeliehen_am)}
 						</p>
 					</div>
 					<div class="text-right">
-						<p class="text-label-small font-medium text-on-surface-variant">Rückgabe bis</p>
+						<p class="text-label-small text-on-surface-variant">Rückgabe bis</p>
 						<p
 							class="flex items-center justify-end gap-1 text-sm font-bold {ueberfaellig
 								? 'text-error'

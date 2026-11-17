@@ -31,7 +31,7 @@
 
 {#if anzahl > 0}
 	<span
-		class="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-label-small font-medium text-on-error {klasse}"
+		class="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-label-small text-on-error {klasse}"
 		aria-hidden="true"
 	>
 		{text}

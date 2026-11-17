@@ -98,7 +98,7 @@
 								type="button"
 								onclick={() => onPreis(p)}
 								aria-label="Preis von {p.titel_name} ändern"
-								class="mt-1 cursor-pointer text-label-small font-medium text-primary hover:underline"
+								class="mt-1 cursor-pointer text-label-small text-primary hover:underline"
 							>
 								Preis ändern
 							</button>

@@ -52,7 +52,7 @@
 
 <div>
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-base font-medium text-on-surface-variant">
+		<h3 class="text-base font-semibold text-on-surface-variant">
 			Erwartete Positionen ({anzahlText(totalItems, 'Exemplar', 'Exemplare')})
 		</h3>
 		{#if incomingShipments.length > 0}

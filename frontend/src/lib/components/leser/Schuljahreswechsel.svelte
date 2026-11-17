@@ -107,7 +107,7 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h3 class="text-base font-medium text-on-surface">Schuljahreswechsel</h3>
+		<h3 class="text-base font-semibold text-on-surface">Schuljahreswechsel</h3>
 		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Zählt die Klassenbezeichnung aller aktiven Schüler stur um eine Jahrgangsstufe hoch (z. B. 5a
 			→ 6a) und markiert Abschlussklassen automatisch als Abgänger. Ausnahmen wie Sitzenbleiber oder

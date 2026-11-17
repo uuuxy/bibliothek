@@ -68,6 +68,9 @@
 	--text-label-small: 0.6875rem; /* 11 px */
 	--text-label-small--line-height: 1rem;
 	--text-label-small--letter-spacing: 0.03125rem;
+	/* Gewicht wie bei Google: „textAppearanceLabelSmall | Medium 11sp“ (material-components-android,
+	   Typography.md); ohne Angabe erbte die Rolle 400. */
+	--text-label-small--font-weight: 500;
 	--text-sm: 0.875rem; /* 14 px — body-medium */
 	--text-sm--line-height: 1.25rem;
 	--text-sm--letter-spacing: 0.015625rem;

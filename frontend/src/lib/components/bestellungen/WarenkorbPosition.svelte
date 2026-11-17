@@ -100,7 +100,7 @@
 	<div class="pl-10">
 		<button
 			onclick={() => bestellStore.verschiebe(position)}
-			class="text-label-small font-medium text-primary hover:underline cursor-pointer"
+			class="text-label-small text-primary hover:underline cursor-pointer"
 			aria-label="{position.titel} in die Bestellung „{ziel.label}“ verschieben"
 		>
 			→ {ziel.label} ({ziel.traeger})
