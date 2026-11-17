@@ -15,7 +15,7 @@ func TestStundenText(t *testing.T) {
 		{30 * time.Hour, "30 Stunden"},
 	} {
 		if got := stundenText(fall.alter); got != fall.text {
-			t.Errorf("stundenText(%v) = %q, want %q", fall.alter, got, fall.text)
+			t.Errorf("stundenText(%v) = %q, erwartet %q", fall.alter, got, fall.text)
 		}
 	}
 }
