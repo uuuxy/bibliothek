@@ -30,7 +30,7 @@
 	<div class="no-print flex shrink-0 flex-col items-center gap-3 p-4">
 		<div
 			class="bg-surface-container-highest text-on-surface-variant flex h-8 w-8 cursor-default items-center justify-center rounded-full text-xs font-bold"
-			title="{benutzer?.vorname} {benutzer?.nachname} ({benutzer?.rolle})"
+			title="{benutzer?.vorname} {benutzer?.nachname} ({rollenName(benutzer?.rolle)})"
 		>
 			{initialen}
 		</div>
