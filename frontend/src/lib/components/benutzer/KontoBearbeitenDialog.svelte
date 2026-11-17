@@ -73,7 +73,7 @@
 		/>
 		{#each AUSWAHLEN as auswahl (auswahl.id)}
 			<div class="space-y-1.5">
-				<label for={auswahl.id} class="block text-xs font-medium text-on-surface-variant"
+				<label for={auswahl.id} class="block text-sm font-medium text-on-surface-variant"
 					>{auswahl.label}</label
 				>
 				<Select id={auswahl.id} bind:value={formular[auswahl.id]} options={auswahl.options} />
@@ -99,7 +99,7 @@
 				/>
 				<label
 					for="benutzer-aktiv"
-					class="cursor-pointer text-xs font-bold text-on-surface-variant"
+					class="cursor-pointer text-sm font-bold text-on-surface-variant"
 				>
 					Benutzerkonto ist aktiv
 				</label>

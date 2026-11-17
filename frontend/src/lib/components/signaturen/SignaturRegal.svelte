@@ -78,7 +78,7 @@
 				{signatur}
 				<span class="font-normal text-on-surface-variant text-sm">· {buecher.length} Titel</span>
 			</h2>
-			<p class="text-xs text-on-surface-variant">
+			<p class="text-sm text-on-surface-variant">
 				In Regalreihenfolge — so läufst du das Regal ab.
 			</p>
 		</div>

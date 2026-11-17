@@ -88,7 +88,7 @@
 
 		<!-- Visibility -->
 		<div class="flex items-center justify-between">
-			<label for="designer-element-sichtbar" class="text-xs font-medium text-on-surface-variant"
+			<label for="designer-element-sichtbar" class="text-sm font-medium text-on-surface-variant"
 				>Sichtbar</label
 			>
 			<Switch id="designer-element-sichtbar" bind:checked={el.show} />

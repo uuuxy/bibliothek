@@ -119,7 +119,7 @@
 	</div>
 
 	<div class="space-y-1">
-		<label for="stagedSignaturInput" class="text-xs font-medium text-on-surface-variant">
+		<label for="stagedSignaturInput" class="text-sm font-medium text-on-surface-variant">
 			Signatur
 			{#if !signaturBeiStart}
 				<!-- primary: M3 „High-emphasis … texts … against surface". Eine Warnfarbe gibt es
@@ -155,7 +155,7 @@
 
 	<div class="flex items-center justify-between gap-3">
 		<div class="flex items-center gap-2">
-			<label for="stagedMengeInput" class="text-xs font-medium text-on-surface-variant">Menge</label
+			<label for="stagedMengeInput" class="text-sm font-medium text-on-surface-variant">Menge</label
 			>
 			<Feld
 				id="stagedMengeInput"

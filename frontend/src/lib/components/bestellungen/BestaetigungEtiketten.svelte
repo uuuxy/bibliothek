@@ -45,7 +45,7 @@
 
 	{#if bestellung.etiketten_formate?.length}
 		<div class="mt-5 max-w-md space-y-1.5">
-			<label for="etikettenformat" class="text-on-surface-variant block text-xs font-medium">
+			<label for="etikettenformat" class="text-on-surface-variant block text-sm font-medium">
 				{rasterBeschriftung}
 			</label>
 			<Select

@@ -45,7 +45,7 @@
 
 <div class="max-w-maske space-y-4">
 	<div class="space-y-1.5">
-		<label for="supplier" class="block text-xs font-medium text-on-surface-variant">Lieferant</label
+		<label for="supplier" class="block text-sm font-medium text-on-surface-variant">Lieferant</label
 		>
 		<Select
 			id="supplier"
@@ -58,7 +58,7 @@
 		/>
 	</div>
 	<div class="space-y-1.5 relative">
-		<label for="book" class="block text-xs font-medium text-on-surface-variant"
+		<label for="book" class="block text-sm font-medium text-on-surface-variant"
 			>Titel suchen &amp; hinzufügen</label
 		>
 		<Suchfeld

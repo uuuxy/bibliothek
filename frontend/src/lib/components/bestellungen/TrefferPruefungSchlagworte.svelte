@@ -75,7 +75,7 @@
 </script>
 
 <div class="space-y-1">
-	<label for="stagedSchlagworte" class="text-xs font-medium text-on-surface-variant">
+	<label for="stagedSchlagworte" class="text-sm font-medium text-on-surface-variant">
 		Schlagworte
 	</label>
 	<ChipFeld

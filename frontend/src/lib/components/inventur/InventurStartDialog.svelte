@@ -111,7 +111,7 @@
 		{#if ablauf.bereichArt === 'filter'}
 			<div transition:slide class="grid grid-cols-2 gap-3">
 				<div class="space-y-1.5">
-					<label for="inventur-fach" class="block text-xs font-medium text-on-surface-variant"
+					<label for="inventur-fach" class="block text-sm font-medium text-on-surface-variant"
 						>Fach</label
 					>
 					<Select
@@ -124,7 +124,7 @@
 					/>
 				</div>
 				<div class="space-y-1.5">
-					<label for="inventur-klasse" class="block text-xs font-medium text-on-surface-variant"
+					<label for="inventur-klasse" class="block text-sm font-medium text-on-surface-variant"
 						>Klasse</label
 					>
 					<Select id="inventur-klasse" bind:value={ablauf.gewaehlterJahrgang} options={KLASSEN} />

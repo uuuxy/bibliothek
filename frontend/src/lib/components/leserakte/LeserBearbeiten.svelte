@@ -82,7 +82,7 @@
 				<h2 class="text-xl font-black text-on-surface leading-tight">
 					{leserArtText(leser?.art)} bearbeiten
 				</h2>
-				<p class="text-xs text-on-surface-variant font-medium mt-0.5">
+				<p class="text-sm text-on-surface-variant font-medium mt-0.5">
 					{leser?.vorname}
 					{leser?.nachname}{leser?.barcode_id ? ` · ${leser.barcode_id}` : ''}
 				</p>

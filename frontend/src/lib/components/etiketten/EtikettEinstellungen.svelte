@@ -22,7 +22,7 @@
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
 					<h3 class="text-base font-medium">Aktiver Druckauftrag</h3>
-					<p class="mt-1 text-xs leading-relaxed font-medium">
+					<p class="mt-1 text-sm leading-relaxed font-medium">
 						<!-- Ohne Herkunft: Die Übergabe kommt aus dem Wareneingang, dem Nachdruck oder
 						     der Buchakte — „aus der freigegebenen Lieferung" stimmte nur für den ersten. -->
 						{anzahl === 1 ? '1 Etikett' : `${anzahl} Etiketten`} zum Drucken übernommen.

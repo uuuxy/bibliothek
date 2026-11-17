@@ -71,7 +71,7 @@
 <div class="space-y-5">
 	<div>
 		<h3 class="text-base font-bold text-on-surface">LMF-Massenverlängerung (Klasse)</h3>
-		<p class="text-xs text-on-surface-variant mt-1 leading-relaxed max-w-lg">
+		<p class="text-sm text-on-surface-variant mt-1 leading-relaxed max-w-lg">
 			Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
 			fixes Rückgabedatum.
 		</p>

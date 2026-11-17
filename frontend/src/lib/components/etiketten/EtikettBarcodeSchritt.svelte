@@ -93,7 +93,7 @@
 				>
 					{#each etikettenStore.sichtbareExemplare as copy (copy.barcode_id)}
 						<label
-							class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-xs text-on-surface hover:bg-on-surface/8"
+							class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-sm text-on-surface hover:bg-on-surface/8"
 						>
 							<Kaestchen bind:checked={copy.checked} />
 							<span class="font-bold">{copy.barcode_id}</span>
@@ -123,6 +123,6 @@
 	     inaktiven Schritts bei 2,5:1. -->
 	<div class="space-y-2 border-b border-outline-variant py-5">
 		<h3 class="text-base font-semibold text-on-surface-variant">{SCHRITT}</h3>
-		<p class="text-xs text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+		<p class="text-sm text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>
 {/if}

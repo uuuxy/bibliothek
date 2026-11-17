@@ -46,7 +46,7 @@
 
 <div class="pt-6 border-t border-outline-variant">
 	<h4 class="text-sm font-bold text-on-surface mb-1">Bestand mit vorhandenen Nummern</h4>
-	<p class="text-xs text-on-surface-variant mb-4">
+	<p class="text-sm text-on-surface-variant mb-4">
 		Für Bücher, die schon eine Nummer tragen: eine CSV-Datei mit Semikolon als Trenner und einer
 		Kopfzeile mit den Spalten Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode und Zustand. Die
 		Exemplare behalten ihre Nummer und gelten als etikettiert.

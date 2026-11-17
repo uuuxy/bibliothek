@@ -48,7 +48,7 @@
      BestandImport und ListenImport. -->
 <div>
 	<h4 class="mb-1 text-sm font-bold text-on-surface">Katalog-Import (Littera)</h4>
-	<p class="mb-4 text-xs text-on-surface-variant">
+	<p class="mb-4 text-sm text-on-surface-variant">
 		Die Datei <strong>katalogisat.xml</strong> aus Littera ergänzt die Angaben vorhandener Titel.
 		Eine
 		<strong>CSV- oder Excel-Datei</strong> legt neue Titel und Exemplare an.

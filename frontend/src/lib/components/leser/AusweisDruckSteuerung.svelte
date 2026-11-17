@@ -60,7 +60,7 @@
 {#if etikettModus}
 	<!-- Angebrochener Bogen: Auf welchem Feld soll der Druck anfangen? Dieselbe Angabe wie bei den
 	     Buch-Etiketten, hier direkt am Druckknopf, weil es die einzige Entscheidung des Vorgangs ist. -->
-	<label class="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-on-surface-variant">
+	<label class="flex shrink-0 items-center gap-2 text-sm whitespace-nowrap text-on-surface-variant">
 		Ab Feld
 		<Feld type="number" min="1" max={maxPosition} bind:value={startPosition} feld="w-16" />
 		<span>von {maxPosition}</span>

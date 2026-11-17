@@ -59,3 +59,56 @@ describe('Schriftrollen nur aus der Skala', () => {
 		).toEqual([]);
 	});
 });
+
+// Die Beschriftung eines Felds steht in body-medium (text-sm) wie in ui/Feld.svelte, die
+// Hinweiszeile unter einer Überschrift ebenso (CLAUDE.md, „Hinweiszeile“). Standen 12 px und
+// 14 px in derselben Maske, sahen gleiche Dinge verschieden aus. Ausgenommen sind Zeilen unter
+// dem Titel eines Buchs in einer Liste oder Karte: Das ist eine Angabe, kein Hinweis.
+//
+// Sieht nicht: Klassen aus Variablen, eine Hinweiszeile, die nicht direkt auf die Überschrift
+// folgt, und eine Beschriftung, die kein <label> ist.
+const LABEL_KLEIN = /<label\b(?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?\bclass="[^"]*\btext-xs\b/g;
+const HINWEIS_KLEIN = /<\/h[1-6]>\s*<p\b[^>]*?\bclass="[^"]*\btext-xs\b/g;
+const ANGABE_UNTER_BUCHTITEL = new Set([
+	'src/lib/components/bestellungen/BedarfZeile.svelte',
+	'src/lib/components/bestellungen/WarenkorbPosition.svelte',
+	'src/lib/components/portal/PortalTrefferkarte.svelte'
+]);
+
+describe('Beschriftung und Hinweiszeile in body-medium', () => {
+	const dateien = sammleQuelldateien(srcRoot).filter((f) => f.endsWith('.svelte'));
+	/** @param {RegExp} muster @param {Set<string>} [ausnahmen] */
+	const funde = (muster, ausnahmen = new Set()) =>
+		dateien.flatMap((f) => {
+			const quelle = ohneKommentare(readFileSync(f, 'utf8'));
+			return ausnahmen.has(relPfad(f)) ? [] : [...quelle.matchAll(muster)].map(() => relPfad(f));
+		});
+
+	it('keine Beschriftung eines Felds in 12 px', () => {
+		expect(funde(LABEL_KLEIN), '<label> in text-xs — text-sm wie ui/Feld.svelte').toEqual([]);
+	});
+
+	it('keine Hinweiszeile unter einer Überschrift in 12 px', () => {
+		expect(
+			funde(HINWEIS_KLEIN, ANGABE_UNTER_BUCHTITEL),
+			'Hinweiszeile in text-xs — text-sm text-on-surface-variant (CLAUDE.md)'
+		).toEqual([]);
+		for (const datei of ANGABE_UNTER_BUCHTITEL) {
+			const quelle = readFileSync(`${srcRoot}/../${datei}`, 'utf8');
+			expect([...quelle.matchAll(HINWEIS_KLEIN)].length, `${datei}: Ausnahme ohne Fundstelle`).toBe(
+				1
+			);
+		}
+	});
+
+	it('Selbstprobe: die Detektoren fassen die Formen', () => {
+		const zaehl = (/** @type {RegExp} */ m, /** @type {string} */ s) => [...s.matchAll(m)].length;
+		expect(zaehl(LABEL_KLEIN, '<label for="x" class="text-xs font-medium">')).toBe(1);
+		expect(zaehl(LABEL_KLEIN, '<label\n\tfor={id}\n\tclass="block text-xs"\n>')).toBe(1);
+		expect(zaehl(LABEL_KLEIN, '<label for="x" class="text-sm font-medium">')).toBe(0);
+		expect(
+			zaehl(HINWEIS_KLEIN, '<h3 class="x">Titel</h3>\n\t<p class="mt-1 text-xs">Satz</p>')
+		).toBe(1);
+		expect(zaehl(HINWEIS_KLEIN, '<h3>Titel</h3>\n<p class="text-sm">Satz</p>')).toBe(0);
+	});
+});

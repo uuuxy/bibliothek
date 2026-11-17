@@ -69,7 +69,7 @@
 			</div>
 			<div>
 				<h3 class="text-lg font-bold text-on-surface">{title}</h3>
-				<p class="mt-1 max-w-lg text-xs leading-relaxed text-on-surface-variant">{description}</p>
+				<p class="mt-1 max-w-lg text-sm leading-relaxed text-on-surface-variant">{description}</p>
 			</div>
 		</div>
 		<div class="pt-2">
@@ -101,7 +101,7 @@
 
 		<div class="border-t border-outline-variant pt-6">
 			<h4 class="mb-1 text-sm font-bold text-on-surface">Fehlende Cover</h4>
-			<p class="mb-4 text-xs text-on-surface-variant">
+			<p class="mb-4 text-sm text-on-surface-variant">
 				Sucht für Titel ohne Cover ein Bild, etwa bei Google Books oder der Deutschen
 				Nationalbibliothek. Der Server arbeitet die Titel im Hintergrund ab.
 			</p>

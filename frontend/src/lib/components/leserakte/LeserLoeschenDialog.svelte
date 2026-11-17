@@ -103,7 +103,10 @@
 				{/if}
 
 				<div class="mt-5">
-					<label class="block text-xs font-bold text-on-surface mb-1.5" for="confirm-name">
+					<label
+						class="block text-sm font-medium text-on-surface-variant mb-1.5"
+						for="confirm-name"
+					>
 						Tippe zur Bestätigung den Namen ein: <span
 							class="font-mono text-error select-none bg-error-container/40 px-1 py-0.5 rounded"
 							>{expectedConfirmText}</span

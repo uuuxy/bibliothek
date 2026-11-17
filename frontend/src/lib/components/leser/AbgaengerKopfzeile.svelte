@@ -58,7 +58,7 @@
 	<div class="flex items-center justify-between gap-4">
 		{#if !laedt && gesamt > 0}
 			<div class="flex items-center gap-3 min-w-0">
-				<label class="text-xs font-medium text-on-surface-variant shrink-0" for="grad-klasse"
+				<label class="text-sm font-medium text-on-surface-variant shrink-0" for="grad-klasse"
 					>Klasse</label
 				>
 				<Select
