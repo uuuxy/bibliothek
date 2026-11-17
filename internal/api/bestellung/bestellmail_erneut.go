@@ -106,7 +106,7 @@ func (t *Tueren) BestellmailVermerkNehmen() http.HandlerFunc {
 			return
 		case errors.Is(err, repository.ErrBestellmailNichtOffen):
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
-				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt.", err)
+				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt", err)
 			return
 		case err != nil:
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

@@ -44,7 +44,7 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", err)
 			return
 		}
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel.", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel", nil)
 		return
 	}
 

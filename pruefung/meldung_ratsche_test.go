@@ -61,9 +61,10 @@ var meldungEnglisch = map[string]bool{
 }
 
 // meldungSatzende erkennt das Ende eines Satzes mitten im Text: ein Wort aus zwei Zeichen, eine
-// Klammer, ein schließendes Anführungszeichen oder ein Platzhalter von fmt (%s), dann . ! ? oder
-// :, dann ein großer Anfang. „z. B. G" ist so kein Satzende.
-var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|[)“"]|%[a-zA-Z])[.!?:]\s+[\p{Lu}„"]`)
+// Klammer, ein schließendes Anführungszeichen oder ein Platzhalter von fmt (%s), dann . ! ?, dann
+// ein großer Anfang. „z. B. G" ist so kein Satzende, ein Doppelpunkt auch nicht: Googles developer
+// documentation style guide führt ihn unter „Colons within sentences".
+var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|[)“"]|%[a-zA-Z])[.!?]\s+[\p{Lu}„"]`)
 
 // meldungStatus löst die Namen der Status aus net/http auf (StatusBadRequest → 400).
 func meldungStatus() map[string]int {
@@ -136,6 +137,7 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 		{text: "Eingabe enthält select * from"},
 		{text: "Leser nicht gefunden", alsFehler: true},
 		{text: "Zeile %d. Bitte prüfen"},
+		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen."},
 	}
 	for _, a := range verboten {
 		if meldungVerstoss(a) == "" {
@@ -145,7 +147,7 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 	erlaubt := []meldungAufruf{
 		{text: "Leser nicht gefunden"},
 		{text: "Der Leser liegt im Papierkorb. Erst wiederherstellen."},
-		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen."},
+		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen"},
 		{text: "Der Barcode muss mit G- beginnen, z. B. G-IPAD-01"},
 		{text: "ID fehlt"},
 		{text: "Unbekannte Art %q. Möglich sind: %s."},

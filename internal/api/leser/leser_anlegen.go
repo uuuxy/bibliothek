@@ -22,7 +22,7 @@ import (
 // meldungSchuelerDuplikat nennt die Regel, an der die Anlage scheitert — auch die
 // Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
 // in der Liste nicht findet.
-const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System."
+const meldungSchuelerDuplikat = "Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
 
 // leserAnlegenAnfrage ist ein neuer Leser, gleich welcher Art. „Neuen Leser anlegen" fragt
 // zuerst nach der Art; Klasse und Geburtsdatum sind deshalb nicht am Feld als Pflicht
@@ -74,7 +74,7 @@ const meldungLeserNamensdublette = "Achtung: Unter diesem Namen steht bereits ei
 func pruefeKollegiumEmail(roh string) error {
 	email := strings.TrimSpace(roh)
 	if email == "" {
-		return apierrors.BadRequest("Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet.", nil)
+		return apierrors.BadRequest("Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet", nil)
 	}
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at == len(email)-1 || strings.ContainsAny(email, " \t") {

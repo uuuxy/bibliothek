@@ -186,7 +186,7 @@ func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Entfernen nach gelungenem Versand: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
-	} else if got := tuertest.Fehlermeldung(t, rec); got != "Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt." {
+	} else if got := tuertest.Fehlermeldung(t, rec); got != "Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt" {
 		t.Errorf("Entfernen nach gelungenem Versand: Meldung %q", got)
 	}
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/00000000-0000-4000-8000-000000000000/mail", ""); rec.Code != http.StatusNotFound {

@@ -264,7 +264,9 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   geht unter keinem Status als Text hinaus: `AntworteFehler` antwortet dann mit „Die Anfrage ließ
   sich nicht ausführen“.
 - Eine Meldung ist ein Satz nach M3 (Content design, Grammar and punctuation): groß begonnen,
-  deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Sätze, die
+  deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Ein
+  Doppelpunkt endet keinen Satz, auch nicht vor einem großen Anfang („Kein Cover: Zu dieser ISBN …“):
+  Googles developer documentation style guide führt ihn unter „Colons within sentences“. Sätze, die
   mehrere Türen teilen, stehen als Konstante beim Thema (`auth.MeldungNichtAngemeldet`).
   `meldung_ratsche_test.go` hält es für jeden festen Text mit einem Fehlerstatus außer 500 (dessen
   Meldung ist neutral), auch 502 und 503, auch für den Formattext von `fmt.Sprintf`, für jede

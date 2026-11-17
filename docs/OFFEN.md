@@ -47,7 +47,7 @@ Nur, was kein Test leisten kann.
   kein langer Strich. (5.185)
 - [x] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
   die 23 Stellen angleichen. (5.186)
-- [ ] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
+- [x] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
   welche Regel für beide gilt. (5.187)
 
 ### Termin
@@ -100,19 +100,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.187 Doppelpunkt vor großem Anfang
-
-Die Prüfung am Server (`pruefung/meldung_ratsche_test.go`) zählt einen Doppelpunkt vor einem
-großen Anfang als Satzende. „Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary
-keinen Titel.“ gilt dort als zwei Sätze und trägt einen Punkt. Die Prüfung der Oberfläche
-(`frontend-hygiene-satzzeichen.test.js`) zählt ihn nicht: Sonst bräuchten Bezeichnungen wie
-„Leserdatei: Sonderrechte“ einen Punkt, weil jedes Hauptwort groß beginnt. „Netzwerkfehler: Die
-Auflagen ließen sich nicht laden“ steht dort ohne Punkt. M3 nennt den Doppelpunkt nur für Listen im
-Fließtext („Use colons for lists within body text“), nicht als Satzende.
-
-Nächster Schritt: entscheiden, ob der Server die Regel der Oberfläche übernimmt; dann die Meldungen
-mit Doppelpunkt am Server und ihre Tests angleichen.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -81,7 +81,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	// Anlegen
 	for _, f := range []struct{ name, rumpf, meldung string }{
 		{"Lehrkraft ohne Schul-E-Mail", `{"vorname":"Lena","nachname":"Ohnemail","art":"lehrkraft"}`,
-			"Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet."},
+			"Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet"},
 		{"Lehrkraft mit Adresse ohne @", `{"vorname":"Lena","nachname":"Ohneat","art":"lehrkraft","email":"lena-ohne-at"}`,
 			"„lena-ohne-at“ ist keine E-Mail-Adresse"},
 		{"unbekannte Art", `{"vorname":"Zora","nachname":"Zauber","art":"zauberer"}`,
@@ -111,7 +111,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Schüler doppelt", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7a","geburtsdatum":"2012-05-06"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Dora","nachname":"Doppelt","klasse":"7b","geburtsdatum":"2012-05-06"}`), http.StatusConflict,
-			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System.")
+			"Achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System")
 	})
 	t.Run("Anlegen: Kollege mit demselben Namen", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Nora","nachname":"Namensgleich","art":"praktikum"}`)
