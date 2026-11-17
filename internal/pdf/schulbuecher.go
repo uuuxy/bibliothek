@@ -168,7 +168,7 @@ func hatZaehlung(titel []Schulbuch) bool {
 // schulbuchStandzeile ist die Zeile unter der Überschrift: die Einschränkung, wenn es eine
 // gibt, dann Zahl der Titel und Tag des Ausdrucks.
 func schulbuchStandzeile(anzahl int, zusatz string) string {
-	hinweis := fmt.Sprintf("%d Titel · Stand %s", anzahl, schulzeit.Jetzt().Format("02.01.2006"))
+	hinweis := fmt.Sprintf("%d Titel · Stand: %s", anzahl, schulzeit.Jetzt().Format("02.01.2006"))
 	if zusatz != "" {
 		hinweis = zusatz + " · " + hinweis
 	}

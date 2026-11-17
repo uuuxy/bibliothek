@@ -67,7 +67,7 @@ func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesam
 			"Betroffene Schüler/innen: %d\n"+
 			"Überfällige Medien gesamt: %d\n\n"+
 			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
-			"Mit freundlichen Grüßen,\nSchulbibliothek",
+			"Mit freundlichen Grüßen\nSchulbibliothek",
 		empfaenger.Klasse,
 		schulzeit.Jetzt().Format(tuer.DatumsformatDE),
 		schuelerGesamt,

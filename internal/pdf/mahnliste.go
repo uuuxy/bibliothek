@@ -98,7 +98,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(120, 120, 120)
-	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am %s", schulzeit.Jetzt().Format(datumsformat))))
+	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am: %s", schulzeit.Jetzt().Format(datumsformat))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(10)
 

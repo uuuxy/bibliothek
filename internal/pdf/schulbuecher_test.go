@@ -121,7 +121,7 @@ func TestErzeugeSchulbuecher_Inhalt(t *testing.T) {
 		"50",
 		"30",
 		"20",
-		"Filter · 1 Titel · Stand",
+		"Filter · 1 Titel · Stand:",
 	}
 
 	for _, e := range erwartet {

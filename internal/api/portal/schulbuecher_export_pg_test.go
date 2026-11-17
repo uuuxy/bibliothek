@@ -70,8 +70,8 @@ func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T)
 	standzeile := func(texte []string) string {
 		t.Helper()
 		for _, s := range texte {
-			if i := strings.Index(s, " Titel · Stand "); i >= 0 {
-				return s[:i+len(" Titel · Stand ")]
+			if i := strings.Index(s, " Titel · Stand: "); i >= 0 {
+				return s[:i+len(" Titel · Stand: ")]
 			}
 		}
 		t.Fatalf("keine Standzeile auf dem Blatt: %q", texte)
@@ -101,7 +101,7 @@ func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T)
 	if !slices.Contains(texte, "Schulbücher · Exportprobe Erdkunde") {
 		t.Errorf("Überschrift ohne das Fach. Gedruckt: %q", texte)
 	}
-	if got, want := standzeile(texte), "Jahrgang 7 · ohne Schulzweig · Suche: Exportprobe · 1 Titel · Stand "; got != want {
+	if got, want := standzeile(texte), "Jahrgang 7 · ohne Schulzweig · Suche: Exportprobe · 1 Titel · Stand: "; got != want {
 		t.Errorf("Standzeile = %q, erwartet %q", got, want)
 	}
 	pruefeTitel(texte, []string{"Exportprobe Atlas"},
@@ -117,7 +117,7 @@ func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T)
 	if !slices.Contains(texte, "Schulbücher") {
 		t.Errorf("Überschrift über alle Fächer fehlt. Gedruckt: %q", texte)
 	}
-	if got, want := standzeile(texte), "Jahrgang 7 · Gymnasium · Suche: Exportprobe · 3 Titel · Stand "; got != want {
+	if got, want := standzeile(texte), "Jahrgang 7 · Gymnasium · Suche: Exportprobe · 3 Titel · Stand: "; got != want {
 		t.Errorf("Standzeile = %q, erwartet %q", got, want)
 	}
 	pruefeTitel(texte, []string{"Exportprobe Atlas", "Exportprobe Globus", "Exportprobe Optik"},

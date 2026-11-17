@@ -48,7 +48,7 @@ func baueBestelllistePDF(bedarf []repository.Bestellbedarf) *gofpdf.Fpdf {
 	pdf.Ln(6)
 	pdf.SetFont("Arial", "I", 9)
 	pdf.SetTextColor(100, 100, 100)
-	pdf.Cell(0, 5, tr(fmt.Sprintf("Generiert am %s", schulzeit.Jetzt().Format("02.01.2006 (15:04)"))))
+	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am: %s", schulzeit.Jetzt().Format("02.01.2006, 15:04 Uhr"))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(12)
 

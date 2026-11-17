@@ -81,7 +81,7 @@ func TestBestellanschreiben_SetztKopfBetreffTextUndTabelleInIhrerFolge(t *testin
 		"Buchtitel", "Autor", "ISBN", "Menge",
 		"Mathematik 7", "Lambacher", "978-3-12-733771-9", "30",
 		"Atlas", "Diercke", "978-3-14-100800-5", "2",
-		"Mit freundlichen Grüßen,", "Das Bibliotheksteam",
+		"Mit freundlichen Grüßen", "Das Bibliotheksteam",
 	}, " | ")
 	if gesetzt != folge {
 		t.Errorf("gesetzt:\n%s\nerwartet:\n%s", gesetzt, folge)
@@ -172,7 +172,7 @@ func TestBestellanschreiben_KopfStehtAmRandDesBriefs(t *testing.T) {
 	}
 	seite := seitenMitOrten(t, roh)[0]
 	const rand = (20.0 + 1.0) / 25.4 * 72
-	for _, text := range []string{"Testschule", "An den Buchlieferanten", "Betreff-Probe", "Mit freundlichen Gr\xfc\xdfen,"} {
+	for _, text := range []string{"Testschule", "An den Buchlieferanten", "Betreff-Probe", "Mit freundlichen Gr\xfc\xdfen"} {
 		links, da := seite.links[text]
 		if !da {
 			t.Errorf("%q steht nicht auf dem Blatt", text)
@@ -218,7 +218,7 @@ func TestBestellanschreiben_LangeBestellungWiederholtDieKoepfe(t *testing.T) {
 			if koepfe != (zeilen > 0) {
 				t.Errorf("%d Positionen, Seite %d: Spaltenköpfe = %v bei %d Zeilen", anzahl, nr+1, koepfe, zeilen)
 			}
-			hatGruss, hatTeam := strings.Contains(text, "Mit freundlichen Grüßen,"), strings.Contains(text, "Das Bibliotheksteam")
+			hatGruss, hatTeam := strings.Contains(text, "Mit freundlichen Grüßen"), strings.Contains(text, "Das Bibliotheksteam")
 			if hatGruss != hatTeam {
 				t.Errorf("%d Positionen, Seite %d: Gruß = %v, Unterschrift = %v — sie gehören zusammen", anzahl, nr+1, hatGruss, hatTeam)
 			}

@@ -279,7 +279,7 @@ func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailse
 			"Je Schüler/in liegt ein Blatt mit den noch nicht zurückgegebenen Medien bei.\n"+
 			"Bitte geben Sie die Blätter aus; die Freigabezeile wird nach der Rückgabe\n"+
 			"in der Bibliothek abgezeichnet.\n\n"+
-			"Mit freundlichen Grüßen,\nSchulbibliothek",
+			"Mit freundlichen Grüßen\nSchulbibliothek",
 		kl.Klasse,
 		schulzeit.Jetzt().Format(tuer.DatumsformatDE),
 		len(anhaenge),

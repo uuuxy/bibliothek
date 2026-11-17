@@ -156,7 +156,7 @@ func ErzeugeBestellanschreiben(b Bestellanschreiben, schule SchuleInfo) ([]byte,
 	p.Ln(15)
 
 	p.SetFont("Arial", "", 10)
-	p.Cell(0, 6, tr("Mit freundlichen Grüßen,"))
+	p.Cell(0, 6, tr("Mit freundlichen Grüßen"))
 	p.Ln(12)
 	p.SetFont("Arial", "B", 10)
 	p.Cell(0, 6, tr("Das Bibliotheksteam"))
