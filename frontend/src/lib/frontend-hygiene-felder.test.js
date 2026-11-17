@@ -16,10 +16,11 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
  * Ein rohes Textfeld: jedes <input>, das kein Schalter (checkbox/radio), keine Datei,
  * kein verstecktes Feld, kein Schieberegler und keine Farbwahl ist. Diese Typen haben
  * eine eigene Gestalt; alles andere (text, number, date, month, email, password,
- * search, tel, url — oder gar kein type) ist ein Textfeld und gehört ins Bauteil.
+ * search, tel, url — oder gar kein type) ist ein Textfeld und gehört ins Bauteil, ebenso jedes
+ * <textarea>: Feld kann mehrzeilig (mehrzeilig, zeilen).
  */
 const ROH_INPUT =
-	/<input\b(?![^>]*type="(?:checkbox|radio|file|hidden|range|color|submit|button)")[^>]*>/gs;
+	/<input\b(?![^>]*type="(?:checkbox|radio|file|hidden|range|color|submit|button)")[^>]*>|<textarea\b[^>]*>/gs;
 
 // ── Ratsche ─────────────────────────────────────────────────────────────────
 // Diese Zahl darf NUR sinken. Wer eine Fundstelle auf das Bauteil umstellt, trägt den
@@ -115,7 +116,8 @@ describe('Feld-Hygiene', () => {
 			'<input type="text" bind:value={x} />',
 			'<input bind:value={x} placeholder="ohne type" />',
 			'<input type="date" bind:value={d} />',
-			'<input\n\ttype="number"\n\tmin={0}\n/>'
+			'<input\n\ttype="number"\n\tmin={0}\n/>',
+			'<textarea\n\tbind:value={notiz}\n\trows="2"\n></textarea>'
 		];
 		for (const beispiel of trefferMuss) {
 			expect(

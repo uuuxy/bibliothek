@@ -19,15 +19,13 @@
 		/>
 		<Feld type="number" bind:value={formular.anzahl} etikett="Anzahl" min={1} max={200} />
 	</div>
-	<label class="grid gap-y-1.5">
-		<span class="text-sm font-medium text-on-surface-variant">Notiz (optional)</span>
-		<textarea
-			bind:value={formular.notiz}
-			rows="2"
-			placeholder="z. B. Benötigt ab 15. September …"
-			class="w-full resize-none rounded-sm border border-outline-variant bg-surface-container-lowest px-3 py-2 text-base text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none"
-		></textarea>
-	</label>
+	<Feld
+		bind:value={formular.notiz}
+		etikett="Notiz (optional)"
+		mehrzeilig
+		zeilen={2}
+		placeholder="z. B. Benötigt ab 15. September …"
+	/>
 	<!-- Anstellen bleibt erlaubt — aber die Lehrkraft soll es VOR dem Absenden wissen,
 	     nicht erst aus der Bestätigung. -->
 	{#if reichtNicht}

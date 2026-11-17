@@ -6,6 +6,7 @@
 	import { LockOpen, Lock, CircleAlert } from '@lucide/svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { ausleiheGesperrt } from '../leser/sperrStatus.js';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
@@ -92,18 +93,14 @@
 		</p>
 
 		{#if wirdGesperrt}
-			<label class="block space-y-1.5">
-				<span class="text-xs font-bold text-on-surface"
-					>Grund der Sperre <span class="text-error">*</span></span
-				>
-				<textarea
-					bind:value={reason}
-					rows="2"
-					disabled={laeuft}
-					placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
-					class="w-full px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-error/30 disabled:opacity-50"
-				></textarea>
-			</label>
+			<Feld
+				bind:value={reason}
+				etikett="Grund der Sperre *"
+				mehrzeilig
+				zeilen={2}
+				disabled={laeuft}
+				placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
+			/>
 		{/if}
 
 		{#if fehler}
