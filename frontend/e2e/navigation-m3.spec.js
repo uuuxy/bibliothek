@@ -64,6 +64,36 @@ test.describe('Navigation: Material-3-Rollen', () => {
 		expect(Number.parseFloat(ist.radius)).toBeGreaterThan(100);
 	});
 
+	test('das ausgewählte Ziel steht in 700, die übrigen in 500, wie in Googles Token', async ({
+		page
+	}) => {
+		// material-web v0_192, _md-comp-navigation-drawer.scss: active-label-text-weight ist
+		// label-large-weight-prominent (700), label-text-weight ist label-large-weight (500).
+		await uiLogin(page);
+		const ziel = menuepunkt(page, 'Leserdatei');
+		await ziel.click();
+		await expect(ziel).toHaveAttribute('aria-current', 'page');
+
+		const gewicht = (/** @type {import('@playwright/test').Locator} */ punkt) =>
+			punkt.evaluate((el) => getComputedStyle(el).fontWeight);
+		expect(await gewicht(ziel)).toBe('700');
+		expect(await gewicht(menuepunkt(page, 'Ausleihe'))).toBe('500');
+
+		// Der Schnitt 700 muss geladen sein; ohne ihn verdickte der Browser 500 künstlich.
+		await expect
+			.poll(() =>
+				page.evaluate(() =>
+					[...document.fonts].some(
+						(f) =>
+							f.family.replaceAll('"', '') === 'Roboto' &&
+							f.weight === '700' &&
+							f.status === 'loaded'
+					)
+				)
+			)
+			.toBe(true);
+	});
+
 	test('Abmelden ist nicht als Fehler markiert', async ({ page }) => {
 		await uiLogin(page);
 

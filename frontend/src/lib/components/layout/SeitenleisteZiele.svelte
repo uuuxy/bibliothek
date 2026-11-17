@@ -61,11 +61,11 @@
 {#snippet navItem(/** @type {any} */ item)}
 	<button
 		onclick={() => navigiere(item.id)}
-		class="relative flex w-full items-center rounded-full text-label-large transition-colors
+		class="relative flex w-full items-center rounded-full transition-colors
 			{zeile}
 			{uiStore.activeTab === item.id
-			? 'bg-secondary-container text-on-secondary-container'
-			: 'text-on-surface-variant hover:bg-surface-container cursor-pointer'}"
+			? 'text-label-large-prominent bg-secondary-container text-on-secondary-container'
+			: 'text-label-large text-on-surface-variant hover:bg-surface-container cursor-pointer'}"
 		title={item.label}
 		aria-current={uiStore.activeTab === item.id ? 'page' : undefined}
 	>
