@@ -63,6 +63,9 @@ var (
 	errZeileUnlesbar     = errors.New("die Zeile ist nicht lesbar")
 	ErrPflichtfeldLeer   = errors.New("leeres Pflichtfeld (Vorname, Nachname oder Klasse)")
 	ErrGeburtsdatumFehlt = errors.New("geburtsdatum fehlt oder ist unlesbar")
+	// ErrNameMitErsatzzeichen meldet ein Fragezeichen oder U+FFFD im Namen: An dieser Stelle
+	// stand ein Buchstabe, den ein Programm beim Speichern nicht kannte.
+	ErrNameMitErsatzzeichen = errors.New("name enthält ein Ersatzzeichen statt eines Buchstabens")
 )
 
 // ZeileFehler nennt die Zeile der Datei, an der das Lesen scheiterte: Das Sekretariat muss sie in

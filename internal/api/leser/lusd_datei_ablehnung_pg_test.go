@@ -144,6 +144,18 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", mappe, nil),
 			http.StatusBadRequest, "In Zeile 4 ist Vorname, Nachname oder Klasse leer")
 	})
+	// Excel speichert „CSV“ in Windows-1252 und setzt für ş ein Fragezeichen; das ü (0xFC) zeigt dem
+	// Import die Kodierung. Ohne die Ablehnung entstünde neben „Ayşe“ eine zweite Schülerin „Ay?e“.
+	const fragezeichenMeldung = "In Zeile 2 steht im Namen ein Fragezeichen. Excel setzt es beim Speichern als „CSV“ " +
+		"für Buchstaben wie ş oder ł. Bitte als Excel-Arbeitsmappe oder als „CSV UTF-8“ speichern und erneut hochladen."
+	t.Run("Fragezeichen im Namen aus einer CSV in Windows-1252", func(t *testing.T) {
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte("vorname,nachname,klasse,geburtsdatum\nAy?e,Y\xFCcel,7a,2012-01-01\n"), nil),
+			http.StatusBadRequest, fragezeichenMeldung)
+	})
+	t.Run("Ersatzzeichen U+FFFD im Namen", func(t *testing.T) {
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte("vorname,nachname,klasse,geburtsdatum\nLukasz,Wi\uFFFDniewski,7a,2012-01-01\n"), nil),
+			http.StatusBadRequest, fragezeichenMeldung)
+	})
 	t.Run("Geburtsdatum fehlt im zweiten Blatt", func(t *testing.T) {
 		mappe := xlsxtest.BaueInReihenfolge(t,
 			xlsxtest.Blatt{Name: "7a", Zeilen: [][]any{kopf, {"Kind", "Nummer01", "7a", "2012-01-01"}}},

@@ -191,6 +191,12 @@ func leseZeile(quelle tabellenZeile, spalten map[string]int) (Zeile, error) {
 	if vorname == "" || nachname == "" || klasse == "" {
 		return Zeile{}, &ZeileFehler{Fundstelle: quelle.fundstelle, Art: ErrPflichtfeldLeer}
 	}
+	// Excel setzt beim Speichern als „CSV“ für jeden Buchstaben, den Windows-1252 nicht kennt (ş, ł),
+	// ein Fragezeichen. Ein solcher Name träfe den richtig geschriebenen Schüler nicht und legte
+	// ihn ein zweites Mal an; in einem Namen nach DIN 91379 kommt keins vor.
+	if strings.ContainsAny(vorname+nachname, "?\uFFFD") {
+		return Zeile{}, &ZeileFehler{Fundstelle: quelle.fundstelle, Art: ErrNameMitErsatzzeichen}
+	}
 
 	geb := leseDatum(zellen, spalten, spalteGeburtsdatum)
 	return Zeile{

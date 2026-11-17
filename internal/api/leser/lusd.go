@@ -147,6 +147,10 @@ func lusdZeilenMeldung(zeile *lusd.ZeileFehler) string {
 	case errors.Is(zeile, lusd.ErrGeburtsdatumFehlt):
 		return fmt.Sprintf("In %s fehlt das Geburtsdatum oder ist unlesbar. Ohne LUSD-ID ordnen Name und "+
 			"Geburtsdatum die Zeile zu, deshalb muss es in jeder Zeile stehen.", fundstelleText(zeile.Fundstelle))
+	case errors.Is(zeile, lusd.ErrNameMitErsatzzeichen):
+		return fmt.Sprintf("In %s steht im Namen ein Fragezeichen. Excel setzt es beim Speichern als „CSV“ "+
+			"für Buchstaben wie ş oder ł. Bitte als Excel-Arbeitsmappe oder als „CSV UTF-8“ speichern und "+
+			"erneut hochladen.", fundstelleText(zeile.Fundstelle))
 	}
 	// Unlesbar ist nur eine Zeile einer CSV-Datei; sie hat kein Blatt.
 	return fmt.Sprintf("Zeile %d der Datei ist nicht lesbar", zeile.Zeile)
