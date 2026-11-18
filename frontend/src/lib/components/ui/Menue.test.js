@@ -125,3 +125,31 @@ describe('Menue', () => {
 		draussen.remove();
 	});
 });
+
+// Maße nach M3, Menus (baseline), Specs: „Container width 112dp min, 280dp max", „Corner radius
+// 4dp", „List item height 48dp", „Left/right padding 12dp", „Padding between elements within a
+// list item 12dp"; Fläche surface-container und Erhebung level2 (md.comp.menu).
+describe('Menue: Form nach M3', () => {
+	it('hat Breite, Ecke, Fläche, Erhebung und Einträge des Baseline-Menüs', async () => {
+		const { getByRole, getAllByRole } = render(Menue, {
+			etikett: 'Aktionen',
+			eintraege: EINTRAEGE,
+			onwahl: () => {}
+		});
+		await fireEvent.click(getByRole('button', { name: 'Aktionen' }));
+		const menue = getByRole('menu', { name: 'Aktionen' }).className.split(/\s+/);
+		expect(menue).toEqual(
+			expect.arrayContaining([
+				'min-w-28',
+				'max-w-70',
+				'rounded-sm',
+				'bg-surface-container',
+				'shadow-level2'
+			])
+		);
+		for (const eintrag of getAllByRole('menuitem'))
+			expect(eintrag.className.split(/\s+/)).toEqual(
+				expect.arrayContaining(['min-h-12', 'px-3', 'gap-3'])
+			);
+	});
+});

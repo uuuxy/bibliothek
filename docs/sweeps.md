@@ -466,13 +466,13 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip`, `LmfKlasseChip`: 32 px, 8 px Ecke, label large, Rahmen outline; Input-Chips ohne Auswahl umrandet (md.comp.input-chip) | Gate: `ChipFeld.test`, `FilterChips.test` |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
 | Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
-| Menus | `ui/Menue`, `ui/Select` | gelesen (b78dbb84); Gate `menue-fuehrt-irgendwohin` prüft nur das Ziel |
+| Menus | `ui/Menue`, `ui/Select`: Baseline-Menü, 112 bis 280 dp breit, 4 px Ecke, surface-container, level2, Einträge 48 dp mit 12 dp Rand und Lücke; offen: Schrift der Einträge (material-web und Android body large, Angular Material label large, das Haus body medium) | Gate: `Menue.test` (Maße), `menue-fuehrt-irgendwohin` (Ziel), `erhebung` (level2) |
 | Navigation drawer, Navigation rail | `layout/Seitenleiste`, aufgeklappt und schmal | Gate: `navigation-m3`; Gewicht nach Googles Token: Ziel 500, aktives Ziel 700 |
 | Progress indicators, Loading indicator | `ui/Ladekreis` | Gate: `frontend-hygiene-ladekreis` |
 | Switch | `ui/Switch` | Gate: `frontend-hygiene-schalter`, `schalter` |
 | Checkbox, Radio button | `ui/Kaestchen`, `ui/Radio`: 18 px mit 2 px Ecke, 20 px, Schicht 40 px, Ring um die Schicht, Welle in der Farbe des kommenden Zustands | Gate: `KaestchenRadio.test`, `welle.test`, `zustaende` |
 | Search | `ui/Suchfeld`, `ui/Suchpille` | Gate: `frontend-hygiene-suchfelder`, `suchpille-einheitlich` |
-| Side sheets | `ui/Seitenblatt` | gelesen (efd17472) |
+| Side sheets | `ui/Seitenblatt`: Standard side sheet, höchstens 400 dp (360), 24 dp Rand, Überschrift title large in on-surface-variant, Fläche surface | Gate: `Seitenblatt.test` |
 | Snackbar | `layout/SnackbarAnzeige`: eine Fläche für jede Meldung (inverse-surface, level3, 4 px), kein Zeichen, Folgehandlung als Textknopf in inverse-primary, höchstens eine Meldung | Gate: `SnackbarAnzeige.test` (Form nach material-components-android), `meldungen-unten` (Platz) |
 | Tabs | `ui/Reiter` | Gate: `frontend-hygiene-reiter`, `bestell-reiter-eine-zeile` |
 | Text fields | `ui/Feld` | Gate: `frontend-hygiene-felder`, `frontend-hygiene-fehlerzeile-rolle`, `feld-fehlersymbol`, `feldbreite`, `ecken` (4 px, corner-extra-small) |
@@ -484,7 +484,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
 | Split button | „Ausweis drucken“ mit Menü in der Leserakte: zwei Knöpfe mit 2 px Abstand, innen 4 px, geöffnet rund, Pfeil dreht sich | Gate: `LeserakteAktionen.test` |
 | Date pickers | `ui/Datumsfeld` an allen 16 Datumsfeldern: eintippen ohne Eingabemaske oder im Kalender nach dem Docked date picker wählen (`ui/Kalender`), „both options are immediately available“; Tastatur und Rollen wie in Angular Material | Gate: `frontend-hygiene-felder` (kein rohes `<input>`), svelte-check (`ui/Feld` nimmt `type="date"` nicht an), `Datumsfeld.svelte.test`, `datumsfeld-kalender`, `feld-fehlersymbol`, `barrierefreiheit-axe` (offener Kalender) |
-| Toolbars | `ui/AuswahlLeiste` für markierte Zeilen, auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | gelesen (962cba20), alle Stellen |
+| Toolbars | `ui/AuswahlLeiste` für markierte Zeilen (Floating toolbar: 64 dp, voll gerundet, surface-container, 8 dp Lücke), auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | Gate: `AuswahlLeiste.test` |
 | Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |
 | Typography | `styles/theme-mass.css` | Gate: `frontend-hygiene-schrift`, `typo-rollen` |
 | Shape | Ecken der Bauteile: Skala in `styles/theme-mass.css`, Stufe je Bauteil nach dem Token in material-web (Textfeld, Menü, Snackbar 4 px; Chips 8; Karten 12; angedockter Kalender und Navigation 16; Dialog 28; Knöpfe voll) | Gate: `ecken` (Skala an jedem Element, Textfelder 4 px, Dialog, Kalender und Menü geöffnet), `frontend-hygiene-layout` (Form-Skala: kein Wert in Klammern, kein `border-radius` abseits der Skala) |

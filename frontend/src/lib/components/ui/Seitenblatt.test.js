@@ -37,3 +37,22 @@ describe('Seitenblatt', () => {
 		expect(onschliessen).toHaveBeenCalledTimes(1);
 	});
 });
+
+// Maße nach M3, Side sheets, Specs: „Start/end padding 24dp", „Max-width 400dp"; Überschrift in
+// title large und on-surface-variant, Fläche surface (Standard side sheet).
+describe('Seitenblatt: Form nach M3', () => {
+	it('ist höchstens 400 dp breit, hat 24 dp Rand und die Überschrift in title large', () => {
+		const { getByRole } = render(Seitenblatt, {
+			titel: 'Encuentros 1',
+			onschliessen: () => {},
+			children: inhalt
+		});
+		const blatt = getByRole('complementary').className.split(/\s+/);
+		expect(blatt).toEqual(expect.arrayContaining(['bg-surface', 'lg:w-90']));
+		const kopf = getByRole('heading', { name: 'Encuentros 1' });
+		expect(kopf.className.split(/\s+/)).toEqual(
+			expect.arrayContaining(['text-lg', 'text-on-surface-variant'])
+		);
+		expect(/** @type {HTMLElement} */ (kopf.parentElement).className).toContain('pl-6');
+	});
+});
