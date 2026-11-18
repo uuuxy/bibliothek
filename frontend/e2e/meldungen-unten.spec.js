@@ -113,14 +113,20 @@ test('Eine Meldung rückt über die Auswahlleiste, die unten am Rand klebt', asy
 	}
 });
 
-test('Eine Meldung rückt über die Leiste der Leserdatei', async ({ page }) => {
+test('Eine Meldung rückt über die Leiste der Leserdatei, die unten am Rand klebt', async ({
+	page
+}) => {
 	const s = uniqueSuffix();
 	const vorname = `Mu${s}`;
+	// So viele Schüler, dass die Liste über das Fenster reicht und die Leiste unten klebt.
 	seedSQL(`
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, geburtsdatum, abgaenger_jahr)
-		VALUES ('${vorname}', 'Probe', '7A', 'MU-${s}', '2012-01-01', 2030);
+		SELECT '${vorname}', 'Probe' || n, '7A', 'MU-${s}-' || n, '2012-01-01', 2030
+		FROM generate_series(1, 25) n;
 	`);
-	const id = querySQL(`SELECT id FROM schueler WHERE barcode_id = 'MU-${s}'`);
+	const ids = querySQL(
+		`SELECT string_agg(quote_literal(id::text), ',') FROM schueler WHERE barcode_id LIKE 'MU-${s}-%'`
+	);
 	try {
 		// Das Ausweis-Design lässt sich nicht laden: „Ausweise drucken" meldet das, und die
 		// Markierung und mit ihr die Leiste bleiben stehen.
@@ -129,11 +135,12 @@ test('Eine Meldung rückt über die Leiste der Leserdatei', async ({ page }) => 
 		await gehZu(page, '/schuelerdatei');
 		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 		await page
-			.getByRole('checkbox', { name: `${vorname} Probe für den Ausweisdruck markieren` })
+			.getByRole('checkbox', { name: `${vorname} Probe1 für den Ausweisdruck markieren` })
 			.check();
 		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Schüler' });
 		await expect(leiste).toBeVisible();
 		const l = await kasten(leiste);
+		expect(720 - (l.y + l.height), 'Die Leiste klebt nicht unten.').toBeCloseTo(40, 0);
 
 		await leiste.getByRole('button', { name: /drucken$/ }).click();
 		const meldung = page.getByRole('alert').filter({ hasText: 'Nicht gedruckt' });
@@ -145,6 +152,6 @@ test('Eine Meldung rückt über die Leiste der Leserdatei', async ({ page }) => 
 			}, 'Abstand zwischen Meldung und Leiste')
 			.toBe(16);
 	} finally {
-		seedSQL(`DELETE FROM schueler WHERE id = '${id}';`);
+		seedSQL(`DELETE FROM schueler WHERE id IN (${ids});`);
 	}
 });
