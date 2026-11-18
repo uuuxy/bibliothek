@@ -4,7 +4,7 @@
      ganz, statt deaktiviert stehen zu bleiben; die Tür liefert das Etikett auch nicht. -->
 <script>
 	import Button from '../ui/Button.svelte';
-	import { verbindeSaetze } from '../../utils/format.js';
+	import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 	import Select from '../ui/Select.svelte';
 	import { Check } from '@lucide/svelte';
 
@@ -54,7 +54,8 @@
 				bind:value={formatId}
 				options={bestellung.etiketten_formate.map((/** @type {any} */ f) => ({
 					value: f.id,
-					label: f.name
+					label: f.name,
+					zusatz: `${anzahlText(f.pro_seite, 'Etikett', 'Etiketten')}, ${f.spalten} × ${f.zeilen}`
 				}))}
 				aria-label={rasterBeschriftung}
 			/>

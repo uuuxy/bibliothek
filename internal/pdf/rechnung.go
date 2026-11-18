@@ -91,7 +91,7 @@ func baueAnschrift(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 	zeile2 := strings.TrimSpace(schueler.Strasse + " " + schueler.Hausnummer)
 	zeile3 := strings.TrimSpace(schueler.PLZ + " " + schueler.Ort)
 	if zeile2 == "" && zeile3 == "" {
-		zeile2 = "(keine Adresse hinterlegt)"
+		zeile2 = "Keine Adresse hinterlegt"
 	}
 	anschriftZeilen := []string{
 		fmt.Sprintf("%s %s", schueler.Vorname, schueler.Nachname),

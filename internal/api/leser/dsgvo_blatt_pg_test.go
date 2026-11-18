@@ -116,9 +116,9 @@ func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 
 	for _, soll := range []string{
-		"Ausleihe", "Rückgabe", "Blatt-Titel Mathematik (Barcode BLATT-EX-1)",
+		"Ausleihe", "Rückgabe", "Blatt-Titel Mathematik, Barcode BLATT-EX-1",
 		"Forderung storniert", "Betrag: 24,50 EUR", "Grund: Blatt-Grund der Stornierung",
-		"Titel gelöscht, während eine Vormerkung offen war (automatisch)", "Titel: Blatt-Titel Vorgemerkt", "Name: Blattkind Test",
+		"Titel gelöscht, während eine Vormerkung offen war, automatisch", "Titel: Blatt-Titel Vorgemerkt", "Name: Blattkind Test",
 		"Leserdatensatz in den Papierkorb gelegt", "Ausweisnummer: S-BLATT-1", "Grund: Blatt-Löschgrund",
 		"Von Hand gesperrt", "Sperrgrund: Blatt-Sperrgrund",
 		"Sperre aufgehoben", "Grund der aufgehobenen Sperre: Blatt-Sperrgrund", "Sperre war von Hand gesetzt: Ja",

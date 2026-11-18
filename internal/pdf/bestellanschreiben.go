@@ -45,11 +45,11 @@ type Bestellanschreiben struct {
 
 // barcodebogenSatz weist den Lieferanten an, die Exemplare vorab zu bekleben. Er steht nur im
 // Brief, wenn der Bogen der Mail beiliegt.
-const barcodebogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern aus dem beigefügten Bogen.\n"
+const barcodebogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode- oder QR-Code-Aufklebern aus dem beigefügten Bogen.\n"
 
 // linkbogenSatz steht an seiner Stelle, wenn der Bogen hinter dem Link der Mail liegt, und
 // nennt den Weg dorthin: Ein Verweis auf eine Anlage, die es nicht gibt, kostet eine Rückfrage.
-const linkbogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern. Den Etikettenbogen rufen Sie über den Link in dieser E-Mail ab; dort wählen Sie zwischen kleinen und großen Etiketten.\n"
+const linkbogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode- oder QR-Code-Aufklebern. Den Etikettenbogen rufen Sie über den Link in dieser E-Mail ab; dort wählen Sie zwischen kleinen und großen Etiketten.\n"
 
 // bestellanschreibenText baut den Fließtext über der Tabelle. Der Vermerk des Topfs kehrt auf
 // der Rechnung wieder, damit die Schule die Rechnungen den Töpfen zuordnen kann.

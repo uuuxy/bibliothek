@@ -93,7 +93,7 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 
 // Schlägt der Versand einer Klasse fehl (abgelehnte Adresse o. ä.), läuft der Rest
 // weiter (best effort), aber die Klasse zählt als fehlgeschlagen, nicht als übersprungen:
-// „übersprungen (keine E-Mail hinterlegt)" ist Absicht, ein Ausfall nicht.
+// „übersprungen: keine E-Mail hinterlegt" ist Absicht, ein Ausfall nicht.
 func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
@@ -121,7 +121,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 
 // Mailserver-Fehler (ErrSMTPVersand) bricht den Lauf ab: Das Relay ist weg, jede weitere
 // Klasse hinge nur bis zur Frist. Die übrigen zählen als fehlgeschlagen, und die Meldung sagt
-// es; unter „übersprungen (keine E-Mail hinterlegt oder keine Fälle)" sähe der Ausfall aus wie
+// es; unter „übersprungen: keine E-Mail hinterlegt oder keine Fälle" sähe der Ausfall aus wie
 // Absicht.
 func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }

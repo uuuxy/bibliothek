@@ -155,14 +155,14 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		{
 			name:     "Mailversand darf Klartext",
 			aendere:  func(l *Lage) { l.SMTPKlartextErlaubt = true },
-			bereich:  "Mailversand (Mahnwesen)",
+			bereich:  "Mailversand im Mahnwesen",
 			stufe:    StufeWarnung,
 			enthaelt: "SMTP_ALLOW_PLAINTEXT",
 		},
 		{
 			name:     "Mailversand prüft das Zertifikat nicht",
 			aendere:  func(l *Lage) { l.SMTPUnsicheresTLSErlaubt = true },
-			bereich:  "Mailversand (Mahnwesen)",
+			bereich:  "Mailversand im Mahnwesen",
 			stufe:    StufeWarnung,
 			enthaelt: "SMTP_ALLOW_INSECURE_TLS",
 		},
@@ -263,7 +263,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 		{
 			name:     "kein SMTP-Server",
 			aendere:  func(l *Lage) { l.SMTPHost = "" },
-			bereich:  "Mailversand (Mahnwesen)",
+			bereich:  "Mailversand im Mahnwesen",
 			stufe:    StufeWarnung,
 			enthaelt: "Mahnungen",
 		},

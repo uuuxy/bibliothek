@@ -276,6 +276,6 @@ func formatiereAdressabgleichBericht(stand adressabgleichStand) (betreff, text s
 		"Der monatliche Abgleich mit dem globalen Adressbuch des Webmails am %s hat %d Konten ihre Adresse "+
 			"der Schule eingetragen; %d Konten mit Platzhalter blieben ohne eindeutigen Treffer.\n\n"+
 			"Die Namen zeigt der Probelauf unter Einstellungen → Mail; jede Übernahme steht im Protokoll "+
-			"der Verwaltung („Adresse aus dem Webmail übernommen“).\n",
+			"der Verwaltung als „Adresse aus dem Webmail übernommen“.\n",
 		zeit, stand.Uebernommen, stand.Uebergangen)
 }

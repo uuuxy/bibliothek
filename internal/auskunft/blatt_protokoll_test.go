@@ -27,7 +27,7 @@ func TestDSGVOVorgang(t *testing.T) {
 		{"Rückgabe", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER"}, `{}`, "Rückgabe"},
 		{"Titel gelöscht bei laufender Ausleihe",
 			ProtokollEintrag{Tabelle: "ausleihen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, Buch war zu diesem Zeitpunkt verliehen")},
-			`{"action":"titel_geloescht_mit_offener_ausleihe"}`, "Titel gelöscht, während das Buch ausgeliehen war (automatisch)"},
+			`{"action":"titel_geloescht_mit_offener_ausleihe"}`, "Titel gelöscht, während das Buch ausgeliehen war, automatisch"},
 		{"Papierkorb", ProtokollEintrag{Tabelle: "schueler", Aktion: "UPDATE", Akteur: "USER", Kontext: satz("Soft-Delete Routine")},
 			`{"action":"soft_delete"}`, "Leserdatensatz in den Papierkorb gelegt"},
 		{"Zusammenführen", ProtokollEintrag{Tabelle: "schueler", Aktion: "ZUSAMMENGEFUEHRT", Akteur: "USER"},
@@ -40,13 +40,13 @@ func TestDSGVOVorgang(t *testing.T) {
 			`{"anlass":"rueckgabe"}`, "Forderung storniert, weil das Buch zurück ist"},
 		{"Titel gelöscht bei offener Forderung",
 			ProtokollEintrag{Tabelle: "schadensfaelle", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, es stand noch eine unbezahlte Forderung offen")},
-			`{"action":"titel_geloescht_mit_offener_forderung"}`, "Titel gelöscht, während eine Forderung offen war (automatisch)"},
+			`{"action":"titel_geloescht_mit_offener_forderung"}`, "Titel gelöscht, während eine Forderung offen war, automatisch"},
 		{"Titel gelöscht bei offener Vormerkung",
 			ProtokollEintrag{Tabelle: "vormerkungen", Aktion: "DELETE", Akteur: "SYSTEM", Kontext: satz("Titel gelöscht, eine Vormerkung stand noch offen")},
-			`{"action":"titel_geloescht_mit_offenem_bezug"}`, "Titel gelöscht, während eine Vormerkung offen war (automatisch)"},
+			`{"action":"titel_geloescht_mit_offenem_bezug"}`, "Titel gelöscht, während eine Vormerkung offen war, automatisch"},
 		// Was das Blatt nicht kennt, bleibt stehen: Aktion, Tabelle, kontext, Akteur.
 		{"unbekannter Vorgang", ProtokollEintrag{Tabelle: "neue_tabelle", Aktion: "NEUE_AKTION", Akteur: "DIENST", Kontext: satz("neuer Satz")},
-			`{}`, "NEUE_AKTION (neue_tabelle) — neuer Satz (DIENST)"},
+			`{}`, "NEUE_AKTION (neue_tabelle) — neuer Satz, DIENST"},
 		{"bekannter Vorgang mit neuem kontext", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER", Kontext: satz("am Automaten")},
 			`{}`, "Rückgabe — am Automaten"},
 	}
@@ -86,7 +86,7 @@ func TestDSGVOAngabenZeilen(t *testing.T) {
 			false, []string{"Titel: Mathematik heute 6 · Buchnummer: 2424 · Name: Erika Muster · Beschreibung: Wasserschaden · Betrag: 12,50 EUR · erfasst am: 17.09.2026"}},
 		{"Papierkorb: barcode_id ist die Ausweisnummer", "UPDATE",
 			`{"vorname":"Erika","nachname":"Muster","klasse":"07A","barcode_id":"S-1001","abgaenger_jahr":2030,"grund":"Manuelle Löschung","action":"soft_delete","art":"schueler","konten_geloescht":0}`,
-			true, []string{"Ausweisnummer: S-1001 · Vorname: Erika · Nachname: Muster · Klasse: 07A · Art des Lesers: Schüler/in · Grund: Manuelle Löschung · Abgangsjahr: 2030 · gelöschte Zugangskonten: 0"}},
+			true, []string{"Ausweisnummer: S-1001 · Vorname: Erika · Nachname: Muster · Klasse: 07A · Art des Lesers: Schülerin oder Schüler · Grund: Manuelle Löschung · Abgangsjahr: 2030 · gelöschte Zugangskonten: 0"}},
 		{"Zusammenführen: Abbild und Umgehängtes je in einer Zeile, Listen als Zahl", "ZUSAMMENGEFUEHRT",
 			`{"action":"zusammenfuehren","aufgeloest_id":"` + kennung + `","aufgeloest_barcode":"S-2002",` +
 				`"quelle":{"id":"` + kennung + `","barcode_id":"S-2002","vorname":"Erica","nachname":"Muster","geburtsdatum":"2014-05-01","ist_gesperrt":false},` +
@@ -172,7 +172,7 @@ func TestBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
 	for _, soll := range []string{
-		"Ausleihe", "Mathematik heute 6 (Barcode 2424)", "Rückgabe", "nicht mehr im Bestand",
+		"Ausleihe", "Mathematik heute 6, Barcode 2424", "Rückgabe", "nicht mehr im Bestand",
 		"Forderung storniert", "Betrag: 24,50 EUR", "Grund: Buch im Regal gefunden",
 		"Von Hand gesperrt", "Sperrgrund: Buch seit Mai überfällig", "LUSD-ID nachgetragen", "LUSD-ID: 4711",
 		"Art. 15 Abs. 4 DSGVO",

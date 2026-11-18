@@ -28,7 +28,7 @@ import (
 // Die Fristen sind die eingestellten, mit denen auch die Jobs rechnen (FristWerte), damit
 // eine geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
 func dsgvoVerarbeitungsangabenKollegium(f FristWerte) Verarbeitungsangaben {
-	const abgeschaltet = "ohne Frist (Befristung in dieser Installation abgeschaltet)"
+	const abgeschaltet = "ohne Frist, weil die Befristung in dieser Installation abgeschaltet ist"
 	nachRueckgabe := func(tage int) string {
 		if tage <= 0 {
 			return abgeschaltet
@@ -42,12 +42,12 @@ func dsgvoVerarbeitungsangabenKollegium(f FristWerte) Verarbeitungsangaben {
 	return Verarbeitungsangaben{
 		Zwecke: []string{
 			"Zugangskontrolle: Anmeldung mit der dienstlichen E-Mail-Adresse und Rolle im System",
-			"Nachvollziehbarkeit von Änderungen an Schülerdaten und Einstellungen (Rechenschaftspflicht nach Art. 5 Abs. 2 DSGVO)",
+			"Nachvollziehbarkeit von Änderungen an Schülerdaten und Einstellungen für die Rechenschaftspflicht nach Art. 5 Abs. 2 DSGVO",
 			"Wünsche, Meldungen und Klassensatz-Reservierungen im Kollegiums-Portal",
 			"Versand an die Klassenleitung: Liste der überfälligen Medien der Klasse und Kontoauszüge der Abgänger",
 			"Ausleihe von Büchern und Medien an die Person selbst",
 		},
-		Rechtsgrundlage: "Zugangskonto, Protokolle und Anfragen: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG; für Beschäftigte § 23 HDSIG (Datenverarbeitung im Beschäftigungsverhältnis). " +
+		Rechtsgrundlage: "Zugangskonto, Protokolle und Anfragen: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG; für Beschäftigte § 23 HDSIG zur Datenverarbeitung im Beschäftigungsverhältnis. " +
 			"Eigene Ausleihen: dieselben Grundlagen wie bei der Ausleihe an Schülerinnen und Schüler. Maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte. Das Bibliothekspersonal der Schule sieht die eigenen Ausleihen sowie Wünsche, Meldungen und Reservierungen mit dem Namen der anfragenden Person; " +
 			"die Liste der Zugangskonten und die Protokolle sehen nur Personen, denen die Schule deren Verwaltung übertragen hat. Helfer an der Theke sehen nur Name, Ausweisnummer und Sperrstatus.",

@@ -97,11 +97,11 @@ func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 	}
 	kopf, rest, _ := strings.Cut(mail.Text, "\n\nBetroffene")
 	if !einerDerTage(kopf, "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die aktuelle Mahnliste der "+
-		"Schulbibliothek für die Klasse 07B (Stand: %s).", "02.01.2006") {
+		"Schulbibliothek für die Klasse 07B, Stand %s.", "02.01.2006") {
 		t.Errorf("Anfang des Texts = %q, erwartet Klasse und heutigen Tag", kopf)
 	}
-	if !strings.HasPrefix(rest, " Schüler/innen: 3\nÜberfällige Medien gesamt: 5\n") {
-		t.Errorf("Zahlen im Text = %q, erwartet 3 Schüler/innen und 5 Medien", rest)
+	if !strings.HasPrefix(rest, " Schülerinnen und Schüler: 3\nÜberfällige Medien gesamt: 5\n") {
+		t.Errorf("Zahlen im Text = %q, erwartet 3 Schülerinnen und Schüler und 5 Medien", rest)
 	}
 
 	if len(mail.Anhaenge) != 1 {

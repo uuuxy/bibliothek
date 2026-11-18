@@ -63,10 +63,10 @@ func mahnStatistik(klassen []repository.MahnwesenKlasse) (schuelerGesamt, medien
 func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesamt, medienGesamt int) mailservice.Nachricht {
 	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
-			"anbei erhalten Sie die aktuelle Mahnliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
-			"Betroffene Schüler/innen: %d\n"+
+			"anbei erhalten Sie die aktuelle Mahnliste der Schulbibliothek für die Klasse %s, Stand %s.\n\n"+
+			"Betroffene Schülerinnen und Schüler: %d\n"+
 			"Überfällige Medien gesamt: %d\n\n"+
-			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
+			"Bitte informieren Sie die betroffenen Schülerinnen und Schüler über die ausstehenden Rückgaben.\n\n"+
 			"Mit freundlichen Grüßen\nSchulbibliothek",
 		empfaenger.Klasse,
 		schulzeit.Jetzt().Format(tuer.DatumsformatDE),

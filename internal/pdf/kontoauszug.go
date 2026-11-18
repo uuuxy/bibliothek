@@ -106,7 +106,7 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 		),
 		row.New(15).Add(
 			col.New().Add(marotoText(
-				fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s (Klasse %s)", schueler.Vorname, schueler.Nachname, schueler.Klasse),
+				fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s, Klasse %s", schueler.Vorname, schueler.Nachname, schueler.Klasse),
 				props.Text{Size: 14, Style: fontstyle.Bold, Align: align.Center},
 			)),
 		),
@@ -164,7 +164,7 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 				marotoText("_________________________________________________________", props.Text{Size: 10}),
 			)),
 			row.New(8).Add(col.New().Add(
-				marotoText("Datum, Unterschrift Bibliotheksteam (Freigabe zum Schulabgang)", props.Text{Size: 9, Style: fontstyle.Italic}),
+				marotoText("Freigabe zum Schulabgang: Datum und Unterschrift des Bibliotheksteams", props.Text{Size: 9, Style: fontstyle.Italic}),
 			)),
 		)
 	} else {

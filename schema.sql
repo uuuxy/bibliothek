@@ -410,17 +410,17 @@ Ihre Schulbibliothek'
 ),
 (
     'BESTELLUNG_HAENDLER',
-    'Buchbestellung {{.Mittel}} - {{.Datum}} (Kundennummer {{.Kundennummer}})',
+    'Buchbestellung {{.Mittel}} vom {{.Datum}}, Kundennummer {{.Kundennummer}}',
     'Sehr geehrte Damen und Herren,
 
-anbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.
+anbei erhalten Sie unsere Buchbestellung vom {{.Datum}} zur Kundennummer {{.Kundennummer}} sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.
 
-Diese Bestellung: {{.Mittel}} — den Vermerk finden Sie auch im Anschreiben; bitte führen Sie ihn auf der Rechnung.
+Diese Bestellung: {{.Mittel}}. Den Vermerk finden Sie auch im Anschreiben; bitte führen Sie ihn auf der Rechnung.
 
 Bestellte Titel: {{.AnzahlTitel}}
 Gesamtanzahl Exemplare: {{.AnzahlExemplare}}
 
-Mit freundlichen Grüßen,
+Mit freundlichen Grüßen
 Schulbibliothek'
 )
 ON CONFLICT (typ) DO NOTHING;
@@ -1989,7 +1989,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('174_lmf_stichtag_entfaellt.sql'),
 ('175_absender_fuer_mein_portal.sql'),
 ('176_webmail_fuer_adressabgleich.sql'),
-('177_zweiter_absender_je_mailart.sql')
+('177_zweiter_absender_je_mailart.sql'),
+('178_haendlermail_ohne_klammern.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

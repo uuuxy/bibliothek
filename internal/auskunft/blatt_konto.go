@@ -33,7 +33,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(k.AktualisiertAm))
 	dsgvoZeile(p, tr, "Klassenleitung", strings.Join(k.Klassenleitungen, ", "))
 
-	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Wünsche, Meldungen und Reservierungen im Kollegiums-Portal (%d)", len(k.Anfragen)))
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Wünsche, Meldungen und Reservierungen im Kollegiums-Portal: %d", len(k.Anfragen)))
 	if len(k.Anfragen) == 0 {
 		dsgvoLeer(p, tr)
 	}
@@ -42,13 +42,13 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 		dsgvoEintragZeile(p, tr, dsgvoAnfrageZeile(a))
 	}
 
-	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Einträge im Verwaltungsprotokoll zu diesem Konto (%d)", len(k.Ereignisse)))
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Einträge im Verwaltungsprotokoll zu diesem Konto: %d", len(k.Ereignisse)))
 	if len(k.Ereignisse) == 0 {
 		dsgvoLeer(p, tr)
 	}
 	dsgvoKontoEreignisse(p, tr, k.Ereignisse)
 
-	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Vorgänge, die diese Person im System bearbeitet hat (%d)", len(k.EigeneVorgaenge)))
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Vorgänge, die diese Person im System bearbeitet hat: %d", len(k.EigeneVorgaenge)))
 	dsgvoHinweis(p, tr, "Ohne Angaben zu anderen Personen (Art. 15 Abs. 4 DSGVO). Eine Buchung kann zweimal "+
 		"stehen: als Ausleihvorgang, solange die bearbeitende Person daran gespeichert ist (bis 14 Tage nach "+
 		"der Rückgabe), und als Protokolleintrag.")
@@ -57,7 +57,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	}
 	p.SetFont(pdfzeichen.Schrift, "", 8)
 	for _, z := range dsgvoVorgaengeJeTag(k.EigeneVorgaenge) {
-		p.MultiCell(0, 5, tr(fmt.Sprintf("%s · %s (%d): %s", z.tag, z.handlung, len(z.zeiten),
+		p.MultiCell(0, 5, tr(fmt.Sprintf("%s · %s: %s", z.tag, z.handlung,
 			strings.Join(z.zeiten, ", "))), "", "L", false)
 	}
 }
@@ -100,7 +100,7 @@ func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten
 	if len(konten) == 0 {
 		return
 	}
-	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Frühere Zugangskonten (%d)", len(konten)))
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Frühere Zugangskonten: %d", len(konten)))
 	dsgvoHinweis(p, tr, "Gelöschte Konten, die auf diesen Leserdatensatz zeigten, mit den Einträgen im "+
 		"Verwaltungsprotokoll über das Konto. Was die Person mit einem solchen Konto selbst bearbeitet hat, "+
 		"ist ihr nach dem Löschen nicht mehr zuzuordnen.")
@@ -170,7 +170,7 @@ func dsgvoHinweis(p *gofpdf.Fpdf, tr func(string) string, satz string) {
 func dsgvoRolle(rolle string) string {
 	switch rolle {
 	case "kollegium":
-		return "Kollegium (keine weitere Rolle)"
+		return "Kollegium · keine Rolle, nur Portal"
 	case "helfer":
 		return "Helfer"
 	case "mitarbeiter":

@@ -21,7 +21,7 @@ func (f EtikettFormat) istGross() bool { return f.Hoehe >= 30 }
 var etikettFormate = map[string]EtikettFormat{
 	"zweckform_l4760": {
 		ID:        "zweckform_l4760",
-		Name:      "Zweckform L4760 (3x7, 21 Etiketten)",
+		Name:      "Zweckform L4760",
 		Spalten:   3,
 		Zeilen:    7,
 		Breite:    63.5, // Avery/Zweckform 63,5 x 38,1
@@ -33,7 +33,7 @@ var etikettFormate = map[string]EtikettFormat{
 	},
 	"avery_3475": {
 		ID:        "avery_3475",
-		Name:      "Avery 3475 (3x8, 24 Etiketten)",
+		Name:      "Avery 3475",
 		Spalten:   3,
 		Zeilen:    8,
 		Breite:    70.0,
@@ -45,7 +45,7 @@ var etikettFormate = map[string]EtikettFormat{
 	},
 	"standard_52": {
 		ID:        "standard_52",
-		Name:      "Standard 52 (4x13, 52 Etiketten)",
+		Name:      "Standard 52",
 		Spalten:   4,
 		Zeilen:    13,
 		Breite:    48.3, // 48,3 x 21,2 mm nach Angabe der Schule

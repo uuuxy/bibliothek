@@ -132,7 +132,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
-	for _, zeile := range []string{"Kundennummer: K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
+	for _, zeile := range []string{"zur Kundennummer K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
 		if !strings.Contains(nachricht, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
@@ -164,7 +164,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	for _, zeile := range []string{
-		"Subject: Buchbestellung Lernmittelfreiheit - ",
+		"Subject: Buchbestellung Lernmittelfreiheit vom ",
 		"Diese Bestellung: Lernmittelfreiheit",
 		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(tuer.DatumsformatDE),
 	} {

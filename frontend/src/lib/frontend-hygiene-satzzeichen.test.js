@@ -242,19 +242,15 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 	});
 
 	it('Selbstprobe: Klammern und Schrägstriche', () => {
-		for (const gut of ['Postausgang (SMTP)', 'Gemäß (§ 153 HSchG)', 'DSGVO-Auskunft (Art. 15)'])
+		// Die Fälle teilt sie mit pruefung/nebenzeichen_ratsche_test.go; CSS gibt es nur hier.
+		for (const gut of geteilt.nebenzeichen.ohne) expect(nebenzeichen(gut), gut).toEqual([]);
+		for (const schlecht of geteilt.nebenzeichen.mit)
+			expect(nebenzeichen(schlecht), schlecht).not.toEqual([]);
+		for (const gut of ['transform: scale({…});', 'input:not([type="file"])', '(width < 80rem)'])
 			expect(nebenzeichen(gut), gut).toEqual([]);
-		for (const gut of ['„LMF Deu 7 / Bie“ ist ein Fach', 'image/jpeg', 'transform: scale({…});'])
-			expect(nebenzeichen(gut), gut).toEqual([]);
-		for (const gut of ['input:not([type="file"])', '(width < 80rem)', 'calc({…}px + 1rem)'])
-			expect(nebenzeichen(gut), gut).toEqual([]);
-		for (const gut of ['Plan (kmk.org/service/x)', 'Steht unter kmk.org/service/x bereit'])
-			expect(nebenzeichen(gut), gut).toEqual([]);
+		expect(nebenzeichen('calc({…}px + 1rem)')).toEqual([]);
 		expect(nebenzeichen('Notiz (optional)')).toEqual(['Klammer (optional)']);
-		expect(nebenzeichen('Forderungen ({…})')).toEqual(['Klammer ({…})']);
-		expect(nebenzeichen('Zahlungsfrist (Tage)')).toEqual(['Klammer (Tage)']);
-		for (const schlecht of ['Schüler/in', 'Klasse / Kurs', '{…} / {…} erfasst', 'N/A'])
-			expect(nebenzeichen(schlecht), schlecht).toEqual(['Schrägstrich']);
+		expect(nebenzeichen('Schüler/in')).toEqual(['Schrägstrich']);
 	});
 
 	it('Selbstprobe: der Detektor fasst die Formen', () => {

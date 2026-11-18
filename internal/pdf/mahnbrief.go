@@ -61,7 +61,7 @@ func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
 	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
 	if strasse == "" && ort == "" {
-		strasse = "(keine Adresse hinterlegt)"
+		strasse = "Keine Adresse hinterlegt"
 	}
 	return []string{name, strasse, ort}
 }

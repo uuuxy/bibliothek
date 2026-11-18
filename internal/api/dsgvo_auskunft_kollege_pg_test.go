@@ -153,7 +153,7 @@ func TestDSGVOAuskunft_Kollege(t *testing.T) {
 
 	pdfRec := rufe(t, srv.leser().DSGVOAuskunftPDF(), "/api/schueler/"+leser+"/dsgvo-auskunft/pdf")
 	blatt := strings.Join(pdftest.Texte(t, pdfRec.Body.Bytes()), "\n")
-	for _, soll := range []string{"(Lehrkraft)", "kora@auskunft-kollege.invalid", "Kanari-Wunschtitel", "Konto angelegt"} {
+	for _, soll := range []string{", Lehrkraft", "kora@auskunft-kollege.invalid", "Kanari-Wunschtitel", "Konto angelegt"} {
 		if !strings.Contains(blatt, soll) {
 			t.Errorf("das PDF enthält %q nicht", soll)
 		}

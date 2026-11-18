@@ -20,7 +20,7 @@ func pruefeBestelllink(l Lage) Befund {
 }
 
 func pruefeMailversand(l Lage) Befund {
-	b := Befund{Bereich: "Mailversand (Mahnwesen)"}
+	b := Befund{Bereich: "Mailversand im Mahnwesen"}
 	// Die Ausnahmeschalter zuerst: Sie schwächen den Versand auch dann, wenn sonst alles
 	// eingerichtet ist, und gerade dann sähe der Bereich ohne sie „ok" aus.
 	var schalter []string

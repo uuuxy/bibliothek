@@ -107,7 +107,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	pdf.SetDrawColor(180, 195, 230)
 	pdf.RoundedRect(18, pdf.GetY(), 174, 22, 3, "1234", "FD")
 	pdf.SetXY(24, pdf.GetY()+4)
-	pdf.Cell(60, 7, tr("Schüler/in:"))
+	pdf.Cell(60, 7, tr("Name:"))
 	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.Cell(0, 7, tr(sch.Name))
 	pdf.SetXY(24, pdf.GetY()+8)

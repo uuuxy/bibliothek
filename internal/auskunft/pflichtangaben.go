@@ -15,26 +15,26 @@ import (
 func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, protokollMonate int) Verarbeitungsangaben {
 	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
-		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
+		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang, also dem Abgang, der letzten Rückgabe oder der Schadensregulierung", karenzTage)
 	}
 	frist := func(tage int) string {
 		if tage <= 0 {
-			return "bis zur Löschung des Schülerdatensatzes (Befristung in dieser Installation abgeschaltet)"
+			return "bis zur Löschung des Schülerdatensatzes; die Befristung ist in dieser Installation abgeschaltet"
 		}
 		return repository.TageMitZahl(tage) + " nach Rückgabe"
 	}
 	return Verarbeitungsangaben{
 		Zwecke: []string{
-			"Verwaltung der Lernmittelausleihe im Rahmen der Lernmittelfreiheit (Nachweis von Ausleihe und Rücklauf, Mahnung, Schadensersatz)",
-			"Betrieb der Schülerbücherei (Ausleihe, Vormerkung, Rückgabeerinnerung)",
+			"Verwaltung der Lernmittelausleihe im Rahmen der Lernmittelfreiheit: Nachweis von Ausleihe und Rücklauf, Mahnung, Schadensersatz",
+			"Betrieb der Schülerbücherei: Ausleihe, Vormerkung, Rückgabeerinnerung",
 			"Abwicklung von Schadens- und Verlustfällen",
 		},
-		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Erhebung und Verarbeitung personenbezogener Daten durch Schulen) und § 153 HSchG (Lernmittelfreiheit) sowie SchDSV — öffentlich-rechtliches Nutzungsverhältnis. " +
-			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
+		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG zur Verarbeitung personenbezogener Daten durch Schulen und § 153 HSchG zur Lernmittelfreiheit sowie die SchDSV; Grundlage ist ein öffentlich-rechtliches Nutzungsverhältnis. " +
+			"Schülerbücherei: Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 3 SchDSV, denn die Nutzung ist freiwillig; bei Minderjährigen willigen die Erziehungsberechtigten ein. Das gilt, sofern die Schule die Schülerbücherei nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt; maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", protokollMonate) + " Monate. " + dsgvoSicherungen,
-		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import), Übernahme aus dem bisherigen Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum) bzw. manuelle Erfassung durch das Bibliotheksteam",
+		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule per Export und Import, Übernahme aus dem bisherigen Bibliotheksprogramm mit Name, Klasse, Ausweisnummer und Geburtsdatum oder Erfassung von Hand durch das Bibliotheksteam",
 		Betroffenenrechte: dsgvoBetroffenenrechte,
 	}
 }
@@ -49,7 +49,7 @@ const (
 )
 
 var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten %d Nächte, "+
-	"dazu von den älteren je Kalenderwoche eine, für %d Wochen (zusammen etwa drei Monate); "+
+	"dazu von den älteren je Kalenderwoche eine, für %d Wochen, zusammen etwa drei Monate; "+
 	"eine Sicherung vor einem Update wird beim ersten Update nach %d Tagen gelöscht, "+
 	"eine von Hand angelegte beim ersten weiteren Lauf nach %d Tagen.",
 	jobs.AufbewahrteNaechte, jobs.AufbewahrteWochen, sicherungVorUpdateTage, sicherungVonHandTage)

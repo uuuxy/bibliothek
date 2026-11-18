@@ -5,8 +5,8 @@ import BestaetigungEtiketten from './BestaetigungEtiketten.svelte';
 const BESTELLUNG = {
 	grosses_etikett: true,
 	etiketten_formate: [
-		{ id: 'avery-3474', name: 'Avery 3474' },
-		{ id: 'herma-4626', name: 'Herma 4626' }
+		{ id: 'avery-3474', name: 'Avery 3474', pro_seite: 24, spalten: 3, zeilen: 8 },
+		{ id: 'herma-4626', name: 'Herma 4626', pro_seite: 65, spalten: 5, zeilen: 13 }
 	]
 };
 

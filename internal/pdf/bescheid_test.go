@@ -141,7 +141,7 @@ func TestBescheidOhneAnschriftSagtEs(t *testing.T) {
 	b.Empfaenger.Strasse = ""
 	b.Empfaenger.Ort = ""
 	text := pdfText(t, mussErzeugen(t, b))
-	if !strings.Contains(text, "keine Adresse hinterlegt") {
+	if !strings.Contains(text, "Keine Adresse hinterlegt") {
 		t.Error("der Brief verschweigt die fehlende Anschrift")
 	}
 }

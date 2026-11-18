@@ -54,8 +54,10 @@ Nur, was kein Test leisten kann.
 - [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
 - [ ] Icons: Lucide durch Googles Material Symbols ersetzen, die letzte offene Seite der
   Abdeckungsliste ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
-- [ ] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
-  Oberfläche; dafür gibt es noch keine Prüfung. (5.192)
+- [x] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
+  Oberfläche. (5.192)
+- [ ] Klammern und Schrägstriche in den übrigen Texten des Servers: Meldungen,
+  Betriebsbereitschaft, Protokoll und Beschriftungen. (5.194)
 - [ ] Datumsauswahl als eigener Kalender nach M3, gebaut nach den Icons
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
@@ -120,17 +122,18 @@ Material Symbols („Use the Material Symbols variable font“, Styles, Icons), 
 mit Lucide (179 Dateien, 96 Symbole). Der Wechsel tauscht jedes Symbol und liefert die
 Symbolschrift selbst aus wie Roboto.
 
-### 5.192 Klammern und Schrägstriche in PDF und Mail
+### 5.194 Klammern und Schrägstriche in den übrigen Texten des Servers
 
-Die Regel aus [STIL.md](STIL.md) 11 hält für die Oberfläche `frontend-hygiene-satzzeichen.test.js`,
-für die Meldungen des Servers `meldung_ratsche_test.go`. Die Texte der PDFs und Mails prüft
-keine von beiden. Bekannte Fundstellen: „Schüler/in:“ in der Mahnliste (`internal/pdf/mahnliste.go`)
-und in der DSGVO-Auskunft (`internal/auskunft/blatt.go`), „Schüler/innen“ in den Mails an die
-Klassenleitungen (`mahnwesen_mail.go`, `abgaenger_mail.go`), „Summe … (2 Bestellungen, 50
-Exemplare)“ im Bestellbericht (`internal/pdf/bestellbericht.go`).
+`pruefung/nebenzeichen_ratsche_test.go` prüft die Regel aus [STIL.md](STIL.md) 11 nur für PDF und
+Mail. Dieselbe Regel über alle Zeichenketten unter `internal/` (ohne SQL, Routen, reguläre
+Ausdrücke und Kopfzeilen) findet rund 70 weitere Stellen: Betriebsbereitschaft, Dienste,
+Katalogdienste, Littera-Import, System, LUSD-Import und Mitteltopf, etwa „Die Katalogdienste
+(DNB, Google, OpenLibrary) sind nicht erreichbar“ oder „Ausleihlimit von %d Büchern überschritten
+(aktuell: %d)“. Im Paket `repository` stehen Beschriftungen wie „Leihfrist Bücher (Tage)“
+zwischen SQL-Bruchstücken, die eine Prüfung über alle Zeichenketten nicht trennen kann.
 
-Nächster Schritt: eine Prüfung über die Zeichenketten dieser Pakete wie in der Oberfläche, dann
-die Funde umschreiben.
+Nächster Schritt: die Regel an die Meldungen hängen, die `meldung_ratsche_test.go` schon
+sammelt, und an die Felder der Betriebsbereitschaft; dann die Funde umschreiben.
 
 ### 5.193 Datumsauswahl nach M3
 

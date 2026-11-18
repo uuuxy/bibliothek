@@ -145,7 +145,7 @@ func zeichneBerichtBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o Bestel
 	p.SetFont(pdfzeichen.Schrift, "B", 8)
 	p.SetFillColor(235, 235, 245)
 	if mitPreisen {
-		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%s)", exemplarText(o.AnzahlExemplare))), "LBR", 0, "R", true, 0, "")
+		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe: %s", exemplarText(o.AnzahlExemplare))), "LBR", 0, "R", true, 0, "")
 		p.CellFormat(20, 6, tr(o.Gesamtbetrag.Euro()), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(170, 6, tr("Summe: "+exemplarText(o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
@@ -235,7 +235,7 @@ func zeichneBerichtTopfSumme(p *gofpdf.Fpdf, tr func(string) string, topf Bestel
 	summe, exemplare := berichtSumme(topf.Bestellungen)
 	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(225, 232, 245)
-	beschriftung := fmt.Sprintf("Summe %s (%s, %s)", topf.Beschriftung,
+	beschriftung := fmt.Sprintf("Summe %s: %s, %s", topf.Beschriftung,
 		anzahlText(len(topf.Bestellungen), "Bestellung", "Bestellungen"), exemplarText(exemplare))
 	if mitPreisen {
 		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")

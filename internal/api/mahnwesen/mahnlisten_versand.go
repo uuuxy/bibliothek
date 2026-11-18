@@ -247,7 +247,7 @@ func mahnlistenMeldung(erg versandErgebnis, umleitung string) string {
 		return "Keine der gewählten Klassen hat noch überfällige Fälle. Nichts versendet."
 	}
 	return alsMeldung(append([]string{fmt.Sprintf(
-		"Mahnlisten von %s %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine Fälle)",
+		"Mahnlisten von %s %s versendet, %d übersprungen: keine E-Mail hinterlegt oder keine Fälle",
 		klassen(erg.Versendet), versandZiel(umleitung), erg.Uebersprungen)},
 		versandAusfall(erg, "Keine Klasse wird doppelt gemahnt, weil der Mailversand die Mahnstufe nicht erhöht")...)...)
 }

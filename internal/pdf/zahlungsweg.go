@@ -31,7 +31,7 @@ const (
 	zahlungswegTraegerSatz = "Den Zahlungsweg für Bücher der Schülerbücherei nennt Ihnen die Schule."
 	// zahlungswegTraegerFehlt ist die beschlossene Zeile, solange die Bankverbindung des
 	// Schulträgers nicht hinterlegt ist.
-	zahlungswegTraegerFehlt = "(Bankverbindung des Schulträgers nicht hinterlegt)"
+	zahlungswegTraegerFehlt = "Bankverbindung des Schulträgers nicht hinterlegt"
 )
 
 // Zahlungsangaben sind die Werte aus den Einstellungen, mit denen der Brief das Konto des
@@ -81,14 +81,14 @@ func zahlungswegBloecke(betragLand, betragTraeger betrag.Cent, a Zahlungsangaben
 	if betragLand > 0 {
 		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(true, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%s EUR):", betragLand.Text())
+			b.Ueberschrift = fmt.Sprintf("%s EUR für die Lernmittel des Landes:", betragLand.Text())
 		}
 		bloecke = append(bloecke, b)
 	}
 	if betragTraeger > 0 {
 		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(false, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%s EUR):", betragTraeger.Text())
+			b.Ueberschrift = fmt.Sprintf("%s EUR für die Bücher der Schülerbücherei:", betragTraeger.Text())
 		}
 		bloecke = append(bloecke, b)
 	}

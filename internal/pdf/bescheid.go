@@ -191,7 +191,7 @@ func bescheidAnschriftZeilen(e BescheidEmpfaenger) []string {
 	}
 	zeilen = append(zeilen, e.Name)
 	if strings.TrimSpace(e.Strasse) == "" || strings.TrimSpace(e.Ort) == "" {
-		return append(zeilen, "(keine Adresse hinterlegt)")
+		return append(zeilen, "Keine Adresse hinterlegt")
 	}
 	return append(zeilen, e.Strasse, strings.TrimSpace(e.PLZ+" "+e.Ort))
 }

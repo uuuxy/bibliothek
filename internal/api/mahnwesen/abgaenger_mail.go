@@ -274,9 +274,9 @@ func baueKontoauszugAnhaenge(
 func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailservice.Nachricht {
 	text := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
-			"anbei erhalten Sie die Kontoauszüge der Abgänger der Klasse %s (Stand: %s).\n\n"+
-			"Betroffene Schüler/innen: %d\n\n"+
-			"Je Schüler/in liegt ein Blatt mit den noch nicht zurückgegebenen Medien bei.\n"+
+			"anbei erhalten Sie die Kontoauszüge der Abgänger der Klasse %s, Stand %s.\n\n"+
+			"Betroffene Schülerinnen und Schüler: %d\n\n"+
+			"Für jede Schülerin und jeden Schüler liegt ein Blatt mit den noch nicht zurückgegebenen Medien bei.\n"+
 			"Bitte geben Sie die Blätter aus; die Freigabezeile wird nach der Rückgabe\n"+
 			"in der Bibliothek abgezeichnet.\n\n"+
 			"Mit freundlichen Grüßen\nSchulbibliothek",
@@ -302,7 +302,7 @@ func abgaengerVersandMeldung(erg versandErgebnis, umleitung string) string {
 		return "Keine der gewählten Klassen hat noch offene Ausleihen. Nichts versendet."
 	}
 	return alsMeldung(append([]string{fmt.Sprintf(
-		"Kontoauszüge von %s %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen)",
+		"Kontoauszüge von %s %s versendet, %d übersprungen: keine E-Mail hinterlegt oder keine offenen Ausleihen",
 		klassen(erg.Versendet), versandZiel(umleitung), erg.Uebersprungen)},
 		versandAusfall(erg, "Doppelte Kontoauszüge schaden nicht")...)...)
 }

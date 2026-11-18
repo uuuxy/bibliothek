@@ -91,9 +91,9 @@ func dsgvoVorgang(e ProtokollEintrag, details map[string]any) string {
 	case "USER", "":
 		// Steht in der Erläuterung des Abschnitts: gebucht von einem Konto der Bibliothek.
 	case "SYSTEM":
-		worte += " (automatisch)"
+		worte += ", automatisch"
 	default:
-		worte += " (" + e.Akteur + ")"
+		worte += ", " + e.Akteur
 	}
 	return worte
 }
@@ -108,7 +108,7 @@ func dsgvoVerwaltungsVorgang(aktion string) string {
 }
 
 func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []ProtokollEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz (%d)", len(eintraege)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz: %d", len(eintraege)))
 	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -121,7 +121,7 @@ func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege [
 		details, rest := dsgvoDetails(e.Details)
 		zeilen := dsgvoAngabenZeilen(details, e.Tabelle == "schueler", e.Aktion)
 		if e.Gegenstand != "" || e.Barcode != "" {
-			zeilen = append([]string{fmt.Sprintf("%s (Barcode %s)", dsgvoWertOderStrich(e.Gegenstand), dsgvoWertOderStrich(e.Barcode))}, zeilen...)
+			zeilen = append([]string{fmt.Sprintf("%s, Barcode %s", dsgvoWertOderStrich(e.Gegenstand), dsgvoWertOderStrich(e.Barcode))}, zeilen...)
 		} else if e.Tabelle == "ausleihen" && (e.Aktion == "CHECKOUT" || e.Aktion == "RETURN") {
 			zeilen = append([]string{"Das Buch oder Gerät ist nicht mehr im Bestand."}, zeilen...)
 		}
@@ -132,7 +132,7 @@ func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege [
 // dsgvoVerwaltungAbschnitt listet die Einträge des Verwaltungsprotokolls (audit_logs), die
 // den Leser nennen.
 func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []VerwaltungsEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("9. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("9. Verwaltungsprotokolle zu diesem Datensatz: %d", len(eintraege)))
 	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)
 		return

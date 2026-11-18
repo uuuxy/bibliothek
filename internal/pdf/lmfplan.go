@@ -30,7 +30,7 @@ type LMFPlanAbschnitt struct {
 
 // lmfSortierhinweis steht über jeder Tabelle: Die Zeilen stehen in der Reihenfolge, in
 // der die Termine stattfinden, nicht in der des Planers.
-const lmfSortierhinweis = "Sortiert nach Zeitpunkt/Termin"
+const lmfSortierhinweis = "Sortiert nach Datum und Uhrzeit"
 
 var wochentage = [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}
 

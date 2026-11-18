@@ -157,7 +157,7 @@ func TestMahnliste_JeSchuelerEineSeiteMitSeinenBuechern(t *testing.T) {
 	// Name und Klasse stehen hinter ihrem Wort, die Spalten einer Zeile in der Reihenfolge der Köpfe.
 	gesetzt := strings.Join(pdftest.TexteInReihenfolge(t, roh), " | ")
 	for _, zeile := range []string{
-		"Schüler/in: | Anna Apfel | Klasse: | 05F",
+		"Name: | Anna Apfel | Klasse: | 05F",
 		"Buchtitel | Autor | Barcode | Fällig | Tage überfällig",
 		"Gregs Tagebuch | Jeff Kinney | B-00042 | 01.06.2026 | 9 Tage",
 		"Atlas | Diercke | B-00815 | 12.05.2026 | 29 Tage | Mathebuch 7 | Lambacher | B-00816 | 13.05.2026 | 28 Tage",

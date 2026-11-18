@@ -223,7 +223,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 	}
 	for _, teil := range []string{
 		"https://bib.example.invalid/bestellung/", "bestellanschreiben", "barcode_mapping",
-		"Kundennummer: K-Naacher-Erneut", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2",
+		"zur Kundennummer K-Naacher-Erneut", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2",
 	} {
 		if !strings.Contains(mail.Nachricht, teil) {
 			t.Errorf("%q fehlt in der erneut gesendeten Mail:\n%s", teil, smtptest.Kopf(mail.Nachricht))

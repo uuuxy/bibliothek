@@ -25,7 +25,7 @@ func TestBescheid_AuskunftNenntDasErstellenInWorten(t *testing.T) {
 		t.Fatal(err)
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
-	if !strings.Contains(blatt, "Verwaltungsprotokolle zu diesem Datensatz (1)") {
+	if !strings.Contains(blatt, "Verwaltungsprotokolle zu diesem Datensatz: 1") {
 		t.Fatal("der Eintrag steht nicht im Abschnitt der Verwaltungsprotokolle")
 	}
 	if !strings.Contains(blatt, "Schadensersatz-Bescheid erstellt") {

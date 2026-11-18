@@ -54,7 +54,7 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 			t.Errorf("Brief ohne %q — das Fensterkuvert bliebe leer", soll)
 		}
 	}
-	if strings.Contains(text, "Adresse unbekannt") || strings.Contains(text, "keine Adresse hinterlegt") {
+	if strings.Contains(text, "Adresse unbekannt") || strings.Contains(text, "Keine Adresse hinterlegt") {
 		t.Error("Brief trägt trotz vollständiger Anschrift einen Fehlt-Vermerk")
 	}
 }
@@ -103,8 +103,8 @@ func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
 
 func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
 	text := erzeugeElternMahnbrief(t, testMahnbriefEmpfaenger())
-	if !strings.Contains(text, "(keine Adresse hinterlegt)") {
-		t.Error("Brief ohne Anschrift muss '(keine Adresse hinterlegt)' ins Fensterfeld drucken — " +
+	if !strings.Contains(text, "Keine Adresse hinterlegt") {
+		t.Error("Brief ohne Anschrift muss 'Keine Adresse hinterlegt' ins Fensterfeld drucken — " +
 			"eine leere Zeile ist von einem Druckfehler nicht zu unterscheiden")
 	}
 }
@@ -213,11 +213,11 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 func TestMahnbrief_HalbeAnschriftOhneVermerk(t *testing.T) {
 	nurOrt := testMahnbriefEmpfaenger()
 	nurOrt.PLZ, nurOrt.Ort = "61169", "Friedberg"
-	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurOrt), []string{"61169 Friedberg"}, []string{"keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurOrt), []string{"61169 Friedberg"}, []string{"Keine Adresse hinterlegt"})
 
 	nurStrasse := testMahnbriefEmpfaenger()
 	nurStrasse.Strasse = "Blumenweg"
-	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"Keine Adresse hinterlegt"})
 }
 
 // langerMahnbrief baut einen Brief mit n Büchern, jedes mit eigenen Texten.

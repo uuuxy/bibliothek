@@ -71,7 +71,7 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 	if st.Klasse == "" {
 		zuordnung = dsgvoLeserart(st.Art)
 	}
-	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (%s)", st.Vorname, st.Nachname, zuordnung)))
+	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s, %s", st.Vorname, st.Nachname, zuordnung)))
 	p.Ln(5)
 	p.Cell(0, 6, tr("Erstellt am: "+dsgvoZeit(a.ErstelltAm)))
 	p.SetTextColor(0, 0, 0)
@@ -99,8 +99,8 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 	dsgvoZeile(p, tr, "LUSD-ID", dsgvoTextOderStrich(st.LUSDID))
 	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitOderStrich(st.LUSDBestaetigtAm))
 	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitOderStrich(st.AnonymisiertAm))
-	dsgvoZeile(p, tr, "Straße/Nr.", strings.TrimSpace(st.Strasse+" "+st.Hausnummer))
-	dsgvoZeile(p, tr, "PLZ/Ort", strings.TrimSpace(st.Plz+" "+st.Ort))
+	dsgvoZeile(p, tr, "Straße und Hausnummer", strings.TrimSpace(st.Strasse+" "+st.Hausnummer))
+	dsgvoZeile(p, tr, "PLZ und Ort", strings.TrimSpace(st.Plz+" "+st.Ort))
 	dsgvoZeile(p, tr, "Eltern-E-Mail", st.ElternEmail)
 	dsgvoZeile(p, tr, "Gesperrt", dsgvoJaNein(st.IstGesperrt))
 	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IstVonHandGesperrt))
@@ -109,7 +109,7 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 	dsgvoZeile(p, tr, "Erfasst am", dsgvoZeit(st.ErstelltAm))
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(st.AktualisiertAm))
 	if st.GeloeschtAm != nil {
-		dsgvoZeile(p, tr, "Gelöscht am (Papierkorb)", dsgvoZeit(*st.GeloeschtAm))
+		dsgvoZeile(p, tr, "Im Papierkorb seit", dsgvoZeit(*st.GeloeschtAm))
 	}
 	// Die Anmeldedaten selbst stehen nicht hier, sondern in Abschnitt 10 (sie gehören zum
 	// Konto, nicht zum Leser); dass es eines gibt, ist aber eine Angabe über diese Person.
@@ -121,15 +121,15 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 func dsgvoLeserart(art string) string {
 	switch art {
 	case "schueler":
-		return "Schüler/in"
+		return "Schülerin oder Schüler"
 	case "lehrkraft":
 		return "Lehrkraft"
 	case "liv":
 		return "Lehrkraft im Vorbereitungsdienst"
 	case "uplus":
-		return "U-plus (Vertretungskraft)"
+		return "Vertretungskraft im Programm U-plus"
 	case "fachbereich":
-		return "Fachbereich (Sammelkonto)"
+		return "Sammelkonto eines Fachbereichs"
 	}
 	// Praktikum und Sekretariat heißen hier wie in der Leserdatei.
 	return leserart.Bezeichnung(art)
@@ -148,9 +148,9 @@ func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto Foto) {
 // die Einzahl.
 func ausleihUeberschrift(n int) string {
 	if n == 1 {
-		return "3. Ausleihhistorie (1 Eintrag)"
+		return "3. Ausleihhistorie: 1 Eintrag"
 	}
-	return fmt.Sprintf("3. Ausleihhistorie (%d Einträge)", n)
+	return fmt.Sprintf("3. Ausleihhistorie: %d Einträge", n)
 }
 
 func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []Ausleihe) {
@@ -172,7 +172,7 @@ func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []A
 }
 
 func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []Schadensfall) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("4. Schadens- und Verlustfälle (%d)", len(schaeden)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("4. Schadens- und Verlustfälle: %d", len(schaeden)))
 	if len(schaeden) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -196,7 +196,7 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []S
 }
 
 func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen []Vormerkung) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("5. Vormerkungen (%d)", len(vormerkungen)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("5. Vormerkungen: %d", len(vormerkungen)))
 	if len(vormerkungen) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -212,7 +212,7 @@ func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen 
 // waren. Die Positionen stehen als Schadensfälle in Abschnitt 4; hier steht der Brief selbst
 // mit Nummer, Frist, Summe und Zustand.
 func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []Bescheid) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Schadensersatz-Bescheide (%d)", len(bescheide)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Schadensersatz-Bescheide: %d", len(bescheide)))
 	if len(bescheide) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -229,7 +229,7 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 // hat ohne Netz gescannt, und beim späteren Buchen wich das Ergebnis vom Scan ab. Eine Meldung
 // nennt keine andere Person, nur die Rolle, in der diese hier beteiligt war.
 func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []NachbuchMeldung) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Meldungen zu Buchungen nach einem Netzausfall (%d)", len(meldungen)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Meldungen zu Buchungen nach einem Netzausfall: %d", len(meldungen)))
 	if len(meldungen) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -279,9 +279,9 @@ func dsgvoNachbuchErgebnis(ergebnis string) string {
 func dsgvoNachbuchRolle(rolle string) string {
 	switch rolle {
 	case "ausleiher":
-		return "Ausleiher/in"
+		return "ausleihende Person"
 	case "vorbesitzer":
-		return "bisherige/r Ausleiher/in"
+		return "zuvor ausleihende Person"
 	}
 	return rolle
 }

@@ -169,7 +169,7 @@ func lmfAufHoehe(kopf []lmfBaustein, hoehe, spalten int) []lmfBaustein {
 // fortsetzung ist der Kopf, mit dem ein in der Mitte umbrochener Abschnitt in der nächsten
 // Spalte weitergeht — ohne ihn stünden dort Termine ohne Überschrift und ohne Tabellenkopf.
 func (b lmfSatzbau) fortsetzung(i int) []lmfBaustein {
-	titel := b.abschnitte[i].Titel + " (Fortsetzung)"
+	titel := b.abschnitte[i].Titel + ", Fortsetzung"
 	return []lmfBaustein{
 		b.breiterBaustein(titel, b.masse.titel, fontstyle.Bold, lmfKopf, i),
 		b.tabellenkopf(i),

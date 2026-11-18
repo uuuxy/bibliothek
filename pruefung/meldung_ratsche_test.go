@@ -79,6 +79,11 @@ type satzzeichenGeteilt struct {
 		Text    string `json:"text"`
 		Mehrere bool   `json:"mehrere"`
 	} `json:"faelle"`
+	// Nebenzeichen sind die Fälle für Klammern und Schrägstriche (nebenzeichen_ratsche_test.go).
+	Nebenzeichen struct {
+		Ohne []string `json:"ohne"`
+		Mit  []string `json:"mit"`
+	} `json:"nebenzeichen"`
 }
 
 // leseSatzzeichen liest die geteilte Datei unter wurzel; die Abkürzungen kommen als Menge zurück.

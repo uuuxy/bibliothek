@@ -42,5 +42,25 @@
 		{ "text": "Der Barcode muss mit G- beginnen, z. B. G-IPAD-01", "mehrere": false },
 		{ "text": "Ab Version 2. Neu ist nur der Name", "mehrere": false },
 		{ "text": "Stand 2026. Neu ist nur der Name", "mehrere": true }
-	]
+	],
+	"nebenzeichen": {
+		"ohne": [
+			"Postausgang (SMTP)",
+			"Gemäß (§ 153 HSchG)",
+			"DSGVO-Auskunft (Art. 15)",
+			"„LMF Deu 7 / Bie“ ist ein Fach",
+			"image/jpeg",
+			"Plan (kmk.org/service/x)",
+			"Steht unter kmk.org/service/x bereit"
+		],
+		"mit": [
+			"Notiz (optional)",
+			"Forderungen ({…})",
+			"Zahlungsfrist (Tage)",
+			"Schüler/in",
+			"Klasse / Kurs",
+			"{…} / {…} erfasst",
+			"N/A"
+		]
+	}
 }
