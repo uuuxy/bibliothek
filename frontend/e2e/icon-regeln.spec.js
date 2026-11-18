@@ -208,7 +208,10 @@ test('Icons nach M3 auf dem Flur-Monitor, jede Folie', async ({ page }) => {
 		} catch {
 			break; // nur diese Folie hat Inhalt
 		}
-		await page.waitForTimeout(400);
+		// Der Text ist gewechselt, gemessen wird erst, wenn die neue Folie gezeichnet ist.
+		await page.evaluate(
+			() => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)))
+		);
 	}
 	expect(b.imText, 'kein Icon in einer Textzeile gesehen: Folien ohne Inhalt?').toBeGreaterThan(0);
 	bewerte(b, 'Monitor');

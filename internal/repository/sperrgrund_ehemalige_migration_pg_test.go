@@ -28,7 +28,13 @@ func TestSperrgrundDerEhemaligen_Migration180(t *testing.T) {
 	}()
 
 	alteUhr := time.Now().Add(-40 * 24 * time.Hour).Truncate(time.Second)
-	zeile := func(barcode, vorname, nachname, klasse string, abgaenger, mitSeit, anonymisiert bool, grund string) string {
+	// Eine Zeile, wie das Programm sie vor der Migration schrieb.
+	type vorher struct {
+		barcode, vorname, nachname, klasse string
+		abgaenger, mitSeit, anonymisiert   bool
+		grund                              string
+	}
+	zeile := func(z vorher) string {
 		t.Helper()
 		var id string
 		if err := tx.QueryRow(ctx, `
@@ -38,18 +44,18 @@ func TestSperrgrundDerEhemaligen_Migration180(t *testing.T) {
 			        CASE WHEN $7 THEN NOW() - interval '10 days' END, $8,
 			        CASE WHEN $9 THEN NOW() END)
 			RETURNING id::text`,
-			barcode, vorname, nachname, klasse, abgaenger, grund, mitSeit, alteUhr, anonymisiert).Scan(&id); err != nil {
-			t.Fatalf("Zeile %s anlegen: %v", barcode, err)
+			z.barcode, z.vorname, z.nachname, z.klasse, z.abgaenger, z.grund, z.mitSeit, alteUhr, z.anonymisiert).Scan(&id); err != nil {
+			t.Fatalf("Zeile %s anlegen: %v", z.barcode, err)
 		}
 		return id
 	}
-	offen := zeile("M180-OFFEN", "Ole", "Offen", "07A", true, true, false, "Automatisierte Abgänger-Sperre wegen offener Vorgänge")
-	karenz := zeile("M180-KARENZ", "Kai", "Karenz", "07A", true, false, false, "Automatisierte Abgänger-Sperre in der Karenzzeit vor der Anonymisierung")
-	versetzt := zeile("M180-SJW", "Sina", "Versetzt", "ABG", true, true, false, "Automatisierte Abgänger-Sperre zum Schuljahreswechsel")
-	rueckkehr := zeile("M180-RUECK", "Rita", "Zurueck", "08A", false, false, false, "Automatisierte Abgänger-Sperre wegen offener Vorgänge")
-	vonHand := zeile("M180-HAND", "Hanna", "Hand", "07A", true, true, false, "Ausweis gestohlen")
-	anonym := zeile("ANON-M180", "Abgänger", "Anonymisiert-alt", "ABG", true, true, true, "Abgänger anonymisiert")
-	echt := zeile("M180-ECHT", "Abgänger", "Anonymisiert-Echt", "07A", true, true, false, "Ausweis verloren")
+	offen := zeile(vorher{"M180-OFFEN", "Ole", "Offen", "07A", true, true, false, "Automatisierte Abgänger-Sperre wegen offener Vorgänge"})
+	karenz := zeile(vorher{"M180-KARENZ", "Kai", "Karenz", "07A", true, false, false, "Automatisierte Abgänger-Sperre in der Karenzzeit vor der Anonymisierung"})
+	versetzt := zeile(vorher{"M180-SJW", "Sina", "Versetzt", "ABG", true, true, false, "Automatisierte Abgänger-Sperre zum Schuljahreswechsel"})
+	rueckkehr := zeile(vorher{"M180-RUECK", "Rita", "Zurueck", "08A", false, false, false, "Automatisierte Abgänger-Sperre wegen offener Vorgänge"})
+	vonHand := zeile(vorher{"M180-HAND", "Hanna", "Hand", "07A", true, true, false, "Ausweis gestohlen"})
+	anonym := zeile(vorher{"ANON-M180", "Abgänger", "Anonymisiert-alt", "ABG", true, true, true, "Abgänger anonymisiert"})
+	echt := zeile(vorher{"M180-ECHT", "Abgänger", "Anonymisiert-Echt", "07A", true, true, false, "Ausweis verloren"})
 
 	migration, err := os.ReadFile(filepath.Join("..", "..", "migrations", "180_sperrgrund_der_ehemaligen.sql"))
 	if err != nil {
