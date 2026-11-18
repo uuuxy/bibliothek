@@ -52,8 +52,8 @@ Nur, was kein Test leisten kann.
 - [x] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
   Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
 - [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
-- [ ] Die offenen Seiten der Abdeckungsliste gegen den Code halten: Date pickers, Toolbars,
-  Motion, Icons, Alt text ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
+- [ ] Die offenen Seiten der Abdeckungsliste gegen den Code halten: Toolbars, Motion,
+  Icons, Alt text ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [ ] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
   Oberfläche; dafür gibt es noch keine Prüfung. (5.192)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
@@ -112,15 +112,15 @@ kennt keine Kürzel, dort zählt nur der Name.
 
 ### 5.191 Offene Seiten der Abdeckungsliste
 
-Fünf Seiten von Material 3 hat niemand gegen den Code gehalten ([sweeps.md](sweeps.md),
-Abdeckung der Google-Seiten): Date pickers (16 Felder mit dem Kalender des Browsers), Toolbars
-(`ui/AuswahlLeiste`, Werkzeugleiste des Ausweis-Designers), Motion (Übergänge an rund 100
-Stellen), Icons und Alt text (17 Stellen mit `alt`).
+Vier Seiten von Material 3 hat niemand gegen den Code gehalten ([sweeps.md](sweeps.md),
+Abdeckung der Google-Seiten): Toolbars (`ui/AuswahlLeiste`, Werkzeugleiste des
+Ausweis-Designers), Motion (Übergänge an rund 100 Stellen), Icons und Alt text (17 Stellen mit
+`alt`).
 
 Icons ist die größte Abweichung: M3 nennt die Material Symbols („Use the Material Symbols variable
 font“, Styles, Icons), das Programm zeichnet mit Lucide (179 Dateien, 96 Symbole). Ein Wechsel
 tauscht jedes Symbol und liefert die Symbolschrift selbst aus wie Roboto; vor dem Bau braucht es
-ein Ja. Die übrigen vier: je Seite lesen, Befund in die Liste, Abweichungen beheben.
+ein Ja. Die übrigen drei: je Seite lesen, Befund in die Liste, Abweichungen beheben.
 
 ### 5.192 Klammern und Schrägstriche in PDF und Mail
 
