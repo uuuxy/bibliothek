@@ -23,10 +23,10 @@ const (
 // ErzeugeBlatt setzt die Auskunft als PDF, aus demselben Objekt, das die Tür als
 // JSON ausliefert: Das Blatt nennt, was die abgerufene Auskunft nennt.
 func ErzeugeBlatt(a Antwort, schule pdf.SchuleInfo) ([]byte, error) {
-	p := gofpdf.New("P", "mm", "A4", "")
+	p := pdfzeichen.NewDokument()
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
-	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor("")) // UTF-8 → Latin-1 für Umlaute
+	tr := pdfzeichen.Ersetze
 	p.AddPage()
 
 	dsgvoKopf(p, tr, schule, a)
@@ -51,19 +51,19 @@ func ErzeugeBlatt(a Antwort, schule pdf.SchuleInfo) ([]byte, error) {
 }
 
 func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a Antwort) {
-	p.SetFont("Arial", "B", 14)
+	p.SetFont(pdfzeichen.Schrift, "B", 14)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(7)
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	p.SetTextColor(100, 100, 100)
 	p.Cell(0, 4, tr(schule.Absenderzeile()))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(11)
 
-	p.SetFont("Arial", "B", 16)
+	p.SetFont(pdfzeichen.Schrift, "B", 16)
 	p.Cell(0, 10, tr(a.Art))
 	p.Ln(9)
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.SetTextColor(90, 90, 90)
 	// Ein Kollege hat keine Klasse; bei ihm steht die Art des Lesers in der Klammer.
 	st := a.Stammdaten
@@ -76,7 +76,7 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 	p.Cell(0, 6, tr("Erstellt am: "+dsgvoZeit(a.ErstelltAm)))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(9)
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.MultiCell(0, 5, tr("Diese Auskunft enthält alle zu der oben genannten Person in diesem System "+
 		"gespeicherten personenbezogenen Daten sowie die Pflichtangaben nach Art. 15 Abs. 1 DSGVO."), "", "L", false)
 }
@@ -301,7 +301,7 @@ func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va Verar
 // dsgvoAbschnitt schreibt eine Abschnittsüberschrift mit Trennlinie.
 func dsgvoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, titel string) {
 	p.Ln(5)
-	p.SetFont("Arial", "B", 12)
+	p.SetFont(pdfzeichen.Schrift, "B", 12)
 	p.SetTextColor(30, 30, 30)
 	p.Cell(0, 8, tr(titel))
 	p.Ln(9)
@@ -314,29 +314,29 @@ func dsgvoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, titel string) {
 
 // dsgvoZeile schreibt eine Label:Wert-Zeile (Wert wrappt bei Bedarf).
 func dsgvoZeile(p *gofpdf.Fpdf, tr func(string) string, bezeichnung, wert string) {
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.CellFormat(55, 6, tr(bezeichnung), "", 0, "L", false, 0, "")
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.MultiCell(0, 6, tr(dsgvoWertOderStrich(wert)), "", "L", false)
 }
 
 // dsgvoAbsatz schreibt einen fetten Titel über einem umbrechenden Fließtext.
 func dsgvoAbsatz(p *gofpdf.Fpdf, tr func(string) string, bezeichnung, text string) {
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.MultiCell(0, 5, tr(bezeichnung), "", "L", false)
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.MultiCell(0, 5, tr(text), "", "L", false)
 	p.Ln(2)
 }
 
 // dsgvoEintragTitel/-Zeile rendern einen Listeneintrag (fetter Titel + graue Detailzeile).
 func dsgvoEintragTitel(p *gofpdf.Fpdf, tr func(string) string, titel string) {
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.MultiCell(0, 5, tr(dsgvoWertOderStrich(titel)), "", "L", false)
 }
 
 func dsgvoEintragZeile(p *gofpdf.Fpdf, tr func(string) string, text string) {
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	p.SetTextColor(90, 90, 90)
 	p.MultiCell(0, 5, tr(text), "", "L", false)
 	p.SetTextColor(0, 0, 0)
@@ -344,7 +344,7 @@ func dsgvoEintragZeile(p *gofpdf.Fpdf, tr func(string) string, text string) {
 }
 
 func dsgvoLeer(p *gofpdf.Fpdf, tr func(string) string) {
-	p.SetFont("Arial", "I", 9)
+	p.SetFont(pdfzeichen.Schrift, "I", 9)
 	p.SetTextColor(120, 120, 120)
 	p.MultiCell(0, 5, tr("Keine Einträge vorhanden."), "", "L", false)
 	p.SetTextColor(0, 0, 0)

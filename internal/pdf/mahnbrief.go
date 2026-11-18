@@ -68,14 +68,14 @@ func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 
 // zeichneMahnbriefKoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.
 func zeichneMahnbriefKoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
-	pdf.SetFont("Arial", "B", 10)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 10)
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
 	pdf.CellFormat(mahnbriefSpalteTitel, mahnbriefKopfHoehe, tr("Titel"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(35, mahnbriefKopfHoehe, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
-	pdf.SetFont("Arial", "", 10)
+	pdf.SetFont(pdfzeichen.Schrift, "", 10)
 }
 
 // zeichneMahnbriefBuecher setzt die Tabelle der Bücher über der Frist. Der Barcode steht als
@@ -109,10 +109,10 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 				pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))
 				pdf.ImageOptions(bildName, strichX+2.5, obenY+2, 30, 8, false, optionen, 0, "")
 			}
-			pdf.SetFont("Courier", "", 7)
+			pdf.SetFont(pdfzeichen.SchriftFest, "", 7)
 			pdf.SetXY(strichX, obenY+10.5)
 			pdf.CellFormat(35, 4, tr(b.Barcode), "", 0, "C", false, 0, "")
-			pdf.SetFont("Arial", "", 10)
+			pdf.SetFont(pdfzeichen.Schrift, "", 10)
 		}
 
 		pdf.SetXY(strichX+35, obenY)
@@ -136,10 +136,10 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 	pdf.SetDrawColor(0, 0, 0)
 
 	// Fensterfeld: Absenderzeile klein darüber, Anschrift ab 52 mm.
-	pdf.SetFont("Arial", "U", 7)
+	pdf.SetFont(pdfzeichen.Schrift, "U", 7)
 	pdf.SetXY(20, 45)
 	pdf.Cell(85, 5, tr(v.Absender))
-	pdf.SetFont("Arial", "", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.SetXY(20, 52)
 	for _, zeile := range mahnbriefAnschrift(e) {
 		pdf.SetX(20)
@@ -165,14 +165,14 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 
 	// In der Betreffzeile hat die Tabelle keinen Platz; ein dort eingetragenes
 	// {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
-	pdf.SetFont("Arial", "B", 12)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 12)
 	pdf.SetXY(20, 100)
 	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(ersetzer.Replace(v.Betreff), platzhalterBuchListe, ""))))
 
 	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
 	// Vorkommen fallen weg.
 	teile := strings.SplitN(ersetzer.Replace(v.Text), platzhalterBuchListe, 2)
-	pdf.SetFont("Arial", "", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.SetXY(20, 115)
 	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)
 	pdf.Ln(5)
@@ -182,7 +182,7 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 	if len(teile) > 1 {
 		pdf.Ln(5)
 		pdf.SetX(20)
-		pdf.SetFont("Arial", "", 11)
+		pdf.SetFont(pdfzeichen.Schrift, "", 11)
 		pdf.MultiCell(170, 6, tr(strings.TrimSpace(strings.ReplaceAll(teile[1], platzhalterBuchListe, ""))), "", "L", false)
 	}
 }
@@ -190,10 +190,10 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 // ErzeugeMahnbriefe setzt je Schüler einen Brief in ein PDF. Ein Brief, der nicht auf eine
 // Seite passt, läuft auf Folgeseiten weiter.
 func ErzeugeMahnbriefe(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte, error) {
-	dokument := gofpdf.New("P", "mm", "A4", "")
+	dokument := pdfzeichen.NewDokument()
 	dokument.SetTopMargin(mahnbriefRand)
 	dokument.SetAutoPageBreak(true, mahnbriefRand)
-	tr := pdfzeichen.Uebersetzer(dokument.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	// Ein Druck trägt viele Briefe hintereinander: Jede Folgeseite nennt über dem Rand, zu
 	// wessen Brief sie gehört, ob die Tabelle sie füllt oder der Text.
@@ -202,7 +202,7 @@ func ErzeugeMahnbriefe(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte
 		if folgeseiteFuer == "" {
 			return
 		}
-		dokument.SetFont("Arial", "B", 9)
+		dokument.SetFont(pdfzeichen.Schrift, "B", 9)
 		dokument.SetXY(20, 12)
 		dokument.Cell(0, 5, tr(folgeseiteFuer))
 		dokument.SetY(mahnbriefRand)

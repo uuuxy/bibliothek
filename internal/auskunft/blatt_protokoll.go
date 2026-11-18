@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/pdfzeichen"
 	"bibliothek/internal/repository"
 
 	"github.com/phpdave11/gofpdf"
@@ -159,7 +160,7 @@ func dsgvoKontoEreignisse(p *gofpdf.Fpdf, tr func(string) string, ereignisse []r
 // Angaben in Grau.
 func dsgvoProtokollEintrag(p *gofpdf.Fpdf, tr func(string) string, kopf string, zeilen []string) {
 	dsgvoEintragTitel(p, tr, kopf)
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	p.SetTextColor(90, 90, 90)
 	for _, zeile := range zeilen {
 		p.MultiCell(0, 4.5, tr(zeile), "", "L", false)

@@ -14,19 +14,30 @@ import (
 	"testing"
 )
 
-// Ratsche: Jeder cp1252-Übersetzer eines PDF-Dokuments läuft durch pdfzeichen.Uebersetzer.
+// pdfRegeln nennt, was im Code eines Erzeugers nur an seiner Tür stehen darf (tuer leer: nirgends),
+// und was es dort anrichtete.
+var pdfRegeln = []struct{ muster, tuer, warum string }{
+	{"gofpdf.New(", "internal/pkg/pdfzeichen/schrift.go", "Dokument ohne die eingebetteten Schriften; Form: pdfzeichen.NewDokument()"},
+	{"gofpdf.NewCustom(", "", "Dokument ohne die eingebetteten Schriften; Form: pdfzeichen.NewDokument()"},
+	{`SetFont("`, "", "Familie als Text, womöglich eine Standardschrift; Form: SetFont(pdfzeichen.Schrift, …)"},
+	{"UnicodeTranslatorFromDescriptor(", "", "Übersetzer nach cp1252; Form: tr := pdfzeichen.Ersetze"},
+	{"config.NewBuilder(", "internal/pdf/maroto_text.go", "maroto ohne die eingebetteten Schriften; Form: marotoKonfig()"},
+	{`maroto/v2/pkg/consts/fontfamily"`, "", "Standardfamilie von maroto; die Grundschrift setzt marotoKonfig"},
+}
+
+// Ratsche: Jedes Dokument mit gofpdf entsteht über pdfzeichen.NewDokument und setzt nur dessen
+// Schriften; jede Konfiguration von maroto beginnt mit pdf.marotoKonfig.
 //
-// Warum: Holt sich ein Renderer seinen Übersetzer direkt von gofpdf, druckt er für Buchstaben
-// außerhalb von cp1252 (ş, ł, ğ …) Punkte statt der Ersetzung. Zwei Wege zum selben Papier, und
-// der zweite kennt die Regel des ersten nicht.
+// Warum: Die Standardschriften des PDF (Arial, Times, Courier) kennen nur cp1252. Ein Erzeuger, der
+// sein Dokument selbst anlegt oder eine von ihnen wählt, druckt für ş, ł oder ǧ einen Punkt. Zwei
+// Wege zum selben Papier, und der zweite kennt die Regel des ersten nicht.
 //
-// Regel: Eine Zeile, die UnicodeTranslatorFromDescriptor( aufruft, trägt auf derselben Zeile
-// pdfzeichen.Uebersetzer(. Wer einen neuen Renderer baut, bekommt die Ersetzung damit von allein,
-// oder diesen Test rot.
-func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
+// Regel: pdfRegeln, Zeile für Zeile. Blindheit: ein Aufruf, der über zwei Zeilen läuft.
+func TestPDFDokument_NurUeberPdfzeichen(t *testing.T) {
 	wechsleInDieWurzel(t)
 	var verstoesse []string
-	gefunden := 0
+	anDerTuer := map[string]int{}
+	setFont := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -48,12 +59,18 @@ func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
 			if strings.HasPrefix(strings.TrimSpace(zeile), "//") {
 				continue
 			}
-			if !strings.Contains(zeile, "UnicodeTranslatorFromDescriptor(") {
-				continue
+			if strings.Contains(zeile, "SetFont(") {
+				setFont++
 			}
-			gefunden++
-			if !strings.Contains(zeile, "pdfzeichen.Uebersetzer(") {
-				verstoesse = append(verstoesse, pfad+":"+strconv.Itoa(nr+1))
+			for _, regel := range pdfRegeln {
+				if !strings.Contains(zeile, regel.muster) {
+					continue
+				}
+				if filepath.ToSlash(pfad) == regel.tuer {
+					anDerTuer[regel.muster]++
+					continue
+				}
+				verstoesse = append(verstoesse, pfad+":"+strconv.Itoa(nr+1)+": "+regel.warum)
 			}
 		}
 		return nil
@@ -61,20 +78,24 @@ func TestPDFUebersetzer_NurUeberPdfzeichen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Nicht-leer-Garantie: Findet der Scanner keine Aufrufe mehr, prüft er nichts.
-	if gefunden < 10 {
-		t.Fatalf("nur %d Übersetzer-Aufrufe gefunden — der Scanner greift nicht mehr (erwartet ≥ 17)", gefunden)
+	// Nicht-leer-Garantie: Findet der Scanner die Türen und die Schriftwahl nicht mehr, prüft er
+	// nichts.
+	if setFont < 100 || anDerTuer["gofpdf.New("] == 0 || anDerTuer["config.NewBuilder("] == 0 {
+		t.Fatalf("%d SetFont, an den Türen %d gofpdf.New und %d config.NewBuilder gefunden — der Scanner "+
+			"greift nicht mehr (erwartet über 100 und je einen)", setFont, anDerTuer["gofpdf.New("], anDerTuer["config.NewBuilder("])
 	}
 	if len(verstoesse) > 0 {
-		t.Fatalf("cp1252-Übersetzer ohne pdfzeichen.Uebersetzer in %v — dort werden ş, ł, ğ zu Punkten. "+
-			"Form: pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(\"\"))", verstoesse)
+		t.Fatalf("PDF an den eingebetteten Schriften vorbei, ş, ł oder ǧ stünden als Punkt auf dem Blatt:\n  %s",
+			strings.Join(verstoesse, "\n  "))
 	}
 }
 
-// Ratsche: Jeder Text, den ein Erzeuger mit gofpdf druckt, geht durch den Übersetzer.
+// Ratsche: Jeder Text, den ein Erzeuger mit gofpdf druckt, geht durch den Übersetzer
+// (tr := pdfzeichen.Ersetze).
 //
-// gofpdf druckt in cp1252. Ein Text mit Umlaut, der roh in eine Zelle geht, steht verstümmelt
-// auf dem Blatt („KÃ¶ln"); an einer Schule in einem Ort ohne Umlaut fällt das nie auf.
+// Warum: Ein Zeichen jenseits der Basisebene von Unicode, etwa ein Emoji im Buchtitel, kann gofpdf
+// nicht setzen und verweigert das ganze Dokument; Ersetze macht daraus „�". Ein Wert, der roh in
+// eine Zelle geht, bringt das Emoji mit.
 //
 // Regel: Das Text-Argument eines Druckaufrufs ist ein Aufruf des Übersetzers (tr, druck) oder
 // sichtbar ohne Buchstaben außerhalb von ASCII: ein Literal, eine Zahl (fmt.Sprintf mit

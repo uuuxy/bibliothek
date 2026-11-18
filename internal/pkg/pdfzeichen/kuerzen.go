@@ -12,7 +12,7 @@ type Breitenmesser interface {
 // gerade gesetzten Schrift und nicht nach Zeichenzahl: „Öztürk, Ali" und „MMMMMMMMMMM" sind
 // beide elf Zeichen und über 50 % verschieden breit.
 //
-// messbar bringt den Text in die Form, die auch gedruckt wird (Uebersetzer): Gemessen wird,
+// messbar bringt den Text in die Form, die auch gedruckt wird (Ersetze): Gemessen wird,
 // was auf dem Papier steht.
 func KuerzeAufBreite(pdf Breitenmesser, messbar func(string) string, text string, breite float64) string {
 	if pdf.GetStringWidth(messbar(text)) <= breite {
@@ -42,9 +42,10 @@ func KuerzeAufZelle(pdf Zellenmesser, messbar func(string) string, text string, 
 }
 
 // Zeilenteiler bricht einen Text in der gerade gesetzten Schrift auf eine Breite um, wie
-// MultiCell ihn druckt; gofpdf erfüllt ihn mit SplitLines.
+// MultiCell ihn druckt. gofpdf erfüllt ihn mit SplitText; SplitLines zählt Bytes statt
+// Buchstaben und taugt nur für Standardschriften.
 type Zeilenteiler interface {
-	SplitLines(text []byte, breite float64) [][]byte
+	SplitText(text string, breite float64) []string
 }
 
 // KuerzeAufZeilen kürzt den Text, bis er umbrochen auf höchstens so viele Zeilen der Breite
@@ -52,7 +53,7 @@ type Zeilenteiler interface {
 // Zeile mit halb so vielen Zeichen wie Ziffern, und eine Zeile zu viel druckt MultiCell unter die
 // Zelle.
 func KuerzeAufZeilen(pdf Zeilenteiler, messbar func(string) string, text string, breite float64, zeilen int) string {
-	passt := func(t string) bool { return len(pdf.SplitLines([]byte(messbar(t)), breite)) <= zeilen }
+	passt := func(t string) bool { return len(pdf.SplitText(messbar(t), breite)) <= zeilen }
 	if passt(text) {
 		return text
 	}
@@ -70,8 +71,8 @@ func KuerzeAufZeilen(pdf Zeilenteiler, messbar func(string) string, text string,
 // KuerzeAufZeichen kürzt den Text auf höchstens so viele Zeichen, das Auslassungszeichen
 // eingerechnet; hoechstens ist damit die Länge der Ausgabe, an der sich eine Spaltenbreite
 // ablesen lässt. Gezählt wird in Zeichen und nicht in Bytes: Ein Umlaut belegt in UTF-8 zwei,
-// und ein Schnitt mitten durch „ä" hinterlässt ein halbes Zeichen, aus dem der Übersetzer von
-// gofpdf Zeichensalat macht.
+// und ein Schnitt mitten durch „ä" hinterlässt ein halbes Zeichen, das als „�“ auf dem Papier
+// stünde.
 func KuerzeAufZeichen(text string, hoechstens int) string {
 	runen := []rune(text)
 	if len(runen) <= hoechstens {

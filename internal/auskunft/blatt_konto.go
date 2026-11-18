@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bibliothek/internal/pkg/pdfzeichen"
 	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
 
@@ -54,7 +55,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	if len(k.EigeneVorgaenge) == 0 {
 		dsgvoLeer(p, tr)
 	}
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	for _, z := range dsgvoVorgaengeJeTag(k.EigeneVorgaenge) {
 		p.MultiCell(0, 5, tr(fmt.Sprintf("%s · %s (%d): %s", z.tag, z.handlung, len(z.zeiten),
 			strings.Join(z.zeiten, ", "))), "", "L", false)
@@ -151,14 +152,14 @@ func dsgvoVorgaengeJeTag(vorgaenge []repository.DSGVOEigenerVorgang) []dsgvoVorg
 // dsgvoUnterabschnitt ist eine Zwischenüberschrift innerhalb eines Abschnitts.
 func dsgvoUnterabschnitt(p *gofpdf.Fpdf, tr func(string) string, titel string) {
 	p.Ln(3)
-	p.SetFont("Arial", "B", 10)
+	p.SetFont(pdfzeichen.Schrift, "B", 10)
 	p.MultiCell(0, 6, tr(titel), "", "L", false)
 	p.Ln(1)
 }
 
 // dsgvoHinweis ist ein Satz in der Form von „Keine Einträge vorhanden.".
 func dsgvoHinweis(p *gofpdf.Fpdf, tr func(string) string, satz string) {
-	p.SetFont("Arial", "I", 9)
+	p.SetFont(pdfzeichen.Schrift, "I", 9)
 	p.SetTextColor(120, 120, 120)
 	p.MultiCell(0, 5, tr(satz), "", "L", false)
 	p.SetTextColor(0, 0, 0)

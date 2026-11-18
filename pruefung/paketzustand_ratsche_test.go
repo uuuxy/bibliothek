@@ -254,6 +254,8 @@ var paketwerteOhneZustand = map[string]string{
 	"internal/db/rechte_vorgabe.go: RechteOptional": "Tabelle, beim Start gebaut",
 	"internal/littera/barcode.go: barcodeZiffern":   "Tabelle, beim Start gebaut",
 	"internal/lusd/spalten.go: spalteZuKopf":        "Tabelle, beim Start gebaut",
+	"internal/pkg/pdfzeichen/schrift.go: schriftDateien": "die eingebetteten Schriftdateien; ein " +
+		"embed.FS lässt sich nur lesen",
 	"internal/pgtest/pgtest.go: fehler": "eine Verbindung zur Testdatenbank je Testlauf; nur Tests " +
 		"binden das Paket ein",
 	"internal/pgtest/pgtest.go: grund": "der Zustand nach dem Einspielen des Schemas, einmal je " +

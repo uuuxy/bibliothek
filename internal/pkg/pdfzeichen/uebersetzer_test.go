@@ -2,76 +2,44 @@ package pdfzeichen
 
 import (
 	"testing"
-
-	"golang.org/x/text/encoding/charmap"
+	"unicode/utf8"
 )
 
-// cp1252Nachbau verhält sich wie der Übersetzer von gofpdf: Was Windows-1252 kennt,
-// bleibt (hier über die echte Tabelle, nicht über eine Auswahl von Hand — í, â, ø
-// gehören dazu), alles andere wird zum Punkt. Der echte Übersetzer hängt an einem
-// Dokument; das Verhalten, um das es geht, ist der Punkt.
-func cp1252Nachbau(text string) string {
-	bekannt := map[rune]bool{}
-	for b := 0x80; b <= 0xFF; b++ {
-		if r := charmap.Windows1252.DecodeByte(byte(b)); r != '�' {
-			bekannt[r] = true
+// Buchstaben, die die Schriften kennen, gehen unverändert aufs Papier, auch türkische, polnische,
+// vietnamesische, kyrillische und griechische.
+func TestErsetze_LaesstBuchstabenStehen(t *testing.T) {
+	for _, text := range []string{
+		"Ayşe Öztürk", "Łukasz Wiśniewski", "Ağaoğlu, İlknur", "Ștefan Țăran", "Đorđe Šimić",
+		"Doǧan", "Nguyễn Văn Ưng", "Дмитрий", "Ελένη", "Müller, François", "Deutschbuch 5 (LMF)",
+	} {
+		if got := Ersetze(text); got != text {
+			t.Errorf("%q → %q, erwartet unverändert", text, got)
 		}
 	}
-	out := make([]rune, 0, len(text))
-	for _, r := range text {
-		switch {
-		case r < 0x80, bekannt[r]:
-			out = append(out, r)
-		default:
-			out = append(out, '.')
-		}
-	}
-	return string(out)
 }
 
-func TestUebersetzer_ErsetztWasCp1252NichtKennt(t *testing.T) {
-	tr := Uebersetzer(cp1252Nachbau)
+// Ein Akzent, der getrennt hinter seinem Buchstaben steht (NFD), wird mit ihm zu einem Zeichen:
+// Nur so misst gofpdf die Breite richtig. Die Eingabe entsteht zur Laufzeit, damit kein Editor sie
+// beim Speichern zusammensetzt.
+func TestErsetze_SetztAkzenteZusammen(t *testing.T) {
+	zerlegt := "Nguye" + string(rune(0x0302)) + string(rune(0x0303)) + "n S" + string(rune(0x0327)) + "ahin"
+	if got := Ersetze(zerlegt); got != "Nguyễn Şahin" {
+		t.Errorf("zerlegte Akzente: %q, erwartet „Nguyễn Şahin“", got)
+	}
+}
+
+// Ein Zeichen jenseits der Basisebene (Emoji) und kaputtes UTF-8 werden zum Ersatzzeichen; gofpdf
+// verweigert sonst das ganze Dokument.
+func TestErsetze_MachtAusEmojiEinErsatzzeichen(t *testing.T) {
+	ersatz := string(utf8.RuneError)
 	faelle := map[string]string{
-		"Ayşe Öztürk":          "Ayse Öztürk",
-		"Łukasz Wiśniewski":    "Lukasz Wisniewski",
-		"Ağaoğlu, İlknur":      "Agaoglu, Ilknur",
-		"Nagy Őrs":             "Nagy Ors",
-		"Ștefan Țăran":         "Stefan Taran",
-		"Đorđe Šimić":          "Dorde Simic",
-		"Ľubomír Ďuriš":        "Lubomír Duris",
-		"Ūla Ėglė Vaišvilaitė": "Ula Egle Vaisvilaite",
-		"Müller, François":     "Müller, François", // alles in cp1252 — bleibt, wie es ist
-		"Deutschbuch 5 (LMF)":  "Deutschbuch 5 (LMF)",
+		"Buch " + string(rune(0x1F600)) + " Titel": "Buch " + ersatz + " Titel",
+		"Linear " + string(rune(0x10000)) + " B":   "Linear " + ersatz + " B",
+		"kaputt \xff":                              "kaputt " + ersatz,
 	}
 	for eingabe, erwartet := range faelle {
-		if got := tr(eingabe); got != erwartet {
+		if got := Ersetze(eingabe); got != erwartet {
 			t.Errorf("%q → %q, erwartet %q", eingabe, got, erwartet)
 		}
-	}
-}
-
-// Lateinische Buchstaben, die die Liste nicht nennt, verlieren ihre Akzente statt zum Punkt zu
-// werden: „ǧ“ stand so in einem echten LUSD-Auszug, vietnamesische Namen tragen „ễ“ oder „ư“.
-func TestUebersetzer_NimmtGrundbuchstabenStattPunkt(t *testing.T) {
-	tr := Uebersetzer(cp1252Nachbau)
-	faelle := map[string]string{
-		"Doǧan":          "Dogan",
-		"Nguyễn Văn Ưng": "Nguyen Van Ung",
-		"Lǚ Mǎ":          "Lu Ma",
-	}
-	for eingabe, erwartet := range faelle {
-		if got := tr(eingabe); got != erwartet {
-			t.Errorf("%q → %q, erwartet %q", eingabe, got, erwartet)
-		}
-	}
-}
-
-// Was sich nicht auf einen Buchstaben aus cp1252 bringen lässt, bleibt beim Verhalten des
-// Übersetzers — der Punkt. Das ist die Grenze der Ersetzung, nicht ihr Fehler: Für kyrillische
-// oder griechische Namen gibt es keine Ersetzung, die ein Etikett noch lesbar macht.
-func TestUebersetzer_LaesstUnbekanntesBeimPunkt(t *testing.T) {
-	tr := Uebersetzer(cp1252Nachbau)
-	if got := tr("Дмитрий"); got != "......." {
-		t.Errorf("kyrillisch: %q, erwartet sieben Punkte", got)
 	}
 }

@@ -85,50 +85,50 @@ const (
 
 // anschreibenSpaltenkoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.
 func anschreibenSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(230, 230, 230)
 	p.CellFormat(anschreibenSpalteTitel, anschreibenKopfHoehe, tr("Buchtitel"), "1", 0, "L", true, 0, "")
 	p.CellFormat(anschreibenSpalteAutor, anschreibenKopfHoehe, tr("Autor"), "1", 0, "L", true, 0, "")
 	p.CellFormat(anschreibenSpalteISBN, anschreibenKopfHoehe, tr("ISBN"), "1", 0, "L", true, 0, "")
 	p.CellFormat(anschreibenSpalteMenge, anschreibenKopfHoehe, tr("Menge"), "1", 1, "C", true, 0, "")
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 }
 
 // ErzeugeBestellanschreiben setzt das Anschreiben an den Lieferanten mit der Tabelle der
 // bestellten Titel.
 func ErzeugeBestellanschreiben(b Bestellanschreiben, schule SchuleInfo) ([]byte, error) {
-	p := gofpdf.New("P", "mm", "A4", "")
+	p := pdfzeichen.NewDokument()
 	p.SetMargins(anschreibenRand, anschreibenRand, anschreibenRand)
 	p.SetAutoPageBreak(true, anschreibenRand)
 	p.AddPage()
 	// Der Kopf der ersten Seite beginnt 10 mm unter der Kante, Folgeseiten am Rand.
 	p.SetY(10)
-	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	// Kopf mit Name und Absenderzeile der Schule.
-	p.SetFont("Arial", "B", 12)
+	p.SetFont(pdfzeichen.Schrift, "B", 12)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(5)
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	p.SetTextColor(100, 100, 100)
 	p.Cell(0, 4, tr(schule.Absenderzeile()))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(15)
 
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.CellFormat(0, 6, tr(schule.ortDatum(schulzeit.Jetzt().Format(datumsformat))), "", 0, "R", false, 0, "")
 	p.Ln(10)
 
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.Cell(0, 4, tr("An den Buchlieferanten"))
 	p.Ln(20)
 
 	// Der Topf steht schon in der Betreffzeile, nicht erst im Fließtext.
-	p.SetFont("Arial", "B", 12)
+	p.SetFont(pdfzeichen.Schrift, "B", 12)
 	p.Cell(0, 8, tr(b.Betreff))
 	p.Ln(10)
 
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.MultiCell(0, 5, tr(bestellanschreibenText(b.Etiketten, b.Vermerk)), "", "L", false)
 	p.Ln(6)
 
@@ -155,10 +155,10 @@ func ErzeugeBestellanschreiben(b Bestellanschreiben, schule SchuleInfo) ([]byte,
 	}
 	p.Ln(15)
 
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.Cell(0, 6, tr("Mit freundlichen Grüßen"))
 	p.Ln(12)
-	p.SetFont("Arial", "B", 10)
+	p.SetFont(pdfzeichen.Schrift, "B", 10)
 	p.Cell(0, 6, tr("Das Bibliotheksteam"))
 
 	var buf bytes.Buffer

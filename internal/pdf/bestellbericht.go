@@ -91,7 +91,7 @@ type berichtRahmen struct {
 // zeichneBerichtBestellKopf setzt die Kopfzeile einer einzelnen Bestellung (Datum, Lieferant,
 // Kundennummer). Das Datum ist der Kalendertag der Schule, an dem bestellt wurde.
 func zeichneBerichtBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o BestellberichtBestellung) {
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(235, 235, 245)
 	kopf := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
 		o.Bestelldatum.In(schulzeit.Zone()).Format(datumsformat), o.LieferantName, o.Kundennummer)
@@ -101,7 +101,7 @@ func zeichneBerichtBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o Bestell
 
 // zeichneBerichtSpaltenkoepfe setzt die Überschriftenzeile der Positionstabelle.
 func zeichneBerichtSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string, s berichtSpalten, mitPreisen bool) {
-	p.SetFont("Arial", "B", 8)
+	p.SetFont(pdfzeichen.Schrift, "B", 8)
 	p.SetFillColor(245, 245, 245)
 	p.CellFormat(s.Titel, 6, tr("Titel"), "1", 0, "L", true, 0, "")
 	p.CellFormat(s.ISBN, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
@@ -117,7 +117,7 @@ func zeichneBerichtSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string, s beric
 
 // zeichneBerichtPositionen setzt die Titelzeilen einer Bestellung, mit Seitenumbruch am Fuß.
 func zeichneBerichtPositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []BestellberichtPosition, s berichtSpalten, mitPreisen bool) {
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	for _, pos := range positionen {
 		if p.GetY() > 265 {
 			p.AddPage()
@@ -142,7 +142,7 @@ func zeichneBerichtPositionen(p *gofpdf.Fpdf, tr func(string) string, positionen
 
 // zeichneBerichtBestellSumme setzt die Abschlusszeile einer einzelnen Bestellung.
 func zeichneBerichtBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o BestellberichtBestellung, mitPreisen bool) {
-	p.SetFont("Arial", "B", 8)
+	p.SetFont(pdfzeichen.Schrift, "B", 8)
 	p.SetFillColor(235, 235, 245)
 	if mitPreisen {
 		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%s)", exemplarText(o.AnzahlExemplare))), "LBR", 0, "R", true, 0, "")
@@ -157,7 +157,7 @@ func zeichneBerichtBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o Bestel
 // zeichneBerichtGesamtsumme setzt die Schlusszeile über alle Bestellungen des Zeitraums.
 func zeichneBerichtGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen) {
 	p.Ln(4)
-	p.SetFont("Arial", "B", 11)
+	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.SetFillColor(220, 230, 255)
 	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(datumsformat), r.Bis.Format(datumsformat))
 	if r.MitPreisen {
@@ -175,14 +175,14 @@ func zeichneBerichtGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r bericht
 // und keine Closures: Eine Closure zählt bei der Komplexität als weitere Ebene.
 func zeichneBerichtDetailliste(p *gofpdf.Fpdf, tr func(string) string, toepfe []BestellberichtTopf, r berichtRahmen) {
 	if r.Bestellungen == 0 {
-		p.SetFont("Arial", "I", 10)
+		p.SetFont(pdfzeichen.Schrift, "I", 10)
 		p.SetTextColor(120, 120, 120)
 		p.Cell(0, 8, tr("Keine Bestellungen im gewählten Zeitraum."))
 		p.SetTextColor(0, 0, 0)
 		return
 	}
 
-	p.SetFont("Arial", "B", 11)
+	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.Cell(0, 8, tr("Bestellungen im Detail"))
 	p.Ln(8)
 
@@ -222,7 +222,7 @@ func zeichneBerichtTopfKopf(p *gofpdf.Fpdf, tr func(string) string, beschriftung
 	if p.GetY() > 235 {
 		p.AddPage()
 	}
-	p.SetFont("Arial", "B", 10)
+	p.SetFont(pdfzeichen.Schrift, "B", 10)
 	p.SetFillColor(235, 240, 250)
 	p.CellFormat(170, 7, tr(" "+beschriftung), "1", 1, "L", true, 0, "")
 	p.SetFillColor(255, 255, 255)
@@ -233,7 +233,7 @@ func zeichneBerichtTopfKopf(p *gofpdf.Fpdf, tr func(string) string, beschriftung
 // Abrechnung dieses Topfs geht.
 func zeichneBerichtTopfSumme(p *gofpdf.Fpdf, tr func(string) string, topf BestellberichtTopf, mitPreisen bool) {
 	summe, exemplare := berichtSumme(topf.Bestellungen)
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(225, 232, 245)
 	beschriftung := fmt.Sprintf("Summe %s (%s, %s)", topf.Beschriftung,
 		anzahlText(len(topf.Bestellungen), "Bestellung", "Bestellungen"), exemplarText(exemplare))
@@ -250,31 +250,31 @@ func zeichneBerichtTopfSumme(p *gofpdf.Fpdf, tr func(string) string, topf Bestel
 // ErzeugeBestellbericht setzt den Bericht: Kopf der Schule, Zeitraum, Zusammenfassung, in
 // der Jahresansicht die zwei Übersichten, dann die Bestellungen je Topf.
 func ErzeugeBestellbericht(b Bestellbericht, schule SchuleInfo) ([]byte, error) {
-	p := gofpdf.New("P", "mm", "A4", "")
+	p := pdfzeichen.NewDokument()
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
-	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 	p.AddPage()
 
 	// Briefkopf
-	p.SetFont("Arial", "B", 12)
+	p.SetFont(pdfzeichen.Schrift, "B", 12)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(5)
-	p.SetFont("Arial", "", 8)
+	p.SetFont(pdfzeichen.Schrift, "", 8)
 	p.SetTextColor(100, 100, 100)
 	p.Cell(0, 4, tr(schule.Absenderzeile()))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
 
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.CellFormat(0, 6, tr(schule.ortDatum(schulzeit.Jetzt().Format(datumsformat))), "", 1, "R", false, 0, "")
 	p.Ln(6)
 
 	// Berichtstitel
-	p.SetFont("Arial", "B", 14)
+	p.SetFont(pdfzeichen.Schrift, "B", 14)
 	p.Cell(0, 10, tr(b.Titel))
 	p.Ln(7)
-	p.SetFont("Arial", "", 10)
+	p.SetFont(pdfzeichen.Schrift, "", 10)
 	p.SetTextColor(80, 80, 80)
 	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", b.Von.Format(datumsformat), b.Bis.Format(datumsformat))))
 	p.SetTextColor(0, 0, 0)
@@ -290,7 +290,7 @@ func ErzeugeBestellbericht(b Bestellbericht, schule SchuleInfo) ([]byte, error) 
 	}
 
 	p.SetFillColor(240, 245, 255)
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	if b.MitPreisen {
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(bestellungen))), "1", 0, "C", true, 0, "")
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")

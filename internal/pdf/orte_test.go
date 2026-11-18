@@ -39,8 +39,8 @@ func seitenMitOrten(t *testing.T, roh []byte) []seiteMitOrten {
 	for _, strom := range pdftest.InhaltJeSeite(t, roh) {
 		seite := seiteMitOrten{texte: map[string]float64{}, links: map[string]float64{}}
 		for _, m := range textOrt.FindAllSubmatch(strom, -1) {
-			seite.texte[string(m[3])] = zahl(t, string(m[2]))
-			seite.links[string(m[3])] = zahl(t, string(m[1]))
+			seite.texte[pdftest.Klartext(m[3])] = zahl(t, string(m[2]))
+			seite.links[pdftest.Klartext(m[3])] = zahl(t, string(m[1]))
 		}
 		for _, m := range bildOrt.FindAllSubmatch(strom, -1) {
 			seite.bildMitten = append(seite.bildMitten, zahl(t, string(m[4]))+zahl(t, string(m[2]))/2)

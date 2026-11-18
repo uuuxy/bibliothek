@@ -28,7 +28,7 @@ func Schriftgroesse(t *testing.T, roh []byte, text string) float64 {
 			aktuell = wert
 			continue
 		}
-		if strings.TrimSpace(nachUTF8(m[2])) == text {
+		if strings.TrimSpace(Klartext(m[2])) == text {
 			groesse = aktuell
 			treffer++
 		}

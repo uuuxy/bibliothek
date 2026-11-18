@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/pdfzeichen"
 	"bibliothek/internal/pkg/schulzeit"
 
 	"github.com/phpdave11/gofpdf"
@@ -45,10 +46,10 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen [
 		jeMonat[m].betrag += o.Gesamtbetrag
 	}
 
-	p.SetFont("Arial", "B", 11)
+	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.Cell(0, 8, tr("Übersicht nach Monat"))
 	p.Ln(8)
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(220, 220, 220)
 	bMonat, bAnzahl, bExemplare := 55.0, 40.0, 40.0
 	if !mitPreisen {
@@ -62,7 +63,7 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen [
 	} else {
 		p.CellFormat(bExemplare, 7, tr("Exemplare"), "1", 1, "C", true, 0, "")
 	}
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.SetFillColor(255, 255, 255)
 	for m := time.January; m <= time.December; m++ {
 		if werte, ok := jeMonat[m]; ok {
@@ -76,7 +77,7 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen [
 			}
 		}
 	}
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(240, 240, 240)
 	p.CellFormat(bMonat, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
 	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(bestellungen)), "1", 0, "C", true, 0, "")
@@ -107,10 +108,10 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, bestellun
 	if !mitPreisen {
 		ueberschrift = "Bestellungen nach Lieferant"
 	}
-	p.SetFont("Arial", "B", 11)
+	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.Cell(0, 8, tr(ueberschrift))
 	p.Ln(8)
-	p.SetFont("Arial", "B", 9)
+	p.SetFont(pdfzeichen.Schrift, "B", 9)
 	p.SetFillColor(220, 220, 220)
 	p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
 	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
@@ -119,7 +120,7 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, bestellun
 	} else {
 		p.CellFormat(45, 7, tr("Exemplare"), "1", 1, "C", true, 0, "")
 	}
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.SetFillColor(255, 255, 255)
 	// Eine Map hat keine Reihenfolge: Ohne die sortierten Namen stünden die Lieferanten bei
 	// jedem Druck anders untereinander.

@@ -70,10 +70,10 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 			pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))
 			pdf.ImageOptions(bildName, strichX+3, obenY+2.5, 34, 8, false, optionen, 0, "")
 		}
-		pdf.SetFont("Courier", "", 7)
+		pdf.SetFont(pdfzeichen.SchriftFest, "", 7)
 		pdf.SetXY(strichX, obenY+11.5)
 		pdf.CellFormat(40, 4, tr(med.Barcode), "", 0, "C", false, 0, "")
-		pdf.SetFont("Arial", "", 8)
+		pdf.SetFont(pdfzeichen.Schrift, "", 8)
 	}
 
 	// Die Nummer unter dem Strichcode hat die Position verschoben.
@@ -82,43 +82,43 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 
 	if med.TageUeberfaellig > 14 {
 		pdf.SetTextColor(200, 30, 30)
-		pdf.SetFont("Arial", "B", 8)
+		pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 	}
 	pdf.CellFormat(26, zeilenHoehe, tr(anzahlText(med.TageUeberfaellig, "Tag", "Tage")), "1", 1, "C", false, 0, "")
 	pdf.SetTextColor(0, 0, 0)
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 }
 
 // zeichneMahnSeite setzt die Seiten eines Schülers: Kopf, Name und Klasse, die Tabelle seiner
 // Bücher und die Fußzeile.
 func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSchueler) {
-	pdf.SetFont("Arial", "B", 14)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 14)
 	pdf.Cell(0, 9, tr("Mahnung – Schulbibliothek"))
 	pdf.Ln(7)
 
-	pdf.SetFont("Arial", "", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "", 9)
 	pdf.SetTextColor(120, 120, 120)
 	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am: %s", schulzeit.Jetzt().Format(datumsformat))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(10)
 
-	pdf.SetFont("Arial", "B", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 11)
 	pdf.SetFillColor(240, 245, 255)
 	pdf.SetDrawColor(180, 195, 230)
 	pdf.RoundedRect(18, pdf.GetY(), 174, 22, 3, "1234", "FD")
 	pdf.SetXY(24, pdf.GetY()+4)
 	pdf.Cell(60, 7, tr("Schüler/in:"))
-	pdf.SetFont("Arial", "", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.Cell(0, 7, tr(sch.Name))
 	pdf.SetXY(24, pdf.GetY()+8)
-	pdf.SetFont("Arial", "B", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 11)
 	pdf.Cell(60, 7, tr("Klasse:"))
-	pdf.SetFont("Arial", "", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.Cell(0, 7, tr(sch.Klasse))
 	pdf.SetXY(18, pdf.GetY()+12)
 
 	pdf.Ln(6)
-	pdf.SetFont("Arial", "I", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "I", 9)
 	pdf.SetTextColor(160, 60, 60)
 	pdf.Cell(0, 5, tr(aufforderungZurAbgabe(len(sch.Medien))))
 	pdf.SetTextColor(0, 0, 0)
@@ -137,7 +137,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	}
 
 	pdf.Ln(10)
-	pdf.SetFont("Arial", "I", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "I", 8)
 	pdf.SetTextColor(130, 130, 130)
 	pdf.Cell(0, 5, tr("Schulbibliothek – Bei Fragen wende dich bitte an das Bibliotheksteam."))
 	pdf.SetTextColor(0, 0, 0)
@@ -145,7 +145,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 
 // zeichneMahnSpaltenkoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.
 func zeichneMahnSpaltenkoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
-	pdf.SetFont("Arial", "B", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 	pdf.SetFillColor(220, 225, 240)
 	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(mahnlisteSpalteTitel, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
@@ -153,7 +153,7 @@ func zeichneMahnSpaltenkoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 }
 
 // zeichneMahnFortsetzung beginnt eine Folgeseite: Die Seiten eines Schülers werden einzeln
@@ -163,7 +163,7 @@ func zeichneMahnFortsetzung(pdf *gofpdf.Fpdf, tr func(string) string, sch Mahnli
 	if sch.Klasse != "" {
 		zeile += ", " + sch.Klasse
 	}
-	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 9)
 	pdf.Cell(0, 5, tr(zeile))
 	pdf.Ln(8)
 	zeichneMahnSpaltenkoepfe(pdf, tr)
@@ -172,10 +172,10 @@ func zeichneMahnFortsetzung(pdf *gofpdf.Fpdf, tr func(string) string, sch Mahnli
 // ErzeugeMahnliste setzt die Mahnliste auf A4, je Schüler eine Seite und bei mehr als zehn
 // Büchern Folgeseiten. Ohne Schüler trägt das Blatt einen Satz, der das sagt.
 func ErzeugeMahnliste(schueler []MahnlisteSchueler) ([]byte, error) {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.SetMargins(18, 18, 18)
 	pdf.SetAutoPageBreak(true, mahnlisteRandUnten)
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	for _, sch := range schueler {
 		pdf.AddPage()
@@ -184,7 +184,7 @@ func ErzeugeMahnliste(schueler []MahnlisteSchueler) ([]byte, error) {
 
 	if len(schueler) == 0 {
 		pdf.AddPage()
-		pdf.SetFont("Arial", "", 12)
+		pdf.SetFont(pdfzeichen.Schrift, "", 12)
 		pdf.SetTextColor(130, 130, 130)
 		pdf.Cell(0, 10, tr("Keine überfälligen Ausleihen vorhanden."))
 	}

@@ -116,20 +116,20 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 	m := masseFuer(format)
 
 	y := pos.Y + m.oben
-	pdf.SetFont("Arial", "B", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 	zeichneZeile(pdf, tr, etikett.Schulname, 42, rechteck{pos.X, y, format.Breite, m.zeile})
 	y += m.zeile
 	zeichneZeile(pdf, tr, etikett.Titel, 40, rechteck{pos.X, y, format.Breite, m.zeile})
 	y += m.zeile
 	if zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur); gross && zeile2 != "" {
-		pdf.SetFont("Arial", "", 7)
+		pdf.SetFont(pdfzeichen.Schrift, "", 7)
 		zeichneZeile(pdf, tr, zeile2, 45, rechteck{pos.X, y, format.Breite, 3})
 		y += 3
 	}
 
 	// Die Nummer unter dem Code ist die, die er trägt; die Beschriftung benennt sie, damit sie
 	// ohne Scanner ablesbar ist (etwa für die Mahnliste).
-	pdf.SetFont("Courier", "B", 9)
+	pdf.SetFont(pdfzeichen.SchriftFest, "B", 9)
 	y += m.vorCode
 	if alsQR && !gross {
 		zeichneCode(pdf, etikett.BarcodeID, true, rechteck{pos.X + qrRandKlein, y, m.qrSeite, m.qrSeite})
@@ -156,7 +156,7 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 	zeichneNummer(pdf, tr, beschriftung, etikett.BarcodeID, format.Breite, m.zeile)
 
 	if vermerk := etikett.Eigentumsvermerk; gross && vermerk != "" {
-		pdf.SetFont("Arial", "", 7)
+		pdf.SetFont(pdfzeichen.Schrift, "", 7)
 		zeichneZeile(pdf, tr, vermerk, 45, rechteck{pos.X, y + m.zeile + 1, format.Breite, 3})
 	}
 }
@@ -190,12 +190,12 @@ func zeichneCode(pdf *gofpdf.Fpdf, nummer string, alsQR bool, r rechteck) {
 func ErzeugeBuchEtiketten(formatID string, startPosition int, mitQR bool, etiketten []BuchEtikett) (*gofpdf.Fpdf, error) {
 	format, _ := FindeEtikettFormat(formatID)
 
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.SetMargins(format.RandLinks, format.RandOben, format.RandLinks)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
 
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos etikettPosition) {
 		zeichneEtikett(pdf, tr, format, etiketten[i], mitQR, pos)

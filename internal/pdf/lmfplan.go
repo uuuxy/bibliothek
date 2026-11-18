@@ -7,7 +7,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/props"
@@ -54,7 +53,11 @@ func wochentagKurz(t time.Time) string {
 func ErzeugeLMFPlan(abschnitte []LMFPlanAbschnitt, stand time.Time) ([]byte, error) {
 	satz := lmfSatzWaehlen(abschnitte)
 	breite := lmfGrid * satz.modus.spalten
-	konfig := config.NewBuilder().
+	bauer, err := marotoKonfig()
+	if err != nil {
+		return nil, err
+	}
+	konfig := bauer.
 		WithPageSize("A4").
 		WithLeftMargin(satz.modus.rand).
 		WithRightMargin(satz.modus.rand).

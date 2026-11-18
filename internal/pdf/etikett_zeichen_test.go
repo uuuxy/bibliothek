@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-// Die Etiketten der Bücher laufen durch die Zeichenersetzung (pdfzeichen) wie jeder andere
-// Erzeuger; ohne sie käme ein Titel wie „Şafak und Łukasz" als „.afak und .ukasz" vom Drucker.
-// Geprüft wird am fertigen PDF, nicht am Aufruf (drei Wege, ein Inhaltsstrom).
+// Die Etiketten der Bücher setzen die eingebetteten Schriften (pdfzeichen) wie jeder andere
+// Erzeuger; in einer Standardschrift käme ein Titel wie „Şafak und Łukasz" als „.afak und .ukasz"
+// vom Drucker. Geprüft wird am fertigen PDF, nicht am Aufruf (drei Wege, ein Inhaltsstrom).
 func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 	etiketten := []BuchEtikett{{
 		Schulname: "Philipp-Reis-Schule, Friedrichsdorf",
@@ -32,13 +32,11 @@ func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 
 	for name, roh := range map[string][]byte{"Buchetikett": puffer.Bytes(), "Lernmittel-Etikett": gross} {
 		text := pdfText(t, roh)
-		// Der Titel ist nach der Ersetzung reines ASCII — so ist der Vergleich unabhängig
-		// davon, wie der Strom Umlaute kodiert.
-		if !strings.Contains(text, "Safak, Lukasz und Wisniewski") {
-			t.Errorf("%s: der ersetzte Titel steht nicht auf dem Etikett", name)
+		if !strings.Contains(text, "Şafak, Łukasz und Wiśniewski") {
+			t.Errorf("%s: der Titel steht nicht mit allen Buchstaben auf dem Etikett", name)
 		}
-		// Der Punkt ist das Zeichen, das cp1252 für Unbekanntes einsetzt.
-		for _, verboten := range []string{".afak", ".ukasz", "W.sniewski"} {
+		// Der Punkt der Standardschrift und der Grundbuchstabe der früheren Ersetzung.
+		for _, verboten := range []string{".afak", ".ukasz", "Wi.niewski", "Safak", "Lukasz", "Wisniewski"} {
 			if strings.Contains(text, verboten) {
 				t.Errorf("%s: entstellter Titel auf dem Etikett: %q", name, verboten)
 			}
@@ -46,9 +44,9 @@ func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 	}
 }
 
-// Die Erzeuger mit maroto (Kontoauszug und Laufzettel, Rechnung, LMF-Plan) übergeben ihren Text
-// dem cp1252-Übersetzer von gofpdf, den maroto selbst aufruft; ohne die Ersetzung käme
-// „Şafak Wiśniewski" als „.afak Wi.niewski" auf das Blatt. Geprüft am fertigen PDF.
+// Die Erzeuger mit maroto (Kontoauszug und Laufzettel, Rechnung, LMF-Plan) setzen die
+// eingebetteten Schriften (marotoKonfig). In einer Standardschrift übersetzte maroto den Text selbst
+// nach cp1252, und „Şafak Wiśniewski" käme als „.afak Wi.niewski" auf das Blatt.
 func TestMarotoErzeugerDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 	jetzt := time.Date(2026, 11, 11, 9, 0, 0, 0, time.UTC)
 	auszug, err := ErzeugeKontoauszuege([]KontoauszugEintrag{{
@@ -76,9 +74,9 @@ func TestMarotoErzeugerDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 		erwartet []string
 		verboten []string
 	}{
-		{"Kontoauszug", auszug, []string{"Safak Wisniewski", "Lukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz"}},
-		{"Rechnung", rechnung, []string{"Safak Wisniewski", "Lakowa 3", "Lukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz", ".akowa"}},
-		{"LMF-Plan", plan, []string{"Yilmaz"}, []string{"Y.lmaz"}},
+		{"Kontoauszug", auszug, []string{"Şafak Wiśniewski", "Łukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz", "Safak", "Lukasz"}},
+		{"Rechnung", rechnung, []string{"Şafak Wiśniewski", "Łąkowa 3", "Łukasz und die"}, []string{".afak", "Wi.niewski", ".ukasz", ".akowa", "Safak", "Lakowa"}},
+		{"LMF-Plan", plan, []string{"Yılmaz"}, []string{"Y.lmaz", "Yilmaz"}},
 	} {
 		text := pdfText(t, fall.roh)
 		for _, stueck := range fall.erwartet {

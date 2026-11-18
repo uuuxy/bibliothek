@@ -179,8 +179,8 @@ func TestMahnliste_OhneSchuelerSagtEs(t *testing.T) {
 
 // Titel und Autor stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt breiter wären als
 // ihre Spalte. Gemessen wird die Breite und nicht die Zahl der Zeichen: 30 breite Buchstaben
-// passen nicht in die Spalte des Titels, 60 schmale schon. Buchstaben außerhalb von cp1252
-// bleiben lesbar.
+// passen nicht in die Spalte des Titels, 60 schmale schon. Ein Name mit Buchstaben
+// außerhalb von cp1252 steht mit allen Buchstaben da.
 func TestMahnliste_TitelUndAutorBleibenInIhrerSpalte(t *testing.T) {
 	medien := []MahnlisteMedium{
 		{Titel: strings.Repeat("W", 30), Autor: strings.Repeat("M", 15), Barcode: "B-1"},
@@ -189,7 +189,7 @@ func TestMahnliste_TitelUndAutorBleibenInIhrerSpalte(t *testing.T) {
 		{Titel: "Kurz", Autor: "A. Utor", Barcode: "B-4"},
 	}
 	texte := pdftest.TexteInReihenfolge(t, mahnliste(t, []MahnlisteSchueler{{Name: "Şafak Łukasz", Klasse: "07B", Medien: medien}}))
-	if !strings.Contains(strings.Join(texte, "\n"), "Safak Lukasz") {
+	if !strings.Contains(strings.Join(texte, "\n"), "Şafak Łukasz") {
 		t.Errorf("der Name steht nicht lesbar auf dem Blatt: %q", texte)
 	}
 

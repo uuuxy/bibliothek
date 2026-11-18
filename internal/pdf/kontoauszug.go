@@ -8,7 +8,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
@@ -61,7 +60,11 @@ func ErzeugeKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch,
 // Freigabe und Unterschrift an; so dient derselbe Auszug beim Schulabgang als Laufzettel, und
 // wer die Unterschrift nicht braucht, lässt die Zeile leer.
 func ErzeugeKontoauszuege(eintraege []KontoauszugEintrag, schule SchuleInfo, mitUnterschrift bool) ([]byte, error) {
-	konfig := config.NewBuilder().
+	bauer, err := marotoKonfig()
+	if err != nil {
+		return nil, err
+	}
+	konfig := bauer.
 		WithPageSize("A4").
 		WithLeftMargin(kontoauszugRand).
 		WithTopMargin(kontoauszugRand).

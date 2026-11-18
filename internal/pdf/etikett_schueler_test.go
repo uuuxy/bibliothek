@@ -47,25 +47,20 @@ func TestSchuelerEtikettTraegtNameKlasseUndBarcode(t *testing.T) {
 }
 
 func TestSchuelerEtikettDrucktNamenAusserhalbVonCp1252(t *testing.T) {
-	// Der Zeichensatz des PDFs ist cp1252; ohne Ersetzung würde „ş" darin zu einem Punkt, und
-	// „Ayşe" käme als „Ay.e" aus dem Drucker. An einer hessischen Schule ist das kein Randfall.
-	// Ein Häkchen weniger ist hinnehmbar, ein entstellter Name nicht.
+	// In einer Standardschrift des PDF würde „ş" zu einem Punkt, und „Ayşe" käme als „Ay.e" aus dem
+	// Drucker. An einer hessischen Schule ist das kein Randfall.
 	text := erzeugeBogen(t, "zweckform_l4760", 1, []SchuelerEtikett{
 		{BarcodeID: "S-000200", Vorname: "Ayşe", Nachname: "Öztürk", Klasse: "5a"},
 		{BarcodeID: "S-000201", Vorname: "Łukasz", Nachname: "Wiśniewski", Klasse: "9R2"},
 	})
 
-	// Verglichen wird nur mit ASCII-Ausschnitten: Im PDF-Strom stehen ä/ö/ü/Ö als
-	// einzelne Bytes in cp1252, ein UTF-8-Literal wie "Öztürk" passte dort nie, und der Test
-	// wäre immer rot, aus dem falschen Grund. Die Aussage steckt ohnehin in
-	// den Buchstaben, die ersetzt werden mussten.
-	for _, erwartet := range []string{", Ayse", "Wisniewski, Lukasz"} {
+	for _, erwartet := range []string{"Öztürk, Ayşe", "Wiśniewski, Łukasz"} {
 		if !strings.Contains(text, erwartet) {
 			t.Errorf("%q steht nicht auf dem Etikett", erwartet)
 		}
 	}
-	// Der Punkt ist das Zeichen, das cp1252 für Unbekanntes einsetzt.
-	for _, verboten := range []string{"Ay.e", "W.sniewski", ".ukasz"} {
+	// Der Punkt der Standardschrift und der Grundbuchstabe der früheren Ersetzung.
+	for _, verboten := range []string{"Ay.e", "Wi.niewski", ".ukasz", "Ayse", "Lukasz"} {
 		if strings.Contains(text, verboten) {
 			t.Errorf("entstellter Name auf dem Etikett: %q", verboten)
 		}

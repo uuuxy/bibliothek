@@ -117,18 +117,17 @@ type BescheidBrief struct {
 
 // ErzeugeBescheid zeichnet den Bescheid.
 func ErzeugeBescheid(b BescheidBrief) ([]byte, error) {
-	p := gofpdf.New("P", "mm", "A4", "")
-	// Jede Zeichenkette, die auf das Papier geht, läuft durch pdfzeichen: Ohne die Ersetzung
-	// käme „Ayşe" als „Ay.e" aus dem Drucker, cp1252 kennt das ş nicht. Ein Bescheid mit
-	// entstelltem Namen ist ein fehlerhafter Bescheid.
-	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
+	p := pdfzeichen.NewDokument()
+	// Jede Zeichenkette, die aufs Papier geht, läuft durch pdfzeichen.Ersetze: Ein Emoji in einem
+	// Titel bräche sonst das ganze Dokument ab.
+	tr := pdfzeichen.Ersetze
 	// Ab der zweiten Seite die Seitenzahl mittig oben, wie im Original („- 2 -").
 	p.SetHeaderFunc(func() {
 		if p.PageNo() < 2 {
 			return
 		}
 		p.SetY(15)
-		p.SetFont("Times", "", 11)
+		p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 		p.CellFormat(0, 6, fmt.Sprintf("- %d -", p.PageNo()), "", 1, "C", false, 0, "")
 		p.SetY(25)
 	})
@@ -151,17 +150,17 @@ func ErzeugeBescheid(b BescheidBrief) ([]byte, error) {
 // bescheidKopf zeichnet Schulname, Anschriftfeld, Infoblock, Betreff, Anrede und die
 // beiden einleitenden Absätze.
 func bescheidKopf(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
-	p.SetFont("Arial", "B", 11)
+	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.SetXY(bescheidRandLinks, 20)
 	p.Cell(0, 6, tr(b.Schule.Name))
 
 	// Absenderzeile klein über dem Anschriftfeld (Fensterkuvert).
-	p.SetFont("Arial", "", 7)
+	p.SetFont(pdfzeichen.Schrift, "", 7)
 	p.SetXY(bescheidRandLinks, bescheidYAnschrift-5)
 	p.Cell(0, 4, tr(b.Schule.Absenderzeile()))
 
 	// Anschriftfeld.
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	p.SetXY(bescheidRandLinks, bescheidYAnschrift)
 	for _, zeile := range bescheidAnschriftZeilen(b.Empfaenger) {
 		p.SetX(bescheidRandLinks)
@@ -172,11 +171,11 @@ func bescheidKopf(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 
 	// Betreff.
 	p.SetXY(bescheidRandLinks, bescheidYBetreff)
-	p.SetFont("Times", "B", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "B", 11)
 	p.MultiCell(bescheidBreite, 5.5, tr(bescheidBetreff), "", "L", false)
 	p.Ln(6)
 
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	bescheidAbsatz(p, tr, b.Empfaenger.Anrede)
 	bescheidAbsatz(p, tr, bescheidAbsatzEigentum)
 	bescheidAbsatz(p, tr, bescheidAbsatzHaftung)
@@ -200,7 +199,7 @@ func bescheidAnschriftZeilen(e BescheidEmpfaenger) []string {
 // bescheidInfoblock setzt Geschäftszeichen, Bearbeiter, Durchwahl und Datum rechts neben
 // das Anschriftfeld. Eine leere Angabe lässt ihre Zeile weg; im Muster sind es Formularfelder.
 func bescheidInfoblock(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
-	p.SetFont("Arial", "", 9)
+	p.SetFont(pdfzeichen.Schrift, "", 9)
 	y := bescheidYAnschrift
 	for _, paar := range [][2]string{
 		{"Geschäftszeichen", b.Geschaeftszeichen},
@@ -262,7 +261,7 @@ func bescheidKaestchen(p *gofpdf.Fpdf, tr func(string) string, text string) {
 	// Das Kreuz, zwei Linien von Ecke zu Ecke mit einem halben Millimeter Luft.
 	p.Line(x+0.5, y+0.5, x+seite-0.5, y+seite-0.5)
 	p.Line(x+seite-0.5, y+0.5, x+0.5, y+seite-0.5)
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	p.SetXY(x+seite+2.5, y-1)
 	p.MultiCell(bescheidBreite-seite-2.5, 5.5, tr(text), "", "L", false)
 	p.Ln(3)
@@ -299,7 +298,7 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 		y := p.GetY()
 		x := bescheidRandLinks
 		werte := []string{pos.SchuelerName, pos.Titel, pos.ISBN, pos.Betrag.Euro()}
-		p.SetFont("Times", "", 10)
+		p.SetFont(pdfzeichen.SchriftSerif, "", 10)
 		for i, wert := range werte {
 			p.Rect(x, y, bescheidSpalten[i], bescheidZeileHoehe, "D")
 			p.SetXY(x+1.5, y+1.4)
@@ -318,7 +317,7 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 func bescheidTabellenkopf(p *gofpdf.Fpdf, tr func(string) string) {
 	y := p.GetY()
 	x := bescheidRandLinks
-	p.SetFont("Times", "", 10)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 10)
 	p.SetFillColor(217, 217, 217)
 	kopf := [][2]string{
 		{"Name des/der", "Schülers/Schülerin"},
@@ -352,7 +351,7 @@ func bescheidPlatzOderNeueSeite(p *gofpdf.Fpdf, hoehe float64) bool {
 // bescheidZahlung zeichnet Gesamtbetrag, Zahlstelle, Bankverbindung und Referenznummer.
 func bescheidZahlung(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidZahlsatz, b.Gesamtbetrag.Euro(), b.Zahlstelle))
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	for _, zeile := range strings.Split(b.Bankverbindung, "\n") {
 		p.SetX(bescheidRandLinks)
 		p.CellFormat(bescheidBreite, 5.5, tr(strings.TrimSpace(zeile)), "", 1, "L", false, 0, "")
@@ -362,9 +361,9 @@ func bescheidZahlung(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	// „Referenz-Nr." fett, die Nummer daneben: An ihr wird die Zahlung zugeordnet, sie darf
 	// nicht im Fließtext untergehen.
 	p.SetX(bescheidRandLinks)
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	p.Write(5.5, tr(bescheidReferenz))
-	p.SetFont("Times", "B", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "B", 11)
 	p.Write(5.5, tr(b.Referenznummer))
 	p.Ln(9)
 }
@@ -375,15 +374,15 @@ func bescheidSchluss(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 	bescheidAbsatz(p, tr, bescheidGruss)
 	p.Ln(10)
 	p.SetX(bescheidRandLinks)
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	p.CellFormat(bescheidBreite, 5.5, tr(b.Schulleitung), "", 1, "L", false, 0, "")
 	p.Ln(8)
 
 	p.SetX(bescheidRandLinks)
-	p.SetFont("Times", "B", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "B", 11)
 	p.CellFormat(bescheidBreite, 5.5, tr(bescheidRechtsTitel), "", 1, "L", false, 0, "")
 	p.Ln(2)
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidRechtsText, bescheidSchulanschriftEinzeilig(b.Schule), b.Aufsicht))
 }
 
@@ -406,7 +405,7 @@ func bescheidAbsatz(p *gofpdf.Fpdf, tr func(string) string, text string) {
 		return
 	}
 	p.SetX(bescheidRandLinks)
-	p.SetFont("Times", "", 11)
+	p.SetFont(pdfzeichen.SchriftSerif, "", 11)
 	p.MultiCell(bescheidBreite, 5.5, tr(text), "", "L", false)
 	p.Ln(4)
 }

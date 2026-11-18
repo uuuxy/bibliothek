@@ -6,13 +6,11 @@ import (
 	"unicode/utf8"
 
 	"bibliothek/internal/pkg/pdfzeichen"
-
-	"github.com/phpdave11/gofpdf"
 )
 
 // InSpalte hält einen gedruckten Text gegen seine Quelle: Er steht ganz da oder so weit
 // gekürzt wie nötig, mit Auslassungszeichen, und gedruckt ist er nicht breiter als der Platz in
-// seiner Zelle (Millimeter, in Arial der genannten Größe).
+// seiner Zelle (Millimeter, in der Grundschrift pdfzeichen.Schrift und der genannten Größe).
 func InSpalte(t *testing.T, gedruckt, quelle string, groesse, platz float64) {
 	t.Helper()
 	inSpalte(t, gedruckt, quelle, "", groesse, platz)
@@ -25,18 +23,17 @@ func InSpalteFett(t *testing.T, gedruckt, quelle string, groesse, platz float64)
 	inSpalte(t, gedruckt, quelle, "B", groesse, platz)
 }
 
-// Breite misst einen Text in Millimetern, so wie gofpdf ihn in der Schrift (etwa „Courier"),
-// dem Schnitt („B" für fett, sonst leer) und der Größe druckt.
+// Breite misst einen Text in Millimetern, so wie gofpdf ihn in der Schrift (etwa
+// pdfzeichen.SchriftFest), dem Schnitt („B" für fett, sonst leer) und der Größe druckt.
 func Breite(text, schrift, schnitt string, groesse float64) float64 {
-	messen := gofpdf.New("P", "mm", "A4", "")
+	messen := pdfzeichen.NewDokument()
 	messen.SetFont(schrift, schnitt, groesse)
-	uebersetze := pdfzeichen.Uebersetzer(messen.UnicodeTranslatorFromDescriptor(""))
-	return messen.GetStringWidth(uebersetze(text))
+	return messen.GetStringWidth(pdfzeichen.Ersetze(text))
 }
 
 func inSpalte(t *testing.T, gedruckt, quelle, schnitt string, groesse, platz float64) {
 	t.Helper()
-	if breite := Breite(gedruckt, "Arial", schnitt, groesse); breite > platz {
+	if breite := Breite(gedruckt, pdfzeichen.Schrift, schnitt, groesse); breite > platz {
 		t.Errorf("%q ist gedruckt %.1f mm breit, die Zelle lässt %.1f mm", gedruckt, breite, platz)
 	}
 	if gedruckt == quelle {
@@ -56,7 +53,7 @@ func inSpalte(t *testing.T, gedruckt, quelle, schnitt string, groesse, platz flo
 	}
 	_, laenge := utf8.DecodeRuneInString(rest[naechstes:])
 	laenger := anfang + rest[:naechstes+laenge] + "…"
-	if breite := Breite(laenger, "Arial", schnitt, groesse); breite <= platz {
+	if breite := Breite(laenger, pdfzeichen.Schrift, schnitt, groesse); breite <= platz {
 		t.Errorf("gedruckt %q, dabei passte auch %q (%.1f mm von %.1f mm)", gedruckt, laenger, breite, platz)
 	}
 }

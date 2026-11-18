@@ -17,8 +17,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"golang.org/x/text/encoding/charmap"
+	"unicode/utf16"
 )
 
 // tjText findet die gezeichneten Textstücke im Inhaltsstrom: `(Ansch.J. 2016 · LMF-Deutsch 5)Tj`.
@@ -31,8 +30,8 @@ var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)\s*Tj`)
 // Texte liefert die gedruckten Textstücke des Dokuments, sortiert.
 //
 // gofpdf packt die Ströme meist (FlateDecode); im rohen PDF steht der Text dann nicht, nach
-// dem Entpacken liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der Kodierung des Erzeugers
-// (Windows-1252), bis nachUTF8 sie wandelt.
+// dem Entpacken liegt er als `(…)Tj` vor. Der Text steht dort in UTF-16BE, bis Klartext ihn
+// wandelt.
 //
 // Ein Strom, der sich nicht entpacken lässt, wird roh gelesen: Der Kontoauszug der Abgänger
 // kommt ungepackt aus dem Erzeuger, und ohne diesen Weg bräche der Leser bei ihm mit „kein
@@ -102,6 +101,13 @@ func lies(t *testing.T, roh []byte) ([]byte, []string) {
 func stroemeAus(t *testing.T, roh []byte) [][]byte {
 	t.Helper()
 
+	// Eine Standardschrift (Type1) schreibt cp1252 in den Strom, und Klartext läse den Text falsch.
+	// Jeder Erzeuger setzt die eingebetteten Schriften aus pdfzeichen.NewDokument.
+	if bytes.Contains(roh, []byte("/Subtype /Type1")) {
+		t.Fatalf("das PDF setzt eine Standardschrift ohne eingebettete Datei (Type1): ş, ł oder ğ " +
+			"fehlten auf dem Blatt; das Dokument entsteht nicht über pdfzeichen.NewDokument")
+	}
+
 	var stroeme [][]byte
 	rest := roh
 	for {
@@ -157,7 +163,7 @@ func texteAus(inhalt []byte) []string {
 func texteInReihenfolge(inhalt []byte) []string {
 	var texte []string
 	for _, treffer := range tjText.FindAllSubmatch(inhalt, -1) {
-		if s := strings.TrimSpace(nachUTF8(treffer[1])); s != "" {
+		if s := strings.TrimSpace(Klartext(treffer[1])); s != "" {
 			texte = append(texte, s)
 		}
 	}
@@ -173,13 +179,14 @@ func TexteInReihenfolge(t *testing.T, roh []byte) []string {
 	return texteInReihenfolge(inhalt)
 }
 
-// nachUTF8 macht aus einem Textstück des PDF lesbaren Text: Es löst die Escapes des PDF auf
-// und wandelt von Windows-1252 nach UTF-8.
+// Klartext macht aus einem Textstück des PDF lesbaren Text: Es löst die Escapes des PDF auf
+// und wandelt von UTF-16BE nach UTF-8. So schreibt gofpdf Text in eingebetteter Schrift, je
+// Zeichen zwei Bytes.
 //
-// Ohne diesen Schritt träfe keine Erwartung mit Umlaut: Im Inhaltsstrom steht „Gez\xe4hlt",
+// Ohne diesen Schritt träfe keine Erwartung: Im Inhaltsstrom steht „\x00G\x00e\x00z\x00\xe4…",
 // und ein Test, der verlangt, dass „Gezählt" nicht gedruckt wird, bliebe auch dann grün, wenn
 // es dasteht.
-func nachUTF8(roh []byte) string {
+func Klartext(roh []byte) string {
 	var b []byte
 	for i := 0; i < len(roh); i++ {
 		c := roh[i]
@@ -198,7 +205,7 @@ func nachUTF8(roh []byte) string {
 		case '(', ')', '\\':
 			b = append(b, n)
 		default:
-			// Ein Escape in Oktal (\344 ist ä in Windows-1252) hat bis zu drei Ziffern.
+			// Ein Escape in Oktal (\050 ist die öffnende Klammer) hat bis zu drei Ziffern.
 			if n < '0' || n > '7' {
 				b = append(b, n)
 				break
@@ -211,12 +218,20 @@ func nachUTF8(roh []byte) string {
 			b = append(b, byte(wert))
 		}
 	}
-	// Ein Fehler ist nur bei kaputter Eingabe möglich; dann ist der rohe Text besser als
-	// keiner.
-	if text, err := charmap.Windows1252.NewDecoder().Bytes(b); err == nil {
-		return string(text)
+	return ausUTF16(b)
+}
+
+// ausUTF16 liest Bytes als UTF-16BE. Eine ungerade Zahl von Bytes ist kaputte Eingabe; dann ist
+// der rohe Text besser als keiner.
+func ausUTF16(b []byte) string {
+	if len(b)%2 != 0 {
+		return string(b)
 	}
-	return string(b)
+	einheiten := make([]uint16, 0, len(b)/2)
+	for i := 0; i < len(b); i += 2 {
+		einheiten = append(einheiten, uint16(b[i])<<8|uint16(b[i+1]))
+	}
+	return string(utf16.Decode(einheiten))
 }
 
 // IstPDF prüft Signatur und Abschluss. Ein abgeschnittenes Dokument beginnt mit %PDF, hat

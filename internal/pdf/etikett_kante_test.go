@@ -28,7 +28,7 @@ var stueckImStrom = regexp.MustCompile(`/\w+\s+([0-9.]+)\s+Tf|BT ([0-9.]+) ([0-9
 const (
 	ptJeMM    = 72 / 25.4
 	a4HoeheMM = 297.0
-	// Ober- und Unterlänge von Helvetica und Courier, gerundet nach oben, als Teil der Größe.
+	// Ober- und Unterlänge von Arimo und Cousine (0,74 und 0,21), gerundet nach oben, als Teil der Größe.
 	oberlaenge  = 0.75
 	unterlaenge = 0.22
 )
@@ -52,7 +52,7 @@ func etikettStuecke(t *testing.T, roh []byte) []etikettStueck {
 		case m[2] != nil:
 			links, grundlinie := zahl(m[2]), a4HoeheMM-zahl(m[3])
 			stuecke = append(stuecke, etikettStueck{
-				text: string(m[4]), links: links, rechts: links,
+				text: pdftest.Klartext(m[4]), links: links, rechts: links,
 				oben: grundlinie - oberlaenge*groesse, unten: grundlinie + unterlaenge*groesse,
 			})
 		default:

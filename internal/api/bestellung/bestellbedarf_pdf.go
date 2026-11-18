@@ -38,15 +38,15 @@ func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 // HTTP-Kontext lesbar (und testbar) bleibt. Die Menge ist das Fehlen der Zeile, dieselbe Zahl,
 // die der Warenkorb übernimmt.
 func baueBestelllistePDF(bedarf []repository.Bestellbedarf) *gofpdf.Fpdf {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
-	pdf.SetFont("Arial", "B", 16)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 16)
 	pdf.Cell(0, 10, tr("Schulbibliothek - Bestellliste"))
 	pdf.Ln(6)
-	pdf.SetFont("Arial", "I", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "I", 9)
 	pdf.SetTextColor(100, 100, 100)
 	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am: %s", schulzeit.Jetzt().Format("02.01.2006, 15:04 Uhr"))))
 	pdf.SetTextColor(0, 0, 0)
@@ -54,7 +54,7 @@ func baueBestelllistePDF(bedarf []repository.Bestellbedarf) *gofpdf.Fpdf {
 
 	schreibeBestelllisteKopf(pdf, tr)
 
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 	for _, b := range bedarf {
 		pdf.CellFormat(62, 6, tr(b.Titel), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(35, 6, tr(b.Autor), "1", 0, "L", false, 0, "")
@@ -68,7 +68,7 @@ func baueBestelllistePDF(bedarf []repository.Bestellbedarf) *gofpdf.Fpdf {
 
 // schreibeBestelllisteKopf setzt die Kopfzeile der Tabelle.
 func schreibeBestelllisteKopf(pdf *gofpdf.Fpdf, tr func(string) string) {
-	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 9)
 	pdf.SetFillColor(230, 230, 230)
 	pdf.CellFormat(62, 7, tr("Buchtitel"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(35, 7, tr("Autor"), "1", 0, "L", true, 0, "")

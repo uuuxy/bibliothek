@@ -9,7 +9,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/code"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
@@ -47,7 +46,11 @@ type RechnungsPosition struct {
 // (Zahlstelle und Bankverbindung aus den Einstellungen); bar in der Bibliothek ist für ein
 // Lernmittel der Weg, den die Arbeitshilfe ausdrücklich untersagt.
 func ErzeugeRechnung(schueler Schueler, positionen []RechnungsPosition, schule SchuleInfo, zahlung Zahlungsangaben) ([]byte, error) {
-	konfig := config.NewBuilder().
+	bauer, err := marotoKonfig()
+	if err != nil {
+		return nil, err
+	}
+	konfig := bauer.
 		WithPageSize("A4").
 		WithLeftMargin(25). // linker Rand 25 mm nach DIN 5008
 		WithTopMargin(20).

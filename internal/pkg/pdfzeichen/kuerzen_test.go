@@ -44,8 +44,8 @@ func TestKuerzeAufBreite(t *testing.T) {
 	}
 }
 
-// Gemessen wird der Text in der Form, die gedruckt wird: Ein Zeichen, das der Übersetzer in
-// mehrere Bytes wandelt, zählt mit seiner gedruckten Breite.
+// Gemessen wird der Text in der Form, die gedruckt wird (messbar, im Erzeuger Ersetze), nicht in
+// der, die hineingeht.
 func TestKuerzeAufBreite_MisstDenUebersetztenText(t *testing.T) {
 	doppelt := func(s string) string { return s + s }
 	if ist := KuerzeAufBreite(jeZeichen{}, doppelt, "abcdef", 8); ist != "abc…" {
@@ -73,17 +73,15 @@ func TestKuerzeAufZelle_ZiehtDenRandDerZelleAb(t *testing.T) {
 	}
 }
 
-// festeZeilen bricht nach einer festen Zahl von Bytes um, ohne auf Wörter zu achten.
+// festeZeilen bricht nach einer festen Zahl von Zeichen um, ohne auf Wörter zu achten.
 type festeZeilen struct{ proZeile int }
 
-func (f festeZeilen) SplitLines(text []byte, _ float64) [][]byte {
-	var zeilen [][]byte
-	for len(text) > f.proZeile {
-		zeilen = append(zeilen, text[:f.proZeile])
-		text = text[f.proZeile:]
-	}
-	if len(text) > 0 {
-		zeilen = append(zeilen, text)
+func (f festeZeilen) SplitText(text string, _ float64) []string {
+	var zeilen []string
+	for runen := []rune(text); len(runen) > 0; {
+		n := min(f.proZeile, len(runen))
+		zeilen = append(zeilen, string(runen[:n]))
+		runen = runen[n:]
 	}
 	return zeilen
 }
@@ -95,12 +93,12 @@ func TestKuerzeAufZeilen(t *testing.T) {
 		soll       string
 	}{
 		{"passt in zwei Zeilen", "abcdefgh", 2, "abcdefgh"},
-		{"eine Zeile zu viel", "abcdefghij", 2, "abcde…"},
-		{"kein Leerraum vor dem Auslassungszeichen", "abcd efghij", 2, "abcd…"},
+		{"eine Zeile zu viel", "abcdefghij", 2, "abcdefg…"},
+		{"kein Leerraum vor dem Auslassungszeichen", "abcdef ghij", 2, "abcdef…"},
 		{"nichts passt", "abcdef", 0, "…"},
 	}
 	for _, f := range faelle {
-		// Vier Bytes je Zeile; das Auslassungszeichen belegt in UTF-8 drei.
+		// Vier Zeichen je Zeile; das Auslassungszeichen ist eines davon.
 		if ist := KuerzeAufZeilen(festeZeilen{proZeile: 4}, gleich, f.text, 0, f.zeilen); ist != f.soll {
 			t.Errorf("%s: KuerzeAufZeilen(%q, %d Zeilen) = %q, erwartet %q", f.name, f.text, f.zeilen, ist, f.soll)
 		}

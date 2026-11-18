@@ -114,8 +114,8 @@ type lmfBaustein struct {
 	abschnitt int
 }
 
-// lmfMesser misst Textbreiten so, wie maroto sie später umbricht: gofpdf mit derselben
-// Kernschrift und derselben Umsetzung nach Latin-1.
+// lmfMesser misst Textbreiten so, wie maroto sie später umbricht: gofpdf mit derselben Schrift
+// (pdfzeichen.Schrift) und derselben Form des Texts (pdfzeichen.Ersetze).
 //
 // gofpdf ist dieselbe Bibliothek, die maroto benutzt. Weil Go je Modul genau eine Fassung baut,
 // misst dieser Messer immer mit den Schriftmaßen, mit denen maroto setzt, auch nach einem
@@ -126,14 +126,14 @@ type lmfMesser struct {
 }
 
 func lmfNeuerMesser() *lmfMesser {
-	p := gofpdf.New("P", "mm", "A4", "")
-	return &lmfMesser{pdf: p, tr: pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))}
+	p := pdfzeichen.NewDokument()
+	return &lmfMesser{pdf: p, tr: pdfzeichen.Ersetze}
 }
 
 // groessteWortBreite ist die Breite des breitesten Wortes. Ein einzelnes Wort bricht maroto nicht
 // um, es läuft in die Nachbarzelle, etwa „Wochentag" über einer halb so breiten Spalte.
 func (me *lmfMesser) groessteWortBreite(text string, groesse float64, stil fontstyle.Type) float64 {
-	me.pdf.SetFont("helvetica", string(stil), groesse)
+	me.pdf.SetFont(pdfzeichen.Schrift, string(stil), groesse)
 	breiteste := 0.0
 	for _, wort := range strings.Split(me.tr(text), " ") {
 		breiteste = math.Max(breiteste, me.pdf.GetStringWidth(wort))
@@ -157,7 +157,7 @@ func (me *lmfMesser) zeilen(text string, groesse float64, stil fontstyle.Type, b
 	if strings.TrimSpace(text) == "" || breite <= 0 {
 		return 1
 	}
-	me.pdf.SetFont("helvetica", string(stil), groesse)
+	me.pdf.SetFont(pdfzeichen.Schrift, string(stil), groesse)
 	zeilen, aktuell := 1, 0.0
 	for _, wort := range strings.Split(me.tr(text), " ") {
 		if wort == "" {

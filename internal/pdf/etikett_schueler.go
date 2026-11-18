@@ -55,11 +55,11 @@ var MusterSchuelerEtikett = SchuelerEtikett{
 func ErzeugeSchuelerEtiketten(formatID string, startPosition int, etiketten []SchuelerEtikett) (*gofpdf.Fpdf, error) {
 	format, _ := FindeEtikettFormat(formatID)
 
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.SetMargins(format.RandLinks, format.RandOben, format.RandLinks)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos etikettPosition) {
 		zeichneSchuelerEtikett(pdf, tr, format, etiketten[i], pos)
@@ -90,7 +90,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Eti
 	y := pos.Y + 3.0
 
 	if gross {
-		pdf.SetFont("Arial", "B", 10)
+		pdf.SetFont(pdfzeichen.Schrift, "B", 10)
 		pdf.SetXY(linkerRand, y)
 		pdf.CellFormat(textbreite, 4.5, druck(kuerze(e.name(), textbreite)), "", 0, "L", false, 0, "")
 		y += 5.0
@@ -98,7 +98,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Eti
 		// Ohne Klasse (von Hand angelegt, Abgänger) fällt die Zeile weg, statt „Klasse " ins
 		// Leere zu schreiben.
 		if klasse != "" {
-			pdf.SetFont("Arial", "", 8)
+			pdf.SetFont(pdfzeichen.Schrift, "", 8)
 			pdf.SetXY(linkerRand, y)
 			pdf.CellFormat(textbreite, 3.5, druck(kuerze("Klasse "+klasse, textbreite)), "", 0, "L", false, 0, "")
 		}
@@ -106,7 +106,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Eti
 	} else {
 		// Kleines Format: keine eigene Klassenzeile, die Klasse rückt hinter den Namen.
 		// Gekürzt wird der Name: Die Klasse ist kurz, und eine halbe Klasse ist wertlos.
-		pdf.SetFont("Arial", "B", 8)
+		pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 		zeile := e.name()
 		if klasse != "" {
 			anhang := "  " + klasse
@@ -136,10 +136,10 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Eti
 	y += bcHoehe + 1.0
 
 	// Die Nummer unter dem Barcode ist dieselbe, die er trägt; sie steht dort, damit sie ohne
-	// Scanner ablesbar ist. Courier, weil sich O und 0 unterscheiden müssen.
-	pdf.SetFont("Courier", "B", 9)
+	// Scanner ablesbar ist. Cousine wie Courier, weil sich O und 0 unterscheiden müssen.
+	pdf.SetFont(pdfzeichen.SchriftFest, "B", 9)
 	if !gross {
-		pdf.SetFont("Courier", "B", 7)
+		pdf.SetFont(pdfzeichen.SchriftFest, "B", 7)
 	}
 	pdf.SetXY(pos.X, y)
 	pdf.CellFormat(format.Breite, 3.5, druck(e.BarcodeID), "", 0, "C", false, 0, "")

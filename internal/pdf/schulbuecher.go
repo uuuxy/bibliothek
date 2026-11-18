@@ -95,10 +95,10 @@ func ErzeugeSchulbuecher(titel []Schulbuch, fachName, zusatz string) ([]byte, er
 	breiteTitel := titelBreite(mitGezaehlt)
 	fehlendeCover := 0
 
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.SetMargins(randLinks, 16, randLinks)
 	pdf.SetAutoPageBreak(true, 16)
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	ueberschrift := "Schulbücher"
 	if fachName != "" {
@@ -107,10 +107,10 @@ func ErzeugeSchulbuecher(titel []Schulbuch, fachName, zusatz string) ([]byte, er
 	// Die Kopfzeile wiederholt sich auf jeder Seite — eine Bestandsliste wird ausgedruckt
 	// und weitergereicht, und Blatt 3 ohne Spaltennamen ist wertlos.
 	pdf.SetHeaderFunc(func() {
-		pdf.SetFont("Arial", "B", 14)
+		pdf.SetFont(pdfzeichen.Schrift, "B", 14)
 		pdf.Cell(0, 9, tr(ueberschrift))
 		pdf.Ln(7)
-		pdf.SetFont("Arial", "", 9)
+		pdf.SetFont(pdfzeichen.Schrift, "", 9)
 		pdf.SetTextColor(120, 120, 120)
 		pdf.Cell(0, 5, tr(schulbuchStandzeile(len(titel), zusatz)))
 		pdf.SetTextColor(0, 0, 0)
@@ -143,7 +143,7 @@ func ErzeugeSchulbuecher(titel []Schulbuch, fachName, zusatz string) ([]byte, er
 		slog.Warn("Schulbuch-PDF: Cover nicht lesbar", "fehlend", fehlendeCover, "gesamt", len(titel))
 	}
 	if len(titel) == 0 {
-		pdf.SetFont("Arial", "I", 10)
+		pdf.SetFont(pdfzeichen.Schrift, "I", 10)
 		pdf.Ln(4)
 		pdf.Cell(0, 6, tr("Keine Schulbücher in dieser Auswahl."))
 	}
@@ -177,7 +177,7 @@ func schulbuchStandzeile(anzahl int, zusatz string) string {
 
 // zeichneKopfzeile schreibt die Spaltennamen.
 func zeichneKopfzeile(pdf *gofpdf.Fpdf, tr func(string) string, breiteTitel float64, mitGezaehlt bool) {
-	pdf.SetFont("Arial", "B", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 	pdf.SetFillColor(226, 232, 240)
 	pdf.CellFormat(spCover, 7, "", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(breiteTitel, 7, tr("Titel"), "1", 0, "L", true, 0, "")
@@ -195,7 +195,7 @@ func zeichneKopfzeile(pdf *gofpdf.Fpdf, tr func(string) string, breiteTitel floa
 
 // zeichneFachTrenner setzt eine Zwischenüberschrift über die Bücher eines Fachs.
 func zeichneFachTrenner(pdf *gofpdf.Fpdf, tr func(string) string, fach string) {
-	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 9)
 	pdf.SetFillColor(241, 245, 249)
 	pdf.CellFormat(nutzBreite, 7, tr(" "+fach), "1", 1, "L", true, 0, "")
 }
@@ -217,7 +217,7 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Schulbuch
 		*fehlend++
 	}
 
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 	pdf.SetXY(randLinks, oben)
 	pdf.CellFormat(spCover, zeilenH, "", "1", 0, "", false, 0, "")
 	zeichneTitelZelle(pdf, tr, t, breiteTitel)
@@ -267,9 +267,9 @@ func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t Schulbuch, br
 	pdf.CellFormat(breite, zeilenH, "", "1", 0, "L", false, 0, "")
 	pdf.SetXY(x, y+1.5)
 	pdf.CellFormat(breite, 4, tr(titel), "", 2, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 6.5)
+	pdf.SetFont(pdfzeichen.Schrift, "", 6.5)
 	pdf.MultiCell(breite, 3, tr(auflagenText(pdf, tr, t.Auflagen, breite)), "", "L", false)
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 	pdf.SetXY(x+breite, y)
 }
 

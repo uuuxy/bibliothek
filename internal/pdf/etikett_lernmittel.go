@@ -49,13 +49,13 @@ const LernmittelEtikettFormat = "lernmittel_gross"
 // A4-Drucker ein Etikett je Blatt heraus, außer jemand stellte im Druckdialog „4 Seiten pro
 // Blatt" ein; die Anordnung gehört in die Datei.
 func ErzeugeLernmittelEtiketten(etiketten []BuchEtikett) ([]byte, error) {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.SetMargins(lernmittelRand, lernmittelRand, lernmittelRand)
 	// Ohne das setzt gofpdf mitten in die Tabelle des unteren Feldes einen Seitenumbruch,
 	// sobald der Inhalt in die unteren 2 cm reicht. Die Lage jedes Feldes rechnet der
 	// Erzeuger selbst; ein Umbruch von gofpdf verschöbe sie.
 	pdf.SetAutoPageBreak(false, 0)
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	tr := pdfzeichen.Ersetze
 
 	for i, etikett := range etiketten {
 		if i%lernmittelProSeite == 0 {
@@ -95,19 +95,19 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, etikett 
 	x := ox + lernmittelRand
 
 	y := oy + 12.0
-	pdf.SetFont("Arial", "B", 11)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 11)
 	pdf.SetXY(x, y)
 	pdf.CellFormat(breite, 5, tr(kuerzeAufEtikett(pdf, tr, etikett.Schulname, 45, breite)), "", 0, "C", false, 0, "")
 
 	y += 7
-	pdf.SetFont("Arial", "B", 12)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 12)
 	pdf.SetXY(x, y)
 	pdf.CellFormat(breite, 6, tr(kuerzeAufEtikett(pdf, tr, etikett.Titel, 42, breite)), "", 0, "C", false, 0, "")
 
 	zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur)
 	if zeile2 != "" {
 		y += 7
-		pdf.SetFont("Arial", "", 9)
+		pdf.SetFont(pdfzeichen.Schrift, "", 9)
 		pdf.SetXY(x, y)
 		pdf.CellFormat(breite, 4, tr(kuerzeAufEtikett(pdf, tr, zeile2, 48, breite)), "", 0, "C", false, 0, "")
 	}
@@ -124,13 +124,13 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, etikett 
 	}
 	y += 18
 
-	pdf.SetFont("Courier", "B", 11)
+	pdf.SetFont(pdfzeichen.SchriftFest, "B", 11)
 	pdf.SetXY(x, y)
 	zeichneNummer(pdf, tr, "Exemplar-Nr.: ", etikett.BarcodeID, breite, 5)
 
 	y += 7
 	if vermerk := etikett.Eigentumsvermerk; vermerk != "" {
-		pdf.SetFont("Arial", "", 8)
+		pdf.SetFont(pdfzeichen.Schrift, "", 8)
 		pdf.SetXY(x, y)
 		pdf.CellFormat(breite, 4, tr(kuerzeAufEtikett(pdf, tr, vermerk, 48, breite)), "", 0, "C", false, 0, "")
 		y += 8
@@ -147,14 +147,14 @@ func zeichneLernmittelTabelle(pdf *gofpdf.Fpdf, tr func(string) string, x, y flo
 	const zeilenhoehe = 7.0
 
 	pdf.SetXY(x, y)
-	pdf.SetFont("Arial", "B", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "B", 8)
 	pdf.SetFillColor(230, 230, 230)
 	for _, spalte := range lernmittelTabellenSpalten {
 		pdf.CellFormat(spalte.Breit, zeilenhoehe, tr(spalte.Titel), "1", 0, "C", true, 0, "")
 	}
 	pdf.Ln(zeilenhoehe)
 
-	pdf.SetFont("Arial", "", 8)
+	pdf.SetFont(pdfzeichen.Schrift, "", 8)
 	for i := 0; i < lernmittelTabellenZeilen; i++ {
 		pdf.SetX(x)
 		for _, spalte := range lernmittelTabellenSpalten {

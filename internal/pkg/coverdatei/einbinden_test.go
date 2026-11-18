@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pkg/pdfzeichen"
 
 	"github.com/phpdave11/gofpdf"
 )
@@ -45,9 +46,9 @@ func schreibeCover(t *testing.T, name string, breite, hoehe int) string {
 // PDF. Ein Fehler am Dokument bricht den Test ab; er zeigte sich sonst erst bei Output.
 func blattMit(t *testing.T, zeichne func(pdf *gofpdf.Fpdf)) []byte {
 	t.Helper()
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.AddPage()
-	pdf.SetFont("Arial", "", 10)
+	pdf.SetFont(pdfzeichen.Schrift, "", 10)
 	pdf.Cell(40, 5, "Blatt")
 	zeichne(pdf)
 	var puffer bytes.Buffer

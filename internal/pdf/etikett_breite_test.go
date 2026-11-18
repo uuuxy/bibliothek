@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pkg/pdfzeichen"
 )
 
 // etikettZeile ist eine gekürzte Zeile eines Etiketts mit dem, was der Test über sie weiß, ohne
@@ -201,11 +202,11 @@ func TestEtikett_NummerStehtGanzInIhrerZelle(t *testing.T) {
 				beschriftung = "Exemplar-Nr.: "
 			}
 			t.Run(id+"/Strichcode/"+laenge, func(t *testing.T) {
-				pruefeNummer(t, buchBogen(t, id, false, e), nummer, nummernZelle{beschriftung, "Courier", "B", 9, f.Breite})
+				pruefeNummer(t, buchBogen(t, id, false, e), nummer, nummernZelle{beschriftung, pdfzeichen.SchriftFest, "B", 9, f.Breite})
 			})
 			// Auf dem kleinen Format steht die Nummer neben dem QR-Code, ihre Zelle reicht vom
 			// Code bis an den Rand.
-			qrZelle := nummernZelle{beschriftung, "Courier", "B", 9, f.Breite}
+			qrZelle := nummernZelle{beschriftung, pdfzeichen.SchriftFest, "B", 9, f.Breite}
 			if !f.istGross() {
 				qrZelle.breite = f.Breite - 2*qrRandKlein - masseFuer(f).qrSeite - qrAbstandKlein
 			}
@@ -218,7 +219,7 @@ func TestEtikett_NummerStehtGanzInIhrerZelle(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Lernmittel-Etikett: %v", err)
 			}
-			pruefeNummer(t, roh, nummer, nummernZelle{"Exemplar-Nr.: ", "Courier", "B", 11, lernmittelInhalt})
+			pruefeNummer(t, roh, nummer, nummernZelle{"Exemplar-Nr.: ", pdfzeichen.SchriftFest, "B", 11, lernmittelInhalt})
 		})
 	}
 }

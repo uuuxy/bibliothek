@@ -229,11 +229,11 @@ func TestBescheidZerreisstDieTabelleNicht(t *testing.T) {
 	}
 }
 
-// Namen mit Zeichen außerhalb von cp1252 kommen richtig aufs Papier.
+// Namen mit Zeichen außerhalb von cp1252 kommen mit allen Buchstaben aufs Papier.
 //
-// Ohne Ersetzung würde „Ayşe" zu „Ay.e": Der Zeichensatz des PDFs kennt das ş nicht, wie beim
-// Etikett für Schüler, und ein Bescheid mit entstelltem Namen ist ein fehlerhafter Bescheid.
-func TestBescheidErsetztZeichenAusserhalbDesZeichensatzes(t *testing.T) {
+// In einer Standardschrift würde „Ayşe" zu „Ay.e": Sie kennt das ş nicht, wie beim Etikett für
+// Schüler, und ein Bescheid mit entstelltem Namen ist ein fehlerhafter Bescheid.
+func TestBescheidDrucktZeichenAusserhalbVonCp1252(t *testing.T) {
 	b := testBescheid()
 	b.Empfaenger.Name = "Ayşe Öztürk-Ćurić"
 	b.NichtZurueckgegeben = []BescheidPosition{
@@ -242,14 +242,12 @@ func TestBescheidErsetztZeichenAusserhalbDesZeichensatzes(t *testing.T) {
 	b.Beschaedigt = nil
 
 	text := pdfText(t, mussErzeugen(t, b))
-	if strings.Contains(text, "Ay.e") || strings.Contains(text, ".uri") {
-		t.Errorf("Zeichen wurden zu Punkten verstümmelt statt ersetzt:\n%s", text[:min(600, len(text))])
-	}
-	// Ersetzt, nicht verschluckt: „Ayse" und „Curic" müssen lesbar sein. Ö und ü kennt
-	// cp1252 und bleiben, wie sie sind.
-	for _, erwartet := range []string{"Ayse", "Curic"} {
-		if !strings.Contains(text, erwartet) {
-			t.Errorf("%q steht nicht im Brief — die Ersetzung greift nicht", erwartet)
+	for _, entstellt := range []string{"Ay.e", ".uri", "Ayse", "Curic"} {
+		if strings.Contains(text, entstellt) {
+			t.Errorf("%q steht im Brief statt des Namens mit allen Buchstaben", entstellt)
 		}
+	}
+	if !strings.Contains(text, "Ayşe Öztürk-Ćurić") {
+		t.Errorf("„Ayşe Öztürk-Ćurić“ steht nicht im Brief:\n%s", text[:min(600, len(text))])
 	}
 }

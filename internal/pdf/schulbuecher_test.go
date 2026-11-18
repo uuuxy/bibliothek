@@ -16,8 +16,6 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pkg/pdfzeichen"
-
-	"github.com/phpdave11/gofpdf"
 )
 
 // Bildplatzierungen im Inhaltsstrom: `q 10.00 0 0 15.00 17.00 260.00 cm /I1 Do Q`.
@@ -453,10 +451,10 @@ func TestErzeugeSchulbuecher_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 // schmalen Titelspalte (mit der Spalte „Gezählt"); eine vierte druckte MultiCell in die nächste
 // Zeile. Was passt, bleibt ungekürzt.
 func TestAuflagenText_HoechstensDreiZeilen(t *testing.T) {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := pdfzeichen.NewDokument()
 	pdf.AddPage()
-	pdf.SetFont("Arial", "", 6.5)
-	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
+	pdf.SetFont(pdfzeichen.Schrift, "", 6.5)
+	tr := pdfzeichen.Ersetze
 	breite := titelBreite(true)
 
 	gross := []SchulbuchAuflage{
@@ -465,7 +463,7 @@ func TestAuflagenText_HoechstensDreiZeilen(t *testing.T) {
 		{Auflage: "AUSGABE HESSEN WWW", Erscheinungsjahr: 2021, Gesamt: 100},
 	}
 	text := auflagenText(pdf, tr, gross, breite)
-	if n := len(pdf.SplitLines([]byte(tr(text)), breite)); n > 3 {
+	if n := len(pdf.SplitText(tr(text), breite)); n > 3 {
 		t.Errorf("Aufschlüsselung in Großbuchstaben: %d Zeilen, erwartet höchstens 3: %q", n, text)
 	}
 	if !strings.HasSuffix(text, "…") {

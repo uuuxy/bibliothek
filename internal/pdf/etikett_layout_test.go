@@ -18,19 +18,6 @@ import (
 // Ein Test, der den Erzeuger nur aufruft und auf "kein Fehler" prüft, wäre bei
 // einem Etikett pro Blatt genauso grün.
 
-// asciiAnfang liefert den Teil einer Zeichenkette bis zum ersten Nicht-ASCII-Zeichen.
-//
-// Aus „Name des Schülers" wird „Name des Sch" — genug, um die Spalte im Inhaltsstrom
-// wiederzuerkennen, ohne über die Kodierung des PDF-Erzeugers zu stolpern.
-func asciiAnfang(s string) string {
-	for i := 0; i < len(s); i++ {
-		if s[i] > 127 {
-			return s[:i]
-		}
-	}
-	return s
-}
-
 func layoutEtiketten(anzahl int) []BuchEtikett {
 	etiketten := make([]BuchEtikett, 0, anzahl)
 	for i := 0; i < anzahl; i++ {
@@ -107,16 +94,9 @@ func TestLernmittelEtiketten_JedesExemplarStehtDrauf(t *testing.T) {
 	}
 
 	// Die Tabelle für die Ausleihhistorie ist der Grund, warum es das große Etikett gibt.
-	//
-	// Verglichen wird nur der ASCII-Anteil der Spaltentitel: gofpdf schreibt den Text in
-	// Windows-1252 in den Inhaltsstrom, das „ü" in „Name des Schülers" ist dort ein Byte
-	// (0xFC) und trifft eine UTF-8-Zeichenkette aus Go nie. Der Paritäts-Test daneben
-	// merkt davon nichts, weil er zwei PDFs miteinander vergleicht — beide Seiten sind
-	// gleich kodiert. Hier steht die Erwartung im Quelltext, also muss sie sich anpassen.
 	for _, spalte := range lernmittelTabellenSpalten {
-		erwartet := asciiAnfang(spalte.Titel)
-		if !strings.Contains(texte, erwartet) {
-			t.Errorf("Tabellenspalte %q fehlt (gesucht: %q)", spalte.Titel, erwartet)
+		if !strings.Contains(texte, spalte.Titel) {
+			t.Errorf("Tabellenspalte %q fehlt", spalte.Titel)
 		}
 	}
 }

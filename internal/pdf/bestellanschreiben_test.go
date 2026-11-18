@@ -116,8 +116,7 @@ func TestBestellanschreiben_DerSatzZuDenEtikettenStehtAufDemBlatt(t *testing.T) 
 	}
 }
 
-// Der Ort der Schule steht in der Datumszeile, wie er heißt. gofpdf druckt in cp1252: Ein Ort mit
-// Umlaut, der nicht durch die Zeichenersetzung geht, stünde verstümmelt auf dem Brief.
+// Der Ort der Schule steht in der Datumszeile, wie er heißt, auch mit Umlaut.
 func TestBestellanschreiben_OrtMitUmlautStehtLesbarInDerDatumszeile(t *testing.T) {
 	roh, err := ErzeugeBestellanschreiben(Bestellanschreiben{Betreff: "B", Vermerk: "V."},
 		SchuleInfo{Name: "Schule", Strasse: "Weg 1", PLZ: "50667", Ort: "Köln"})
@@ -172,7 +171,7 @@ func TestBestellanschreiben_KopfStehtAmRandDesBriefs(t *testing.T) {
 	}
 	seite := seitenMitOrten(t, roh)[0]
 	const rand = (20.0 + 1.0) / 25.4 * 72
-	for _, text := range []string{"Testschule", "An den Buchlieferanten", "Betreff-Probe", "Mit freundlichen Gr\xfc\xdfen"} {
+	for _, text := range []string{"Testschule", "An den Buchlieferanten", "Betreff-Probe", "Mit freundlichen Grüßen"} {
 		links, da := seite.links[text]
 		if !da {
 			t.Errorf("%q steht nicht auf dem Blatt", text)
