@@ -108,4 +108,13 @@ describe('Icons', () => {
 			'Icons in der Liste, die keine Stelle nennt: aus iconNamen.js nehmen, Schrift neu holen'
 		).toEqual([]);
 	});
+
+	// Fällt das Programm hinter dem Proxy aus, liefert der Service Worker die Oberfläche aus
+	// seinem Vorrat (vite-plugin-pwa, workbox.globPatterns). Liegt die Schrift nicht darin, stehen
+	// nach der Sperrfrist von font-display: block die Namen der Icons („delete“) in den Knöpfen.
+	it('liegt im Vorrat des Service Workers', () => {
+		const konfig = readFileSync(join(srcRoot, '..', 'vite.config.js'), 'utf8');
+		const muster = /globPatterns:\s*\[([^\]]*)\]/.exec(konfig)?.[1] ?? '';
+		expect(muster, 'workbox.globPatterns in vite.config.js').toMatch(/woff2/);
+	});
 });

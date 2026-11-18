@@ -24,7 +24,9 @@ export default defineConfig({
 			registerType: 'autoUpdate',
 			injectRegister: 'auto',
 			workbox: {
-				globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+				// Mit den Schriften: Die Icons sind eine Schrift (ui/Icon). Fällt das Programm hinter
+				// dem Proxy aus, stünden ohne sie die Namen der Icons in den Knöpfen.
+				globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 				// Der Service Worker beantwortet JEDE Navigation aus dem Cache mit der
 				// App-Shell — das ist der Sinn einer SPA-PWA, aber nur für Pfade, die auch
 				// die App meinen.

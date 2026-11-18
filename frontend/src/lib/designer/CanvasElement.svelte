@@ -90,10 +90,12 @@
 			{/if}
 		</div>
 	{:else if isPhoto}
+		<!-- Das Zeichen wächst mit dem Rahmen: Die Zeichenfläche ist in kleinen Einheiten gebaut und
+		     wird als Ganzes vergrößert, eine feste Größe in px passte nur zu einem Maß. -->
 		<div
-			class="w-full h-full border border-dashed border-outline-variant bg-surface flex flex-col items-center justify-center overflow-hidden rounded-sm text-on-surface-variant"
+			class="w-full h-full border border-dashed border-outline-variant bg-surface flex flex-col items-center justify-center overflow-hidden rounded-sm text-on-surface-variant [container-type:size]"
 		>
-			<Icon name="person" class="w-1/2 h-1/2 mb-1 opacity-40 pointer-events-none" />
+			<Icon name="person" class="[--icon-groesse:50cqmin] mb-1 opacity-40 pointer-events-none" />
 			<span class="text-[5px] font-medium pointer-events-none">PASSBILD</span>
 		</div>
 	{:else if isBarcode}
