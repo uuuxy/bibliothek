@@ -14,7 +14,10 @@ import { fileURLToPath } from 'node:url';
 import { ICON_NAMEN } from '../frontend/src/lib/components/ui/iconNamen.js';
 
 const ziel = join(dirname(fileURLToPath(import.meta.url)), '../frontend/src/styles/schriften');
-const namen = [...ICON_NAMEN].sort();
+// Googles Anleitung verlangt „an alphabetically sorted comma-separated list of icon names“;
+// iconNamen.js steht schon so (frontend-hygiene-icons prüft es), und namen.txt hält dieselbe
+// Reihenfolge.
+const namen = [...ICON_NAMEN];
 const adresse =
 	'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,FILL@20..48,0..1' +
 	`&icon_names=${namen.join(',')}&display=block`;
@@ -26,7 +29,7 @@ const kopf = {
 
 const antwort = await fetch(adresse, { headers: kopf });
 const css = await antwort.text();
-const datei = css.match(/src:\s*url\((https:[^)]+)\)\s*format\('woff2'\)/)?.[1];
+const datei = /src:\s*url\((https:[^)]+)\)\s*format\('woff2'\)/.exec(css)?.[1];
 if (!antwort.ok || !datei) {
 	throw new Error(`keine woff2-Datei in der Antwort (${antwort.status}):\n${css}`);
 }
