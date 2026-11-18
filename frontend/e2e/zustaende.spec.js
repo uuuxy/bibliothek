@@ -7,7 +7,8 @@
 // - Zeigen: eine Schicht in der Farbe des Inhalts mit 8 % („Hover +8% opacity"), beim Textfeld
 //   der Rahmen in on-surface (hover-outline-color); gesperrt keine Schicht.
 // - Drücken: „A ripple overlay signifies a pressed state" (md-ripple), auch über die Tastatur.
-// Sieht nicht: Stopps nach den ersten 30 je Seite, Seiten und Zustände, die der Test nicht öffnet.
+// Sieht nicht: Stopps nach den ersten 30 je Seite, Seiten und Zustände, die der Test nicht öffnet;
+// die Schicht misst es an den ersten acht Knöpfen im Inhalt je Seite.
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu } from './helpers.js';
 import { beobachteDatenanfragen, warteAufInhalt } from './messhilfe.js';
@@ -106,8 +107,9 @@ test('Tastaturfokus wie Googles md-focus-ring auf jeder Seite', async ({ page })
 		await warteAufInhalt(anfragen, zaehle);
 		await gehDurch(seite);
 	}
-	// Selbstschutz: Bricht die Navigation, misst der Test still nichts mehr.
-	expect(gemessen, 'kaum Fokusstopps gemessen').toBeGreaterThan(300);
+	// Selbstschutz: Bricht die Navigation, misst der Test still nichts mehr. Die Schwellen hält
+	// auch die frische Datenbank der CI, die weniger Zeilen zum Fokussieren hat.
+	expect(gemessen, 'kaum Fokusstopps gemessen').toBeGreaterThan(150);
 	expect(textfelder, 'kaum Textfelder gemessen').toBeGreaterThan(10);
 	expect(innen, 'keine Zeile mit innerem Ring gemessen').toBeGreaterThan(0);
 	expect(abweichungen, 'Fokus anders als md-focus-ring (material-web)').toEqual([]);
@@ -137,7 +139,8 @@ test('Jeder Knopf zeigt beim Zeigen eine Schicht mit 8 % in der Farbe des Inhalt
 	for (const [seite, pfad] of SEITEN) {
 		await gehZu(page, pfad);
 		await warteAufInhalt(anfragen, zaehle);
-		const knoepfe = page.locator('button:visible:not(:disabled):not(.no-state-layer)');
+		// Im Inhalt, nicht in der Navigation: Deren Knöpfe stünden sonst auf jeder Seite vorn.
+		const knoepfe = page.locator('main button:visible:not(:disabled):not(.no-state-layer)');
 		const n = Math.min(await knoepfe.count(), 8);
 		for (let i = 0; i < n; i++) {
 			const knopf = knoepfe.nth(i);
@@ -164,7 +167,7 @@ test('Jeder Knopf zeigt beim Zeigen eine Schicht mit 8 % in der Farbe des Inhalt
 			}
 		}
 	}
-	expect(gemessen, 'kaum Knöpfe gemessen').toBeGreaterThan(60);
+	expect(gemessen, 'kaum Knöpfe gemessen').toBeGreaterThan(30);
 	expect(ohne, 'Knopf ohne State-Layer nach M3 (Hover +8% opacity)').toEqual([]);
 });
 

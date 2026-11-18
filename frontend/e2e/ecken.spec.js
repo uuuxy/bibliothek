@@ -128,8 +128,9 @@ test('Ecken nach M3 auf jeder Seite', async ({ page }) => {
 	}
 
 	// Selbstschutz: Bricht eine Navigation oder ein Selektor, misst der Test still nichts mehr.
-	expect(gemessen, 'kaum Elemente gemessen').toBeGreaterThan(1000);
-	expect(felderGemessen, 'kaum Textfelder gemessen').toBeGreaterThan(20);
+	// Die Schwellen hält auch die frische Datenbank der CI (dort 591 Elemente).
+	expect(gemessen, 'kaum Elemente gemessen').toBeGreaterThan(300);
+	expect(felderGemessen, 'kaum Textfelder gemessen').toBeGreaterThan(10);
 	expect.soft(abseits, 'Ecke abseits der Skala von M3 (Shape, Corner radius scale)').toEqual([]);
 	expect
 		.soft(felder, 'Textfeld ohne 4 px: material-web, outlined-text-field „corner-extra-small“')
