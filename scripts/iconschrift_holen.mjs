@@ -6,8 +6,10 @@
 // Googles Anleitung (developers.google.com/fonts/docs/material_symbols, „Optimize the icon
 // font“ und „Self-hosting the font“): nur die Icons der Anwendung über &icon_names, nur die
 // Achsen, die sie nutzt, display=block, und die Datei an einem Ort, den man selbst bestimmt.
-// Achsen: opsz folgt der Größe (font-optical-sizing), FILL zeigt den gewählten Zustand; das
-// Gewicht bleibt bei 400 und Grade bei 0, das Programm hat kein dunkles Design.
+// Achsen: opsz folgt der Größe (font-optical-sizing), FILL zeigt den gewählten Zustand, GRAD
+// von -25 bis 0 gleicht helle Icons auf dunklem Grund aus (M3, Icons, Grade: „the default grade
+// for a dark icon on a light background is 0, and -25 for a light icon on a dark background“).
+// Das Gewicht bleibt bei 400.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +21,7 @@ const ziel = join(dirname(fileURLToPath(import.meta.url)), '../frontend/src/styl
 // Reihenfolge.
 const namen = [...ICON_NAMEN];
 const adresse =
-	'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,FILL@20..48,0..1' +
+	'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,FILL,GRAD@20..48,0..1,-25..0' +
 	`&icon_names=${namen.join(',')}&display=block`;
 // Google liefert woff2 nur einem Browser, der es lesen kann.
 const kopf = {

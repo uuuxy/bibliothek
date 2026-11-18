@@ -33,6 +33,9 @@
 		font-size: var(--icon-groesse, 20px);
 		font-optical-sizing: auto;
 		font-feature-settings: 'liga';
+		font-variation-settings:
+			'FILL' var(--icon-fill, 0),
+			'GRAD' var(--icon-grad, var(--icon-grad-flaeche, 0));
 		display: inline-block;
 		flex-shrink: 0;
 		width: 1em;
@@ -54,6 +57,38 @@
 	/* Gefüllt für den gewählten Zustand, M3 (Icons, Fill): „A fill attribute can be used to convey a
 	   state of transition, such as unfilled and filled states.“ */
 	.icon[data-gefuellt] {
-		font-variation-settings: 'FILL' 1;
+		--icon-fill: 1;
+	}
+
+	/* Mitten in einer Textzeile (Icon imText): so groß wie der Text, die Grundlinie um 11,5 % der
+	   Schriftgröße tiefer, M3 (Icons, Using Material Symbols with typography): „Use the same size
+	   for your Material Symbols and text“ und „Shift down the baseline of symbols to approximately
+	   11.5% of the text size“. Die Zeichen der Schrift stehen auf der Grundlinie. */
+	.icon[data-im-text] {
+		font-size: 1em;
+		vertical-align: -0.115em;
+	}
+
+	/* Grade nach dem Grund, M3 (Icons, Grade): „the default grade for a dark icon on a light
+	   background is 0, and -25 for a light icon on a dark background“. Auf den Flächen eines
+	   Schemas folgt das Icon dem Schema; auf einer kräftigen Fläche (primary, error, success,
+	   warning, inverse-surface) steht es in der hellen On-Farbe des hellen Schemas, im dunklen
+	   Schema umgekehrt. Ein gesperrter Knopf verliert seine Fläche (Button.svelte). Gemessen an
+	   Farbe und Grund jedes Icons: e2e/icon-regeln.spec.js. */
+	:root,
+	.schema-hell {
+		--icon-grad-flaeche: 0;
+		--icon-grad-stark: -25;
+	}
+	:where(.bg-primary, .bg-error, .bg-success, .bg-warning, .bg-inverse-surface):not(:disabled) {
+		--icon-grad: var(--icon-grad-stark);
+	}
+}
+
+/* Wie die Rollen in rollen.css nur am Bildschirm: Papier ist hell. */
+@media screen {
+	.schema-dunkel {
+		--icon-grad-flaeche: -25;
+		--icon-grad-stark: 0;
 	}
 }

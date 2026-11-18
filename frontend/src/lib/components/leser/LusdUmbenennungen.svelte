@@ -65,8 +65,8 @@
 				<li class="py-2 pl-5 text-xs">
 					<label class="flex items-start gap-3 cursor-pointer">
 						{#if abgeschlossen}
-							<span class="mt-0.5 w-4 h-4 shrink-0 text-primary" aria-hidden="true">
-								{#if p.bestaetigt}<Icon name="check_circle" />{/if}
+							<span class="size-4.5 shrink-0 text-primary" aria-hidden="true">
+								{#if p.bestaetigt}<Icon name="check_circle" groesse={18} />{/if}
 							</span>
 						{:else}
 							<Kaestchen

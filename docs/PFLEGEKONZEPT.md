@@ -321,6 +321,10 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 - **Ein Browser-Test, der die Lage eines Elements vor und nach einer Eingabe vergleicht, ist rot
   um wenige Pixel senkrecht.** `fill` rollt ein Feld am Fensterrand ins Bild; gemessen wurde
   davor. Abhilfe: vor der ersten Messung `scrollIntoViewIfNeeded()`.
+- **Ein Skript unter `scripts/` steht nach Prettier in doppelten Anführungszeichen und mit zwei
+  Leerzeichen eingerückt.** `frontend/.prettierrc` gilt nur unter `frontend/`; aus `frontend/`
+  heraus auf `../scripts/…` angewandt, nimmt Prettier seine eigenen Vorgaben. Abhilfe: die Datei
+  mit `git checkout` zurückholen und Prettier nur auf Dateien unter `frontend/` anwenden.
 - **Am Arbeitsplatz scheitert jede Spec.** Zuerst die Umgebung: Läuft Docker (`docker info`)?
   Nach einem Update von Playwright fehlen die Browser der neuen Fassung
   (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel

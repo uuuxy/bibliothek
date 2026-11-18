@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parse as svelteParse } from 'svelte/compiler';
+import { walk } from 'estree-walker';
 import {
 	srcRoot,
 	sammleQuelldateien,
@@ -117,4 +119,64 @@ describe('Icons', () => {
 		const muster = /globPatterns:\s*\[([^\]]*)\]/.exec(konfig)?.[1] ?? '';
 		expect(muster, 'workbox.globPatterns in vite.config.js').toMatch(/woff2/);
 	});
+
+	// Eine Hülle fester Größe, die kleiner ist als ihr Icon: Es ragt heraus und frisst den Abstand
+	// zum Nachbarn, oder die Hülle schneidet es ab. Gelesen am Baum; die Größe des Icons aus
+	// groesse, sonst die Vorgabe von 20 px. Ein Icon in einem Bauteil oder Snippet misst der
+	// Browser (e2e/icon-regeln.spec.js), nur auf den Seiten, die er öffnet.
+	it('steht in keiner Hülle, die kleiner ist als das Icon', () => {
+		/** @type {string[]} */
+		const funde = [];
+		let gesehen = 0;
+		for (const [f, q] of quellen()) {
+			if (!f.endsWith('.svelte') || !q.includes('<Icon')) continue;
+			/** @type {any[]} */
+			const stapel = [];
+			const traeger = ['RegularElement', 'Component', 'SvelteElement', 'SnippetBlock'];
+			walk(/** @type {any} */ (svelteParse(q, { modern: true }).fragment), {
+				enter(/** @type {any} */ k) {
+					if (k.type === 'Component' && k.name === 'Icon') {
+						gesehen++;
+						const huelle = stapel.at(-1);
+						const px = iconGroesse(k);
+						if (huelle?.type === 'RegularElement' && px) {
+							const klassen = festeKlassen(huelle);
+							const masse = [...klassen.matchAll(/\s(?:size|w|h)-(\d+(?:\.\d+)?)(?=\s)/g)];
+							if (masse.some(([, n]) => Number(n) * 4 < px))
+								funde.push(
+									`${f}:${q.slice(0, k.start).split('\n').length}: ${px} px in „${klassen.trim()}“`
+								);
+						}
+					}
+					if (traeger.includes(k.type)) stapel.push(k);
+				},
+				leave(/** @type {any} */ k) {
+					if (traeger.includes(k.type)) stapel.pop();
+				}
+			});
+		}
+		expect(gesehen, 'der Baum greift ins Leere').toBeGreaterThan(250);
+		expect(funde, 'Hülle so groß wie das Icon oder groesse passend wählen').toEqual([]);
+	});
 });
+
+/** Die Größe eines Icons in px; 0 für eins im Text (imText), das die Größe des Texts nimmt. @param {any} k */
+function iconGroesse(k) {
+	const attr = (/** @type {string} */ n) =>
+		k.attributes.find((/** @type {any} */ a) => a.type === 'Attribute' && a.name === n);
+	if (attr('imText')) return 0;
+	const g = attr('groesse');
+	if (!g) return 20;
+	const teil = Array.isArray(g.value) ? g.value[0] : g.value;
+	return Number(teil?.expression?.value ?? teil?.data) || 0;
+}
+
+/** Die festen Teile des class-Attributs, ohne Ausdrücke. @param {any} k */
+function festeKlassen(k) {
+	const a = k.attributes.find(
+		(/** @type {any} */ x) => x.type === 'Attribute' && x.name === 'class'
+	);
+	if (!a || a.value === true) return '';
+	const teile = Array.isArray(a.value) ? a.value : [a.value];
+	return ` ${teile.map((/** @type {any} */ t) => (t.type === 'Text' ? t.data : ' ')).join('')} `;
+}

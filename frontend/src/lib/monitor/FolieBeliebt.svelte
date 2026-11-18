@@ -8,7 +8,7 @@
 
 <div class="flex flex-col items-center gap-6 w-full max-w-lg">
 	<span class="text-sm font-medium text-primary"
-		><Icon name="local_fire_department" /> Beliebt diese Woche</span
+		><Icon name="local_fire_department" imText /> Beliebt diese Woche</span
 	>
 	{#if titel.length > 0}
 		<ol class="w-full flex flex-col gap-3">

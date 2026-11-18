@@ -11,6 +11,10 @@
   Bedienelement oder neben kleiner Schrift (die Größe der Chips), 24 neben einer Überschrift, 40
   oder 48 für eine hervorgehobene Stelle, M3 (Icons, Optical sizes): „Use larger
   size 40dp–48dp symbols when primary actions need to be highlighted“.
+
+  `imText` für ein Icon mitten in einer Textzeile: so groß wie der Text und etwas tiefer, M3 (Icons,
+  Using Material Symbols with typography): „Use the same size for your Material Symbols and text“
+  und „Shift down the baseline of symbols to approximately 11.5% of the text size“.
 -->
 <script>
 	/**
@@ -18,17 +22,19 @@
 	 *   name: import('./iconNamen.js').IconName,
 	 *   groesse?: 18 | 24 | 40 | 48,
 	 *   gefuellt?: boolean,
+	 *   imText?: boolean,
 	 *   vorlesen?: string,
 	 *   class?: string
 	 * }}
 	 */
-	let { name, groesse, gefuellt = false, vorlesen, class: klasse = '' } = $props();
+	let { name, groesse, gefuellt = false, imText = false, vorlesen, class: klasse = '' } = $props();
 </script>
 
 <span
 	class="icon {klasse}"
 	data-icon={name}
 	data-gefuellt={gefuellt ? '' : undefined}
+	data-im-text={imText ? '' : undefined}
 	style:--icon-groesse={groesse ? `${groesse}px` : undefined}
 	role={vorlesen ? 'img' : undefined}
 	aria-label={vorlesen}

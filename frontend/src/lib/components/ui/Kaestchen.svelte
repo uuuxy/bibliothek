@@ -4,7 +4,7 @@
      bewirken an ihm nichts, der Browser zeichnet sein eigenes. Dieses Bauteil zeichnet
      deshalb selbst (appearance-none):
        - Kasten 18 px, Rahmen 2 px in `on-surface-variant`, Ecken 2 px (rounded-xs).
-       - Ausgewählt: Fläche `primary`, Häkchen in `on-primary` (Lucide Check, nicht
+       - Ausgewählt: Fläche `primary`, Häkchen in `on-primary` (Icon check aus ui/Icon, nicht
          handgezeichnet — Ratsche frontend-hygiene-icons.test.js).
        - Unbestimmt (`indeterminate`): dieselbe Fläche, ein Strich statt Häkchen.
        - State-Layer 40 px rund für Hover 8 % und Fokus 10 % — das ist das Eingabeelement
