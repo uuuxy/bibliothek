@@ -24,9 +24,12 @@
 	 * @prop {(wert: string) => void} onwahl
 	 * @prop {string} etikett - Name der Gruppe für Screenreader.
 	 * @prop {string} [klasse]
+	 * @prop {boolean} [disabled] - sperrt die ganze Gruppe. Schrift in on-surface zu 38 %, Rahmen
+	 *   und gewählte Fläche zu 12 %, wie jeder gesperrte Zustand in M3 (Interaction states).
 	 */
-	/** @type {{ optionen: { wert: string, text: string }[], wert: string, onwahl: (wert: string) => void, etikett: string, klasse?: string }} */
-	let { optionen, wert, onwahl, etikett, klasse = '' } = $props();
+	/** @type {{ optionen: { wert: string, text: string }[], wert: string, onwahl: (wert: string) => void, etikett: string, klasse?: string, disabled?: boolean }} */
+	let { optionen, wert, onwahl, etikett, klasse = '', disabled = false } = $props();
+	const rahmen = $derived(disabled ? 'border-on-surface/12' : 'border-outline');
 </script>
 
 <!-- auto-cols-fr: M3 gibt allen Segmenten dieselbe Breite. Mit `inline-grid` richtet
@@ -34,18 +37,21 @@
 <div
 	role="group"
 	aria-label={etikett}
-	class="inline-grid h-10 grid-flow-col auto-cols-fr overflow-hidden rounded-full border border-outline {klasse}"
+	class="inline-grid h-10 grid-flow-col auto-cols-fr overflow-hidden rounded-full border {rahmen} {klasse}"
 >
 	{#each optionen as o, i (o.wert)}
 		{@const gewaehlt = o.wert === wert}
+		{@const zustand = disabled
+			? `cursor-not-allowed text-on-surface/38 ${gewaehlt ? 'bg-on-surface/12' : ''}`
+			: `cursor-pointer ${gewaehlt ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface'}`}
 		<button
 			type="button"
 			aria-pressed={gewaehlt}
+			{disabled}
 			onclick={() => onwahl(o.wert)}
-			class="flex cursor-pointer items-center justify-center gap-2 px-4 text-label-large transition-colors {i >
-			0
-				? 'border-l border-outline'
-				: ''} {gewaehlt ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface'}"
+			class="flex items-center justify-center gap-2 px-4 text-label-large transition-colors {i > 0
+				? `border-l ${rahmen}`
+				: ''} {zustand}"
 		>
 			<!-- Immer im Fluss, nur unsichtbar: hält die Breite über alle Zustände fest. -->
 			<Check class="h-4.5 w-4.5 shrink-0 {gewaehlt ? '' : 'invisible'}" aria-hidden="true" />

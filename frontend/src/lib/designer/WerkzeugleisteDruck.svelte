@@ -14,6 +14,7 @@
 	import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
 	import Button from '../components/ui/Button.svelte';
 	import Ladekreis from '../components/ui/Ladekreis.svelte';
+	import Segmente from '../components/ui/Segmente.svelte';
 	import Select from '../components/ui/Select.svelte';
 
 	/**
@@ -28,7 +29,7 @@
 	const { druckArt, onDruckArt, side, onPrint, gesperrt = false } = $props();
 
 	// Das Muster-Etikett holt der Server: Ein zweiter Klick vor der Antwort öffnete einen zweiten Tab
-	// mit demselben Bogen, wie beim Stapeldruck der Schülerdatei (AuswahlAktionsleiste).
+	// mit demselben Bogen, wie beim Stapeldruck der Schülerdatei (AusweisDruckSteuerung).
 	let druckt = $state(false);
 	async function drucke() {
 		if (druckt) return;
@@ -41,8 +42,8 @@
 	}
 
 	const MODI = [
-		{ value: 'card', label: 'Kartendrucker' },
-		{ value: 'etikett', label: 'Etikettenbogen' }
+		{ wert: 'card', text: 'Kartendrucker' },
+		{ wert: 'etikett', text: 'Etikettenbogen' }
 	];
 
 	// Der Etikettenbogen kennt keine Rückseite — die Beschriftung darf keine versprechen,
@@ -58,21 +59,14 @@
 
 <div class="border-outline-variant flex flex-wrap items-center justify-between gap-3 border-b pb-4">
 	<div class="flex flex-wrap items-center gap-3">
-		<div
-			class="border-outline-variant bg-surface-container flex shrink-0 rounded-xl border p-0.5 text-sm"
-		>
-			{#each MODI as modus (modus.value)}
-				<button
-					onclick={() => onDruckArt(/** @type {'card'|'etikett'} */ (modus.value))}
-					aria-pressed={druckArt === modus.value}
-					disabled={gesperrt}
-					class="cursor-pointer rounded-lg px-3 py-1.5 transition-all disabled:cursor-not-allowed disabled:text-on-surface/38 text-label-large {druckArt ===
-					modus.value
-						? 'bg-surface text-on-surface shadow-xs'
-						: 'text-on-surface-variant hover:text-on-surface'}">{modus.label}</button
-				>
-			{/each}
-		</div>
+		<Segmente
+			optionen={MODI}
+			wert={druckArt}
+			onwahl={(v) => onDruckArt(/** @type {'card'|'etikett'} */ (v))}
+			etikett="Druckart"
+			disabled={gesperrt}
+			klasse="shrink-0"
+		/>
 
 		{#if druckArt === 'etikett'}
 			<Select

@@ -8,7 +8,9 @@
 	import Papierkorb from './Papierkorb.svelte';
 	import SchuelerdateiLeiste from './SchuelerdateiLeiste.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
-	import AuswahlAktionsleiste from './AuswahlAktionsleiste.svelte';
+	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
+	import AusweisDruckSteuerung from './AusweisDruckSteuerung.svelte';
+	import { anzahlText } from '../../utils/format.js';
 	import AusweisStapeldruck from './AusweisStapeldruck.svelte';
 	import { erzeugeAusweisdruck, mitAusweisnummer } from './ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './schuelerSuche.svelte.js';
@@ -117,16 +119,6 @@
 						}}
 					/>
 
-					<AuswahlAktionsleiste
-						anzahl={gewaehlt.markierte.length}
-						ohneDatum={gewaehlt.ohneDatum}
-						etikettModus={druck.etikettModus}
-						maxPosition={druck.maxPosition}
-						bind:startPosition={druck.startPosition}
-						onDrucken={() => druck.drucke(gewaehlt.markierte)}
-						onLeeren={gewaehlt.leeren}
-					/>
-
 					<div class="mt-6">
 						<AktiveLeserListe
 							leserListe={suche.schueler}
@@ -141,6 +133,23 @@
 							onsortiere={suche.sortiere}
 						/>
 					</div>
+
+					<!-- Letztes Kind der Spalte: Die Leiste klebt unten unter ihrer Liste. -->
+					{#if gewaehlt.markierte.length > 0}
+						<AuswahlLeiste
+							satz="{anzahlText(gewaehlt.markierte.length, 'Schüler', 'Schüler')} markiert"
+							beschriftung="Aktionen für die markierten Schüler"
+							onleeren={gewaehlt.leeren}
+						>
+							<AusweisDruckSteuerung
+								ohneDatum={gewaehlt.ohneDatum}
+								etikettModus={druck.etikettModus}
+								maxPosition={druck.maxPosition}
+								bind:startPosition={druck.startPosition}
+								onDrucken={() => druck.drucke(gewaehlt.markierte)}
+							/>
+						</AuswahlLeiste>
+					{/if}
 				</div>
 			{:else if aktiverReiter === 'graduates'}
 				<EhemaligeListe onSelect={oeffneStammdaten} />

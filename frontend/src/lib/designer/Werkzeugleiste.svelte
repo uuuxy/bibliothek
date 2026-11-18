@@ -19,6 +19,7 @@
 	} from './idDesignerStore.svelte.js';
 	import { KARTEN_HINTERGRUENDE } from './kartenFarben.js';
 	import Button from '../components/ui/Button.svelte';
+	import Segmente from '../components/ui/Segmente.svelte';
 	import WerkzeugleisteAuswahl from './WerkzeugleisteAuswahl.svelte';
 	import WerkzeugleisteDruck from './WerkzeugleisteDruck.svelte';
 	import { leseKartenBild } from './kartenBild.js';
@@ -102,14 +103,15 @@
 
 	<!-- Row 3: Side tab + Add-element buttons -->
 	<div class="flex flex-wrap items-center gap-3">
-		{@render toggleGroup(
-			[
-				{ value: 'front', label: '🪪 Vorderseite' },
-				{ value: 'back', label: '↩ Rückseite' }
-			],
-			side,
-			(v) => onSide(/** @type {'front'|'back'} */ (v))
-		)}
+		<Segmente
+			optionen={[
+				{ wert: 'front', text: 'Vorderseite' },
+				{ wert: 'back', text: 'Rückseite' }
+			]}
+			wert={side}
+			onwahl={(v) => onSide(/** @type {'front'|'back'} */ (v))}
+			etikett="Kartenseite"
+		/>
 
 		<Button variant="secondary" size="sm" disabled={gesperrt} onclick={() => fuegeTextHinzu(side)}>
 			+ Text
@@ -152,20 +154,3 @@
 		{/if}
 	</div>
 </div>
-
-{#snippet toggleGroup(options, active, onChange)}
-	<div
-		class="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant text-sm shrink-0"
-	>
-		{#each options as opt, _i (_i)}
-			<button
-				onclick={() => onChange(opt.value)}
-				aria-pressed={active === opt.value}
-				class="px-3 py-1.5 rounded-lg transition-all cursor-pointer text-label-large {active ===
-				opt.value
-					? 'bg-surface text-on-surface shadow-xs'
-					: 'text-on-surface-variant hover:text-on-surface'}">{opt.label}</button
-			>
-		{/each}
-	</div>
-{/snippet}

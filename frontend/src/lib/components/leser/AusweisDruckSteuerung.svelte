@@ -1,5 +1,5 @@
 <!-- @component AusweisDruckSteuerung — was vor dem Druck eines Ausweis-Stapels zu entscheiden ist,
-     an einer Stelle für die Leserdatei (AuswahlAktionsleiste) und den Reiter „Ausweise je Klasse"
+     an einer Stelle für die Auswahlleiste der Schülerdatei und den Reiter „Ausweise je Klasse"
      (AusweiseJeKlasse): die Warnung ohne Ablaufjahr, das erste Feld eines angebrochenen Bogens und
      der Druckknopf, der während des Drucks gesperrt bleibt. Ohne eigenen Rahmen: Wo die Teile
      stehen, legt der Aufrufer fest. -->
@@ -16,9 +16,7 @@
 	 * @property {number} [maxPosition]   Felder auf dem gewählten Bogen
 	 * @property {number} [startPosition] erstes zu bedruckendes Feld (bindable)
 	 * @property {boolean} [gesperrt]     nichts zu drucken
-	 * @property {boolean} [rechts]       Knopf rechtsbündig, wie in der Aktionsleiste
 	 * @property {() => void | Promise<void>} onDrucken
-	 * @property {import('svelte').Snippet} [children]  steht neben dem Knopf
 	 */
 	/** @type {Props} */
 	let {
@@ -27,9 +25,7 @@
 		maxPosition = 21,
 		startPosition = $bindable(1),
 		gesperrt = false,
-		rechts = false,
-		onDrucken,
-		children
+		onDrucken
 	} = $props();
 
 	// Ein zweiter Klick vor dem Ende des Drucks schickte den Etikettenbogen noch einmal und öffnete
@@ -67,7 +63,7 @@
 	</label>
 {/if}
 
-<div class="{rechts ? 'ml-auto ' : ''}flex items-center gap-2">
+<div class="flex items-center gap-2">
 	<Button variant="primary" onclick={drucke} disabled={druckt || gesperrt}>
 		{#if druckt}
 			<Ladekreis size="sm" farbe="aktuell" />
@@ -76,5 +72,4 @@
 		{/if}
 		{etikettModus ? 'Etiketten drucken' : 'Ausweise drucken'}
 	</Button>
-	{@render children?.()}
 </div>

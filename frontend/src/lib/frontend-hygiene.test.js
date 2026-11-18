@@ -58,8 +58,7 @@ const EMOJI_BESTAND = [
 	'src/lib/components/omnibox/OmniboxSperrHinweis.svelte',
 	'src/lib/components/omnibox/OmniboxVormerkungHinweis.svelte',
 	'src/lib/components/bestellungen/Warenkorb.svelte',
-	'src/lib/components/layout/RouteFallback.svelte',
-	'src/lib/designer/Werkzeugleiste.svelte'
+	'src/lib/components/layout/RouteFallback.svelte'
 ];
 
 describe('Oberflächen-Hygiene', () => {

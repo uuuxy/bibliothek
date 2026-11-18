@@ -8,8 +8,7 @@
      rounded", Abstand 16 dp zum Rand; darüber Erhebung wie ein Menü (shadow-xl).
 
      Die Leiste liegt unten über dem Inhalt statt oben in der Werkzeugleiste: Wer markiert,
-     scrollt dabei durch die Liste, und ein Knopf oben wäre nach der dritten Zeile aus dem Bild
-     (derselbe Grund wie bei der Leiste des Ausweisdrucks, leser/AuswahlAktionsleiste).
+     scrollt dabei durch die Liste, und ein Knopf oben wäre nach der dritten Zeile aus dem Bild.
      `sticky`, nicht `fixed`, und als letztes Kind der Spalte, die die Liste trägt: M3
      „Floating toolbars shouldn't exceed the edge of the window or pane", die Leiste gehört
      mittig unter ihre Liste. `fixed` zentrierte sie über dem Fenster, auf der Pflegeseite der

@@ -43,12 +43,8 @@ function istGetoenterKasten(klassenliste) {
 	);
 }
 
-// Was bleibt, ist kein Kasten mit Inhalt: Die zwei Schienen im Ausweis-Designer halten je
-// zwei Umschaltknöpfe zusammen; die Fläche gehört zum Bedienelement.
-const BESTAND = [
-	'src/lib/designer/Werkzeugleiste.svelte',
-	'src/lib/designer/WerkzeugleisteDruck.svelte'
-];
+/** @type {string[]} */
+const BESTAND = [];
 
 describe('Ein umrandeter Kasten trägt keinen Flächenton', () => {
 	it('der Detektor trennt Kasten, Bedienelement und Platzhalter', () => {
