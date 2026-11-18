@@ -50,3 +50,16 @@ describe('Zaehlerpille', () => {
 		expect(klassen).toContain('text-label-small');
 	});
 });
+
+// In der aufgeklappten Navigation ist die Zahl Text: md.comp.navigation-drawer,
+// „large-badge-label-color: on-surface-variant" in label large, ohne Fläche.
+describe('Zaehlerpille als Text der Navigation', () => {
+	it('zeigt dieselbe gekappte Zahl ohne Pille in label large', () => {
+		const { getByText } = render(Zaehlerpille, { anzahl: 30674, alsText: true });
+		const klassen = getByText('999+').className.split(/\s+/);
+		expect(klassen).toContain('text-label-large');
+		expect(klassen).toContain('text-on-surface-variant');
+		expect(klassen).not.toContain('bg-error');
+		expect(getByText('30674 offen').className).toContain('sr-only');
+	});
+});

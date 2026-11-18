@@ -18,12 +18,17 @@
 	 * Maße nach M3: 16 dp Höhe, 4 dp Polsterung, label-small, voll gerundet, und die
 	 * Farbrolle ist `error` — auch am Reiter. M3 kennt für das Badge keine zweite.
 	 *
+	 * In der aufgeklappten Navigation steht die Zahl als Text am Ende der Zeile: Googles Token
+	 * md.comp.navigation-drawer nennen „large-badge-label-color: on-surface-variant" in label
+	 * large und keine Fläche (`alsText`).
+	 *
 	 * @prop {number} anzahl - 0 oder weniger zeigt nichts (M3: kein leeres Badge).
 	 * @prop {string} [beschreibung] - was gezählt wird, z. B. "Etiketten offen".
+	 * @prop {boolean} [alsText] - Zahl ohne Pille, für die aufgeklappte Navigation.
 	 * @prop {string} [klasse]
 	 */
-	/** @type {{ anzahl: number, beschreibung?: string, klasse?: string }} */
-	let { anzahl, beschreibung = 'offen', klasse = '' } = $props();
+	/** @type {{ anzahl: number, beschreibung?: string, alsText?: boolean, klasse?: string }} */
+	let { anzahl, beschreibung = 'offen', alsText = false, klasse = '' } = $props();
 
 	const KAPPUNG = 999;
 	const text = $derived(anzahl > KAPPUNG ? `${KAPPUNG}+` : String(anzahl));
@@ -31,7 +36,9 @@
 
 {#if anzahl > 0}
 	<span
-		class="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-label-small text-on-error {klasse}"
+		class="{alsText
+			? 'text-label-large text-on-surface-variant'
+			: 'inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-label-small text-on-error'} {klasse}"
 		aria-hidden="true"
 	>
 		{text}

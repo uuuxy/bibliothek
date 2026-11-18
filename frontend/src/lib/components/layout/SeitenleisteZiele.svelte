@@ -73,12 +73,11 @@
 		<NavIcon name={item.icon} aktiv={uiStore.activeTab === item.id} />
 		{#if !schmal}
 			<span class="animate-fade-in flex-1 whitespace-nowrap text-left">{item.label}</span>
-			<Zaehlerpille anzahl={wartendeArbeit(item.id)} klasse="ml-auto" />
-			<!-- Eingeklappt bleibt nur der Punkt: M3 nennt das „small badge" — er sagt „hier
-			     liegt etwas", ohne dass eine Zahl in eine 40-px-Pille gequetscht wird. -->
+			<Zaehlerpille anzahl={wartendeArbeit(item.id)} alsText klasse="ml-auto" />
+			<!-- Eingeklappt bleibt nur der Punkt: M3 nennt das „small badge" (Specs: „Small badge size
+			     (HxW) 6dp"); er sagt „hier liegt etwas", ohne Zahl in einer 40-px-Pille. -->
 		{:else if wartendeArbeit(item.id) > 0}
-			<span class="bg-error absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface"
-			></span>
+			<span class="bg-error absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full"></span>
 		{/if}
 	</button>
 {/snippet}

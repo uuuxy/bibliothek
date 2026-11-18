@@ -473,7 +473,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Tabs | `ui/Reiter` | Gate: `frontend-hygiene-reiter`, `bestell-reiter-eine-zeile` |
 | Text fields | `ui/Feld` | Gate: `frontend-hygiene-felder`, `frontend-hygiene-fehlerzeile-rolle`, `feld-fehlersymbol`, `feldbreite`, `ecken` (4 px, corner-extra-small) |
 | Tooltips | `actions/tooltip` | Gate: `frontend-hygiene-sprechblasen`, `icon-tooltips` |
-| Badges | `ui/Zaehlerpille`, Punkt an der schmalen Leiste | gelesen (dd6b67e5) |
+| Badges | `ui/Zaehlerpille`: Pille am Reiter (large badge, 16 px, error), in der aufgeklappten Navigation die Zahl als Text (md.comp.navigation-drawer, large-badge-label in on-surface-variant), Punkt von 6 px an der schmalen Leiste | Gate: `Zaehlerpille.test` (Maße, Kappung, Textform) |
 | Cards | umrandete Karte (ARCHITEKTUR 5.3) | Gate: `frontend-hygiene-karten` |
 | Divider | Trennlinie `border-outline-variant` | gelesen (2bbda2dd) |
 | App bars | Kopfzeile der Seiten | gelesen (aea2a6b9) |
