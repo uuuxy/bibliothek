@@ -29,7 +29,7 @@
 </script>
 
 <div
-	class="lg:col-span-1 relative bg-surface/60 border-r border-outline-variant px-7 pt-8 pb-6 flex flex-col items-start text-left gap-6"
+	class="lg:col-span-1 relative bg-surface/60 border-r border-outline-variant px-6 pt-8 pb-6 flex flex-col items-start text-left gap-6"
 >
 	<!-- Schließen -->
 	<button

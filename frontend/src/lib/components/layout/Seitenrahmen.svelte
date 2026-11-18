@@ -17,7 +17,7 @@
   Keine Breitenbegrenzung: Ein Verwaltungswerkzeug am Schreibtisch nutzt den Bildschirm, den
   es hat.
 
-  Die äußere Polsterung (px-4 md:px-8 py-6) sitzt in App.svelte und gilt für alle; eine
+  Die äußere Polsterung (px-4 sm:px-6 py-6) sitzt in Anwendungsrahmen.svelte und gilt für alle; eine
   Route, die hier nochmal p-6 setzt, polstert doppelt.
 -->
 <script>

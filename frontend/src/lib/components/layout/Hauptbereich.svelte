@@ -28,7 +28,7 @@
 <main
 	id="hauptinhalt"
 	tabindex="-1"
-	class="print-flow -mx-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 outline-none md:-mx-8 md:px-8"
+	class="print-flow -mx-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 outline-none sm:-mx-6 sm:px-6"
 >
 	<h1 class="sr-only">{bildschirmTitel(uiStore.activeTab)}</h1>
 	{@render children()}

@@ -130,7 +130,7 @@
 	<!-- Ein anderer Titel in derselben Maske (nach dem Zusammenführen) baut den Inhalt neu auf:
 	     Felder, Auflagen und Exemplare laden beim Aufbau. -->
 	{#key formular}
-		<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
+		<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-6">
 			<!-- Die Felder enden an der Breite der Masken (max-w-maske): In einem breiten Fenster
 		     laufen Textfelder sonst über die ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
 			<div class="max-w-maske space-y-8 lg:col-start-1">

@@ -26,7 +26,7 @@
 </script>
 
 <div class="w-full space-y-6 no-print text-on-surface animate-fade-in">
-	<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 		<EtikettEinstellungen />
 		<EtikettVorschau />
 	</div>

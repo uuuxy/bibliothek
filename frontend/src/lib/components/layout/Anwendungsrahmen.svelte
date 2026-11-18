@@ -30,9 +30,10 @@
 	<Seitenleiste />
 	<!-- Die Arbeitsfläche ist weiß, nicht getönt: Auf getöntem Grund treten die Karten hervor,
 	     und die Anwendung wirkt in Kacheln gezwängt. Getrennt wird durch Linien, über die volle
-	     Breite. Hauptbereich.svelte reicht mit denselben Maßen in den seitlichen Rand. -->
+	     Breite. Hauptbereich.svelte reicht mit denselben Maßen in den seitlichen Rand. Der Rand
+	     ist Googles: „In compact layouts, use 16dp margins", ab medium 24 dp (M3, Breakpoints). -->
 	<div
-		class="print-flow bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
+		class="print-flow bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6"
 	>
 		<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
 		     nicht in der Navigation. Die neue Fassung sieht jeder; den Backup-Status alle, die

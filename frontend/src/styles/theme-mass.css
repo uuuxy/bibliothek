@@ -236,4 +236,15 @@
 	   Min: 360dp, max: 720dp". Sie steht am Anfang des Inhalts, die Liste darunter bleibt breit.
 	   Gate: e2e/feldbreite.spec.js. */
 	--container-suche: 45rem;
+
+	/* ── Breakpoints ──────────────────────────────────────────────────────────
+	   Googles Fensterklassen, M3 (Breakpoints): „Compact: Under 600dp, Medium: 600–839dp,
+	   Expanded: 840–1199dp, Large: 1200–1599dp, Extra-large: 1600dp+". sm beginnt bei medium,
+	   md bei expanded, lg bei large, xl bei extra-large; Tailwinds eigene Stufen (640, 768,
+	   1024, 1280, 1536) entfallen. Gate: e2e/abstaende.spec.js misst den Rand je Klasse. */
+	--breakpoint-*: initial;
+	--breakpoint-sm: 600px;
+	--breakpoint-md: 840px;
+	--breakpoint-lg: 1200px;
+	--breakpoint-xl: 1600px;
 }
