@@ -470,7 +470,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | App bars | Kopfzeile der Seiten | gelesen (aea2a6b9) |
 | Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
 | Split button | „Ausweis drucken“ mit Menü in der Leserakte | gelesen (6a5a1562) |
-| Date pickers | 16 Felder `type="date"`: eintippen oder im Kalender des Browsers wählen, wie beim Docked date picker („both options are immediately available“) | Abweichung, entschieden: Der aufgeklappte Kalender sieht aus wie im Browser, nicht wie in M3. Googles Material Web hat keinen Kalender und führt `date` im Textfeld als „not fully supported“; ein eigener Kalender änderte nur das Aussehen |
+| Date pickers | 16 Felder `type="date"`: eintippen oder im Kalender des Browsers wählen, wie beim Docked date picker („both options are immediately available“) | **offen**: Der aufgeklappte Kalender sieht aus wie im Browser, nicht wie in M3. Beschlossen ist ein eigener Kalender nach M3, nach den Icons (OFFEN 5.193) |
 | Toolbars | `ui/AuswahlLeiste` für markierte Zeilen, auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | gelesen (962cba20), alle Stellen |
 | Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |
 | Typography | `styles/theme-mass.css` | Gate: `frontend-hygiene-schrift`, `typo-rollen` |

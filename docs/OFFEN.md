@@ -56,6 +56,8 @@ Nur, was kein Test leisten kann.
   Abdeckungsliste ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [ ] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
   Oberfläche; dafür gibt es noch keine Prüfung. (5.192)
+- [ ] Datumsauswahl als eigener Kalender nach M3, gebaut nach den Icons
+  ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
 
@@ -129,6 +131,18 @@ Exemplare)“ im Bestellbericht (`internal/pdf/bestellbericht.go`).
 
 Nächster Schritt: eine Prüfung über die Zeichenketten dieser Pakete wie in der Oberfläche, dann
 die Funde umschreiben.
+
+### 5.193 Datumsauswahl nach M3
+
+Die 16 Felder `type="date"` klappen den Kalender des Browsers auf, der in Chrome, Safari und
+Firefox verschieden aussieht. Beschlossen ist ein eigener Kalender nach M3, gebaut nach den Icons
+(5.191). Am Computer ist das der Docked date picker, ein Feld, unter dem der Kalender aufklappt:
+„Dates can be added by using a keyboard or by navigating the calendar UI; both options are
+immediately available“. Beim Geburtsdatum bleibt das Eintippen der Hauptweg („Don’t use a modal
+date picker to prompt for dates in the distant past or future, such as a date of birth“).
+Googles Material Web hat keinen Kalender; Tastatur und Screenreader wie in Googles Angular
+Material (src/material/datepicker). Ein neues Bauteil in ui/; die Browser-Tests, die heute ins
+Feld des Browsers schreiben, ziehen mit. Aufwand etwa zwei bis drei Tage.
 
 ### 7.2 Frisches Littera-Backup
 
