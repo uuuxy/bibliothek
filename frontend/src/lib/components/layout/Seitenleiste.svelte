@@ -90,7 +90,7 @@
 		data-schmal={schmal ? '' : undefined}
 	>
 		<div>
-			<div class="border-outline-variant/60 flex h-16 shrink-0 items-center gap-3 border-b px-4">
+			<div class="border-outline-variant flex h-16 shrink-0 items-center gap-3 border-b px-4">
 				{@render klappPfeil(!zu)}
 				{#if !schmal}
 					<img src={logoUrl} alt="" class="animate-fade-in h-10 w-10 shrink-0 object-contain" />
@@ -104,7 +104,7 @@
 			<SeitenleisteZiele {zu} {schmal} nachWahl={zeigerGeht} />
 		</div>
 
-		<div class="border-outline-variant/60 mt-auto border-t">
+		<div class="border-outline-variant mt-auto border-t">
 			<!-- Backup-Wächter: dasselbe Recht wie seine Route (manage_settings) -->
 			{#if hatRecht(authStore.currentUser, 'manage_settings')}
 				<BackupStatusBadge collapsed={schmal} />

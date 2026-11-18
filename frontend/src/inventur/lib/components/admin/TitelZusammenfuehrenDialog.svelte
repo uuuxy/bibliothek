@@ -112,7 +112,7 @@
 				<p role="alert" class="text-body-small-emphasized text-error">{s.fehler}</p>
 			{:else if s.treffer.length > 0}
 				<ul
-					class="max-h-72 divide-y divide-outline-variant/40 overflow-y-auto rounded-xl border border-outline-variant"
+					class="max-h-72 divide-y divide-outline-variant overflow-y-auto rounded-xl border border-outline-variant"
 				>
 					{#each s.treffer as t (t.id)}
 						<li>

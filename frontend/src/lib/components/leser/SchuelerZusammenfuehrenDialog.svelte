@@ -111,7 +111,7 @@
 				<p role="alert" class="text-body-small-emphasized text-error">{s.fehler}</p>
 			{:else if s.treffer.length > 0 && !anderer}
 				<ul
-					class="max-h-56 overflow-y-auto divide-y divide-outline-variant/40 rounded-xl border border-outline-variant"
+					class="max-h-56 overflow-y-auto divide-y divide-outline-variant rounded-xl border border-outline-variant"
 				>
 					{#each s.treffer as k (k.id)}
 						<li>

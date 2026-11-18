@@ -60,7 +60,7 @@
 			</div>
 			<span class="text-lg font-black tabular-nums shrink-0 ml-4 text-primary">{paare.length}</span>
 		</summary>
-		<ul class="divide-y divide-outline-variant/40 pb-2">
+		<ul class="divide-y divide-outline-variant pb-2">
 			{#each paare as p (p.zeile)}
 				<li class="py-2 pl-5 text-xs">
 					<label class="flex items-start gap-3 cursor-pointer">

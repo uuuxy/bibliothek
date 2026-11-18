@@ -32,7 +32,7 @@
 	const rasterID = $derived(`schulbuecher-${(fach.fach || 'ohne-fach').replace(/\s+/g, '-')}`);
 </script>
 
-<div class="border-b border-outline-variant/60 last:border-b-0">
+<div class="border-b border-outline-variant last:border-b-0">
 	<div class="flex items-center justify-between gap-4 py-3">
 		<!-- Die ganze Zeile schaltet um, nicht nur das Dreieck: Das Ziel ist so groß wie die
 		     Aussage, die es betrifft (wie in KlassenKarte). -->
