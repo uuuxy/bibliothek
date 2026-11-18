@@ -50,11 +50,12 @@ test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }
 test('Ein unlesbarer Monat sperrt den Download und sagt warum', async ({ page }) => {
 	await uiLogin(page);
 	await menuepunkt(page, 'Bestellberichte').click();
-	const link = page.getByRole('link', { name: /Als PDF/ });
-	await expect(link).toHaveAttribute('aria-disabled', 'false');
+	// Frei ein Link, gesperrt ein gesperrter Knopf (ui/Button mit href).
+	await expect(page.getByRole('link', { name: /Als PDF/ })).toBeVisible();
 
 	await page.locator('#monat').fill('');
 
 	await expect(page.getByText('Monat als Jahr und Monat eingeben')).toBeVisible();
-	await expect(page.getByText('Als PDF')).toHaveAttribute('aria-disabled', 'true');
+	await expect(page.getByRole('button', { name: /Als PDF/ })).toBeDisabled();
+	await expect(page.getByRole('link', { name: /Als PDF/ })).toHaveCount(0);
 });

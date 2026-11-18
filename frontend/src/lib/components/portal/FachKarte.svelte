@@ -10,6 +10,7 @@
      Der Fachsprecher exportiert sein Fach, nicht die ganze Schule. -->
 <script>
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import KlassenBuchKachel from '../../../inventur/lib/components/admin/KlassenBuchKachel.svelte';
 	import { RASTER_ABSTAND } from '../../../inventur/lib/components/BuchKarte.svelte';
 	import { anzahlText, formatZahl } from '../../utils/format.js';
@@ -58,15 +59,16 @@
 			</span>
 		</button>
 
-		<a
+		<Button
 			href={exportUrl}
 			download
+			variant="ghost"
+			class="shrink-0"
 			data-tip="{name}: Bestandsliste als PDF, mit Buchbildern"
-			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-label-large text-on-surface-variant hover:bg-surface-container"
 		>
 			<Icon name="download" />
 			Als PDF
-		</a>
+		</Button>
 	</div>
 
 	{#if offen}

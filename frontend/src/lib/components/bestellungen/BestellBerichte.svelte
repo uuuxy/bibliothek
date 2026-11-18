@@ -23,6 +23,7 @@
 	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 
 	onMount(() => {
 		bestellStore.loadSuppliers();
@@ -166,18 +167,10 @@
 
 		<!-- Download -->
 		<section class="space-y-3">
-			<a
-				href={canDownload ? downloadURL : undefined}
-				target="_blank"
-				rel="noopener"
-				aria-disabled={!canDownload}
-				class="inline-flex h-9 items-center gap-2 rounded-full px-4 text-label-large {canDownload
-					? 'm3-state bg-primary text-on-primary'
-					: 'pointer-events-none bg-on-surface/12 text-on-surface/38'}"
-			>
+			<Button href={downloadURL} disabled={!canDownload} target="_blank" rel="noopener">
 				<Icon name="print" />
 				Als PDF
-			</a>
+			</Button>
 			<p class="text-xs text-on-surface-variant">
 				Das PDF öffnet sich im Browser, von dort ausdrucken oder als Datei speichern
 			</p>

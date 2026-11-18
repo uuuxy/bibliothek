@@ -74,14 +74,10 @@
 					</p>
 				{/if}
 			</div>
-			<a
-				href="/api/bestellungen/pdf"
-				download
-				class="m3-state shrink-0 flex items-center gap-2 text-label-medium text-on-surface-variant bg-surface-container-low border border-outline-variant px-3 py-2 rounded-xl"
-			>
+			<Button href="/api/bestellungen/pdf" download variant="secondary" class="shrink-0">
 				<Icon name="print" />
 				<span class="hidden sm:inline">PDF-Bestellliste</span>
-			</a>
+			</Button>
 		</div>
 
 		{#if vorschlaege.length}

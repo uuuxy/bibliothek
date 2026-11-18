@@ -11,7 +11,7 @@
 	 * Die Form:
 	 *   - Höhe 36 px wie jedes Bedienelement (basis.css, Gate e2e/control-hoehen.spec.js). M3
 	 *     nennt 56 dp; das gilt für Formulare am Telefon, nicht für ein Werkzeug mit 36-px-Knöpfen.
-	 *   - Radius `rounded-xl`: Karten und Eingabefelder tragen 12 px.
+	 *   - Radius `rounded-sm` (4 px) wie Select und Suchfeld: outlined text field, corner-extra-small.
 	 *   - Schrift `text-sm` wie Select und Button size="md": Kein Feld schreibt größer als sie.
 	 *   - Rahmen `outline` (die M3-Rolle des outlined text field im Ruhezustand), Fläche
 	 *     `surface-container-lowest`, im Fokus `primary` mit 1-px-Ring: das Rezept von
@@ -106,7 +106,7 @@
 		// spezifisch, dann entschiede die Stylesheet-Reihenfolge statt des Aufrufs.
 		// Mehrzeilig wächst mit den Zeilen, die 36-px-Grundlinie gilt für eine Zeile.
 		(mehrzeilig ? 'w-full py-2 leading-relaxed ' : /\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
-			'rounded-xl border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
+			'rounded-sm border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
 			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 ' +
 			'disabled:cursor-not-allowed disabled:opacity-40 read-only:text-on-surface-variant ' +
 			(ungueltig

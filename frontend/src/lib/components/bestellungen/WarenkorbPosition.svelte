@@ -53,7 +53,7 @@
 
 	<div class="flex items-center justify-between gap-2 pl-10">
 		<div
-			class="flex items-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest"
+			class="flex items-center overflow-hidden rounded-sm border border-outline-variant bg-surface-container-lowest"
 		>
 			<!-- Unter 1 geht die Menge nicht; entfernt wird die Position über das Kreuz. Der Knopf
 			     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->

@@ -125,3 +125,24 @@ describe('Button — gesperrt', () => {
 		}
 	});
 });
+
+// Mit href ein Link in derselben Form, wie Googles Knöpfe in material-web; gesperrt ein Knopf,
+// weil ein Link kein disabled kennt und sonst anklickbar bliebe.
+describe('Button — als Link', () => {
+	it('wird mit href zum Link mit den Klassen des Knopfs', () => {
+		const { container } = render(Button, { href: '/api/x.pdf', download: true });
+		const link = container.querySelector('a');
+		expect(link?.getAttribute('href')).toBe('/api/x.pdf');
+		expect(link?.hasAttribute('download')).toBe(true);
+		expect(klassen(/** @type {Element} */ (link))).toEqual(
+			expect.arrayContaining(['rounded-full', 'h-9', 'bg-primary'])
+		);
+		expect(container.querySelector('button')).toBeNull();
+	});
+
+	it('bleibt gesperrt ein gesperrter Knopf', () => {
+		const { container } = render(Button, { href: '/api/x.pdf', disabled: true });
+		expect(container.querySelector('a')).toBeNull();
+		expect(container.querySelector('button')?.disabled).toBe(true);
+	});
+});

@@ -106,15 +106,11 @@
 			<Datumsfeld bind:value={von} etikett="Von" class="w-44" />
 			<Datumsfeld bind:value={bis} etikett="Bis" class="w-44" />
 			<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
-			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen.
-			     Die Form ist die von ui/Button. -->
-			<a
-				href={druckAdresse}
-				class="m3-state ml-auto inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-label-large text-on-primary"
-			>
+			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen. -->
+			<Button href={druckAdresse} class="ml-auto">
 				<Icon name="print" />
 				Ausdrucken
-			</a>
+			</Button>
 		</div>
 		{#if !laeuft && !fehler && abschnitte.length > 0}
 			<FilterChips

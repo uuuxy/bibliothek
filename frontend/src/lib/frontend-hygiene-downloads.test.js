@@ -10,7 +10,7 @@ import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-
 //
 // Sieht nicht: einen Link auf eine Adresse, die der Server als Anhang schickt (das hält
 // internal/api/anhang_ratsche_test.go), und einen Download über eine andere Schreibweise
-// als `.download =` oder das Attribut download an einem Link.
+// als `.download =` oder das Attribut download an einem Link oder an ui/Button.
 const ALS_DATEI = {
 	'src/inventur/lib/admin_api.js': 'der Katalog als CSV',
 	'src/lib/stores/offlineSync.svelte.js': 'die Sicherung der Offline-Scans, zum Aufheben',
@@ -18,7 +18,7 @@ const ALS_DATEI = {
 	'src/lib/components/bestellungen/Bestellbedarf.svelte': 'die Bestellliste',
 	'src/lib/components/portal/FachKarte.svelte': 'die Bücher eines Fachs im Portal'
 };
-const DOWNLOAD = /\.download\s*=|<a\b[^>]*\sdownload\b/;
+const DOWNLOAD = /\.download\s*=|<(?:a|Button)\b[^>]*\sdownload\b/;
 const ZEIGE_PDF = 'src/lib/utils/pdfImFenster.js';
 const BLOB = /createObjectURL\(/;
 const IN_EIN_FENSTER = /window\.open\(|\.location\.replace\(/;

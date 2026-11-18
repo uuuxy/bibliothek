@@ -5,6 +5,7 @@
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   class?: string,
 	 *   element?: HTMLButtonElement,
+	 *   href?: string,
 	 *   [key: string]: any
 	 * }} */
 	let {
@@ -13,6 +14,7 @@
 		size = 'md',
 		class: className = '',
 		element = $bindable(),
+		href,
 		...rest
 	} = $props();
 
@@ -98,14 +100,19 @@
 			.filter((c) => !(FARBE.test(c) && eigene.has(familie(c))))
 			.join(' ');
 	});
+
+	const klassen = $derived(
+		`${baseClasses} ${variant === 'symbol' ? symbolSizes[size] : sizes[size]} ` +
+			`${ohneFlaecheGesperrt[variant] ?? flaecheGesperrt} ${variantClasses} ${className}`
+	);
 </script>
 
-<button
-	bind:this={element}
-	class="{baseClasses} {variant === 'symbol'
-		? symbolSizes[size]
-		: sizes[size]} {ohneFlaecheGesperrt[variant] ?? flaecheGesperrt} {variantClasses} {className}"
-	{...rest}
->
-	{@render children?.()}
-</button>
+<!-- Mit href ein Link im Kleid des Knopfs, wie Googles Knöpfe in material-web (href, download).
+     Gesperrt bleibt er ein Knopf: Ein Link kennt kein disabled. -->
+{#if href && !rest.disabled}
+	<a {href} class={klassen} {...rest}>{@render children?.()}</a>
+{:else}
+	<button bind:this={element} class={klassen} {...rest}>
+		{@render children?.()}
+	</button>
+{/if}

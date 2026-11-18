@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { srcRoot, sammleQuelldateien } from './hygiene-quellen.js';
 
@@ -160,10 +160,44 @@ describe('Form-Skala', () => {
 		expect(
 			gefunden,
 			'Karte mit 16 px Radius. 16 px gehoert den Navigationsflaechen;\n' +
-				'Karten und Eingabefelder sind 12 px (rounded-xl), Dialoge 28 px (rounded-3xl),\n' +
+				'Karten sind 12 px (rounded-xl), Textfelder 4 px (rounded-sm), Dialoge 28 px (rounded-3xl),\n' +
 				'Menues stehen auf bg-surface-container mit 4 px (siehe SelectListe.svelte).\n' +
 				'Die Zuordnung steht in styles/theme-mass.css:\n  ' +
 				gefunden.join('\n  ')
+		).toEqual([]);
+	});
+
+	// Jede Ecke aus Googles Skala, M3 (Shape, Corner radius scale): 0, 4, 8, 12, 16, 20, 28, 32,
+	// 48 dp oder voll. Ein Wert in eckigen Klammern oder ein border-radius in einem Stil liegt
+	// sonst daneben, auch an einer Stelle, die e2e/ecken.spec.js nicht öffnet. Ausnahmen nennt
+	// Google selbst (material-web): Kästchen 2 px, Strich des Reiters 3px 3px 0px 0px. Der
+	// Ausweis-Designer (lib/designer/) zeichnet Papier in mm und gehört nicht dazu.
+	it('nimmt jede Ecke aus der Skala', () => {
+		const SKALA = new Set([0, 2, 3, 4, 8, 12, 16, 20, 28, 32, 48]);
+		const IN_KLAMMERN = new Set(['rounded-t-[3px]', 'rounded-[50%]']);
+		const WERT_OK = /^(?:0|inherit|9999px|50%|var\(--radius-[a-z0-9]+\))$/;
+		/** @type {string[]} */
+		const abseits = [];
+		const stile = readdirSync(srcRoot, { recursive: true })
+			.map(String)
+			.filter((n) => n.endsWith('.css'))
+			.map((n) => join(srcRoot, n));
+		expect(stile.length, 'keine Stildatei gefunden').toBeGreaterThan(3);
+		for (const f of [...sammleQuelldateien(srcRoot), ...stile]) {
+			const pfad = f.slice(srcRoot.length + 1);
+			if (pfad.startsWith('lib/designer/')) continue;
+			const text = readFileSync(f, 'utf8');
+			for (const [klasse] of text.matchAll(/\brounded(?:-[a-z]{1,2})?-\[[^\]]+\]/g))
+				if (!IN_KLAMMERN.has(klasse)) abseits.push(`${pfad}: ${klasse}`);
+			for (const [, wert] of text.matchAll(/(?:border-radius|--radius-[a-z0-9]+):\s*([^;}\n]+)/g)) {
+				const w = wert.trim();
+				const px = /^(\d+)px$/.exec(w)?.[1];
+				if (!WERT_OK.test(w) && !(px && SKALA.has(Number(px)))) abseits.push(`${pfad}: ${w}`);
+			}
+		}
+		expect(
+			abseits,
+			'Ecke abseits der Skala von M3: rounded-* aus styles/theme-mass.css nehmen'
 		).toEqual([]);
 	});
 });

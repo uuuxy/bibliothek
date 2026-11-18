@@ -174,8 +174,10 @@
 
 	   Google rundet NICHT überall gleich — das ist der eigentliche Punkt. M3 hat
 	   eine Skala mit fünf Stufen (4/8/12/16/28 px) plus Pille, und ordnet jeder
-	   BAUTEILROLLE eine davon zu: Menüs und Snackbars 4, Chips 8, Karten 12,
-	   Navigationsflächen 16, Dialoge 28 — und Buttons die Pille.
+	   BAUTEILROLLE eine davon zu: Textfelder, Menüs und Snackbars 4, Chips 8,
+	   Karten 12, Navigationsflächen und angedockter Kalender 16, Dialoge 28 — und
+	   Buttons die Pille (Googles Token in material-web, container-shape je Bauteil;
+	   Gate e2e/ecken.spec.js).
 
 	   Zuordnung auf die vorhandenen Klassennamen, gemessen an ihrer tatsächlichen
 	   Verwendung (163 rounded-full, 157 xl, 88 lg, 65 2xl, 36 md, 24 3xl):

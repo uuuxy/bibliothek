@@ -25,19 +25,18 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	await page.goto('/bestellberichte');
 	await page.getByRole('radio').nth(2).check();
 
-	// Bewusst kein getByRole('link'): im disabled-Zustand entfällt das href,
-	// und ein <a> ohne href hat keine Link-Rolle mehr.
-	const download = page.locator('a').filter({ hasText: 'Als PDF' });
+	// Frei ein Link, gesperrt ein gesperrter Knopf (ui/Button mit href).
+	const download = page.getByRole('link', { name: /Als PDF/ });
 	await expect(download).toBeVisible();
-	await expect(download).not.toHaveAttribute('aria-disabled', 'true');
 
 	// Von > Bis → Button disabled + Fehlermeldung (Client-Validierung)
 	await page.locator('#von').fill('2026-07-10');
 	await page.locator('#bis').fill('2026-07-01');
 	await expect(page.getByText('Das Von-Datum liegt nach dem Bis-Datum')).toBeVisible();
-	await expect(download).toHaveAttribute('aria-disabled', 'true');
+	await expect(page.getByRole('button', { name: /Als PDF/ })).toBeDisabled();
+	await expect(download).toHaveCount(0);
 
 	// Zurück in den gültigen Bereich → wieder aktiv
 	await page.locator('#bis').fill('2026-07-31');
-	await expect(download).not.toHaveAttribute('aria-disabled', 'true');
+	await expect(download).toBeVisible();
 });

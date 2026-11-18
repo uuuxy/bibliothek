@@ -123,3 +123,22 @@ describe('Textknopf und Symbolknopf sind zwei Varianten', () => {
 		expect(fundstellen('symbol').length).toBeGreaterThan(0);
 	});
 });
+
+// Ein Link im Kleid eines Knopfs kommt aus ui/Button mit href, wie Googles Knöpfe in material-web
+// (href, download). Von Hand gebaut altert er für sich: Ecke, Höhe, Schrift und der gesperrte
+// Zustand liefen an vier Stellen auseinander, die Bestellliste stand mit 12 px Ecke da.
+// Sieht nicht: Klassen aus einem Ausdruck, einen Kopf mit „>" vor class, einen Link ohne Knopfhöhe.
+describe('Ein Link, der wie ein Knopf aussieht, ist ui/Button', () => {
+	const ECKE = /\brounded-(?:full|xl|lg)\b/;
+	const KNOPFHOEHE = /\b(?:h-(?:8|9|10)|py-[12])\b/;
+	it('baut keinen Knopf aus einem <a> nach', () => {
+		const funde = sammleQuelldateien(srcRoot)
+			.filter((f) => f.endsWith('.svelte'))
+			.flatMap((f) =>
+				[...ohneKommentare(readFileSync(f, 'utf8')).matchAll(/<a\b[^>]*?\sclass="([^"]*)"/g)]
+					.filter((m) => ECKE.test(m[1]) && KNOPFHOEHE.test(m[1]))
+					.map((m) => `${relPfad(f)}: ${m[1].slice(0, 90)}`)
+			);
+		expect(funde, 'Link als Knopf gebaut: <Button href=…> aus ui/Button nehmen').toEqual([]);
+	});
+});
