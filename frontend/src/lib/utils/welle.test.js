@@ -100,6 +100,16 @@ describe('Welle beim Drücken (utils/welle.js)', () => {
 		).toHaveLength(1);
 	});
 
+	it('wächst in der Schicht von Kästchen und Radio, nicht wenn das Feld gesperrt ist', () => {
+		const schicht = knopf('<span data-welle><input type="checkbox" /></span>');
+		zeiger(/** @type {Element} */ (schicht.querySelector('input')), 'pointerdown');
+		expect(schicht.querySelector('.m3-welle')).not.toBeNull();
+		zeiger(schicht, 'pointerup');
+		const gesperrt = knopf('<span data-welle><input type="checkbox" disabled /></span>');
+		zeiger(/** @type {Element} */ (gesperrt.querySelector('input')), 'pointerdown');
+		expect(gesperrt.querySelector('.m3-welle')).toBeNull();
+	});
+
 	it('wartet beim Finger 150 ms und bricht ab, wenn gewischt wird', () => {
 		const el = knopf('<button>Finger</button>');
 		zeiger(el, 'pointerdown', { pointerType: 'touch' });

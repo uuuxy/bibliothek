@@ -33,11 +33,12 @@
 </script>
 
 <!-- auto-cols-fr: M3 gibt allen Segmenten dieselbe Breite. Mit `inline-grid` richtet
-     sich diese Breite nach dem längsten Segment, statt die ganze Zeile zu füllen. -->
+     sich diese Breite nach dem längsten Segment, statt die ganze Zeile zu füllen. h-9: M3 nennt
+     40 dp bei Dichte 0 („Each step down in density removes 4dp"), das Haus steht auf -1. -->
 <div
 	role="group"
 	aria-label={etikett}
-	class="inline-grid h-10 grid-flow-col auto-cols-fr overflow-hidden rounded-full border {rahmen} {klasse}"
+	class="inline-grid h-9 grid-flow-col auto-cols-fr overflow-hidden rounded-full border {rahmen} {klasse}"
 >
 	{#each optionen as o, i (o.wert)}
 		{@const gewaehlt = o.wert === wert}

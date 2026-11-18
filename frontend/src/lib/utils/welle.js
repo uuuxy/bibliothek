@@ -3,9 +3,10 @@
 // (easing standard), blendet in 105 ms ein und nach dem Loslassen, frühestens 225 ms nach dem
 // Druck, in 375 ms aus. Ein Klick über die Tastatur lässt ihn aus der Mitte wachsen, ein Finger
 // erst nach 150 ms, damit Wischen keine Welle auslöst. Die Welle gilt für dieselben Elemente wie
-// der State-Layer in styles/komponenten.css; ihre Farbe ist die Farbe des Inhalts.
+// der State-Layer in styles/komponenten.css und für die Schicht von Kästchen und Radio
+// (data-welle); ihre Farbe ist die Farbe des Inhalts oder --welle-farbe.
 
-const ZIEL = 'button:not(.no-state-layer), .m3-state';
+const ZIEL = 'button:not(.no-state-layer), .m3-state, [data-welle]';
 const WACHSEN_MS = 450;
 const MINDESTENS_MS = 225;
 const EINBLENDEN_MS = 105;
@@ -22,6 +23,8 @@ const KURVE = 'cubic-bezier(0.2, 0, 0, 1)';
 function wirt(ziel) {
 	const el = ziel instanceof Element ? ziel.closest(ZIEL) : null;
 	if (!el || el.matches(':disabled, [aria-disabled="true"]')) return null;
+	// Die Schicht von Kästchen und Radio ist gesperrt, wenn ihr Feld es ist.
+	if (el.hasAttribute('data-welle') && el.querySelector(':disabled')) return null;
 	// Ein leeres Element nimmt keine Kinder auf.
 	return /^(INPUT|SELECT|TEXTAREA|IMG)$/.test(el.tagName) ? null : el;
 }

@@ -121,8 +121,10 @@ describe('ChipFeld', () => {
 	});
 
 	// Schrift: label-large der M3-Token (14/20 px, 500, 0,1 px), als Rolle `text-label-large`
-	// aus styles/theme-mass.css.
-	it('hat die Chip-Form des Hauses: 32 px, Radius 8 px, Gewicht 500, secondary-container, × auf 32 × 32 px', () => {
+	// aus styles/theme-mass.css. Ohne Auswahl ist der Input-Chip umrandet (material-web,
+	// md.comp.input-chip: unselected-outline-color outline, unselected-label-text-color
+	// on-surface-variant); secondary-container trägt er erst ausgewählt.
+	it('hat Googles Form des Input-Chips: 32 px, Radius 8 px, label large, umrandet, × auf 32 × 32 px', () => {
 		const { getByRole, container } = aufbau({ werte: ['Krimi'] });
 		const chip = (container.querySelector('li')?.getAttribute('class') || '').split(/\s+/);
 		expect(chip).toEqual(
@@ -130,10 +132,12 @@ describe('ChipFeld', () => {
 				'h-8',
 				'rounded-md',
 				'text-label-large',
-				'bg-secondary-container',
-				'text-on-secondary-container'
+				'border',
+				'border-outline',
+				'text-on-surface-variant'
 			])
 		);
+		expect(chip).not.toContain('bg-secondary-container');
 		expect(chip).not.toContain('font-medium');
 		const knopf = (
 			getByRole('button', { name: '„Krimi“ entfernen' }).getAttribute('class') || ''

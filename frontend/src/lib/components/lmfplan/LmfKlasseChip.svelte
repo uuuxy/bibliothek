@@ -36,7 +36,7 @@
 		onclick={onklick}
 		draggable={ziehbar}
 		ondragstart={ziehbar ? ziehstart : undefined}
-		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface"
+		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-label-large text-on-surface"
 		data-tip="{name} {verb}{hinweis ? `, ${hinweis}` : ''}"
 	>
 		<Icon name="add" />
@@ -46,7 +46,7 @@
 	</button>
 {:else}
 	<span
-		class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container text-sm font-medium text-on-secondary-container {onklick
+		class="inline-flex h-8 items-center gap-1 rounded-md border border-outline text-label-large text-on-surface-variant {onklick
 			? 'pl-0'
 			: 'pl-3'} {onentfernen ? 'pr-0' : 'pr-3'}"
 	>

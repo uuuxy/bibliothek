@@ -59,4 +59,19 @@ describe('Ausweis drucken in der Leserakte', () => {
 		expect(druckknopf(screen).closest('[data-tip]')).toBeNull();
 		expect(screen.getByRole('button', { name: 'Ausweisseiten wählen' })).toBeTruthy();
 	});
+
+	// M3, Split button: zwei Knöpfe mit 2 dp Abstand, innen 4 dp Ecke, ohne Schatten; geöffnet
+	// wird der rechte rund („applies shape morph").
+	it('steht als Split button nach M3 da und rundet den rechten Teil, solange das Menü offen ist', async () => {
+		const screen = zeige('A-00042');
+		const pfeil = screen.getByRole('button', { name: 'Ausweisseiten wählen' });
+		const huelle = /** @type {HTMLElement} */ (pfeil.parentElement);
+		expect(huelle.className.split(/\s+/)).toContain('gap-0.5');
+		expect(huelle.className).not.toMatch(/shadow/);
+		expect(druckknopf(screen).className.split(/\s+/)).toContain('rounded-r-sm');
+		expect(pfeil.className.split(/\s+/)).toContain('rounded-l-sm');
+		pfeil.click();
+		await vi.waitFor(() => expect(pfeil.getAttribute('aria-expanded')).toBe('true'));
+		expect(pfeil.className.split(/\s+/)).not.toContain('rounded-l-sm');
+	});
 });

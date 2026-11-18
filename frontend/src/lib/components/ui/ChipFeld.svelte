@@ -16,7 +16,8 @@
 	 * LmfKlasseChip ist ein einzelner Chip ohne Eingabe. Deshalb setzt sich dieses Bauteil
 	 * aus den beiden zusammen, statt sie nachzubauen — das Feld IST ui/VorschlagFeld (ui/Feld
 	 * mit dem Menü der Vorschläge, 36 px, derselbe Rahmen), die Chips haben die Form von LmfKlasseChip (32 px, Radius 8 px,
-	 * secondary-container, × auf 32 × 32 px wie das Gate icon-trefferflaechen verlangt).
+	 * umrandet wie Googles Input-Chip ohne Auswahl, × auf 32 × 32 px wie das Gate icon-trefferflaechen
+	 * verlangt).
 	 *
 	 * Übernommen wird mit Enter, mit Komma, mit der Auswahl eines Vorschlags und beim
 	 * Verlassen des Feldes: Ein getipptes, nicht bestätigtes Wort geht beim Speichern nicht
@@ -162,7 +163,7 @@
 		<ul class="flex flex-wrap gap-2" aria-label="{etikett ?? ariaLabel}: gewählt">
 			{#each liste as wert (schluessel(wert))}
 				<li
-					class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-label-large text-on-secondary-container"
+					class="inline-flex h-8 items-center gap-1 rounded-md border border-outline pl-3 text-label-large text-on-surface-variant"
 				>
 					{wert}
 					<button

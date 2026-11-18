@@ -55,10 +55,19 @@
 			? 'hover:bg-error/8 focus-visible:bg-error/10'
 			: 'hover:bg-on-surface/8 focus-visible:bg-on-surface/10 checked:hover:bg-primary/8 checked:focus-visible:bg-primary/10'
 	);
+	// Die Welle beim Drücken zeigt die Farbe des kommenden Zustands (md.comp.checkbox:
+	// unselected-pressed-state-layer-color primary, selected-pressed-… on-surface).
+	const welle = $derived(
+		ungueltig ? 'var(--color-error)' : checked ? 'var(--color-on-surface)' : 'var(--color-primary)'
+	);
 </script>
 
 {#snippet kasten(zusatz)}
-	<span class="relative -m-2.75 inline-grid h-10 w-10 shrink-0 place-items-center {zusatz}">
+	<span
+		class="relative -m-2.75 inline-grid h-10 w-10 shrink-0 place-items-center rounded-full {zusatz}"
+		data-welle
+		style:--welle-farbe={welle}
+	>
 		<input
 			type="checkbox"
 			bind:checked

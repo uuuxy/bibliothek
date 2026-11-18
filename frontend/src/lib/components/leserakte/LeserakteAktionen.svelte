@@ -80,8 +80,11 @@
 				ausrichtung="links"
 			>
 				{#snippet ausloeser({ offen, umschalten })}
-					<div class="inline-flex rounded-md shadow-sm">
-						<Button type="button" onclick={() => druckeAusweis('both')} class="rounded-r-none">
+					<!-- M3, Split button: zwei Knöpfe mit 2 dp Abstand („The space should always be
+					     2dp"), innen 4 dp Ecke; geöffnet wird der rechte rund („applies shape morph")
+					     und der Pfeil dreht sich. Gefüllt ohne Schatten, wie jeder gefüllte Knopf. -->
+					<div class="inline-flex gap-0.5">
+						<Button type="button" onclick={() => druckeAusweis('both')} class="rounded-r-sm">
 							<Icon name="id_card" />
 							Ausweis drucken
 						</Button>
@@ -96,7 +99,7 @@
 							aria-label="Ausweisseiten wählen"
 							data-tip="Ausweisseiten wählen"
 							data-split-pfeil
-							class="rounded-l-none border-l-on-primary/25 px-2.5"
+							class="px-2.5 {offen ? '' : 'rounded-l-sm'}"
 						>
 							<Icon name="expand_more" class="transition-transform {offen ? 'rotate-180' : ''}" />
 						</Button>

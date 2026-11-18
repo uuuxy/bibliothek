@@ -29,7 +29,13 @@
 </script>
 
 {#snippet knopf(zusatz)}
-	<span class="relative -m-2.5 inline-grid h-10 w-10 shrink-0 place-items-center {zusatz}">
+	<!-- Die Welle zeigt die Farbe des kommenden Zustands (md.comp.radio-button:
+	     unselected-pressed-state-layer-color primary, selected-pressed-… on-surface). -->
+	<span
+		class="relative -m-2.5 inline-grid h-10 w-10 shrink-0 place-items-center rounded-full {zusatz}"
+		data-welle
+		style:--welle-farbe={group === value ? 'var(--color-on-surface)' : 'var(--color-primary)'}
+	>
 		<input
 			type="radio"
 			bind:group

@@ -459,15 +459,15 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Seite | bei uns | Stand |
 | --- | --- | --- |
 | Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen`, `Button.test` (gesperrt: Fläche nur beim Knopf mit Fläche) |
-| Segmented buttons | `ui/Segmente`, auch im Ausweis-Designer | gelesen (962cba20) |
-| Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip` | gelesen (b78dbb84) |
+| Segmented buttons | `ui/Segmente`, auch im Ausweis-Designer: 36 px (40 dp bei Dichte 0, das Haus steht auf -1), voll gerundet, Häkchen am gewählten Segment | Gate: `Segmente.test`, `control-hoehen` |
+| Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip`, `LmfKlasseChip`: 32 px, 8 px Ecke, label large, Rahmen outline; Input-Chips ohne Auswahl umrandet (md.comp.input-chip) | Gate: `ChipFeld.test`, `FilterChips.test` |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
 | Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
 | Menus | `ui/Menue`, `ui/Select` | gelesen (b78dbb84); Gate `menue-fuehrt-irgendwohin` prüft nur das Ziel |
 | Navigation drawer, Navigation rail | `layout/Seitenleiste`, aufgeklappt und schmal | Gate: `navigation-m3`; Gewicht nach Googles Token: Ziel 500, aktives Ziel 700 |
 | Progress indicators, Loading indicator | `ui/Ladekreis` | Gate: `frontend-hygiene-ladekreis` |
 | Switch | `ui/Switch` | Gate: `frontend-hygiene-schalter`, `schalter` |
-| Checkbox, Radio button | `ui/Kaestchen`, `ui/Radio` | gelesen (5c520e06, 5e6eaeb1) |
+| Checkbox, Radio button | `ui/Kaestchen`, `ui/Radio`: 18 px mit 2 px Ecke, 20 px, Schicht 40 px, Ring um die Schicht, Welle in der Farbe des kommenden Zustands | Gate: `KaestchenRadio.test`, `welle.test`, `zustaende` |
 | Search | `ui/Suchfeld`, `ui/Suchpille` | Gate: `frontend-hygiene-suchfelder`, `suchpille-einheitlich` |
 | Side sheets | `ui/Seitenblatt` | gelesen (efd17472) |
 | Snackbar | `layout/SnackbarAnzeige`: eine Fläche für jede Meldung (inverse-surface, level3, 4 px), kein Zeichen, Folgehandlung als Textknopf in inverse-primary, höchstens eine Meldung | Gate: `SnackbarAnzeige.test` (Form nach material-components-android), `meldungen-unten` (Platz) |
@@ -479,7 +479,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Divider | Trennlinie `border-outline-variant` und `divide-outline-variant`, 1 px, ohne eigene Deckkraft | Gate: `frontend-hygiene-trennlinien` |
 | App bars | Kopfzeile der Seiten | gelesen (aea2a6b9) |
 | Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
-| Split button | „Ausweis drucken“ mit Menü in der Leserakte | gelesen (6a5a1562) |
+| Split button | „Ausweis drucken“ mit Menü in der Leserakte: zwei Knöpfe mit 2 px Abstand, innen 4 px, geöffnet rund, Pfeil dreht sich | Gate: `LeserakteAktionen.test` |
 | Date pickers | `ui/Datumsfeld` an allen 16 Datumsfeldern: eintippen ohne Eingabemaske oder im Kalender nach dem Docked date picker wählen (`ui/Kalender`), „both options are immediately available“; Tastatur und Rollen wie in Angular Material | Gate: `frontend-hygiene-felder` (kein rohes `<input>`), svelte-check (`ui/Feld` nimmt `type="date"` nicht an), `Datumsfeld.svelte.test`, `datumsfeld-kalender`, `feld-fehlersymbol`, `barrierefreiheit-axe` (offener Kalender) |
 | Toolbars | `ui/AuswahlLeiste` für markierte Zeilen, auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | gelesen (962cba20), alle Stellen |
 | Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |

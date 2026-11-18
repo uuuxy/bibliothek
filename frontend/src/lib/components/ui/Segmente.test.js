@@ -48,10 +48,12 @@ describe('Segmente', () => {
 		expect(unsichtbar).toHaveLength(optionen.length - 1);
 	});
 
-	it('ist 40 dp hoch und voll gerundet — die M3-Maße des Segmented Button', () => {
+	// M3 nennt 40 dp bei Dichte 0 („Each step down in density removes 4dp"); das Haus steht wie
+	// jedes Bedienelement auf Dichte -1 (e2e/control-hoehen.spec.js).
+	it('ist 36 px hoch und voll gerundet — Segmented Button bei Dichte -1', () => {
 		const { getByRole } = aufbau('offen');
 		const klassen = (getByRole('group').getAttribute('class') || '').split(/\s+/);
-		expect(klassen).toContain('h-10');
+		expect(klassen).toContain('h-9');
 		expect(klassen).toContain('rounded-full');
 	});
 
