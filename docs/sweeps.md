@@ -469,7 +469,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Checkbox, Radio button | `ui/Kaestchen`, `ui/Radio` | gelesen (5c520e06, 5e6eaeb1) |
 | Search | `ui/Suchfeld`, `ui/Suchpille` | Gate: `frontend-hygiene-suchfelder`, `suchpille-einheitlich` |
 | Side sheets | `ui/Seitenblatt` | gelesen (efd17472) |
-| Snackbar | `layout/SnackbarAnzeige` | gelesen (96f4a497) |
+| Snackbar | `layout/SnackbarAnzeige`: eine Fläche für jede Meldung (inverse-surface, level3, 4 px), kein Zeichen, Folgehandlung als Textknopf in inverse-primary, höchstens eine Meldung | Gate: `SnackbarAnzeige.test` (Form nach material-components-android), `meldungen-unten` (Platz) |
 | Tabs | `ui/Reiter` | Gate: `frontend-hygiene-reiter`, `bestell-reiter-eine-zeile` |
 | Text fields | `ui/Feld` | Gate: `frontend-hygiene-felder`, `frontend-hygiene-fehlerzeile-rolle`, `feld-fehlersymbol`, `feldbreite`, `ecken` (4 px, corner-extra-small) |
 | Tooltips | `actions/tooltip` | Gate: `frontend-hygiene-sprechblasen`, `icon-tooltips` |
