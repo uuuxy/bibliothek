@@ -129,6 +129,8 @@
 </div>
 
 <style>
+	/* M3, Applying easing and duration: Was auf den Bildschirm tritt, läuft 400 ms auf
+	   „Emphasized decelerate“. */
 	@keyframes fadeIn {
 		from {
 			opacity: 0;
@@ -148,10 +150,10 @@
 		}
 	}
 	:global(.animate-fade-in) {
-		animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation: fadeIn 400ms cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
 	}
 	:global(.animate-slide-up) {
-		animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation: slideUp 400ms cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
 	}
 
 	@media print {

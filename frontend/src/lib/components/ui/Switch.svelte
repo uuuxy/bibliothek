@@ -73,7 +73,7 @@
 		: 'cursor-pointer'}"
 >
 	<span
-		class="pointer-events-none absolute -top-0.5 -left-0.5 flex size-8 items-center justify-center transition-transform duration-200 ease-in-out {checked
+		class="pointer-events-none absolute -top-0.5 -left-0.5 flex size-8 items-center justify-center transition-transform duration-200 {checked
 			? 'translate-x-5'
 			: ''}"
 	>
@@ -82,7 +82,6 @@
 				? 'bg-primary'
 				: 'bg-on-surface'}"
 		></span>
-		<span data-griff class="relative rounded-full transition-all duration-200 ease-in-out {griff}"
-		></span>
+		<span data-griff class="relative rounded-full transition-all duration-200 {griff}"></span>
 	</span>
 </button>

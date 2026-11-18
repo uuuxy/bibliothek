@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { slide } from 'svelte/transition';
+	import { standardAccelerate, standardDecelerate } from '../../utils/bewegung.js';
 	import { useInventur } from './useInventur.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
@@ -114,7 +115,7 @@
 				     track-color: surface-container-highest, active-indicator-color: primary). -->
 				<div class="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
 					<div
-						class="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
+						class="bg-primary h-3 rounded-full transition-all duration-500"
 						style="width: {prozent}%"
 					></div>
 				</div>
@@ -148,7 +149,10 @@
 			<!-- Die Rückmeldung zum letzten Scan (ScanRueckmeldung.svelte: Erfolg, Warnung,
 			     Fehler auf eigenen Farbrollen). Das Einblenden bleibt hier, am {#if}. -->
 			{#if ablauf.letzterScan}
-				<div transition:slide>
+				<div
+					in:slide={{ duration: 250, easing: standardDecelerate }}
+					out:slide={{ duration: 200, easing: standardAccelerate }}
+				>
 					<ScanRueckmeldung scan={ablauf.letzterScan} />
 				</div>
 			{/if}

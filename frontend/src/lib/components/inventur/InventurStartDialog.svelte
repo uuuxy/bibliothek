@@ -6,6 +6,7 @@
      im Dialog (M3 Dialogs: „Errors about the dialog fields should always appear inline"). -->
 <script>
 	import { slide } from 'svelte/transition';
+	import { standardAccelerate, standardDecelerate } from '../../utils/bewegung.js';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
@@ -86,7 +87,10 @@
 		</fieldset>
 
 		{#if ablauf.bereichArt === 'signature'}
-			<div transition:slide>
+			<div
+				in:slide={{ duration: 250, easing: standardDecelerate }}
+				out:slide={{ duration: 200, easing: standardAccelerate }}
+			>
 				<!-- Freie Eingabe mit Vorschlagsliste: Die Signatur wird als Präfix gelesen,
 				     „LMF Deu 7" erfasst also auch „LMF Deu 7 / Bie". Eine reine Auswahlliste
 				     könnte nur vorhandene Werte anbieten und damit kein ganzes Regal. -->
@@ -109,7 +113,11 @@
 		{/if}
 
 		{#if ablauf.bereichArt === 'filter'}
-			<div transition:slide class="grid grid-cols-2 gap-3">
+			<div
+				in:slide={{ duration: 250, easing: standardDecelerate }}
+				out:slide={{ duration: 200, easing: standardAccelerate }}
+				class="grid grid-cols-2 gap-3"
+			>
 				<div class="space-y-1.5">
 					<label for="inventur-fach" class="block text-sm font-medium text-on-surface-variant"
 						>Fach</label

@@ -143,7 +143,7 @@
 >
 	<div
 		style="transform: scale({zoom /
-			100}); transform-origin: center; transition: transform 0.05s ease-out;"
+			100}); transform-origin: center; transition: transform 50ms cubic-bezier(0.2, 0, 0, 1);"
 		class="shrink-0"
 	>
 		<!-- data-ausweis-vorschau: Ab hier ist alles die maßstäbliche Zeichnung der

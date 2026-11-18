@@ -1,5 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition';
+	import { emphasizedAccelerate, emphasizedDecelerate } from '../../../../lib/utils/bewegung.js';
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
@@ -94,7 +95,8 @@
      eines Scans (enterSpeichert). -->
 <div
 	class="flex flex-col w-full my-4"
-	transition:fade={{ duration: 200 }}
+	in:fade={{ duration: 400, easing: emphasizedDecelerate }}
+	out:fade={{ duration: 200, easing: emphasizedAccelerate }}
 	use:enterSpeichert={speichern}
 >
 	<!-- Der Kopf ist das einzige stehende Band der Maske: Schließen, Überschrift und die eine

@@ -18,7 +18,7 @@
 		pointer-events: none;
 		z-index: 9999;
 		border-radius: 0;
-		animation: screen-flash-fade 300ms ease-out forwards;
+		animation: screen-flash-fade 300ms cubic-bezier(0.2, 0, 0, 1) forwards;
 	}
 	.screen-flash--success {
 		box-shadow:

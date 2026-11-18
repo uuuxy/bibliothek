@@ -95,7 +95,7 @@
 			<!-- Selection Overlay -->
 			{#if gewaehlteKennungen.has(book.id)}
 				<div
-					class="absolute top-4 right-4 z-10 bg-primary text-on-primary p-1.5 rounded-full border-2 border-surface-container-lowest animate-in zoom-in-50 duration-200"
+					class="absolute top-4 right-4 z-10 bg-primary text-on-primary p-1.5 rounded-full border-2 border-surface-container-lowest"
 				>
 					<Check class="w-5 h-5" aria-hidden="true" />
 				</div>

@@ -197,6 +197,6 @@
 		}
 	}
 	.animate-shake {
-		animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+		animation: shake 400ms cubic-bezier(0.2, 0, 0, 1) both;
 	}
 </style>

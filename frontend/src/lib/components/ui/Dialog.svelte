@@ -84,7 +84,7 @@
 		<div
 			class="bg-surface-container-lowest w-full {breitenKlasse} {voll
 				? ''
-				: 'rounded-3xl'} shadow-2xl overflow-hidden animate-scale-up"
+				: 'rounded-3xl'} shadow-2xl overflow-hidden"
 			role="dialog"
 			aria-modal="true"
 			aria-label={beschriftung}

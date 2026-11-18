@@ -1,5 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition';
+	import { emphasizedAccelerate, emphasizedDecelerate } from '../../../../lib/utils/bewegung.js';
 	import KameraScanner from '$lib/components/scanner/KameraScanner.svelte';
 	import { X } from '@lucide/svelte';
 	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
@@ -19,7 +20,8 @@
 {#if isScanning}
 	<div
 		class="fixed inset-0 z-60 flex items-center justify-center bg-scrim/80 backdrop-blur-sm p-4"
-		transition:fade
+		in:fade={{ duration: 400, easing: emphasizedDecelerate }}
+		out:fade={{ duration: 200, easing: emphasizedAccelerate }}
 	>
 		<div
 			class="bg-surface-container-lowest p-6 rounded-3xl shadow-xl w-full max-w-md relative"
