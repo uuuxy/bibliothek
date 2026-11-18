@@ -144,6 +144,10 @@ const leserSuchRang = `
 //     mal ist es umgekehrt.
 //
 // Die SQL-Bausteine stehen oben als Konstanten; dieselbe Suche bedient die Leserdatei.
+//
+// Eine anonymisierte Zeile ist keine Person mehr. Ihr Ersatzname („Anonym", ein Vorname aus
+// Hex-Ziffern) träfe sonst kurze Eingaben wie „An" oder Ziffern einer Ausweisnummer und belegte
+// die zehn Plätze der Omnibox vor den Lesern, die gesucht sind.
 func (a *LeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error) {
 	tokens := suchTokens(suchtext)
 	if len(tokens) == 0 {
@@ -155,6 +159,7 @@ func (a *LeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limi
 		       count(*) OVER () AS gesamt
 		FROM leser s
 		WHERE s.deleted_at IS NULL
+		  AND s.anonymized_at IS NULL
 		  AND ` + leserSuchBedingung(false) + `
 		ORDER BY ` + leserSuchRang + `,
 			s.nachname ASC, s.vorname ASC

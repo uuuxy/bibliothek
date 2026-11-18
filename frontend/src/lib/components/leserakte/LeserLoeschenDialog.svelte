@@ -1,7 +1,7 @@
 <!-- @component LeserLoeschenDialog — legt einen Leser in den Papierkorb, mit
      Namens-Bestätigung. Der Dialog sagt, was danach gilt: bis zu 180 Tage wiederherstellbar,
-     dann anonymisiert (Schüler) oder endgültig gelöscht (Kollegium). „Bis zu", weil ein
-     Ehemaliger schon mit dem Ende seiner Karenzzeit anonymisiert wird.
+     dann endgültig gelöscht, Schüler wie Kollegium. „Bis zu", weil ein Ehemaliger schon mit
+     dem Ende seiner Karenzzeit anonymisiert wird.
 
      Beim Kollegium fällt mit dem Eintrag der Zugang, und das Wiederherstellen bringt ihn
      nicht zurück. Der Satz steht nur, wenn es einen Zugang gibt — Praktikum und Fachbereich
@@ -89,10 +89,8 @@
 				</div>
 			{:else}
 				<p class="mt-4 text-sm text-on-surface-variant leading-relaxed font-sans">
-					<strong>{leser.vorname} {leser.nachname}</strong> kommt in den Papierkorb der Leserdatei
-					und lässt sich dort bis zu 180 Tage lang wiederherstellen. Danach wird der Eintrag {kollege
-						? 'endgültig gelöscht'
-						: 'anonymisiert'}.
+					<strong>{leser.vorname} {leser.nachname}</strong> kommt in den Papierkorb der Leserdatei und
+					lässt sich dort bis zu 180 Tage lang wiederherstellen. Danach wird der Eintrag endgültig gelöscht.
 				</p>
 
 				{#if mitZugang}

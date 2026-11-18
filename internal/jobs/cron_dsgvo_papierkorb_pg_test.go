@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig, mit derselben Tilgung wie
-// „Endgültig löschen" von Hand (LoescheKollegenAusDemPapierkorb).
+// Gelöschte Leser fallen nach 180 Tagen im Papierkorb endgültig, Schüler wie Kollegen, mit
+// derselben Tilgung wie „Endgültig löschen" von Hand (LoescheAusDemPapierkorb).
 //
 // Erwartung nach dem Lauf:
 //
@@ -22,8 +22,8 @@ import (
 //	K-AUSLEIHE   Kollege, 200 Tage, offene Ausleihe                 → bleibt
 //	K-FORDERUNG  Kollege, 200 Tage, unbezahlte Forderung            → bleibt
 //	K-AKTIV      Kollege, nicht im Papierkorb                       → bleibt
-//	S-ALT        Schüler, 200 Tage im Papierkorb                    → bleibt (ihn anonymisiert
-//	                                                                   ein anderer Lauf)
+//	S-ALT        Schüler, 200 Tage im Papierkorb, anonymisiert      → gelöscht
+//	S-JUNG       Schüler, 10 Tage im Papierkorb                     → bleibt
 func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T) {
 	adminDSN := os.Getenv(datenbankVariable)
 	if adminDSN == "" {
@@ -63,9 +63,15 @@ func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.
 		"K-AUSLEIHE":  kollege("K-AUSLEIHE", tage(200)),
 		"K-FORDERUNG": kollege("K-FORDERUNG", tage(200)),
 		"K-AKTIV":     kollege("K-AKTIV", nil),
+		// So liegt er da, wenn die Anonymisierung derselben Nacht vor diesem Lauf war.
 		"S-ALT": eins("Schüler im Papierkorb", `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at,
+			                      ist_gesperrt, block_reason, anonymized_at)
+			VALUES ('ANON-S-PK-ALT', 'a1b2c3d4', 'Anonym', '', 2030, NOW() - interval '200 days',
+			        true, 'Anonymisiert (DSGVO)', NOW()) RETURNING id`),
+		"S-JUNG": eins("Schüler seit Kurzem im Papierkorb", `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
-			VALUES ('S-PK-ALT', 'Probe', 'S-ALT', '9c', 2030, NOW() - interval '200 days') RETURNING id`),
+			VALUES ('S-PK-JUNG', 'Probe', 'S-JUNG', '9c', 2030, NOW() - interval '10 days') RETURNING id`),
 	}
 
 	titel := eins("Titel", `INSERT INTO buecher_titel (titel) VALUES ('Papierkorb-Titel') RETURNING id`)
@@ -89,7 +95,8 @@ func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.
 	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehrePapierkorbLoeschungAus(ctx)
 
 	for name, bleibt := range map[string]bool{
-		"K-ALT": false, "K-JUNG": true, "K-AUSLEIHE": true, "K-FORDERUNG": true, "K-AKTIV": true, "S-ALT": true,
+		"K-ALT": false, "K-JUNG": true, "K-AUSLEIHE": true, "K-FORDERUNG": true, "K-AKTIV": true,
+		"S-ALT": false, "S-JUNG": true,
 	} {
 		var n int
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM leser WHERE id = $1`, ids[name]).Scan(&n); err != nil {
@@ -125,10 +132,10 @@ func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.
 	if err := pool.QueryRow(ctx, `
 		SELECT coalesce(details->>'geloescht', '') FROM audit_log
 		WHERE tabelle = 'schueler' AND aktion = 'BATCH_DELETE'
-		  AND kontext LIKE '%Kollegen nach 180 Tagen im Papierkorb%'`).Scan(&lauf); err != nil {
+		  AND kontext LIKE '%Leser nach 180 Tagen im Papierkorb%'`).Scan(&lauf); err != nil {
 		t.Fatalf("Protokollzeile des Laufs: %v", err)
 	}
-	if lauf != "1" {
-		t.Errorf("Protokoll nennt %q gelöschte Kollegen, erwartet 1", lauf)
+	if lauf != "2" {
+		t.Errorf("Protokoll nennt %q gelöschte Leser, erwartet 2 (K-ALT und S-ALT)", lauf)
 	}
 }

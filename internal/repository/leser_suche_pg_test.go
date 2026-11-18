@@ -171,6 +171,43 @@ func TestFindeUnscharf_GesamtzahlTrotzLimit(t *testing.T) {
 	}
 }
 
+// TestFindeUnscharf_UebergehtAnonymisierte: Eine anonymisierte Zeile trägt den Ersatznamen
+// „Anonym" und einen Vornamen aus Hex-Ziffern. Fände die Omnibox sie, belegten nach einem
+// Schuljahr lauter „Anonym" die zehn Plätze, sobald jemand „An" tippt, und die gesuchte Anna
+// stünde nicht in der Liste.
+func TestFindeUnscharf_UebergehtAnonymisierte(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	legeSuchSchuelerAn(t, pool, "ANONSUCH-1", "Anna", "Arndt")
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger,
+		                      ist_gesperrt, block_reason, anonymized_at)
+		VALUES ('ANON-SUCH-2', 'a1b2c3d4', 'Anonym', '', 2026, true, true, 'Anonymisiert (DSGVO)', now())`); err != nil {
+		t.Fatalf("Seed anonymisiert: %v", err)
+	}
+
+	repo := NewLeserAbfragen(pool)
+	for _, eingabe := range []string{"An", "Anonym", "a1b2"} {
+		treffer, gesamt, err := repo.FindeUnscharf(ctx, eingabe, 10)
+		if err != nil {
+			t.Fatalf("Suche %q: %v", eingabe, err)
+		}
+		namen := namenDerTreffer(treffer)
+		if enthaelt(namen, "a1b2c3d4 Anonym") {
+			t.Errorf("Suche %q findet die anonymisierte Zeile: %v (gesamt %d)", eingabe, namen, gesamt)
+		}
+	}
+	treffer, _, err := repo.FindeUnscharf(ctx, "An", 10)
+	if err != nil {
+		t.Fatalf("Suche An: %v", err)
+	}
+	if !enthaelt(namenDerTreffer(treffer), "Anna Arndt") {
+		t.Errorf("Suche An findet Anna Arndt nicht: %v", namenDerTreffer(treffer))
+	}
+}
+
 // TestFindeUnscharf_RanktVollenNamenNachOben prüft die Sortierung: Wer beide
 // Namensteile tippt, will die passende Person oben sehen und nicht alphabetisch
 // irgendwo. Bauer stünde sonst vor Hoffmann.

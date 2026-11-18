@@ -1350,7 +1350,7 @@ Welcher Pfad welche Zeile sperrt:
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
 | Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`internal/api/theke/ausleihe.go`)                      |
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`internal/api/leser/leser_sperre.go`)                         |
-| Endgültig löschen, von Hand und im Nachtlauf | die **Leser**-Zeile, schon bei der Frage, ob sie löschbar ist: Ein Wiederherstellen dazwischen träfe sonst das Löschen des aktiven Lesers | `LoescheLeserEndgueltig`, `LoescheKollegenAusDemPapierkorb` (`internal/repository/leser_loeschen.go`) |
+| Endgültig löschen, von Hand und im Nachtlauf | die **Leser**-Zeile, schon bei der Frage, ob sie löschbar ist: Ein Wiederherstellen dazwischen träfe sonst das Löschen des aktiven Lesers | `LoescheLeserEndgueltig`, `LoescheAusDemPapierkorb` (`internal/repository/leser_loeschen.go`) |
 | Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`internal/repository/auflagen.go`)   |
 | LMF-Plan speichern         | erst die Advisory-Sperre der Pläne, dann die Zeile des neuesten **Plans** der Art. Die Zeile allein hielte ein zweites Speichern nicht auf, solange es keinen Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt | `SperreNeuestenPlan` (`internal/repository/lmf_plan.go`) |
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`internal/repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`internal/repository/schlagworte_pflege.go`) |
@@ -1476,7 +1476,7 @@ in der Zukunft liegt, beginnt die Mahnfolge neu. Mahnlisten gehen an die Klassen
              2. fuehreSchuelerAnonymisierungAus    fällige Schüler-PII inkl. Audit-Spuren tilgen
              3. FuehreAbgaengerLoeschungAus        Hard-Delete ab 30. Januar des Folgejahres,
                                                 NUR anonymisierte Zeilen
-             4. Papierkorb: gelöschte Kollegen nach 180 Tagen endgültig löschen
+             4. Papierkorb: gelöschte Leser nach 180 Tagen endgültig löschen
              5. Lesehistorie   6. Anliegen   7. Klassensatz-Reservierungen
              8. quittierte Nachbuch-Meldungen
            └─ Die Reihenfolge ist die Zusage: Löschung NACH Anonymisierung, damit die

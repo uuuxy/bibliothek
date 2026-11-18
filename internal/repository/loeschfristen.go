@@ -69,7 +69,7 @@ func sqlKarenzUhr(alias string) string {
 // Der Zweig des Papierkorbs behält seine eigene Uhr (deleted_at): Eine Löschung von Hand ist
 // eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
 func PraedikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{AnonymisierungPapierkorbTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
+	return Loeschbedingung{Args: []any{PapierkorbTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
 		  AND anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
@@ -93,19 +93,18 @@ func PraedikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // Selbstprüfung stellt dieselbe Frage als count(*). Stünde die Einschränkung nur im Job, zählte
 // der Wächter weiter Kollegen mit und meldete Arbeit, die niemand tun kann.
 
-// ── Gelöschte Kollegen endgültig löschen ($1 Tage, $2 Kulanz) ─────────────────
+// ── Gelöschte Leser endgültig löschen ($1 Tage, $2 Kulanz) ───────────────────
 
-// praedikatKollegenPapierkorb liefert die Bedingung, mit der FuehrePapierkorbLoeschungAus
-// Kollegen auswählt, die seit AnonymisierungPapierkorbTage im Papierkorb liegen.
-// Dieselbe Frist wie beim Schüler, der dort
-// anonymisiert wird; einen Kollegen verbietet chk_leser_nur_schueler_werden_abgaenger zu
-// anonymisieren, deshalb fällt er ganz — über denselben Weg wie „Endgültig löschen" von Hand
-// (LoescheLeserEndgueltig). Offene Ausleihen und unbezahlte Forderungen halten ihn, wie dort.
+// praedikatPapierkorbLoeschung liefert die Bedingung, mit der fuehrePapierkorbLoeschungAus
+// Leser jeder Art auswählt, die seit PapierkorbTage im Papierkorb liegen: Nach
+// der Frist ist nichts mehr wiederherzustellen, und eine anonymisierte Schülerzeile hätte im
+// Papierkorb keinen Zweck mehr. Gelöscht wird über denselben Weg wie „Endgültig löschen" von
+// Hand (LoescheLeserEndgueltig); offene Ausleihen und unbezahlte Forderungen halten den Leser,
+// wie dort.
 //
 // Gefragt wird die Tabelle leser, nicht die Sicht schueler: Die zeigt keinen Kollegen.
-func praedikatKollegenPapierkorb(kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{AnonymisierungPapierkorbTage, kulanz}, Where: `art <> 'schueler'
-		  AND deleted_at IS NOT NULL
+func praedikatPapierkorbLoeschung(kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{PapierkorbTage, kulanz}, Where: `deleted_at IS NOT NULL
 		  AND deleted_at < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = leser.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = leser.id AND ist_bezahlt = false)`}

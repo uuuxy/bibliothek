@@ -1,9 +1,9 @@
 // papierkorbListe.svelte.js — der Zustand des Papierkorbs: laden, wiederherstellen,
 // endgültig löschen. Jeder dieser Wege meldet seinen Fehlausgang:
 //
-//  1. Wiederherstellen: Nach 180 Tagen im Papierkorb anonymisiert der nächtliche DSGVO-Lauf
-//     die Zeile, und LeserWiederherstellen weist die Wiederherstellung mit 409 ab, denn ein
-//     Pseudonym ist kein Schüler mehr. Ohne Meldung täte ein Klick nichts: eine Tür, die
+//  1. Wiederherstellen: Endet die Karenzzeit eines Ehemaligen im Papierkorb, anonymisiert der
+//     nächtliche DSGVO-Lauf die Zeile, und LeserWiederherstellen weist die Wiederherstellung
+//     mit 409 ab, denn ein Pseudonym ist kein Schüler mehr. Ohne Meldung täte ein Klick nichts: eine Tür, die
 //     sich nicht öffnet und nicht sagt, warum.
 //  2. Laden: Ein gescheiterter Abruf ließe die Liste leer, und die Ansicht schriebe „Der
 //     Papierkorb ist leer.", eine falsche Auskunft über gelöschte Schülerdaten.

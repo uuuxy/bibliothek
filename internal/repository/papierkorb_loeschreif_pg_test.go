@@ -8,11 +8,11 @@ import (
 	"bibliothek/internal/repository"
 )
 
-// Der nächtliche Lauf liest die löschreifen Kollegen vorher und löscht danach einzeln. Wer
+// Der nächtliche Lauf liest die löschreifen Leser vorher und löscht danach einzeln. Wer
 // dazwischen wiederhergestellt und neu gelöscht wurde, liegt erst Sekunden im Papierkorb; die
-// Löschung stellt deshalb die Frage der Liste noch einmal (praedikatKollegenPapierkorb) und lässt
+// Löschung stellt deshalb die Frage der Liste noch einmal (praedikatPapierkorbLoeschung) und lässt
 // ihn stehen.
-func TestLoescheKollegenAusDemPapierkorb_FragtBeimLoeschenNochEinmal(t *testing.T) {
+func TestLoescheAusDemPapierkorb_FragtBeimLoeschenNochEinmal(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := repository.NewLeserAbfragen(pool)
@@ -43,16 +43,16 @@ func TestLoescheKollegenAusDemPapierkorb_FragtBeimLoeschenNochEinmal(t *testing.
 	}
 
 	frisch := kollege("Frisch-Geloescht", 0)
-	if weg, err := repo.LoescheKollegenAusDemPapierkorb(ctx, frisch); err != nil || weg {
-		t.Errorf("LoescheKollegenAusDemPapierkorb(seit heute im Papierkorb) = %v, %v, erwartet false ohne Fehler", weg, err)
+	if weg, err := repo.LoescheAusDemPapierkorb(ctx, frisch); err != nil || weg {
+		t.Errorf("LoescheAusDemPapierkorb(seit heute im Papierkorb) = %v, %v, erwartet false ohne Fehler", weg, err)
 	}
 	if !gibtEs(frisch) {
 		t.Error("ein Kollege, der erst seit heute im Papierkorb liegt, ist endgültig gelöscht")
 	}
 
 	alt := kollege("Lange-Geloescht", 200)
-	if weg, err := repo.LoescheKollegenAusDemPapierkorb(ctx, alt); err != nil || !weg {
-		t.Errorf("LoescheKollegenAusDemPapierkorb(200 Tage im Papierkorb) = %v, %v, erwartet true ohne Fehler", weg, err)
+	if weg, err := repo.LoescheAusDemPapierkorb(ctx, alt); err != nil || !weg {
+		t.Errorf("LoescheAusDemPapierkorb(200 Tage im Papierkorb) = %v, %v, erwartet true ohne Fehler", weg, err)
 	}
 	if gibtEs(alt) {
 		t.Error("ein Kollege nach 200 Tagen im Papierkorb ist noch da")

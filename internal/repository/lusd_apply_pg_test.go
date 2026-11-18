@@ -51,13 +51,17 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 	if fotos != 0 {
 		t.Error("verschlüsseltes Foto wurde bei der Anonymisierung nicht gelöscht")
 	}
-	if _, abgaenger, _, vorname := testdaten.LadeSchuelerStatus(t, pool, id); !abgaenger || vorname != "Abgänger" {
-		t.Errorf("Datensatz nicht korrekt anonymisiert: vorname=%q abgaenger=%v", vorname, abgaenger)
+	var anonymisiert bool
+	if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1`, id).Scan(&anonymisiert); err != nil {
+		t.Fatal(err)
+	}
+	if _, abgaenger, _, vorname := testdaten.LadeSchuelerStatus(t, pool, id); !abgaenger || !anonymisiert || vorname == "Max" {
+		t.Errorf("Datensatz nicht korrekt anonymisiert: vorname=%q abgaenger=%v anonymisiert=%v", vorname, abgaenger, anonymisiert)
 	}
 }
 
 // Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur gesperrt (nicht
-// anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
+// anonymisiert) wurde, behielt seine "Automatisierte Ehemaligen-Sperre" beim LUSD-Wiedereintritt
 // dauerhaft. repository.AendereLUSDBestand muss beim Rückkehrer prüfen, ob noch Vorgänge offen
 // sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
 // nur ein echter DB-Test (nicht pgxmock) prüft sie.
@@ -103,7 +107,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger ohne offene Vorgänge wird entsperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-A", "Max", "Muster", "ABG",
-			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
+			"Automatisierte Ehemaligen-Sperre wegen offener Vorgänge")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
 
@@ -122,7 +126,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-B", "Lea", "Klein", "ABG",
-			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
+			"Automatisierte Ehemaligen-Sperre wegen offener Vorgänge")
 		testdaten.LegeOffeneAusleiheAn(t, pool, id, "B")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
@@ -134,7 +138,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if abgaenger {
 			t.Error("ist_abgaenger muss trotzdem zurückgesetzt sein (er ist wieder aktiv)")
 		}
-		if reason == nil || *reason != "Automatisierte Abgänger-Sperre wegen offener Vorgänge" {
+		if reason == nil || *reason != "Automatisierte Ehemaligen-Sperre wegen offener Vorgänge" {
 			t.Errorf("irreführender Abgänger-Grund muss umbenannt werden, war %v", reason)
 		}
 	})
@@ -142,7 +146,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger mit unbezahltem Schaden bleibt gesperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-C", "Tom", "Groß", "ABG",
-			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
+			"Automatisierte Ehemaligen-Sperre wegen offener Vorgänge")
 		testdaten.LegeOffenenSchadenAn(t, pool, id, "C")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
@@ -151,7 +155,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if !gesperrt {
 			t.Error("mit unbezahltem Schaden muss die Sperre bestehen bleiben")
 		}
-		if reason == nil || *reason != "Automatisierte Abgänger-Sperre wegen offener Vorgänge" {
+		if reason == nil || *reason != "Automatisierte Ehemaligen-Sperre wegen offener Vorgänge" {
 			t.Errorf("Grund muss umbenannt werden, war %v", reason)
 		}
 	})
@@ -177,9 +181,14 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 	t.Run("anonymisierter Abgänger wird entsperrt und umbenannt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
-		// Anonymisierte tragen 'Abgänger' / 'Anonymisiert-…' und den festen Grund.
-		id := legeGesperrtenAbgaengerAn(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
-			"Abgänger anonymisiert")
+		// Anonymisierte tragen den Ersatznamen, den festen Grund und anonymized_at; erkannt werden
+		// sie am Merkmal, nicht am Namen.
+		id := legeGesperrtenAbgaengerAn(t, pool, "R-E", "a1b2c3d4", "Anonym", "ABG",
+			"Anonymisiert (DSGVO)")
+		if _, err := pool.Exec(context.Background(),
+			`UPDATE schueler SET anonymized_at = NOW() WHERE id = $1`, id); err != nil {
+			t.Fatalf("anonymized_at setzen: %v", err)
+		}
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
 

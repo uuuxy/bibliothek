@@ -86,12 +86,12 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandLeserUndLesehistorie(ctx conte
 	}
 	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach Karenz und Anonymisierung ab 30. Januar des Folgejahres", Zeilen: n})
 
-	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb).
-	n, err = a.zaehle(ctx, "leser", "", praedikatKollegenPapierkorb(KulanzWaechter))
+	// 2a. Gelöschte Leser endgültig löschen (180 Tage im Papierkorb).
+	n, err = a.zaehle(ctx, "leser", "", praedikatPapierkorbLoeschung(KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Gelöschte Kollegen endgültig löschen", Frist: tageText(AnonymisierungPapierkorbTage) + " im Papierkorb", Zeilen: n})
+	stand = append(stand, LoeschRueckstand{Routine: "Gelöschte Leser endgültig löschen", Frist: tageText(PapierkorbTage) + " im Papierkorb", Zeilen: n})
 
 	// 3./4. Lesehistorie, beide Klassen — Ausleihe und Protokolleintrag. Die
 	//       Protokollzeile trägt dieselbe Zuordnung; wer nur die Ausleihe zählt, sieht

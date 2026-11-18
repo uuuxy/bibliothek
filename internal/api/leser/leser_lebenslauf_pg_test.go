@@ -102,12 +102,13 @@ func TestLUSDRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	ctx := context.Background()
 
 	var id string
-	// Anonymisierter Abgänger, wie ihn repository.AnonymisiereAbgaenger hinterlässt: gesperrt mit
-	// Grund (chk_schueler_block_reason verlangt ihn).
+	// Anonymisierter Abgänger, wie ihn repository.AnonymisiereAbgaenger hinterlässt: Ersatzname,
+	// gesperrt mit Grund (chk_schueler_block_reason verlangt ihn) und anonymized_at, an dem der
+	// Rückweg ihn erkennt.
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id,
-		                       ist_abgaenger, ist_gesperrt, block_reason)
-		 VALUES ('L-1', 'Abgänger', 'Anonymisiert-alt', 'ABG', 2030, 'LUSD-42', true, true, 'Abgänger anonymisiert')
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr,
+		                       ist_abgaenger, ist_gesperrt, block_reason, anonymized_at)
+		 VALUES ('ANON-L-1', 'a1b2c3d4', 'Anonym', 'ABG', 2030, true, true, 'Anonymisiert (DSGVO)', NOW())
 		 RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}

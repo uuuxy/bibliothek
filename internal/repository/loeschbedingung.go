@@ -14,9 +14,9 @@ const (
 	// nächtlichen Lauf zugesteht.
 	KulanzWaechter = 1
 
-	// AnonymisierungPapierkorbTage sind die Tage nach dem Soft-Delete
-	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
-	AnonymisierungPapierkorbTage = 180
+	// PapierkorbTage sind die Tage nach dem Soft-Delete (Papierkorb), nach denen ein Leser
+	// endgültig gelöscht wird; einen Schüler anonymisiert der Lauf derselben Nacht vorher.
+	PapierkorbTage = 180
 	// AbgaengerKarenzTageVorgabe ist die Vorgabe der Karenzzeit nach dem Abgang: So lange
 	// bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche Job ihn
 	// anonymisiert. Eine sofortige Anonymisierung beim LUSD-Import nähme jede Reparatur einer

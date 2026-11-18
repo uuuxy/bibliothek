@@ -231,19 +231,19 @@ func (a *LeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID stri
 	return tx.Commit(ctx)
 }
 
-// LoescheKollegenAusDemPapierkorb entfernt für den nächtlichen Lauf einen Kollegen, wenn er beim
-// Löschen noch löschreif ist (praedikatKollegenPapierkorb, dieselbe Bedingung wie die Liste des
+// LoescheAusDemPapierkorb entfernt für den nächtlichen Lauf einen Leser, wenn er beim
+// Löschen noch löschreif ist (praedikatPapierkorbLoeschung, dieselbe Bedingung wie die Liste des
 // Laufs). Der Lauf liest seine Liste vorher; wer dazwischen wiederhergestellt und neu gelöscht
 // wurde, verlöre sonst seine 180 Tage. Die Zeile bleibt bis zum Löschen gesperrt. false heißt:
 // nicht mehr löschreif, nichts geändert.
-func (a *LeserAbfragen) LoescheKollegenAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
+func (a *LeserAbfragen) LoescheAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	bedingung := praedikatKollegenPapierkorb(KulanzJob)
+	bedingung := praedikatPapierkorbLoeschung(KulanzJob)
 	argumente := append(bedingung.Args, leserID)
 	var loeschreif int
 	err = tx.QueryRow(ctx, fmt.Sprintf(`SELECT 1 FROM leser WHERE id = $%d AND %s FOR UPDATE`,

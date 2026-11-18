@@ -576,7 +576,9 @@ Liste.
   Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
-  der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Im Mahnwesen steht
+  der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Wer nichts mehr offen
+  hat, bleibt bis zum Ende der Karenzzeit darin stehen; danach ist der Eintrag anonymisiert und
+  verschwindet aus der Liste und aus der Suche. Im Mahnwesen steht
   ein Ehemaliger unter „Ehemalige", sobald die Frist eines Buchs abgelaufen ist; läuft sie noch
   (etwa bei einem Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute
   setzen. Löschen in
@@ -584,8 +586,7 @@ Liste.
   Kollegen fällt dabei sein Zugang zu „Mein Portal"; hat er einen, löscht ihn nur, wer auch
   _Benutzer & Rechte_ darf, ein Admin-Konto nur ein Admin. Sonst ist der Knopf abgeschaltet,
   und der Grund steht daneben. Im Papierkorb lässt sich die Person bis zu 180 Tage lang
-  wiederherstellen; danach wird ein Schüler anonymisiert, ein
-  Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
+  wiederherstellen; danach wird sie endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
   anonymisiert, wenn sie früher abläuft. _Endgültig löschen_ im Papierkorb wirkt sofort und
   braucht ein eigenes Recht (DSGVO-Kette, §8).
 - **Doppelter Datensatz?** (Recht „Leser zusammenführen", ab Werk Admin und Leitung; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe

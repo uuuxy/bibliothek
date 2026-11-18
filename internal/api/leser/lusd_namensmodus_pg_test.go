@@ -159,13 +159,12 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 		t.Errorf("bestätigter Schüler muss Abgänger sein (err=%v, abg=%v)", err, abg)
 	}
 	for _, id := range []string{handID, ohneID} {
-		var abg bool
-		var vorname string
-		if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, vorname FROM schueler WHERE id=$1`, id).Scan(&abg, &vorname); err != nil {
+		var abg, anonymisiert bool
+		if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, anonymized_at IS NOT NULL FROM schueler WHERE id=$1`, id).Scan(&abg, &anonymisiert); err != nil {
 			t.Fatal(err)
 		}
-		if abg || vorname == "Abgänger" {
-			t.Errorf("Schüler %s wurde angefasst (abgaenger=%v, vorname=%q) — er stand nie in einem Export", id, abg, vorname)
+		if abg || anonymisiert {
+			t.Errorf("Schüler %s wurde angefasst (abgaenger=%v, anonymisiert=%v) — er stand nie in einem Export", id, abg, anonymisiert)
 		}
 	}
 }
@@ -180,7 +179,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	id := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Rück", nachname: "Kehrer", klasse: "9a", barcode: "NM-6", geb: testdaten.Datum(2010, 6, 6), abgaenger: true, bestaetigt: true})
-	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre wegen offener Vorgänge' WHERE id=$1`, id); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Ehemaligen-Sperre wegen offener Vorgänge' WHERE id=$1`, id); err != nil {
 		t.Fatal(err)
 	}
 

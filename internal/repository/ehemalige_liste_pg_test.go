@@ -7,7 +7,8 @@ import (
 
 // Der Reiter „Ehemalige" und „Aktive Schüler" sind dieselbe Abfrage mit
 // umgekehrtem Vorzeichen — hier der Beweis, dass keine Zeile in beiden oder in keiner
-// Liste landet: aktiv, weggegangen, gelöscht.
+// Liste landet: aktiv, weggegangen, gelöscht. Eine anonymisierte Zeile steht in keiner der
+// beiden: Sie ist keine Person mehr und wartet nur auf die endgültige Löschung.
 func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -20,6 +21,14 @@ func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 		('EHEM-X', 'Weglaenger', 'Ehemtest', 'ABG',  2025, true,  NULL),
 		('EHEM-G', 'Geloescht',  'Ehemtest', 'ABG',  2026, true,  now())`); err != nil {
 		t.Fatalf("Seed: %v", err)
+	}
+	// Der Nachname bleibt Ehemtest, damit die Suche die Zeile träfe: Ausgeschlossen wird sie
+	// allein wegen anonymized_at.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger,
+		                      ist_gesperrt, block_reason, anonymized_at)
+		VALUES ('ANON-EHEM-N', 'Anonymisiert', 'Ehemtest', '', 2026, true, true, 'Anonymisiert (DSGVO)', now())`); err != nil {
+		t.Fatalf("Seed anonymisiert: %v", err)
 	}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE nachname = 'Ehemtest'`); err != nil {
@@ -44,14 +53,14 @@ func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 		return m
 	}
 	e, a := namen(ehemalige), namen(aktive)
-	if !e["Weg"] || !e["Weglaenger"] || e["Aktiv"] || e["Geloescht"] || len(ehemalige) != 2 {
+	if !e["Weg"] || !e["Weglaenger"] || e["Aktiv"] || e["Geloescht"] || e["Anonymisiert"] || len(ehemalige) != 2 {
 		t.Errorf("Ehemalige: %v — erwartet genau Weg und Weglaenger", e)
 	}
-	if !a["Aktiv"] || a["Weg"] || a["Geloescht"] || len(aktive) != 1 {
+	if !a["Aktiv"] || a["Weg"] || a["Geloescht"] || a["Anonymisiert"] || len(aktive) != 1 {
 		t.Errorf("Aktive: %v — erwartet genau Aktiv", a)
 	}
 
-	// Ohne Suchbegriff: jüngster Abgang zuerst.
+	// Ohne Suchbegriff: jüngster Abgang zuerst, die anonymisierte Zeile auch hier nicht.
 	alle, err := repo.LadeEhemaligenListe(ctx, "", LeserSortierung{})
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +70,9 @@ func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 		if s.Nachname == "Ehemtest" {
 			pos[s.Vorname] = i
 		}
+	}
+	if _, drin := pos["Anonymisiert"]; drin {
+		t.Error("Ehemalige ohne Suchbegriff: die anonymisierte Zeile steht in der Liste")
 	}
 	if pos["Weg"] > pos["Weglaenger"] {
 		t.Errorf("Reihenfolge: Abgang 2026 muss vor 2025 stehen, war %v", pos)

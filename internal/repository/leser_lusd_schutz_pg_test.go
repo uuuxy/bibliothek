@@ -117,7 +117,7 @@ func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	if err := repository.SperreAbgaenger(ctx, tx, kollegeID, "Automatisierte Abgänger-Sperre"); err != nil {
+	if err := repository.SperreAbgaenger(ctx, tx, kollegeID, "Automatisierte Ehemaligen-Sperre"); err != nil {
 		t.Fatalf("repository.SperreAbgaenger: %v", err)
 	}
 	if err := repository.AnonymisiereAbgaenger(ctx, tx, kollegeID); err != nil {

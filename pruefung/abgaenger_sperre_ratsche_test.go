@@ -8,16 +8,17 @@ import (
 	"testing"
 )
 
-// Abgänger-Sperre: ein Präfix, eine Uhr. Der Pfad der Rückkehrer im LUSD-Import und das
+// Sperre der Ehemaligen: ein Präfix, eine Uhr. Der Pfad der Rückkehrer im LUSD-Import und das
 // Zusammenführen erkennen die automatische Sperre am Präfix des Sperrgrunds; die Karenz vor der
 // Anonymisierung rechnet mit abgaenger_seit. Ein Weg mit anderem Präfix („Automatische" statt
-// „Automatisierte") oder ohne Stempel der Uhr erzeugt eine Sperre, die diese Pfade nicht erkennen.
+// „Automatisierte", das alte „Abgänger-Sperre") oder ohne Stempel der Uhr erzeugt eine Sperre,
+// die diese Pfade nicht erkennen.
 // Zwei Regeln, mechanisch:
 //  1. Das Präfix steht als Literal nur in internal/repository/abgaenger_sperre.go.
 //  2. Jedes SQL, das ist_abgaenger auf true setzt, stempelt im selben Statement abgaenger_seit.
 func TestAbgaengerSperre_EinPraefixEineUhr(t *testing.T) {
 	wechsleInDieWurzel(t)
-	praefix := regexp.MustCompile(`Automati(sierte|sche) Abgänger-Sperre`)
+	praefix := regexp.MustCompile(`Automati(sierte|sche) (Abgänger|Ehemaligen)-Sperre`)
 	setztAbgaenger := regexp.MustCompile(`(?s)ist_abgaenger\s*=\s*(true|c\.is_graduating)`)
 	rohstrings := regexp.MustCompile("(?s)`[^`]*`")
 	verkettung := regexp.MustCompile("` *\\+ *[A-Za-z_.]+ *\\+ *`")

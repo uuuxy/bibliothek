@@ -73,8 +73,8 @@ func FindeJuengstenSchuljahreswechsel(ctx context.Context, db Datenbank) (*Jueng
 // bis Juli zum Einsammeln zeigt.
 //
 // Zwei Regeln hält die Anweisung:
-//   - klasse ist NOT NULL (schema.sql): Abgänger bekommen 'ABG' wie beim LUSD-Import
-//     (berechneLUSDAenderungen), damit beide Wege dieselbe Konvention schreiben.
+//   - klasse ist NOT NULL (schema.sql): Abgänger bekommen den Sonderwert 'ABG' statt eines
+//     Jahrgangs, den es nicht gibt.
 //   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu kürzen
 //     ('09' → '10'; greatest() verhindert, dass lpad abschneidet).
 var sqlVersetzeSchueler = `
@@ -105,7 +105,7 @@ var sqlVersetzeSchueler = `
 			-- Abgänger werden gesperrt → chk_schueler_block_reason verlangt einen Grund.
 			-- Ein vorhandener (z. B. manueller) Grund bleibt erhalten.
 			block_reason = CASE WHEN c.is_graduating
-			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + abgaengerSperrgrundSchuljahreswechsel + `')
+			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + AbgaengerSperrgrund + `')
 			                    ELSE s.block_reason END,
 			-- Karenz-Uhr: beim ersten Abgang gestempelt, wie im LUSD-Pfad
 			-- (SperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.

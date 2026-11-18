@@ -30,9 +30,9 @@ type Zeitplan struct {
 // leserLoeschung sind die zwei Wege, auf denen ein nächtlicher Lauf einen Leser endgültig löscht
 // (repository.LeserAbfragen).
 type leserLoeschung interface {
-	// LoescheKollegenAusDemPapierkorb entfernt einen Kollegen aus dem Papierkorb, wenn er beim
+	// LoescheAusDemPapierkorb entfernt einen Leser aus dem Papierkorb, wenn er beim
 	// Löschen noch löschreif ist; false heißt, er ist es nicht mehr.
-	LoescheKollegenAusDemPapierkorb(ctx context.Context, leserID string) (bool, error)
+	LoescheAusDemPapierkorb(ctx context.Context, leserID string) (bool, error)
 	// LoescheAbgaengerEndgueltig entfernt einen Abgänger, den der Lauf ausgewählt hat; offene
 	// Vorgänge verhindern es, auch wenn sie nach der Auswahl entstanden sind.
 	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
@@ -217,8 +217,8 @@ func (z *Zeitplan) fuehreNaechtlicheDSGVOAus(ctx context.Context) {
 	// Betriebsbereitschaft sieht nie eine anonymisierte Hülle einen Tag lang als Rückstand.
 	z.fuehreSchuelerAnonymisierungAus(ctx)
 	z.FuehreAbgaengerLoeschungAus(ctx)
-	// Gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig löschen
-	// (cron_dsgvo_papierkorb.go).
+	// Gelöschte Leser nach 180 Tagen im Papierkorb endgültig löschen
+	// (cron_dsgvo_papierkorb.go); einen Schüler hat der Lauf davor schon anonymisiert.
 	z.fuehrePapierkorbLoeschungAus(ctx)
 	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene Ausleihen nach
 	// der Frist vom Leser. Die Fristen stehen in den Einstellungen.

@@ -68,12 +68,12 @@ func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 	}
 	ehemalig := testdaten.LegeSchuelerAn(t, pool, "S-VSP-1", "Ehemalig", "10R1")
 	sperre(ehemalig, "Ehemaligen", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Automatisierte Abgänger-Sperre zum Schuljahreswechsel' WHERE id = $1`)
+		block_reason = 'Automatisierte Ehemaligen-Sperre' WHERE id = $1`)
 	vonHand := testdaten.LegeSchuelerAn(t, pool, "S-VSP-2", "VonHand", "10R1")
 	sperre(vonHand, "von Hand", `UPDATE leser SET is_manually_blocked = true, block_reason = 'Buchverlust' WHERE id = $1`)
 	anonym := testdaten.LegeSchuelerAn(t, pool, "S-VSP-3", "Anonym", "10R1")
 	sperre(anonym, "anonymisiert", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`)
+		block_reason = 'Anonymisiert (DSGVO)', anonymized_at = NOW() WHERE id = $1`)
 	papierkorb := testdaten.LegeSchuelerAn(t, pool, "S-VSP-4", "Papierkorb", "10R1")
 	sperre(papierkorb, "Papierkorb", `UPDATE leser SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`)

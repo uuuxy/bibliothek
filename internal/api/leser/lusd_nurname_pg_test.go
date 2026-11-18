@@ -161,7 +161,7 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	alt := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Alt", klasse: "10a", barcode: "NN-7", geb: testdaten.Datum(2008, 3, 3), abgaenger: true, bestaetigt: true})
-	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre wegen offener Vorgänge' WHERE id=$1`, alt); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Ehemaligen-Sperre wegen offener Vorgänge' WHERE id=$1`, alt); err != nil {
 		t.Fatal(err)
 	}
 	datei := nnDatei(nmZeile(2, "Max", "Alt", "5a", nil))

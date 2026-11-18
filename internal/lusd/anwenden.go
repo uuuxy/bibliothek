@@ -178,14 +178,12 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, abgaengerIDs []string, ka
 }
 
 // sperreOderAnonymisiere schließt einen Abgänger ab: Mit offenen Vorgängen und während der
-// Karenzzeit wird er nur gesperrt, sonst sofort anonymisiert.
+// Karenzzeit wird er nur gesperrt, sonst sofort anonymisiert. Der Sperrgrund ist in beiden
+// Fällen derselbe, weil die offenen Vorgänge mit der letzten Rückgabe enden, der Grund aber
+// stehen bliebe.
 func sperreOderAnonymisiere(ctx context.Context, tx pgx.Tx, schuelerID string, offen bool, karenzTage int) error {
-	switch {
-	case offen:
-		return repository.SperreAbgaenger(ctx, tx, schuelerID, repository.AbgaengerSperrgrundOffen)
-	case karenzTage > 0:
-		return repository.SperreAbgaenger(ctx, tx, schuelerID, repository.AbgaengerSperrgrundKarenz)
-	default:
-		return repository.AnonymisiereAbgaenger(ctx, tx, schuelerID)
+	if offen || karenzTage > 0 {
+		return repository.SperreAbgaenger(ctx, tx, schuelerID, repository.AbgaengerSperrgrund)
 	}
+	return repository.AnonymisiereAbgaenger(ctx, tx, schuelerID)
 }

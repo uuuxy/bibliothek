@@ -175,27 +175,22 @@ func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	}
 
 	// Es gilt die Karenzzeit (Vorgabe 90 Tage): Auch „sauber" wird nicht
-	// sofort anonymisiert, sondern nur gesperrt — mit dem Karenz-Grund und gestempeltem
-	// abgaenger_seit, damit der nächtliche Job die Frist rechnen kann. Die beiden anderen
-	// tragen offene Vorgänge und den Grund dafür; anonymisiert wird keiner.
-	sollGrund := map[string]string{
-		"sauber":   repository.AbgaengerSperrgrundKarenz,
-		"ausleihe": repository.AbgaengerSperrgrundOffen,
-		"schaden":  repository.AbgaengerSperrgrundOffen,
-	}
-	for name, grund := range sollGrund {
-		var vorname, blockReason string
-		var gesperrt, seitGesetzt bool
+	// sofort anonymisiert, sondern nur gesperrt — mit gestempeltem abgaenger_seit, damit der
+	// nächtliche Job die Frist rechnen kann. Alle drei tragen denselben Grund: Er nennt keine
+	// offenen Vorgänge, die mit der letzten Rückgabe enden; anonymisiert wird keiner.
+	for _, name := range []string{"sauber", "ausleihe", "schaden"} {
+		var blockReason string
+		var anonymisiert, gesperrt, seitGesetzt bool
 		if err := pool.QueryRow(ctx,
-			`SELECT vorname, ist_gesperrt, COALESCE(block_reason, ''), abgaenger_seit IS NOT NULL FROM schueler WHERE id = $1`, ids[name],
-		).Scan(&vorname, &gesperrt, &blockReason, &seitGesetzt); err != nil {
+			`SELECT anonymized_at IS NOT NULL, ist_gesperrt, COALESCE(block_reason, ''), abgaenger_seit IS NOT NULL FROM schueler WHERE id = $1`, ids[name],
+		).Scan(&anonymisiert, &gesperrt, &blockReason, &seitGesetzt); err != nil {
 			t.Fatalf("%s nach dem Lauf lesen: %v", name, err)
 		}
-		if vorname == "Abgänger" {
+		if anonymisiert {
 			t.Errorf("%s: wurde anonymisiert — in der Karenzzeit darf das nicht passieren", name)
 		}
-		if !gesperrt || blockReason != grund {
-			t.Errorf("%s: gesperrt=%v grund=%q, erwartet gesperrt mit %q", name, gesperrt, blockReason, grund)
+		if !gesperrt || blockReason != repository.AbgaengerSperrgrund {
+			t.Errorf("%s: gesperrt=%v grund=%q, erwartet gesperrt mit %q", name, gesperrt, blockReason, repository.AbgaengerSperrgrund)
 		}
 		if !seitGesetzt {
 			t.Errorf("%s: abgaenger_seit fehlt — ohne Stempel läuft keine Karenz-Uhr", name)
@@ -223,13 +218,13 @@ func TestLUSDImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		t.Fatalf("zweiter Abgängerlauf scheiterte: %v", err)
 	}
 	for name, sollAnonym := range map[string]bool{"sauber": true, "ausleihe": false, "schaden": false} {
-		var vorname string
-		if err := pool.QueryRow(ctx, `SELECT vorname FROM schueler WHERE id = $1`, ids[name]).Scan(&vorname); err != nil {
+		var anonymisiert bool
+		if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1`, ids[name]).Scan(&anonymisiert); err != nil {
 			t.Fatal(err)
 		}
-		if (vorname == "Abgänger") != sollAnonym {
+		if anonymisiert != sollAnonym {
 			t.Errorf("Karenz 0: %s anonymisiert=%v, erwartet %v — die Zuordnung der offenen Vorgaenge stimmt nicht",
-				name, vorname == "Abgänger", sollAnonym)
+				name, anonymisiert, sollAnonym)
 		}
 	}
 }

@@ -141,7 +141,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 		Scan(&vorname, &abg, &gesperrt, &grund, &seit); err != nil {
 		t.Fatal(err)
 	}
-	if vorname != "Anna" || !abg || !gesperrt || grund != repository.AbgaengerSperrgrundKarenz || !seit {
+	if vorname != "Anna" || !abg || !gesperrt || grund != repository.AbgaengerSperrgrund || !seit {
 		t.Errorf("Karenz-Abgänger falsch: vorname=%q abg=%v gesperrt=%v grund=%q seit=%v", vorname, abg, gesperrt, grund, seit)
 	}
 }

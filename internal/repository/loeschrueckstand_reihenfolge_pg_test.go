@@ -21,7 +21,7 @@ func TestZaehleLoeschRueckstand_EineZeileJeRoutineInFesterReihenfolge(t *testing
 	want := []string{
 		"Schüler-Anonymisierung",
 		"Abgänger endgültig löschen",
-		"Gelöschte Kollegen endgültig löschen",
+		"Gelöschte Leser endgültig löschen",
 		"Lesehistorie Schülerbücherei",
 		"Lesehistorie Lernmittel",
 		"Bearbeiter zurückgegebener Ausleihen",

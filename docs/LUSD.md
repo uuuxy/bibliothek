@@ -130,9 +130,14 @@ Wer bestätigt war und im Export fehlt, wird Abgänger:
 
 | Zustand                                  | Was passiert                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Abgänger-Sperre wegen offener Vorgänge" |
-| nichts offen, Karenz > 0                 | **nur gesperrt**, Grund „… (Karenzzeit vor Anonymisierung)"; der nächtliche Job anonymisiert nach Ablauf          |
-| nichts offen, Karenz = 0                 | sofort anonymisiert                                                                                               |
+| offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Ehemaligen-Sperre" |
+| nichts offen, Karenz > 0                 | **nur gesperrt**, derselbe Grund; der nächtliche Job anonymisiert nach Ablauf                                     |
+| nichts offen, Karenz = 0                 | sofort anonymisiert, in derselben Form wie im nächtlichen Job (`repository.sqlAnonymisierung`)                    |
+
+Der Grund nennt keinen Zustand, der sich ändert: „wegen offener Vorgänge" stünde nach der letzten
+Rückgabe falsch in der Akte. Nur wer wieder im Export steht und aus der Zeit als Ehemaliger noch
+etwas offen hat, bleibt mit dem Grund „Automatisierte Ehemaligen-Sperre wegen offener Vorgänge"
+gesperrt, bis ein Abgleich nichts Offenes mehr findet.
 
 Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit_
 (Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr läuft ab dem späteren

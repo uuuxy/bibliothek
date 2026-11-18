@@ -86,7 +86,7 @@ func (a *LeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string,
 }
 
 // LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben (ist_abgaenger =
-// true, nicht gelöscht), für den Reiter „Ehemalige" der Schülerdatei. Die
+// true, nicht gelöscht, noch nicht anonymisiert), für den Reiter „Ehemalige" der Schülerdatei. Die
 // Abgängerliste meint die Abschlussklassen, die noch an der Schule sind; die Weggegangenen
 // haben deshalb ihre eigene Liste, mit denselben Zeilen und derselben Suche wie die Aktiven
 // (ladeListe). Jüngster Abgang zuerst, dann Name.
@@ -125,10 +125,12 @@ func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche s
 	// Weggegangene (ist_abgaenger) gehören nicht in „Aktive Schüler": Sie stünden als
 	// „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven, nach einem Schuljahreswechsel ein
 	// ganzer Jahrgang. Sie haben den Reiter „Ehemalige", der über dieselbe Abfrage mit
-	// umgekehrtem Vorzeichen läuft.
+	// umgekehrtem Vorzeichen läuft. Eine anonymisierte Zeile ist keine Person mehr und hat
+	// nichts Offenes (PraedikatAnonymisierung); sie bleibt nur bis zur endgültigen Löschung
+	// stehen und gehört in keine Liste.
 	statusBedingung := "COALESCE(s.ist_abgaenger, false) = false"
 	if art == listeEhemalige {
-		statusBedingung = "s.ist_abgaenger = true"
+		statusBedingung = "s.ist_abgaenger = true AND s.anonymized_at IS NULL"
 	}
 	// Die Leserdatei liest die Tabelle, die beiden Schüler-Listen die Sicht. Das ist der
 	// einzige Unterschied im Rumpf — alles andere (Suche, Ausleihzahlen, Foto) gilt für

@@ -13,7 +13,7 @@ describe('LeserKontoStatus', () => {
 			leser: {
 				art: 'schueler',
 				ist_gesperrt: true,
-				block_reason: 'Automatisierte Abgänger-Sperre wegen offener Vorgänge'
+				block_reason: 'Automatisierte Ehemaligen-Sperre wegen offener Vorgänge'
 			},
 			onLock
 		});

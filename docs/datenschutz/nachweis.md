@@ -74,7 +74,7 @@ Datenschutz & Sitzung.
 | Zuordnung der Ausleihe eines Buchs des Landes zur Person             | 730 Tage nach der Rückgabe, sonst wie oben                                                      | ja          |
 | bearbeitende Person an einer Ausleihe                                | 14 Tage nach der Rückgabe                                                                       | nein        |
 | Abgänger ohne offene Vorgänge                                        | anonymisiert 90 Tage nach dem späteren von Abgang und letztem Vorgang, endgültig gelöscht ab dem 30. Januar des Folgejahres | die 90 Tage |
-| Schülerin oder Schüler im Papierkorb                                 | anonymisiert nach 180 Tagen                                                                     | nein        |
+| Schülerin oder Schüler im Papierkorb                                 | endgültig gelöscht nach 180 Tagen, außer eine Ausleihe oder eine unbezahlte Forderung ist offen | nein        |
 | Kollegin oder Kollege im Papierkorb                                  | endgültig gelöscht nach 180 Tagen, außer eine Ausleihe oder eine unbezahlte Forderung ist offen; das Zugangskonto geht schon beim Löschen | nein        |
 | erledigte Wünsche, Meldungen und Klassensatz-Reservierungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
 | quittierte Meldungen der Theke nach einem Netzausfall                | Frist der Schülerbücherei, höchstens 30 Tage                                                    | über diese  |
@@ -156,7 +156,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 - **Löschung:** in den Papierkorb, von dort endgültig von Hand (ab Werk Admin und Leitung) oder
   nach den Fristen in Abschnitt 4. Widerruft jemand die Einwilligung für die Schülerbücherei,
   lässt sich der Datensatz sofort in den Papierkorb legen; nach 180 Tagen wird er
-  anonymisiert. Laufende Lernmittel-Ausleihen bleiben davon unberührt, für sie gilt keine
+  endgültig gelöscht. Laufende Lernmittel-Ausleihen bleiben davon unberührt, für sie gilt keine
   Einwilligung.
 
 ## 8. Wenn etwas passiert: Ablauf bei einer Datenpanne
@@ -209,7 +209,7 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   fest und nennt danach, wer erneut zu löschen ist
   ([resilience_and_recovery.md](../resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und
   8); das Nachholen ist Handarbeit.
-- Ein gelöschter Kollege fällt nach 180 Tagen im Papierkorb endgültig, erledigte
+- Ein gelöschter Leser fällt nach 180 Tagen im Papierkorb endgültig, erledigte
   Klassensatz-Reservierungen nach der Frist für erledigte Wünsche und Meldungen; eine
   Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere

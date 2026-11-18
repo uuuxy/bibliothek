@@ -89,8 +89,8 @@ func TestAnonymisiereAbgaenger_SetztFestenGrund(t *testing.T) {
 	}
 
 	gesperrt, grund := gesperrtState(t, pool, sid)
-	if !gesperrt || grund != "Abgänger anonymisiert" {
-		t.Errorf("gesperrtState(t, pool, sid) = gesperrt=%v grund=%q, erwartet gesperrt mit festem Grund 'Abgänger anonymisiert'", gesperrt, grund)
+	if !gesperrt || grund != "Anonymisiert (DSGVO)" {
+		t.Errorf("gesperrtState(t, pool, sid) = gesperrt=%v grund=%q, erwartet gesperrt mit festem Grund 'Anonymisiert (DSGVO)'", gesperrt, grund)
 	}
 }
 

@@ -23,7 +23,7 @@ func legeGesperrtenAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, lusdID
 			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id,
 			 ist_abgaenger, ist_gesperrt, block_reason)
 		VALUES ($1, 'Max', 'Muster', 'ABG', 2025, $2,
-			 true, true, 'Automatisierte Abgänger-Sperre wegen offener Vorgänge')
+			 true, true, 'Automatisierte Ehemaligen-Sperre wegen offener Vorgänge')
 		RETURNING id`, barcode, lusdID).Scan(&id); err != nil {
 		t.Fatalf("Abgänger anlegen: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 		}
 		// Der Grund sagt jetzt „offene Vorgänge", trägt aber weiter das Präfix der
 		// Automatik — sonst erkennt kein späterer Weg die Sperre als automatisch wieder.
-		if reason == nil || *reason != "Automatisierte Abgänger-Sperre wegen offener Vorgänge" {
+		if reason == nil || *reason != "Automatisierte Ehemaligen-Sperre wegen offener Vorgänge" {
 			t.Errorf("Grund muss „offene Vorgänge“ nennen UND das Automatik-Präfix tragen, war %v", reason)
 		}
 	})

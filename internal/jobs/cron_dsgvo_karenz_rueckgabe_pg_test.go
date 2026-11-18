@@ -50,7 +50,7 @@ func TestSchuelerAnonymisierung_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
 			                      ist_gesperrt, block_reason, abgaenger_seit, aktualisiert_am)
 			VALUES ($1, 'Karenz', $1, 'ABG', 2026, true, true, $2,
 			        NOW() - interval '100 days', NOW() - interval '400 days')
-			RETURNING id`, barcode, repository.AbgaengerSperrgrundKarenz).Scan(&id); err != nil {
+			RETURNING id`, barcode, repository.AbgaengerSperrgrund).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		return id

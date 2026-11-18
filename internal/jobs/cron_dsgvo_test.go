@@ -17,7 +17,7 @@ type protokollAttrappe struct {
 	systemEintraege      int
 }
 
-func (p *protokollAttrappe) LoescheKollegenAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
+func (p *protokollAttrappe) LoescheAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
 	return true, nil
 }
 

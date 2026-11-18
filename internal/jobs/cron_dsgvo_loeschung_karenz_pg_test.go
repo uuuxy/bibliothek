@@ -55,7 +55,7 @@ func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
 			VALUES ($1, 'Karenz', $1, 'ABG', $2, true, true, $3,
 			        NOW() - interval '300 days', NOW() - interval '400 days',
 			        NOW() - NULLIF($4, '')::interval)
-			RETURNING id`, barcode, altesJahr, repository.AbgaengerSperrgrundKarenz, anonymisiertVor).Scan(&id); err != nil {
+			RETURNING id`, barcode, altesJahr, repository.AbgaengerSperrgrund, anonymisiertVor).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		return id

@@ -25,17 +25,13 @@ func AnonymisiereBearbeiterAlterAusleihen(ctx context.Context, db Datenbank) (in
 	return tag.RowsAffected(), nil
 }
 
-// AnonymisiereSchueler leert bei jedem Schüler, den PraedikatAnonymisierung trifft, die Spalten,
-// die ihn erkennbar machen, und setzt anonymized_at. barcode_id und block_reason bekommen
-// feste Ersatzwerte: Ein Schüler braucht eine Ausweisnummer, die unter den Lesern einmalig
-// ist, ein gesperrter einen Grund, und ein alter Freitext könnte selbst eine Person nennen.
-// Dieselben Spalten leert AnonymisiereAbgaenger im Abgleich mit der LUSD; kommt eine Spalte
-// dazu, die eine Person erkennbar macht, gehört sie in beide Anweisungen.
-func AnonymisiereSchueler(ctx context.Context, db Datenbank, karenzTage int) (int64, error) {
-	bedingung := PraedikatAnonymisierung(karenzTage, KulanzJob)
-	tag, err := db.Exec(ctx, `
-		UPDATE schueler
-		SET vorname = left(md5(random()::text), 8),
+// sqlAnonymisierung sind die Zuweisungen, die einen Schüler unkenntlich machen, und das Setzen
+// von anonymized_at. barcode_id und block_reason bekommen feste Ersatzwerte: Ein Schüler braucht
+// eine Ausweisnummer, die unter den Lesern einmalig ist, ein gesperrter einen Grund, und ein
+// alter Freitext könnte selbst eine Person nennen. Der nächtliche Lauf und der Abgleich mit der
+// LUSD schreiben beide diese eine Liste; eine Spalte, die eine Person erkennbar macht, gehört
+// hierher.
+const sqlAnonymisierung = `vorname = left(md5(random()::text), 8),
 		    nachname = 'Anonym',
 		    klasse = '',
 		    barcode_id = 'ANON-' || id::text,
@@ -49,7 +45,15 @@ func AnonymisiereSchueler(ctx context.Context, db Datenbank, karenzTage int) (in
 		    eltern_email = NULL,
 		    block_reason = 'Anonymisiert (DSGVO)',
 		    anonymized_at = NOW(),
-		    aktualisiert_am = NOW()
+		    aktualisiert_am = NOW()`
+
+// AnonymisiereSchueler macht jeden Schüler unkenntlich, den PraedikatAnonymisierung trifft
+// (sqlAnonymisierung).
+func AnonymisiereSchueler(ctx context.Context, db Datenbank, karenzTage int) (int64, error) {
+	bedingung := PraedikatAnonymisierung(karenzTage, KulanzJob)
+	tag, err := db.Exec(ctx, `
+		UPDATE schueler
+		SET `+sqlAnonymisierung+`
 		WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
@@ -129,10 +133,10 @@ func LadeLoeschreifeAbgaenger(ctx context.Context, db Datenbank, jetzt time.Time
 	return abgaenger, rows.Err()
 }
 
-// LadeKollegenImPapierkorb nennt die Kennungen der Kollegen, die praedikatKollegenPapierkorb zur
-// endgültigen Löschung freigibt.
-func LadeKollegenImPapierkorb(ctx context.Context, db Datenbank) ([]string, error) {
-	bedingung := praedikatKollegenPapierkorb(KulanzJob)
+// LadeLoeschreifeImPapierkorb nennt die Kennungen der Leser, die praedikatPapierkorbLoeschung
+// zur endgültigen Löschung freigibt.
+func LadeLoeschreifeImPapierkorb(ctx context.Context, db Datenbank) ([]string, error) {
+	bedingung := praedikatPapierkorbLoeschung(KulanzJob)
 	return ladeKennungen(ctx, db, `SELECT id::text FROM leser WHERE `+bedingung.Where, bedingung.Args...)
 }
 

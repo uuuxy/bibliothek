@@ -95,7 +95,7 @@ func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 
 	id := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-1", "Ehemalig", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Automatisierte Abgänger-Sperre wegen offener Vorgänge' WHERE id = $1`, id); err != nil {
+		block_reason = 'Automatisierte Ehemaligen-Sperre wegen offener Vorgänge' WHERE id = $1`, id); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
 	}
 
@@ -184,7 +184,7 @@ func TestSperrTuer_PapierkorbUndAnonymisiertBleiben(t *testing.T) {
 
 	anonym := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-A", "Anonym", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
+		block_reason = 'Anonymisiert (DSGVO)', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
 	geloescht := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-P", "Papierkorb", "07A")

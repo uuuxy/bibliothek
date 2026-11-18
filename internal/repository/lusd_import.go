@@ -148,7 +148,7 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 			ist_abgaenger = false,
 			abgaenger_seit = NULL,
 			ist_gesperrt = CASE
-				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN false
+				WHEN anonymized_at IS NOT NULL THEN false
 				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
@@ -157,7 +157,7 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 			-- block_reason konsistent zu ist_gesperrt setzen: chk_schueler_block_reason
 			-- verlangt einen Grund nur solange ist_gesperrt = true.
 			block_reason = CASE
-				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN NULL
+				WHEN anonymized_at IS NOT NULL THEN NULL
 				WHEN `+sqlAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
@@ -252,33 +252,18 @@ func SperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID, grund string) e
 	return err
 }
 
-// AnonymisiereAbgaenger entfernt die Personendaten eines Abgängers ohne offene Vorgänge:
-// Foto, Name, Anschrift, E-Mail, Geburtsdatum, Schuleintritt, LUSD-ID und Ausweisnummer. Die
-// Kennung der Zeile steht im Nachnamen, damit die Eindeutigkeit der Namen hält.
-//
-// Der Sperrgrund wird ein fester Text, weil ein alter Grund Personenbezug tragen kann.
-// anonymized_at und die anonyme Ausweisnummer setzt auch der nächtliche Lauf
-// (FuehreSchuelerAnonymisierungAus); an anonymized_at hängen dessen Nachlauf über die Nebentabellen und
-// die Sperre des Papierkorbs. abgaenger_jahr wird wie in SperreAbgaenger das Jahr des Abgangs,
-// damit der Löschjob die Zeile später entfernt. Die Spuren in den Nebentabellen tilgt
-// TilgeSchuelerSpuren in derselben Transaktion.
+// AnonymisiereAbgaenger macht einen Abgänger ohne offene Vorgänge sofort unkenntlich, wenn die
+// Karenzzeit 0 ist: erst der Abgang wie in SperreAbgaenger (Sperre, Uhr und Abgangsjahr, damit
+// der Löschjob die Zeile später entfernt), dann dieselben Zuweisungen wie im nächtlichen Lauf
+// (sqlAnonymisierung). Foto und Spuren in den Nebentabellen fallen in derselben Transaktion.
 func AnonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
 	if _, err := tx.Exec(ctx, "DELETE FROM schueler_fotos WHERE schueler_id = $1", schuelerID); err != nil {
 		return err
 	}
-
-	anonymisiertName := fmt.Sprintf("Anonymisiert-%s", schuelerID)
-	if _, err := tx.Exec(ctx, `
-		UPDATE schueler SET
-			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
-			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
-			geburtsdatum = NULL, schul_eintritt_am = NULL, lusd_id = NULL,
-			barcode_id = 'ANON-' || id::text, anonymized_at = NOW(),
-			abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
-			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
-			abgaenger_jahr = EXTRACT(YEAR FROM NOW() AT TIME ZONE $3)::int, aktualisiert_am = NOW()
-		WHERE id = $2`,
-		anonymisiertName, schuelerID, schulzeit.Zone().String()); err != nil {
+	if err := SperreAbgaenger(ctx, tx, schuelerID, AbgaengerSperrgrund); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `UPDATE schueler SET `+sqlAnonymisierung+` WHERE id = $1`, schuelerID); err != nil {
 		return err
 	}
 	return TilgeSchuelerSpuren(ctx, tx, schuelerID, "DSGVO-Anonymisierung (LUSD-Abgang)")

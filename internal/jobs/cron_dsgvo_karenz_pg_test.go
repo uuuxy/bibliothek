@@ -34,7 +34,7 @@ func TestSchuelerAnonymisierung_KarenzUhrUndEinstellung(t *testing.T) {
 		if err := pool.QueryRow(ctx, `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, ist_gesperrt, block_reason, abgaenger_seit, aktualisiert_am)
 			VALUES ($1, 'Karenz', $1, 'ABG', 2026, true, true, $4, NOW() - $2::interval, NOW() - $3::interval)
-			RETURNING id`, barcode, seit, aktualisiert, repository.AbgaengerSperrgrundKarenz).Scan(&id); err != nil {
+			RETURNING id`, barcode, seit, aktualisiert, repository.AbgaengerSperrgrund).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		return id
@@ -118,7 +118,7 @@ func TestSchuelerAnonymisierung_OhneEinstellungenWirdNichtsAnonymisiert(t *testi
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, ist_gesperrt, block_reason, abgaenger_seit, aktualisiert_am)
 		VALUES ('KZF-1', 'Karenz', 'Fehler', 'ABG', 2026, true, true, $1, NOW() - '150 days'::interval, NOW() - '150 days'::interval)
-		RETURNING id`, repository.AbgaengerSperrgrundKarenz).Scan(&id); err != nil {
+		RETURNING id`, repository.AbgaengerSperrgrund).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 

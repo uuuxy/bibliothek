@@ -60,9 +60,9 @@ type Leser struct {
 	// ElternEmail ist die Adresse der Erziehungsberechtigten.
 	ElternEmail string `json:"eltern_email"`
 	// IstAnonymisiert sagt, dass anonymized_at gesetzt ist: Die Zeile ist keine Person mehr.
-	// Die Theke gibt ihr nichts aus, auch kein Lernmittel (service.pruefeAusleihSperren); die
-	// Namenssuche findet sie noch („Abgänger Anonymisiert-…"). Gefüllt nur über die
-	// Spaltenliste der Leser-Abfragen (spaltenLeser), nicht in der API.
+	// Die Theke gibt ihr nichts aus, auch kein Lernmittel (service.pruefeAusleihSperren), und
+	// die Namenssuche findet sie nicht (FindeUnscharf). Gefüllt nur über die Spaltenliste der
+	// Leser-Abfragen (spaltenLeser), nicht in der API.
 	IstAnonymisiert bool `json:"-"`
 }
 

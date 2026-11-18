@@ -27,7 +27,7 @@ func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) str
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
 		                      schul_eintritt_am, ist_abgaenger, lusd_bestaetigt_am, ist_gesperrt, block_reason, abgaenger_seit)
 		VALUES ($1,$2,$3,$4,2031,$5,$6,$7,NOW() - interval '1 year',$7,
-		        CASE WHEN $7 THEN '`+repository.AbgaengerSperrgrundKarenz+`' END,
+		        CASE WHEN $7 THEN '`+repository.AbgaengerSperrgrund+`' END,
 		        CASE WHEN $7 THEN NOW() - interval '10 days' END)
 		RETURNING id`,
 		s.Vorname, s.Nachname, s.Klasse, s.Barcode, s.Geburtsdatum, s.SchulEintrittAm, s.IstAbgaenger).Scan(&id); err != nil {

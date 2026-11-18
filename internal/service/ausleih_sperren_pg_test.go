@@ -178,7 +178,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	buecherei, schulbuch := th.bestand(t, "EHM")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Automatisierte Abgänger-Sperre zum Schuljahreswechsel' WHERE id = $1`, kind); err != nil {
+		block_reason = 'Automatisierte Ehemaligen-Sperre' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
 	}
 	th.legeGeraetAn(t, "G-SPERRWEG-2", "")
@@ -200,8 +200,8 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	}
 }
 
-// Ein anonymisierter Datensatz bekommt nichts, auch kein Schulbuch — die Namenssuche der
-// Theke findet ihn noch („Abgänger Anonymisiert-…"). Die Sperre trägt kein Merkmal: Aufheben
+// Ein anonymisierter Datensatz bekommt nichts, auch kein Schulbuch, obwohl ihn die Suche der
+// Theke nicht mehr anbietet: Die Prüfung ist die letzte Sicherung. Die Sperre trägt kein Merkmal: Aufheben
 // kann man sie nicht (internal/api/leser/leser_sperre_pg_test.go).
 // Rot gesehen am Rückbau: die Prüfung auf IstAnonymisiert entfernt — das Schulbuch geht an
 // den anonymisierten Datensatz.
@@ -210,7 +210,7 @@ func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 	_, schulbuch := th.bestand(t, "ANO")
 	anonym := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-3", "Anonym", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
+		block_reason = 'Anonymisiert (DSGVO)', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
 

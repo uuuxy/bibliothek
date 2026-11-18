@@ -56,7 +56,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		freihandTage   = repository.LesehistorieTageVorgabe
 		lernmittelTage = repository.LesehistorieLernmittelTageVorgabe
 		anliegenTage   = repository.AnliegenTageVorgabe
-		papierkorbTage = repository.AnonymisierungPapierkorbTage
+		papierkorbTage = repository.PapierkorbTage
 		// Länger als die Vorgabe von 24 Monaten: Mit ihr fiele die Protokollzeile der
 		// Lernmittel-Ausleihe (730 Tage) in derselben Nacht unter beide Fristen, und ihr Fall
 		// mäße die Lesehistorie nicht.
@@ -149,7 +149,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		rest int
 	}{
 		{"Schüler-Anonymisierung", anzahl(`SELECT count(*) FROM schueler WHERE barcode_id = 'S-KULANZ' AND anonymized_at IS NULL`)},
-		{"Gelöschte Kollegen endgültig löschen", anzahl(`SELECT count(*) FROM leser WHERE id = $1`, kollege)},
+		{"Gelöschte Leser endgültig löschen", anzahl(`SELECT count(*) FROM leser WHERE id = $1`, kollege)},
 		{"Lesehistorie Schülerbücherei, Ausleihe", anzahl(`SELECT count(*) FROM ausleihen WHERE id = $1 AND schueler_id IS NOT NULL`, freihandLeihe)},
 		{"Lesehistorie Lernmittel, Ausleihe", anzahl(`SELECT count(*) FROM ausleihen WHERE id = $1 AND schueler_id IS NOT NULL`, lmfLeihe)},
 		{"Lesehistorie Schülerbücherei, Protokoll", anzahl(`SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND datensatz_id = $1 AND details ? 'schueler_id'`, freihandExemplar)},

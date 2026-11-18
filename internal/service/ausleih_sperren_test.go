@@ -53,7 +53,7 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 			s.IstVonHandGesperrt, s.Sperrgrund = true, strPtr("Ausweis verloren")
 		}),
 		"vom Programm (Ehemalige)": schueler(func(s *repository.Leser) {
-			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Abgänger-Sperre wegen offener Vorgänge")
+			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Ehemaligen-Sperre wegen offener Vorgänge")
 		}),
 	}
 	for name, leser := range faelle {
@@ -82,7 +82,7 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 	t.Run("Ehemalige, offene Forderung, überfällig: keine Abfrage, keine Sperre", func(t *testing.T) {
 		leser := schueler(func(s *repository.Leser) {
-			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Abgänger-Sperre zum Schuljahreswechsel")
+			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Ehemaligen-Sperre")
 		})
 		lage, err := pruefeMitAttrappe(t, leser, true, false, keineAbfrage)
 		if err != nil {
@@ -123,7 +123,7 @@ func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 // Merkmal — aufheben lässt sich diese Sperre nicht (internal/api/leser/leser_sperre.go lehnt ab).
 func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 	leser := schueler(func(s *repository.Leser) {
-		s.IstAnonymisiert, s.IstGesperrt, s.Sperrgrund = true, true, strPtr("Abgänger anonymisiert")
+		s.IstAnonymisiert, s.IstGesperrt, s.Sperrgrund = true, true, strPtr("Anonymisiert (DSGVO)")
 	})
 	for _, lernmittel := range []bool{false, true} {
 		_, err := pruefeMitAttrappe(t, leser, lernmittel, true, keineAbfrage)
