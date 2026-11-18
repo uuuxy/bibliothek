@@ -47,10 +47,13 @@
 
 	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und in
 	// Tabellenzeilen auf einer Linie. md = 36 px ist die gemeinsame Höhe der Bedienelemente.
+	// Seitlich Googles Token (material-components-android, m3_comp_button_*_leading_space):
+	// extra small 12 dp, small 16 dp („Small button padding … Use 16dp"); md ist small bei
+	// Dichte -1, die Dichte nimmt nur Höhe.
 	const sizes = {
 		// M3 kennt keinen Knopf unter label-large (14 px).
-		sm: 'h-8 px-2.5 text-label-large',
-		md: 'h-9 px-3 text-label-large',
+		sm: 'h-8 px-3 text-label-large',
+		md: 'h-9 px-4 text-label-large',
 		lg: 'h-10 px-4 text-label-large'
 	};
 	// Ein Symbolknopf ist quadratisch ohne den Innenabstand eines Knopfs mit Text, M3 Icon

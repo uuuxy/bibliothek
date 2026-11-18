@@ -134,7 +134,9 @@ describe('ChipFeld', () => {
 				'text-label-large',
 				'border',
 				'border-outline',
-				'text-on-surface-variant'
+				'text-on-surface-variant',
+				// md.comp.input-chip: leading-space 16px
+				'pl-4'
 			])
 		);
 		expect(chip).not.toContain('bg-secondary-container');

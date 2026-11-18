@@ -96,6 +96,22 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 			unmount();
 		}
 	});
+
+	// Googles Token (material-components-android): extra small 12 dp, small 16 dp seitlich,
+	// 8 dp zwischen Symbol und Text (m3_comp_button_*_leading_space, *_icon_label_space).
+	it('hält seitlich Googles Rand je Größe und 8 dp zwischen Symbol und Text', () => {
+		/** @type {[('sm'|'md'|'lg'), string][]} */
+		const raender = [
+			['sm', 'px-3'],
+			['md', 'px-4'],
+			['lg', 'px-4']
+		];
+		for (const [size, rand] of raender) {
+			const { getByRole, unmount } = render(Button, { size });
+			expect(klassen(getByRole('button'))).toEqual(expect.arrayContaining([rand, 'gap-2']));
+			unmount();
+		}
+	});
 });
 
 // Googles Token in material-web: Text- und Standard-Symbolknopf kennen gesperrt nur Beschriftung
