@@ -11,7 +11,7 @@ export function schuelerdateiReiter(rechte) {
 		{ id: 'active', label: 'Aktive Leser' },
 		// „Ehemalige", nicht „Abgänger": Abgänger sind die Abschlussklassen, die noch da sind
 		// (eigene Ansicht /abgaenger); hier stehen die, die laut LUSD schon weg sind.
-		{ id: 'graduates', label: 'Ehemalige / Archiv' }
+		{ id: 'graduates', label: 'Ehemalige' }
 	];
 	if (rechte.loeschen) liste.push({ id: 'deleted', label: 'Papierkorb' });
 	return liste;

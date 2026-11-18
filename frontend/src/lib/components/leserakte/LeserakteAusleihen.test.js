@@ -33,7 +33,7 @@ describe('LeserakteAusleihen', () => {
 		});
 		const hinweis = screen.getByRole('alert');
 		expect(hinweis.textContent).toMatch(
-			/Nicht geladen: Vormerkungen \(Datenbank nicht erreichbar\)/
+			/Nicht geladen: Vormerkungen wegen „Datenbank nicht erreichbar“/
 		);
 	});
 

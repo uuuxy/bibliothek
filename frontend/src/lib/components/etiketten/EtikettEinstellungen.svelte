@@ -30,13 +30,13 @@
 				</div>
 			</div>
 			<Button variant="secondary" class="w-full" onclick={etikettenStore.leereDruckauftrag}>
-				Auswahl zurücksetzen / Anderes Buch wählen
+				Anderes Buch wählen
 			</Button>
 		</div>
 	{:else}
 		<!-- Step 1: Selection -->
 		<div class="space-y-4 border-b border-outline-variant py-5">
-			<h3 class="text-title-medium text-on-surface-variant">1. Titel / Klassensatz wählen</h3>
+			<h3 class="text-title-medium text-on-surface-variant">1. Titel oder Klassensatz wählen</h3>
 
 			<!-- Tab selector for search vs class set -->
 			<div class="space-y-3">

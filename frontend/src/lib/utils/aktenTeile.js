@@ -18,12 +18,12 @@ export async function leseTeil(ergebnis) {
 
 /**
  * Die Listen, deren Abruf gescheitert ist, mit ihrem Grund; ein Grund für mehrere steht einmal:
- * „Gebühren, Bescheide (Datenbank nicht erreichbar)".
+ * „Gebühren, Bescheide wegen „Datenbank nicht erreichbar“".
  * @param {{ name: string, grund: string }[]} fehlende
  */
 export function nenneFehlende(fehlende) {
 	/** @type {Map<string, string[]>} */
 	const je = new Map();
 	for (const { name, grund } of fehlende) je.set(grund, [...(je.get(grund) ?? []), name]);
-	return [...je].map(([grund, namen]) => `${namen.join(', ')} (${grund})`).join(', ');
+	return [...je].map(([grund, namen]) => `${namen.join(', ')} wegen „${grund}“`).join(', ');
 }

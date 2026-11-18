@@ -102,7 +102,7 @@ export function erzeugeDesignAblage() {
 			try {
 				const res = await apiFetch('/api/ausweis-layout');
 				if (!res.ok) {
-					ladefehler = `Das gespeicherte Ausweis-Design konnte nicht geladen werden (${await leseApiFehler(res)}). Es wird nichts gespeichert, solange das so ist.`;
+					ladefehler = `Das gespeicherte Ausweis-Design konnte nicht geladen werden: ${await leseApiFehler(res)}. Es wird nichts gespeichert, solange das so ist.`;
 					return;
 				}
 				applyDesign(await res.json());
@@ -115,7 +115,7 @@ export function erzeugeDesignAblage() {
 				if (zustand === 'error') zustand = 'idle';
 			} catch (e) {
 				ladefehler =
-					'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Netzwerkfehler). Es wird nichts gespeichert, solange das so ist.';
+					'Das gespeicherte Ausweis-Design konnte nicht geladen werden: Server nicht erreichbar. Es wird nichts gespeichert, solange das so ist.';
 				console.error('Ausweis-Design konnte nicht geladen werden:', e);
 			} finally {
 				clearTimeout(zeitgeber);

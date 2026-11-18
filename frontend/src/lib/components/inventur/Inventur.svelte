@@ -78,7 +78,7 @@
 			symbol={ClipboardCheck}
 			titel="Keine Inventur aktiv"
 			hinweis={darfVerwalten
-				? 'Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt nach einer bestimmten Signatur / Kategorie scannen.'
+				? 'Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt nach einer bestimmten Signatur oder Kategorie scannen.'
 				: 'Eine Inventur starten darf, wer das Recht „Bestand verwalten“ hat. Läuft eine, lässt sie sich unten fortsetzen.'}
 			aktion={darfVerwalten ? startknopf : undefined}
 		/>
@@ -104,7 +104,7 @@
 							>Aktueller Fortschritt</span
 						>
 						<div class="text-2xl font-bold text-on-surface mt-1">
-							{formatZahl(gefunden)} / {formatZahl(ablauf.stand.erwartet)}
+							{formatZahl(gefunden)} von {formatZahl(ablauf.stand.erwartet)}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>

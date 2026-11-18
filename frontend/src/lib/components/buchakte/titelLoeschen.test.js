@@ -73,10 +73,10 @@ describe('baueLoeschfrage', () => {
 		const frage = baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: verliehene(5) });
 		expect(frage.zusatz?.liste).toEqual([
 			'Leser 1',
-			'Leser 2 (7b)',
-			'Leser 3 (7b)',
-			'Leser 4 (7b)',
-			'Leser 5 (7b)'
+			'Leser 2 aus der 7b',
+			'Leser 3 aus der 7b',
+			'Leser 4 aus der 7b',
+			'Leser 5 aus der 7b'
 		]);
 	});
 
@@ -89,7 +89,7 @@ describe('baueLoeschfrage', () => {
 		expect(frage.aktion).toBe('9 Exemplare löschen');
 		expect(frage.zusatz).toEqual({
 			hinweis: '3 Exemplare sind verliehen:',
-			liste: ['Leser 1', 'Leser 2 (7b)', 'Leser 3 (7b)'],
+			liste: ['Leser 1', 'Leser 2 aus der 7b', 'Leser 3 aus der 7b'],
 			nachsatz: 'Sie bleiben bei den Lesern, und der Titel bleibt, bis sie zurück sind',
 			kaestchen: 'Auch diese 3 Exemplare löschen und aus den Leserkonten austragen',
 			aktionMit: 'Alle 12 Exemplare löschen',

@@ -91,10 +91,10 @@ describe('format.js — eine deutsche Schreibweise', () => {
 	});
 
 	// Der Chip auf der Katalogkachel: kurz, aber ohne Exemplare in denselben Worten wie der Satz.
-	it('Bestand kurz: „27 / 28", ohne Exemplare die Worte des Satzes', () => {
-		expect(bestandKurz(28, 27)).toBe('27 / 28');
-		expect(bestandKurz(5, 0)).toBe('0 / 5');
-		expect(bestandKurz(3, undefined)).toBe('0 / 3');
+	it('Bestand kurz: „27 von 28", ohne Exemplare die Worte des Satzes', () => {
+		expect(bestandKurz(28, 27)).toBe('27 von 28');
+		expect(bestandKurz(5, 0)).toBe('0 von 5');
+		expect(bestandKurz(3, undefined)).toBe('0 von 3');
 		expect(bestandKurz(0, 0)).toBe('Keine Exemplare');
 		expect(bestandKurz(0, 0, 2)).toBe('2 bestellt');
 		expect(bestandKurz(null, null)).toBe('');

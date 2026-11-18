@@ -84,7 +84,7 @@ describe('baueMahnlisteDruckHtml', () => {
 			]
 		]);
 		expect(html).toContain(
-			'<th class="schmal">Klasse</th><th>Schüler/in</th><th>Buch</th>' +
+			'<th class="schmal">Klasse</th><th>Schüler</th><th>Buch</th>' +
 				'<th class="schmal">Fällig seit</th><th class="schmal">Gemahnt</th>'
 		);
 	});

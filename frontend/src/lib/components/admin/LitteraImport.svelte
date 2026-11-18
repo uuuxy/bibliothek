@@ -47,7 +47,7 @@
 <!-- Der erste Baustein der Gruppe, deshalb ohne Trennlinie darüber; sonst gebaut wie
      BestandImport und ListenImport. -->
 <div>
-	<h4 class="mb-1 text-title-small text-on-surface">Katalog-Import (Littera)</h4>
+	<h4 class="mb-1 text-title-small text-on-surface">Katalog-Import aus Littera</h4>
 	<p class="mb-4 text-sm text-on-surface-variant">
 		Die Datei <strong>katalogisat.xml</strong> aus Littera ergänzt die Angaben vorhandener Titel.
 		Eine

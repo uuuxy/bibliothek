@@ -74,7 +74,7 @@ func pruefeEhemaligeOffen(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = fmt.Sprintf("%d Ehemalige haben seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung", n)
 		b.Folge = "Solange der Vorgang offen ist, bleiben Name und Anschrift gespeichert. Karenz, Anonymisierung und Löschung greifen nicht (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Leserdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden, das schließt die Ausleihe und legt die Forderung an, dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
+		b.Abhilfe = "Leserdatei → Ehemalige → Akte öffnen: das Buch als Verlust melden, das schließt die Ausleihe und legt die Forderung an, dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
 		return b
 	}
 	b.Stufe = StufeOK

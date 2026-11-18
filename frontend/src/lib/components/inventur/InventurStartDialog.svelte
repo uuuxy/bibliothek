@@ -28,7 +28,7 @@
 		},
 		{
 			wert: 'filter',
-			name: 'Nach Fach / Klasse',
+			name: 'Nach Fach oder Klasse',
 			text: 'Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“'
 		}
 	];

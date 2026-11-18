@@ -44,12 +44,12 @@ describe('Neuen Leser anlegen', () => {
 		if (art !== 'schueler') {
 			await waehleArt(screen, art === 'liv' ? 'LiV' : 'Lehrkraft');
 		}
-		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: vorname } });
-		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: nachname } });
+		await fireEvent.input(screen.getByLabelText('Vorname*'), { target: { value: vorname } });
+		await fireEvent.input(screen.getByLabelText('Nachname*'), { target: { value: nachname } });
 		// Die Schul-E-Mail ist seit dem 16.09.2026 Pflicht — ohne sie kommt das Formular
 		// nicht bis zum Server, und der Test prüfte nur noch seine eigene Vorprüfung.
 		if (art !== 'schueler') {
-			await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+			await fireEvent.input(screen.getByLabelText('Schul-E-Mail*'), {
 				target: { value: `${vorname}.${nachname}@schule.invalid`.toLowerCase() }
 			});
 		}
@@ -81,12 +81,12 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		await waehleArt(screen, 'Lehrkraft');
-		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Katrin' } });
-		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Wendland' } });
-		await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+		await fireEvent.input(screen.getByLabelText('Vorname*'), { target: { value: 'Katrin' } });
+		await fireEvent.input(screen.getByLabelText('Nachname*'), { target: { value: 'Wendland' } });
+		await fireEvent.input(screen.getByLabelText('Schul-E-Mail*'), {
 			target: { value: 'katrin.wendland@schule.invalid' }
 		});
-		await fireEvent.input(screen.getByLabelText('Ausweisnummer (optional)'), {
+		await fireEvent.input(screen.getByLabelText('Ausweisnummer'), {
 			target: { value: 'Aß10007' }
 		});
 		await fireEvent.click(screen.getByText('Speichern'));
@@ -118,13 +118,13 @@ describe('Neuen Leser anlegen', () => {
 		const screen = await anlegen('schueler');
 		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
 
-		await fireEvent.click(screen.getByRole('combobox', { name: 'Klasse *' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Klasse' }));
 		await fireEvent.click(screen.getByRole('option', { name: '07A' }));
 		await fireEvent.click(screen.getByText('Speichern'));
 		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
 		expect(screen.container.textContent ?? '').toContain('Geburtsdatum fehlt');
 
-		await fireEvent.input(screen.getByLabelText('Geburtsdatum *'), {
+		await fireEvent.input(screen.getByLabelText('Geburtsdatum*'), {
 			target: { value: '2012-05-06' }
 		});
 		await fireEvent.click(screen.getByText('Speichern'));
@@ -142,8 +142,8 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		await waehleArt(screen, 'Lehrkraft');
-		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Ohne' } });
-		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Mail' } });
+		await fireEvent.input(screen.getByLabelText('Vorname*'), { target: { value: 'Ohne' } });
+		await fireEvent.input(screen.getByLabelText('Nachname*'), { target: { value: 'Mail' } });
 		await fireEvent.click(screen.getByText('Speichern'));
 
 		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
@@ -187,8 +187,8 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		await waehleArt(screen, 'Praktikum');
-		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Paul' } });
-		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Praktikant' } });
+		await fireEvent.input(screen.getByLabelText('Vorname*'), { target: { value: 'Paul' } });
+		await fireEvent.input(screen.getByLabelText('Nachname*'), { target: { value: 'Praktikant' } });
 		expect(
 			/** @type {HTMLInputElement} */ (screen.getByLabelText('Schul-E-Mail')).disabled,
 			'die Adresse ist beim Praktikum verschlossen'
@@ -212,12 +212,12 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		await waehleArt(screen, 'Lehrkraft');
-		await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+		await fireEvent.input(screen.getByLabelText('Schul-E-Mail*'), {
 			target: { value: 'erdkunde@schule.invalid' }
 		});
 		await waehleArt(screen, 'Fachbereich');
-		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Fachbereich' } });
-		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Erdkunde' } });
+		await fireEvent.input(screen.getByLabelText('Vorname*'), { target: { value: 'Fachbereich' } });
+		await fireEvent.input(screen.getByLabelText('Nachname*'), { target: { value: 'Erdkunde' } });
 		await fireEvent.click(screen.getByText('Speichern'));
 
 		const koerper = /** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]);

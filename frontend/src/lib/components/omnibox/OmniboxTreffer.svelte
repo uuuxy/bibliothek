@@ -13,8 +13,8 @@
 	 * @param {number} gesamt
 	 */
 	function gruppenTitel(label, gezeigt, gesamt) {
-		if (gesamt > gezeigt) return `${label} (${gezeigt} von ${gesamt})`;
-		return `${label} (${gezeigt})`;
+		if (gesamt > gezeigt) return `${label} · ${gezeigt} von ${gesamt}`;
+		return `${label} · ${gezeigt}`;
 	}
 </script>
 

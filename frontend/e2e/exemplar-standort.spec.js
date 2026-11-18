@@ -54,7 +54,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	const karten = page.getByText('Standort:', { exact: true });
 	await expect(page.getByText('Standort: Lehrerschrank', { exact: true })).toBeVisible();
 	await expect(karten).toHaveCount(1);
-	await expect(page.getByText('· Lehrerschrank (1)')).toBeVisible();
+	await expect(page.getByText('· Lehrerschrank: 1')).toBeVisible();
 
 	// Ändern: erst mit einem eingetragenen Standort frei.
 	await page.getByRole('checkbox', { name: `Exemplar ${b} auswählen` }).check();
@@ -76,7 +76,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	await expect(dialog).toBeHidden();
 	await expect(page.getByText('Standort: Bibliothek, Regal 3B', { exact: true })).toBeVisible();
 	await expect(karten).toHaveCount(2);
-	await expect(page.getByText('· Bibliothek, Regal 3B (1) · Lehrerschrank (1)')).toBeVisible();
+	await expect(page.getByText('· Bibliothek, Regal 3B: 1 · Lehrerschrank: 1')).toBeVisible();
 	await expect
 		.poll(() => standorteInDerTabelle(barcodes))
 		.toBe('Lehrerschrank|Bibliothek, Regal 3B|-');
@@ -91,7 +91,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(titel);
 	await expect(page.getByRole('row').filter({ hasText: titel })).toContainText(
-		'Bibliothek, Regal 3B (1) · Lehrerschrank (1)'
+		'Bibliothek, Regal 3B: 1 · Lehrerschrank: 1'
 	);
 
 	// Entfernen: für alle Exemplare auf einmal.

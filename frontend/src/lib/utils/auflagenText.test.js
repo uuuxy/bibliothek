@@ -41,7 +41,7 @@ describe('auflagenBeschriftung und auflagenAufschluesselung, geteilte Prüffäll
 	it('kommt ohne die Felder aus', () => {
 		expect(auflagenBeschriftung({})).toBe('Auflage ohne Angabe');
 		expect(auflagenAufschluesselung([{ gesamt_bestand: 3 }, { gesamt_bestand: 1 }])).toBe(
-			'Bestand aus 2 Auflagen: Auflage ohne Angabe (3), Auflage ohne Angabe (1)'
+			'Bestand aus 2 Auflagen: 3 Exemplare der Auflage ohne Angabe, 1 Exemplar der Auflage ohne Angabe'
 		);
 	});
 });

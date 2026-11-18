@@ -245,7 +245,7 @@ describe('bestellStore.submitOrder', () => {
 		bestellStore.addToCart({ id: 't7', titel: 'A', autor: '', isbn: '7' }, 2, true);
 		await bestellStore.submitOrder();
 		expect(snackbars.addToast).toHaveBeenLastCalledWith(
-			expect.stringContaining('(2 Barcodes reserviert.)'),
+			expect.stringContaining('ok. 2 Barcodes reserviert.'),
 			'success'
 		);
 

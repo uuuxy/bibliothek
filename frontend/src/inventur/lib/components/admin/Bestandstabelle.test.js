@@ -41,18 +41,18 @@ describe('Bestandstabelle: Auswahl und Massenaktion', () => {
 			geloescht
 		);
 		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
-		expect(getByRole('button', { name: /Löschen \(3\)/ })).toBeTruthy();
+		expect(getByRole('button', { name: /3 Titel löschen/ })).toBeTruthy();
 
 		// Suche eingegrenzt: nur noch ein Titel in der Liste.
 		await rerender({ titelListe: [buch('1', 'Mathe 5')] });
 
 		// Die Werkzeugleiste zählt jetzt nur noch die sichtbare Zeile …
 		expect(
-			getByRole('button', { name: /Löschen \(1\)/ }),
+			getByRole('button', { name: /1 Titel löschen/ }),
 			'die Leiste zählt weiter die unsichtbaren Zeilen'
 		).toBeTruthy();
 		// … und wer löscht, trifft auch nur sie.
-		await fireEvent.click(getByRole('button', { name: /Löschen \(1\)/ }));
+		await fireEvent.click(getByRole('button', { name: /1 Titel löschen/ }));
 		expect(geloescht.mock.calls[0][0], 'die Massenaktion traf unsichtbare Zeilen').toEqual(['1']);
 	});
 });
@@ -71,11 +71,11 @@ describe('Bestandstabelle: Löschen der markierten Titel', () => {
 		);
 		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
 
-		await fireEvent.click(getByRole('button', { name: /Löschen \(2\)/ }));
+		await fireEvent.click(getByRole('button', { name: /2 Titel löschen/ }));
 		await new Promise((weiter) => setTimeout(weiter));
 
 		expect(
-			getByRole('button', { name: /Löschen \(2\)/ }),
+			getByRole('button', { name: /2 Titel löschen/ }),
 			'die Markierung ging mit dem Klick'
 		).toBeTruthy();
 	});
@@ -86,11 +86,11 @@ describe('Bestandstabelle: Löschen der markierten Titel', () => {
 			vi.fn(async () => {})
 		);
 		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
-		await fireEvent.click(getByRole('button', { name: /Löschen \(2\)/ }));
+		await fireEvent.click(getByRole('button', { name: /2 Titel löschen/ }));
 
 		await rerender({ titelListe: [] });
 
-		expect(queryByRole('button', { name: /Löschen \(/ })).toBeNull();
+		expect(queryByRole('button', { name: /\d+ Titel löschen/ })).toBeNull();
 	});
 
 	it('schickt keinen zweiten Auftrag, solange der erste läuft', async () => {
@@ -99,7 +99,9 @@ describe('Bestandstabelle: Löschen der markierten Titel', () => {
 		const onDelete = vi.fn(() => new Promise((weiter) => (fertig = () => weiter(undefined))));
 		const { getByLabelText, getByRole } = zeige(zwei(), onDelete);
 		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
-		const knopf = /** @type {HTMLButtonElement} */ (getByRole('button', { name: /Löschen \(2\)/ }));
+		const knopf = /** @type {HTMLButtonElement} */ (
+			getByRole('button', { name: /2 Titel löschen/ })
+		);
 
 		await fireEvent.click(knopf);
 		await fireEvent.click(knopf);

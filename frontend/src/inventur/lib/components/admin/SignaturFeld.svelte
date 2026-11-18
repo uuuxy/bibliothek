@@ -37,7 +37,8 @@
 
 <VorschlagFeld
 	id="buch-signatur"
-	etikett={pflicht ? 'Signatur (Buchrücken) *' : 'Signatur (Buchrücken)'}
+	etikett="Signatur"
+	aria-required={pflicht || undefined}
 	bind:value={formular.signatur}
 	vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
 	placeholder={beispiele ? `z. B. ${beispiele}` : 'Signatur des Regals'}

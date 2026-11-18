@@ -95,7 +95,7 @@ var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 var ErrAusleiheOhneBuch = errors.New("ausleihe ohne buch")
 
 // Melde bucht einen Verlust oder Schaden an einer Ausleihe in eigener Transaktion, für
-// „Verlust/Schaden melden" in der Akte. Schuldner und Exemplar nimmt es nicht entgegen: Beide
+// „Verlust oder Schaden melden" in der Akte. Schuldner und Exemplar nimmt es nicht entgegen: Beide
 // stehen an der Ausleihe. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
 func (a *SchadensAbfragen) Melde(ctx context.Context, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, hoehe betrag.Cent) (string, error) {
 	tx, err := a.db.Begin(ctx)

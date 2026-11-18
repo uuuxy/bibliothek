@@ -913,6 +913,13 @@ frontend/src
   state"). Wer `ungueltig` nutzt, gibt immer true oder false, nie undefined: Davon hängt ab, ob
   das Feld die Hülle der Symbole hat, und käme sie erst mit dem Fehler, baute Svelte das Feld
   neu und nähme ihm den Fokus. Gemessen: `frontend/e2e/feld-fehlersymbol.spec.js`.
+- **Ein Pflichtfeld trägt `required` oder `aria-required` an `ui/Feld`,** und Feld hängt das
+  Sternchen an die Beschriftung, ohne Leerzeichen wie material-web („Titel*“), für den
+  Screenreader ausgeblendet. `aria-required` nimmt, wer die Pflicht selbst prüft: Es sperrt
+  im Browser nichts. Am Anfang jeder solchen Maske steht `ui/Pflichthinweis` („* Pflichtfeld“).
+  Material 3, Text fields: „To show a field is required, display an asterisk (*) next to the
+  label text, and explain that asterisks indicate required fields“, „Indicate all required
+  fields“.
 - **Vorschläge an einem Textfeld zeigt `ui/VorschlagFeld`,** nicht die Liste des Browsers
   (`<datalist>`): die Signatur (`SignaturFeld`, `InventurStartDialog`, `TrefferPruefung`), der
   Standort (`ExemplarStandortDialog`), die Schlagworte (`ui/ChipFeld`) und das Ziel beim

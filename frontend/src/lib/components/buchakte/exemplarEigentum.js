@@ -24,7 +24,7 @@ export function eigentumZeile(ex) {
 	let herkunft;
 	switch (ex.eigentum_herkunft) {
 		case 'littera':
-			herkunft = vermerk ? `laut Littera („${vermerk}“)` : 'laut Littera';
+			herkunft = vermerk ? `laut Littera: „${vermerk}“` : 'laut Littera';
 			break;
 		case 'hand':
 			herkunft = 'von Hand gesetzt';
@@ -33,7 +33,8 @@ export function eigentumZeile(ex) {
 			herkunft = 'aus der Bestellung';
 			break;
 		default:
-			herkunft = ex.eigentum === 'land' ? 'Vorgabe (Lernmittel)' : 'Vorgabe (kein Lernmittel)';
+			herkunft =
+				ex.eigentum === 'land' ? 'Vorgabe, weil Lernmittel' : 'Vorgabe, weil kein Lernmittel';
 	}
 	// Ein Littera-Wortlaut, der das Eigentum nicht gesetzt hat (oder später von Hand geändert
 	// wurde), steht dahinter: Die Bücherei sieht, was in Littera stand.

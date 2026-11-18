@@ -11,6 +11,6 @@ describe('SeitenleisteFuss eingeklappt', () => {
 			benutzer: { vorname: 'Erika', nachname: 'Muster', rolle: 'admin' },
 			onLogout: () => {}
 		});
-		expect(screen.getByTitle('Erika Muster (Administrator)')).toBeTruthy();
+		expect(screen.getByTitle('Erika Muster · Administrator')).toBeTruthy();
 	});
 });

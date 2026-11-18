@@ -33,8 +33,8 @@
 
 	const BARCODE_TYPEN = [
 		// Wert historisch 'code39', gedruckt wird Code 128 — siehe EtikettLayoutOptionen.
-		{ value: 'code39', label: 'Strichcode (Code 128)' },
-		{ value: 'qr', label: 'QR-Code (2D)' }
+		{ value: 'code39', label: 'Strichcode', zusatz: 'Code 128' },
+		{ value: 'qr', label: 'QR-Code' }
 	];
 </script>
 

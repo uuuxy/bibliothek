@@ -147,7 +147,7 @@
 							{#if book.autor}
 								<p class="line-clamp-1">{book.autor}</p>
 							{/if}
-							<p>{book.verfuegbar} / {book.gesamt} verfügbar</p>
+							<p>{book.verfuegbar} von {book.gesamt} verfügbar</p>
 						</div>
 					</div>
 				{/each}

@@ -37,19 +37,22 @@
 </script>
 
 <Feld
-	etikett="Vorname *"
+	etikett="Vorname"
+	aria-required="true"
 	bind:value={vorname}
 	placeholder={fachbereich ? 'z. B. Fachbereich' : 'z. B. Katrin'}
 />
 
 <Feld
-	etikett="Nachname *"
+	etikett="Nachname"
+	aria-required="true"
 	bind:value={nachname}
 	placeholder={fachbereich ? 'z. B. Erdkunde' : 'z. B. Wendland'}
 />
 
 <Feld
-	etikett={mitKonto ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
+	etikett="Schul-E-Mail"
+	aria-required={mitKonto || undefined}
 	type="email"
 	bind:value={email}
 	placeholder={mitKonto ? 'vorname.nachname@schule.de' : ''}
@@ -60,7 +63,7 @@
 />
 
 <Feld
-	etikett="Ausweisnummer (optional)"
+	etikett="Ausweisnummer"
 	bind:value={barcode}
 	placeholder="Wird automatisch vergeben, wenn leer"
 />

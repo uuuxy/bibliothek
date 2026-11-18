@@ -56,7 +56,7 @@
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
 				{verbindeSaetze(
 					'Der Hauptlieferant soll die Etikettengröße selbst wählen und damit bestätigen',
-					'Dafür braucht das System die öffentliche Adresse, unter der er es von außen erreicht (Einstellungen → Erreichbarkeit & Alarme)',
+					'Dafür braucht das System in den Einstellungen unter Erreichbarkeit & Alarme die öffentliche Adresse, unter der er es von außen erreicht',
 					!istAdmin && 'Ein Administrator kann sie hinterlegen'
 				)}
 			</p>

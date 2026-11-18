@@ -42,7 +42,7 @@ describe('leseKartenBild', () => {
 	it('weist ab, was auch verkleinert zu groß ist, und nennt die Datei', async () => {
 		vi.mocked(verkleinereBild).mockResolvedValue(new Blob([new Uint8Array(2_100_000)]));
 		await expect(leseKartenBild(datei(6_000_000, 'image/png', 'plakat.png'))).rejects.toThrow(
-			'„plakat.png“ ist auch verkleinert zu groß (2,1 MB). Bitte kleiner zuschneiden oder als JPEG speichern.'
+			'„plakat.png“ ist auch verkleinert mit 2,1 MB zu groß. Bitte kleiner zuschneiden oder als JPEG speichern.'
 		);
 	});
 

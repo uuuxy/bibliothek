@@ -104,7 +104,7 @@
 			class="text-label-small text-primary hover:underline cursor-pointer"
 			aria-label="{position.titel} in die Bestellung „{ziel.label}“ verschieben"
 		>
-			→ {ziel.label} ({ziel.traeger})
+			→ {ziel.label} · {ziel.traeger}
 		</button>
 	</div>
 </div>

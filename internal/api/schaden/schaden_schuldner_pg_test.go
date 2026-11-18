@@ -15,7 +15,7 @@ import (
 	"bibliothek/internal/tuertest"
 )
 
-// Der Schuldner einer Forderung ist, wer das Buch geliehen hat. Der Dialog „Verlust/Schaden
+// Der Schuldner einer Forderung ist, wer das Buch geliehen hat. Der Dialog „Verlust oder Schaden
 // melden" schickt eine schueler_id mit; die Tür nimmt das Feld an und liest es nicht. Eine
 // vertippte oder verfälschte Kennung hängt die Forderung deshalb keinem Unbeteiligten an.
 func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {

@@ -35,12 +35,17 @@
 	const klassenOptionen = $derived(klassen.map((k) => ({ value: k, label: k })));
 </script>
 
-<Feld etikett="Vorname *" bind:value={vorname} placeholder="z. B. Max" />
-
-<Feld etikett="Nachname *" bind:value={nachname} placeholder="z. B. Mustermann" />
+<Feld etikett="Vorname" aria-required="true" bind:value={vorname} placeholder="z. B. Max" />
 
 <Feld
-	etikett="Geburtsdatum *"
+	etikett="Nachname"
+	aria-required="true"
+	bind:value={nachname}
+	placeholder="z. B. Mustermann"
+/>
+
+<Feld
+	etikett="Geburtsdatum"
 	type="date"
 	required
 	bind:value={geburtsdatum}
@@ -48,7 +53,9 @@
 />
 
 <div class="grid gap-y-1.5">
-	<label for="schueler-klasse" class="text-sm font-medium text-on-surface-variant">Klasse *</label>
+	<label for="schueler-klasse" class="text-sm font-medium text-on-surface-variant"
+		>Klasse<span aria-hidden="true">*</span></label
+	>
 	<Select
 		id="schueler-klasse"
 		bind:value={klasse}
@@ -63,7 +70,7 @@
 </div>
 
 <Feld
-	etikett="Ausweisnummer (optional)"
+	etikett="Ausweisnummer"
 	bind:value={barcode}
 	placeholder="Wird automatisch generiert, wenn leer"
 />

@@ -8,7 +8,7 @@
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import Button from '../ui/Button.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { formatDatum, formatZahl } from '../../utils/format.js';
+	import { anzahlText, formatDatum, formatZahl } from '../../utils/format.js';
 
 	const SCHRITT = 50;
 
@@ -24,7 +24,7 @@
 
 	let grenze = $state(SCHRITT);
 	// Die Überschrift zählt Exemplare, „Mehr laden" Zeilen: Eine Zeile trägt alle Exemplare
-	// eines Titels von einem Tag. Der Knopf nennt deshalb das Wort, sonst läse sich „5 weitere"
+	// eines Titels von einem Tag. Der Knopf nennt deshalb das Wort, sonst läse sich „noch 5 übrig"
 	// als fünf Bücher.
 	const exemplare = $derived(abschnitt.exemplare);
 	const anzahl = $derived(abschnitt.zeilen.length);
@@ -67,9 +67,7 @@
 	{#if grenze < anzahl}
 		<div class="flex justify-center pt-2">
 			<Button variant="secondary" onclick={() => (grenze += SCHRITT)}>
-				Mehr laden ({formatZahl(anzahl - grenze)} weitere {anzahl - grenze === 1
-					? 'Zeile'
-					: 'Zeilen'})
+				Mehr laden, noch {anzahlText(anzahl - grenze, 'Zeile', 'Zeilen')} übrig
 			</Button>
 		</div>
 	{/if}

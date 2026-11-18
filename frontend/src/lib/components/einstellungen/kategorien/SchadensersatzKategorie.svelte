@@ -68,7 +68,7 @@
 		zahlen: [
 			{
 				schluessel: 'bescheid_frist_tage',
-				label: 'Zahlungsfrist (Tage)',
+				label: 'Zahlungsfrist',
 				wert: fristTage,
 				min: 1
 			}
@@ -136,13 +136,14 @@
 
 		<Feld
 			id="bescheid-aufsicht"
-			etikett="Aufsichtsbehörde (Name und Anschrift)"
+			etikett="Aufsichtsbehörde"
 			bind:value={aufsicht}
 			placeholder="Name, Straße, PLZ Ort"
 		/>
 		<Feld
 			id="bescheid-schulleitung"
-			etikett="Name der Schulleitung (Unterschriftszeile)"
+			etikett="Name der Schulleitung"
+			hint="Steht in der Unterschriftszeile"
 			bind:value={schulleitung}
 		/>
 
@@ -155,14 +156,17 @@
 		<Feld id="bescheid-zahlstelle" etikett="Zahlstelle" bind:value={zahlstelle} />
 		<Feld
 			id="bescheid-bank"
-			etikett="Bankverbindung (eine Angabe je Zeile)"
+			etikett="Bankverbindung"
+			hint="Eine Angabe je Zeile"
 			bind:value={bankverbindung}
 			mehrzeilig
 			zeilen={4}
 		/>
 		<Feld
 			id="bescheid-frist"
-			etikett="Zahlungsfrist (Tage ab Briefdatum)"
+			etikett="Zahlungsfrist"
+			hint="Gezählt ab dem Briefdatum"
+			nachlaufend={tage}
 			type="number"
 			min="1"
 			bind:value={fristTage}
@@ -170,3 +174,5 @@
 		/>
 	</div>
 </KategorieRahmen>
+
+{#snippet tage()}Tage{/snippet}

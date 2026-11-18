@@ -105,9 +105,9 @@ func Reihenfolge() []string {
 	return []string{Land, Schultraeger, ""}
 }
 
-// Beschriftung ist die Überschrift eines Topfs, wo ein Mensch sie liest: „Lernmittelfreiheit
-// (Land)". Der leere Wert heißt „ohne Zuordnung"; ein unbekannter Wert ergibt "", damit der
-// Aufrufer entscheidet.
+// Beschriftung ist die Überschrift eines Topfs, wo ein Mensch sie liest: „Lernmittelfreiheit ·
+// Land", ohne Klammer nach M3 (Grammar and punctuation, Parentheses). Der leere Wert heißt „ohne
+// Zuordnung"; ein unbekannter Wert ergibt "", damit der Aufrufer entscheidet.
 func Beschriftung(mittel string) string {
 	if mittel == "" {
 		return OhneZuordnung
@@ -116,7 +116,7 @@ func Beschriftung(mittel string) string {
 	if err != nil {
 		return ""
 	}
-	return t.Kurz + " (" + t.Traeger + ")"
+	return t.Kurz + " · " + t.Traeger
 }
 
 // HatGrossesLernmittelEtikett sagt, ob zu einer Bestellung dieses Topfs das große

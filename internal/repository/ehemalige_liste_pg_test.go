@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Der Reiter „Ehemalige / Archiv" und „Aktive Schüler" sind dieselbe Abfrage mit
+// Der Reiter „Ehemalige" und „Aktive Schüler" sind dieselbe Abfrage mit
 // umgekehrtem Vorzeichen — hier der Beweis, dass keine Zeile in beiden oder in keiner
 // Liste landet: aktiv, weggegangen, gelöscht.
 func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {

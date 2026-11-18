@@ -50,7 +50,7 @@
 		class="text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-large-emphasized"
 		aria-label="Akte von {name} öffnen"
 	>
-		{name || '(Angaben getilgt)'}
+		{name || 'Angaben getilgt'}
 	</button>
 	{#if klasse}
 		<span class="text-on-surface-variant"> · {klasse}</span>
@@ -71,8 +71,8 @@
 	<div class="rounded-xl border border-outline-variant py-10 text-center">
 		<p class="text-on-surface text-body-large-emphasized">Keine offenen Schadensersatz-Fälle</p>
 		<p class="mt-1 text-sm text-on-surface-variant">
-			Ein Fall beginnt in der Leserakte mit „Verlust/Schaden melden" an der Ausleihzeile. Er steht
-			dann hier, bis der Bescheid erstellt, die Frist abgelaufen und der Fall übergeben ist.
+			Ein Fall beginnt in der Leserakte mit „Verlust oder Schaden melden" an der Ausleihzeile. Er
+			steht dann hier, bis der Bescheid erstellt, die Frist abgelaufen und der Fall übergeben ist.
 		</p>
 	</div>
 {:else}
@@ -82,7 +82,7 @@
 				<thead class="font-medium">
 					<tr>
 						<th>Referenz-Nr.</th>
-						<th>Schüler/in</th>
+						<th>Schüler</th>
 						<th class="text-right">Betrag</th>
 						<th>Frist</th>
 						<th>Stand</th>
@@ -135,7 +135,7 @@
 								{#if b.schueler_id}
 									{@render schueler(b.schueler_id, b.schueler_name, b.klasse)}
 								{:else}
-									<span class="text-on-surface text-body-medium-emphasized">(Angaben getilgt)</span>
+									<span class="text-on-surface text-body-medium-emphasized">Angaben getilgt</span>
 								{/if}
 								<span class="block text-sm text-on-surface-variant">
 									{b.anzahl_positionen}

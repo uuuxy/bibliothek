@@ -159,7 +159,7 @@
 	{#if liste.length}
 		<!-- Eigener Name, nicht der des Feldes: Zwei Elemente mit demselben Namen sagt ein
 		     Screenreader als dasselbe an. -->
-		<ul class="flex flex-wrap gap-2" aria-label="{etikett ?? ariaLabel} (gewählt)">
+		<ul class="flex flex-wrap gap-2" aria-label="{etikett ?? ariaLabel}: gewählt">
 			{#each liste as wert (schluessel(wert))}
 				<li
 					class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-label-large text-on-secondary-container"

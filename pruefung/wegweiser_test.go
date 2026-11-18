@@ -79,7 +79,6 @@ var wegKeinWeg = []struct{ datei, stueck, grund string }{
 	{"internal/db/rechte_vorgabe.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
 	{"frontend/src/lib/components/benutzer/Zugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
 	{"frontend/src/lib/components/einstellungen/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},
-	{"frontend/src/lib/components/leser/Schuljahreswechsel.svelte", "5a → 6a", "Beispiel einer Versetzung"},
 }
 
 // Der Detektor an den Formen, die er finden und durchlassen muss.

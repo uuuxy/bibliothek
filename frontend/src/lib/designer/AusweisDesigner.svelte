@@ -138,7 +138,7 @@
 		{:else if ablage.zustand === 'saving'}
 			<span class="text-on-surface-variant">Wird gespeichert …</span>
 		{:else if ablage.zustand === 'saved'}
-			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
+			<span class="text-success">✓ Zentral für alle Arbeitsplätze gespeichert</span>
 		{:else if ablage.zustand === 'error'}
 			<span role="alert" class="text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>
 			<Button variant="ghost" onclick={ablage.konflikt ? neuLaden : () => ablage.erneutSpeichern()}>

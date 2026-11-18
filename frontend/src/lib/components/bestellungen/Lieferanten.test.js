@@ -37,9 +37,9 @@ function baue(props = {}) {
 
 /** @param {ReturnType<typeof baue>} ansicht */
 async function fuelleNeuenLieferanten(ansicht) {
-	await fireEvent.input(ansicht.feld('Name'), { target: { value: 'Buchhandlung Neu' } });
-	await fireEvent.input(ansicht.feld('E-Mail'), { target: { value: 'neu@example.org' } });
-	await fireEvent.input(ansicht.feld('Kundennummer'), { target: { value: 'K-9' } });
+	await fireEvent.input(ansicht.feld('Name*'), { target: { value: 'Buchhandlung Neu' } });
+	await fireEvent.input(ansicht.feld('E-Mail*'), { target: { value: 'neu@example.org' } });
+	await fireEvent.input(ansicht.feld('Kundennummer*'), { target: { value: 'K-9' } });
 }
 
 describe('Lieferanten', () => {
@@ -55,12 +55,12 @@ describe('Lieferanten', () => {
 		await fireEvent.click(speichern);
 		await tick();
 		expect(onAddSupplier).toHaveBeenCalledTimes(1);
-		expect(ansicht.feld('Name').value, 'abgelehnt: die Eingabe bleibt').toBe('Buchhandlung Neu');
+		expect(ansicht.feld('Name*').value, 'abgelehnt: die Eingabe bleibt').toBe('Buchhandlung Neu');
 
 		await fireEvent.click(speichern);
 		await tick();
 		expect(onAddSupplier).toHaveBeenCalledTimes(2);
-		expect(ansicht.feld('Name').value, 'angelegt: das Formular ist leer').toBe('');
+		expect(ansicht.feld('Name*').value, 'angelegt: das Formular ist leer').toBe('');
 	});
 
 	it('schickt einen zweiten Klick nicht, solange das Anlegen läuft', async () => {

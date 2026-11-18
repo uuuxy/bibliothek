@@ -28,7 +28,7 @@ describe('Klassensatz: Hinweis auf ersetzte Klassensätze', () => {
 
 		expect(
 			await screen.findByText(
-				'5a (1 Buch) hat bereits einen Klassensatz. Beim Speichern wird er durch die Auswahl hier ersetzt.'
+				'5a mit 1 Buch hat bereits einen Klassensatz. Beim Speichern wird er durch die Auswahl hier ersetzt.'
 			)
 		).toBeTruthy();
 	});
@@ -40,7 +40,7 @@ describe('Klassensatz: Hinweis auf ersetzte Klassensätze', () => {
 
 		expect(
 			await screen.findByText(
-				'5a (1 Buch) und 5b (2 Bücher) haben bereits einen Klassensatz. Beim Speichern werden sie durch die Auswahl hier ersetzt.'
+				'5a mit 1 Buch und 5b mit 2 Büchern haben bereits einen Klassensatz. Beim Speichern werden sie durch die Auswahl hier ersetzt.'
 			)
 		).toBeTruthy();
 	});

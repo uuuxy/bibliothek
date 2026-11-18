@@ -83,7 +83,7 @@ describe('InventurLaeufe', () => {
 
 		expect(screen.getByText('Laufende Inventuren')).toBeTruthy();
 		// Gefunden sind die erwarteten Bücher, die nicht mehr fehlen, wie der Abschluss sie zählt.
-		expect(screen.getByText(/^3 \/ 9 erfasst/)).toBeTruthy();
+		expect(screen.getByText(/^3 von 9 erfasst/)).toBeTruthy();
 		expect(screen.getByText('2 fehlend')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Fortsetzen' }));
 		expect(a.setzeLaufFort).toHaveBeenCalledWith(lauf);
@@ -118,7 +118,7 @@ describe('InventurLaeufe', () => {
 		const a = ablauf({ frueher: frueheres({ laeufe: [fruehereInventur], weitere: 12 }) });
 		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (12 weitere)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden, noch 12 übrig' }));
 		expect(a.frueher.ladeMehr).toHaveBeenCalled();
 
 		cleanup();

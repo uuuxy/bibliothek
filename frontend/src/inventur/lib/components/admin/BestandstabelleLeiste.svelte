@@ -4,6 +4,7 @@
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
+	import { anzahlText } from '../../../../lib/utils/format.js';
 	import { BookOpen, Camera, Plus, RefreshCw, Trash } from '@lucide/svelte';
 
 	/**
@@ -42,7 +43,7 @@
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 		<h2 class="shrink-0 text-lg text-on-surface">
-			Titel ({titelAnzahl})
+			{anzahlText(titelAnzahl, 'Titel', 'Titel')}
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
 		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
@@ -76,7 +77,7 @@
 		{#if anzahlGewaehlt > 0}
 			<Button variant="secondary" onclick={onAssignClass}>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
-				Zum Klassensatz hinzufügen ({anzahlGewaehlt})
+				{anzahlText(anzahlGewaehlt, 'Titel', 'Titel')} zum Klassensatz hinzufügen
 			</Button>
 			<Button variant="danger" onclick={onDelete} disabled={loescht}>
 				{#if loescht}
@@ -84,7 +85,7 @@
 				{:else}
 					<Trash class="w-4 h-4" aria-hidden="true" />
 				{/if}
-				Löschen ({anzahlGewaehlt})
+				{anzahlText(anzahlGewaehlt, 'Titel', 'Titel')} löschen
 			</Button>
 		{/if}
 	</div>

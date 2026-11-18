@@ -65,7 +65,7 @@
 					id="grad-klasse"
 					bind:value={klasse}
 					options={[
-						{ value: '', label: `Alle Klassen (${gesamt})` },
+						{ value: '', label: 'Alle Klassen', zusatz: String(gesamt) },
 						...klassen.map((/** @type {string} */ k) => ({ value: k, label: k }))
 					]}
 					class="w-48"

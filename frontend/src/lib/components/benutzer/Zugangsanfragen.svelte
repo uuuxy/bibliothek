@@ -161,7 +161,7 @@
 			<span class="mt-2 flex flex-wrap items-center gap-2">
 				<span>
 					{d.name}
-					{d.herkunft}{d.ausweis ? ` (Ausweis ${d.ausweis})` : ''}:
+					{d.herkunft}{d.ausweis ? `, Ausweis ${d.ausweis}` : ''}:
 					{#if darfZuordnen && istZuordenbar(d)}
 						Beide Einträge gehören zusammen — dann hängen Ausweis, Ausleihen und Anmeldung an einem.
 					{:else}

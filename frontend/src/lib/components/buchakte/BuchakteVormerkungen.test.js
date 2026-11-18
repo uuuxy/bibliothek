@@ -53,7 +53,7 @@ describe('BuchakteVormerkungen', () => {
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
-		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
+		await fireEvent.input(screen.getByLabelText('Schüler suchen'), {
 			target: { value: 'Ida' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
@@ -85,7 +85,7 @@ describe('BuchakteVormerkungen', () => {
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
-		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
+		await fireEvent.input(screen.getByLabelText('Schüler suchen'), {
 			target: { value: 'Ida' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
@@ -135,7 +135,7 @@ describe('BuchakteVormerkungen', () => {
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
-		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
+		await fireEvent.input(screen.getByLabelText('Schüler suchen'), {
 			target: { value: 'Ida' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
@@ -168,7 +168,7 @@ describe('BuchakteVormerkungen: ein Auftrag zur Zeit', () => {
 		vi.mocked(apiClient.post).mockImplementation(() => new Promise((fertig) => (liefere = fertig)));
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
-		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
+		await fireEvent.input(screen.getByLabelText('Schüler suchen'), {
 			target: { value: 'Ida' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));

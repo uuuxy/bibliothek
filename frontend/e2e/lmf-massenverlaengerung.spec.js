@@ -51,7 +51,9 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 	await page.goto('/einstellungen');
 	await einstellungsKategorie(page, 'LMF-Aktionen').click();
 
-	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'LMF-Verlängerung für eine Klasse' })
+	).toBeVisible();
 
 	// Auswählen statt tippen (seit 30.09.2026, docs/OFFEN.md 5.18). Die Liste zeigt die Klasse
 	// so, wie sie gespeichert ist (Anzeigeform, Migration 087) — deshalb aus der Datenbank.

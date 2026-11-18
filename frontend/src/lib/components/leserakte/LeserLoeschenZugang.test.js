@@ -144,7 +144,7 @@ describe('Löschen in der Akte: einen Zugang löscht nur, wer Konten verwaltet',
 		/** @type {HTMLButtonElement} */ (
 			render(LeserGefahrenzone, { props: { leser: profile, onDelete: () => {} } }).getByRole(
 				'button',
-				{ name: /archivieren \/ löschen/ }
+				{ name: /archivieren oder löschen/ }
 			)
 		);
 

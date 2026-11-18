@@ -53,9 +53,9 @@ describe('entwurfAus: „Nicht im Plan“', () => {
 
 describe('artErklaerung', () => {
 	it('zählt die Eingangsjahrgänge mit Komma und „und“ auf', () => {
-		expect(artErklaerung('ausgabe', [5])).toContain('(Jahrgang 5)');
-		expect(artErklaerung('ausgabe', [5, 7])).toContain('(Jahrgang 5 und 7)');
-		expect(artErklaerung('ausgabe', [5, 7, 11])).toContain('(Jahrgang 5, 7 und 11)');
+		expect(artErklaerung('ausgabe', [5])).toContain('Klassen in Jahrgang 5 bekommen');
+		expect(artErklaerung('ausgabe', [5, 7])).toContain('in Jahrgang 5 und 7 bekommen');
+		expect(artErklaerung('ausgabe', [5, 7, 11])).toContain('in Jahrgang 5, 7 und 11 bekommen');
 	});
 });
 

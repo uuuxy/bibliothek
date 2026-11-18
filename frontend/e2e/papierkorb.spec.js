@@ -40,7 +40,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	await expect(page.getByText(`Korb-${suffix}`).first()).toBeVisible();
 
 	await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
-	await page.getByRole('button', { name: 'Schüler archivieren / löschen' }).click();
+	await page.getByRole('button', { name: 'Schüler archivieren oder löschen' }).click();
 
 	// Tipp-Bestätigung: exakter Name als Sicherung gegen Versehen
 	await page.locator('#confirm-name').fill(`E2E Korb-${suffix}`);

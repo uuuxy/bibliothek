@@ -53,7 +53,7 @@
 <div>
 	<div class="flex items-center justify-between mb-3">
 		<h3 class="text-title-medium text-on-surface-variant">
-			Erwartete Positionen ({anzahlText(totalItems, 'Exemplar', 'Exemplare')})
+			{anzahlText(totalItems, 'Exemplar', 'Exemplare')} erwartet
 		</h3>
 		{#if incomingShipments.length > 0}
 			<Button variant="ghost" size="sm" onclick={toggleAll}>

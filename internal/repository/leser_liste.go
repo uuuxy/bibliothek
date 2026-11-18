@@ -86,7 +86,7 @@ func (a *LeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string,
 }
 
 // LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben (ist_abgaenger =
-// true, nicht gelöscht), für den Reiter „Ehemalige / Archiv" der Schülerdatei. Die
+// true, nicht gelöscht), für den Reiter „Ehemalige" der Schülerdatei. Die
 // Abgängerliste meint die Abschlussklassen, die noch an der Schule sind; die Weggegangenen
 // haben deshalb ihre eigene Liste, mit denselben Zeilen und derselben Suche wie die Aktiven
 // (ladeListe). Jüngster Abgang zuerst, dann Name.
@@ -110,7 +110,7 @@ type listenArt int
 const (
 	// listeAktiveSchueler: die Schülerdatei, wie sie war — die Sicht `schueler`.
 	listeAktiveSchueler listenArt = iota
-	// listeEhemalige: der Reiter „Ehemalige / Archiv", ebenfalls nur Schüler. Kollegium
+	// listeEhemalige: der Reiter „Ehemalige", ebenfalls nur Schüler. Kollegium
 	// hat kein Abgängerjahr und wird vom LUSD-Abgleich nicht angefasst.
 	listeEhemalige
 	// listeAlleLeser: die Leserdatei über die Tabelle `leser`.
@@ -124,7 +124,7 @@ func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche s
 	//
 	// Weggegangene (ist_abgaenger) gehören nicht in „Aktive Schüler": Sie stünden als
 	// „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven, nach einem Schuljahreswechsel ein
-	// ganzer Jahrgang. Sie haben den Reiter „Ehemalige / Archiv", der über dieselbe Abfrage mit
+	// ganzer Jahrgang. Sie haben den Reiter „Ehemalige", der über dieselbe Abfrage mit
 	// umgekehrtem Vorzeichen läuft.
 	statusBedingung := "COALESCE(s.ist_abgaenger, false) = false"
 	if art == listeEhemalige {

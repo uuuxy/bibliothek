@@ -44,7 +44,7 @@ describe('BuchExemplareListe', () => {
 
 		expect(await screen.findByText('B-000101')).toBeTruthy();
 		expect(screen.getByText('B-000102')).toBeTruthy();
-		expect(screen.getByRole('heading', { name: 'Exemplare (2)' })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: '2 Exemplare' })).toBeTruthy();
 		expect(screen.queryByText(/Nicht im Bestand/)).toBeNull();
 		expect(apiFetch).toHaveBeenCalledWith('/api/buecher/titel/t-1/exemplare', expect.anything());
 	});
@@ -65,7 +65,7 @@ describe('BuchExemplareListe', () => {
 		);
 		const screen = render(BuchExemplareListe, { formular: { id: 't-1', stock: 2 } });
 
-		expect(await screen.findByRole('heading', { name: 'Exemplare (2)' })).toBeTruthy();
+		expect(await screen.findByRole('heading', { name: '2 Exemplare' })).toBeTruthy();
 		expect(screen.queryByText('B-3')).toBeNull();
 		expect(screen.queryByText('B-5')).toBeNull();
 		expect(
@@ -87,7 +87,7 @@ describe('BuchExemplareListe', () => {
 
 		await fireEvent.click(screen.getAllByRole('button', { name: 'Exemplar löschen' })[0]);
 
-		expect(await screen.findByRole('heading', { name: 'Exemplare (1)' })).toBeTruthy();
+		expect(await screen.findByRole('heading', { name: '1 Exemplar' })).toBeTruthy();
 		expect(apiFetch, 'der gewählte Grund geht mit').toHaveBeenCalledWith(
 			'/api/buecher/exemplare/e-1',
 			expect.objectContaining({
@@ -113,7 +113,7 @@ describe('BuchExemplareListe', () => {
 		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Zähldatum')).value).toBe(
 			'2026-09-02'
 		);
-		const ueberschrift = screen.getByRole('heading', { name: 'Exemplare (2)' });
+		const ueberschrift = screen.getByRole('heading', { name: '2 Exemplare' });
 		const FOLGT = Node.DOCUMENT_POSITION_FOLLOWING;
 		expect(
 			ueberschrift.compareDocumentPosition(bestand) & FOLGT,

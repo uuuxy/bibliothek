@@ -53,6 +53,32 @@ function verstoesse(roh, ohneSchlusspunkt = false) {
 	return funde;
 }
 
+// Klammern nur um ein Kürzel oder eine Quelle, M3 (Grammar and punctuation): „Parentheses can be
+// used to define acronyms or jargon or when referencing a source. They shouldn’t be used when
+// adding a side note or an afterthought of a sentence.“ Kein Schrägstrich zwischen Wörtern, Googles
+// developer documentation style guide (Slashes): „Avoid using slashes, except in code.“ Ein Kürzel
+// trägt zwei Großbuchstaben und kein Leerzeichen (SMTP, HSchG), eine Quelle beginnt mit Art., §
+// oder DIN. Was in Anführungszeichen steht, ist ein Beispiel aus den Daten („LMF Deu 7 / Bie“).
+const KUERZEL = /^(?=(?:[^\p{Lu}]*\p{Lu}){2})[\p{L}\d.-]+$|^(?:Art\.|§|DIN) /u;
+// Code: ein Pfad, eine Adresse, ein Dateityp, und was weder Leerzeichen noch Großbuchstaben trägt.
+const CODE = /^\.{0,2}\/|^data:|https?:\/\/|^[^\s\p{Lu}]+$/u;
+// Eine Webadresse ohne Schema (kmk.org/service/ferienregelung) ist Code und, in Klammern, eine Quelle.
+const ADRESSE = /[\w-]+(?:\.[\w-]+)*\.[a-z]{2,}\/[^\s()]*/gu;
+
+/** @param {string} roh @returns {string[]} */
+function nebenzeichen(roh) {
+	const t = roh.replace(/\s+/g, ' ').trim();
+	// CSS: eine Eigenschaft, eine Funktion, ein Selektor mit :not( oder eine Media-Query.
+	if (/^[a-z-]+: |^[a-z-]+\(|:not\(|^\([a-z-]+(?::| [<>])/.test(t)) return [];
+	const funde = [...t.matchAll(/\(([^()]*)\)/g)]
+		.filter((m) => !KUERZEL.test(m[1]) && m[1].replace(ADRESSE, '') !== '')
+		.map((m) => `Klammer (${m[1]})`);
+	const ohneZitat = t.replace(/„[^“]*“|"[^"]*"/g, '„…“').replace(ADRESSE, '…');
+	if (!CODE.test(ohneZitat) && /[\p{L}}]\s?\/\s?[\p{L}{]/u.test(ohneZitat))
+		funde.push('Schrägstrich');
+	return funde;
+}
+
 /**
  * Die Texte einer Datei, je mit der Angabe, ob ihr Punkt am Ende ungeprüft bleibt.
  * @param {string} quelle @param {boolean} svelte @returns {[string, boolean][]}
@@ -173,6 +199,8 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 	const gefunden = new Set();
 	/** @type {string[]} */
 	const funde = [];
+	/** @type {string[]} */
+	const zeichenFunde = [];
 	let anzahl = 0;
 	for (const datei of sammleQuelldateien(srcRoot)) {
 		for (const [roh, ohneSchlusspunkt] of texte(
@@ -181,9 +209,12 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 		)) {
 			anzahl++;
 			const ort = `${relPfad(datei)}: ${roh.replace(/\s+/g, ' ').trim()}`;
-			if (AUSNAHMEN.includes(ort)) gefunden.add(ort);
-			else
-				for (const v of verstoesse(roh, ohneSchlusspunkt)) funde.push(`${v}: ${ort.slice(0, 160)}`);
+			if (AUSNAHMEN.includes(ort)) {
+				gefunden.add(ort);
+				continue;
+			}
+			for (const v of verstoesse(roh, ohneSchlusspunkt)) funde.push(`${v}: ${ort.slice(0, 160)}`);
+			for (const v of nebenzeichen(roh)) zeichenFunde.push(`${v}: ${ort.slice(0, 160)}`);
 		}
 	}
 
@@ -199,6 +230,31 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 				'Gedankenstrichs ein Komma, ein Doppelpunkt oder ein zweiter Satz. Sätze aus Teilen ' +
 				'verbindet verbindeSaetze (utils/format.js).'
 		).toEqual([]);
+	});
+
+	it('setzt Klammern nur um Kürzel und Quellen, keinen Schrägstrich zwischen Wörtern', () => {
+		expect(
+			zeichenFunde,
+			'Nach M3 gehört ein Nebengedanke in den Satz, eine Zahl in den Text („12 Exemplare“) oder ' +
+				'als Badge in den Reiter, eine Einheit rechts ins Feld (Snippet nachlaufend). Statt des ' +
+				'Schrägstrichs „oder“, „und“, bei Zahlen „von“.'
+		).toEqual([]);
+	});
+
+	it('Selbstprobe: Klammern und Schrägstriche', () => {
+		for (const gut of ['Postausgang (SMTP)', 'Gemäß (§ 153 HSchG)', 'DSGVO-Auskunft (Art. 15)'])
+			expect(nebenzeichen(gut), gut).toEqual([]);
+		for (const gut of ['„LMF Deu 7 / Bie“ ist ein Fach', 'image/jpeg', 'transform: scale({…});'])
+			expect(nebenzeichen(gut), gut).toEqual([]);
+		for (const gut of ['input:not([type="file"])', '(width < 80rem)', 'calc({…}px + 1rem)'])
+			expect(nebenzeichen(gut), gut).toEqual([]);
+		for (const gut of ['Plan (kmk.org/service/x)', 'Steht unter kmk.org/service/x bereit'])
+			expect(nebenzeichen(gut), gut).toEqual([]);
+		expect(nebenzeichen('Notiz (optional)')).toEqual(['Klammer (optional)']);
+		expect(nebenzeichen('Forderungen ({…})')).toEqual(['Klammer ({…})']);
+		expect(nebenzeichen('Zahlungsfrist (Tage)')).toEqual(['Klammer (Tage)']);
+		for (const schlecht of ['Schüler/in', 'Klasse / Kurs', '{…} / {…} erfasst', 'N/A'])
+			expect(nebenzeichen(schlecht), schlecht).toEqual(['Schrägstrich']);
 	});
 
 	it('Selbstprobe: der Detektor fasst die Formen', () => {

@@ -47,7 +47,9 @@ describe('BedarfZeile', () => {
 	it('schlüsselt ein Buch mit mehreren Auflagen auf', () => {
 		const screen = render(BedarfZeile, { r: buch, onAddToCart: vi.fn() });
 		expect(
-			screen.getByText('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)')
+			screen.getByText(
+				'Bestand aus 2 Auflagen: 1 Exemplar der 4. Aufl. · 2023, 2 Exemplare der 3. Aufl. · 2019'
+			)
 		).toBeTruthy();
 	});
 
@@ -59,9 +61,9 @@ describe('BedarfZeile', () => {
 	it('legt die Zeile des Buchs mit der fehlenden Menge in den Warenkorb — die neueste Auflage', async () => {
 		const onAddToCart = vi.fn();
 		const screen = render(BedarfZeile, { r: buch, onAddToCart });
-		expect(screen.getByTitle('Bestand / Bedarf im nächsten Schuljahr').textContent?.trim()).toBe(
-			'3/5'
-		);
+		expect(
+			screen.getByTitle('Bestand, gemessen am Bedarf im nächsten Schuljahr').textContent?.trim()
+		).toBe('3 von 5');
 		await fireEvent.click(
 			screen.getByRole('button', {
 				name: '2 Exemplare von Lambacher Schweizer 7 zur Bestellung hinzufügen'

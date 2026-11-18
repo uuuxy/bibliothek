@@ -49,7 +49,7 @@ export async function ladeSchlagwortVorschlaege(suche = '') {
 export async function ladeDnbSchlagwortVorschlag(isbn) {
 	const res = await apiFetch(`/api/schlagworte/dnb-vorschlag?isbn=${encodeURIComponent(isbn)}`);
 	if (!res.ok) {
-		throw new Error(await leseApiFehler(res, `DNB-Vorschlag nicht geladen (${res.status})`));
+		throw new Error(await leseApiFehler(res, `DNB-Vorschlag nicht geladen: HTTP ${res.status}`));
 	}
 	const antwort = await res.json();
 	const liste = antwort?.schlagwort_vorschlaege;
@@ -74,7 +74,7 @@ export async function ladeTitelSchlagworte(titelId) {
 	const res = await apiFetch(`/api/buecher/titel/${encodeURIComponent(titelId)}/schlagworte`);
 	if (!res.ok) {
 		throw new Error(
-			await leseApiFehler(res, `Schlagworte konnten nicht geladen werden (${res.status})`)
+			await leseApiFehler(res, `Schlagworte konnten nicht geladen werden: HTTP ${res.status}`)
 		);
 	}
 	const antwort = await res.json();

@@ -51,7 +51,7 @@ describe('LmfPlanFreieTage', () => {
 			]
 		});
 		const text = getByTestId('lmf-ausfaelle').textContent?.replace(/\s+/g, ' ');
-		expect(text).toContain('Donnerstag 04.06.2026 (Fronleichnam)');
-		expect(text).toContain('Freitag 05.06.2026 (Brückentag)');
+		expect(text).toContain('Donnerstag 04.06.2026 Fronleichnam');
+		expect(text).toContain('Freitag 05.06.2026 Brückentag');
 	});
 });

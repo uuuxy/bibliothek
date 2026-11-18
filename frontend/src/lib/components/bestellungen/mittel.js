@@ -1,4 +1,4 @@
-// Der Topf einer Bestellung: Lernmittelfreiheit (Land) oder Schülerbücherei (Schulträger).
+// Der Topf einer Bestellung: Lernmittelfreiheit des Landes oder Schülerbücherei des Schulträgers.
 //
 // Dasselbe Vokabular wie internal/pkg/mitteltopf und bestellungen_verlauf.mittel (Migration
 // 109). Eine Bestellung = ein Topf; der Titel schlägt ihn über ist_lernmittel nur vor,
@@ -37,6 +37,6 @@ export function anderesMittel(mittel) {
  */
 export function mittelBeschriftung(mittel) {
 	return mittel && mittel in MITTEL
-		? `${MITTEL[/** @type {Mittel} */ (mittel)].label} (${MITTEL[/** @type {Mittel} */ (mittel)].traeger})`
+		? `${MITTEL[/** @type {Mittel} */ (mittel)].label} · ${MITTEL[/** @type {Mittel} */ (mittel)].traeger}`
 		: 'ohne Zuordnung';
 }

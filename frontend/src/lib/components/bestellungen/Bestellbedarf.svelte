@@ -62,10 +62,10 @@
 		<div class="flex items-start justify-between gap-4">
 			<div class="min-w-0">
 				<h2 class="text-lg text-on-surface tracking-tight flex items-center gap-2">
-					Bestellbedarf
-					<!-- Die Zahl in Klammern wie bei „Titel (4440)“: Ein Badge gehört in M3 an Navigation
+					<!-- Die Zahl steht im Text wie bei „4.440 Titel“: Ein Badge gehört in M3 an Navigation
 					     und Symbole, nicht an eine Überschrift. -->
-					{#if vorschlaege.length}({vorschlaege.length}){/if}
+					Bestellbedarf{#if vorschlaege.length}
+						für {anzahlText(vorschlaege.length, 'Titel', 'Titel')}{/if}
 				</h2>
 				{#if vorschlaege.length}
 					<p class="text-sm text-on-surface-variant mt-1">
@@ -150,7 +150,7 @@
 			>
 				<span class="w-8 shrink-0" aria-hidden="true"></span>
 				<span class="flex-1 min-w-0">Titel</span>
-				<span class="text-right">Bestand / Bedarf</span>
+				<span class="text-right">Bestand</span>
 				<span class="w-9 shrink-0" aria-hidden="true"></span>
 			</div>
 		</div>

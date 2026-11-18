@@ -89,7 +89,7 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 		await screen.findByText('Mathe 9');
 
 		await fireEvent.click(screen.getByLabelText('Buch auswählen'));
-		await fireEvent.click(screen.getByRole('button', { name: /Löschen \(1\)/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /1 Titel löschen/ }));
 
 		await waitFor(() => expect(loescheTitelMitRueckfrage).toHaveBeenCalledWith(['t1']));
 		await waitFor(() => expect(screen.queryByText('Mathe 9')).toBeNull());
@@ -102,7 +102,7 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 		await screen.findByText('Mathe 9');
 
 		await fireEvent.click(screen.getByLabelText('Buch auswählen'));
-		await fireEvent.click(screen.getByRole('button', { name: /Löschen \(1\)/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /1 Titel löschen/ }));
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => t.message)).toContain(

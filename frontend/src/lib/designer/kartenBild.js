@@ -48,7 +48,7 @@ export async function leseKartenBild(datei) {
 	}
 	if (bild.size > HOECHSTENS_BYTES) {
 		throw new Error(
-			`„${datei.name}“ ist auch verkleinert zu groß (${formatDateigroesse(bild.size)}). Bitte kleiner zuschneiden oder als JPEG speichern.`
+			`„${datei.name}“ ist auch verkleinert mit ${formatDateigroesse(bild.size)} zu groß. Bitte kleiner zuschneiden oder als JPEG speichern.`
 		);
 	}
 	return alsDatenAdresse(bild);

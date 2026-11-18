@@ -370,7 +370,7 @@ async function fehlertext(res) {
 	if (res.status === 401) return 'Passwort falsch';
 	if (res.status === 429) return 'Zu viele Versuche, bitte kurz warten';
 	if (res.status === 503) return 'Anmeldedienst nicht erreichbar';
-	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen (${res.status})`);
+	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen: HTTP ${res.status}`);
 }
 
 export const leerlaufSperre = new LeerlaufSperre();

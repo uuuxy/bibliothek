@@ -1,3 +1,5 @@
+import { anzahlText } from './format.js';
+
 /**
  * Wie eine Auflage in Listen heißt (docs/OFFEN.md 4.18). Eine Stelle für den Abschnitt der
  * Titelmaske, den Zuordnen-Dialog und den Bestellbedarf: Alle zeigen Titel derselben Reihe,
@@ -32,7 +34,9 @@ export function auflagenBeschriftung(a) {
  * @param {{ auflage?: string, erscheinungsjahr?: number, gesamt_bestand: number }[]} auflagen
  */
 export function auflagenAufschluesselung(auflagen) {
-	const teile = auflagen.map((a) => `${auflagenBeschriftung(a)} (${a.gesamt_bestand})`);
+	const teile = auflagen.map(
+		(a) => `${anzahlText(a.gesamt_bestand, 'Exemplar', 'Exemplare')} der ${auflagenBeschriftung(a)}`
+	);
 	return `Bestand aus ${auflagen.length} Auflagen: ${teile.join(', ')}`;
 }
 

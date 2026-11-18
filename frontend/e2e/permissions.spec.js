@@ -105,10 +105,10 @@ test('Mitarbeiter: einen Kollegen mit Zugang löscht er nicht, die Akte sagt war
 			await gehZu(page, '/schuelerdatei');
 			await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(nachname);
 			await page
-				.getByRole('button', { name: `Profil von ${vorname} ${nachname} (Lehrkraft) anzeigen` })
+				.getByRole('button', { name: `Profil von ${vorname} ${nachname} anzeigen, Lehrkraft` })
 				.click();
 			await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
-			return page.getByRole('button', { name: 'Kollegen archivieren / löschen' });
+			return page.getByRole('button', { name: 'Kollegen archivieren oder löschen' });
 		};
 
 		await expect(await loeschknopf('Zora', mitZugang)).toBeDisabled();

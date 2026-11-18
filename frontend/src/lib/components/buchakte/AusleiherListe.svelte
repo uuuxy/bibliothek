@@ -28,7 +28,9 @@
 {#snippet leser(/** @type {any} */ b)}
 	{b.schueler_name}
 	{b.schueler_nachname}
-	<span class="text-xs font-normal text-on-surface-variant ml-1">({b.klasse || 'Unbekannt'})</span>
+	<span class="text-xs font-normal text-on-surface-variant ml-1"
+		>· {b.klasse || 'Klasse unbekannt'}</span
+	>
 {/snippet}
 
 <div class="w-full">

@@ -99,7 +99,7 @@ class NachbuchMeldungen {
 				const grund =
 					res.status === 403
 						? 'Für die Meldungen fehlt das Recht, Schülerdaten zu sehen'
-						: await leseApiFehler(res, `Meldungen nicht abrufbar (${res.status})`);
+						: await leseApiFehler(res, `Meldungen nicht abrufbar: HTTP ${res.status}`);
 				if (lauf === this.#listenLauf) {
 					// Ein fehlendes Recht ist kein gestörtes Auffrischen: Die Liste von vorhin nennt Namen.
 					if (res.status === 403) {
@@ -139,7 +139,7 @@ class NachbuchMeldungen {
 		try {
 			const res = await apiClient.post(`/api/action/nachbuch-meldungen/${id}/quittieren`, {});
 			if (!res.ok && res.status !== 404) {
-				this.fehler = await leseApiFehler(res, `Quittieren fehlgeschlagen (${res.status})`);
+				this.fehler = await leseApiFehler(res, `Quittieren fehlgeschlagen: HTTP ${res.status}`);
 				return;
 			}
 		} catch (err) {

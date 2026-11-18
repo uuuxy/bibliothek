@@ -46,8 +46,8 @@
 			ferien_leseclub_zieldatum: leseclubZieldatum
 		},
 		zahlen: [
-			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: fristBuch, min: 1 },
-			{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: fristMedien, min: 1 },
+			{ schluessel: 'frist_buch_tage', label: 'Leihfrist Bücher', wert: fristBuch, min: 1 },
+			{ schluessel: 'frist_medien_tage', label: 'Leihfrist Medien', wert: fristMedien, min: 1 },
 			{
 				schluessel: 'max_ausleihen_schueler',
 				label: 'Max. Ausleihen',
@@ -71,8 +71,8 @@
 			Sommerferien, in der Oberstufe bis zum 31. Juli.
 		</p>
 		<p>
-			Die Eingangsjahrgänge sind die Klassen, die zum neuen Schuljahr neu gebildet werden (an dieser
-			Schule die 5er und die 7er nach der Förderstufe). Sie bekommen ihre Schulbücher erst nach den
+			Die Eingangsjahrgänge sind die Klassen, die zum neuen Schuljahr neu gebildet werden, an dieser
+			Schule die 5er und die 7er nach der Förderstufe. Sie bekommen ihre Schulbücher erst nach den
 			Sommerferien; der Jahrgang davor gibt beim Büchertausch nur zurück. Der LMF-Plan liest das
 			hier.
 		</p>
@@ -83,8 +83,22 @@
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-		<Feld type="number" bind:value={fristBuch} etikett="Tage / Buch" min={1} max={365} />
-		<Feld type="number" bind:value={fristMedien} etikett="Tage / Medien" min={1} max={365} />
+		<Feld
+			type="number"
+			bind:value={fristBuch}
+			etikett="Leihfrist Bücher"
+			min={1}
+			max={365}
+			nachlaufend={tage}
+		/>
+		<Feld
+			type="number"
+			bind:value={fristMedien}
+			etikett="Leihfrist Medien"
+			min={1}
+			max={365}
+			nachlaufend={tage}
+		/>
 		<Feld type="number" bind:value={maxAusleihen} etikett="Max. Ausleihen" min={1} max={50} />
 		<Feld
 			bind:value={lmfEingang}
@@ -113,3 +127,5 @@
 		{/if}
 	</div>
 </KategorieRahmen>
+
+{#snippet tage()}Tage{/snippet}

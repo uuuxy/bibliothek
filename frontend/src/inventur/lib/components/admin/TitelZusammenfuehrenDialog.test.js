@@ -116,7 +116,7 @@ describe('TitelZusammenfuehrenDialog', () => {
 
 		expect(vorschauen()).toEqual(['/api/buecher/titel/klein/zusammenfuehren?quelle_id=gross']);
 		expect(screen.getByText(/9783060158423 · 59 Exemplare/)).toBeTruthy();
-		expect(screen.getByText(/\(ohne ISBN\) wird gelöscht/)).toBeTruthy();
+		expect(screen.getByText(/“ ohne ISBN wird gelöscht/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: /9783060158423/ }).getAttribute('aria-pressed')).toBe(
 			'true'
 		);

@@ -43,7 +43,7 @@ async function trefferInDerTitelliste(page, sicht, nummer) {
 		.getByRole('button', { name: sicht })
 		.click();
 	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(nummer);
-	return page.getByRole('heading', { name: /^Titel \(\d+\)$/ });
+	return page.getByRole('heading', { name: /^[\d.]+ Titel$/ });
 }
 
 test.describe.serial('Buch anlegen: danach auffindbar', () => {
@@ -64,7 +64,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_MIT)).toBe('1');
 
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_MIT)).toHaveText(
-			'Titel (1)'
+			'1 Titel'
 		);
 		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill('');
 		await page.getByRole('tab', { name: 'Suche & Filter' }).click();
@@ -84,10 +84,10 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_OHNE)).toBe('0');
 
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_OHNE)).toHaveText(
-			'Titel (0)'
+			'0 Titel'
 		);
 		await expect(await trefferInDerTitelliste(page, 'Ohne Exemplare', ISBN_OHNE)).toHaveText(
-			'Titel (1)'
+			'1 Titel'
 		);
 	});
 
@@ -123,7 +123,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_OHNE)).toBe('1');
 		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ISBN_OHNE}'`)).toBe('1');
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_OHNE)).toHaveText(
-			'Titel (1)'
+			'1 Titel'
 		);
 	});
 

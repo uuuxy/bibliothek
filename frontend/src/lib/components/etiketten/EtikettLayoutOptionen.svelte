@@ -11,8 +11,8 @@
 		// Der Wert heißt 'code39', gedruckt wird Code 128 (internal/pkg/strichcode). Der gespeicherte
 		// Wert bleibt, weil er in den Ausweis-Layouts steht; die Beschriftung sagt, was
 		// tatsächlich herauskommt.
-		{ value: 'code39', label: 'Strichcode (Code 128)' },
-		{ value: 'qr', label: 'QR-Code (2D)' }
+		{ value: 'code39', label: 'Strichcode', zusatz: 'Code 128' },
+		{ value: 'qr', label: 'QR-Code' }
 	];
 	// Das große Lernmittel-Etikett hat ein festes Raster und immer den Strichcode: Startfeld und
 	// Barcode-Art entfallen, statt wirkungslos stehen zu bleiben.

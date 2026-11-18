@@ -40,7 +40,7 @@ func (t *Tueren) Leserliste(leserAbfragen *repository.LeserAbfragen, lmfAbfragen
 			return sortierFehler
 		}
 
-		// status=ehemalige: der Reiter „Ehemalige / Archiv" — dieselbe Liste mit
+		// status=ehemalige: der Reiter „Ehemalige" — dieselbe Liste mit
 		// umgekehrtem Vorzeichen (ist_abgaenger), kein eigener Endpunkt.
 		//
 		// art=alle: die Leserdatei. Muss ausdrücklich angefragt werden, denn an dieser

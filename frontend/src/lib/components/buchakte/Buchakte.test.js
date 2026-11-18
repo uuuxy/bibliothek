@@ -28,7 +28,7 @@ describe('Buchakte: Reiter', () => {
 
 		const leiste = await screen.findByRole('tablist', { name: 'Bereiche der Buchakte' });
 		const namen = [...leiste.querySelectorAll('[role="tab"]')].map((r) => r.textContent?.trim());
-		expect(namen).toEqual(['Ausleiher (0)', 'Exemplare (0)', 'Vormerkungen (0)', 'Historie']);
+		expect(namen).toEqual(['Ausleiher', 'Exemplare', 'Vormerkungen', 'Historie']);
 
 		const historie = screen.getByRole('tab', { name: 'Historie' });
 		await fireEvent.click(historie);
@@ -63,8 +63,8 @@ describe('Buchakte: ohne das Recht auf Personen', () => {
 
 		const leiste = await screen.findByRole('tablist', { name: 'Bereiche der Buchakte' });
 		const namen = [...leiste.querySelectorAll('[role="tab"]')].map((r) => r.textContent?.trim());
-		expect(namen).toEqual(['Exemplare (0)', 'Vormerkungen (0)']);
-		expect(screen.getByRole('tab', { name: 'Exemplare (0)' }).getAttribute('aria-selected')).toBe(
+		expect(namen).toEqual(['Exemplare', 'Vormerkungen']);
+		expect(screen.getByRole('tab', { name: 'Exemplare' }).getAttribute('aria-selected')).toBe(
 			'true'
 		);
 	});
@@ -103,7 +103,7 @@ describe('Buchakte: Zahlen zu den Exemplaren', () => {
 		antworteMitExemplaren(exemplare);
 		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
 
-		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
+		expect(await screen.findByRole('tab', { name: 'Exemplare 2 im Bestand' })).toBeTruthy();
 		const bestellt = screen.getByText('bestellt', { selector: 'dt' });
 		expect(bestellt.parentElement?.querySelector('dd')?.textContent?.trim()).toBe('1');
 		expect(screen.queryByText('Exemplare', { selector: 'dt' })).toBeNull();
@@ -113,7 +113,7 @@ describe('Buchakte: Zahlen zu den Exemplaren', () => {
 		antworteMitExemplaren(exemplare.filter((ex) => ex.im_bestand));
 		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
 
-		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
+		expect(await screen.findByRole('tab', { name: 'Exemplare 2 im Bestand' })).toBeTruthy();
 		expect(screen.queryByText('bestellt', { selector: 'dt' })).toBeNull();
 		expect(screen.queryByText('Exemplare', { selector: 'dt' })).toBeNull();
 	});

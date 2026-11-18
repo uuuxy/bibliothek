@@ -72,7 +72,7 @@ test.describe('Schüler-Etiketten', () => {
 		expect(JSON.parse(muster.request().postData() ?? '{}').muster).toBe(true);
 
 		// Der Auto-Save braucht 800 ms Ruhe; ohne ihn läse die Schülerdatei den alten Stand.
-		await expect(page.getByText('Zentral gespeichert')).toBeVisible();
+		await expect(page.getByText('Zentral für alle Arbeitsplätze gespeichert')).toBeVisible();
 
 		// ── Schülerdatei: derselbe Zustand, anderer Bildschirm ──
 		await menuepunkt(page, 'Leserdatei').click();
@@ -150,7 +150,7 @@ test.describe('Schüler-Etiketten', () => {
 		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 		await page.getByRole('button', { name: 'Etikettenbogen', exact: true }).click();
 		// Der Auto-Save braucht 800 ms Ruhe; erst danach steht die Betriebsart auf dem Server.
-		await expect(page.getByText('Zentral gespeichert')).toBeVisible();
+		await expect(page.getByText('Zentral für alle Arbeitsplätze gespeichert')).toBeVisible();
 
 		await page.getByRole('tab', { name: 'Ausweise je Klasse' }).click();
 		await page.getByRole('combobox', { name: 'Klasse' }).click();

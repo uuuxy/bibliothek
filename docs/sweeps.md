@@ -480,7 +480,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Layout, Spacing | Raster und Abstände (ARCHITEKTUR 5.3) | gelesen (e95fd674) |
 | Interaction states | Hover, Fokus, gedrückt | gelesen (d1273fcf) |
 | Accessibility | Rollen, Namen, Fokus | Gate: `frontend-hygiene-fehlerzeile-rolle`, `frontend-hygiene-namen` |
-| Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`; offen: Klammern und Schrägstriche (OFFEN 5.188) |
+| Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`; offen: Klammern und Schrägstriche in PDF und Mail (OFFEN 5.192) |
 | Alt text | 17 Stellen mit `alt` | **offen** |
 | Global writing | Sätze für alle Leser | gelesen (a71a5dd0) |
 

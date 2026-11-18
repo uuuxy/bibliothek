@@ -21,7 +21,7 @@ export function modusInfo(modus) {
 		case 'name_geburtsdatum':
 			return {
 				warn: false,
-				text: 'Zuordnung über Name + Geburtsdatum (die Datei enthält keine Schüler-ID). Umbenannte oder korrigierte Schüler schlägt die Vorschau unten als Paare vor.'
+				text: 'Zuordnung über Name und Geburtsdatum, weil die Datei keine Schüler-ID enthält. Umbenannte oder korrigierte Schüler schlägt die Vorschau unten als Paare vor.'
 			};
 		case 'name':
 			return {
@@ -39,8 +39,8 @@ export function modusInfo(modus) {
  */
 export function abgaengerHinweis(karenzTage) {
 	return karenzTage > 0
-		? `Fehlen in der Datei und werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
-		: 'Fehlen in der Datei und werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert (Karenzzeit 0)';
+		? `Fehlen in der Datei und werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert, einstellbar unter Einstellungen › Datenschutz & Sitzung`
+		: 'Fehlen in der Datei und werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert, weil die Karenzzeit 0 ist';
 }
 
 /**
@@ -77,7 +77,7 @@ export function dateiZahlen(r) {
 		});
 	if (r.dubletten_in_datei > 0)
 		teile.push({
-			text: `${anzahlText(r.dubletten_in_datei, 'doppelte Zeile', 'doppelte Zeilen')} zusammengelegt (letzte gewinnt)`,
+			text: `${anzahlText(r.dubletten_in_datei, 'doppelte Zeile', 'doppelte Zeilen')} zusammengelegt, die letzte gilt`,
 			ton: 'text-body-small-emphasized'
 		});
 	return teile;
@@ -100,7 +100,7 @@ export function rubriken(r) {
 		{
 			key: 'adoptions',
 			label: 'Zusammengeführt',
-			hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID (Handanlage/Littera) bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen, kein Duplikat',
+			hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID, etwa von Hand oder aus Littera angelegt, bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen, kein Duplikat',
 			items: (r.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
 			valueClass: 'text-primary'
 		},
@@ -130,7 +130,7 @@ export function rubriken(r) {
 		{
 			key: 'notInExport',
 			label: 'Nicht im Export',
-			hint: 'Standen noch nie in einem LUSD-Export (Handanlagen, Gastschüler), bleiben unverändert',
+			hint: 'Standen noch nie in einem LUSD-Export, etwa Handanlagen und Gastschüler, und bleiben unverändert',
 			items: r.nicht_im_export || [],
 			valueClass: 'text-on-surface-variant'
 		},
@@ -151,7 +151,7 @@ export function rubriken(r) {
 		{
 			key: 'ambiguous',
 			label: 'Mehrdeutig',
-			hint: 'Gleicher Name mehrfach (in der Datei oder im Bestand), wird nicht angefasst, bitte von Hand klären',
+			hint: 'Gleicher Name mehrfach in der Datei oder im Bestand, wird nicht angefasst, bitte von Hand klären',
 			items: r.mehrdeutig || [],
 			valueClass: 'text-error'
 		}

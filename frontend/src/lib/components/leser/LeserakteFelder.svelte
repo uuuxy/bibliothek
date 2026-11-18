@@ -17,6 +17,7 @@
      Abschnitt, denn bei einem Kollegen ist sie das einzige bediente Feld. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Select from '../ui/Select.svelte';
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import LeserArtWahl from './LeserArtWahl.svelte';
@@ -66,6 +67,7 @@
 <!-- ── Persönliche Daten ──────────────────────────────── -->
 <section>
 	<Abschnitt titel="Persönliche Daten" />
+	<Pflichthinweis klasse="mb-4" />
 
 	<!-- Die Art, wie bei Littera in den Stammdaten: eine Auswahlliste (sieben Arten), im
 	     selben Raster wie die Felder darunter und so breit wie eines davon. -->
@@ -81,8 +83,8 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<Feld id="vorname" etikett="Vorname *" bind:value={eingaben.vorname} />
-		<Feld id="nachname" etikett="Nachname *" bind:value={eingaben.nachname} />
+		<Feld id="vorname" etikett="Vorname" aria-required="true" bind:value={eingaben.vorname} />
+		<Feld id="nachname" etikett="Nachname" aria-required="true" bind:value={eingaben.nachname} />
 		<Feld
 			id="geburtsdatum"
 			etikett="Geburtsdatum{schuelerPflicht}"

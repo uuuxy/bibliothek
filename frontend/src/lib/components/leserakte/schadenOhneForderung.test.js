@@ -6,7 +6,7 @@ import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 // Server (internal/repository/schaden_melden.go); der Dialog darf dann aber auch nicht nach einem
 // Betrag fragen, den niemand fordern wird — sonst tippt die Bibliothekskraft eine Zahl ein,
 // die spurlos verschwindet, und wartet danach auf einen Bescheid, der nie kommt.
-describe('Verlust/Schaden melden', () => {
+describe('Verlust oder Schaden melden', () => {
 	const buch = { id: 'e1', ausleihe_id: 'a1', titel: 'Momo', barcode_id: 'B-1' };
 
 	it('fragt bei einem Kollegen nicht nach einem Ersatzbetrag', () => {

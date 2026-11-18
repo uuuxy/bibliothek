@@ -87,8 +87,8 @@
 		</p>
 		<p>
 			Alarm-Empfänger bekommen täglich die Kritisch-Meldungen der Betriebsbereitschaft und die
-			Fehler im Log (mehrere Adressen mit Komma). Bleibt das Feld leer, gehen sie an alle aktiven
-			Admin-Konten. Ein Alarm, der niemanden erreicht, ist keiner.
+			Fehler im Log; mehrere Adressen trennt ein Komma. Bleibt das Feld leer, gehen sie an alle
+			aktiven Admin-Konten. Ein Alarm, der niemanden erreicht, ist keiner.
 		</p>
 		<p>
 			Mit „Auch Warnungen mailen" nennt die Mail zusätzlich die Warnungen: im Log, in der

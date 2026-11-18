@@ -37,7 +37,7 @@ describe('Rückfall-Erkenner: was ist ein Fehler, was ist der Normalfall', () =>
 	it('alles andere ist ein Grund, warum die Erkennung nicht arbeitet', () => {
 		for (const text of [
 			'TypeError: File is not a constructor',
-			'Der Browser liefert kein Bild aus der Kamera (toBlob)',
+			'Der Browser liefert kein Bild aus der Kamera: toBlob gab nichts zurück',
 			'Cannot start file scan - ongoing camera scan'
 		]) {
 			expect(istNichtsGefunden(text), text).toBe(false);
@@ -120,7 +120,7 @@ describe('Rückfall-Erkenner: was detect() aus einem Bild macht', () => {
 		ausDerKamera = null;
 
 		await expect((await erkenner()).detect(bild)).rejects.toThrow(
-			'Der Browser liefert kein Bild aus der Kamera (toBlob)'
+			'Der Browser liefert kein Bild aus der Kamera: toBlob gab nichts zurück'
 		);
 		expect(scanFileV2).not.toHaveBeenCalled();
 	});

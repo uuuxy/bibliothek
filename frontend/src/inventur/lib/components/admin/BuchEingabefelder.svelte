@@ -5,6 +5,7 @@
 	import BuchEingabefelderKategorisierung from './BuchEingabefelderKategorisierung.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import Pflichthinweis from '../../../../lib/components/ui/Pflichthinweis.svelte';
 	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
 	import SchlagwortDnbVorschlag from '../../../../lib/components/katalog/SchlagwortDnbVorschlag.svelte';
 	import { erzeugeSchlagwortVorschlaege } from '../../../../lib/utils/schlagwortVorschlaege.svelte.js';
@@ -57,6 +58,7 @@
      steht die ISBN, weil die Aufnahme mit ihr beginnt und ihre Abfrage die Felder darunter füllt;
      sie darf leer bleiben. -->
 <div class="space-y-5">
+	<Pflichthinweis />
 	<div class="grid grid-cols-2 gap-4">
 		<IsbnFeld bind:formular bind:wirdGescannt {abfrage} />
 		<!-- Wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die Nachbarn fluchten. -->
@@ -71,7 +73,7 @@
 	<!-- Der Titel ist das Pflichtfeld der Maske: Stern an der Beschriftung, der Fehler am Feld. -->
 	<Feld
 		id="buch-titel"
-		etikett="Titel *"
+		etikett="Titel"
 		bind:value={formular.title}
 		required
 		ungueltig={titelFehlt}

@@ -58,7 +58,7 @@ test('Bestellbedarf: neue Auflage über das Menü der Zeile zuordnen und bestell
 		await expect(zeilen).toHaveCount(1);
 		await expect(zeilen.first()).toContainText(`${marke} Neubearbeitung`);
 		await expect(zeilen.first()).toContainText(
-			'Bestand aus 2 Auflagen: 4. Aufl. · 2024 (0), 3. Aufl. · 2019 (1)'
+			'Bestand aus 2 Auflagen: 0 Exemplare der 4. Aufl. · 2024, 1 Exemplar der 3. Aufl. · 2019'
 		);
 		await expect(page.getByRole('region', { name: 'Bestellung Lernmittelfreiheit' })).toContainText(
 			`${marke} Neubearbeitung`

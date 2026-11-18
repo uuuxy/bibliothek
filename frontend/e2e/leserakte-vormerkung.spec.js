@@ -17,7 +17,7 @@ test('Akte: eine Vormerkung nennt ihren Titel', async ({ page }) => {
 		await uiLogin(page);
 		await oeffneSchuelerProfil(page, `Vorm${s}`);
 
-		await expect(page.getByRole('heading', { name: 'Vorgemerkte Bücher (1)' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '1 vorgemerktes Buch' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: titel })).toBeVisible();
 	} finally {
 		seedSQL(`

@@ -198,7 +198,7 @@ describe('Offline-Band', () => {
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 
 		expect(text).toContain('2 Buchungen aus dem Nachbuchen brauchen einen Blick');
-		expect(screen.getByText(/Meldungen \(2\)/)).not.toBeNull();
+		expect(screen.getByText(/2 Meldungen/)).not.toBeNull();
 	});
 
 	it('bietet einem Helfer keinen Knopf, sondern den Hinweis', () => {
@@ -209,7 +209,7 @@ describe('Offline-Band', () => {
 
 		expect(text).toContain('1 Buchung aus dem Nachbuchen braucht einen Blick');
 		expect(text).toContain('Bitte die Bibliothek ansprechen');
-		expect(screen.queryByText(/Meldungen \(/)).toBeNull();
+		expect(screen.queryByText(/\d+ Meldung/)).toBeNull();
 	});
 
 	it('bleibt still, wenn nichts offen ist und die Verbindung steht', () => {

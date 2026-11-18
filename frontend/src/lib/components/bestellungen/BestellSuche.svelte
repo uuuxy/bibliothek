@@ -52,7 +52,8 @@
 			bind:value={bestellStore.selectedSupplierId}
 			options={bestellStore.suppliers.map((s) => ({
 				value: s.id,
-				label: `${s.name} (${s.customerNumber})`
+				label: s.name,
+				zusatz: s.customerNumber
 			}))}
 			placeholder="Kein Lieferant angelegt"
 		/>
@@ -114,7 +115,7 @@
 					<div
 						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
 					>
-						Neu aus DNB (Externe Suche)
+						Neu aus der DNB
 					</div>
 					{#each dnbTreffer as b, _i (_i)}
 						{@const isDuplicate =

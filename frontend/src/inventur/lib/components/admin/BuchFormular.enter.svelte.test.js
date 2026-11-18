@@ -49,7 +49,7 @@ describe('BuchFormular: Enter speichert', () => {
 	it('aus dem Titel wie der Klick auf „Speichern"', async () => {
 		const formular = $state({ ...leeresBuchFormular(), title: 'Krabat', signatur: 'Pre' });
 		const { screen, onSave } = maske(formular);
-		await fireEvent.keyDown(screen.getByLabelText('Titel *'), { key: 'Enter' });
+		await fireEvent.keyDown(screen.getByLabelText('Titel*'), { key: 'Enter' });
 		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 	});
 
@@ -86,7 +86,7 @@ describe('BuchFormular: Enter speichert', () => {
 	it('das Enter am Ende eines Scans in den Titel speichert nicht', async () => {
 		const formular = $state({ ...leeresBuchFormular(), title: 'Krabat', signatur: 'Pre' });
 		const { screen, onSave } = maske(formular);
-		const titel = screen.getByLabelText('Titel *');
+		const titel = screen.getByLabelText('Titel*');
 		/** @param {string} key @param {number} zeit */
 		const druecke = (key, zeit) => {
 			const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });

@@ -106,7 +106,7 @@ test.describe.serial('Theke: Scans bei offener Stammdaten-Maske', () => {
 		await uiLogin(andererPlatz);
 		await expect(andererPlatz.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
 		await scanneWieScanner(andererPlatz, AUSWEIS);
-		await expect(andererPlatz.getByPlaceholder('Buch-Barcode (B-) scannen')).toBeVisible();
+		await expect(andererPlatz.getByPlaceholder('Buch-Barcode scannen')).toBeVisible();
 		await scanneWieScanner(andererPlatz, BUCH_ANDERER_PLATZ);
 		await expect.poll(() => offeneAusleihen(BUCH_ANDERER_PLATZ)).toBe('1');
 		await kontext.close();

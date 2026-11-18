@@ -37,7 +37,7 @@
 		draggable={ziehbar}
 		ondragstart={ziehbar ? ziehstart : undefined}
 		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
-		data-tip="{name} {verb}{hinweis ? ` (${hinweis})` : ''}"
+		data-tip="{name} {verb}{hinweis ? `, ${hinweis}` : ''}"
 	>
 		<Plus class="h-4 w-4" aria-hidden="true" />
 		{name}

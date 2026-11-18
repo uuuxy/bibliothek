@@ -115,7 +115,7 @@
 		{#if titelListe.length > maxVisible}
 			<div class="flex justify-center p-4">
 				<Button variant="secondary" onclick={() => (maxVisible += 50)}>
-					Weitere Bücher laden ({titelListe.length - maxVisible} verbleibend)
+					Weitere Bücher laden, noch {titelListe.length - maxVisible} übrig
 				</Button>
 			</div>
 		{/if}

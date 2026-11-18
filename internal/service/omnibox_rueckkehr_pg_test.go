@@ -190,7 +190,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Fatalf("Exemplar anlegen: %v", err)
 	}
 	// Der Schaden entsteht auf dem einzigen Weg, den es dafür gibt: Ausleihe, dann
-	// „Verlust/Schaden melden" aus der Schülerakte mit der Art „beschädigt".
+	// „Verlust oder Schaden melden" aus der Schülerakte mit der Art „beschädigt".
 	exDefekt, err := bookRepo.FindeExemplar(ctx, barcodeDefekt)
 	if err != nil {
 		t.Fatalf("Exemplar lesen: %v", err)

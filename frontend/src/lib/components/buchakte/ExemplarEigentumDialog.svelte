@@ -11,6 +11,7 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -72,6 +73,7 @@
 			{anzahl === 1 ? 'Exemplar' : 'Exemplare'}. Wirkt auf Etikett, Bestandsbücher und
 			Schadensersatz. Die Änderung wird mit Grund protokolliert.
 		</p>
+		<Pflichthinweis />
 
 		<fieldset class="space-y-2">
 			<legend class="text-xs font-medium text-on-surface-variant">Eigentum</legend>
@@ -80,14 +82,13 @@
 					<Radio bind:group={gewaehlt} value={m} aria-label={MITTEL[m].traeger} />
 					<span
 						>{MITTEL[m].traeger}
-						<span class="text-on-surface-variant">({MITTEL[m].label})</span></span
+						<span class="text-on-surface-variant">· {MITTEL[m].label}</span></span
 					>
 				</label>
 			{/each}
 			<label class="flex items-center gap-3 text-sm text-on-surface">
 				<Radio bind:group={gewaehlt} value={VORGABE} aria-label="Vorgabe" />
-				<span>Vorgabe <span class="text-on-surface-variant">(aus Bestellung oder Titel)</span></span
-				>
+				<span>Vorgabe <span class="text-on-surface-variant">aus Bestellung oder Titel</span></span>
 			</label>
 		</fieldset>
 

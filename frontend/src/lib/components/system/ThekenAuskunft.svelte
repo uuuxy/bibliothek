@@ -132,7 +132,7 @@
 									{#if e.personenbezug_getilgt}
 										<!-- Getilgt ≠ Datenfehler: Die leere Zelle bekommt eine Erklärung. -->
 										<td class="italic" colspan="2">
-											Personenbezug getilgt (DSGVO-Frist oder Löschung)
+											Personenbezug getilgt nach DSGVO-Frist oder Löschung
 										</td>
 									{:else}
 										<td class="font-medium">{e.entleiher}</td>

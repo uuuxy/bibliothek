@@ -62,14 +62,14 @@
 	<tr aria-selected="true" class="align-top">
 		<td class="space-y-2">
 			<Feld aria-label="Name" bind:value={neuerName} />
-			<Switch bind:checked={istHauptlieferant} etikett="Hauptlieferant der Schule ({s.name})" />
+			<Switch bind:checked={istHauptlieferant} etikett="Hauptlieferant der Schule" />
 		</td>
 		<td class="space-y-2">
 			<Feld aria-label="E-Mail" type="email" bind:value={neueEmail} />
 			<Feld aria-label="Kundennummer" bind:value={neueKundennummer} />
 			<Feld
 				aria-label="Kundennummer Schülerbücherei"
-				placeholder="Kundennummer Schülerbücherei (falls abweichend)"
+				placeholder="Nur falls abweichend"
 				bind:value={neueKundennummerSchultraeger}
 			/>
 		</td>
@@ -98,7 +98,7 @@
 			{#if s.ist_hauptlieferant}
 				<span
 					class="block text-body-small-emphasized text-on-surface"
-					data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
+					data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink, wählt dort die Etikettengröße, bestätigt und beklebt die Bücher selbst"
 					>Hauptlieferant</span
 				>
 			{:else}

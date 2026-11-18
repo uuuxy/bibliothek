@@ -49,7 +49,7 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		await page.getByRole('button', { name: 'Anzeigen' }).click();
 
 		// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
-		const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit \(Land\)/ });
+		const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit · Land/ });
 		await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
 		await expect(land.getByText(`E2E-Haendler ${s}`)).toBeVisible();
 
@@ -74,7 +74,7 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		//    bleibt das ganze Buch: Die Wahl ändert seine Adresse nicht.
 		const feldLand = page
 			.getByRole('group', { name: 'Nach Mittelherkunft filtern' })
-			.getByRole('button', { name: /^Lernmittelfreiheit \(Land\) · \d/ });
+			.getByRole('button', { name: /^Lernmittelfreiheit · Land · \d/ });
 		await feldLand.click();
 		await expect(feldLand).toHaveAttribute('aria-pressed', 'true');
 		await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
@@ -149,7 +149,7 @@ test('Zugangsbuch: Ein Topf mit mehr als 50 Zeilen zeigt 50 und „Mehr laden"',
 		await expect(erste.getByRole('cell').nth(2)).toHaveText('3');
 		await expect(erste).toContainText(`E2E-ZUG-V-${s}-010\u00a0–\u00a0E2E-ZUG-V-${s}-012`);
 
-		await page.getByRole('button', { name: 'Mehr laden (5 weitere Zeilen)' }).click();
+		await page.getByRole('button', { name: 'Mehr laden, noch 5 Zeilen übrig' }).click();
 		await expect(ohne.locator('tbody tr')).toHaveCount(55);
 		await expect(page.getByRole('button', { name: /^Mehr laden/ })).toHaveCount(0);
 	} finally {

@@ -41,7 +41,7 @@ describe('ladeTitelSchlagworte', () => {
 		serverAntwortet(serverAntwort(503));
 
 		await expect(ladeTitelSchlagworte('t1')).rejects.toThrow(
-			'Schlagworte konnten nicht geladen werden (503)'
+			'Schlagworte konnten nicht geladen werden: HTTP 503'
 		);
 	});
 

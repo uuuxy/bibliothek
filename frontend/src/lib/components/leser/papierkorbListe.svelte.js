@@ -77,7 +77,7 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 			} catch (err) {
 				liste = [];
 				grenze = 0;
-				ladefehler = 'Der Papierkorb konnte nicht geladen werden (Netzwerkfehler)';
+				ladefehler = 'Der Papierkorb konnte nicht geladen werden: Server nicht erreichbar';
 				console.error('Fehler beim Laden des Papierkorbs:', err);
 			} finally {
 				laedt = false;

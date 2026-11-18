@@ -89,8 +89,8 @@
 		     Zugangsbuch der Tag dieser Buchung; was im Zulauf bleibt, steht in keinem
 		     Nachweis. M3: supporting text in body-medium auf on-surface-variant. -->
 		<p class="text-sm text-on-surface-variant">
-			Eingebuchte Exemplare erscheinen mit dem heutigen Tag im Zugangsbuch (Berichte →
-			Bestandsbücher). Was im Zulauf bleibt, steht in keinem Bestandsnachweis.
+			Eingebuchte Exemplare erscheinen mit dem heutigen Tag im Zugangsbuch unter Berichte →
+			Bestandsbücher. Was im Zulauf bleibt, steht in keinem Bestandsnachweis.
 		</p>
 	</div>
 

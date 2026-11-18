@@ -8,13 +8,13 @@ export const vorlagenInfo = {
 	MAHNUNG_ELTERN: {
 		name: 'Mahnbrief an die Eltern',
 		verwendung:
-			'Gedruckter Eltern-Mahnbrief (Fensterkuvert), es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
+			'Gedruckter Eltern-Mahnbrief für das Fensterkuvert, es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
 		platzhalter: ['{{.Vorname}}', '{{.Nachname}}', '{{.BuchListe}}', '{{.Frist}}']
 	},
 	BESTELLUNG_HAENDLER: {
 		name: 'Bestellung an den Händler',
 		verwendung:
-			'Bestellmail an den Buchhändler. Fehlt {{.BestaetigungsLink}} im Text, hängt das System den Bestätigungs-Link automatisch als eigenen Absatz an. {{.LinkGueltigBis}} ist das Ablaufdatum des Links (Einstellung „Bestellwesen"). {{.Mittel}} ist der Topf der Bestellung („Lernmittelfreiheit" oder „Schülerbücherei"). Fehlt er, ergänzt das System Betreff und Text automatisch um den Vermerk.',
+			'Bestellmail an den Buchhändler. Fehlt {{.BestaetigungsLink}} im Text, hängt das System den Bestätigungs-Link automatisch als eigenen Absatz an. {{.LinkGueltigBis}} ist das Ablaufdatum des Links aus der Einstellung „Bestellwesen". {{.Mittel}} ist der Topf der Bestellung, „Lernmittelfreiheit" oder „Schülerbücherei". Fehlt er, ergänzt das System Betreff und Text automatisch um den Vermerk.',
 		platzhalter: [
 			'{{.Datum}}',
 			'{{.Kundennummer}}',

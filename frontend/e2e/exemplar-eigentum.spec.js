@@ -30,8 +30,8 @@ test('Eigentum: Karte zeigt die Herkunft, markierte Exemplare werden mit Grund g
 	await page.getByRole('tab', { name: /^Exemplare/ }).click();
 
 	// Anzeige: Wert und Herkunft je Karte.
-	await expect(page.getByText('laut Littera („Land Hessen“)')).toBeVisible();
-	await expect(page.getByText('Vorgabe (kein Lernmittel)')).toBeVisible();
+	await expect(page.getByText('laut Littera: „Land Hessen“')).toBeVisible();
+	await expect(page.getByText('Vorgabe, weil kein Lernmittel')).toBeVisible();
 
 	// Markieren: Die gemeinsame Leiste erscheint mit „Alle auswählen".
 	await page.getByRole('checkbox', { name: `Exemplar ${b} auswählen` }).check();

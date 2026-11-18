@@ -5,6 +5,7 @@
 		loescheExemplarMitGrund
 	} from '../../../../lib/components/buchakte/exemplareLoeschen.js';
 	import { melde } from '$lib/store.svelte.js';
+	import { anzahlText } from '../../../../lib/utils/format.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -88,7 +89,7 @@
 
 <div class="mt-8 border-t border-outline-variant pt-6">
 	<h3 class="text-title-medium text-on-surface">
-		{formular.id ? `Exemplare (${exemplare.length})` : 'Exemplare'}
+		{formular.id ? anzahlText(exemplare.length, 'Exemplar', 'Exemplare') : 'Exemplare'}
 	</h3>
 	{#if nichtImBestand}
 		<p class="text-sm text-on-surface-variant">

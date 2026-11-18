@@ -44,7 +44,7 @@
 				<div class="flex items-baseline justify-between gap-2 border-b border-outline-variant pb-1">
 					<h3 class="text-label-medium text-on-surface">
 						{gruppe.label}
-						<span class="font-normal text-on-surface-variant">({gruppe.traeger})</span>
+						<span class="font-normal text-on-surface-variant">· {gruppe.traeger}</span>
 					</h3>
 					<span class="text-xs text-on-surface-variant tabular-nums">
 						{anzahlText(gruppe.menge, 'Exemplar', 'Exemplare')}{#if bestellStore.preiseErfassen}

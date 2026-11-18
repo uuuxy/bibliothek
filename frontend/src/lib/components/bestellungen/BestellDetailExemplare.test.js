@@ -27,7 +27,11 @@ describe('BestellDetailExemplare', () => {
 		const koepfe = [...ansicht.container.querySelectorAll('p')].map((p) =>
 			p.textContent?.replace(/\s+/g, ' ').trim()
 		);
-		expect(koepfe).toEqual(['Green Line 3 (2)', 'Green Line 3 (1)', 'Zahlen und Größen 7 (1)']);
+		expect(koepfe).toEqual([
+			'Green Line 3 · 2 Exemplare',
+			'Green Line 3 · 1 Exemplar',
+			'Zahlen und Größen 7 · 1 Exemplar'
+		]);
 		const nummern = [...ansicht.container.querySelectorAll('ul')].map((ul) =>
 			[...ul.querySelectorAll('li')].map((li) => li.textContent?.trim())
 		);

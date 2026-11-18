@@ -22,7 +22,7 @@ async function holeKopf(id) {
 		return { kopf: null, fehler: res.status === 404 ? '' : await leseApiFehler(res) };
 	} catch (err) {
 		console.error('Fehler beim Laden des Buches:', err);
-		return { kopf: null, fehler: 'Der Titel konnte nicht geladen werden (Netzwerkfehler)' };
+		return { kopf: null, fehler: 'Der Titel konnte nicht geladen werden: Server nicht erreichbar' };
 	}
 }
 

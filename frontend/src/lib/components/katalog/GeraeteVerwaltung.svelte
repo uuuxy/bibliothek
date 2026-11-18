@@ -5,7 +5,8 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { leeresGeraetFormular, geraetFormularAus, geraetNutzlast } from './geraetFormular.js';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import GeraetFelder from './GeraetFelder.svelte';
+	import { anzahlText } from '../../utils/format.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { Pencil, Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
 
@@ -89,7 +90,9 @@
 	<!-- Anlegen vorn bei der Liste wie in Leserdatei und Benutzern, nicht am fernen Rand. -->
 	<div class="space-y-3 border-b border-outline-variant pb-3">
 		<div>
-			<h2 class="text-title-medium text-on-surface">Geräte ({geraete.liste.length})</h2>
+			<h2 class="text-title-medium text-on-surface">
+				{anzahlText(geraete.liste.length, 'Gerät', 'Geräte')}
+			</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
 				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste bestätigt
 			</p>
@@ -102,27 +105,7 @@
 
 	{#if formularOffen}
 		<div class="rounded-xl border border-outline-variant p-4">
-			<div class="grid gap-3 sm:grid-cols-2">
-				<Feld
-					etikett="Modellname *"
-					bind:value={formular.modellname}
-					placeholder="z. B. iPad 9. Gen"
-				/>
-				<Feld
-					etikett="Barcode (G-…) *"
-					bind:value={formular.barcode_id}
-					disabled={bearbeiteId != null}
-				/>
-				<!-- Der Barcode klebt am Gerät und bleibt; die Seriennummer lässt sich nachtragen und
-				     berichtigen (geraetFormular.js, AENDERBAR). -->
-				<Feld etikett="Seriennummer" bind:value={formular.seriennummer} />
-				<Feld
-					etikett="Zubehör (Checkliste, mit Komma getrennt)"
-					bind:value={formular.zubehoer}
-					placeholder="Ladekabel, Stift, Hülle"
-				/>
-				<Feld etikett="Zustandsnotiz" bind:value={formular.zustand_notiz} class="sm:col-span-2" />
-			</div>
+			<GeraetFelder bind:formular barcodeFest={bearbeiteId != null} />
 			<div class="mt-4 flex justify-end gap-2">
 				<Button variant="secondary" onclick={schliesseFormular}>Abbrechen</Button>
 				<Button variant="primary" onclick={speichere} disabled={speichert}>

@@ -28,7 +28,7 @@
 	 *
 	 * @type {{
 	 *   value?: any,
-	 *   options?: Array<{ value: any, label: string, disabled?: boolean }>,
+	 *   options?: Array<{ value: any, label: string, disabled?: boolean, zusatz?: string }>,
 	 *   id?: string,
 	 *   disabled?: boolean,
 	 *   placeholder?: string,

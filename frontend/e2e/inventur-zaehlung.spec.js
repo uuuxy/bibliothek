@@ -39,18 +39,18 @@ test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückge
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
 		await page.getByRole('button', { name: 'Starten', exact: true }).click();
-		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
-		await expect(fortschritt).toHaveText(/0 \/ 2/);
+		const fortschritt = page.getByText(/^\s*\d+ von \d+\s*erfasst\s*$/);
+		await expect(fortschritt).toHaveText(/0 von 2/);
 
 		const scan = page.getByPlaceholder('Barcode scannen …');
 		await scan.fill(da);
 		await scan.press('Enter');
-		await expect(fortschritt).toHaveText(/1 \/ 2/);
+		await expect(fortschritt).toHaveText(/1 von 2/);
 		await scan.fill(gesperrt);
 		await scan.press('Enter');
 		await expect(page.getByText(`Barcode: ${gesperrt}`)).toBeVisible();
 		await expect(fortschritt, 'das gesperrte Buch erwartet der Abschluss nicht').toHaveText(
-			/1 \/ 2/
+			/1 von 2/
 		);
 		await scan.fill(verliehen);
 		await scan.press('Enter');
@@ -58,7 +58,7 @@ test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückge
 			page.getByText('Zurückgebucht: Das Buch war laut Programm noch ausgeliehen.')
 		).toBeVisible();
 		await expect(fortschritt, 'beim Beginn verliehen, erwartet der Abschluss es nicht').toHaveText(
-			/1 \/ 2/
+			/1 von 2/
 		);
 		expect(
 			querySQL(`SELECT count(*) FROM ausleihen a JOIN buecher_exemplare e ON e.id = a.exemplar_id
@@ -126,12 +126,12 @@ test('Inventur: Ein Buch, das während der Inventur zurückkommt, gilt nicht als
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
 		await page.getByRole('button', { name: 'Starten', exact: true }).click();
-		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
-		await expect(fortschritt).toHaveText(/0 \/ 2/);
+		const fortschritt = page.getByText(/^\s*\d+ von \d+\s*erfasst\s*$/);
+		await expect(fortschritt).toHaveText(/0 von 2/);
 		const scan = page.getByPlaceholder('Barcode scannen …');
 		await scan.fill(da);
 		await scan.press('Enter');
-		await expect(fortschritt).toHaveText(/1 \/ 2/);
+		await expect(fortschritt).toHaveText(/1 von 2/);
 
 		// An der Theke, nach dem letzten Scan: die Rückgabe, ohne geöffneten Leser.
 		const rueckgabe = await apiPost(page, '/api/action', { query: zurueck });

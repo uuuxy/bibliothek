@@ -140,7 +140,7 @@
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small text-on-surface-variant"
 					>
-						{o.anzahl} reserviert für {o.klasse} (seit {o.erstellt_am})
+						{o.anzahl} reserviert für {o.klasse} seit {o.erstellt_am}
 					</span>
 				</p>
 			{/each}

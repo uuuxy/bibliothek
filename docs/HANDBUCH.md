@@ -58,7 +58,7 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
    („Fremdrückgabe", mit Hinweis).
 4. **Namen tippen** statt scannen: Vorschläge erscheinen beim Tippen, Klick öffnet die Theke.
 
-**An jeder Buchzeile:** Verlängern · Zurückgeben · Verlust/Schaden melden (Grund, Ersatzbetrag —
+**An jeder Buchzeile:** Verlängern · Zurückgeben · Verlust oder Schaden melden (Grund, Ersatzbetrag —
 die Forderung steht danach in der Akte unter _Gebühren & Schäden_, der Bescheid ist ein eigener
 Schritt).
 
@@ -503,7 +503,7 @@ Liste.
   Dauerleihe: Sie wird nicht überfällig und nicht gemahnt. In der Akte steht statt des
   Rückgabedatums „Dauerleihe", in der Liste der Ausleiher einer Buchakte und auf Ausdrucken
   „ohne Frist".
-- **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
+- **Reiter**: _Aktive Leser_, _Ehemalige_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Ausweisnummer). Zeile anklicken → Akte.
 - **Akte**: drei Reiter — _Ausleihen & Vormerkungen_, _Gebühren & Schäden_ und _Stammdaten &
@@ -557,7 +557,7 @@ Liste.
   bezahlt / storniert; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_
   (derselbe Dialog wie im Mahnwesen). (§14)
-- **Verlust/Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an.
+- **Verlust oder Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an.
   Das Kind steht danach nicht mehr in der Mahnliste, sondern im Mahnwesen unter _Schadensersatz_.
   Der Brief an die Eltern ist der nächste, eigene Schritt.
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke. **Sperre aufheben**
@@ -575,7 +575,7 @@ Liste.
   Formular nie. Bei Praktikum und Fachbereich ist das Feld verschlossen: Es entsteht nur der
   Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
-- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
+- Reiter **Ehemalige** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
   der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Im Mahnwesen steht
   ein Ehemaliger unter „Ehemalige", sobald die Frist eines Buchs abgelaufen ist; läuft sie noch
   (etwa bei einem Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute
@@ -699,8 +699,8 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 Fünf Reiter: **Bestellbedarf** (Schulbücher, deren Bestand nicht für die Kinder im nächsten
 Schuljahr reicht — automatisch; das Plus legt die fehlende Menge in den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
-Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
-(Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
+Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit · Land_ und _Schülerbücherei ·
+Schulträger_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
 sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten; der Kopf jeder Bestellung

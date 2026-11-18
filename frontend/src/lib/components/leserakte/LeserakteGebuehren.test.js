@@ -46,7 +46,7 @@ describe('LeserakteGebuehren', () => {
 			]
 		});
 		expect(screen.getByRole('alert').textContent).toMatch(
-			/Nicht geladen: Gebühren, Bescheide \(Datenbank nicht erreichbar\)/
+			/Nicht geladen: Gebühren, Bescheide wegen „Datenbank nicht erreichbar“/
 		);
 		expect(screen.queryByText(/Keine Gebühren/)).toBeNull();
 	});

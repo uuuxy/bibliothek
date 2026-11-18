@@ -21,12 +21,12 @@ export const rechteBeschreibungen = [
 			{
 				key: 'create_students',
 				label: 'Leser anlegen',
-				desc: 'Leser von Hand anlegen („Leser anlegen“ in der Leserdatei)'
+				desc: 'Leser von Hand anlegen, mit „Leser anlegen“ in der Leserdatei'
 			},
 			{
 				key: 'edit_students',
 				label: 'Leser bearbeiten',
-				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen/aufheben, Buchschäden melden sowie Schadensfälle als bezahlt buchen oder stornieren'
+				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen und aufheben, Buchschäden melden sowie Schadensfälle als bezahlt buchen oder stornieren'
 			},
 			{
 				key: 'delete_students',
@@ -36,7 +36,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'import_students',
 				label: 'LUSD-Import',
-				desc: 'LUSD-Export (CSV/XLSX) als Vorschau prüfen und einspielen'
+				desc: 'LUSD-Export als CSV- oder Excel-Datei in der Vorschau prüfen und einspielen'
 			},
 			{
 				key: 'upload_photos',
@@ -71,8 +71,8 @@ export const rechteBeschreibungen = [
 			},
 			{
 				key: 'manage_inventory',
-				label: 'Bestand verwalten (Import, Inventur-Abschluss)',
-				desc: 'Inventuren starten, abbrechen und abschließen; Fehlbestand bearbeiten (gefunden / endgültig löschen); Littera- und Bestandsimport; Cover-Abgleich'
+				label: 'Bestand verwalten',
+				desc: 'Inventuren starten, abbrechen und abschließen; Fehlbestand als gefunden buchen oder endgültig löschen; Littera- und Bestandsimport; Cover-Abgleich'
 			}
 		]
 	},
@@ -83,7 +83,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'perform_actions',
 				label: 'Kiosk bedienen',
-				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk, die Kernfunktion der Helfer-Rolle (ohne Leserdatei und Mahnwesen)'
+				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk, die Kernfunktion der Helfer-Rolle, ohne Leserdatei und Mahnwesen'
 			},
 			{
 				key: 'create_reservations',
@@ -92,7 +92,7 @@ export const rechteBeschreibungen = [
 			},
 			{
 				key: 'manage_vormerkungen',
-				label: 'Vormerkungen verwalten (Warteliste)',
+				label: 'Vormerkungen verwalten',
 				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse, als enges Theken-Recht für Helfer zuschaltbar, ohne die Leserdatei zu öffnen.'
 			},
 			{
@@ -119,32 +119,32 @@ export const rechteBeschreibungen = [
 			{
 				key: 'view_stats',
 				label: 'Statistiken anzeigen',
-				desc: 'Ausleih-Statistiken und Auswertungen einsehen (ohne Schüler-Klarnamen)'
+				desc: 'Ausleih-Statistiken und Auswertungen ohne Klarnamen der Schüler einsehen'
 			},
 			{
 				key: 'audit_logs',
 				label: 'System-Logs einsehen',
-				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Verwaltungsprotokoll zusätzlich: „Benutzer & Rechte verwalten")'
+				desc: 'Allgemeines Logbuch der Systemereignisse einsehen. Das Verwaltungsprotokoll braucht zusätzlich „Benutzer & Rechte verwalten".'
 			},
 			{
 				key: 'audit_details',
-				label: 'Theken-Auskunft (gelöschte Exemplare)',
+				label: 'Theken-Auskunft über gelöschte Exemplare',
 				desc: 'Zu einem Buch-Barcode die protokollierte Ausleihhistorie nachschlagen, auch wenn das Exemplar längst gelöscht ist. Nennt Entleiher mit Namen; jeder Abruf wird selbst protokolliert. Der Reiter erscheint unter System-Logs.'
 			},
 			{
 				key: 'manage_settings',
 				label: 'Einstellungen verwalten',
-				desc: 'Alle Systemeinstellungen (Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz, Erreichbarkeit), Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft. Öffnet den Menüpunkt „Einstellungen".'
+				desc: 'Alle Systemeinstellungen zu Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz und Erreichbarkeit, dazu Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft. Öffnet den Menüpunkt „Einstellungen".'
 			},
 			{
 				key: 'manage_students_admin',
 				label: 'Leserdatei: Sonderrechte',
-				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig.'
+				desc: 'Versetzung im Schuljahreswechsel und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb mit dem Knopf „Endgültig löschen". Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig.'
 			},
 			{
 				key: 'merge_students',
 				label: 'Leser zusammenführen',
-				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Leserakte, Reiter Stammdaten & Adresse). Unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar.'
+				desc: 'Zwei Datensätze derselben Person zu einem vereinen, über „Doppelter Datensatz?" im Reiter Stammdaten & Adresse der Leserakte. Unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar.'
 			},
 			{
 				key: 'manage_users',

@@ -3,6 +3,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import LieferantZeile from './LieferantZeile.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
@@ -107,22 +108,20 @@
 			Lieferant anlegen
 		</h2>
 		<form onsubmit={speichere} class="space-y-4 text-sm">
+			<Pflichthinweis />
 			<Feld id="n" etikett="Name" bind:value={newName} required />
 			<Feld id="e" etikett="E-Mail" type="email" bind:value={newEmail} required />
 			<Feld id="c" etikett="Kundennummer" bind:value={newCustNum} required />
-			<!-- Händler führen Lernmittel und Bibliothek oft als getrennte Kundenkonten
-			     (anderer Nachlass, andere Rechnungsstelle). Bestellungen der Schülerbücherei
-			     tragen dann diese Nummer; leer heißt: dieselbe wie oben (Migration 109). -->
+			<!-- Händler führen Lernmittel und Bibliothek oft als getrennte Kundenkonten; Bestellungen
+			     der Schülerbücherei tragen dann diese Nummer, leer heißt dieselbe (Migration 109). -->
 			<Feld
 				id="cs"
-				etikett="Kundennummer Schülerbücherei (falls abweichend)"
+				etikett="Kundennummer Schülerbücherei"
+				hint="Leer lassen, wenn es dieselbe ist"
 				bind:value={newCustNumSchultraeger}
 			/>
-			<!-- EIN Schalter statt drei. Vorher standen hier „beklebt die Bücher",
-			     „voreingestellt beim Bestellen" und „bekommt den Bestelllink" einzeln — drei
-			     Haken für eine einzige Tatsache aus dem Schulalltag, und eine Kombination davon
-			     war eine stille Falle: Bestelllink ohne „beklebt" hiess, der Händler klebt und
-			     die Bibliothek druckt trotzdem noch einmal. Siehe Migration 066. -->
+			<!-- Ein Schalter für eine Tatsache: Der Hauptlieferant beklebt, ist vorausgewählt und bekommt
+			     den Bestelllink. Drei Haken erlaubten den Bestelllink ohne Bekleben (Migration 066). -->
 			<div class="flex items-start justify-between gap-4 border-t border-outline-variant pt-4">
 				<label for="ist-hauptlieferant" class="cursor-pointer text-sm">
 					<span class="block text-on-surface text-body-medium-emphasized"

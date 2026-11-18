@@ -40,7 +40,7 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 		meta: `Erstellt am: ${formatDatum(jetzt)} | Filter: Klasse ${filterKlasse}`,
 		// Nur der Name bricht um; die kurzen Spalten nehmen die Breite ihres Inhalts.
 		spalten: [
-			'Schüler/in',
+			'Schüler',
 			{ text: 'Klasse', klasse: 'schmal' },
 			{ text: 'Exemplar', klasse: 'schmal' },
 			{ text: 'Ausgeliehen am', klasse: 'schmal' },

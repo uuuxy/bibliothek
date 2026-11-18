@@ -21,7 +21,7 @@
 	// description of the information people can search").
 	const hinweis = $derived.by(() => {
 		if (schnellrueckgabe) return 'Schnellrückgabe: Bücher scannen';
-		return belegt ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben';
+		return belegt ? 'Buch-Barcode scannen' : 'Scannen oder Namen eingeben';
 	});
 </script>
 
@@ -58,7 +58,7 @@
 <button
 	type="button"
 	onclick={onToggleCamera}
-	data-tip="Kamera-Scanner (Mobilgerät)"
+	data-tip="Kamera-Scanner am Mobilgerät"
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
 	class="icon-btn shrink-0 ml-2 -mr-2 {kameraOffen
 		? 'bg-secondary-container text-on-secondary-container'

@@ -74,7 +74,7 @@
 				<div class="min-w-0">
 					<div class="truncate text-body-large-emphasized">{session.label}</div>
 					<div class="text-xs">
-						{session.erwartet - session.fehlend} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
+						{session.erwartet - session.fehlend} von {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
 							0,
 							16
 						)}
@@ -152,7 +152,7 @@
 					disabled={ablauf.frueher.laedtMehr}
 					onclick={ablauf.frueher.ladeMehr}
 				>
-					Mehr laden ({ablauf.frueher.weitere} weitere)
+					Mehr laden, noch {ablauf.frueher.weitere} übrig
 				</Button>
 			</div>
 		{/if}

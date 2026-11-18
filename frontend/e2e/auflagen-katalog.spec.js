@@ -36,13 +36,16 @@ test('Medienkatalog: ein Buch in zwei Auflagen ist eine Kachel mit Summe und Auf
 		await expect(kacheln).toHaveCount(1);
 		// Oben steht die getroffene Auflage; ihre ISBN nennt die Einblendung auf dem Cover.
 		await expect(karte.locator('[data-nummer]')).toHaveText(`ISBN ${neueIsbn}`);
-		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
+		await expect(karte.getByText('3 von 3', { exact: true })).toBeVisible();
 		// Woraus die Summe besteht, steht in der Einblendung auf dem Cover. Sichtbar wird sie
 		// beim Zeigen; toBeVisible allein sähe keinen Unterschied, weil es die Deckkraft nicht prüft.
 		const einblendung = karte
-			.getByText('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)', {
-				exact: true
-			})
+			.getByText(
+				'Bestand aus 2 Auflagen: 1 Exemplar der 4. Aufl. · 2023, 2 Exemplare der 3. Aufl. · 2019',
+				{
+					exact: true
+				}
+			)
 			.locator('..');
 		await page.mouse.move(0, 0);
 		await expect(einblendung).toHaveCSS('opacity', '0');
@@ -52,7 +55,7 @@ test('Medienkatalog: ein Buch in zwei Auflagen ist eine Kachel mit Summe und Auf
 		await suche.fill(alteIsbn);
 		await expect(kacheln).toHaveCount(1);
 		await expect(karte.locator('[data-nummer]')).toHaveText(`ISBN ${alteIsbn}`);
-		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
+		await expect(karte.getByText('3 von 3', { exact: true })).toBeVisible();
 	} finally {
 		seedSQL(`
 			DELETE FROM werke WHERE id IN (SELECT werk_id FROM buecher_titel WHERE titel = '${titel}');

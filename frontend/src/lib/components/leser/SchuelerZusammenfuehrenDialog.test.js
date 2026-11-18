@@ -128,7 +128,7 @@ describe('SchuelerZusammenfuehrenDialog: welcher Datensatz bleibt', () => {
 	});
 
 	it('schickt den anderen Datensatz als Ziel, wenn der bleibt', async () => {
-		await fuehreZusammen('Lena Neu (S-k2)');
+		await fuehreZusammen('Lena Neu, Ausweis S-k2');
 		expect(apiClient.post).toHaveBeenCalledWith('/api/schueler/k2/zusammenfuehren', {
 			quelle_id: 'quelle'
 		});

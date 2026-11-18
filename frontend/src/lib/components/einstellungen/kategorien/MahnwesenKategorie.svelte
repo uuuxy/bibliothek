@@ -49,7 +49,7 @@
 	{#snippet mehr()}
 		<p>
 			Gesperrt wird, wenn mindestens die eingetragene Anzahl Medien länger als die eingetragenen
-			Tage überfällig ist. Geräte und Dauerleihen (Laptops) sind ausgenommen.
+			Tage überfällig ist. Geräte und Dauerleihen wie Laptops sind ausgenommen.
 		</p>
 		<p>Null Tage sperrt am ersten Tag nach Fristablauf, die 0 schaltet hier nichts ab</p>
 	{/snippet}

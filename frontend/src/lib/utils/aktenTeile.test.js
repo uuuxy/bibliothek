@@ -33,7 +33,7 @@ describe('nenneFehlende', () => {
 				{ name: 'Gebühren', grund },
 				{ name: 'Bescheide', grund }
 			])
-		).toBe('Gebühren, Bescheide (Datenbank nicht erreichbar)');
+		).toBe('Gebühren, Bescheide wegen „Datenbank nicht erreichbar“');
 	});
 
 	it('nennt verschiedene Gründe je Liste', () => {
@@ -42,6 +42,6 @@ describe('nenneFehlende', () => {
 				{ name: 'Ausleiher', grund: 'Fehler 500' },
 				{ name: 'Historie', grund: 'Keine Verbindung zum Server' }
 			])
-		).toBe('Ausleiher (Fehler 500), Historie (Keine Verbindung zum Server)');
+		).toBe('Ausleiher wegen „Fehler 500“, Historie wegen „Keine Verbindung zum Server“');
 	});
 });

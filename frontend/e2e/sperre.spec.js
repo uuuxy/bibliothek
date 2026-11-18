@@ -104,12 +104,12 @@ test('Gesperrter Schüler: nur Aufheben, dann geht das Buch raus', async ({ page
 
 // Offene Forderung: ein Hinweis. „Einmalig ignorieren" wiederholt den Scan mit override_block
 // — die Ausleihe läuft durch, die Forderung bleibt offen.
-test('Offene Forderung: Einmalig ignorieren (Override) erlaubt die Ausleihe', async ({ page }) => {
+test('Offene Forderung: Einmalig ignorieren erlaubt die Ausleihe', async ({ page }) => {
 	await uiLogin(page);
 	const { bookTitle, dialog } = await openBlockedStudent(page, uniqueSuffix(), 'forderung');
 
 	await expect(dialog.getByRole('button', { name: 'Sperre aufheben' })).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Einmalig ignorieren (Override)' }).click();
+	await dialog.getByRole('button', { name: 'Einmalig ignorieren' }).click();
 	await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).not.toBeVisible();
 
 	await expect(page.getByText(bookTitle).first()).toBeVisible();

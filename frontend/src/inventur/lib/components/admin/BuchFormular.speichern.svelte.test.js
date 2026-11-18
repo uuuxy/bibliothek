@@ -187,7 +187,7 @@ describe('BuchFormular: Speichern ohne Titel und ohne ISBN', () => {
 		const formular = $state({ ...leeresBuchFormular(), isbn: '', signatur: 'Spi 1' });
 		const onSave = vi.fn();
 		const screen = maske(formular, onSave);
-		const titel = screen.getByLabelText('Titel *');
+		const titel = screen.getByLabelText('Titel*');
 
 		expect(screen.queryByText(FEHLER), 'vor dem Klick steht kein Fehler am Feld').toBeNull();
 		expect(titel.getAttribute('aria-invalid')).toBeNull();
@@ -254,7 +254,7 @@ describe('BuchFormular: Speichern ohne Pflicht-Signatur', () => {
 
 		const screen = await verlasseIsbnUndSpeichere(formular, onSave, (s) =>
 			expect(
-				s.getByLabelText('Signatur (Buchrücken) *').getAttribute('aria-invalid'),
+				s.getByLabelText('Signatur*').getAttribute('aria-invalid'),
 				'vor dem Klick steht kein Fehler am Feld'
 			).toBeNull()
 		);
@@ -263,9 +263,7 @@ describe('BuchFormular: Speichern ohne Pflicht-Signatur', () => {
 		expect(onSave).not.toHaveBeenCalled();
 		expect(document.activeElement?.id).toBe('buch-signatur');
 		expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
-		expect(screen.getByLabelText('Signatur (Buchrücken) *').getAttribute('aria-invalid')).toBe(
-			'true'
-		);
+		expect(screen.getByLabelText('Signatur*').getAttribute('aria-invalid')).toBe('true');
 	});
 
 	it('ein Lernmittel speichert ohne Signatur', async () => {

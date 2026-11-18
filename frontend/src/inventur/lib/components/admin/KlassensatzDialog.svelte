@@ -69,7 +69,7 @@
 	const ueberschriebenText = $derived.by(() => {
 		const teile = ueberschriebeneKlassen.map(
 			(/** @type {any} */ g) =>
-				`${g.className} (${g.books.length} ${g.books.length === 1 ? 'Buch' : 'Bücher'})`
+				`${g.className} mit ${g.books.length} ${g.books.length === 1 ? 'Buch' : 'Büchern'}`
 		);
 		if (teile.length === 0) return '';
 		const liste =

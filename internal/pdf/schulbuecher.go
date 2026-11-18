@@ -303,7 +303,7 @@ func auflagenBeschriftung(auflage string, jahr int) string {
 func auflagenAufschluesselung(auflagen []SchulbuchAuflage) string {
 	teile := make([]string, 0, len(auflagen))
 	for _, a := range auflagen {
-		teile = append(teile, fmt.Sprintf("%s (%d)", auflagenBeschriftung(a.Auflage, a.Erscheinungsjahr), a.Gesamt))
+		teile = append(teile, exemplarText(a.Gesamt)+" der "+auflagenBeschriftung(a.Auflage, a.Erscheinungsjahr))
 	}
 	return fmt.Sprintf("Bestand aus %d Auflagen: %s", len(auflagen), strings.Join(teile, ", "))
 }

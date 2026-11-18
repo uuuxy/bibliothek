@@ -11,7 +11,7 @@ import (
 	"bibliothek/internal/repository"
 )
 
-// Der Vorschlag eines Betrags für den Dialog „Verlust/Schaden melden". Eine feste Zahl hätte
+// Der Vorschlag eines Betrags für den Dialog „Verlust oder Schaden melden". Eine feste Zahl hätte
 // keinen Bezug zum Buch. Es gelten zwei Regeln, nicht eine; deshalb tut dieser Vorschlag mehr
 // als bescheidVorschlagAus:
 //

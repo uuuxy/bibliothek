@@ -41,7 +41,8 @@
 			An: Jede Nacht entsteht eine verschlüsselte Sicherung im Sicherungsordner, mit Kopie außer
 			Haus, wenn eine eingerichtet ist; einmal in der Woche wird die jüngste probeweise
 			wiederhergestellt. Aus: Es entsteht keine eigene Sicherung mehr, die Probe ruht, und ältere
-			Stände werden gelöscht, sobald sie älter sind als die Aufbewahrung (14 Nächte und 12 Wochen).
+			Stände werden gelöscht, sobald sie älter sind als die Aufbewahrung von 14 Nächten und 12
+			Wochen.
 		</p>
 		<p>
 			Ein Spiegel des Servers schützt vor einer kaputten Platte, nicht vor versehentlichem Löschen:

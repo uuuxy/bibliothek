@@ -124,7 +124,7 @@
 			{#if !signaturBeiStart}
 				<!-- primary: M3 „High-emphasis … texts … against surface". Eine Warnfarbe gibt es
 				     in den Rollen nicht. -->
-				<span class="text-primary font-normal">(bitte eintragen)</span>
+				<span class="text-primary font-normal">bitte eintragen</span>
 			{/if}
 		</label>
 		<VorschlagFeld
@@ -151,7 +151,7 @@
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-
 	     freiheit), alles andere die Schülerbücherei aus Mitteln des Schulträgers. -->
-	<Kaestchen bind:checked={istLernmittel} etikett="Lernmittel (Schulbuch der Lernmittelfreiheit)" />
+	<Kaestchen bind:checked={istLernmittel} etikett="Schulbuch der Lernmittelfreiheit" />
 
 	<div class="flex items-center justify-between gap-3">
 		<div class="flex items-center gap-2">

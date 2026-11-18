@@ -10,7 +10,7 @@ vi.mock('../../apiFetch.js', () => ({
 	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 
-// Der Reiter „Ehemalige / Archiv" muss die WEGGEGANGENEN laden (status=ehemalige) —
+// Der Reiter „Ehemalige" muss die WEGGEGANGENEN laden (status=ehemalige) —
 // nicht die Abgängerliste, die er bis zum 05.09.2026 eingebettet hatte und die seitdem
 // die Abschlussklassen meint. Geprüft wird die Tür, durch die er geht, und was er zeigt.
 const ehemalige = [

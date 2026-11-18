@@ -35,7 +35,7 @@ func TestBestellberichtToepfe_FuelltJedesFeldAusDerZeile(t *testing.T) {
 			Positionen: []repository.BerichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 475}}},
 	}
 	will := []pdf.BestellberichtTopf{
-		{Beschriftung: "Lernmittelfreiheit (Land)", Bestellungen: []pdf.BestellberichtBestellung{
+		{Beschriftung: "Lernmittelfreiheit · Land", Bestellungen: []pdf.BestellberichtBestellung{
 			{LieferantName: "Lieferant 3", Kundennummer: "K-3", Bestelldatum: tag(3), Gesamtbetrag: 12000, AnzahlExemplare: 30,
 				Positionen: []pdf.BestellberichtPosition{
 					{TitelName: "Titel 3a", ISBN: "isbn-3a", Menge: 10, Einzelpreis: 400},
@@ -44,7 +44,7 @@ func TestBestellberichtToepfe_FuelltJedesFeldAusDerZeile(t *testing.T) {
 			{LieferantName: "Lieferant 4", Kundennummer: "K-4", Bestelldatum: tag(4), Gesamtbetrag: 8000, AnzahlExemplare: 20,
 				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 475}}},
 		}},
-		{Beschriftung: "Schülerbücherei (Schulträger)", Bestellungen: []pdf.BestellberichtBestellung{
+		{Beschriftung: "Schülerbücherei · Schulträger", Bestellungen: []pdf.BestellberichtBestellung{
 			{LieferantName: "Lieferant 2", Kundennummer: "K-2", Bestelldatum: tag(2), Gesamtbetrag: 4550, AnzahlExemplare: 5,
 				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 2", ISBN: "isbn-2", Menge: 5, Einzelpreis: 910}}},
 		}},
@@ -72,8 +72,8 @@ func TestBestellberichtToepfe_TopfOhneBestellungBekommtKeinenBlock(t *testing.T)
 		return []repository.BerichtBestellung{{ID: "id", LieferantName: "Lieferant", Mittel: mittel}}
 	}
 	for mittel, beschriftung := range map[string]string{
-		mitteltopf.Land:         "Lernmittelfreiheit (Land)",
-		mitteltopf.Schultraeger: "Schülerbücherei (Schulträger)",
+		mitteltopf.Land:         "Lernmittelfreiheit · Land",
+		mitteltopf.Schultraeger: "Schülerbücherei · Schulträger",
 		"":                      "ohne Zuordnung",
 	} {
 		toepfe, err := bestellberichtToepfe(nur(mittel))

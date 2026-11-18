@@ -51,8 +51,8 @@
 							behielten ihren Datensatz, die übrigen wurden als Abgänger + Neuzugang behandelt.
 						{:else}
 							Ein Abgänger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
-							Anschrift zusammengehören (Namensänderung oder Datumskorrektur in der LUSD).
-							Angekreuzt heißt: derselbe Datensatz bekommt den neuen Namen, Ausweis und Bücher
+							Anschrift zusammengehören, etwa nach einer Namensänderung oder Datumskorrektur in der
+							LUSD. Angekreuzt heißt: derselbe Datensatz bekommt den neuen Namen, Ausweis und Bücher
 							bleiben. Nicht angekreuzt: Abgänger + Neuanlage wie bisher.
 						{/if}
 					</p>

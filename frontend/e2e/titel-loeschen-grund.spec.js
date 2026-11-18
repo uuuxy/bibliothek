@@ -66,7 +66,7 @@ test.describe.serial('Titel löschen mit Grund', () => {
 		).toBeVisible();
 		await expect(dialog.getByRole('radio', { name: 'Alter Bestand' })).toBeChecked();
 		await expect(dialog.getByText('Ein Exemplar ist verliehen:')).toBeVisible();
-		await expect(dialog.getByText(`${LESER} Testschueler (10R1)`)).toBeVisible();
+		await expect(dialog.getByText(`${LESER} Testschueler aus der 10R1`)).toBeVisible();
 		await expect(dialog.getByRole('checkbox')).not.toBeChecked();
 
 		await dialog.getByRole('radio', { name: 'Beschädigt' }).check();

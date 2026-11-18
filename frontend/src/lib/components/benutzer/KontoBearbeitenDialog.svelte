@@ -6,6 +6,7 @@
 	import Switch from '../ui/Switch.svelte';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { ROLLEN_AUSWAHL } from './benutzerRollen.js';
 
 	/**
@@ -51,6 +52,7 @@
 		</h3>
 	{/snippet}
 	<form onsubmit={speichereKonto} class="p-6 space-y-4">
+		<Pflichthinweis />
 		{#if fehler}
 			<div
 				role="alert"

@@ -46,7 +46,7 @@
 	<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
 		<h3 class="text-title-medium text-error flex items-center gap-2">
 			<Trash class="h-5 w-5" aria-hidden="true" />
-			Gelöschte Leser (Papierkorb)
+			Gelöschte Leser im Papierkorb
 		</h3>
 	</div>
 
@@ -100,7 +100,7 @@
 								</div>
 							</td>
 							<td class="font-medium">
-								Kl. {s.klasse || 'N/A'}
+								{s.klasse ? `Kl. ${s.klasse}` : 'Klasse unbekannt'}
 							</td>
 							<td>
 								{new Date(s.deleted_at).toLocaleString('de-DE', {

@@ -38,13 +38,13 @@ test.describe.serial('Portal: Problem melden', () => {
 		const melden = page.getByRole('button', { name: `Problem melden zu ${TITEL}` });
 		await melden.click();
 		// Das Buch wird nicht noch einmal getippt.
-		await expect(page.getByLabel('Worum geht es? *')).toHaveCount(0);
-		await expect(page.getByLabel('Klasse / Kurs', { exact: true })).toBeFocused();
+		await expect(page.getByLabel('Worum geht es?*')).toHaveCount(0);
+		await expect(page.getByLabel('Klasse oder Kurs', { exact: true })).toBeFocused();
 
 		const absenden = page.getByRole('button', { name: 'Absenden' });
 		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();
-		await page.getByLabel('Klasse / Kurs', { exact: true }).fill('8G3');
-		await page.getByLabel('Was stimmt nicht? *').fill(BESCHREIBUNG);
+		await page.getByLabel('Klasse oder Kurs', { exact: true }).fill('8G3');
+		await page.getByLabel('Was stimmt nicht?*').fill(BESCHREIBUNG);
 		await absenden.click();
 
 		await expect
@@ -75,7 +75,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
 		const knopf = page.getByRole('button', { name: 'Problem melden', exact: true });
 		await knopf.click();
-		const worum = page.getByLabel('Worum geht es? *');
+		const worum = page.getByLabel('Worum geht es?*');
 		await expect(worum).toBeFocused();
 		// Der Knopf steht links, sein Formular klappt darunter auf: dieselbe linke Kante.
 		const knopfLage = await knopf.boundingBox();
@@ -91,7 +91,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		await worum.fill(OHNE_BUCH);
 		const absenden = page.getByRole('button', { name: 'Absenden' });
 		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();
-		await page.getByLabel('Was stimmt nicht? *').fill('drei fehlen');
+		await page.getByLabel('Was stimmt nicht?*').fill('drei fehlen');
 		await absenden.click();
 
 		await expect
@@ -119,7 +119,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		await expect(page.getByText('Keine Titel gefunden')).toBeVisible();
 
 		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
-		await expect(page.getByLabel('Worum geht es? *')).toHaveValue(getippt);
+		await expect(page.getByLabel('Worum geht es?*')).toHaveValue(getippt);
 	});
 
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {

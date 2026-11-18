@@ -39,7 +39,7 @@
 		zahlen: [
 			{
 				schluessel: 'bestelllink_gueltigkeit_tage',
-				label: 'Bestätigungs-Link gültig (Tage)',
+				label: 'Bestätigungs-Link gültig',
 				wert: linkTage,
 				min: 1
 			}
@@ -92,10 +92,13 @@
 				type="number"
 				min={1}
 				bind:value={linkTage}
-				etikett="Bestätigungs-Link gültig (Tage)"
+				etikett="Bestätigungs-Link gültig"
+				nachlaufend={tage}
 				hint="Solange kann der Händler über den Link aus der Bestellmail bestätigen und Etiketten drucken. Gilt für neu erzeugte Links; laufende behalten ihr Datum."
 				feld="w-32"
 			/>
 		</div>
 	</div>
 </KategorieRahmen>
+
+{#snippet tage()}Tage{/snippet}

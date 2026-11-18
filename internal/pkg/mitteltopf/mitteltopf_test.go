@@ -76,8 +76,8 @@ func TestTraeger(t *testing.T) {
 
 func TestBeschriftung(t *testing.T) {
 	faelle := map[string]string{
-		Land:         "Lernmittelfreiheit (Land)",
-		Schultraeger: "Schülerbücherei (Schulträger)",
+		Land:         "Lernmittelfreiheit · Land",
+		Schultraeger: "Schülerbücherei · Schulträger",
 		"":           "ohne Zuordnung",
 		"kreis":      "",
 	}

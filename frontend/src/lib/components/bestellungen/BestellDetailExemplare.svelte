@@ -10,6 +10,7 @@
      sagt das ausdrücklich, statt eine leere Liste für eine Aussage zu halten. -->
 <script>
 	import { CircleCheck, Clock, Ban } from '@lucide/svelte';
+	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ exemplare: any[] }} */
 	let { exemplare } = $props();
@@ -41,7 +42,9 @@
 			<div>
 				<p class="mb-1.5 text-body-medium-emphasized text-on-surface">
 					{g.titel}
-					<span class="ml-1 font-normal text-on-surface-variant">({g.stuecke.length})</span>
+					<span class="ml-1 font-normal text-on-surface-variant"
+						>· {anzahlText(g.stuecke.length, 'Exemplar', 'Exemplare')}</span
+					>
 				</p>
 				<ul class="flex flex-wrap gap-1.5">
 					{#each g.stuecke as e (e.barcode_id)}

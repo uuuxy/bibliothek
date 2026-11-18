@@ -382,7 +382,7 @@ func TestErzeugeSchulbuecher_AuflagenUnterDemTitel(t *testing.T) {
 	}
 	// Die Aufschlüsselung bricht in der Titelspalte um, und pdftest liefert die Zeilen sortiert,
 	// nicht in Lesereihenfolge: Der Satz muss aus einer oder zwei Zeilen zusammengehen.
-	const soll = "Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019 (42)"
+	const soll = "Bestand aus 2 Auflagen: 16 Exemplare der 4. Aufl. · 2023, 42 Exemplare der 3. Aufl. · 2019"
 	gefunden := false
 	for _, a := range texte {
 		for _, b := range append([]string{""}, texte...) {

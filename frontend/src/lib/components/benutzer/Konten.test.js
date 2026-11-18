@@ -58,9 +58,9 @@ describe('Benutzerliste: Meldungen', () => {
 
 		const dialog = screen.getByRole('dialog');
 		for (const [feld, wert] of [
-			['Vorname', 'Nele'],
-			['Nachname', 'Neu'],
-			['E-Mail Adresse', 'nele@test.local']
+			['Vorname*', 'Nele'],
+			['Nachname*', 'Neu'],
+			['E-Mail Adresse*', 'nele@test.local']
 		])
 			await fireEvent.input(within(dialog).getByLabelText(feld), { target: { value: wert } });
 		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
@@ -205,9 +205,9 @@ describe('Benutzerliste: Meldungen', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
 		const dialog = screen.getByRole('dialog');
 		for (const [feld, wert] of [
-			['Vorname', 'Nele'],
-			['Nachname', 'Neu'],
-			['E-Mail Adresse', 'nele@test.local']
+			['Vorname*', 'Nele'],
+			['Nachname*', 'Neu'],
+			['E-Mail Adresse*', 'nele@test.local']
 		])
 			await fireEvent.input(within(dialog).getByLabelText(feld), { target: { value: wert } });
 		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
@@ -280,9 +280,9 @@ describe('Benutzerliste: nach einem Fehler neu laden', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
 		const dialog = screen.getByRole('dialog');
 		for (const [feld, wert] of [
-			['Vorname', NEU.vorname],
-			['Nachname', NEU.nachname],
-			['E-Mail Adresse', NEU.email]
+			['Vorname*', NEU.vorname],
+			['Nachname*', NEU.nachname],
+			['E-Mail Adresse*', NEU.email]
 		])
 			await fireEvent.input(within(dialog).getByLabelText(feld), { target: { value: wert } });
 		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));

@@ -80,9 +80,9 @@
 {#if ausleihe}
 	<Dialog open={true} onclose={onCancel} ebene="darueber" beschriftetDurch="schaden-titel">
 		<div class="p-6">
-			<h3 id="schaden-titel" class="dialog-titel mb-2">Verlust/Schaden melden</h3>
+			<h3 id="schaden-titel" class="dialog-titel mb-2">Verlust oder Schaden melden</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
-				Für <strong>{ausleihe.titel}</strong> ({ausleihe.barcode_id}).
+				Für <strong>{ausleihe.titel}</strong>, Exemplar {ausleihe.barcode_id}.
 				{#if ohneForderung}
 					Die Ausleihe wird beendet und das Exemplar ausgesondert. Eine Forderung entsteht nicht:
 					Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung, nicht der Bücherei.
@@ -99,7 +99,7 @@
 					<Radio
 						bind:group={art}
 						value="nicht_zurueckgegeben"
-						etikett="Nicht zurückgegeben (verloren)"
+						etikett="Verloren, nicht zurückgegeben"
 					/>
 					<Radio bind:group={art} value="beschaedigt" etikett="Beschädigt zurückgegeben" />
 				</fieldset>

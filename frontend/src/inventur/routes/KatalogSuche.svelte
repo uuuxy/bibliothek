@@ -139,7 +139,7 @@
 		{#if displayLimit < gefilterteTitel.length}
 			<div class="mt-8 flex justify-center">
 				<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
-					Mehr laden ({gefilterteTitel.length - displayLimit} weitere)
+					Mehr laden, noch {gefilterteTitel.length - displayLimit} übrig
 				</Button>
 			</div>
 		{/if}

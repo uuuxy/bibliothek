@@ -100,8 +100,8 @@
 							<!-- Ohne Notiz steht ein Wort für den Zustand; ein bestelltes Exemplar ist
 							     noch nicht eingetroffen und heißt wie in der Buchakte „Bestellt". -->
 							<span class="text-label-small text-on-surface-variant font-sans"
-								>({copy.zustand_notiz ||
-									(copy.im_bestand === false ? 'Bestellt' : 'Neuwertig')})</span
+								>· {copy.zustand_notiz ||
+									(copy.im_bestand === false ? 'Bestellt' : 'Neuwertig')}</span
 							>
 						</label>
 					{:else}

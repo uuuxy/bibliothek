@@ -41,8 +41,8 @@
 	const isDynamic = $derived(el && ['name', 'validity', 'dokumenttyp'].includes(el.type));
 
 	const fontFamilies = [
-		{ label: 'System (Standard)', value: 'inherit' },
-		{ label: 'Inter / Sans-Serif', value: 'Inter, system-ui, sans-serif' },
+		{ label: 'System', zusatz: 'Standard', value: 'inherit' },
+		{ label: 'Inter', value: 'Inter, system-ui, sans-serif' },
 		{ label: 'Serif', value: 'Georgia, serif' },
 		{ label: 'Monospace', value: 'ui-monospace, monospace' }
 	];
@@ -99,7 +99,7 @@
 			<span class="text-xs font-medium text-on-surface-variant block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
 				<ZahlenFeld
-					etikett="X (mm)"
+					etikett="X"
 					value={el.x}
 					min={0}
 					max={80}
@@ -107,7 +107,7 @@
 					onInput={(v) => (el.x = v)}
 				/>
 				<ZahlenFeld
-					etikett="Y (mm)"
+					etikett="Y"
 					value={el.y}
 					min={0}
 					max={50}
@@ -115,7 +115,7 @@
 					onInput={(v) => (el.y = v)}
 				/>
 				<ZahlenFeld
-					etikett="Breite (mm)"
+					etikett="Breite"
 					value={el.width}
 					min={3}
 					max={85}
@@ -123,7 +123,7 @@
 					onInput={(v) => (el.width = v)}
 				/>
 				<ZahlenFeld
-					etikett="Höhe (mm)"
+					etikett="Höhe"
 					value={el.height}
 					min={2}
 					max={53}
@@ -135,7 +135,7 @@
 
 		<!-- Z-Index -->
 		<div class="flex items-center gap-2 pt-2 border-t border-outline-variant">
-			<span class="text-xs font-medium text-on-surface-variant flex-1">Ebene (z={el.zIndex})</span>
+			<span class="text-xs font-medium text-on-surface-variant flex-1">Ebene {el.zIndex}</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
 				class="icon-btn text-label-small bg-surface-container text-on-surface"
@@ -169,7 +169,7 @@
 						/>
 					</div>
 					<ZahlenFeld
-						etikett="Ecken (mm)"
+						etikett="Ecken"
 						value={el.style.radius ?? 0}
 						min={0}
 						max={10}

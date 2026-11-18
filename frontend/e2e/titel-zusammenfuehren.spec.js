@@ -29,7 +29,7 @@ test('Titel zusammenführen: der Titel mit ISBN bleibt und hat danach alle Exemp
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Zwilling ${s} Liste`);
 	await page.getByText(`E2E Zwilling ${s} Liste`).first().click();
-	await expect(page.getByRole('heading', { name: 'Exemplare (1)' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: '1 Exemplar' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Mit anderem Titel zusammenführen' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Mit anderem Titel zusammenführen' });
@@ -37,13 +37,11 @@ test('Titel zusammenführen: der Titel mit ISBN bleibt und hat danach alle Exemp
 	await dialog.getByRole('button', { name: new RegExp(isbn) }).click();
 
 	await expect(dialog.getByText(`E2E Zwilling ${s} · ${isbn} · 2 Exemplare`)).toBeVisible();
-	await expect(
-		dialog.getByText(`„E2E Zwilling ${s} Liste“ (ohne ISBN) wird gelöscht`)
-	).toBeVisible();
+	await expect(dialog.getByText(`„E2E Zwilling ${s} Liste“ ohne ISBN wird gelöscht`)).toBeVisible();
 	await dialog.getByRole('button', { name: 'Zusammenführen' }).click();
 
 	await expect(dialog).toBeHidden();
-	await expect(page.getByRole('heading', { name: 'Exemplare (2)' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: '2 Exemplare' })).toBeVisible();
 	await expect(page.locator('#buch-isbn')).toHaveValue(isbn);
 	expect(
 		querySQL(`

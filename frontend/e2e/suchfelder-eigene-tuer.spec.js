@@ -57,10 +57,7 @@ test('Vormerkungs-Schülersuche in der Buchakte fragt die Leserdatei, nicht die 
 
 	await uiLogin(page);
 	await gehZu(page, `/medienkatalog/buch/${titelId}`);
-	await page
-		.getByText(/^Vormerkungen \(/)
-		.first()
-		.click();
+	await page.getByRole('tab', { name: /^Vormerkungen/ }).click();
 	await page.getByRole('button', { name: 'Schüler vormerken' }).click();
 
 	/** @type {string[]} */

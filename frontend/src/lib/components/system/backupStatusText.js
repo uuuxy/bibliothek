@@ -55,6 +55,6 @@ export function backupHint(s) {
 	if (!s.last_backup_at)
 		return 'Es liegt noch kein Sicherungsstand vor. Was zu prüfen ist, steht unter Einstellungen → Betriebsbereitschaft.';
 	if (s.encryption_key_weak && s.status === 'warning')
-		return 'Die Sicherungen laufen, sind aber mit einer kurzen Passphrase verschlüsselt und dadurch leichter zu knacken. Einen längeren Schlüssel (mindestens 32 Zeichen) in der Datei .env auf dem Server setzen; bereits erstellte Backups bleiben mit dem alten Schlüssel lesbar.';
+		return 'Die Sicherungen laufen, sind aber mit einer kurzen Passphrase verschlüsselt und dadurch leichter zu knacken. Einen längeren Schlüssel mit mindestens 32 Zeichen in der Datei .env auf dem Server setzen; bereits erstellte Backups bleiben mit dem alten Schlüssel lesbar.';
 	return 'Der nächtliche Job läuft nicht wie erwartet. Stand und Konfiguration unter Einstellungen → Betriebsbereitschaft prüfen.';
 }

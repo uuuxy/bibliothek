@@ -25,7 +25,12 @@ const maske = (anders = {}) => {
 			ferien_leseclub_aktiv: jetzt.ferien_leseclub_aktiv
 		},
 		zahlen: [
-			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: jetzt.frist_buch_tage, min: 1 }
+			{
+				schluessel: 'frist_buch_tage',
+				label: 'Leihfrist Bücher',
+				wert: jetzt.frist_buch_tage,
+				min: 1
+			}
 		]
 	};
 };
@@ -66,7 +71,7 @@ describe('speichereKategorie', () => {
 		expect(await speichereKategorie(eingabe)).toBe(false);
 		expect(apiPut).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledExactlyOnceWith(
-			expect.stringContaining('Tage / Buch'),
+			expect.stringContaining('Leihfrist Bücher'),
 			'warning'
 		);
 	});

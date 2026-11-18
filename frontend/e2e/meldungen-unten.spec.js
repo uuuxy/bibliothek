@@ -30,7 +30,7 @@ test('Eine Meldung steht unten, mittig rechts der Navigation, eingeklappt wie au
 	await uiLogin(page);
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
-	await page.getByLabel('Tage / Buch').waitFor();
+	await page.getByLabel('Leihfrist Bücher').waitFor();
 	const navigation = page
 		.locator('aside')
 		.filter({ has: page.getByRole('button', { name: /^Navigation / }) });

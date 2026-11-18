@@ -150,7 +150,7 @@
 					class="shrink-0"
 				>
 					<ListChecks size={16} strokeWidth={2.5} />
-					Meldungen ({nachbuchMeldungen.offen})
+					{anzahlText(nachbuchMeldungen.offen, 'Meldung', 'Meldungen')}
 				</Button>
 			{/if}
 

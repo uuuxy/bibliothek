@@ -106,7 +106,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 	}) => {
 		await zurTitelVerwaltung(page);
 		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`kein-treffer-${s}`);
-		await expect(page.getByRole('heading', { name: 'Titel (0)' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '0 Titel', exact: true })).toBeVisible();
 		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-isbn').fill(ISBN);
 		await page.locator('#buch-isbn').press('Tab');
@@ -171,7 +171,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		page
 	}) => {
 		await oeffneTitel(page, '5');
-		await expect(page.getByRole('heading', { name: 'Exemplare (5)' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '5 Exemplare' })).toBeVisible();
 		await expect(page.getByText(/^B-BM-Z[12]-/)).toHaveCount(0);
 		await expect(
 			page.getByText('Nicht im Bestand: 2 ausgesondert, 2 bestellt. Sie stehen in der Buchakte.')
@@ -181,7 +181,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await page.getByRole('dialog').getByRole('button', { name: 'Löschen' }).click();
 		await expect(page.getByText('Exemplar erfolgreich gelöscht')).toBeVisible();
 		await expect(page.locator('#buch-bestand')).toHaveValue('4');
-		await expect(page.getByRole('heading', { name: 'Exemplare (4)' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '4 Exemplare' })).toBeVisible();
 		await expect(page.getByText(/Nicht im Bestand: 3 ausgesondert, 2 bestellt\./)).toBeVisible();
 		expect(stand()).toBe('4/2/3');
 

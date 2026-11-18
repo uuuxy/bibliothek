@@ -173,8 +173,8 @@ export function useLeserakte() {
 				// Der Bescheid ist ein eigener Schritt: „Bescheid erstellen" an der Gebühren-Karte.
 				snackbars.addToast(
 					exemplar.ohneForderung
-						? 'Verlust/Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
-						: 'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
+						? 'Verlust oder Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
+						: 'Verlust oder Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
 					'success'
 				);
 				if (schadenExemplar === exemplar) schadenOffen = false;

@@ -48,7 +48,7 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 		meta,
 		spalten: [
 			{ text: 'Klasse', klasse: 'schmal' },
-			'Schüler/in',
+			'Schüler',
 			'Buch',
 			{ text: 'Fällig seit', klasse: 'schmal' },
 			{ text: 'Gemahnt', klasse: 'schmal' }

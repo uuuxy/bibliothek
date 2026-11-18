@@ -32,8 +32,8 @@ test('Fehlende Etiketten: Exemplare finden, auswählen und an den Druck übergeb
 	await expect(page.getByRole('row', { name: new RegExp(`E2E-ETI-${s}-1`) })).toBeVisible();
 
 	// Zwei der drei auswählen — die Auswahl muss einzeln möglich sein, nicht nur "alle".
-	await page.getByLabel(`${titel} (E2E-ETI-${s}-1) auswählen`).check();
-	await page.getByLabel(`${titel} (E2E-ETI-${s}-2) auswählen`).check();
+	await page.getByLabel(`E2E-ETI-${s}-1 von „${titel}“ auswählen`).check();
+	await page.getByLabel(`E2E-ETI-${s}-2 von „${titel}“ auswählen`).check();
 
 	await page.getByRole('button', { name: /2 an den Druck übergeben/ }).click();
 
@@ -65,7 +65,7 @@ test('Nach dem Druck sind die Exemplare als gedruckt vermerkt', async ({ page, c
 	const filter = page.getByLabel('Exemplare filtern');
 	await filter.click();
 	await filter.fill(`E2E-VER-${s}`);
-	await page.getByLabel(`${titel} (E2E-VER-${s}) auswählen`).check();
+	await page.getByLabel(`E2E-VER-${s} von „${titel}“ auswählen`).check();
 	await page.getByRole('button', { name: /1 an den Druck übergeben/ }).click();
 
 	// Der Druck öffnet das PDF in einem neuen Tab — den fangen wir ab, sonst bleibt er offen.
@@ -118,7 +118,7 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	await expect(page.getByLabel('Exemplare filtern')).toBeVisible();
 
 	await page.getByLabel('Exemplare filtern').fill(`E2E-HIN-${s}`);
-	await expect(page.getByLabel(`${titel} (E2E-HIN-${s}) auswählen`)).toBeVisible();
+	await expect(page.getByLabel(`E2E-HIN-${s} von „${titel}“ auswählen`)).toBeVisible();
 });
 
 // Das Etikett eines einzelnen Exemplars kommt aus dem Druck-Center, auf dem Bogen nach der
@@ -236,7 +236,7 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 	// Und der Verweis landet in der Liste, bereits auf diesen Titel gefiltert.
 	await nachdruckOffen.click();
 	await expect(page.getByLabel('Exemplare filtern')).toHaveValue(offenerTitel);
-	await expect(page.getByLabel(`${offenerTitel} (E2E-HO-${s}) auswählen`)).toBeVisible();
+	await expect(page.getByLabel(`E2E-HO-${s} von „${offenerTitel}“ auswählen`)).toBeVisible();
 });
 
 // Der Weg zurück — beide Richtungen von Hand, ohne zu drucken.

@@ -138,7 +138,7 @@ export function verbindeSaetze(...saetze) {
  */
 export function bestandKurz(gesamt, verfuegbar, imZulauf) {
 	if (!gesamt) return bestandSatz(gesamt, verfuegbar, imZulauf);
-	return `${verfuegbar ?? 0} / ${gesamt}`;
+	return `${verfuegbar ?? 0} von ${gesamt}`;
 }
 
 /**

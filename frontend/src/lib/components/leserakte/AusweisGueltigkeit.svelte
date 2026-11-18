@@ -68,7 +68,7 @@
 					type="button"
 					onclick={() => onWert(vorschlag)}
 					aria-label="Auf den vorgeschlagenen Wert {vorschlag} zurücksetzen"
-					data-tip="Zurück auf {vorschlag} (aus der Klasse gerechnet)"
+					data-tip="Zurück auf {vorschlag}, aus der Klasse gerechnet"
 					class="icon-btn text-on-surface-variant"
 				>
 					<RotateCcw class="h-4 w-4" aria-hidden="true" />
@@ -88,7 +88,7 @@
 		</p>
 	{:else if abweichend}
 		<p class="text-xs text-on-surface-variant">
-			Abweichend vom Vorschlag ({vorschlag}). Gilt nur für diesen Druck.
+			Abweichend vom Vorschlag {vorschlag}. Gilt nur für diesen Druck.
 		</p>
 	{/if}
 </div>

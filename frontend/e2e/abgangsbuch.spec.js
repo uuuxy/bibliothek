@@ -78,7 +78,7 @@ async function pruefeAbgangsbuch(page, s, tag) {
 	// 1. Beide Abschnitte stehen da, jeder mit seiner Stückzahl im Kopf.
 	// Die Überschrift kommt vom Server (mitteltopf.Beschriftung) — hier steht sie deshalb so,
 	// wie sie auch auf dem Ausdruck steht.
-	const lernmittel = page.getByRole('table', { name: /Lernmittelfreiheit \(Land\)/ });
+	const lernmittel = page.getByRole('table', { name: /Lernmittelfreiheit · Land/ });
 	const buecherei = page.getByRole('table', { name: /Schülerbücherei/ });
 	await expect(lernmittel.getByText(`E2E-Abgang-Lernmittel ${s}`)).toBeVisible();
 	await expect(buecherei.getByText(`E2E-Abgang-Buecherei ${s}`)).toBeVisible();

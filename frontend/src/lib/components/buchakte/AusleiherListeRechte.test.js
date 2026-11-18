@@ -29,7 +29,7 @@ describe('Ausleiher-Liste: Recht zu scannen', () => {
 		const { queryByRole, getByText } = zeige();
 		expect(queryByRole('button')).toBeNull();
 		expect(getByText(/Kim\s+Beispiel/)).toBeTruthy();
-		expect(getByText('(07a)')).toBeTruthy();
+		expect(getByText('· 07a')).toBeTruthy();
 	});
 
 	it('legt den Ausweis mit dem Recht in den Scan-Kanal', async () => {

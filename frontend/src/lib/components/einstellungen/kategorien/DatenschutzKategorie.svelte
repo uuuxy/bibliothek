@@ -114,12 +114,12 @@
 			Sperrbildschirm kommt. Entsperrt wird mit dem eigenen Passwort.
 		</p>
 		<p>
-			Abgänger-Karenzzeit: Tage nach dem letzten Vorgang (Abgang im LUSD-Import, letzte Rückgabe
-			oder Schadensregulierung), die ein Abgänger ohne offene Vorgänge nur gesperrt bleibt, bevor er
-			anonymisiert wird. In dieser Zeit lässt sich eine falsche Zuordnung noch reparieren, etwa ein
-			umbenannter Schüler, den der Export ohne Schüler-ID nicht wiedererkannt hat (Zusammenführen in
-			der Leserakte). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur
-			Datensätze, die die Karenz durchlaufen haben.
+			Abgänger-Karenzzeit: So viele Tage bleibt ein Abgänger ohne offene Vorgänge nur gesperrt,
+			bevor er anonymisiert wird. Sie zählen ab dem letzten Vorgang, also dem Abgang im LUSD-Import,
+			der letzten Rückgabe oder der Schadensregulierung. In dieser Zeit lässt sich eine falsche
+			Zuordnung noch reparieren, etwa ein umbenannter Schüler, den der Export ohne Schüler-ID nicht
+			wiedererkannt hat; zusammengeführt wird in der Leserakte. Die endgültige Löschung ab dem 30.
+			Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen haben.
 		</p>
 		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort</p>
 	{/snippet}
@@ -128,23 +128,26 @@
 		<Feld
 			type="number"
 			bind:value={lesehistorie}
-			etikett="Lesehistorie Schülerbücherei (Tage)"
+			etikett="Lesehistorie Schülerbücherei"
+			nachlaufend={tage}
 			min={0}
 			max={3650}
-			hint="Vorgabe 1 (einen Tag nach der Rückgabe)"
+			hint="Vorgabe 1, also einen Tag nach der Rückgabe"
 		/>
 		<Feld
 			type="number"
 			bind:value={lesehistorieLmf}
-			etikett="Lesehistorie Lernmittel (Tage)"
+			etikett="Lesehistorie Lernmittel"
+			nachlaufend={tage}
 			min={0}
 			max={3650}
-			hint="Vorgabe 730 (zwei Schuljahre)"
+			hint="Vorgabe 730, also zwei Schuljahre"
 		/>
 		<Feld
 			type="number"
 			bind:value={anliegen}
-			etikett="Erledigte Anliegen aufbewahren (Tage)"
+			etikett="Erledigte Anliegen aufbewahren"
+			nachlaufend={tage}
 			min={0}
 			max={3650}
 			hint="Vorgabe 365"
@@ -152,7 +155,8 @@
 		<Feld
 			type="number"
 			bind:value={protokollMonate}
-			etikett="Prüfprotokoll aufbewahren (Monate)"
+			etikett="Prüfprotokoll aufbewahren"
+			nachlaufend={monate}
 			min={6}
 			max={120}
 			hint="Vorgabe 24. Mindestens 6, darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
@@ -160,7 +164,8 @@
 		<Feld
 			type="number"
 			bind:value={thekeLeeren}
-			etikett="Theke leeren nach (Min.)"
+			etikett="Theke leeren nach"
+			nachlaufend={minuten}
 			min={0}
 			max={1440}
 			hint="Vorgabe 5"
@@ -168,7 +173,8 @@
 		<Feld
 			type="number"
 			bind:value={sperre}
-			etikett="Sperrbildschirm nach (Min.)"
+			etikett="Sperrbildschirm nach"
+			nachlaufend={minuten}
 			min={0}
 			max={1440}
 			hint="Vorgabe 15"
@@ -176,10 +182,15 @@
 		<Feld
 			type="number"
 			bind:value={abgaengerKarenz}
-			etikett="Abgänger-Karenzzeit (Tage)"
+			etikett="Abgänger-Karenzzeit"
+			nachlaufend={tage}
 			min={0}
 			max={365}
 			hint="Vorgabe 90. 0 = sofort anonymisieren"
 		/>
 	</div>
 </KategorieRahmen>
+
+{#snippet tage()}Tage{/snippet}
+{#snippet monate()}Monate{/snippet}
+{#snippet minuten()}Minuten{/snippet}

@@ -62,7 +62,7 @@ export function baueLoeschfrage(anzahlTitel, name, folgen) {
 	const bleibt = bleibendeTitel(anzahlTitel, verliehen.length);
 	const namen = verliehen
 		.slice(0, MAX_NAMEN)
-		.map((v) => (v.klasse ? `${v.leser} (${v.klasse})` : v.leser));
+		.map((v) => (v.klasse ? `${v.leser} aus der ${v.klasse}` : v.leser));
 	if (verliehen.length > MAX_NAMEN) namen.push(`und ${verliehen.length - MAX_NAMEN} weitere`);
 	return {
 		titel,

@@ -15,7 +15,7 @@ const GESCHEITERT = { text: `Die ISBN-Abfrage ist fehlgeschlagen. ${VON_HAND}.`,
 /** Was eine Abfrage ohne Treffer bedeutet, je Status der Antwort.
  * @type {Record<number, Ausgang>} */
 const AUSGAENGE = {
-	400: { text: 'Die Nummer hat nicht die Form einer ISBN (10 oder 13 Stellen)', fehler: true },
+	400: { text: 'Die Nummer hat nicht die Form einer ISBN mit 10 oder 13 Stellen', fehler: true },
 	404: NICHTS_BEKANNT,
 	502: { text: `Die Katalogdienste sind nicht erreichbar. ${VON_HAND}.`, fehler: true }
 };

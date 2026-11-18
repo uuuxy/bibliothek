@@ -88,7 +88,7 @@ test('Eine geänderte Mail-Vorlage hält den Wechsel der Seite an', async ({ pag
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Mail').click();
 	await kategorieOffen(page, 'Mail');
-	await page.getByLabel('SMTP Host *').fill(`smtp-${s}.example`);
+	await page.getByLabel('SMTP Host*').fill(`smtp-${s}.example`);
 	await menuepunkt(page, 'Ausleihe').click();
 	await expect(rueckfrage(page)).toBeVisible();
 	await rueckfrage(page).getByRole('button', { name: 'Verwerfen' }).click();
@@ -103,7 +103,7 @@ test('Nach dem Speichern fragt die Kategorie erst bei der nächsten Eingabe wied
 	await uiLogin(page);
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
-	const tage = page.getByLabel('Tage / Buch');
+	const tage = page.getByLabel('Leihfrist Bücher');
 	const gespeichert = String(Number(FRIST_VORHER) + 1);
 	await tage.fill(gespeichert);
 	// Die Marke am alten Feld: Ist sie weg, steht die Kategorie neu aufgebaut da.

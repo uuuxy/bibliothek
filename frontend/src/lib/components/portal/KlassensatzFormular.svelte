@@ -3,6 +3,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 
 	/** @type {{ formular: any, reichtNicht: boolean, rechnerischFrei: number | null, warteschlange: { klasse: string }[], onsenden: () => void }} */
 	let { formular, reichtNicht, rechnerischFrei, warteschlange, onsenden } = $props();
@@ -10,10 +11,12 @@
 
 <div class="flex flex-col gap-4">
 	<p class="text-sm font-medium text-on-surface">Klassensatz-Reservierung</p>
+	<Pflichthinweis />
 	<div class="grid grid-cols-2 gap-4">
 		<Feld
 			bind:value={formular.klasse}
-			etikett="Klasse / Kurs *"
+			etikett="Klasse oder Kurs"
+			aria-required="true"
 			type="text"
 			placeholder="z. B. 8G3"
 		/>
@@ -21,7 +24,7 @@
 	</div>
 	<Feld
 		bind:value={formular.notiz}
-		etikett="Notiz (optional)"
+		etikett="Notiz"
 		mehrzeilig
 		zeilen={2}
 		placeholder="z. B. Benötigt ab 15. September …"

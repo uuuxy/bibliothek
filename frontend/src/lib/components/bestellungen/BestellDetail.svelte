@@ -165,10 +165,9 @@
 
 		<section>
 			<h3 class="mb-2 text-title-medium text-on-surface">
-				Exemplare aus dieser Bestellung
-				{#if bestellung.exemplare.length > 0}
-					<span class="font-normal text-on-surface-variant">({bestellung.exemplare.length})</span>
-				{/if}
+				{bestellung.exemplare.length > 0
+					? anzahlText(bestellung.exemplare.length, 'Exemplar', 'Exemplare')
+					: 'Exemplare'} aus dieser Bestellung
 			</h3>
 			<BestellDetailExemplare exemplare={bestellung.exemplare} />
 		</section>

@@ -96,10 +96,10 @@
 				<div class="flex flex-1 w-full items-end gap-2">
 					<Feld
 						id="student-search-input"
-						etikett="Schüler suchen (Name oder Ausweisnummer)"
+						etikett="Schüler suchen"
 						bind:value={suche}
 						onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
-						placeholder="z. B. Max Mustermann"
+						placeholder="Name oder Ausweisnummer"
 						class="flex-1"
 					/>
 					<Button variant="secondary" onclick={sucheLeser} disabled={isSearching}>
@@ -108,7 +108,7 @@
 				</div>
 				<Feld
 					id="notiz-input"
-					etikett="Interne Notiz (optional)"
+					etikett="Interne Notiz"
 					bind:value={notiz}
 					placeholder="z. B. Braucht es dringend für Referat"
 					class="flex-1 w-full"

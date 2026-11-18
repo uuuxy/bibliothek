@@ -38,7 +38,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 		await expect(page.getByText('3 von 3 verfügbar')).toBeVisible();
 
 		await page.getByRole('button', { name: 'Klassensatz reservieren' }).click();
-		await page.getByLabel('Klasse / Kurs *').fill(`8G${s}`);
+		await page.getByLabel('Klasse oder Kurs*').fill(`8G${s}`);
 		await page.getByLabel('Anzahl').fill('3');
 		await page.getByRole('button', { name: 'Anfrage senden' }).click();
 		await expect(page.getByText('✓ Gesendet')).toBeVisible();

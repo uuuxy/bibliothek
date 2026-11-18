@@ -63,7 +63,8 @@
 	<p class="col-span-full text-sm text-on-surface-variant" data-testid="lmf-ausfaelle">
 		Übersprungen:
 		{#each ausfaelle as a, i (a.datum)}{i > 0 ? ' · ' : ''}{wochentag(a.datum)}
-			{datumKurz(a.datum)} ({a.grund}){/each}
+			{datumKurz(a.datum)}
+			{a.grund}{/each}
 	</p>
 {/if}
 

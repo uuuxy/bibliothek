@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 17.11.2026
+Stand: 18.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -49,11 +49,13 @@ Nur, was kein Test leisten kann.
   die 23 Stellen angleichen. (5.186)
 - [x] Doppelpunkt vor großem Anfang: am Server ein Satzende, in der Oberfläche nicht. Entscheiden,
   welche Regel für beide gilt. (5.187)
-- [ ] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
+- [x] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
   Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
 - [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
 - [ ] Die offenen Seiten der Abdeckungsliste gegen den Code halten: Date pickers, Toolbars,
   Motion, Icons, Alt text ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
+- [ ] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
+  Oberfläche; dafür gibt es noch keine Prüfung. (5.192)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
 
@@ -108,25 +110,6 @@ Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
 
-### 5.188 Klammern und Schrägstriche wie bei Google
-
-M3 (Content design, Grammar and punctuation): „Parentheses can be used to define acronyms or
-jargon or when referencing a source. They shouldn’t be used when adding a side note or an
-afterthought of a sentence.“ Googles developer documentation style guide (Slashes): „Don't use
-slashes to separate alternatives.“ Am Server sind die Meldungen und die Sätze der
-Betriebsbereitschaft umgestellt; erlaubt blieben Quellen und Begriffe (`(docs/DEPLOYMENT.md)`,
-`(kmk.org/…)`, „Katalogdienste (DNB, Google, OpenLibrary)“, `(DSGVO)`).
-
-In der Oberfläche gezählt (Texte, die frontend-hygiene-satzzeichen.test.js liest): 230 Texte mit
-Klammern, davon 157 mit Wortlaut (136 verschiedene Inhalte, meist Einzelfälle), 59 nur mit einer
-Zahl („Papierkorb (3)“), 12 Kürzel und 3 Rechtsquellen, die bleiben dürfen. Schrägstriche
-zwischen Wörtern: 16 Texte („Schüler/in“, „Verlust/Schaden“, „N/A“), dazu Etiketten mit
-„ / “ wie der Reiter „Ehemalige / Archiv“, die die Zählung nicht erfasst.
-
-Nächster Schritt: je Gruppe nach Google entscheiden: Einheiten wie „Frist (Tage)“ als Suffix im
-Feld (M3, Text fields), Zahlen als Zählerpille statt in Klammern, die übrigen Nebengedanken in den
-Satz. Danach eine Prüfung für neue Klammern mit Wortlaut. Aufwand: etwa fünf Stunden.
-
 ### 5.191 Offene Seiten der Abdeckungsliste
 
 Fünf Seiten von Material 3 hat niemand gegen den Code gehalten ([sweeps.md](sweeps.md),
@@ -138,6 +121,18 @@ Icons ist die größte Abweichung: M3 nennt die Material Symbols („Use the Mat
 font“, Styles, Icons), das Programm zeichnet mit Lucide (179 Dateien, 96 Symbole). Ein Wechsel
 tauscht jedes Symbol und liefert die Symbolschrift selbst aus wie Roboto; vor dem Bau braucht es
 ein Ja. Die übrigen vier: je Seite lesen, Befund in die Liste, Abweichungen beheben.
+
+### 5.192 Klammern und Schrägstriche in PDF und Mail
+
+Die Regel aus [STIL.md](STIL.md) 11 hält für die Oberfläche `frontend-hygiene-satzzeichen.test.js`,
+für die Meldungen des Servers `meldung_ratsche_test.go`. Die Texte der PDFs und Mails prüft
+keine von beiden. Bekannte Fundstellen: „Schüler/in:“ in der Mahnliste (`internal/pdf/mahnliste.go`)
+und in der DSGVO-Auskunft (`internal/auskunft/blatt.go`), „Schüler/innen“ in den Mails an die
+Klassenleitungen (`mahnwesen_mail.go`, `abgaenger_mail.go`), „Summe … (2 Bestellungen, 50
+Exemplare)“ im Bestellbericht (`internal/pdf/bestellbericht.go`).
+
+Nächster Schritt: eine Prüfung über die Zeichenketten dieser Pakete wie in der Oberfläche, dann
+die Funde umschreiben.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -55,7 +55,7 @@ describe('Ausweis-Design laden', () => {
 		const ablage = erzeugeDesignAblage();
 		await ablage.laden();
 		expect(ablage.geladen).toBe(false);
-		expect(ablage.ladefehler).toMatch(/Netzwerkfehler/);
+		expect(ablage.ladefehler).toMatch(/Server nicht erreichbar/);
 	});
 
 	it('nennt im Ladefehler den Grund, den der Server angibt', async () => {
@@ -66,7 +66,7 @@ describe('Ausweis-Design laden', () => {
 		await ablage.laden();
 
 		expect(ablage.ladefehler).toBe(
-			'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Keine Berechtigung für diese Aktion). Es wird nichts gespeichert, solange das so ist.'
+			'Das gespeicherte Ausweis-Design konnte nicht geladen werden: Keine Berechtigung für diese Aktion. Es wird nichts gespeichert, solange das so ist.'
 		);
 		expect(ablage.geladen).toBe(false);
 	});

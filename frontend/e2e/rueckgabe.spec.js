@@ -72,11 +72,11 @@ test('Fremdrückgabe: Scan 1 bucht nur beim Vorbesitzer aus, Scan 2 leiht an die
 	await expect(page.getByText(/war auf E2E Leiher-.* verbucht/).first()).toBeVisible();
 	await expect(page.getByText(/Fremdrückgabe: Buch war auf E2E Leiher-.* verbucht/)).toBeVisible();
 	// NICHT auf B gebucht — die Sitzung läuft ungestört weiter
-	await expect(page.getByText('ENTLIEHENE BÜCHER (0)')).toBeVisible();
+	await expect(page.getByText('0 entliehene Bücher')).toBeVisible();
 
 	// Scan 2: jetzt ist das Buch frei → normale Ausleihe an B
 	await scanInput.fill(bookBarcode);
 	await scanInput.press('Enter');
 	await expect(page.getByText(`„${bookTitle}" ausgeliehen an E2E`)).toBeVisible();
-	await expect(page.getByText('ENTLIEHENE BÜCHER (1)')).toBeVisible();
+	await expect(page.getByText('1 entliehenes Buch')).toBeVisible();
 });

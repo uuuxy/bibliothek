@@ -23,12 +23,12 @@ describe('KontoBearbeitenDialog: Anmeldeverfahren', () => {
 	it('fragt nach dem Verfahren und bei IMAP nach keiner Kennung', () => {
 		const k = zeige(leeresBenutzerFormular());
 		expect(k.getByLabelText('Anmeldung über')).toBeTruthy();
-		expect(k.queryByLabelText('LDAP-Kennung')).toBeNull();
+		expect(k.queryByLabelText('LDAP-Kennung*')).toBeNull();
 	});
 
 	it('verlangt bei LDAP die Kennung', () => {
 		const k = zeige({ ...leeresBenutzerFormular(), anmeldeverfahren: 'ldap' });
-		const feld = k.getByLabelText('LDAP-Kennung');
+		const feld = k.getByLabelText('LDAP-Kennung*');
 		expect(feld.hasAttribute('required')).toBe(true);
 	});
 });

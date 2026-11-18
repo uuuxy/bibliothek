@@ -71,12 +71,12 @@
 	<div class="mt-4 flex flex-wrap gap-3">
 		<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
 			{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
-			{bestellung.grosses_etikett ? 'Kleine Etiketten (Bogen A4)' : 'Etiketten (Bogen A4)'}
+			{bestellung.grosses_etikett ? 'Kleine Etiketten auf A4-Bogen' : 'Etiketten auf A4-Bogen'}
 		</Button>
 		{#if bestellung.grosses_etikett}
 			<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
 				{#if geoeffneteGroesse === 'gross'}<Check size={16} aria-hidden="true" />{/if}
-				Große Lernmittel-Etiketten (4 je A4-Blatt)
+				Große Lernmittel-Etiketten, 4 je A4-Blatt
 			</Button>
 		{/if}
 	</div>

@@ -54,7 +54,7 @@ test('Ausleihlimit 1: zweiter Checkout blockt sofort', async ({ page }) => {
 		await scanInput.fill(`B-Limit2-${suffix}`);
 		await scanInput.press('Enter');
 		await expect(page.getByText(/Ausleihlimit von 1 Büchern überschritten/).first()).toBeVisible();
-		await expect(page.getByText('ENTLIEHENE BÜCHER (1)')).toBeVisible();
+		await expect(page.getByText('1 entliehenes Buch')).toBeVisible();
 	} finally {
 		if (vorher) {
 			seedSQL(

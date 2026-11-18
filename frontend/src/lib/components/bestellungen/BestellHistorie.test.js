@@ -99,8 +99,8 @@ describe('BestellHistorie', () => {
 		const screen = render(BestellHistorie);
 		await screen.findByText('Buchhandlung Nord');
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Schülerbücherei (Schulträger)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit · Land' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Schülerbücherei · Schulträger' }));
 		await screen.findByText('Buchhandlung Süd');
 
 		landFertig([bestellung('Späte Antwort', 'land')]);
@@ -126,7 +126,7 @@ describe('BestellHistorie: die Liste zeigt nicht alles', () => {
 		const screen = render(BestellHistorie);
 		expect(await screen.findByText(/1 von 137 Bestellungen, die neuesten zuerst/)).toBeTruthy();
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit · Land' }));
 
 		await waitFor(() => expect(screen.queryByText(/Bestellungen, die neuesten zuerst/)).toBeNull());
 	});
@@ -206,7 +206,7 @@ describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () =>
 		await screen.findByText('Buchhandlung Nord');
 
 		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
-		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit · Land' }));
 
 		expect(await screen.findByRole('alert')).toBeTruthy();
 		expect(screen.queryByText('Buchhandlung Nord')).toBeNull();

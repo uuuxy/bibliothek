@@ -1,4 +1,5 @@
-<!-- @component ZahlenFeld — beschriftetes Zahlenfeld des Ausweis-Designers (mm/pt).
+<!-- @component ZahlenFeld — beschriftetes Zahlenfeld des Ausweis-Designers, die Einheit rechts im Feld
+     (M3, Text fields: „suffix text such as unit of measurement"); Vorgabe mm, die Schriftgröße nennt pt.
      War ein Snippet in Eigenschaften; als eigene Datei kann auch der
      Text-Bereich es benutzen, ohne dass beide dasselbe zweimal beschreiben.
 
@@ -9,11 +10,11 @@
 
 	/**
 	 * @type {{
-	 *   etikett: string, value: number, min: number, max?: number, step: number,
+	 *   etikett: string, value: number, min: number, max?: number, step: number, einheit?: string,
 	 *   onInput: (v: number) => void
 	 * }}
 	 */
-	let { etikett, value, min, max, step, onInput } = $props();
+	let { etikett, value, min, max, step, einheit = 'mm', onInput } = $props();
 </script>
 
 <Feld
@@ -24,4 +25,6 @@
 	{step}
 	value={Math.round(value * 10) / 10}
 	oninput={(e) => onInput(parseFloat(/** @type {HTMLInputElement} */ (e.currentTarget).value) || 0)}
-/>
+>
+	{#snippet nachlaufend()}{einheit}{/snippet}
+</Feld>

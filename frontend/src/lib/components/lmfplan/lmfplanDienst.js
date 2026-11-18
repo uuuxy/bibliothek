@@ -53,7 +53,7 @@ export function artErklaerung(art, eingang) {
 		// (internal/api/lernmittel/lmf_termine.go, lmfArtErklaerung; Prüfung: TestLMFTexte…).
 		return (eingang ?? []).length === 0
 			? 'Nur die neu gebildeten Klassen bekommen ihre Schulbücher'
-			: `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher`;
+			: `Nur die neu gebildeten Klassen in Jahrgang ${jahrgaengeText(eingang)} bekommen ihre Schulbücher`;
 	return 'Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. „Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.';
 }
 

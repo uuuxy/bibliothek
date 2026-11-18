@@ -42,7 +42,7 @@ test.describe('Bestellsuche: Die DNB antwortet nicht', () => {
 
 		await expect(page.getByRole('alert').filter({ hasText: HINWEIS })).toBeVisible();
 		await expect(page.getByText('Im lokalen Bestand')).toHaveCount(0);
-		await expect(page.getByText('Neu aus DNB (Externe Suche)')).toHaveCount(0);
+		await expect(page.getByText('Neu aus der DNB')).toHaveCount(0);
 	});
 
 	// Unter vielen Treffern aus dem Bestand läse den Hinweis niemand: Er steht über ihnen.
@@ -75,6 +75,6 @@ test.describe('Bestellsuche: Die DNB antwortet nicht', () => {
 
 		await expect(page.getByText(/^Suche läuft/)).toHaveCount(0);
 		await expect(page.getByText(HINWEIS)).toHaveCount(0);
-		await expect(page.getByText('Neu aus DNB (Externe Suche)')).toHaveCount(0);
+		await expect(page.getByText('Neu aus der DNB')).toHaveCount(0);
 	});
 });

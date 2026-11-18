@@ -145,12 +145,12 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 			"Probeschule Nord", "Probeschule Nord · Probeweg 5 · 34117 Kassel", "Kassel, den "+schulzeit.Jetzt().Format("02.01.2006"),
 			"Bestellbericht", "Zeitraum: 01.09.2019 bis 30.09.2019",
 			"Bestellungen: 4", "Exemplare: 57", "Gesamtbetrag: 255,50 €",
-			"Lernmittelfreiheit (Land)",
+			"Lernmittelfreiheit · Land",
 			"04.09.2019  ·  Bericht-Probe Land-A  ·  Kd.-Nr. KD-Land-A", "Titel Land-A", "isbn-Land-A", "30", "4,00 €", "120,00 €",
 			"30.09.2019  ·  Bericht-Probe Land-B  ·  Kd.-Nr. KD-Land-B", "Titel Land-B",
-			"Summe Lernmittelfreiheit (Land) (2 Bestellungen, 50 Exemplare)", "200,00 €",
-			"Schülerbücherei (Schulträger)", "03.09.2019  ·  Bericht-Probe Kreis  ·  Kd.-Nr. KD-Kreis",
-			"Summe Schülerbücherei (Schulträger) (1 Bestellung, 5 Exemplare)", "45,50 €",
+			"Summe Lernmittelfreiheit · Land (2 Bestellungen, 50 Exemplare)", "200,00 €",
+			"Schülerbücherei · Schulträger", "03.09.2019  ·  Bericht-Probe Kreis  ·  Kd.-Nr. KD-Kreis",
+			"Summe Schülerbücherei · Schulträger (1 Bestellung, 5 Exemplare)", "45,50 €",
 			"ohne Zuordnung", "02.09.2019  ·  Bericht-Probe Alt  ·  Kd.-Nr. KD-Alt",
 			"Summe ohne Zuordnung (1 Bestellung, 2 Exemplare)", "10,00 €",
 			"Gesamtbetrag 01.09.2019 – 30.09.2019", "255,50 €")
@@ -166,8 +166,8 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 	t.Run("ohne Preise: Mengen statt Beträge", func(t *testing.T) {
 		setzePreise(t, "false")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30")
-		folge(t, texte, "Bestellungen: 4", "Exemplare: 57", "Lernmittelfreiheit (Land)",
-			"Summe Lernmittelfreiheit (Land) (2 Bestellungen, 50 Exemplare)", "Gesamt 01.09.2019 – 30.09.2019", "57")
+		folge(t, texte, "Bestellungen: 4", "Exemplare: 57", "Lernmittelfreiheit · Land",
+			"Summe Lernmittelfreiheit · Land (2 Bestellungen, 50 Exemplare)", "Gesamt 01.09.2019 – 30.09.2019", "57")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "€") {
 			t.Errorf("der Mengenbericht nennt einen Betrag: %q", texte)
 		}
@@ -176,8 +176,8 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 	t.Run("auf einen Topf eingeengt: Überschrift nennt ihn, der andere fehlt", func(t *testing.T) {
 		setzePreise(t, "true")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30&mittel=schultraeger")
-		folge(t, texte, "Bestellbericht — Schülerbücherei (Schulträger)", "Bestellungen: 1", "Gesamtbetrag: 45,50 €",
-			"Schülerbücherei (Schulträger)", "Summe Schülerbücherei (Schulträger) (1 Bestellung, 5 Exemplare)", "45,50 €")
+		folge(t, texte, "Bestellbericht — Schülerbücherei · Schulträger", "Bestellungen: 1", "Gesamtbetrag: 45,50 €",
+			"Schülerbücherei · Schulträger", "Summe Schülerbücherei · Schulträger (1 Bestellung, 5 Exemplare)", "45,50 €")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "Lernmittelfreiheit") || strings.Contains(text, "ohne Zuordnung") {
 			t.Errorf("der Bericht über einen Topf nennt einen anderen: %q", texte)
 		}

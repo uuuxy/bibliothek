@@ -15,27 +15,30 @@
  * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin. Die Maße in
  * Millimetern kennt nur der Server: Die Vorschau zeigt sein Druck-PDF.
  *
- * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number, ohneStartfeld?: boolean }} EtikettFormat
+ * @typedef {{ value: string, label: string, zusatz: string, kurz: string, spalten: number, zeilen: number, ohneStartfeld?: boolean }} EtikettFormat
  * @type {EtikettFormat[]}
  */
 export const ETIKETT_FORMATE = [
 	{
 		value: 'zweckform_l4760',
-		label: 'Zweckform L4760 (3x7, 21 Etiketten)',
+		label: 'Zweckform L4760',
+		zusatz: '21 Etiketten, 3 × 7',
 		kurz: 'Zweckform L4760',
 		spalten: 3,
 		zeilen: 7
 	},
 	{
 		value: 'avery_3475',
-		label: 'Avery 3475 (3x8, 24 Etiketten)',
+		label: 'Avery 3475',
+		zusatz: '24 Etiketten, 3 × 8',
 		kurz: 'Avery 3475',
 		spalten: 3,
 		zeilen: 8
 	},
 	{
 		value: 'standard_52',
-		label: 'Kleine Barcodes (4x13, 52 Etiketten)',
+		label: 'Kleine Barcodes',
+		zusatz: '52 Etiketten, 4 × 13',
 		kurz: 'Standard 52',
 		spalten: 4,
 		zeilen: 13
@@ -52,7 +55,8 @@ export const ETIKETT_FORMATE = [
  */
 export const LERNMITTEL_ETIKETT = {
 	value: 'lernmittel_gross',
-	label: 'Große Lernmittel-Etiketten (2x2, 4 Etiketten)',
+	label: 'Große Lernmittel-Etiketten',
+	zusatz: '4 Etiketten, 2 × 2',
 	kurz: 'Große Lernmittel-Etiketten',
 	spalten: 2,
 	zeilen: 2,

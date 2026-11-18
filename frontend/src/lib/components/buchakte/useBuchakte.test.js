@@ -130,9 +130,8 @@ describe('useBuchakte.ladeAlles', () => {
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
 	});
 
-	// „(0)" ist eine Aussage über den Bestand. Scheitert der Abruf einer Liste, hat
-	// niemand diese Aussage geprüft — bis zum Sweep am 06.09.2026 machte die Akte sie
-	// trotzdem („Ausleiher (0)" für einen Titel, der Ausleiher hat).
+	// Eine 0 ist eine Aussage über den Bestand. Scheitert der Abruf einer Liste, hat niemand
+	// diese Aussage geprüft; die Akte nennt die Liste, statt sie zu machen.
 	it('nennt die Listen, die nicht geladen werden konnten', async () => {
 		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
 			const u = String(url);
@@ -203,11 +202,11 @@ describe('useBuchakte.ladeAlles', () => {
 
 	// Die zweite Hälfte der Kette: Die Liste nützt nur, solange der Reiter sie fragt.
 	// Am Quelltext OHNE Kommentare — sonst genügte der erklärende Satz daneben.
-	it('der Reiter zeigt ein Fragezeichen statt einer ungeprüften Null', () => {
+	it('der Reiter zeigt keine ungeprüfte Null', () => {
 		const quelle = ohneKommentare(
 			readFileSync(join(srcRoot, 'lib', 'components', 'buchakte', 'Buchakte.svelte'), 'utf8')
 		);
-		expect(quelle).toMatch(/fehlendeListen\.some\(\(l\) => l\.name === name\)\s*\?\s*'\?'/);
+		expect(quelle).toMatch(/fehlendeListen\.some\(\(l\) => l\.name === name\)\s*\?\s*undefined/);
 	});
 });
 
@@ -252,7 +251,7 @@ describe('useBuchakte.ladeAlles: Kopf und überholte Läufe', () => {
 		await akte.ladeAlles('A');
 
 		expect(akte.buch).toBeNull();
-		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden (Netzwerkfehler)');
+		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden: Server nicht erreichbar');
 		expect(akte.laedt).toBe(false);
 		konsole.mockRestore();
 	});

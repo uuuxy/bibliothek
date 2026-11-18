@@ -25,8 +25,8 @@ const basis = {
 	mittel: '',
 	mittelFilter: [
 		{ value: '', label: 'Alle Mittel' },
-		{ value: 'land', label: 'Lernmittelfreiheit (Land)' },
-		{ value: 'schultraeger', label: 'Schülerbücherei (Schulträger)' },
+		{ value: 'land', label: 'Lernmittelfreiheit · Land' },
+		{ value: 'schultraeger', label: 'Schülerbücherei · Schulträger' },
 		{ value: 'ohne', label: 'ohne Zuordnung' }
 	],
 	euro,
@@ -102,8 +102,8 @@ describe('BestellHistorieKopf', () => {
 		const chips = within(screen.getByRole('group', { name: 'Nach Mittelherkunft filtern' }));
 
 		expect(chips.getAllByRole('button').map((b) => b.textContent?.trim())).toEqual([
-			'Lernmittelfreiheit (Land)',
-			'Schülerbücherei (Schulträger)',
+			'Lernmittelfreiheit · Land',
+			'Schülerbücherei · Schulträger',
 			'ohne Zuordnung'
 		]);
 	});
@@ -112,7 +112,7 @@ describe('BestellHistorieKopf', () => {
 	it('filtert mit einem Chip und hebt den Filter mit einem zweiten Klick auf', async () => {
 		const onFilterWechsel = vi.fn();
 		const screen = render(BestellHistorieKopf, { ...basis, aufteilung: [], onFilterWechsel });
-		const land = screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' });
+		const land = screen.getByRole('button', { name: 'Lernmittelfreiheit · Land' });
 
 		await fireEvent.click(land);
 		expect(land.getAttribute('aria-pressed')).toBe('true');

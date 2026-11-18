@@ -56,7 +56,7 @@ test('Bestellbedarf: Auflagen eines Buchs stehen als eine Zeile mit ihrer Summe'
 		await expect(zeilen).toHaveCount(1);
 		await expect(zeilen.first()).toContainText(isbnNeu);
 		await expect(zeilen.first()).toContainText(
-			'Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)'
+			'Bestand aus 2 Auflagen: 1 Exemplar der 4. Aufl. · 2023, 2 Exemplare der 3. Aufl. · 2019'
 		);
 
 		// Wer die alte Auflage scannt, findet dieselbe Zeile.

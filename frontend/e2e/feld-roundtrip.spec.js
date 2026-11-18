@@ -233,9 +233,9 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(lp, LEHRER);
 		await menuepunkt(lp, 'Mein Portal').click();
 		await lp.getByRole('button', { name: 'Problem melden' }).click();
-		await lp.getByLabel('Worum geht es? *').fill(`RT Meldung ${s}`);
-		await lp.getByLabel('Klasse / Kurs').fill('7A');
-		await lp.getByLabel('Was stimmt nicht? *').fill(`RT Beschreibung ${s}`);
+		await lp.getByLabel('Worum geht es?*').fill(`RT Meldung ${s}`);
+		await lp.getByLabel('Klasse oder Kurs').fill('7A');
+		await lp.getByLabel('Was stimmt nicht?*').fill(`RT Beschreibung ${s}`);
 		await lp.getByRole('button', { name: 'Absenden' }).click();
 		await expect
 			.poll(() =>
@@ -273,7 +273,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(page);
 		await page.goto('/einstellungen');
 		await page.getByText('Ausleihe & Fristen').first().click();
-		const feld = page.getByLabel('Tage / Buch');
+		const feld = page.getByLabel('Leihfrist Bücher');
 		await feld.fill('23');
 		await page.getByRole('button', { name: 'Ausleihe & Fristen speichern' }).click();
 		await expect

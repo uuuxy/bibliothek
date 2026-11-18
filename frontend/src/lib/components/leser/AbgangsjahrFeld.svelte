@@ -29,7 +29,7 @@
 	async function speichere() {
 		const jahr = parseInt(String(eingabe), 10);
 		if (isNaN(jahr) || jahr < 2000 || jahr > 2100) {
-			fehler = 'Bitte ein gültiges Jahr eingeben (2000–2100)';
+			fehler = 'Bitte ein Jahr zwischen 2000 und 2100 eingeben';
 			return;
 		}
 		speichert = true;

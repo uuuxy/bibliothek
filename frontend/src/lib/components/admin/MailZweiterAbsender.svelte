@@ -70,7 +70,7 @@
 			bind:value={password}
 			etikett="Passwort"
 			type="password"
-			placeholder={hatPasswort ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
+			placeholder={hatPasswort ? 'Passwort hinterlegt' : 'Passwort eingeben'}
 			hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern"
 			class="md:col-span-2"
 		/>

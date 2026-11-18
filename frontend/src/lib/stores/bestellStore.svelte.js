@@ -20,7 +20,7 @@ import {
 	anderesMittel,
 	mittelVorschlag
 } from '../components/bestellungen/mittel.js';
-import { anzahlText } from '../utils/format.js';
+import { anzahlText, verbindeSaetze } from '../utils/format.js';
 
 /** @typedef {import('../components/bestellungen/mittel.js').Mittel} Mittel */
 /** @typedef {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean, kundennummer_schultraeger?: string }} Supplier */
@@ -38,7 +38,7 @@ class BestellStore {
 	total = $derived(this.cart.reduce((sum, i) => sum + i.menge * (Number(i.preis) || 0), 0));
 	totalQty = $derived(this.cart.reduce((sum, i) => sum + i.menge, 0));
 	/**
-	 * Der Warenkorb nach Topf: Lernmittelfreiheit (Land) und Schülerbücherei (Schulträger),
+	 * Der Warenkorb nach Topf: Lernmittelfreiheit des Landes und Schülerbücherei des Schulträgers,
 	 * jede Gruppe mit eigener Summe. Eine Bestellung = ein Topf — beim Auslösen entsteht je
 	 * nicht-leerer Gruppe eine eigene Bestellung an denselben Händler (zwei Mails, zwei
 	 * Anschreiben), weil der Händler Nachlass und Rechnungsweg nach dem Topf richtet.
@@ -514,9 +514,9 @@ class BestellStore {
 			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
 			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
 			const n = antwort?.ordered_qty;
-			const info = n == null ? '' : ` (${anzahlText(n, 'Barcode', 'Barcodes')} reserviert.)`;
+			const info = n == null ? '' : `${anzahlText(n, 'Barcode', 'Barcodes')} reserviert`;
 			snackbars.addToast(
-				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst'}${info}`,
+				`${gruppe.label}: ${verbindeSaetze(antwort?.message ?? 'Bestellung ausgelöst', info)}`,
 				antwort?.status === 'warning' ? 'error' : 'success'
 			);
 			return true;

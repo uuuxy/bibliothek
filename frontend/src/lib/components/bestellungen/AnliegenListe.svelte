@@ -51,7 +51,7 @@
 			}
 		} catch {
 			anliegen = [];
-			ladefehler = 'Die Meldungen konnten nicht geladen werden (Netzwerkfehler)';
+			ladefehler = 'Die Meldungen konnten nicht geladen werden: Server nicht erreichbar';
 		} finally {
 			laedt = false;
 		}
@@ -137,7 +137,7 @@
 			<Feld
 				bind:value={notiz}
 				maxlength={500}
-				placeholder="Notiz für die Mail an die Lehrkraft (optional)"
+				placeholder="Notiz für die Mail an die Lehrkraft"
 				aria-label="Notiz für die Mail an die Lehrkraft"
 				feld="flex-1"
 			/>

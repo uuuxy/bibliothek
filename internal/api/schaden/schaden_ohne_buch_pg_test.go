@@ -21,7 +21,7 @@ import (
 
 // Verlust und Schaden gehören an das Buch, das die Ausleihe nennt. Eine Geräteausleihe hat
 // keins; die Tür nahm dann das Exemplar aus der Anfrage. Mit der Kennung eines Regalbuchs
-// sonderte „Verlust/Schaden melden" es als Verlust aus, das Kind mit dem Gerät bekam dafür eine
+// sonderte „Verlust oder Schaden melden" es als Verlust aus, das Kind mit dem Gerät bekam dafür eine
 // Forderung, und die Geräteausleihe galt als beendet, obwohl das Gerät noch draußen war. Beide
 // Türen, die Schadensmeldung und der Bescheid, lehnen eine Geräteausleihe jetzt ab und buchen
 // nichts.

@@ -61,11 +61,11 @@ test('Leserakte: zwölf Ausleihen stehen in einer Liste ohne eigenen Scrollkaste
 	try {
 		await uiLogin(page);
 		await oeffneSchuelerProfil(page, `Scroll${s}`);
-		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const lage = await page.evaluate(scrollLage, {
 			beschriftung: 'Ausgeliehene Bücher',
-			ueberschrift: 'Entliehene Bücher'
+			ueberschrift: '12 entliehene Bücher'
 		});
 		expect(lage, 'Tabelle oder Überschrift der Ausleihliste nicht gefunden').not.toBeNull();
 		expect(
@@ -175,11 +175,11 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Scrollmaske ${s}`);
 		await page.getByText(`E2E Scrollmaske ${s}`).first().click();
-		await expect(page.getByRole('heading', { name: 'Exemplare (20)' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '20 Exemplare' })).toBeVisible();
 
 		const lage = await page.evaluate(scrollLage, {
 			zeile: `B-scm-${s}-01`,
-			ueberschrift: 'Exemplare (20)'
+			ueberschrift: '20 Exemplare'
 		});
 		expect(lage, 'Liste oder Überschrift der Exemplare nicht gefunden').not.toBeNull();
 		expect(
@@ -200,7 +200,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 				h.textContent?.includes('Titel bearbeiten')
 			);
 			const liste = [...document.querySelectorAll('h3')].find((h) =>
-				h.textContent?.includes('Exemplare (')
+				h.textContent?.trim().endsWith(' Exemplare')
 			);
 			/** @type {Element | null | undefined} */
 			let maske = kopf;

@@ -54,7 +54,7 @@ describe('Titel-Verwaltung: Zeile', () => {
 			'Die Räuber',
 			'Friedrich Schiller',
 			'Deutsch',
-			'Raum 12 (10) · Lehrerschrank (2)',
+			'Raum 12: 10 · Lehrerschrank: 2',
 			'01.09.2026',
 			'12'
 		])

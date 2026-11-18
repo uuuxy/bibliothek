@@ -30,7 +30,7 @@
 							<p class="text-body-medium-emphasized text-on-surface truncate">
 								{h.schueler_name}
 								{h.schueler_nachname}
-								<span class="text-xs font-normal text-on-surface-variant">({h.klasse})</span>
+								<span class="text-xs font-normal text-on-surface-variant">· {h.klasse}</span>
 							</p>
 							<p class="text-xs text-on-surface-variant font-mono">
 								Exemplar: {h.exemplar_barcode}

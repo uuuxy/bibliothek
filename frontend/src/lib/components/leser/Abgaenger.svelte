@@ -129,7 +129,7 @@
 				// Scheitert nur das Auffrischen, bleibt die Liste stehen: An ihr wird gerade gearbeitet.
 				if (geladen) melde(`Die Liste wurde nicht aktualisiert: ${fehlertext(err)}`, 'error');
 				else
-					ladefehler = `Die Abgängerliste konnte nicht geladen werden (${fehlertext(err)}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
+					ladefehler = `Die Abgängerliste konnte nicht geladen werden: ${fehlertext(err)}. Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
 			}
 			return false;
 		} finally {

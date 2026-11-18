@@ -24,7 +24,7 @@
 	/** @typedef {{ id?: string, titel: string, autor: string, isbn?: string, cover_url?: string, fachbereich?: string, systematik?: string, erscheinungsjahr?: number, count?: number, letzte_aus?: string }} StatRow */
 
 	const kind = $derived(uiStore.statsDetailKind);
-	const title = $derived(kind === 'renner' ? 'Beliebteste Titel (Die Renner)' : 'Ladenhüter');
+	const title = $derived(kind === 'renner' ? 'Beliebteste Titel' : 'Ladenhüter');
 	// Zeitraum und Bestand der Übersicht: „Alle anzeigen" zeigt dieselbe Auswahl wie die Karte.
 	const filter = $derived(uiStore.statsDetailFilter);
 	const hint = $derived(statistikSatz(kind, filter));

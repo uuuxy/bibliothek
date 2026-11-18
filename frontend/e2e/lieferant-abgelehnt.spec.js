@@ -16,10 +16,10 @@ test('Ein abgelehnter Lieferant lässt die Eingabe stehen, das Anlegen leert sie
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Lieferanten').click();
 
-	const name = page.getByLabel('Name', { exact: true });
+	const name = page.getByLabel('Name*', { exact: true });
 	await name.fill(NAME);
-	await page.getByLabel('E-Mail', { exact: true }).fill('abgelehnt@example.org');
-	await page.getByLabel('Kundennummer', { exact: true }).fill('K-ABGELEHNT');
+	await page.getByLabel('E-Mail*', { exact: true }).fill('abgelehnt@example.org');
+	await page.getByLabel('Kundennummer*', { exact: true }).fill('K-ABGELEHNT');
 	const speichern = page.getByRole('button', { name: 'Lieferanten speichern' });
 
 	await page.route('**/api/lieferanten', (route) =>

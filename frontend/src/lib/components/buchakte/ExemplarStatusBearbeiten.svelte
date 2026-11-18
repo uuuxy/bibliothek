@@ -7,10 +7,11 @@
 	import { formatEuro } from '../../utils/format.js';
 	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
 
-	const STATUS = ['Verfügbar', 'Gesperrt (Defekt/Reserviert)', 'Verloren'].map((s) => ({
-		value: s,
-		label: s
-	}));
+	const STATUS = [
+		{ value: 'Verfügbar', label: 'Verfügbar' },
+		{ value: 'Gesperrt', label: 'Gesperrt', zusatz: 'defekt oder reserviert' },
+		{ value: 'Verloren', label: 'Verloren' }
+	];
 
 	/**
 	 * Status-Editor eines Exemplars (Verfügbar / Gesperrt / Verloren).
@@ -28,11 +29,7 @@
 	// es aus.
 	// svelte-ignore state_referenced_locally
 	let neuerStatus = $state(
-		ex.ist_ausleihbar
-			? 'Verfügbar'
-			: ex.ist_ausgesondert
-				? 'Verloren'
-				: 'Gesperrt (Defekt/Reserviert)'
+		ex.ist_ausleihbar ? 'Verfügbar' : ex.ist_ausgesondert ? 'Verloren' : 'Gesperrt'
 	);
 	// svelte-ignore state_referenced_locally
 	let neueNotiz = $state(ex.zustand_notiz || '');
@@ -114,7 +111,7 @@
 	{#if neuerStatus !== 'Verfügbar'}
 		<Feld
 			bind:value={neueNotiz}
-			placeholder="Notiz (optional)"
+			placeholder="Notiz"
 			aria-label="Notiz zum Status"
 			feld="mb-2"
 			onkeydown={(e) => {
@@ -133,7 +130,8 @@
 	<div class="mb-2 max-w-40">
 		<Feld
 			bind:value={abwertung}
-			etikett="Wertverlust (%)"
+			etikett="Wertverlust"
+			nachlaufend={prozent}
 			type="number"
 			min="0"
 			max="100"
@@ -162,3 +160,5 @@
 		<p role="alert" class="text-label-small text-error mt-1">{fehler}</p>
 	{/if}
 </div>
+
+{#snippet prozent()}%{/snippet}

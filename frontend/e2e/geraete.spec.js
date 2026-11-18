@@ -18,8 +18,8 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Geräte' }).click();
 	await page.getByRole('button', { name: 'Gerät anlegen' }).click();
-	await page.getByLabel('Modellname *').fill(`E2E-Tablet ${s}`);
-	await page.getByLabel('Barcode (G-…) *').fill(BARCODE);
+	await page.getByLabel('Modellname*').fill(`E2E-Tablet ${s}`);
+	await page.getByLabel('Barcode*').fill(BARCODE);
 	await page.getByLabel(/Zubehör/).fill('Ladekabel, Eingabestift');
 	await page.getByRole('button', { name: 'Anlegen', exact: true }).click();
 	const zeile = page.locator('li').filter({ hasText: `E2E-Tablet ${s}` });

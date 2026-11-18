@@ -24,7 +24,7 @@
 
 	<div class="flex justify-between mb-8">
 		<div>
-			<p class="text-sm text-on-surface-variant">Schüler/in</p>
+			<p class="text-sm text-on-surface-variant">Schüler</p>
 			<p class="font-bold text-lg">{leser.vorname} {leser.nachname}</p>
 			<p class="text-sm">{leser.klasse || ''}</p>
 		</div>
@@ -42,7 +42,7 @@
 					<tr class="border-b border-outline-variant">
 						<th class="py-2 px-2 w-12 text-title-small">Cover</th>
 						<th class="py-2 px-2 text-title-small">Titel</th>
-						<th class="py-2 px-2 text-center text-title-small">Barcode/Signatur</th>
+						<th class="py-2 px-2 text-center text-title-small">Barcode und Signatur</th>
 						<th class="py-2 px-2 text-center text-title-small">Ausgeliehen am</th>
 						<th class="py-2 px-2 text-right text-title-small">Rückgabe bis</th>
 					</tr>

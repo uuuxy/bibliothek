@@ -279,6 +279,15 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   endet, und die Fälle für das Satzende teilen beide Prüfungen in
   `frontend/src/lib/utils/satzzeichen.faelle.json`. Sätze aus Teilen, auch mit einem Satz des
   Servers, verbindet `verbindeSaetze` in `frontend/src/lib/utils/format.js`.
+- Klammern stehen nur um ein Kürzel oder eine Quelle („Postausgang (SMTP)“, „(Art. 15)“,
+  „(kmk.org/…)“). M3 (Content design, Grammar and punctuation): „Parentheses can be used to
+  define acronyms or jargon or when referencing a source. They shouldn’t be used when adding a
+  side note or an afterthought of a sentence.“ Der Nebengedanke kommt in den Satz, eine Zahl in
+  den Text („12 Exemplare“, `anzahlText`) oder als Badge an den Reiter, eine Einheit rechts ins
+  Feld, ein Zusatz im Auswahlmenü rechts in die Zeile (`zusatz`). Zwischen Wörtern steht kein
+  Schrägstrich, Googles developer documentation style guide (Slashes): „Don't use slashes to
+  separate alternatives.“ Statt dessen „oder“ und „und“, zwischen Zahlen „von“ („12 von 30
+  erfasst“). `frontend-hygiene-satzzeichen.test.js` hält es für die Texte der Oberfläche.
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut

@@ -32,7 +32,7 @@ describe('BuchakteHistorie', () => {
 		const [ida, ole] = screen
 			.getAllByRole('listitem')
 			.map((z) => (z.textContent ?? '').replace(/\s+/g, ' '));
-		expect(ida).toContain('Ida Imker (07A)');
+		expect(ida).toContain('Ida Imker · 07A');
 		expect(ida).toContain('Exemplar: B-1');
 		expect(ida).toContain('Von 01.09.2026');
 		expect(ida).toContain('Zurück 20.09.2026');

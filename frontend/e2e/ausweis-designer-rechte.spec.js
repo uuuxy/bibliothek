@@ -84,7 +84,7 @@ test('Mit dem Recht: Öffnen schreibt nichts, eine Änderung geht einmal hinaus'
 		expect(rumpfe).toEqual([]);
 
 		await page.getByRole('button', { name: 'Etikettenbogen', exact: true }).click();
-		await expect(page.getByText(/Zentral gespeichert/)).toBeVisible();
+		await expect(page.getByText(/Zentral für alle Arbeitsplätze gespeichert/)).toBeVisible();
 		expect(rumpfe).toHaveLength(1);
 		expect(JSON.parse(rumpfe[0]).printMode).toBe('etikett');
 		// Der Kopf der Schule und der Änderungsstand gehören zur Antwort, nicht zum Design.
@@ -115,7 +115,7 @@ test('Zwei Plätze: Der ältere Stand überschreibt den neueren nicht', async ({
 
 		// B stellt auf den Etikettenbogen; A zeigt noch den Kartendrucker.
 		await platzB.getByRole('button', { name: 'Etikettenbogen', exact: true }).click();
-		await expect(platzB.getByText(/Zentral gespeichert/)).toBeVisible();
+		await expect(platzB.getByText(/Zentral für alle Arbeitsplätze gespeichert/)).toBeVisible();
 
 		// A ändert etwas anderes, auf seinem alten Stand.
 		await page.getByRole('combobox', { name: 'Barcode-Typ' }).click();
@@ -172,7 +172,7 @@ test('Ein Platz: Eine Änderung während eines langsamen Speicherns ist kein Kon
 		await page.getByRole('option').nth(1).click();
 
 		await expect.poll(() => rumpfe.length, 'das zweite Speichern geht hinaus').toBe(2);
-		await expect(page.getByText(/Zentral gespeichert/)).toBeVisible();
+		await expect(page.getByText(/Zentral für alle Arbeitsplätze gespeichert/)).toBeVisible();
 		await expect(page.getByText(/Speichern fehlgeschlagen/)).toHaveCount(0);
 		expect(
 			querySQL(

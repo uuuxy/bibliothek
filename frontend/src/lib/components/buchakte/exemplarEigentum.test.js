@@ -9,7 +9,7 @@ describe('eigentumZeile', () => {
 				eigentum_herkunft: 'littera',
 				littera_eigentumsvermerk: 'Land Hessen'
 			})
-		).toEqual({ wer: 'Land', herkunft: 'laut Littera („Land Hessen“)' });
+		).toEqual({ wer: 'Land', herkunft: 'laut Littera: „Land Hessen“' });
 		expect(eigentumZeile({ eigentum: 'schultraeger', eigentum_herkunft: 'hand' })).toEqual({
 			wer: 'Schulträger',
 			herkunft: 'von Hand gesetzt'
@@ -19,11 +19,11 @@ describe('eigentumZeile', () => {
 			herkunft: 'aus der Bestellung'
 		});
 		expect(eigentumZeile({ eigentum: 'land', eigentum_herkunft: 'vorgabe' })?.herkunft).toBe(
-			'Vorgabe (Lernmittel)'
+			'Vorgabe, weil Lernmittel'
 		);
 		expect(
 			eigentumZeile({ eigentum: 'schultraeger', eigentum_herkunft: 'vorgabe' })?.herkunft
-		).toBe('Vorgabe (kein Lernmittel)');
+		).toBe('Vorgabe, weil kein Lernmittel');
 	});
 
 	it('zeigt einen Littera-Wortlaut, der das Eigentum nicht gesetzt hat', () => {
@@ -33,7 +33,7 @@ describe('eigentumZeile', () => {
 				eigentum_herkunft: 'vorgabe',
 				littera_eigentumsvermerk: 'Förderverein'
 			})?.herkunft
-		).toBe('Vorgabe (kein Lernmittel) · Littera: „Förderverein“');
+		).toBe('Vorgabe, weil kein Lernmittel · Littera: „Förderverein“');
 		expect(
 			eigentumZeile({
 				eigentum: 'schultraeger',

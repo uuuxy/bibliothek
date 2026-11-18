@@ -5,7 +5,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Dialog from '../ui/Dialog.svelte';
-	import { formatDatum, formatEuro as euro } from '../../utils/format.js';
+	import { anzahlText, formatDatum, formatEuro as euro } from '../../utils/format.js';
 	import BescheidDialog from '../mahnwesen/BescheidDialog.svelte';
 
 	/**
@@ -14,7 +14,7 @@
 	 * Buttons nur für Rollen, die Schülerdaten bearbeiten — das Backend erzwingt
 	 * edit_students unabhängig davon.
 	 *
-	 * „Bescheid erstellen" steht hier, weil die Forderung hier entsteht: „Verlust/Schaden
+	 * „Bescheid erstellen" steht hier, weil die Forderung hier entsteht: „Verlust oder Schaden
 	 * melden" beendet die Ausleihe, und das Kind fällt damit aus der Mahnliste. Derselbe
 	 * Dialog wie im Mahnwesen; er entscheidet selbst, welche Forderung auf den Brief des
 	 * Landes darf.
@@ -68,7 +68,7 @@
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
 			<!-- „Gebühren & Schäden" heißt der Reiter; die Liste darunter nennt, was sie zählt. -->
 			<h3 class="text-title-medium text-on-surface-variant">
-				Forderungen ({gebuehren.length})
+				{anzahlText(gebuehren.length, 'Forderung', 'Forderungen')}
 			</h3>
 			{#if bescheidMoeglich}
 				<Button variant="secondary" onclick={() => (bescheidOffen = true)}>

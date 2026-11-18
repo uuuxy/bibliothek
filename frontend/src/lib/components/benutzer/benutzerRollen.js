@@ -18,7 +18,8 @@ const ROLLEN = [
 /** Die Einträge für das Auswahlfeld. */
 export const ROLLEN_AUSWAHL = ROLLEN.map((r) => ({
 	value: r.value,
-	label: r.zusatz ? `${r.name} (${r.zusatz})` : r.name
+	label: r.name,
+	zusatz: r.zusatz
 }));
 
 /**

@@ -36,7 +36,7 @@ type ErsatzwertGroessen struct {
 }
 
 // LadeGroessenFuerExemplar liest die Größen des Staffel-Vorschlags für ein Exemplar, für den
-// Dialog „Verlust/Schaden melden": Beim Melden entsteht die Forderung erst, aus der der Dialog
+// Dialog „Verlust oder Schaden melden": Beim Melden entsteht die Forderung erst, aus der der Dialog
 // des Bescheids seinen Vorschlag rechnet. Gezählt wird wie in LadeOffeneForderungen
 // (schuljahrVon, zaehleSchuljahreMitAusleihe); zwei Auslegungen derselben Grenze verschöben den
 // Betrag um eine Stufe der Staffel.

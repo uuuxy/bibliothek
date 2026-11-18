@@ -10,6 +10,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 
 	/** @type {{ formular: import('./problemMeldung.svelte.js').MeldeFormular, mitWorum?: boolean, onsenden: () => void, onabbrechen: () => void }} */
 	let { formular, mitWorum = false, onsenden, onabbrechen } = $props();
@@ -36,12 +37,14 @@
 		<p class="text-sm text-on-surface-variant">
 			Die Bibliothek arbeitet die Liste ab, beim Erledigen bekommst du eine Mail
 		</p>
+		<Pflichthinweis klasse="mt-1" />
 	</div>
 	{#if mitWorum}
 		<Feld
 			bind:value={formular.worum}
 			bind:element={worumFeld}
-			etikett="Worum geht es? *"
+			etikett="Worum geht es?"
+			aria-required="true"
 			type="text"
 			maxlength={300}
 			placeholder="z. B. die Bücher der 8G3"
@@ -50,7 +53,7 @@
 	<Feld
 		bind:value={formular.klasse}
 		bind:element={klasseFeld}
-		etikett="Klasse / Kurs"
+		etikett="Klasse oder Kurs"
 		type="text"
 		maxlength={50}
 		placeholder="z. B. 8G3"
@@ -58,7 +61,8 @@
 	/>
 	<Feld
 		bind:value={formular.text}
-		etikett="Was stimmt nicht? *"
+		etikett="Was stimmt nicht?"
+		aria-required="true"
 		mehrzeilig
 		zeilen={2}
 		maxlength={1000}

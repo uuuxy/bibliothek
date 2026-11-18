@@ -379,7 +379,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
-- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige / Archiv".
+- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige".
 - **Karenzzeit:** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort). Uhr ist der spätere von zwei Zeitpunkten (`repository.sqlKarenzUhr`): `abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr) und `letzter_vorgang_am` am Leser (Migration 137) — die letzte Rückgabe einer Ausleihe oder der letzte Abschluss eines Schadensfalls, bezahlt oder storniert. Trigger stempeln den Zeitpunkt am Leser, bei jeder Rückgabe und bei jedem Abschluss eines Schadensfalls; die Uhr geht nie zurück. Aus den Ausleihen lässt er sich nicht rechnen: Der Lesehistorie-Lauf trennt die Ausleihe nach seiner Frist vom Leser. Grenze: Was der Lesehistorie-Lauf vor Migration 137 schon getrennt hatte, ist nicht auffindbar — diese Leser rechnen ab dem Abgang. Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PraedikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann. Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur anonymisierte Datensätze — sie wartet die Karenz ab, statt sie abzuschneiden; im Cron läuft die Anonymisierung deshalb vor der Löschung (`fuehreNaechtlicheDSGVOAus`).
 - Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail, Foto; die Ausweisnummer wird durch `ANON-…` ersetzt, eine `A-`-Nummer bleibt als bloße Zahl ohne Person gesperrt, §12), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Verwaltungsprotokoll und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre (offene Vorgänge)"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf. Sie lässt sich außerdem in der Akte aufheben (§2.2). Ein späterer LUSD-Import sperrt einen so entsperrten Ehemaligen nicht wieder: Er behandelt nur aktive Schüler als neue Abgänger (`sammleAbgaenger`); die Frist bis zur Anonymisierung läuft unabhängig von der Sperre weiter (`PraedikatAnonymisierung`).
@@ -406,7 +406,7 @@ Klassenleitungen (§17, Einstellungen → Klassenleitungen), Klassen ohne Zuordn
 markiert, statt still übersprungen zu werden.
 
 Wer weg ist (`ist_abgaenger = true`, weg laut LUSD) und noch Bücher hat, steht in der Leserdatei unter
-„Ehemalige / Archiv" (`GET /api/schueler?status=ehemalige`, `LeserAbfragen.LadeEhemaligenListe` — dieselbe
+„Ehemalige" (`GET /api/schueler?status=ehemalige`, `LeserAbfragen.LadeEhemaligenListe` — dieselbe
 Liste und Serversuche wie „Aktive Schüler" mit umgekehrtem Vorzeichen), mit der Zahl seiner offenen und überfälligen Bücher. Im
 Mahnwesen steht er, sobald die Frist eines Buchs abgelaufen ist (`MahnwesenAbfragen.LadeUeberfaelligeNachKlasse`),
 in der Gruppe der Ehemaligen (§3); das Mahnwesen kennt nur die Frist.
@@ -688,7 +688,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 - Wenn ein Buch als "Verlust" oder "Beschädigt" ausgebucht wird (z.B. bei der Inventur oder manuell am Kiosk), kann das System automatisch eine Kostenforderung (Schadensfall) gegen den verursachenden Schüler anlegen.
 - Offene Schäden blockieren die DSGVO-Löschung eines Schülers und können per PDF-Rechnung ausgedruckt werden.
-- **Gegen einen Kollegen entsteht KEINE Forderung.** „Verlust/Schaden melden" steht in seiner
+- **Gegen einen Kollegen entsteht KEINE Forderung.** „Verlust oder Schaden melden" steht in seiner
   Akte und bucht, was den Bestand angeht — das Exemplar wird ausgesondert, die Ausleihe endet, eine Vormerkung
   darauf wird gelöst —, aber ohne Schadensfall. Grund: Der Weg einer Forderung endet im Schadensersatz-Bescheid,
   und der ist ein Schreiben an Erziehungsberechtigte; er braucht Klasse und Anschrift, die von einer Lehrkraft

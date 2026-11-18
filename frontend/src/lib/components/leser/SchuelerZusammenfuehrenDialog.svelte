@@ -65,7 +65,7 @@
 			}
 			const erg = await res.json();
 			snackbars.addToast(
-				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}), ${anzahlText(erg.ausleihen, 'Ausleihe', 'Ausleihen')}, ${anzahlText(erg.schaeden, 'Gebühr', 'Gebühren')}, ${anzahlText(erg.vormerkungen, 'Vormerkung', 'Vormerkungen')} übernommen`,
+				`Zusammengeführt: ${erg.vorname} ${erg.nachname}${erg.klasse ? ` aus der ${erg.klasse}` : ''}, ${anzahlText(erg.ausleihen, 'Ausleihe', 'Ausleihen')}, ${anzahlText(erg.schaeden, 'Gebühr', 'Gebühren')}, ${anzahlText(erg.vormerkungen, 'Vormerkung', 'Vormerkungen')} übernommen`,
 				'success'
 			);
 			if (lauf.nochOffen()) open = false;
@@ -103,7 +103,7 @@
 		<div class="space-y-2">
 			<Suchfeld
 				bind:wert={s.suche}
-				platzhalter="Anderen Datensatz suchen (Name, Klasse, Ausweisnummer) …"
+				platzhalter="Anderen Datensatz nach Name, Klasse oder Ausweisnummer suchen …"
 				etikett="Anderen Datensatz suchen"
 				oninput={s.tippen}
 			/>
@@ -139,7 +139,7 @@
 
 			<fieldset class="space-y-2">
 				<legend class="text-label-medium text-on-surface">Welcher Datensatz bleibt?</legend>
-				{#each [{ wert: 'dieser', text: `${leser.vorname} ${leser.nachname} (${leser.barcode_id})` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname} (${anderer.barcode_id})` }] as w (w.wert)}
+				{#each [{ wert: 'dieser', text: `${leser.vorname} ${leser.nachname}, Ausweis ${leser.barcode_id}` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname}, Ausweis ${anderer.barcode_id}` }] as w (w.wert)}
 					<label class="flex items-center gap-2 text-sm cursor-pointer">
 						<Radio name="bleibt" value={w.wert} bind:group={bleibt} />
 						<span>{w.text}</span>

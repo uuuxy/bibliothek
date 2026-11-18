@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Die Größen des Betragsvorschlags im Dialog „Verlust/Schaden melden", am echten Postgres:
+// Die Größen des Betragsvorschlags im Dialog „Verlust oder Schaden melden", am echten Postgres:
 // Geprüft wird, dass der JOIN auf buecher_titel trägt, dass ein leeres Feld das Lesen nicht
 // abbricht und dass die Zählung der Schuljahre dieselbe ist wie die des Bescheids. Zwei
 // Auslegungen der Grenze zum 1. August verschöben den Betrag um eine Stufe der Staffel, und die

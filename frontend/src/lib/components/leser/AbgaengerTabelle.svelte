@@ -29,7 +29,7 @@
 	<SuchZustand
 		symbol={CalendarClock}
 		titel="Abschlussklassen erscheinen hier ab Mai"
-		hinweis="Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen (9H, 10R, 13) mit noch offenen Büchern, zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch Bücher schuldet, steht im Mahnwesen."
+		hinweis="Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen 9H, 10R und 13 mit noch offenen Büchern, zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch Bücher schuldet, steht im Mahnwesen."
 	/>
 {:else if leer}
 	<SuchZustand

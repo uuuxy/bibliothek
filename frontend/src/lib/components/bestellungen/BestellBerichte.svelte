@@ -14,7 +14,7 @@
 	import { onMount } from 'svelte';
 	import { localISO } from '../../utils/datum.js';
 	import { berichtOptionen as optionen, berichtURL, monatIstGueltig } from './bestellberichte.js';
-	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
+	import { MITTEL_REIHENFOLGE, mittelBeschriftung } from './mittel.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Select from '../ui/Select.svelte';
@@ -53,10 +53,10 @@
 	// ohne eindeutige Zuordnung; sie stehen dann als eigener Block darin.
 	let mittel = $state('');
 	const mittelOptionen = [
-		{ value: '', label: 'Alle Mittel (mit Aufteilung)' },
+		{ value: '', label: 'Alle Mittel mit Aufteilung' },
 		...MITTEL_REIHENFOLGE.map((m) => ({
 			value: m,
-			label: `${MITTEL[m].label} (${MITTEL[m].traeger})`
+			label: mittelBeschriftung(m)
 		}))
 	];
 

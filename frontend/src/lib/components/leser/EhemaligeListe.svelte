@@ -1,4 +1,4 @@
-<!-- @component EhemaligeListe — der Reiter „Ehemalige / Archiv" der Schülerdatei: wer die
+<!-- @component EhemaligeListe — der Reiter „Ehemalige" der Schülerdatei: wer die
      Schule verlassen hat (laut LUSD-Import oder Versetzung), noch nicht anonymisiert. Die
      Abgängerliste meint die Abschlussklassen (noch an der Schule, Mai bis Juli); die
      Weggegangenen haben diese eigene Liste: dieselbe Serversuche wie „Aktive Schüler", mit
@@ -57,7 +57,7 @@
 			if (nr === ladeNr) {
 				zeilen = [];
 				grenze = 0;
-				ladefehler = 'Die Ehemaligen konnten nicht geladen werden (Netzwerkfehler)';
+				ladefehler = 'Die Ehemaligen konnten nicht geladen werden: Server nicht erreichbar';
 			}
 			console.error('Fehler beim Laden der Ehemaligen:', err);
 		} finally {

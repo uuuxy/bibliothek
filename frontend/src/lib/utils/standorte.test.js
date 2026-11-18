@@ -45,7 +45,7 @@ describe('standortZeile', () => {
 				{ standort: 'Lehrerschrank', anzahl: 1 },
 				{ standort: 'Bibliothek, Regal 3B', anzahl: 2 }
 			])
-		).toBe('Bibliothek, Regal 3B (2) · Lehrerschrank (1)');
+		).toBe('Bibliothek, Regal 3B: 2 · Lehrerschrank: 1');
 	});
 
 	it('ordnet gleich häufige nach dem Namen, Umlaute wie im Deutschen', () => {
@@ -55,7 +55,7 @@ describe('standortZeile', () => {
 				{ standort: 'Ärztezimmer', anzahl: 1 },
 				{ standort: 'Bibliothek', anzahl: 1 }
 			])
-		).toBe('Ärztezimmer (1) · Bibliothek (1) · Zimmer 12 (1)');
+		).toBe('Ärztezimmer: 1 · Bibliothek: 1 · Zimmer 12: 1');
 	});
 
 	it('ändert die übergebene Liste nicht', () => {

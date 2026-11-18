@@ -76,7 +76,7 @@ describe('Status-Editor: der Status beim Öffnen', () => {
 			ist_ausgesondert: false,
 			zustand_notiz: 'CD verloren, Buch vollständig'
 		});
-		expect(gewaehlt).toBe('Gesperrt (Defekt/Reserviert)');
+		expect(gewaehlt).toBe('Gesperrt');
 	});
 
 	it('öffnet ein ausgesondertes Exemplar als „Verloren“ und lässt es ausgesondert', async () => {

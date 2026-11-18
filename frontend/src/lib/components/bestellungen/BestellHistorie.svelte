@@ -8,7 +8,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { ShoppingBag } from '@lucide/svelte';
-	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
+	import { MITTEL, MITTEL_REIHENFOLGE, mittelBeschriftung } from './mittel.js';
 	import { formatEuro, anzahlText } from '../../utils/format.js';
 
 	/** @type {any[]} */
@@ -44,7 +44,7 @@
 		{ value: '', label: 'Alle Mittel' },
 		...MITTEL_REIHENFOLGE.map((m) => ({
 			value: m,
-			label: `${MITTEL[m].label} (${MITTEL[m].traeger})`
+			label: mittelBeschriftung(m)
 		})),
 		{ value: 'ohne', label: 'ohne Zuordnung' }
 	];

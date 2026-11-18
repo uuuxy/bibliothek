@@ -68,7 +68,7 @@
 		// Umlabeln, nicht einem Klick.
 		if (daten?.titel_mitgezogen > 0) {
 			snackbars.addToast(
-				`Geändert. ${anzahlText(daten.titel_mitgezogen, 'Buch', 'Bücher')} auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
+				`Geändert. ${anzahlText(daten.titel_mitgezogen, 'Buch', 'Bücher')} auf das neue Fach umgestellt, die Signatur am Buchrücken bleibt.`,
 				'success'
 			);
 		} else {

@@ -133,7 +133,7 @@
 			<Feld
 				bind:value={notiz}
 				maxlength={500}
-				placeholder="Notiz für die Bereit-Mail an die Lehrkraft (optional)"
+				placeholder="Notiz für die Bereit-Mail an die Lehrkraft"
 				aria-label="Notiz für die Bereit-Mail an die Lehrkraft"
 				feld="flex-1"
 			/>
@@ -158,7 +158,7 @@
 	<div>
 		<h2 class="text-title-medium text-on-surface">Klassensatz-Reservierungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
-			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
+			Von Lehrkräften angefragte Klassensätze in der Reihenfolge ihres Eingangs, die älteste zuerst.
 			Reservieren sperrt keinen Bestand. „Abschließen" schließt den Vorgang nach der Übergabe ab und
 			schickt der Lehrkraft die Bereit-Mail, mit deiner Notiz, wenn du eine schreibst.
 		</p>

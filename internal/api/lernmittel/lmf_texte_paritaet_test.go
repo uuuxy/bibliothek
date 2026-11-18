@@ -57,7 +57,7 @@ func TestLMFTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 		t.Error("lmfplanDienst.js kennt den Satz ohne Jahrgänge nicht — dann zeigt das Portal ein leeres Klammerpaar")
 	}
 	saetze := map[string]string{
-		repository.LMFTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher",
+		repository.LMFTerminAusgabe: "Nur die neu gebildeten Klassen in Jahrgang ${jahrgaengeText(eingang)} bekommen ihre Schulbücher",
 		repository.LMFTerminRueckgabe: "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
 			"„Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
 	}

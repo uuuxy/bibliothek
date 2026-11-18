@@ -40,7 +40,8 @@
 
 	<div class="grid grid-cols-2 gap-2">
 		<ZahlenFeld
-			etikett="Größe (pt)"
+			etikett="Größe"
+			einheit="pt"
 			value={el.style.fontSize}
 			min={4}
 			max={20}

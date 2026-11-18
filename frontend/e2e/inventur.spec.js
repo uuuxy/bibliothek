@@ -213,7 +213,7 @@ test('Inventur: ältere frühere Inventuren über „Mehr laden“, eine davon l
 		await menuepunkt(page, 'Inventur').click();
 		const zeile = page.getByText(aeltester, { exact: true });
 		const zeilen = page.getByRole('button', { name: /^Aktionen für „/ });
-		const mehr = page.getByRole('button', { name: /^Mehr laden \(\d+ weitere\)$/ });
+		const mehr = page.getByRole('button', { name: /^Mehr laden, noch \d+ übrig$/ });
 		await expect(zeilen.first()).toBeVisible();
 		// Jeder Klick holt zehn; wie viele Seiten davor liegen, hängt an den Läufen anderer Tests.
 		for (let i = 0; i < 50 && !(await zeile.isVisible()); i++) {

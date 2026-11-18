@@ -40,8 +40,8 @@ export function berichtOptionen(mitPreisen) {
 			value: 'jahr',
 			label: 'Jahresbericht',
 			desc: mitPreisen
-				? 'Monatliche Übersicht + Aufteilung nach Lieferant'
-				: 'Monatliche Übersicht + Aufteilung nach Lieferant (Mengen)'
+				? 'Monatliche Übersicht und Aufteilung nach Lieferant'
+				: 'Monatliche Übersicht und Aufteilung nach Lieferant, nur Mengen'
 		},
 		{
 			value: 'lieferant',

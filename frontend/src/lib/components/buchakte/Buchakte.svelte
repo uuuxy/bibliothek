@@ -26,20 +26,39 @@
 	// „Gesamten Titel löschen", auch wer beides nicht durfte (Knopf → 403).
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
-	// Eine Zahl, die niemand kennt, ist ein Fragezeichen, kein „(0)": Scheitert der Abruf einer
-	// Liste, wäre „Ausleiher (0)" eine Aussage über den Bestand, die niemand geprüft hat.
+	// Eine Zahl, die niemand kennt, steht nicht am Reiter: Scheitert der Abruf einer Liste, wäre
+	// eine 0 eine Aussage über den Bestand, die niemand geprüft hat.
 	/** @param {string} name @param {number} anzahl */
 	const zaehler = (name, anzahl) =>
-		`${name} (${akte.fehlendeListen.some((l) => l.name === name) ? '?' : anzahl})`;
+		akte.fehlendeListen.some((l) => l.name === name) ? undefined : anzahl;
 	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
 	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
 	const reiter = $derived([
 		...(akte.darfPersonen
-			? [{ id: 'ausleiher', label: zaehler('Ausleiher', akte.ausleiher.length) }]
+			? [
+					{
+						id: 'ausleiher',
+						label: 'Ausleiher',
+						anzahl: zaehler('Ausleiher', akte.ausleiher.length),
+						beschreibung: 'Personen'
+					}
+				]
 			: []),
-		{ id: 'exemplare', label: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand) },
+		{
+			id: 'exemplare',
+			label: 'Exemplare',
+			anzahl: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand),
+			beschreibung: 'im Bestand'
+		},
 		...(akte.darfVormerken
-			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen.length) }]
+			? [
+					{
+						id: 'vormerkungen',
+						label: 'Vormerkungen',
+						anzahl: zaehler('Vormerkungen', akte.vormerkungen.length),
+						beschreibung: 'wartend'
+					}
+				]
 			: []),
 		...(akte.darfPersonen ? [{ id: 'historie', label: 'Historie' }] : [])
 	]);

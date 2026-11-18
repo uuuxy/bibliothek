@@ -25,7 +25,7 @@
 				{ "auflage": "4. Aufl.", "jahr": 2023, "bestand": 30 },
 				{ "auflage": "3. Aufl.", "jahr": 2019, "bestand": 0 }
 			],
-			"soll": "Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), 3. Aufl. · 2019 (0)"
+			"soll": "Bestand aus 2 Auflagen: 30 Exemplare der 4. Aufl. · 2023, 0 Exemplare der 3. Aufl. · 2019"
 		},
 		{
 			"fall": "eine Auflage ohne Angabe mitten im Satz",
@@ -33,7 +33,7 @@
 				{ "auflage": "4. Aufl.", "jahr": 2023, "bestand": 30 },
 				{ "auflage": "", "jahr": 0, "bestand": 3 }
 			],
-			"soll": "Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), Auflage ohne Angabe (3)"
+			"soll": "Bestand aus 2 Auflagen: 30 Exemplare der 4. Aufl. · 2023, 3 Exemplare der Auflage ohne Angabe"
 		}
 	]
 }

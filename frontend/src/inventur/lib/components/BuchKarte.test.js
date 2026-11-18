@@ -65,7 +65,9 @@ describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 		});
 		expect(getByText('41 von 46 verfügbar')).toBeTruthy();
 		expect(
-			getByText('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (4), 3. Aufl. · 2019 (42)')
+			getByText(
+				'Bestand aus 2 Auflagen: 4 Exemplare der 4. Aufl. · 2023, 42 Exemplare der 3. Aufl. · 2019'
+			)
 		).toBeTruthy();
 	});
 
@@ -110,7 +112,7 @@ describe('BuchKarte — ISBN, Prüfdatum und Bestand', () => {
 
 	it('der Bestand steht kurz im Chip und als Satz für Hilfstechnik', () => {
 		const { getByText } = render(BuchKarte, { titel: buch });
-		expect(getByText('27 / 28')).toBeTruthy();
+		expect(getByText('27 von 28')).toBeTruthy();
 		expect(getByText('27 von 28 verfügbar')).toBeTruthy();
 	});
 });

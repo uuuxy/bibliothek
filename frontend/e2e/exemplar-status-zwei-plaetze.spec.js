@@ -36,7 +36,7 @@ test('Status-Dialog speichert, wenn niemand dazwischen geändert hat', async ({ 
 	await oeffneStatusDialog(page, titelID);
 
 	await page.getByRole('combobox', { name: 'Status des Exemplars' }).click();
-	await page.getByRole('option', { name: 'Gesperrt (Defekt/Reserviert)' }).click();
+	await page.getByRole('option', { name: 'Gesperrt' }).click();
 	await page.getByRole('button', { name: 'Speichern', exact: true }).click();
 
 	await expect(page.getByText('Status erfolgreich gespeichert')).toBeVisible();

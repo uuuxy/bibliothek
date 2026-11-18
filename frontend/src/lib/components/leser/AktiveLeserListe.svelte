@@ -141,9 +141,9 @@
 								<button
 									type="button"
 									onclick={() => onSelectStudent(s)}
-									aria-label="Profil von {s.vorname} {s.nachname} ({istKollegium(s)
+									aria-label="Profil von {s.vorname} {s.nachname} anzeigen, {istKollegium(s)
 										? leserArtText(s.art)
-										: `Klasse ${s.klasse || 'N/A'}`}) anzeigen"
+										: `Klasse ${s.klasse || 'unbekannt'}`}"
 									class="text-left text-on-surface hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-medium-emphasized"
 								>
 									{s.vorname}
@@ -165,7 +165,7 @@
 								{#if istKollegium(s)}
 									<span class="text-on-surface-variant" aria-label="keine Klasse">–</span>
 								{:else}
-									Kl. {s.klasse || 'N/A'}
+									{s.klasse ? `Kl. ${s.klasse}` : 'Klasse unbekannt'}
 								{/if}
 							</td>
 							<td class="text-right">

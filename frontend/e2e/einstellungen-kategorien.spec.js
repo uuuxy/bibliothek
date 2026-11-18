@@ -73,7 +73,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 
 	await einstellungsKategorie(page, 'Datenschutz & Sitzung').click();
 
-	const feld = page.getByLabel('Sperrbildschirm nach (Min.)');
+	const feld = page.getByLabel('Sperrbildschirm nach');
 	await feld.waitFor();
 	await feld.fill('12');
 	await page.getByRole('button', { name: 'Datenschutz & Sitzung speichern' }).click();
@@ -117,7 +117,7 @@ test('Ein Feld speichern lässt die anderen Felder derselben Kategorie unangetas
 	await uiLogin(page);
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
-	const feld = page.getByLabel('Tage / Buch');
+	const feld = page.getByLabel('Leihfrist Bücher');
 	await feld.waitFor();
 
 	// Ein anderer Platz speichert inzwischen ein anderes Feld derselben Kategorie.
@@ -138,7 +138,7 @@ test('Ein Feld speichern lässt die anderen Felder derselben Kategorie unangetas
 	expect(wert('max_ausleihen_schueler')).toBe('9');
 	expect(wert('lmf_eingangsjahrgaenge')).toBe('5, 6');
 	// Die Maske zeigt danach den Stand des Servers, auch das Feld des anderen Platzes.
-	await expect(page.getByLabel('Tage / Medien')).toHaveValue('13');
+	await expect(page.getByLabel('Leihfrist Medien')).toHaveValue('13');
 });
 
 test('Speichern ohne Änderung schickt keine Anfrage und meldet den Stand als gespeichert', async ({
@@ -148,7 +148,7 @@ test('Speichern ohne Änderung schickt keine Anfrage und meldet den Stand als ge
 	await uiLogin(page);
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
-	await page.getByLabel('Tage / Buch').waitFor();
+	await page.getByLabel('Leihfrist Bücher').waitFor();
 
 	let anfragen = 0;
 	page.on('request', (r) => {
@@ -171,13 +171,15 @@ test('Ein leer geräumtes Zahlenfeld speichert gar nichts und sagt, welches Feld
 	await gehZu(page, '/einstellungen');
 
 	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
-	await page.getByLabel('Tage / Buch').fill('');
-	await page.getByLabel('Tage / Medien').fill('19');
+	await page.getByLabel('Leihfrist Bücher').fill('');
+	await page.getByLabel('Leihfrist Medien').fill('19');
 	await page.getByRole('button', { name: 'Ausleihe & Fristen speichern' }).click();
 
 	// Die Meldung nennt die BESCHRIFTUNG des Feldes, nicht seinen API-Schlüssel —
 	// „frist_buch_tage fehlt" hilft am Bildschirm niemandem.
-	await expect(page.getByText('Bitte eine gültige Zahl eintragen bei: Tage / Buch')).toBeVisible();
+	await expect(
+		page.getByText('Bitte eine gültige Zahl eintragen bei: Leihfrist Bücher')
+	).toBeVisible();
 	expect(wert('frist_buch_tage'), 'das leere Feld darf keine 0 werden').toBe('28');
 	expect(wert('frist_medien_tage'), 'auch das ausgefüllte Feld bleibt ungespeichert').toBe('11');
 });
@@ -249,6 +251,6 @@ test('Portal: kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', asy
 	// Die Felder stehen erst nach dem Klick auf „Problem melden" da. Das Suchfeld darüber
 	// zählt mit und steht weit genug über dem Formular.
 	await page.getByRole('button', { name: 'Problem melden' }).click();
-	await page.getByLabel('Worum geht es? *').waitFor();
+	await page.getByLabel('Worum geht es?*').waitFor();
 	await pruefeFeldreihen(page, 'Portal → Problem melden');
 });

@@ -118,7 +118,7 @@
 						onclick={() => nochmal(true)}
 						class="w-full text-lg"
 					>
-						Einmalig ignorieren (Override)
+						Einmalig ignorieren
 					</Button>
 				{/if}
 

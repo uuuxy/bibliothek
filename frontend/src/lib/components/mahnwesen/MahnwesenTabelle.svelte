@@ -65,7 +65,7 @@
 								aria-label="Alle überfälligen Schüler auswählen"
 							/>
 						</th>
-						<th>Schüler/in</th>
+						<th>Schüler</th>
 						<th>Klasse</th>
 						<th>Medien</th>
 						<th>Status</th>
@@ -151,7 +151,7 @@
 					{#if mahnwesenStore.gefilterteSchueler.length === 0}
 						<tr>
 							<td colspan="5" class="text-center">
-								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche)
+								Keine Treffer für den gewählten Reiter, die Klasse oder die Suche
 							</td>
 						</tr>
 					{/if}

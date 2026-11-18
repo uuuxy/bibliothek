@@ -33,7 +33,7 @@ describe('zahlOderLeer', () => {
 describe('sammleZahlen', () => {
 	it('baut den Patch aus den ausgefüllten Feldern', () => {
 		const { werte, fehlend } = sammleZahlen([
-			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: 28 },
+			{ schluessel: 'frist_buch_tage', label: 'Leihfrist Bücher', wert: 28 },
 			{ schluessel: 'lesehistorie_tage', label: 'Lesehistorie', wert: '0' }
 		]);
 		expect(werte).toEqual({ frist_buch_tage: 28, lesehistorie_tage: 0 });
@@ -41,26 +41,26 @@ describe('sammleZahlen', () => {
 	});
 
 	it('meldet einen Wert unterhalb der Feldgrenze — das Backend ersetzt ihn sonst still', () => {
-		// Eine getippte 0 in „Tage / Buch" wird serverseitig zu 21. Ohne diese Prüfung
+		// Eine getippte 0 in „Leihfrist Bücher" wird serverseitig zu 21. Ohne diese Prüfung
 		// bekäme man eine Erfolgsmeldung und fände danach 21 im Feld.
 		const { werte, fehlend } = sammleZahlen([
-			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: 0, min: 1 },
+			{ schluessel: 'frist_buch_tage', label: 'Leihfrist Bücher', wert: 0, min: 1 },
 			// Dasselbe Feld mit min 0: Dort BEDEUTET die 0 „aus" und ist ein Wert.
 			{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: 0, min: 0 }
 		]);
 		expect(werte).toEqual({ sperre_minuten: 0 });
-		expect(fehlend).toEqual(['Tage / Buch (mindestens 1)']);
+		expect(fehlend).toEqual(['Leihfrist Bücher mit mindestens 1']);
 	});
 
 	it('meldet leere Felder mit ihrer Beschriftung und lässt sie aus dem Patch', () => {
 		const { werte, fehlend } = sammleZahlen([
-			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: '' },
-			{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: 7 },
+			{ schluessel: 'frist_buch_tage', label: 'Leihfrist Bücher', wert: '' },
+			{ schluessel: 'frist_medien_tage', label: 'Leihfrist Medien', wert: 7 },
 			{ schluessel: 'max_ausleihen_schueler', label: 'Max. Ausleihen', wert: null }
 		]);
 		// Der Patch trägt NUR die gültigen Felder — der Aufrufer schickt ihn bei
 		// fehlenden Angaben ohnehin nicht ab, aber ein halber Patch darf nie entstehen.
 		expect(werte).toEqual({ frist_medien_tage: 7 });
-		expect(fehlend).toEqual(['Tage / Buch', 'Max. Ausleihen']);
+		expect(fehlend).toEqual(['Leihfrist Bücher', 'Max. Ausleihen']);
 	});
 });

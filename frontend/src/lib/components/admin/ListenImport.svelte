@@ -47,13 +47,13 @@
 
 {#if darf}
 	<div class="pt-6 border-t border-outline-variant">
-		<h4 class="text-title-small text-on-surface mb-1">Listenimport (ISBN + Stückzahl)</h4>
+		<h4 class="text-title-small text-on-surface mb-1">Listenimport nach ISBN und Stückzahl</h4>
 		<p class="text-sm text-on-surface-variant mb-4">
-			CSV oder Excel mit den Spalten ISBN (Pflicht), Titel, Autor, Fach, Klasse und Bestand. Ohne
-			Kopfzeile werden die Spalten am Inhalt erkannt. Je Zeile entsteht ein Titel mit so vielen
-			Exemplaren, wie im Bestand steht, jedes mit einer neuen B-Nummer; die Etiketten stehen danach
-			im Druck-Center unter „Fehlende Etiketten". Für Bücher, die schon eine Nummer tragen, ist der
-			Bestands-Import der richtige Weg.
+			CSV oder Excel mit den Spalten ISBN, Titel, Autor, Fach, Klasse und Bestand; Pflicht ist nur
+			die ISBN. Ohne Kopfzeile werden die Spalten am Inhalt erkannt. Je Zeile entsteht ein Titel mit
+			so vielen Exemplaren, wie im Bestand steht, jedes mit einer neuen B-Nummer; die Etiketten
+			stehen danach im Druck-Center unter „Fehlende Etiketten". Für Bücher, die schon eine Nummer
+			tragen, ist der Bestands-Import der richtige Weg.
 		</p>
 
 		<div class="flex items-center gap-4">

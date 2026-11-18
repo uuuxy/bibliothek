@@ -536,8 +536,8 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 	}
 
 	it.each([
-		['nicht_gebucht', 'Barcode nicht gefunden', 'nicht gebucht (Barcode nicht gefunden)'],
-		['veraltet', 'schon zurückgegeben', 'nicht gebucht (schon zurückgegeben)'],
+		['nicht_gebucht', 'Barcode nicht gefunden', 'nicht gebucht, Grund: Barcode nicht gefunden'],
+		['veraltet', 'schon zurückgegeben', 'nicht gebucht, Grund: schon zurückgegeben'],
 		['nicht_gebucht', undefined, 'nicht gebucht'],
 		['veraltet', '', 'nicht gebucht']
 	])('„%s“ mit dem Grund „%s“ heißt „%s“', async (ergebnis, grund, text) => {
@@ -588,7 +588,7 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 
 		expect(meldungen).toEqual([
 			[
-				`2 Offline-Scans brauchen Prüfung: „B-2“: nicht gebucht (gesperrt); „B-2“: ${AUFGABE} ${HAND}`,
+				`2 Offline-Scans brauchen Prüfung: „B-2“: nicht gebucht, Grund: gesperrt; „B-2“: ${AUFGABE} ${HAND}`,
 				'error'
 			]
 		]);

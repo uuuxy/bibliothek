@@ -35,7 +35,7 @@
 	<button
 		onclick={onDeselect}
 		class="icon-btn absolute top-4 right-4 p-2 text-on-surface-variant"
-		data-tip="{schliessenEtikett} (Esc)"
+		data-tip={schliessenEtikett}
 		aria-label={schliessenEtikett}
 	>
 		<X class="w-5 h-5" aria-hidden="true" />

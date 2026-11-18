@@ -54,7 +54,7 @@
 				<tr aria-selected={markiert}>
 					<td>
 						<Kaestchen
-							aria-label="{e.titel} ({e.barcode_id}) auswählen"
+							aria-label="{e.barcode_id} von „{e.titel}“ auswählen"
 							checked={markiert}
 							onchange={() => onumschalten(e.barcode_id)}
 						/>

@@ -44,7 +44,7 @@ async function sucheUndOeffneFormular(screen) {
 	);
 	const knopf = await screen.findByRole('button', { name: 'Klassensatz reservieren' });
 	await fireEvent.click(knopf);
-	await fireEvent.input(await screen.findByLabelText('Klasse / Kurs *'), {
+	await fireEvent.input(await screen.findByLabelText('Klasse oder Kurs*'), {
 		target: { value: '08a' }
 	});
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
@@ -75,7 +75,7 @@ describe('KollegiumPortal', () => {
 		expect(erneut.hasAttribute('disabled')).toBe(false);
 
 		await fireEvent.click(erneut);
-		expect(await screen.findByLabelText('Klasse / Kurs *')).toBeTruthy();
+		expect(await screen.findByLabelText('Klasse oder Kurs*')).toBeTruthy();
 	});
 
 	/**
@@ -207,14 +207,14 @@ describe('Problem melden im Portal', () => {
 		await suche(screen);
 
 		await fireEvent.click(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` }));
-		expect(screen.queryByLabelText('Worum geht es? *'), 'das Buch ist schon gewählt').toBeNull();
+		expect(screen.queryByLabelText('Worum geht es?*'), 'das Buch ist schon gewählt').toBeNull();
 		const absenden = /** @type {HTMLButtonElement} */ (
 			await screen.findByRole('button', { name: 'Absenden' })
 		);
 		expect(absenden.disabled, 'ohne Beschreibung').toBe(true);
 
-		await fireEvent.input(screen.getByLabelText('Klasse / Kurs'), { target: { value: '8G3' } });
-		await fireEvent.input(screen.getByLabelText('Was stimmt nicht? *'), {
+		await fireEvent.input(screen.getByLabelText('Klasse oder Kurs'), { target: { value: '8G3' } });
+		await fireEvent.input(screen.getByLabelText('Was stimmt nicht?*'), {
 			target: { value: 'falsche Auflage' }
 		});
 		await fireEvent.click(absenden);
@@ -261,14 +261,14 @@ describe('Problem melden im Portal', () => {
 		expect(screen.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
-		const worum = await screen.findByLabelText('Worum geht es? *');
+		const worum = await screen.findByLabelText('Worum geht es?*');
 		// Der Knopf steht direkt über dem Formular: Eine Überschrift mit denselben Worten
 		// stünde dort doppelt.
 		expect(screen.getAllByText('Problem melden')).toHaveLength(1);
 		await fireEvent.input(worum, {
 			target: { value: 'die Bücher der 8G3' }
 		});
-		await fireEvent.input(screen.getByLabelText('Was stimmt nicht? *'), {
+		await fireEvent.input(screen.getByLabelText('Was stimmt nicht?*'), {
 			target: { value: 'drei fehlen' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Absenden' }));
@@ -295,9 +295,7 @@ describe('Problem melden im Portal', () => {
 		await suche(screen);
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
-		const worum = /** @type {HTMLInputElement} */ (
-			await screen.findByLabelText('Worum geht es? *')
-		);
+		const worum = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Worum geht es?*'));
 		expect(worum.value).toBe('Seydlitz');
 	});
 
@@ -387,7 +385,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	);
 
 	// Die Warteschlange steht am Treffer, BEVOR reserviert wird.
-	expect(await screen.findByText('28 reserviert für 8a (seit 10.08.2026)')).toBeTruthy();
+	expect(await screen.findByText('28 reserviert für 8a seit 10.08.2026')).toBeTruthy();
 	// Und verrechnet: 12 im Regal minus 28 vorgemerkt — die Lehrkraft muss nicht rechnen.
 	expect(screen.getByText('28 vorgemerkt · 0 rechnerisch frei')).toBeTruthy();
 
@@ -396,7 +394,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	expect((await screen.findByRole('status')).textContent?.replace(/\s+/g, ' ').trim()).toBe(
 		'Reicht aktuell nicht: 0 rechnerisch frei, du stellst dich hinter 8a an'
 	);
-	await fireEvent.input(await screen.findByLabelText('Klasse / Kurs *'), {
+	await fireEvent.input(await screen.findByLabelText('Klasse oder Kurs*'), {
 		target: { value: '9b' }
 	});
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));

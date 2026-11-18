@@ -55,7 +55,7 @@ export function sammleZahlen(felder) {
 		const n = zahlOderLeer(f.wert);
 		const min = f.min ?? 0;
 		if (n === null) fehlend.push(f.label);
-		else if (n < min) fehlend.push(`${f.label} (mindestens ${min})`);
+		else if (n < min) fehlend.push(`${f.label} mit mindestens ${min}`);
 		else werte[f.schluessel] = n;
 	}
 	return { werte, fehlend };

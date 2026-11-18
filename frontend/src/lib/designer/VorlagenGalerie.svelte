@@ -1,6 +1,6 @@
 <!-- @component VorlagenGalerie — Auswahl der Design-Vorlage als Bildergalerie.
 
-     Ein Name wie „Marine (Seitenband)" sagt nichts darüber, wie die Karte aussieht, und
+     Ein Name wie „Marine mit Seitenband" sagt nichts darüber, wie die Karte aussieht, und
      jede Wahl fragt nach, weil sie das zentrale Design aller Arbeitsplätze ersetzt. Wer erst
      nach dem Anwenden sieht, was er gewählt hat, klickt sich siebenmal durch die Rückfrage.
      Die Galerie zeigt jede Vorlage deshalb als Miniatur vor der Wahl.

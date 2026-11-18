@@ -63,7 +63,7 @@ describe('KlassenBuchKachel: Bestand aus mehreren Auflagen', () => {
 			bearbeitbar: false
 		});
 		expect(getByTestId('schulbuch-auflagen').textContent).toBe(
-			'Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019 (42)'
+			'Bestand aus 2 Auflagen: 16 Exemplare der 4. Aufl. · 2023, 42 Exemplare der 3. Aufl. · 2019'
 		);
 		expect(queryByTestId('klassensatz-auflagen')).toBeNull();
 	});
@@ -111,7 +111,7 @@ describe('KlassenBuchKachel: gebaut wie die Katalog-Kachel', () => {
 			titel: buch(),
 			bearbeitbar: false
 		});
-		const chip = getByText('2 / 30').closest('[data-chip]');
+		const chip = getByText('2 von 30').closest('[data-chip]');
 		expect(chip).not.toBeNull();
 		// Der Satz steht nur noch für Hilfstechnik da, nicht mehr als Zeile unter dem Titel.
 		const saetze = getAllByText('2 von 30 verfügbar');

@@ -109,7 +109,7 @@ test('Schülerbücherei: die Seite nennt den Topf, das große Lernmittel-Etikett
 	await expect(page.getByText(/^Schülerbücherei · E2E-Naacher/)).toBeVisible();
 	// Eine Größe, also kein „klein": Das Wort braucht ein Gegenstück.
 	await expect(
-		page.getByRole('button', { name: 'Etiketten (Bogen A4)', exact: true })
+		page.getByRole('button', { name: 'Etiketten auf A4-Bogen', exact: true })
 	).toBeVisible();
 	await expect(page.getByLabel('Bogenraster der Etiketten', { exact: true })).toBeVisible();
 	await expect(page.getByText(/klein/i)).toHaveCount(0);

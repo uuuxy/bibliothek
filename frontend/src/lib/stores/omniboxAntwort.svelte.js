@@ -19,7 +19,7 @@ function formatVorbesitzerName(daten) {
 /** @param {{vorname: string, nachname: string, klasse?: string}} leser */
 function leserMitKlasse(leser) {
 	const name = `${leser.vorname} ${leser.nachname}`;
-	return leser.klasse ? `${name} (${leser.klasse})` : name;
+	return leser.klasse ? `${name} aus der ${leser.klasse}` : name;
 }
 
 /**

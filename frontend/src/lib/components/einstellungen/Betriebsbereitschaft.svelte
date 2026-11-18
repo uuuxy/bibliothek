@@ -36,7 +36,7 @@
 		try {
 			const res = await apiFetch('/api/admin/system/betriebsbereitschaft');
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, `Abruf fehlgeschlagen (HTTP ${res.status})`));
+				throw new Error(await leseApiFehler(res, `Abruf fehlgeschlagen: HTTP ${res.status}`));
 			bericht = await res.json();
 		} catch (e) {
 			fehler = fehlertext(e);

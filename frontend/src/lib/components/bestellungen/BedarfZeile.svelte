@@ -46,9 +46,9 @@
 	     date". Bestand gegen Bedarf; was fehlt, legt das Plus in den Warenkorb. -->
 	<div
 		class="text-right shrink-0 leading-tight text-body-medium-emphasized tabular-nums text-on-surface-variant"
-		title="Bestand / Bedarf im nächsten Schuljahr"
+		title="Bestand, gemessen am Bedarf im nächsten Schuljahr"
 	>
-		{r.gesamt_bestand}<span class="font-medium">/</span>{r.bedarf}
+		{r.gesamt_bestand} von {r.bedarf}
 	</div>
 
 	<button

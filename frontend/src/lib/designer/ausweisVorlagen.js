@@ -60,12 +60,12 @@ const WEISS_THEME = FRONT_THEME_DEFAULT;
 
 /** Für das Auswahl-Dropdown in der Werkzeugleiste. */
 export const AUSWEIS_VORLAGEN = [
-	{ value: 'blanko', label: 'Blanko (weiß)' },
-	{ value: 'schwarz-gruen', label: 'Schwarz-Grün (Webauftritt)' },
+	{ value: 'blanko', label: 'Blanko in Weiß' },
+	{ value: 'schwarz-gruen', label: 'Schwarz-Grün wie der Webauftritt' },
 	{ value: 'waldgruen', label: 'Waldgrün-Verlauf' },
 	{ value: 'reis-welle', label: 'Reis-Welle' },
-	{ value: 'marine', label: 'Marine (Seitenband)' },
-	{ value: 'indigo-kopfkarte', label: 'Indigo (Kopfkarte)' },
+	{ value: 'marine', label: 'Marine mit Seitenband' },
+	{ value: 'indigo-kopfkarte', label: 'Indigo mit Kopfkarte' },
 	{ value: 'sonnenstreifen', label: 'Sommer-Streifen' }
 ];
 
@@ -186,14 +186,7 @@ function schulkopf(x, y, breite, farben, zeilen = 1) {
 function unterschrift(x, y) {
 	return [
 		box('back-signatur-linie', '#3a4234', [x, y + 0.5, 32, 0.5], 1),
-		el(
-			'text',
-			'back-signatur',
-			'Unterschrift Schüler/in',
-			[x, y + 1.7, 32, 3.5],
-			1,
-			stil(5.5, '#64748b')
-		)
+		el('text', 'back-signatur', 'Unterschrift', [x, y + 1.7, 32, 3.5], 1, stil(5.5, '#64748b'))
 	];
 }
 
@@ -301,7 +294,7 @@ function reisWelle() {
 				el(
 					'text',
 					'welle-text',
-					'Philipp Reis baute in Friedrichsdorf das erste Telefon (1861)',
+					'Philipp Reis baute 1861 in Friedrichsdorf das erste Telefon',
 					[29, 20.1, 53.6, 2.4],
 					1,
 					stil(4.5, '#7a8474', 'normal', 'right')

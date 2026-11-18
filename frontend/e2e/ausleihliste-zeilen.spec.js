@@ -98,7 +98,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
 		await titelSindZuLesen(page, tabelle);
@@ -151,7 +151,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
 		await titelSindZuLesen(page, tabelle);
@@ -182,7 +182,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const blase = page.locator('[data-tooltip-blase]');
 		await page
@@ -194,7 +194,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 
 		// Fünf Minuten ohne Bedienung: Die Theke leert sich, der Zeiger liegt noch dort.
 		await page.clock.fastForward('05:10');
-		await expect(page.getByText('Entliehene Bücher (12)')).toHaveCount(0);
+		await expect(page.getByText('12 entliehene Bücher')).toHaveCount(0);
 		await expect(blase, 'die Sprechblase steht ohne ihre Zeile da').toBeHidden();
 
 		// Dasselbe an einem Knopf, der bleibt: Hinter dem Sperrbildschirm ist er ausgeblendet.
@@ -216,7 +216,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
 		await expect(tabelle.getByRole('columnheader', { name: 'Barcode' })).toBeVisible();

@@ -9,12 +9,10 @@
 	 * Das Eingabefeld der Anwendung — Material 3, Variante „outlined".
 	 *
 	 * Die Form:
-	 *   - Höhe 36 px wie jedes Bedienelement (basis.css, Gate e2e/control-hoehen.spec.js).
-	 *     M3 nennt 56 dp; das gilt für Formulare am Telefon, nicht für ein
-	 *     Verwaltungswerkzeug mit Knöpfen von 36 px.
+	 *   - Höhe 36 px wie jedes Bedienelement (basis.css, Gate e2e/control-hoehen.spec.js). M3
+	 *     nennt 56 dp; das gilt für Formulare am Telefon, nicht für ein Werkzeug mit 36-px-Knöpfen.
 	 *   - Radius `rounded-xl`: Karten und Eingabefelder tragen 12 px.
-	 *   - Schrift `text-sm` wie Select und Button size="md" — ein Feld neben einem
-	 *     Auswahlfeld darf nicht größer schreiben als dieses.
+	 *   - Schrift `text-sm` wie Select und Button size="md": Kein Feld schreibt größer als sie.
 	 *   - Rahmen `outline` (die M3-Rolle des outlined text field im Ruhezustand), Fläche
 	 *     `surface-container-lowest`, im Fokus `primary` mit 1-px-Ring: das Rezept von
 	 *     Select.svelte, damit Feld und Auswahlfeld in einer Zeile gleich aussehen.
@@ -34,8 +32,7 @@
 	 * Ohne `etikett` (Tabellenzelle, Werkzeugleiste) ist das Bauteil nur das Feld — dann
 	 * ist `aria-label` Pflicht, sonst hat der Screenreader einen namenlosen Kasten.
 	 *
-	 * Der Hilfetext hängt an aria-describedby und liegt außerhalb des <label>: Ein
-	 * Name benennt, eine Beschreibung erklärt.
+	 * Der Hilfetext hängt an aria-describedby, nicht im <label>: Der Name benennt, er erklärt.
 	 *
 	 * Zwei-Wege-Bindung erfordert eine Komponente (Snippets können `bind:` nicht
 	 * zurückpropagieren). Alles hier nicht Benannte (placeholder, min, required, list,
@@ -87,8 +84,7 @@
 		...rest
 	} = $props();
 
-	// Eigene Nummer je Feld: Der Hilfetext braucht ein Ziel für aria-describedby, und
-	// zwei Felder derselben Seite dürfen sich keine ID teilen.
+	// Eigene Nummer je Feld: Ziel für aria-describedby, und zwei Felder teilen sich keine ID.
 	const nummer = ++zaehler;
 	const feldId = $derived(id ?? `feld-${nummer}`);
 	const hinweisId = $derived(`${feldId}-hinweis`);
@@ -102,6 +98,8 @@
 	let rechts = $state(0);
 	const abstandRechts = $derived(ungueltig && rechts ? `calc(${rechts}px + 1.25rem)` : undefined);
 	const farbe = $derived(ungueltig ? 'text-error' : 'text-on-surface-variant');
+	// M3, Required text indicator: Sternchen wie in material-web; aria-required sperrt nichts.
+	const stern = $derived(!!(rest.required || rest['aria-required']));
 
 	const feldKlasse = $derived(
 		// Breite nur setzen, wenn `feld` keine mitbringt: w-full und w-64 sind gleich
@@ -184,7 +182,9 @@
 
 {#if etikett}
 	<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5 {className}">
-		<label for={feldId} class="text-sm font-medium {farbe}">{etikett}</label>
+		<label for={feldId} class="text-sm font-medium {farbe}"
+			>{etikett}{#if stern}<span aria-hidden="true">*</span>{/if}</label
+		>
 		{@render eingabe()}
 		{#if hint}
 			<span id={hinweisId} class="text-xs {farbe}">{hint}</span>

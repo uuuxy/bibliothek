@@ -17,11 +17,11 @@ const zeige = (/** @type {object} */ treffer) =>
 describe('OmniboxTreffer: Überschrift der Gruppe', () => {
 	it('nennt die Gesamtzahl, wenn die Liste gekappt ist', () => {
 		const screen = zeige({ students: leser(2), studentsTotal: 37 });
-		expect(screen.getByText('Leser (2 von 37)')).toBeTruthy();
+		expect(screen.getByText('Leser · 2 von 37')).toBeTruthy();
 	});
 
 	it('nennt nur die Zahl, wenn alle Treffer dastehen', () => {
 		const screen = zeige({ students: leser(2), studentsTotal: 2 });
-		expect(screen.getByText('Leser (2)')).toBeTruthy();
+		expect(screen.getByText('Leser · 2')).toBeTruthy();
 	});
 });

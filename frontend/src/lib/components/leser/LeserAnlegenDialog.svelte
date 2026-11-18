@@ -10,6 +10,7 @@
      Seite erspart nur den Umweg über eine Fehlermeldung vom Server. -->
 <script>
 	import Dialog from '../ui/Dialog.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import SchuelerEingabeFelder from './SchuelerEingabeFelder.svelte';
@@ -106,7 +107,7 @@
 			const doppelt = res.status === 409;
 			const meldung = await leseApiFehler(
 				res,
-				doppelt ? 'Diese Person gibt es bereits' : `Fehler beim Anlegen (${artText})`
+				doppelt ? 'Diese Person gibt es bereits' : `Fehler beim Anlegen: ${artText}`
 			);
 			if (doppelt) lauf.fehler(meldung, (t) => (duplicateConflict = t));
 			else lauf.fehler(meldung, (t) => (fehler = t));
@@ -124,6 +125,7 @@
 		<h3 class="dialog-titel">Leser anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
+		<Pflichthinweis />
 		<LeserArtWahl bind:art disabled={speichert} />
 
 		{#if duplicateConflict}

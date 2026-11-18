@@ -39,7 +39,7 @@ test('Portal Schulbücher: ein Buch in zwei Auflagen ist eine Kachel mit der Sum
 		const raster = page.getByTestId('schulbuecher-raster');
 		await expect(raster.locator('h3')).toHaveCount(1);
 		await expect(raster.getByTestId('schulbuch-auflagen')).toHaveText(
-			'Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)'
+			'Bestand aus 2 Auflagen: 1 Exemplar der 4. Aufl. · 2023, 2 Exemplare der 3. Aufl. · 2019'
 		);
 
 		await page.getByLabel('Schulbücher durchsuchen').fill(`PA1${s}`);

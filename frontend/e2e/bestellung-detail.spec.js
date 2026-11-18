@@ -85,7 +85,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 		// … und darunter stehen DIE NUMMERN. Das ist der Punkt der ganzen Ansicht.
 		const abschnitt = page.getByRole('heading', { name: /Exemplare aus dieser Bestellung/ });
 		await expect(abschnitt).toBeVisible();
-		await expect(abschnitt).toContainText(`(${MENGE})`);
+		await expect(abschnitt).toContainText(`${MENGE} Exemplare`);
 		for (const barcode of barcodes) {
 			await expect(page.getByText(barcode, { exact: true })).toBeVisible();
 		}

@@ -88,12 +88,12 @@ export function useFehlbestand() {
 		const uebersprungen = exemplarIds.length - geloeschteIds.length;
 		if (geloeschteIds.length === 0) {
 			snackbars.addToast(
-				'Nichts gelöscht, keines der ausgewählten Exemplare ist (noch) als Verlust gebucht',
+				'Nichts gelöscht, keines der ausgewählten Exemplare ist als Verlust gebucht',
 				'warning'
 			);
 		} else if (uebersprungen > 0) {
 			snackbars.addToast(
-				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen (nicht mehr als Verlust gebucht)`,
+				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen, weil nicht mehr als Verlust gebucht`,
 				'warning'
 			);
 		} else {

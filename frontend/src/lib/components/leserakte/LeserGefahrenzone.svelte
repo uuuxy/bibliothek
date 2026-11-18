@@ -69,6 +69,6 @@
 		disabled={zugangGesperrt}
 		class="shrink-0 px-6 bg-surface-container-lowest"
 	>
-		{kollege ? 'Kollegen archivieren / löschen' : 'Schüler archivieren / löschen'}
+		{kollege ? 'Kollegen archivieren oder löschen' : 'Schüler archivieren oder löschen'}
 	</Button>
 </section>

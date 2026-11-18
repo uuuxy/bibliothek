@@ -194,7 +194,10 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 		await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
 
 		// Das Buch lag bei Ben und ging an Lena: Das sieht der zweite Platz, ohne neu zu laden.
-		const knopf = platz2.getByRole('button', { name: `Meldungen (${meldungenVorher + 1})` });
+		const neu = meldungenVorher + 1;
+		const knopf = platz2.getByRole('button', {
+			name: `${neu} ${neu === 1 ? 'Meldung' : 'Meldungen'}`
+		});
 		await expect(knopf).toBeVisible({ timeout: 10_000 });
 		await knopf.click();
 		const zeile = platz2.getByRole('row', { name: new RegExp(buch.z) });

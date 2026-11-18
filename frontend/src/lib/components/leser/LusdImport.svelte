@@ -238,9 +238,9 @@
 						LUSD-CSV oder -Excel auswählen oder reinziehen
 					</p>
 					<p class="text-label-small text-on-surface-variant">
-						CSV (Komma oder Semikolon) oder Excel · Pflichtspalten: Vorname, Nachname, Klasse ·
-						Zuordnung über die LUSD-ID, sonst das Geburtsdatum (empfohlen), sonst nur den Namen ·
-						die Spalte Eintritt (Schuleintritt) hilft bei Umbenennungen
+						CSV mit Komma oder Semikolon oder Excel · Pflichtspalten: Vorname, Nachname, Klasse ·
+						Zuordnung über die LUSD-ID, sonst das empfohlene Geburtsdatum, sonst nur den Namen · die
+						Spalte Eintritt mit dem Schuleintritt hilft bei Umbenennungen
 					</p>
 				</div>
 			{/if}
@@ -266,8 +266,8 @@
 						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
 						<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span
-							>Auffällig viele Abgänger ({probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
-							aktiven Schülern). Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
+							>Auffällig viele Abgänger: {probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
+							aktiven Schülern. Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span
 						>
 					</div>

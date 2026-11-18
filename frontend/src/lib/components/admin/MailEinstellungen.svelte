@@ -6,6 +6,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import MailTestversand from './MailTestversand.svelte';
 	import MailZweiterAbsender from './MailZweiterAbsender.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
@@ -116,10 +117,17 @@
 					Gilt für alle E-Mails der Bibliothek, die unten nicht angehakt sind; wirkt sofort, ohne
 					Neustart
 				</p>
+				<Pflichthinweis />
 			</div>
 
 			<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-				<Feld bind:value={host} etikett="SMTP Host *" type="text" placeholder="smtp.example.com" />
+				<Feld
+					bind:value={host}
+					etikett="SMTP Host"
+					aria-required="true"
+					type="text"
+					placeholder="smtp.example.com"
+				/>
 				<Feld bind:value={port} etikett="SMTP Port" type="text" placeholder="587" />
 				<Feld
 					bind:value={benutzername}
@@ -137,7 +145,7 @@
 					bind:value={password}
 					etikett="Passwort"
 					type="password"
-					placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
+					placeholder={hasPassword ? 'Passwort hinterlegt' : 'Passwort eingeben'}
 					hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern"
 					class="md:col-span-2"
 				/>

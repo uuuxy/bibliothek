@@ -52,7 +52,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 
 	// Schaden melden → Modal ausfüllen → Hinweis, wo die Forderung jetzt steht.
 	// Am zugänglichen Namen festmachen, nicht am title-Attribut: Der Locator hing an
-	// „Verlust/Schaden melden" und fiel um, als title und aria-label vereinheitlicht
+	// „Verlust oder Schaden melden" und fiel um, als title und aria-label vereinheitlicht
 	// wurden. getByRole prüft, was Nutzer und Screenreader tatsächlich adressieren.
 	await page.getByRole('button', { name: 'Verlust oder Schaden melden' }).first().click();
 	await page.locator('#damage-reason').fill('E2E Wasserschaden');
@@ -64,7 +64,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	let popups = 0;
 	page.context().on('page', () => popups++);
 	await page.getByRole('button', { name: 'Melden', exact: true }).click();
-	await expect(page.getByText(/Verlust\/Schaden gebucht/)).toBeVisible();
+	await expect(page.getByText(/Verlust oder Schaden gebucht/)).toBeVisible();
 	expect(popups, 'kein PDF-Fenster nach dem Melden').toBe(0);
 
 	// Die Ausleihe ist beendet — das Buch verschwindet aus der AUSLEIH-Liste.
@@ -72,7 +72,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	// trägt): Seit der Gebühren-Sektion (16.08.2026) taucht derselbe Titel rechtmäßig
 	// in der Forderungsliste wieder auf — ein seitenweites not.toBeVisible würde die
 	// neue Wahrheit als Fehler melden.
-	const ausleihKarte = page.locator('div:has(> div > h3:text-matches("Entliehene Bücher"))');
+	const ausleihKarte = page.locator('div:has(> div > h3:text-matches("entliehenes? B"))');
 	// Wache gegen leer-grünes Scoping: Erst belegen, dass der Karten-Locator überhaupt
 	// etwas findet — sonst wäre das not.toBeVisible darunter vakuum-grün.
 	await expect(ausleihKarte).toBeVisible();
@@ -85,7 +85,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	const kontoZeile = page.locator('div:has(> span:text-is("Offene Forderungen"))');
 	await expect(kontoZeile).toContainText('12,50');
 	await reiter.click();
-	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Forderungen"))');
+	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Forderung"))');
 	await expect(gebuehrenKarte.getByText(`E2E-Schadenbuch-${suffix}`)).toBeVisible();
 	await expect(gebuehrenKarte.getByText('offen', { exact: true })).toBeVisible();
 	// Zweite Tür zum Bescheid: an der Forderung, aus der er entsteht.

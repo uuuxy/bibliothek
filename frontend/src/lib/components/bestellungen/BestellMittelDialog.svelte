@@ -14,6 +14,7 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -75,6 +76,7 @@
 			Ändert nur die Zuordnung in dieser Anwendung. Das Anschreiben, das der Händler bekommen hat,
 			bleibt unverändert. Die Änderung wird mit Grund protokolliert.
 		</p>
+		<Pflichthinweis />
 
 		<fieldset class="space-y-2">
 			<legend class="text-xs font-medium text-on-surface-variant">Bezahlt aus</legend>
@@ -83,7 +85,7 @@
 					<Radio bind:group={gewaehlt} value={m} aria-label={mittelBeschriftung(m)} />
 					<span
 						>{MITTEL[m].label}
-						<span class="text-on-surface-variant">({MITTEL[m].traeger})</span></span
+						<span class="text-on-surface-variant">· {MITTEL[m].traeger}</span></span
 					>
 				</label>
 			{/each}

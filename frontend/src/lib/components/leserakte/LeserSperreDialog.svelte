@@ -7,6 +7,7 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { ausleiheGesperrt } from '../leser/sperrStatus.js';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
@@ -95,9 +96,11 @@
 		</p>
 
 		{#if wirdGesperrt}
+			<Pflichthinweis />
 			<Feld
 				bind:value={reason}
-				etikett="Grund der Sperre *"
+				etikett="Grund der Sperre"
+				aria-required="true"
 				mehrzeilig
 				zeilen={2}
 				disabled={laeuft}

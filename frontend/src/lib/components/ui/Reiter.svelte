@@ -24,7 +24,7 @@
 	 * Primärleiste; gewählter Text in on-surface statt primary, Indikator ohne Rundung).
 	 * Zwei Leisten im selben Stil übereinander ließen die Rangfolge unsichtbar.
 	 *
-	 * @prop {{ id: string, label: string, anzahl?: number, steuert?: string }[]} reiter
+	 * @prop {{ id: string, label: string, anzahl?: number, beschreibung?: string, steuert?: string }[]} reiter
 	 *   `steuert` = aria-controls (ids der Inhaltsflächen); der Reiter selbst heißt tab-<id>.
 	 * @prop {string} aktiv
 	 * @prop {(id: string) => void} onwahl
@@ -34,7 +34,7 @@
 	 */
 	import Zaehlerpille from './Zaehlerpille.svelte';
 
-	/** @type {{ reiter: { id: string, label: string, anzahl?: number, steuert?: string }[], aktiv: string, onwahl: (id: string) => void, etikett: string, variante?: 'primaer'|'sekundaer', klasse?: string }} */
+	/** @type {{ reiter: { id: string, label: string, anzahl?: number, beschreibung?: string, steuert?: string }[], aktiv: string, onwahl: (id: string) => void, etikett: string, variante?: 'primaer'|'sekundaer', klasse?: string }} */
 	let { reiter, aktiv, onwahl, etikett, variante = 'primaer', klasse = '' } = $props();
 	const sekundaer = $derived(variante === 'sekundaer');
 </script>
@@ -65,7 +65,7 @@
 		>
 			{r.label}
 			{#if r.anzahl}
-				<Zaehlerpille anzahl={r.anzahl} klasse="ml-2" />
+				<Zaehlerpille anzahl={r.anzahl} beschreibung={r.beschreibung} klasse="ml-2" />
 			{/if}
 			{#if gewaehlt}
 				<span

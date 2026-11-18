@@ -161,7 +161,7 @@ describe('BuchEingabefelder: Signatur', () => {
 	it('ist am neuen Bibliotheksbuch Pflicht: Stern an der Beschriftung, vor dem Speichern kein Fehler', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
-		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur (Buchrücken) *'));
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur*'));
 		expect(feld.id).toBe('buch-signatur');
 		expect(feld.required).toBe(true);
 		expect(feld.getAttribute('aria-invalid')).toBeNull();
@@ -171,7 +171,7 @@ describe('BuchEingabefelder: Signatur', () => {
 	it('nach dem Klick auf „Speichern" zeigt das leere Feld den Fehler, bis es gefüllt ist', async () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular, true);
-		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur (Buchrücken) *'));
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur*'));
 		expect(feld.getAttribute('aria-invalid')).toBe('true');
 		expect(screen.getByText(/^Ohne Signatur kein Etikett/)).toBeTruthy();
 
@@ -182,15 +182,13 @@ describe('BuchEingabefelder: Signatur', () => {
 	it('ist am Lernmittel und am vorhandenen Titel frei', async () => {
 		const neu = $state({ ...leeresBuchFormular(), istLernmittel: true });
 		const lernmittel = maske(neu);
-		const feld = /** @type {HTMLInputElement} */ (
-			lernmittel.getByLabelText('Signatur (Buchrücken)')
-		);
+		const feld = /** @type {HTMLInputElement} */ (lernmittel.getByLabelText('Signatur'));
 		expect(feld.required).toBe(false);
 		expect(feld.getAttribute('aria-invalid')).toBeNull();
 		lernmittel.unmount();
 
 		const vorhanden = $state({ ...leeresBuchFormular(), id: 't-1' });
 		const alt = maske(vorhanden);
-		expect(alt.getByLabelText('Signatur (Buchrücken)')).toBeTruthy();
+		expect(alt.getByLabelText('Signatur')).toBeTruthy();
 	});
 });

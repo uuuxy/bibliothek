@@ -81,10 +81,10 @@ describe('Druck-Center, Schritt 2: Angabe hinter der Nummer', () => {
 
 		const zeile = (/** @type {string} */ nummer) =>
 			k.getByText(nummer).closest('label')?.textContent ?? '';
-		expect(zeile('B-0000001')).toContain('(Neuwertig)');
-		expect(zeile('B-0000002')).toContain('(Bestellt)');
-		expect(zeile('B-0000003')).toContain('(Im Zulauf - Buchhandlung)');
-		expect(zeile('B-0000004')).toContain('(Einband lose)');
+		expect(zeile('B-0000001')).toContain('· Neuwertig');
+		expect(zeile('B-0000002')).toContain('· Bestellt');
+		expect(zeile('B-0000003')).toContain('· Im Zulauf - Buchhandlung');
+		expect(zeile('B-0000004')).toContain('· Einband lose');
 	});
 });
 

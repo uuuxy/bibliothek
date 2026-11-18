@@ -55,7 +55,7 @@ function zuPruefendeFuer(posten, erg) {
 	if (erg.ergebnis === 'nicht_gebucht' || erg.ergebnis === 'veraltet') {
 		pruefen.push({
 			barcode: posten.barcode,
-			meldung: erg.grund ? `nicht gebucht (${erg.grund})` : 'nicht gebucht'
+			meldung: erg.grund ? `nicht gebucht, Grund: ${erg.grund}` : 'nicht gebucht'
 		});
 	} else if (erg.ergebnis === 'umgebucht') {
 		pruefen.push({

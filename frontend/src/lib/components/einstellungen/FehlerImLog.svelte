@@ -28,7 +28,7 @@
 		try {
 			const res = await apiFetch('/api/admin/system/fehler-im-log');
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, `Abruf fehlgeschlagen (HTTP ${res.status})`));
+				throw new Error(await leseApiFehler(res, `Abruf fehlgeschlagen: HTTP ${res.status}`));
 			stand = await res.json();
 		} catch (e) {
 			fehler = fehlertext(e);
