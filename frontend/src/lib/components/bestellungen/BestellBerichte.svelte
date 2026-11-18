@@ -95,10 +95,10 @@
 			<div class="divide-y divide-outline-variant">
 				{#each berichtOptionen as opt, _i (_i)}
 					<label
-						class="flex items-start gap-3 py-3 pl-3 border-l-2 cursor-pointer transition-colors {typ ===
+						class="m3-state flex items-start gap-3 py-3 pl-3 border-l-2 cursor-pointer {typ ===
 						opt.value
 							? 'border-primary'
-							: 'border-transparent hover:bg-surface-container-low'}"
+							: 'border-transparent'}"
 					>
 						<Radio bind:group={typ} value={opt.value} />
 						<div>

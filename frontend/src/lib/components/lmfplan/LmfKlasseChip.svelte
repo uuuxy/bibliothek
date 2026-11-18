@@ -36,7 +36,7 @@
 		onclick={onklick}
 		draggable={ziehbar}
 		ondragstart={ziehbar ? ziehstart : undefined}
-		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
+		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface"
 		data-tip="{name} {verb}{hinweis ? `, ${hinweis}` : ''}"
 	>
 		<Icon name="add" />
@@ -54,7 +54,7 @@
 			<button
 				type="button"
 				onclick={onklick}
-				class="flex h-8 cursor-pointer items-center gap-1 rounded-l-md pl-3 pr-1 hover:bg-on-secondary-container/10"
+				class="flex h-8 cursor-pointer items-center gap-1 rounded-l-md pl-3 pr-1"
 				data-tip="{name} gegen eine andere Klasse tauschen"
 			>
 				{name}
@@ -68,7 +68,7 @@
 			<button
 				type="button"
 				onclick={onentfernen}
-				class="icon-btn h-8 w-8 hover:bg-on-secondary-container/10"
+				class="icon-btn h-8 w-8"
 				data-tip="{name} aus dem Plan nehmen"
 				aria-label="{name} aus dem Plan nehmen"
 			>

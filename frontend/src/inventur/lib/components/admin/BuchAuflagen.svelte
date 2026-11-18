@@ -111,7 +111,7 @@
 							/>
 							<button
 								type="button"
-								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+								class="icon-btn text-on-surface-variant"
 								data-tip="Aus den Auflagen lösen"
 								aria-label={`${auflagenBeschriftung(a)} aus den Auflagen lösen`}
 								disabled={loest !== ''}

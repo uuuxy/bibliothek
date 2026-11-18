@@ -33,7 +33,7 @@
 			onclick={() => onwahl(k.id)}
 			class="flex w-full cursor-pointer items-center gap-4 rounded-2xl px-4 py-3 text-left transition-colors {gewaehlt
 				? 'bg-secondary-container text-on-secondary-container'
-				: 'text-on-surface-variant hover:bg-surface-container'}"
+				: 'text-on-surface-variant'}"
 		>
 			<Icon name={k.icon} gefuellt={gewaehlt} />
 			<span class="flex min-w-0 flex-col">

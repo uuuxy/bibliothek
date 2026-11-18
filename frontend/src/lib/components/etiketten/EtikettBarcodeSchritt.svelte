@@ -93,7 +93,7 @@
 				>
 					{#each etikettenStore.sichtbareExemplare as copy (copy.barcode_id)}
 						<label
-							class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-sm text-on-surface hover:bg-on-surface/8"
+							class="m3-state flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-sm text-on-surface"
 						>
 							<Kaestchen bind:checked={copy.checked} />
 							<span class="text-body-medium-emphasized">{copy.barcode_id}</span>

@@ -18,9 +18,7 @@
 	const eintraege = [{ id: 'neue-auflage', text: 'Neue Auflage bestellen …', icon: 'library_add' }];
 </script>
 
-<div
-	class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-on-surface/8 transition-colors"
->
+<div class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2">
 	<!-- Cover IN der Zeile, zugleich Auslöser der Großansicht (so sieht CoverVorschau es
 	     über `children` vor). Frühere Gegengründe gemessen widerlegt: `loading="lazy"`
 	     erspart die 247 Requests, 5.724 von 8.706 Titeln ohne Exemplar haben ein Cover. -->
@@ -57,7 +55,7 @@
 			? 'Exemplar'
 			: 'Exemplare'} von {r.titel} zur Bestellung hinzufügen"
 		data-tip="{r.fehlen} zur Bestellung hinzufügen"
-		class="icon-btn shrink-0 w-9 h-9 border border-outline-variant text-on-surface-variant active:scale-90"
+		class="icon-btn shrink-0 w-9 h-9 border border-outline-variant text-on-surface-variant"
 	>
 		<Icon name="add" />
 	</button>

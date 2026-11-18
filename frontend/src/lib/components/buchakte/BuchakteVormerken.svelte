@@ -121,7 +121,7 @@
 				>
 					{#each treffer as r, _i (_i)}
 						<div
-							class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0 hover:bg-surface transition-colors"
+							class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0"
 						>
 							<div>
 								<p class="text-on-surface text-body-medium-emphasized">{r.title}</p>

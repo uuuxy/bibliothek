@@ -27,8 +27,7 @@
 		document.getElementById(`lmf-zeile-fest-${feld}-${i}`)?.focus();
 	}
 
-	const ZELLE =
-		'-mx-2 h-8 cursor-pointer rounded-md px-2 text-left whitespace-nowrap hover:bg-surface-container';
+	const ZELLE = '-mx-2 h-8 cursor-pointer rounded-md px-2 text-left whitespace-nowrap';
 </script>
 
 {#if zeile.fest}

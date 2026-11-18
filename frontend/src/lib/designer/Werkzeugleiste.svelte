@@ -140,6 +140,7 @@
 			accept="image/*"
 			multiple
 			class="sr-only"
+			tabindex="-1"
 			onchange={ladeBilderHoch}
 		/>
 

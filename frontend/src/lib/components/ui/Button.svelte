@@ -76,7 +76,7 @@
 		secondary: 'disabled:bg-transparent! disabled:border-on-surface/12!'
 	};
 
-	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`;
+	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 transition-colors border rounded-full cursor-pointer ${disabledClasses}`;
 
 	// Farb-Utilities des Aufrufers ersetzen die der Variante, statt mit ihnen zu konkurrieren:
 	// Tailwind-Utilities haben alle dieselbe Spezifität, also entschiede sonst die Reihenfolge

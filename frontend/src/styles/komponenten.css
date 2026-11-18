@@ -2,7 +2,7 @@
 	/* ── State-Layer (Material 3) ─────────────────────────────────────────────
 	   M3 gibt Rückmeldung NICHT durch Farbwechsel, sondern durch eine
 	   durchscheinende Schicht über der unveränderten Fläche: 8 % bei Hover,
-	   10 % bei Fokus und beim Drücken. Genau das fehlte hier vollständig — die
+	   10 % bei Fokus, beim Drücken eine Welle (unten). Genau das fehlte hier vollständig — die
 	   Anwendung tauschte stattdessen Farben (hover:bg-blue-700), was jede
 	   Variante einzeln festlegen muss und bei getönten Flächen schnell falsch
 	   aussieht.
@@ -49,9 +49,120 @@
 	.m3-state:focus-visible:not(:disabled)::after {
 		opacity: 0.1;
 	}
-	button:not(.no-state-layer):active:not(:disabled)::after,
-	.m3-state:active:not(:disabled)::after {
-		opacity: 0.1;
+	/* Gedrückt kommt die Welle aus utils/welle.js wie bei Googles md-ripple: ein Kreis mit 10 %
+	   (M3, State layers: „Press +10% opacity"), der vom Druckpunkt über die Fläche wächst, über
+	   der Schicht des Zeigens. Die Hülle schneidet ihn auf die Form des Elements zu. */
+	.m3-welle {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		border-radius: inherit;
+		pointer-events: none;
+	}
+	.m3-welle > span {
+		position: absolute;
+		top: 0;
+		left: 0;
+		opacity: 0;
+		/* --welle-farbe nur, wo Googles Token eine andere Farbe als den Inhalt nennt. */
+		background: radial-gradient(
+			closest-side,
+			var(--welle-farbe, currentColor) max(calc(100% - 70px), 65%),
+			transparent 100%
+		);
+	}
+	@media (forced-colors: active) {
+		.m3-welle {
+			display: none;
+		}
+	}
+
+	/* ── Tastaturfokus ────────────────────────────────────────────────────────
+	   Material 3, States: „When an element is tabbed to, it appears in its focused state with a
+	   ring-like keyboard focus indicator." Die Form ist Googles md-focus-ring (material-web):
+	   3 px in secondary, 2 px außerhalb des Elements und in seiner Form; beim Erscheinen wächst
+	   er auf 8 px und geht auf 3 px zurück (duration-long4, 600 ms: ein Viertel wachsen, drei
+	   Viertel schrumpfen, easing emphasized). Innen liegt er wie in material-web bei Reiter,
+	   Listen-, Menü- und Auswahlzeile („inward"). Textfelder zeigen den Fokus an ihrem Rahmen
+	   (outlined text field: focus-outline primary, 2 px) und tragen keinen Ring. Flächen mit
+	   tabindex="-1" (Dialog, Hauptbereich) sind kein Bedienelement: „Focus states aren't inherited
+	   by … Dialogs". Gate: e2e/zustaende.spec.js. */
+	:where(
+		a[href],
+		button,
+		summary,
+		input,
+		[role='button'],
+		[role='link'],
+		[role='switch'],
+		[role='checkbox'],
+		[role='radio'],
+		[tabindex]:not([tabindex='-1'])
+	):focus-visible {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
+		animation:
+			m3-fokus-wachsen 150ms var(--default-transition-timing-function),
+			m3-fokus-schrumpfen 450ms var(--default-transition-timing-function) 150ms;
+	}
+	:where(
+		[role='tab'],
+		[role='menuitem'],
+		[role='menuitemradio'],
+		[role='menuitemcheckbox'],
+		[role='option'],
+		[role='row'],
+		tr,
+		li
+	):focus-visible {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: -3px;
+		animation:
+			m3-fokus-innen-wachsen 150ms var(--default-transition-timing-function),
+			m3-fokus-innen-schrumpfen 450ms var(--default-transition-timing-function) 150ms;
+	}
+	:where(
+		input:not([type='checkbox'], [type='radio'], [type='range'], [type='button']),
+		textarea,
+		select,
+		[role='combobox']
+	):focus-visible {
+		outline: none;
+		animation: none;
+	}
+	/* Eine unsichtbare Eingabe zeigt den Fokus an ihrem Etikett, etwa die Ablage der LUSD-Datei. */
+	:where(label:has(> input.sr-only:focus-visible)) {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
+	}
+	@keyframes m3-fokus-wachsen {
+		from {
+			outline-width: 0;
+		}
+		to {
+			outline-width: 8px;
+		}
+	}
+	@keyframes m3-fokus-schrumpfen {
+		from {
+			outline-width: 8px;
+		}
+	}
+	@keyframes m3-fokus-innen-wachsen {
+		from {
+			outline-width: 0;
+			outline-offset: 0;
+		}
+		to {
+			outline-width: 8px;
+			outline-offset: -8px;
+		}
+	}
+	@keyframes m3-fokus-innen-schrumpfen {
+		from {
+			outline-width: 8px;
+			outline-offset: -8px;
+		}
 	}
 
 	/* ── Icon-Buttons ─────────────────────────────────────────────────────────

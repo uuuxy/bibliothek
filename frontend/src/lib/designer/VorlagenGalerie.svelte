@@ -49,9 +49,9 @@
 		aria-expanded={offen}
 		disabled={gesperrt}
 		onclick={() => (offen = !offen)}
-		class="flex h-9 w-full cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {offen
+		class="flex h-9 w-full cursor-pointer items-center gap-2 rounded-sm border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:border-on-surface/12 disabled:text-on-surface/38 {offen
 			? 'border-primary ring-1 ring-primary'
-			: 'border-outline-variant'}"
+			: 'border-outline hover:border-on-surface'}"
 	>
 		<span class="min-w-0 flex-1 truncate text-on-surface-variant">Vorlage wählen …</span>
 		<Icon

@@ -212,7 +212,7 @@
 		<Button onclick={resetFlow}>Weitere Datei importieren</Button>
 	{:else}
 		<label
-			class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-outline-variant p-8 text-center transition-colors select-none hover:border-primary hover:bg-on-surface/8"
+			class="m3-state flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-outline-variant p-8 text-center select-none"
 		>
 			<input
 				type="file"

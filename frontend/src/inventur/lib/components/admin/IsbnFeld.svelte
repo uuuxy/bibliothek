@@ -91,7 +91,7 @@
 				type="button"
 				onclick={aufKnopf}
 				disabled={abfrage.aktiv}
-				class="icon-btn text-on-surface-variant hover:text-primary disabled:opacity-50"
+				class="icon-btn text-on-surface-variant disabled:opacity-50"
 				data-tip="Daten aus dem Internet aktualisieren"
 				aria-label="Daten aus dem Internet aktualisieren"
 			>
@@ -105,7 +105,7 @@
 				type="button"
 				onclick={() => (wirdGescannt = true)}
 				aria-pressed={wirdGescannt}
-				class="icon-btn text-on-surface-variant hover:text-primary"
+				class="icon-btn text-on-surface-variant"
 				data-tip="Scan ISBN"
 				aria-label="Scan ISBN"
 			>

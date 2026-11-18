@@ -35,9 +35,7 @@
 		</div>
 	{:else}
 		{#each gewaehlteTitel as book (book.id)}
-			<div
-				class="flex items-center gap-3.5 hover:bg-surface-container p-2 rounded-xl transition-colors group"
-			>
+			<div class="flex items-center gap-3.5 p-2 rounded-xl group">
 				<!-- Der Titel steht daneben, das Bild ist Schmuck. -->
 				<BuchCover
 					coverUrl={book.coverUrl}

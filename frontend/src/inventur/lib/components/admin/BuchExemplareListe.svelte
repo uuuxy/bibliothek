@@ -140,7 +140,7 @@
 							<button
 								data-tip="Exemplar löschen"
 								aria-label="Exemplar löschen"
-								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none disabled:cursor-not-allowed disabled:text-on-surface/38"
+								class="icon-btn text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
 								onclick={() => loescheExemplar(ex)}
 								disabled={loescht.has(ex.id)}
 							>

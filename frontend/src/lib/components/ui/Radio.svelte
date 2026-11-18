@@ -35,12 +35,12 @@
 			bind:group
 			{value}
 			{disabled}
-			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full outline-none transition-colors hover:bg-on-surface/8 focus-visible:bg-on-surface/10 checked:hover:bg-primary/8 checked:focus-visible:bg-primary/10 disabled:cursor-not-allowed"
+			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full transition-colors hover:bg-on-surface/8 focus-visible:bg-on-surface/10 checked:hover:bg-primary/8 checked:focus-visible:bg-primary/10 disabled:cursor-not-allowed"
 			{...rest}
 		/>
 		<span
 			aria-hidden="true"
-			class="pointer-events-none col-start-1 row-start-1 grid h-5 w-5 place-items-center rounded-full border-2 border-on-surface-variant transition-colors peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:border-on-surface/38 peer-disabled:peer-checked:border-on-surface/38 peer-disabled:peer-checked:[&>span]:bg-on-surface/38"
+			class="pointer-events-none col-start-1 row-start-1 grid h-5 w-5 place-items-center rounded-full border-2 border-on-surface-variant transition-colors peer-checked:border-primary peer-disabled:border-on-surface/38 peer-disabled:peer-checked:border-on-surface/38 peer-disabled:peer-checked:[&>span]:bg-on-surface/38"
 		>
 			<span
 				class="h-2.5 w-2.5 rounded-full bg-primary opacity-0 transition-opacity {group === value

@@ -15,6 +15,7 @@
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import { nenneFehlende } from '../../utils/aktenTeile.js';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import { untrack } from 'svelte';
 
 	/** @type {{ titelId: string | null, onBack: () => void }} */
@@ -77,13 +78,10 @@
 	<!-- Back Button + Breadcrumb -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
-			<button
-				onclick={onBack}
-				class="flex items-center gap-2 px-3 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors text-label-large cursor-pointer"
-			>
+			<Button variant="ghost" onclick={onBack}>
 				<Icon name="chevron_left" />
 				Zurück zum Katalog
-			</button>
+			</Button>
 			<span class="text-on-surface-variant">/</span>
 			<span class="text-on-surface-variant text-sm truncate max-w-xs"
 				>{akte.buch?.title ?? 'Wird geladen …'}</span

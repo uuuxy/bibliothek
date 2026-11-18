@@ -48,11 +48,7 @@
 	     Handler hier navigierte doppelt. Die Zustandsschicht beim Zeigen trägt er selbst: Die
 	     Kachel hat keinen Rahmen, den sie füllen könnte. -->
 	<h2>
-		<button
-			type="button"
-			aria-label={titel}
-			class="block w-full cursor-pointer rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-		>
+		<button type="button" aria-label={titel} class="block w-full cursor-pointer rounded-lg">
 			<BuchCover {coverUrl} {isbn} {titel} {fach} groesse="kachel" dekorativ />
 		</button>
 	</h2>

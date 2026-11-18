@@ -59,7 +59,7 @@
 						}}
 						tabindex="0"
 						role="button"
-						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
+						class="cursor-pointer animate-slide-up"
 					>
 						<td>{student.klasse}</td>
 						<td class="font-medium">{student.vorname} {student.nachname}</td>

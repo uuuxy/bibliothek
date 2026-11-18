@@ -107,11 +107,11 @@
 		// Mehrzeilig wächst mit den Zeilen, die 36-px-Grundlinie gilt für eine Zeile.
 		(mehrzeilig ? 'w-full py-2 leading-relaxed ' : /\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
 			'rounded-sm border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
-			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 ' +
-			'disabled:cursor-not-allowed disabled:opacity-40 read-only:text-on-surface-variant ' +
+			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 read-only:text-on-surface-variant ' +
+			'disabled:cursor-not-allowed disabled:border-on-surface/12 disabled:text-on-surface/38 ' +
 			(ungueltig
-				? 'border-error focus:border-error focus:ring-error '
-				: 'border-outline focus:border-primary focus:ring-primary ') +
+				? 'border-error hover:border-on-error-container focus:border-error focus:ring-error '
+				: 'border-outline hover:border-on-surface focus:border-primary focus:ring-primary ') +
 			(vorlaufend && !/\bpl-/.test(feld) ? 'pl-10 ' : '') +
 			((nachlaufend || ungueltig) && !/\bpr-/.test(feld) ? 'pr-10 ' : '') +
 			feld

@@ -128,7 +128,7 @@
 
 {#if aktion}
 	<div
-		class="group cursor-pointer rounded-lg {KACHEL} focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+		class="group cursor-pointer rounded-lg {KACHEL}"
 		onclick={aktion}
 		aria-pressed={bearbeitbar ? undefined : gewaehlt}
 		role="button"

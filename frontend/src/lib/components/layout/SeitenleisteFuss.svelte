@@ -36,7 +36,7 @@
 		</div>
 		<button
 			onclick={onLogout}
-			class="icon-btn bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+			class="icon-btn text-on-surface-variant"
 			data-tip="Abmelden"
 			aria-label="Abmelden"
 		>

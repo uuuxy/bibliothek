@@ -45,7 +45,7 @@
 			onclick={() => bestellStore.removeFromCart(position)}
 			aria-label="Entfernen"
 			data-tip="Entfernen"
-			class="icon-btn shrink-0 text-on-surface-variant hover:text-error"
+			class="icon-btn shrink-0 text-on-surface-variant"
 		>
 			<Icon name="close" />
 		</button>

@@ -21,6 +21,7 @@
 	const darf = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	let datei = $state(/** @type {File | null} */ (null));
+	let dateiFeld = $state(/** @type {HTMLInputElement | undefined} */ (undefined));
 	let laeuft = $state(false);
 
 	// Ein Schlüssel je Dateiauswahl, nicht je Klick: Bleibt die Auswahl nach einem
@@ -57,24 +58,22 @@
 		</p>
 
 		<div class="flex items-center gap-4">
-			<label class="relative {laeuft ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
-				<input
-					type="file"
-					accept=".csv,.xlsx"
-					onchange={(e) => {
-						datei = nimmDatei(e);
-						schluessel = crypto.randomUUID();
-					}}
-					disabled={laeuft}
-					class="sr-only"
-					data-testid="listenimport-datei"
-				/>
-				<div
-					class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-medium-emphasized rounded-xl transition-colors border border-outline-variant inline-block"
-				>
-					{datei ? datei.name : 'CSV- oder Excel-Datei auswählen …'}
-				</div>
-			</label>
+			<input
+				bind:this={dateiFeld}
+				type="file"
+				accept=".csv,.xlsx"
+				onchange={(e) => {
+					datei = nimmDatei(e);
+					schluessel = crypto.randomUUID();
+				}}
+				disabled={laeuft}
+				class="sr-only"
+				tabindex="-1"
+				data-testid="listenimport-datei"
+			/>
+			<Button variant="secondary" onclick={() => dateiFeld?.click()} disabled={laeuft}>
+				{datei ? datei.name : 'CSV- oder Excel-Datei auswählen …'}
+			</Button>
 
 			<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 				{#if laeuft}

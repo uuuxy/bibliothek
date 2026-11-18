@@ -39,7 +39,7 @@
 <div
 	class="rounded-xl border bg-surface-container-lowest p-4 transition-colors {gewaehlt
 		? 'border-primary bg-primary-container/30 ring-1 ring-primary'
-		: 'border-outline-variant hover:border-outline'}"
+		: 'border-outline-variant'}"
 >
 	<!-- Zwei Aktionsbereiche, der Barcode und der Status, je mit seinen Symbolknöpfen. Ist die
 	     Karte zu schmal für beide, steht der Status darunter. Abstand 16 px, auch zwischen den
@@ -86,7 +86,7 @@
 							<div class="flex items-center gap-4">
 								{#if onEtikett}
 									<button
-										class="icon-btn text-on-surface-variant hover:text-primary"
+										class="icon-btn text-on-surface-variant"
 										aria-label="Etikett für {ex.barcode_id} im Druck-Center drucken"
 										data-tip="Etikett im Druck-Center drucken"
 										onclick={onEtikett}
@@ -95,7 +95,7 @@
 									</button>
 								{/if}
 								<button
-									class="icon-btn text-on-surface-variant hover:text-primary"
+									class="icon-btn text-on-surface-variant"
 									aria-label="Barcode zuweisen oder ändern"
 									data-tip="Barcode zuweisen oder ändern"
 									onclick={() => (barcodeBearbeiten = true)}
@@ -116,7 +116,7 @@
 						<button
 							aria-label="Status ändern"
 							data-tip="Status ändern"
-							class="icon-btn text-on-surface-variant hover:text-primary"
+							class="icon-btn text-on-surface-variant"
 							onclick={() => {
 								zustandBearbeiten = true;
 							}}
@@ -129,7 +129,7 @@
 						<button
 							aria-label="Exemplar löschen"
 							data-tip="Exemplar löschen"
-							class="icon-btn text-on-surface-variant hover:text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
+							class="icon-btn text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
 							onclick={onDelete}
 							disabled={loescht}
 						>

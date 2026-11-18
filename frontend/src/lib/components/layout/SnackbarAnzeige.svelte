@@ -99,14 +99,14 @@
 						toast.aktion?.onClick();
 						snackbars.removeToast(toast.id);
 					}}
-					class="ml-2 shrink-0 rounded-sm px-1 whitespace-nowrap underline underline-offset-2 hover:opacity-80 text-label-large"
+					class="ml-2 shrink-0 rounded-sm px-1 whitespace-nowrap underline underline-offset-2 text-label-large"
 				>
 					{toast.aktion.label}
 				</button>
 			{/if}
 			<button
 				onclick={() => snackbars.removeToast(toast.id)}
-				class="icon-btn ml-2 shrink-0 opacity-70 hover:opacity-100"
+				class="icon-btn ml-2 shrink-0 opacity-70"
 				aria-label="Schließen"
 				data-tip="Schließen"
 			>

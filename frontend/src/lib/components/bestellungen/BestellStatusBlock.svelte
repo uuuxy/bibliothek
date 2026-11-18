@@ -108,7 +108,7 @@
 		<div
 			bind:this={quittung}
 			tabindex="-1"
-			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container focus-visible:outline-2 focus-visible:outline-primary"
+			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container"
 		>
 			<Icon name="check_circle" class="mt-0.5" />
 			<div>

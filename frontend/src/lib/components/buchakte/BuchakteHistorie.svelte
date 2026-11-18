@@ -18,7 +18,7 @@
 		</div>
 		<ul class="divide-y divide-outline-variant">
 			{#each verlauf as h, _i (_i)}
-				<li class="px-5 py-3 flex items-center justify-between hover:bg-surface transition-colors">
+				<li class="px-5 py-3 flex items-center justify-between">
 					<div class="flex items-center gap-3 min-w-0">
 						<div
 							class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-label-medium shrink-0"

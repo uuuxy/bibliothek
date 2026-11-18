@@ -63,7 +63,7 @@
 			uiStore.sidebarWahl = einklappen;
 			zeigerGeht();
 		}}
-		class="icon-btn text-on-surface-variant hover:bg-surface-container shrink-0"
+		class="icon-btn text-on-surface-variant shrink-0"
 		aria-label={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}
 		data-tip={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}
 	>

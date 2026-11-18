@@ -119,7 +119,7 @@
 							<button
 								type="button"
 								aria-pressed={anderer?.id === t.id}
-								class="w-full cursor-pointer px-3 py-2 text-left transition-colors hover:bg-surface-container aria-pressed:bg-secondary-container aria-pressed:text-on-secondary-container"
+								class="w-full cursor-pointer px-3 py-2 text-left aria-pressed:bg-secondary-container aria-pressed:text-on-secondary-container"
 								onclick={() => (anderer = t)}
 							>
 								<span class="block truncate text-sm">{t.title}</span>

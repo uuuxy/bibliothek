@@ -87,9 +87,9 @@
 		<button
 			onclick={() => schalteTitelUm(book.id)}
 			aria-pressed={gewaehlteKennungen.has(book.id)}
-			class="group relative flex flex-col text-left rounded-3xl overflow-hidden transition-all duration-300 transform active:scale-95
+			class="group relative flex flex-col text-left rounded-3xl overflow-hidden
             {gewaehlteKennungen.has(book.id)
-				? 'bg-primary-container/30 ring-4 ring-primary shadow-xl scale-[1.02]'
+				? 'bg-primary-container/30 ring-4 ring-primary shadow-xl'
 				: 'bg-surface-container-lowest shadow-md hover:shadow-xl'}"
 		>
 			<!-- Selection Overlay -->
@@ -110,11 +110,8 @@
 					fach={book.subject}
 					groesse="kachel"
 					dekorativ
-					klasse="transition-transform duration-500 group-hover:scale-110"
 				/>
-				<div
-					class="absolute inset-0 bg-linear-to-t from-scrim/20 to-transparent group-hover:from-scrim/40 transition-colors"
-				></div>
+				<div class="absolute inset-0 bg-linear-to-t from-scrim/20 to-transparent"></div>
 			</div>
 
 			<!-- Content -->

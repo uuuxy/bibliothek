@@ -68,7 +68,7 @@
 	aria-label={etikett || undefined}
 	{disabled}
 	onclick={umlegen}
-	class="group no-state-layer relative inline-flex h-8 w-13 shrink-0 rounded-full border-2 transition-colors duration-200 before:absolute before:-inset-x-0.5 before:-inset-y-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed {spur} {disabled
+	class="group no-state-layer relative inline-flex h-8 w-13 shrink-0 rounded-full border-2 transition-colors duration-200 before:absolute before:-inset-x-0.5 before:-inset-y-2.5 disabled:cursor-not-allowed {spur} {disabled
 		? ''
 		: 'cursor-pointer'}"
 >

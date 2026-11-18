@@ -13,6 +13,7 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/** @param {string} alle @param {string[]} werte */
@@ -73,13 +74,10 @@
 
 <Seitenrahmen>
 	<!-- Zurück zur Statistik-Übersicht -->
-	<button
-		onclick={() => (uiStore.activeTab = 'stats')}
-		class="inline-flex items-center gap-1.5 text-label-large text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
-	>
+	<Button variant="ghost" class="mb-5" onclick={() => (uiStore.activeTab = 'stats')}>
 		<Icon name="chevron_left" />
 		Statistik
-	</button>
+	</Button>
 
 	<header class="space-y-4">
 		<div>

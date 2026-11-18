@@ -101,7 +101,7 @@
 			<span class="inline-flex items-center gap-2">
 				<button
 					type="button"
-					class="-mx-2 h-8 cursor-pointer rounded-md px-2 font-medium text-on-surface hover:bg-surface-container"
+					class="-mx-2 h-8 cursor-pointer rounded-md px-2 font-medium text-on-surface"
 					data-tip="{klassen[0]} gegen eine andere Klasse tauschen"
 					onclick={() => beginnen(klassen[0])}>{klassen[0]}</button
 				>

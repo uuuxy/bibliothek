@@ -66,7 +66,7 @@
 			{zeile}
 			{uiStore.activeTab === item.id
 			? 'text-label-large-prominent bg-secondary-container text-on-secondary-container'
-			: 'text-label-large text-on-surface-variant hover:bg-surface-container cursor-pointer'}"
+			: 'text-label-large text-on-surface-variant hover:text-on-surface focus-visible:text-on-surface active:text-on-surface [--welle-farbe:var(--color-on-secondary-container)] cursor-pointer'}"
 		title={item.label}
 		aria-current={uiStore.activeTab === item.id ? 'page' : undefined}
 	>
@@ -93,7 +93,7 @@
 				{#if group.name === 'System'}
 					<button
 						onclick={() => (systemOpen = !systemOpen)}
-						class="text-on-surface-variant hover:bg-surface-container flex w-full cursor-pointer items-center rounded-full text-label-large transition-colors {zeile}"
+						class="text-on-surface-variant hover:text-on-surface focus-visible:text-on-surface active:text-on-surface [--welle-farbe:var(--color-on-secondary-container)] flex w-full cursor-pointer items-center rounded-full text-label-large transition-colors {zeile}"
 						aria-label={group.name}
 						aria-expanded={systemOpen}
 						aria-controls="seitenleiste-system"

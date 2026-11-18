@@ -59,7 +59,7 @@
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
 	class="icon-btn shrink-0 ml-2 -mr-2 {kameraOffen
 		? 'bg-secondary-container text-on-secondary-container'
-		: 'text-on-surface-variant hover:text-primary'}"
+		: 'text-on-surface-variant'}"
 >
 	<Icon name="photo_camera" />
 </button>

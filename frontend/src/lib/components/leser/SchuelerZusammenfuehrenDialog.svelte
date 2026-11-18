@@ -117,7 +117,7 @@
 						<li>
 							<button
 								type="button"
-								class="w-full text-left px-3 py-2 hover:bg-surface-container transition-colors cursor-pointer"
+								class="w-full text-left px-3 py-2 cursor-pointer"
 								onclick={() => (anderer = k)}
 							>
 								<ZusammenfuehrenKandidat kandidat={k} kompakt />

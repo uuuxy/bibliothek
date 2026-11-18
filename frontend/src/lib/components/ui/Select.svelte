@@ -164,8 +164,10 @@
 	aria-activedescendant={offen && aktiv >= 0 ? zeilenKennung(aktiv) : undefined}
 	onclick={() => (offen ? schliessen() : oeffnen())}
 	onkeydown={taste}
-	class="flex h-9 cursor-pointer items-center gap-2 rounded-sm border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40
-		{offen ? 'border-primary ring-1 ring-primary' : 'border-outline'} {className}"
+	class="flex h-9 cursor-pointer items-center gap-2 rounded-sm border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:border-on-surface/12 disabled:text-on-surface/38
+		{offen
+		? 'border-primary ring-1 ring-primary'
+		: 'border-outline hover:border-on-surface'} {className}"
 	{...rest}
 >
 	<!-- truncate statt hartem Abschneiden: Der native Select kappte mitten im

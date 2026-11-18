@@ -111,7 +111,7 @@
 							<li>
 								<button
 									type="button"
-									class="w-full cursor-pointer px-3 py-2 text-left transition-colors hover:bg-surface-container"
+									class="w-full cursor-pointer px-3 py-2 text-left"
 									onclick={() => waehle(t)}
 								>
 									<AuflagenZeile

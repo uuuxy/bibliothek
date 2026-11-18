@@ -86,7 +86,7 @@
 									<button
 										type="button"
 										onclick={() => zeigeAkte(schueler.schueler_id)}
-										class="text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-medium-emphasized"
+										class="text-on-surface text-left hover:underline cursor-pointer rounded text-body-medium-emphasized"
 										aria-label="Profil von {schueler.name} anzeigen"
 									>
 										{schueler.name}

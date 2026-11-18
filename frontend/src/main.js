@@ -21,10 +21,12 @@ import App from './App.svelte';
 import { registerSW } from 'virtual:pwa-register';
 import { programmstand } from './lib/stores/programmstand.svelte.js';
 import { darstellung } from './lib/stores/darstellung.svelte.js';
+import { richteWelleEin } from './lib/utils/welle.js';
 
 // Der Stand dieses Fensters ist der Name dieser Programmdatei; der Entwicklungsserver hat keinen.
 programmstand.starte(import.meta.env.DEV ? '' : new URL(import.meta.url).pathname);
 darstellung.starte();
+richteWelleEin(document);
 registerSW({ immediate: true, onNeedReload: () => programmstand.neuerServiceWorker() });
 
 const target = document.getElementById('app');

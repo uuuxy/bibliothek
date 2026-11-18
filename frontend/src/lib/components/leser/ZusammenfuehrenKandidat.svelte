@@ -53,7 +53,7 @@
 			onclick={onAbwaehlen}
 			aria-label="Auswahl aufheben"
 			data-tip="Auswahl aufheben"
-			class="icon-btn shrink-0 text-on-surface-variant hover:text-on-surface"
+			class="icon-btn shrink-0 text-on-surface-variant"
 		>
 			<Icon name="close" />
 		</button>

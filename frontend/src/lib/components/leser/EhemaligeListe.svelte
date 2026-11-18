@@ -139,7 +139,7 @@
 						}}
 						tabindex="0"
 						role="button"
-						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
+						class="cursor-pointer animate-slide-up"
 					>
 						<td>{s.abgaenger_jahr || '–'}</td>
 						<td class="font-medium">{s.vorname} {s.nachname}</td>

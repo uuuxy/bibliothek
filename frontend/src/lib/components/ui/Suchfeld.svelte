@@ -94,7 +94,7 @@
 		{onblur}
 		aria-label={etikett}
 		placeholder={platzhalter}
-		class="h-9 w-full rounded-sm border border-outline bg-surface-container-lowest pl-9 {nachlaufend ||
+		class="h-9 w-full rounded-sm border border-outline bg-surface-container-lowest hover:border-on-surface pl-9 {nachlaufend ||
 		kamera
 			? 'pr-12'
 			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -114,7 +114,7 @@
 				aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
 				class="icon-btn h-9 w-9 shrink-0 {kameraOffen
 					? 'bg-secondary-container text-on-secondary-container'
-					: 'text-on-surface-variant hover:text-primary'}"
+					: 'text-on-surface-variant'}"
 			>
 				<Icon name="photo_camera" groesse={24} />
 			</button>

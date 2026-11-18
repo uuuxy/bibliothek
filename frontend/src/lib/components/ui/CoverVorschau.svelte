@@ -112,7 +112,7 @@
 	aria-expanded={offen}
 	aria-label="Cover von {titel} anzeigen"
 	data-tip-eigen="zeigt beim Überfahren das Cover"
-	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer {children
+	class="shrink-0 rounded transition-colors cursor-pointer {children
 		? ''
 		: 'icon-btn text-on-surface-variant'}"
 >

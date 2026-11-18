@@ -67,7 +67,7 @@
 				event.stopPropagation();
 				onOpenDetail(titel);
 			}}
-			class="text-left text-on-surface hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-medium-emphasized"
+			class="text-left text-on-surface hover:underline cursor-pointer rounded text-body-medium-emphasized"
 		>
 			{titel.title}
 		</button>

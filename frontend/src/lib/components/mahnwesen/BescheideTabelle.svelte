@@ -47,7 +47,7 @@
 	<button
 		type="button"
 		onclick={() => oeffneAkte(id)}
-		class="text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-large-emphasized"
+		class="text-on-surface text-left hover:underline cursor-pointer rounded text-body-large-emphasized"
 		aria-label="Akte von {name} öffnen"
 	>
 		{name || 'Angaben getilgt'}

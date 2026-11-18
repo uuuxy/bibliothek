@@ -7,6 +7,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	let datei = $state(/** @type {File | null} */ (null));
+	let dateiFeld = $state(/** @type {HTMLInputElement | undefined} */ (undefined));
 	let isImporting = $state(false);
 
 	async function ladeHoch() {
@@ -55,20 +56,18 @@
 	</p>
 
 	<div class="flex items-center gap-4">
-		<label class="relative {isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
-			<input
-				type="file"
-				accept=".xml,.csv,.xlsx"
-				onchange={(e) => (datei = nimmDatei(e))}
-				disabled={isImporting}
-				class="sr-only"
-			/>
-			<div
-				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-medium-emphasized rounded-xl transition-colors border border-outline-variant inline-block"
-			>
-				{datei ? datei.name : 'Datei auswählen …'}
-			</div>
-		</label>
+		<input
+			bind:this={dateiFeld}
+			type="file"
+			accept=".xml,.csv,.xlsx"
+			onchange={(e) => (datei = nimmDatei(e))}
+			disabled={isImporting}
+			class="sr-only"
+			tabindex="-1"
+		/>
+		<Button variant="secondary" onclick={() => dateiFeld?.click()} disabled={isImporting}>
+			{datei ? datei.name : 'Datei auswählen …'}
+		</Button>
 
 		<Button size="lg" onclick={ladeHoch} disabled={isImporting || !datei} class="px-6">
 			{#if isImporting}

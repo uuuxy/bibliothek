@@ -123,7 +123,7 @@
 						aria-current={gewaehlt ? 'true' : undefined}
 						class="flex flex-col rounded-2xl px-4 py-3 text-left transition-colors {gewaehlt
 							? 'bg-secondary-container text-on-secondary-container'
-							: 'text-on-surface-variant hover:bg-surface-container'}"
+							: 'text-on-surface-variant'}"
 						onclick={() => {
 							gewaehlteKennung = t.id;
 							fehler = '';

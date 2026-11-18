@@ -144,7 +144,7 @@
 									aria-label="Profil von {s.vorname} {s.nachname} anzeigen, {istKollegium(s)
 										? leserArtText(s.art)
 										: `Klasse ${s.klasse || 'unbekannt'}`}"
-									class="text-left text-on-surface hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary text-body-medium-emphasized"
+									class="text-left text-on-surface hover:underline cursor-pointer rounded text-body-medium-emphasized"
 								>
 									{s.vorname}
 									{s.nachname}

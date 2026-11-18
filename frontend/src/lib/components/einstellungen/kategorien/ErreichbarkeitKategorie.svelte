@@ -142,7 +142,7 @@
 					</div>
 					<button
 						type="button"
-						class="icon-btn text-on-surface-variant hover:bg-surface-container"
+						class="icon-btn text-on-surface-variant"
 						aria-label="Adresse von {seite.name} kopieren"
 						data-tip={kopiert === url ? 'Kopiert' : 'Adresse kopieren'}
 						onclick={() => kopiereAdresse(url)}

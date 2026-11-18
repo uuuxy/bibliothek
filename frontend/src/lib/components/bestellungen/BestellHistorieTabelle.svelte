@@ -60,7 +60,7 @@
 							onOeffnen(b.id);
 						}
 					}}
-					class="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+					class="cursor-pointer"
 				>
 					<td class="whitespace-nowrap tabular-nums text-body-medium-emphasized">
 						{datum(b.bestelldatum)}

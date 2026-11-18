@@ -169,7 +169,7 @@
 						type="button"
 						onclick={() => entferne(wert)}
 						{disabled}
-						class="icon-btn h-8 w-8 hover:bg-on-secondary-container/10 disabled:cursor-not-allowed disabled:opacity-40"
+						class="icon-btn h-8 w-8 disabled:cursor-not-allowed disabled:opacity-40"
 						data-tip="„{wert}“ entfernen"
 						aria-label="„{wert}“ entfernen"
 					>

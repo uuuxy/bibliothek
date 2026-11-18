@@ -71,7 +71,7 @@
 		<button
 			bind:this={knopf}
 			type="button"
-			class="flex h-9 w-full max-w-maske cursor-pointer items-center rounded-sm border border-transparent px-3 text-left text-on-surface hover:bg-surface-container"
+			class="flex h-9 w-full max-w-maske cursor-pointer items-center rounded-sm border border-transparent px-3 text-left text-on-surface"
 			data-tip={vermerk.trim() || undefined}
 			onclick={oeffnen}
 		>

@@ -38,9 +38,7 @@
 			<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte. -->
 			{@const dauerleihe = !!b.ist_dauerleihe}
 			{@const ueberfaellig = istUeberfaellig(b)}
-			<li
-				class="px-5 py-3.5 hover:bg-surface transition-colors flex items-center justify-between group"
-			>
+			<li class="px-5 py-3.5 flex items-center justify-between group">
 				<div class="flex items-center gap-3 min-w-0">
 					<div
 						class="w-9 h-9 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-label-medium shrink-0"
@@ -54,7 +52,7 @@
 									appState.triggerStudentScan = b.schueler_barcode;
 									onBack();
 								}}
-								class="text-body-medium-emphasized text-on-surface hover:underline text-left cursor-pointer truncate block rounded focus-visible:outline-2 focus-visible:outline-primary"
+								class="text-body-medium-emphasized text-on-surface hover:underline text-left cursor-pointer truncate block rounded"
 							>
 								{@render leser(b)}
 							</button>

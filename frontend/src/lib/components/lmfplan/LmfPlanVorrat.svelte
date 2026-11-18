@@ -59,7 +59,7 @@
 	{#if bewusst.length > 0}
 		<button
 			type="button"
-			class="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-sm font-medium text-on-surface-variant hover:bg-surface-container"
+			class="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-sm font-medium text-on-surface-variant"
 			aria-expanded={zeigeBewusst}
 			aria-controls="lmf-vorrat-draussen"
 			onclick={() => (zeigeBewusst = !zeigeBewusst)}

@@ -19,7 +19,7 @@
 </script>
 
 <button
-	class="flex w-fit cursor-pointer items-center gap-1.5 font-mono transition-colors hover:text-primary"
+	class="flex w-fit cursor-pointer items-center gap-1.5 font-mono"
 	onclick={kopieren}
 	data-tip="{art} kopieren"
 >
