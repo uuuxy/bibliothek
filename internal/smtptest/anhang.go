@@ -7,17 +7,16 @@ import (
 	"testing"
 )
 
-// DateiAusMail schält einen Anhang aus der MIME-Nachricht und dekodiert ihn.
+// DateiAusMail schält einen Anhang aus der MIME-Nachricht und dekodiert ihn. Gesucht wird
+// namensteil nur im Kopf eines Teils: Im Base64-Rumpf eines anderen Anhangs kann dieselbe
+// Buchstabenfolge zufällig stehen.
 func DateiAusMail(t *testing.T, nachricht, namensteil string) string {
 	t.Helper()
 	teile := strings.Split(nachricht, "--"+mimeGrenze(t, nachricht))
-	for _, teil := range teile {
-		if !strings.Contains(teil, namensteil) {
-			continue
-		}
+	for _, teil := range teile[1:] {
 		leer := strings.Index(teil, "\r\n\r\n")
-		if leer < 0 {
-			t.Fatalf("Anhang %q hat keinen Rumpf", namensteil)
+		if leer < 0 || !strings.Contains(teil[:leer], namensteil) {
+			continue
 		}
 		roh := strings.NewReplacer("\r", "", "\n", "").Replace(teil[leer:])
 		daten, err := base64.StdEncoding.DecodeString(strings.TrimSpace(roh))
