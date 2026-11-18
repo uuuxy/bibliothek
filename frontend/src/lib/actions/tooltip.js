@@ -47,7 +47,9 @@ function zielSteht(el) {
 	return el.isConnected && !el.closest('[hidden], [inert]') && (el.checkVisibility?.() ?? true);
 }
 
-/** Eine einzige Blase für die ganze Anwendung — sichtbar sein kann ohnehin nur eine. */
+/** Eine einzige Blase für die ganze Anwendung — sichtbar sein kann ohnehin nur eine. Form nach
+ * Googles plain tooltip (md.comp.plain-tooltip): inverse-surface, corner-extra-small, body small,
+ * ohne Erhebung, 8 px seitlich und 4 px oben und unten. */
 function holeBlase() {
 	if (blase?.isConnected) return blase;
 	blase = document.createElement('div');
@@ -55,7 +57,7 @@ function holeBlase() {
 	blase.setAttribute('aria-hidden', 'true');
 	blase.dataset.tooltipBlase = '';
 	blase.className =
-		'fixed m-0 w-max max-w-64 rounded-2xl bg-inverse-surface px-2.5 py-1.5 text-xs font-medium text-inverse-on-surface shadow-lg';
+		'fixed m-0 w-max max-w-64 rounded-sm bg-inverse-surface px-2 py-1 text-xs text-inverse-on-surface';
 	document.body.appendChild(blase);
 	return blase;
 }

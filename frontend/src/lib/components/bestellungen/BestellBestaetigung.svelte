@@ -120,7 +120,7 @@
 		{:else if zustand === 'gestoert'}
 			<LadeFehler titel="Bestellung nicht geladen" text={ladefehler} onerneut={laden} />
 		{:else if zustand === 'ungueltig'}
-			<div class="bg-surface-container-lowest rounded-xl p-8 text-center shadow-sm">
+			<div class="bg-surface-container-lowest rounded-xl p-8 text-center shadow-level1">
 				<h1 class="text-on-surface text-lg">Dieser Link ist nicht mehr gültig</h1>
 				<p class="text-on-surface-variant mt-2 text-sm">
 					Bestätigungs-Links laufen nach einiger Zeit ab und gehören immer zu genau einer
@@ -128,7 +128,7 @@
 				</p>
 			</div>
 		{:else}
-			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-level1">
 				<p class="text-on-surface-variant text-xs font-medium">
 					{bestellung.schule_name || 'Schulbibliothek'}
 				</p>
@@ -166,7 +166,7 @@
 				<BestaetigungEtiketten {bestellung} {token} bind:formatId bind:geoeffneteGroesse />
 			{/if}
 
-			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-level1">
 				{#if bestellung.bestaetigt_am}
 					<h2 class="text-primary text-title-medium">Bestellung bestätigt</h2>
 					<p class="text-on-surface-variant mt-1 text-sm">

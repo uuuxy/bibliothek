@@ -73,7 +73,7 @@
 			onmouseleave={() => snackbars.fortsetzen(toast.id)}
 			onfocusin={() => snackbars.pausieren(toast.id)}
 			onfocusout={() => snackbars.fortsetzen(toast.id)}
-			class="pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-1 rounded-sm bg-inverse-surface py-1 pr-2 pl-4 text-sm text-inverse-on-surface shadow-2xl"
+			class="pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-1 rounded-sm bg-inverse-surface py-1 pr-2 pl-4 text-sm text-inverse-on-surface shadow-level3"
 		>
 			<span class="w-full py-2 wrap-break-word">{toast.message}</span>
 			{#if toast.aktion}

@@ -26,7 +26,7 @@
 	id="omnibox-dropdown"
 	role="listbox"
 	aria-label="Suchergebnisse"
-	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-surface-container rounded-sm shadow-xl py-2"
+	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-surface-container rounded-sm shadow-level2 py-2"
 >
 	{#if suchTreffer.students.length > 0}
 		<div class="px-4 pt-3 pb-2 text-xs font-medium text-on-surface-variant">

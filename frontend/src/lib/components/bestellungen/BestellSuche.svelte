@@ -78,7 +78,7 @@
 			     kommt aus ui/BuchCover — mit dessen Platzhalter, wenn keine Quelle ein Bild hat.
 			     Die Rückmeldung beim Zeigen gibt der State-Layer der Knöpfe. -->
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-level2 max-h-72 overflow-y-auto"
 			>
 				{#if bestellStore.dnbAusfall}
 					<!-- Ohne die Zeile sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht
@@ -145,14 +145,14 @@
 		{/if}
 		{#if bestellStore.searchLoading}
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-level2 px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
 				Suche läuft …
 			</div>
 		{:else if resolvingDnb}
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-level2 px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
 				Titel wird im Katalog angelegt …

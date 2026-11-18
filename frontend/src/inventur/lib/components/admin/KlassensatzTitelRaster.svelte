@@ -89,8 +89,8 @@
 			aria-pressed={gewaehlteKennungen.has(book.id)}
 			class="group relative flex flex-col text-left rounded-3xl overflow-hidden
             {gewaehlteKennungen.has(book.id)
-				? 'bg-primary-container/30 ring-4 ring-primary shadow-xl'
-				: 'bg-surface-container-lowest shadow-md hover:shadow-xl'}"
+				? 'bg-primary-container/30 ring-4 ring-primary shadow-level2'
+				: 'bg-surface-container-lowest shadow-level1 hover:shadow-level2'}"
 		>
 			<!-- Selection Overlay -->
 			{#if gewaehlteKennungen.has(book.id)}

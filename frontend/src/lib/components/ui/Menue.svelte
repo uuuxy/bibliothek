@@ -154,7 +154,7 @@
 		onfocusout={fokusWeg}
 		style="position:fixed; left:{box?.left ?? 0}px; top:{box?.top ??
 			0}px; z-index:60; visibility:{box ? 'visible' : 'hidden'};"
-		class="w-max max-w-70 min-w-28 rounded-sm bg-surface-container py-2 whitespace-normal shadow-xl"
+		class="w-max max-w-70 min-w-28 rounded-sm bg-surface-container py-2 whitespace-normal shadow-level2"
 	>
 		{#each eintraege as e, i (e.id)}
 			{#if e.trennerDavor}

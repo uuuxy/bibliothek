@@ -62,7 +62,7 @@
 					{#if etikettenStore.treffer.length > 0}
 						<div class="relative">
 							<div
-								class="absolute right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-sm bg-surface-container shadow-xl"
+								class="absolute right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-sm bg-surface-container shadow-level2"
 							>
 								{#each etikettenStore.treffer as r, _i (_i)}
 									<button

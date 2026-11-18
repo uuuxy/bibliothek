@@ -30,11 +30,11 @@ import {
 // Ein neuer Verstoß muss durch beide Maschen fallen, um unbemerkt zu bleiben.
 //
 // Erkannt wird eine Klassenliste, in der eine breitengebende Rahmen-Utility und eine
-// Schatten-Utility OHNE Zustandspräfix nebeneinander stehen. `hover:shadow-xl`,
+// Schatten-Utility OHNE Zustandspräfix nebeneinander stehen. `hover:shadow-level2`,
 // `focus-within:ring-2`, `shadow-none` und reine Farb-Utilities (`border-slate-100`
 // ohne `border`) zählen nicht — das schließt das führende Zeichen aus.
 const RAHMEN = /(^|[\s'"`{(])border(-[trblxy])?(-[1-8])?(?=[\s'"`});]|$)/;
-const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
+const SCHATTEN = /(^|[\s'"`{(])shadow(-level[1-5])?(?=[\s'"`});]|$)/;
 
 // Eingefroren am 05.09.2026, am selben Tag um neun Einträge gekürzt: Die neun
 // selbstgebauten Dialoge haben ihren Rahmen abgegeben und behalten die Erhebung — die

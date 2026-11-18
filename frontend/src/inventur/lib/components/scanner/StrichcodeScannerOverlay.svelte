@@ -24,7 +24,7 @@
 		out:fade={{ duration: 200, easing: emphasizedAccelerate }}
 	>
 		<div
-			class="bg-surface-container-lowest p-6 rounded-3xl shadow-xl w-full max-w-md relative"
+			class="bg-surface-container-lowest p-6 rounded-3xl shadow-level3 w-full max-w-md relative"
 			use:escapeSchliesst={() => (isScanning = false)}
 		>
 			<button

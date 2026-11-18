@@ -125,7 +125,7 @@
 
 {#if offen}
 	<div
-		class="fixed z-50 rounded-md border border-outline-variant bg-surface-container-lowest shadow-xl overflow-hidden pointer-events-none"
+		class="fixed z-50 rounded-md border border-outline-variant bg-surface-container-lowest shadow-level2 overflow-hidden pointer-events-none"
 		style="top: {pos.top}px; left: {pos.left}px; width: {BREITE}px; height: {HOEHE}px;"
 		role="tooltip"
 	>

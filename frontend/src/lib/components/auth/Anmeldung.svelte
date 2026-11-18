@@ -69,7 +69,7 @@
 	<form
 		onsubmit={absenden}
 		use:scanSchutz={beiScan}
-		class="w-full max-w-md p-8 rounded-3xl bg-surface-container-lowest shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
+		class="w-full max-w-md p-8 rounded-3xl bg-surface-container-lowest shadow-level1 flex flex-col items-center space-y-6 animate-fade-in no-print"
 	>
 		<img src={logoUrl} alt="Bibliosys" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">

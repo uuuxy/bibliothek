@@ -30,7 +30,7 @@ const TOKEN = {
 	// Der Ausweis-Designer umrandet beim Zeigen wie Googles Editoren das Element unter der Maus.
 	'src/lib/designer/CanvasElement.svelte': /^hover:ring(-[a-z0-9-]+)?$/,
 	// md.comp.elevated-card: container-elevation level1, hover-container-elevation level2.
-	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': /^hover:shadow-xl$/
+	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': /^hover:shadow-level2$/
 };
 
 const VERBOTEN =

@@ -91,7 +91,7 @@
 			role="alertdialog"
 			aria-modal="true"
 			aria-labelledby="omnibox-block-titel"
-			class="bg-surface-container-lowest rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-error"
+			class="bg-surface-container-lowest rounded-3xl p-8 max-w-md w-full text-center shadow-level3 border-4 border-error"
 			use:fokusFalle
 			use:escapeSchliesst={schliessen}
 		>

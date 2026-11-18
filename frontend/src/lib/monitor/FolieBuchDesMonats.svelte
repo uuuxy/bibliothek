@@ -16,7 +16,7 @@
 				titel={titel.titel}
 				groesse="kachel"
 				nurGespeichert
-				klasse="shadow-2xl ring-4 ring-primary/30"
+				klasse="shadow-level3 ring-4 ring-primary/30"
 				dekorativ
 			/>
 		</div>

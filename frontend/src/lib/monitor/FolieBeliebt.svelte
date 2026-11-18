@@ -13,7 +13,7 @@
 	{#if titel.length > 0}
 		<ol class="w-full flex flex-col gap-3">
 			{#each titel as book, i (i)}
-				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-3 shadow-md">
+				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-3 shadow-level1">
 					<span class="text-2xl font-black w-8 text-center text-on-surface-variant">#{i + 1}</span>
 					<BuchCover
 						coverUrl={book.cover_url}

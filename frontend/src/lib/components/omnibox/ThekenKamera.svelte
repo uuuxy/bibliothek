@@ -46,7 +46,7 @@
 </script>
 
 <div
-	class="schema-dunkel w-full rounded-2xl overflow-hidden shadow-lg animate-slide-up bg-surface relative"
+	class="schema-dunkel w-full rounded-2xl overflow-hidden shadow-level2 animate-slide-up bg-surface relative"
 >
 	<div class="absolute top-3 right-3 z-10">
 		<button

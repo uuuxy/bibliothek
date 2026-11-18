@@ -128,7 +128,7 @@
 	aria-label="Datum wählen"
 	tabindex="-1"
 	style="position:fixed; left:{box.left}px; top:{box.top}px; z-index:60;"
-	class="w-90 rounded-2xl bg-surface-container-high shadow-xl"
+	class="w-90 rounded-2xl bg-surface-container-high shadow-level3"
 	onkeydown={dialogTaste}
 	onfocusout={(e) => {
 		const nach = /** @type {Node | null} */ (e.relatedTarget);

@@ -5,7 +5,7 @@
      or tap an action on the toolbar." M3 Toolbars: Die schwebende Form „is best used for
      contextual actions relevant to the body content". Maße nach material-components-android
      (FloatingToolbar.md): Fläche `surface-container` (Farbschema „standard"), Form „50 %
-     rounded", Abstand 16 dp zum Rand; darüber Erhebung wie ein Menü (shadow-xl).
+     rounded", Abstand 16 dp zum Rand; darüber Erhebung wie ein Menü (shadow-level2).
 
      Die Leiste liegt unten über dem Inhalt statt oben in der Werkzeugleiste: Wer markiert,
      scrollt dabei durch die Liste, und ein Knopf oben wäre nach der dritten Zeile aus dem Bild.
@@ -36,7 +36,7 @@
 	aria-label={beschriftung}
 >
 	<div
-		class="pointer-events-auto flex h-16 max-w-full items-center gap-2 rounded-full bg-surface-container pr-3 pl-6 text-on-surface shadow-xl"
+		class="pointer-events-auto flex h-16 max-w-full items-center gap-2 rounded-full bg-surface-container pr-3 pl-6 text-on-surface shadow-level2"
 		use:meldungenWeichenAus
 	>
 		<span class="text-sm whitespace-nowrap" aria-live="polite">{satz}</span>

@@ -829,6 +829,10 @@ frontend/src
   Rahmen und eine Erhebung zugleich; welcher Teil weicht, entscheidet die Rolle des Bauteils
   (Dialog: Erhebung, Tabelle und umrandeter Knopf: Rahmen). Gemessen wird im Browser:
   `frontend/e2e/m3-bauform.spec.js`.
+- **Erhebung nur in Googles Stufen.** Schatten sind `shadow-level1` bis `shadow-level5`, die
+  Stufen aus material-web (zwei Schatten mit 30 % und 15 %, `styles/theme-mass.css`); jedes
+  Bauteil trägt die Stufe seines Tokens (Menü 2, Dialog, Snackbar und angedockter Kalender 3,
+  erhöhte Karte 1). Gates: `frontend/e2e/erhebung.spec.js`, `frontend-hygiene-erhebung.test.js`.
 - **Eine Karte trägt einen Rahmen oder einen Flächenton, nicht beides.** Material 3, Cards,
   Specs: die umrandete Karte „Surface" mit „Outline variant", die gefüllte „Surface container
   highest" ohne Rahmen, die erhöhte „Surface container low" mit Schatten. Im Haus ist die

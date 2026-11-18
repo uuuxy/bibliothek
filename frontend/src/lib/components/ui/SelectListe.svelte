@@ -63,7 +63,7 @@
 	role="listbox"
 	tabindex="-1"
 	style="position:fixed; left:{box.left}px; top:{box.top}px; width:{box.breite}px; z-index:60;"
-	class="max-h-80 overflow-y-auto rounded-sm bg-surface-container py-2 shadow-xl"
+	class="max-h-80 overflow-y-auto rounded-sm bg-surface-container py-2 shadow-level2"
 	onmousedown={(e) => e.preventDefault()}
 >
 	{#each options as o, i (o.value)}

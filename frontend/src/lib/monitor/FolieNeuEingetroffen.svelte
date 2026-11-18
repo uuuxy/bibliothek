@@ -29,7 +29,7 @@
 							titel={book.titel}
 							groesse="kachel"
 							nurGespeichert
-							klasse="shadow-lg"
+							klasse="shadow-level2"
 							dekorativ
 						/>
 					</div>

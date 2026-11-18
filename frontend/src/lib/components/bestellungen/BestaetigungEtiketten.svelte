@@ -33,7 +33,7 @@
 	}
 </script>
 
-<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-level1">
 	<h2 class="text-on-surface text-title-medium">Etiketten drucken</h2>
 	<p class="text-on-surface-variant mt-1 text-sm">
 		{#if bestellung.grosses_etikett}

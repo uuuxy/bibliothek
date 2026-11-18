@@ -35,7 +35,7 @@
 </script>
 
 {#if titel.length}
-	<div class="flex gap-2 rounded-sm bg-surface-container p-2 shadow-xl">
+	<div class="flex gap-2 rounded-sm bg-surface-container p-2 shadow-level2">
 		{#each titel as t (t.titel_id)}
 			<div class="w-28">
 				<BuchCover

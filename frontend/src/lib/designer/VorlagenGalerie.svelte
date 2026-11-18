@@ -64,7 +64,7 @@
 		<div
 			role="dialog"
 			aria-label="Design-Vorlagen"
-			class="absolute top-full left-0 z-50 mt-1 grid w-max max-w-[calc(100vw-4rem)] grid-cols-2 gap-1 rounded-sm bg-surface-container p-2 shadow-xl sm:grid-cols-3 md:grid-cols-4"
+			class="absolute top-full left-0 z-50 mt-1 grid w-max max-w-[calc(100vw-4rem)] grid-cols-2 gap-1 rounded-sm bg-surface-container p-2 shadow-level2 sm:grid-cols-3 md:grid-cols-4"
 		>
 			{#each AUSWEIS_VORLAGEN as v (v.value)}
 				<button
@@ -73,7 +73,7 @@
 					aria-label={v.label}
 					class="m3-state flex cursor-pointer flex-col items-center gap-1.5 rounded-sm p-2"
 				>
-					<span class="rounded-xs shadow-sm ring-1 ring-outline-variant">
+					<span class="rounded-xs shadow-level1 ring-1 ring-outline-variant">
 						<VorlageMiniatur kennung={v.value} />
 					</span>
 					<span class="text-label-small text-on-surface">{v.label}</span>

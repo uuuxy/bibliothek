@@ -132,7 +132,7 @@
 											disabled={papierkorb.stelltHer(s.id)}
 											data-tip="Wiederherstellen"
 											aria-label="Wiederherstellen"
-											class="icon-btn bg-success-container text-on-success-container shadow-sm disabled:cursor-not-allowed"
+											class="icon-btn bg-success-container text-on-success-container disabled:cursor-not-allowed"
 										>
 											{#if papierkorb.stelltHer(s.id)}
 												<Ladekreis size="sm" farbe="aktuell" />
@@ -146,7 +146,7 @@
 											onclick={() => (loeschKandidat = s)}
 											data-tip="Endgültig löschen"
 											aria-label="Endgültig löschen"
-											class="icon-btn bg-error-container text-on-error-container shadow-sm"
+											class="icon-btn bg-error-container text-on-error-container"
 										>
 											<Icon name="delete" />
 										</button>

@@ -49,7 +49,7 @@
 		</Suchpille>
 		{#if isKlasseDropdownOpen && klassen.length > 0}
 			<ul
-				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl max-h-60 overflow-y-auto py-1"
+				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-level2 max-h-60 overflow-y-auto py-1"
 			>
 				{#each klassen as klasse (klasse)}
 					<li>
@@ -65,7 +65,7 @@
 			</ul>
 		{:else if isKlasseDropdownOpen && klassen.length === 0}
 			<div
-				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-on-surface-variant text-center text-sm"
+				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-level2 py-4 px-5 text-on-surface-variant text-center text-sm"
 			>
 				Keine Klasse gefunden
 			</div>

@@ -77,7 +77,7 @@ describe('SnackbarAnzeige: Form nach M3', () => {
 			);
 			expect(meldung.className).toContain('bg-inverse-surface');
 			expect(meldung.className).toContain('text-inverse-on-surface');
-			expect(meldung.className).toContain('shadow-2xl');
+			expect(meldung.className).toContain('shadow-level3');
 			expect(meldung.className).not.toMatch(/\bbg-(error|success|warning)\b/);
 			expect(meldung.firstElementChild?.textContent?.trim()).toBe(`Meldung ${typ}`);
 		}

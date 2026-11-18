@@ -110,7 +110,7 @@
 						src={bild}
 						alt="Erster Bogen, wie er gedruckt wird"
 						data-testid="etiketten-blatt"
-						class="w-full shadow-2xl transition-opacity {laedt ? 'opacity-60' : ''}"
+						class="w-full shadow-level3 transition-opacity {laedt ? 'opacity-60' : ''}"
 					/>
 					{#if laedt}
 						<div class="absolute inset-0 flex items-center justify-center"><Ladekreis /></div>
