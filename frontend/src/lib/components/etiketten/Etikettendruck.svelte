@@ -26,7 +26,9 @@
 </script>
 
 <div class="w-full space-y-6 no-print text-on-surface animate-fade-in">
-	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+	<!-- Zwei Bereiche ab expanded (md): M3, Breakpoints: „Expanded and large breakpoints: Two
+	     panes are recommended", dazwischen „The spacer between panes is 24dp". -->
+	<div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 		<EtikettEinstellungen />
 		<EtikettVorschau />
 	</div>

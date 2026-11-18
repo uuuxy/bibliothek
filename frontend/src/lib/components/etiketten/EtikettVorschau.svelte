@@ -77,7 +77,7 @@
      daneben. Eine getönte Fläche ohne gestrichelten Rand, denn gestrichelt heißt in dieser
      Anwendung „hier gehört etwas hin", und die Vorschau ist die Ausgabe. -->
 <div
-	class="lg:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
+	class="md:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
 >
 	<span class="text-xs text-on-surface-variant font-medium mb-4"
 		>A4 Etiketten-Vorschau · {format.kurz}</span
