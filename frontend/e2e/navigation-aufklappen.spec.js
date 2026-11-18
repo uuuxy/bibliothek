@@ -9,9 +9,9 @@ import { uiLogin, gehZu, menuepunkt } from './helpers.js';
 /** Lage jedes Navigationsziels: Oberkante und Mitte des Symbols. Läuft im Browser. */
 const LAGE = () =>
 	[...document.querySelectorAll('aside nav button')]
-		.filter((b) => b.querySelector('svg'))
+		.filter((b) => b.querySelector('.icon'))
 		.map((b) => {
-			const symbol = /** @type {SVGElement} */ (b.querySelector('svg')).getBoundingClientRect();
+			const symbol = /** @type {HTMLElement} */ (b.querySelector('.icon')).getBoundingClientRect();
 			return `${Math.round(b.getBoundingClientRect().y)}/${Math.round(symbol.x + symbol.width / 2)}`;
 		});
 

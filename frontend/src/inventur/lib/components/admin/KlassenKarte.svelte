@@ -3,7 +3,7 @@
 	import { RASTER_ABSTAND } from '$lib/components/BuchKarte.svelte';
 	import { sortiereNachFachUndTitel } from '$lib/titelSortierung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import { ChevronDown, Pencil, Trash } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -59,11 +59,9 @@
 			aria-controls={rasterID}
 			class="group flex min-w-0 flex-1 items-center gap-3 rounded-lg py-1 text-left"
 		>
-			<ChevronDown
-				class="h-5 w-5 shrink-0 text-on-surface-variant transition-transform {offen
-					? ''
-					: '-rotate-90'}"
-				aria-hidden="true"
+			<Icon
+				name="expand_more"
+				class="text-on-surface-variant transition-transform {offen ? '' : '-rotate-90'}"
 			/>
 			<span class={zaehlerChip}
 				>{group.books.length}
@@ -86,7 +84,7 @@
 					data-tip="Bücher verwalten"
 					aria-label="Bücher verwalten"
 				>
-					<Pencil class="h-4 w-4" aria-hidden="true" />
+					<Icon name="edit" />
 				</Button>
 				<Button
 					variant="symbol"
@@ -95,7 +93,7 @@
 					data-tip="Buchliste löschen"
 					aria-label="Buchliste löschen"
 				>
-					<Trash class="h-4 w-4" aria-hidden="true" />
+					<Icon name="delete" />
 				</Button>
 			</div>
 		{/if}

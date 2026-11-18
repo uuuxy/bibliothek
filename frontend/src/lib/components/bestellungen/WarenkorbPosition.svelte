@@ -9,7 +9,7 @@
 	import BuchCover from '../ui/BuchCover.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { MITTEL, anderesMittel } from './mittel.js';
-	import { X, Tag } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { position } = $props();
@@ -35,7 +35,7 @@
 			{#if position.generate_barcodes}
 				<div class="mt-1">
 					<StatusChip
-						icon={Tag}
+						icon="label"
 						text={position.menge === 1 ? '1 Barcode' : `${position.menge} Barcodes`}
 					/>
 				</div>
@@ -47,7 +47,7 @@
 			data-tip="Entfernen"
 			class="icon-btn shrink-0 text-on-surface-variant hover:text-error"
 		>
-			<X class="h-4 w-4" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	</div>
 

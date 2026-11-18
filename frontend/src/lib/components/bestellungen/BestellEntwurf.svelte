@@ -1,5 +1,5 @@
 <script>
-	import { ChevronRight } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import BestellSuche from './BestellSuche.svelte';
 	import Warenkorb from './Warenkorb.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -33,7 +33,7 @@
 					aria-expanded="true"
 					class="icon-btn hidden lg:inline-flex text-on-surface-variant"
 				>
-					<ChevronRight class="h-4 w-4" aria-hidden="true" />
+					<Icon name="chevron_right" />
 				</button>
 			{/if}
 		</div>

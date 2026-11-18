@@ -4,7 +4,7 @@
      Klassenleitungen mailen. Der Druck folgt Suche und Filter: Was auf dem Bildschirm
      steht, steht auf dem Papier. -->
 <script>
-	import { Mail, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
@@ -87,7 +87,7 @@
 					<Ladekreis size="sm" />
 					Lade Daten …
 				{:else}
-					<Printer class="h-4 w-4" aria-hidden="true" />
+					<Icon name="print" />
 					{klasse ? `Kontoauszüge ${klasse}` : 'Kontoauszüge drucken'}
 				{/if}
 			</Button>
@@ -102,7 +102,7 @@
 					{#if mailLaeuft}
 						<Ladekreis size="sm" farbe="aktuell" etikett="Versand läuft" />
 					{:else}
-						<Mail class="h-4 w-4" />
+						<Icon name="mail" />
 					{/if}
 					An Klassenleitungen mailen
 				</Button>

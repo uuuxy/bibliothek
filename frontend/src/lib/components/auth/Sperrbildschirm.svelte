@@ -1,7 +1,7 @@
 <script>
 	import { onMount, tick } from 'svelte';
 	import { fokusFalle } from '../ui/fokusFalle.js';
-	import { Lock } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { leerlaufSperre } from '../../stores/leerlaufSperre.svelte.js';
@@ -83,7 +83,7 @@
 		class="w-full max-w-sm rounded-3xl bg-surface-container-lowest border border-outline-variant p-8 flex flex-col items-center space-y-5 animate-fade-in"
 	>
 		<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center">
-			<Lock class="w-6 h-6 text-on-secondary-container" aria-hidden="true" />
+			<Icon name="lock" groesse={24} class="text-on-secondary-container" />
 		</div>
 		<div class="text-center space-y-1">
 			<h2 id="sperre-titel" class="dialog-titel">

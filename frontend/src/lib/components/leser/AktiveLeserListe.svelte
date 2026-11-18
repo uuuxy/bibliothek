@@ -10,7 +10,7 @@
   Klasse. Ohne die Art stünde er da wie ein Schüler, bei dem die Klasse fehlt.
 -->
 <script>
-	import { ChevronRight } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import TabelleSortierKopf from '../ui/TabelleSortierKopf.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -182,9 +182,9 @@
 								{@render statusBadge(s)}
 							</td>
 							<td class="text-right">
-								<ChevronRight
-									class="w-4 h-4 text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
-									aria-hidden="true"
+								<Icon
+									name="chevron_right"
+									class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
 								/>
 							</td>
 						</tr>

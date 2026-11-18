@@ -11,7 +11,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
-	import { CircleCheck, Clock, Copy, Check } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { formatDatum, verbindeSaetze } from '../../utils/format.js';
 
 	let { b, onAktualisieren } = $props();
@@ -110,7 +110,7 @@
 			tabindex="-1"
 			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container focus-visible:outline-2 focus-visible:outline-primary"
 		>
-			<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
+			<Icon name="check_circle" class="mt-0.5" />
 			<div>
 				<p class="text-body-medium-emphasized">
 					{b.bestaetigt_durch === 'lieferant'
@@ -129,7 +129,7 @@
 	>
 		<div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
 			<div class="flex items-start gap-3">
-				<Clock size={20} class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+				<Icon name="schedule" class="mt-0.5 text-warning" />
 				<div>
 					<p class="text-body-medium-emphasized text-on-surface">Warten auf den Händler</p>
 					<p class="mt-0.5 text-xs text-on-surface-variant">{linkSatz}</p>
@@ -152,9 +152,9 @@
 				<div class="mt-1.5 flex items-center gap-2">
 					<Feld readonly value={neuerLink} aria-label="Bestätigungs-Link" feld="font-mono" />
 					<Button variant="secondary" size="sm" onclick={kopieren}>
-						{#if kopiert}<Check size={14} aria-hidden="true" />{:else}<Copy
-								size={14}
-								aria-hidden="true"
+						{#if kopiert}<Icon name="check" groesse={18} />{:else}<Icon
+								name="content_copy"
+								groesse={18}
 							/>{/if}
 						{kopiert ? 'Kopiert' : 'Kopieren'}
 					</Button>

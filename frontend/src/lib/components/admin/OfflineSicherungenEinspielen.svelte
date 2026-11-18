@@ -19,7 +19,7 @@
 	import { offlineSync } from '../../stores/offlineSync.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import { Upload } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import { anzahlText } from '../../utils/format.js';
 
@@ -75,7 +75,7 @@
 
 	<div class="mt-6 flex items-center gap-4">
 		<Button variant="secondary" size="lg" onclick={() => fileInput?.click()} disabled={laeuft}>
-			<Upload size={18} aria-hidden="true" />
+			<Icon name="upload" />
 			{laeuft ? 'Wird eingespielt …' : 'Sicherungsdateien auswählen'}
 		</Button>
 		{#if offlineSync.wartendeAnzahl > 0}

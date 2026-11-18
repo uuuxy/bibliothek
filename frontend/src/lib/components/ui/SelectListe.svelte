@@ -10,7 +10,7 @@
      Absolut positioniert würde sie dort abgeschnitten — dieselbe Falle, die in
      CoverVorschau schon dokumentiert ist. -->
 <script>
-	import { Check } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import MenueVorschau from './MenueVorschau.svelte';
 
 	/**
@@ -92,7 +92,7 @@
 				<span class="shrink-0 text-label-small text-on-surface-variant">{o.zusatz}</span>
 			{/if}
 			{#if o.value === value}
-				<Check class="h-5 w-5 shrink-0" aria-hidden="true" />
+				<Icon name="check" groesse={24} />
 			{/if}
 		</div>
 	{/each}

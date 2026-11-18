@@ -19,7 +19,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { bescheidStatus } from './bescheidStatus.js';
-	import { FileText, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { formatDatum as datum, formatEuro } from '../../utils/format.js';
 	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -106,7 +106,7 @@
 								{#if z.land}
 									<StatusChip
 										ton="warten"
-										icon={FileText}
+										icon="description"
 										text="Bescheid noch nicht erstellt"
 										tip="Verlust oder Schaden ist gemeldet. Der Brief mit Referenznummer und Frist fehlt noch."
 									/>
@@ -157,7 +157,7 @@
 							</td>
 							<td class="space-x-2 text-right whitespace-nowrap">
 								<Button variant="secondary" onclick={() => nachdruck(b)}>
-									<Printer class="h-4 w-4" aria-hidden="true" />
+									<Icon name="print" />
 									Nachdruck
 								</Button>
 								{#if darfSchreiben && b.status === 'offen' && b.frist_abgelaufen}

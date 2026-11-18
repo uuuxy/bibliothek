@@ -12,7 +12,7 @@
 	 */
 	import { untrack } from 'svelte';
 	import Tabelle from '../../ui/Tabelle.svelte';
-	import { X } from '@lucide/svelte';
+	import Icon from '../../ui/Icon.svelte';
 	import Button from '../../ui/Button.svelte';
 	import Feld from '../../ui/Feld.svelte';
 	import { speichereKategorie, hatAenderungen } from '../einstellungenSpeichern.js';
@@ -131,7 +131,7 @@
 								data-tip="Sommerferien {z.jahr} entfernen"
 								aria-label="Sommerferien {z.jahr} entfernen"
 							>
-								<X class="h-4 w-4" aria-hidden="true" />
+								<Icon name="close" />
 							</Button>
 						{/if}
 					</td>

@@ -9,7 +9,7 @@
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { Trash } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { exemplarStatus } from '../../../../lib/components/buchakte/exemplarStatus.js';
@@ -147,7 +147,7 @@
 								{#if loescht.has(ex.id)}
 									<Ladekreis size="sm" farbe="aktuell" />
 								{:else}
-									<Trash class="w-4 h-4" aria-hidden="true" />
+									<Icon name="delete" />
 								{/if}
 							</button>
 						</div>

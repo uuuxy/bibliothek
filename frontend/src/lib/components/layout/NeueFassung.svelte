@@ -6,7 +6,7 @@
      nächste Scan. Nicht wegklickbar, weil das alte Programm eine Antwort des neuen Servers
      falsch lesen kann, ohne Meldung. -->
 <script>
-	import { RefreshCw } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { programmstand } from '../../stores/programmstand.svelte.js';
 	import Button from '../ui/Button.svelte';
 </script>
@@ -16,7 +16,7 @@
 		role="status"
 		class="no-print mb-5 flex w-full items-start gap-3 rounded-md border border-outline-variant border-l-[3px] border-l-primary bg-surface-container-lowest py-3 pr-4 pl-3.5"
 	>
-		<RefreshCw class="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+		<Icon name="refresh" class="mt-0.5 text-primary" />
 		<div class="min-w-0 flex-1">
 			<p class="text-body-medium-emphasized text-on-surface">
 				Eine neue Fassung des Programms ist eingespielt

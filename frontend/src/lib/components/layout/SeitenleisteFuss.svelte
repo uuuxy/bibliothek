@@ -7,7 +7,7 @@
      unwichtigste Knopf der Navigation der auffälligste, und der Unterschied zwischen „du
      gehst nach Hause" und „hier gehen Daten verloren" wäre eingeebnet. -->
 <script>
-	import { LogOut, ShieldCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import { darstellung } from '../../stores/darstellung.svelte.js';
@@ -40,10 +40,10 @@
 			data-tip="Abmelden"
 			aria-label="Abmelden"
 		>
-			<LogOut class="h-4 w-4" aria-hidden="true" />
+			<Icon name="logout" />
 		</button>
 		<span class="text-on-surface-variant cursor-default" title="DSGVO: {DSGVO_HINWEIS}">
-			<ShieldCheck class="h-4 w-4" aria-label="DSGVO: {DSGVO_HINWEIS}" />
+			<Icon name="verified_user" vorlesen="DSGVO: {DSGVO_HINWEIS}" />
 		</span>
 	</div>
 {:else}
@@ -74,7 +74,7 @@
 			</div>
 		{/if}
 		<Button variant="secondary" size="sm" onclick={onLogout} class="w-full gap-1.5">
-			<LogOut class="h-3.5 w-3.5" aria-hidden="true" />
+			<Icon name="logout" groesse={18} />
 			<span>Abmelden</span>
 		</Button>
 
@@ -86,7 +86,7 @@
 			class="text-on-surface-variant flex items-center justify-center gap-1.5 text-center text-sm"
 			title={DSGVO_HINWEIS}
 		>
-			<ShieldCheck class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+			<Icon name="verified_user" groesse={18} />
 			<span>Scans nach 14 Tagen anonymisiert</span>
 		</div>
 	</div>

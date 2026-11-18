@@ -1,7 +1,7 @@
 <script>
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
-	import { Save, Table, X } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	let {
 		gewaehlteKlassen = [],
 		gewaehlteKennungen = new Set(),
@@ -30,7 +30,7 @@
 		<div
 			class="h-full flex flex-col items-center justify-center text-center p-8 text-on-surface-variant"
 		>
-			<Table class="mb-4" aria-hidden="true" />
+			<Icon name="table" class="mb-4" />
 			<p class="text-sm font-medium">Deine Auswahl ist noch leer</p>
 		</div>
 	{:else}
@@ -55,7 +55,7 @@
 					data-tip="Buch entfernen"
 					aria-label="Buch entfernen"
 				>
-					<X class="w-4 h-4" aria-hidden="true" />
+					<Icon name="close" />
 				</button>
 			</div>
 		{/each}
@@ -74,7 +74,7 @@
 			speichert}
 		onclick={(e) => onsave(e)}
 	>
-		<Save class="h-4 w-4" aria-hidden="true" />
+		<Icon name="save" />
 		<!-- Kurz halten: In der 340 px schmalen Spalte bräche „Auswahl speichern" auf zwei
 		     Zeilen um. Was gespeichert wird, sagt die Überschrift des Dialogs. -->
 		<span class="whitespace-nowrap">{speichert ? 'Wird gespeichert …' : 'Speichern'}</span>

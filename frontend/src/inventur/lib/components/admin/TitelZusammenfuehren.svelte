@@ -4,7 +4,7 @@
      Der Dialog hängt nicht hier, sondern an der Wurzel der Maske: In der stehenden Spalte
      (sticky) läge er unter der Exemplarliste. -->
 <script>
-	import { Merge } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { uiStore } from '../../../../lib/stores/uiStore.svelte.js';
 	import { verwerfenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
@@ -27,6 +27,6 @@
 	class="w-full"
 	data-tip="Ein Buch, das zweimal im Katalog steht, zu einem Titel machen"
 >
-	<Merge class="w-4 h-4" aria-hidden="true" />
+	<Icon name="merge" />
 	Mit anderem Titel zusammenführen
 </Button>

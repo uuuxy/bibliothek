@@ -6,7 +6,7 @@
 	import Button from '../ui/Button.svelte';
 	import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 	import Select from '../ui/Select.svelte';
-	import { Check } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ bestellung: any, token: string, formatId?: string, geoeffneteGroesse?: string }} */
 	let { bestellung, token, formatId = $bindable(''), geoeffneteGroesse = $bindable('') } = $props();
@@ -71,12 +71,12 @@
 
 	<div class="mt-4 flex flex-wrap gap-3">
 		<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
-			{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
+			{#if geoeffneteGroesse === 'klein'}<Icon name="check" />{/if}
 			{bestellung.grosses_etikett ? 'Kleine Etiketten auf A4-Bogen' : 'Etiketten auf A4-Bogen'}
 		</Button>
 		{#if bestellung.grosses_etikett}
 			<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
-				{#if geoeffneteGroesse === 'gross'}<Check size={16} aria-hidden="true" />{/if}
+				{#if geoeffneteGroesse === 'gross'}<Icon name="check" />{/if}
 				Große Lernmittel-Etiketten, 4 je A4-Blatt
 			</Button>
 		{/if}

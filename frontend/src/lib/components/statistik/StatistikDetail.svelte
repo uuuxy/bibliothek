@@ -12,7 +12,7 @@
 	import Select from '../ui/Select.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
-	import { ChevronLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/** @param {string} alle @param {string[]} werte */
@@ -77,7 +77,7 @@
 		onclick={() => (uiStore.activeTab = 'stats')}
 		class="inline-flex items-center gap-1.5 text-label-large text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
 	>
-		<ChevronLeft class="w-4 h-4" aria-hidden="true" />
+		<Icon name="chevron_left" />
 		Statistik
 	</button>
 

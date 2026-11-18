@@ -1,71 +1,44 @@
-<!-- @component NavIcon — das Symbol eines Navigationsziels.
+<!-- @component NavIcon — das Icon eines Navigationsziels.
 
-     Die EINE Stelle, an der die Zuordnung Menüpunkt → Symbol steht. Vorher gab es sie
-     dreifach: als `icons`-Export in menue.js (den niemand importierte) und zweimal inline
-     in Seitenleiste.svelte — je einmal für die System-Gruppe und einmal für alle anderen.
-     Jedes Symbol war ein handgeschriebener SVG-Pfad; wer eines tauschen wollte, musste
-     zwei Stellen finden und übersah die dritte. Seitenleiste.svelte war dadurch 476 Zeilen lang.
-
-     Die Symbole kommen jetzt aus @lucide/svelte statt aus abgetippten Pfaden. Das ist
-     nicht Geschmack, sondern die Regel des Hauses: frontend-hygiene.test.js sagt beim
-     Anschlagen wörtlich "Bitte ein Lucide-Icon verwenden". Handgesetzte Pfade altern
-     nicht mit, lassen sich nicht durchsuchen und haben hier über die Jahre zwei
-     Strichstärken nebeneinander erzeugt. -->
+     Die eine Stelle, an der die Zuordnung Menüpunkt → Icon steht; menue.js nennt nur den
+     Schlüssel. Größe 24 px, M3 Navigation drawer: Icon 24 dp. Das gewählte Ziel zeigt sein Icon
+     gefüllt, M3 (Icons, Fill): „Bottom navigation with filled symbols in selected and unselected
+     states“. -->
 <script>
-	import {
-		ScanBarcode,
-		Bell,
-		CalendarDays,
-		Library,
-		BookOpen,
-		Printer,
-		Users,
-		IdCard,
-		GraduationCap,
-		ShoppingBag,
-		ClipboardCheck,
-		Clock,
-		ChartColumn,
-		ShieldCheck,
-		KeyRound,
-		Settings,
-		BookBookmark,
-		FileText
-	} from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
-	/** @type {{ name: string, class?: string }} */
-	let { name, class: klasse = 'h-5 w-5 shrink-0' } = $props();
+	/** @type {{ name: string, aktiv?: boolean }} */
+	let { name, aktiv = false } = $props();
 
-	// Die Schlüssel sind die `icon`-Werte aus menue.js. Ein unbekannter Name liefert
-	// bewusst nichts, statt ein Ersatzsymbol zu zeigen: Ein falsches Symbol im Menü
-	// fällt niemandem auf, eine Lücke schon.
+	// Die Schlüssel sind die `icon`-Werte aus menue.js.
+	/** @type {Record<string, import('../ui/iconNamen.js').IconName>} */
 	const symbole = {
-		kiosk: ScanBarcode,
-		bell: Bell,
-		catalog: Library,
-		book: BookOpen,
-		printer: Printer,
-		users: Users,
-		identification: IdCard,
-		'academic-cap': GraduationCap,
-		calendar: CalendarDays,
-		'shopping-bag': ShoppingBag,
-		clipboard: ClipboardCheck,
-		clock: Clock,
-		'chart-bar': ChartColumn,
+		kiosk: 'barcode_scanner',
+		bell: 'notifications',
+		catalog: 'local_library',
+		book: 'menu_book',
+		printer: 'print',
+		users: 'group',
+		identification: 'id_card',
+		'academic-cap': 'school',
+		calendar: 'calendar_month',
+		'shopping-bag': 'shopping_bag',
+		clipboard: 'fact_check',
+		clock: 'schedule',
+		'chart-bar': 'bar_chart',
 		// Bestandsbücher (Zugang/Abgang) — ein Nachweis zum Abheften, kein Katalog.
-		'book-marked': BookBookmark,
+		'book-marked': 'book',
 		// Bestellberichte — das Blatt selbst. NICHT 'clipboard' (ClipboardCheck): Das trägt
 		// die Inventur, und zwei Ziele mit demselben Symbol unterscheidet niemand.
-		'file-text': FileText,
-		shield: ShieldCheck,
-		key: KeyRound,
-		cog: Settings
+		'file-text': 'description',
+		shield: 'verified_user',
+		key: 'key',
+		cog: 'settings'
 	};
 
-	const Symbol = $derived(symbole[name]);
+	const symbol = $derived(symbole[name]);
 </script>
 
-{#if Symbol}
-	<Symbol class={klasse} aria-hidden="true" />
+{#if symbol}
+	<Icon name={symbol} groesse={24} gefuellt={aktiv} />
 {/if}

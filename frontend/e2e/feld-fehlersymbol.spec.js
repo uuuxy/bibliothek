@@ -18,7 +18,7 @@ async function miss(feld) {
 			const b = e.getBoundingClientRect();
 			return { links: b.left, rechts: b.right, oben: b.top, unten: b.bottom };
 		};
-		const zeichen = el.parentElement?.querySelector('svg.lucide-circle-alert');
+		const zeichen = el.parentElement?.querySelector('[data-icon="error"]');
 		return {
 			feld: kasten(el),
 			symbol: zeichen ? kasten(zeichen) : null,

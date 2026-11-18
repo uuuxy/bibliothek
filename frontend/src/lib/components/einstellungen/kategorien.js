@@ -10,25 +10,6 @@
 // rendert, steht sichtbar in KategorieDetail.svelte. Eine Liste von Komponenten in
 // einer .js-Datei würde diese Bauteile zudem vor dem Verwaisten-Test verstecken
 // (frontend-hygiene.test.js sucht echte Importe).
-import {
-	Activity,
-	BellRing,
-	CalendarClock,
-	Clock,
-	Database,
-	DatabaseBackup,
-	FileExclamationPoint,
-	Globe,
-	GraduationCap,
-	Mail,
-	Route,
-	Receipt,
-	School,
-	ShieldCheck,
-	ShoppingCart,
-	Tags,
-	Truck
-} from '@lucide/svelte';
 
 import { hatRecht } from '../../menue.js';
 
@@ -43,20 +24,25 @@ import { hatRecht } from '../../menue.js';
 
 /** @type {Kategorie[]} */
 export const KATEGORIEN = [
-	{ id: 'schule', titel: 'Schule', kurz: 'Name, Anschrift, Eigentumsvermerk', icon: School },
+	{ id: 'schule', titel: 'Schule', kurz: 'Name, Anschrift, Eigentumsvermerk', icon: 'domain' },
 	{
 		id: 'ausleihe',
 		titel: 'Ausleihe & Fristen',
 		kurz: 'Fristen, Limits, Ferien-Leseclub',
-		icon: CalendarClock
+		icon: 'calendar_clock'
 	},
-	{ id: 'mahnwesen', titel: 'Mahnwesen', kurz: 'Automatische Ausleihsperre', icon: BellRing },
-	{ id: 'routing', titel: 'Klassenleitungen', kurz: 'Klasse → Lehrkraft', icon: Route },
+	{
+		id: 'mahnwesen',
+		titel: 'Mahnwesen',
+		kurz: 'Automatische Ausleihsperre',
+		icon: 'notifications_active'
+	},
+	{ id: 'routing', titel: 'Klassenleitungen', kurz: 'Klasse → Lehrkraft', icon: 'route' },
 	{
 		id: 'bestellwesen',
 		titel: 'Bestellwesen',
 		kurz: 'Bedarfswarnung und Preise',
-		icon: ShoppingCart
+		icon: 'shopping_cart'
 	},
 	{
 		// Konfiguration, keine Tagesarbeit, deshalb hier und nicht im Bestellwesen. Rechte wie
@@ -64,7 +50,7 @@ export const KATEGORIEN = [
 		id: 'lieferanten',
 		titel: 'Lieferanten',
 		kurz: 'Händler, Kundennummern, Hauptlieferant',
-		icon: Truck,
+		icon: 'local_shipping',
 		rechte: ['create_orders']
 	},
 	{
@@ -73,7 +59,7 @@ export const KATEGORIEN = [
 		id: 'schlagworte',
 		titel: 'Schlagworte',
 		kurz: 'Umbenennen, zusammenführen, Verweise, Filter',
-		icon: Tags,
+		icon: 'label',
 		rechte: ['edit_books']
 	},
 	{
@@ -84,25 +70,25 @@ export const KATEGORIEN = [
 		id: 'schadensersatz',
 		titel: 'Schadensersatz',
 		kurz: 'Grundlage der Berechnung, Referenznummer, Frist, Zahlungsweg',
-		icon: Receipt
+		icon: 'receipt'
 	},
 	{
 		id: 'datenschutz',
 		titel: 'Datenschutz & Sitzung',
 		kurz: 'Löschfristen, Sperrbildschirm',
-		icon: ShieldCheck
+		icon: 'verified_user'
 	},
 	{
 		id: 'erreichbarkeit',
 		titel: 'Erreichbarkeit & Alarme',
 		kurz: 'Öffentliche Adresse, Alarm-Mails',
-		icon: Globe
+		icon: 'public'
 	},
 	{
 		id: 'mail',
 		titel: 'Mail',
 		kurz: 'Postausgang, Vorlagen, Adressen aus dem Webmail',
-		icon: Mail
+		icon: 'mail'
 	},
 	{
 		// Bei den anderen seltenen Eingriffen, kein eigener Menüpunkt: Das Werkzeug wird fast
@@ -110,7 +96,7 @@ export const KATEGORIEN = [
 		id: 'lmf',
 		titel: 'LMF-Aktionen',
 		kurz: 'Massenverlängerung je Klasse',
-		icon: Clock,
+		icon: 'schedule',
 		// POST /api/ausleihen/global-extend-lmf verlangt edit_books (die Klassenliste
 		// dazu view_students). Ohne diese Zeile stand die Kategorie jedem mit
 		// manage_settings offen — mit leerer Klassenliste und 403 beim Ausführen.
@@ -120,7 +106,7 @@ export const KATEGORIEN = [
 		id: 'daten',
 		titel: 'Datenverwaltung',
 		kurz: 'Import, Export, Offline-Sicherungen',
-		icon: Database,
+		icon: 'database',
 		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory; Export → edit_books.
 		rechte: ['manage_inventory', 'edit_books']
 	},
@@ -132,7 +118,7 @@ export const KATEGORIEN = [
 		id: 'schuljahr',
 		titel: 'LUSD & Versetzung',
 		kurz: 'LUSD-Abgleich, Versetzung, Sommerferien',
-		icon: GraduationCap,
+		icon: 'school',
 		// LUSD → import_students, Versetzung → manage_students_admin, Sommerferien →
 		// manage_settings; eines genügt.
 		rechte: ['import_students', 'manage_students_admin', 'manage_settings']
@@ -141,20 +127,20 @@ export const KATEGORIEN = [
 		id: 'sicherung',
 		titel: 'Sicherung',
 		kurz: 'Nächtliche Sicherung an oder aus',
-		icon: DatabaseBackup
+		icon: 'backup'
 	},
 	{
 		id: 'betrieb',
 		titel: 'Betriebsbereitschaft',
 		kurz: 'Eingerichtet, aber nicht in Betrieb?',
-		icon: Activity
+		icon: 'monitor_heart'
 	},
 	{
 		// Neben der Betriebsbereitschaft, nicht in ihr: Sie nennt Zustände, das Log Ereignisse.
 		id: 'fehler',
 		titel: 'Fehler im Log',
 		kurz: 'Was ist im Betrieb schiefgegangen?',
-		icon: FileExclamationPoint
+		icon: 'assignment_late'
 	}
 ];
 

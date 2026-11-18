@@ -3,7 +3,7 @@
      erneut an /api/lusd/import. Die Zuordnung (LUSD-ID → Name + Geburtsdatum → nur Name) wählt
      die Datei (internal/lusd/datei.go); Texte stehen in lusdVorschauRubriken.js. -->
 <script>
-	import { TriangleAlert, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -129,11 +129,8 @@
 		<summary
 			class="flex items-center justify-between py-3 cursor-pointer select-none marker:content-none [&::-webkit-details-marker]:hidden"
 		>
-			<div class="min-w-0 flex items-center gap-2">
-				<ChevronRight
-					class="w-3 h-3 text-on-surface-variant shrink-0 transition-transform group-open:rotate-90"
-					aria-hidden="true"
-				/>
+			<div class="min-w-0 flex items-center gap-2 text-on-surface-variant">
+				<Icon name="chevron_right" groesse={18} class="transition-transform group-open:rotate-90" />
 				<div class="min-w-0">
 					<p class="text-label-large text-on-surface">{section.label}</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">{section.hint}</p>
@@ -200,7 +197,7 @@
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>
+			<Icon name="warning" /><span>{fehler}</span>
 		</div>
 	{/if}
 
@@ -208,7 +205,7 @@
 		<div
 			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
-			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="check_circle" />
 			<span>Import abgeschlossen, der Bestand ist aktuell</span>
 		</div>
 		{@render ergebnis(true)}
@@ -224,7 +221,7 @@
 				onchange={beiDateiwahl}
 				disabled={probeLaeuft || importLaeuft}
 			/>
-			<FolderOpen class="h-8 w-8 text-on-surface-variant" aria-hidden="true" />
+			<Icon name="folder_open" groesse={40} class="text-on-surface-variant" />
 			{#if gewaehlteDatei}
 				<div class="space-y-1">
 					<p class="text-body-small-emphasized text-on-surface max-w-xs truncate">
@@ -265,7 +262,7 @@
 					<div
 						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
-						<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span
+						<Icon name="warning" /><span
 							>Auffällig viele Abgänger: {probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
 							aktiven Schülern. Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span

@@ -5,7 +5,7 @@
      muss. -->
 <script>
 	import { istKollegium } from './leserArt.js';
-	import { Merge } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import SchuelerZusammenfuehrenDialog from './SchuelerZusammenfuehrenDialog.svelte';
 
@@ -20,7 +20,7 @@
 >
 	<div>
 		<h3 class="text-on-surface text-title-medium flex items-center gap-2">
-			<Merge class="w-5 h-5 text-primary" aria-hidden="true" />
+			<Icon name="merge" class="text-primary" />
 			Doppelter Datensatz?
 		</h3>
 		<!-- Der Grund ist bei beiden ein anderer, und das gehört gesagt: Bei einem Schüler

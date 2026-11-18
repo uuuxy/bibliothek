@@ -62,7 +62,7 @@ const EMOJI_BESTAND = [
 ];
 
 describe('Oberflächen-Hygiene', () => {
-	it('führt keine neuen Emojis ein (Icons kommen aus @lucide/svelte)', () => {
+	it('führt keine neuen Emojis ein (Icons kommen aus ui/Icon)', () => {
 		const betroffen = sammleQuelldateien(srcRoot)
 			.filter((f) => EMOJI.test(readFileSync(f, 'utf8')))
 			.map(relPfad)
@@ -72,7 +72,7 @@ describe('Oberflächen-Hygiene', () => {
 
 		expect(
 			neu,
-			`Neue Emojis im Quellcode. Bitte ein Lucide-Icon verwenden:\n  ${neu.join('\n  ')}`
+			`Neue Emojis im Quellcode. Bitte ui/Icon verwenden:\n  ${neu.join('\n  ')}`
 		).toEqual([]);
 
 		expect(

@@ -19,7 +19,7 @@
 	import Button from '../ui/Button.svelte';
 	import SchuelerZusammenfuehren from '../leser/SchuelerZusammenfuehren.svelte';
 	import { istKollegium, leserArtText } from '../leser/leserArt.js';
-	import { Info, SquarePen } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { formatDatum } from '../../utils/format.js';
 
 	const kollege = $derived(istKollegium(leser));
@@ -42,7 +42,7 @@
 			     (styles/rollen.css). Die vier Tailwind-Klassen hier waren eine zweite
 			     Farbquelle neben den Rollen — genau das, was die Farb-Ratsche abbaut. -->
 			<Button variant="secondary" size="lg" onclick={onEdit} class="px-5">
-				<SquarePen class="w-4 h-4" aria-hidden="true" />
+				<Icon name="edit_square" />
 				Bearbeiten
 			</Button>
 		</div>
@@ -100,7 +100,7 @@
 		<div
 			class="flex items-start gap-3 rounded-xl border border-outline-variant px-4 py-3 text-sm text-on-surface-variant"
 		>
-			<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
+			<Icon name="info" class="text-outline" />
 			<p>
 				<span class="text-body-medium-emphasized">E-Mail-Adresse, Rolle und Freischaltung</span>
 				stehen nicht hier, sondern in

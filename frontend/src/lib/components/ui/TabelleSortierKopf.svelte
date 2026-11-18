@@ -15,7 +15,7 @@
      dort, wo Sortieren nichts bewirkt (Kiosk, Abgänger, Schülersuche der Vormerkung) —
      ein Pfeil, der nichts tut, wäre dort schlimmer als keiner. -->
 <script>
-	import { ArrowDown, ArrowUp, ChevronsUpDown } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/**
 	 * @type {{
@@ -64,11 +64,11 @@
 			{#if !aktiv}
 				<!-- Der Doppelpfeil sagt „hier kann man sortieren", ohne eine Richtung zu
 				     behaupten. Ohne Symbol sähe die Spalte aus wie eine gewöhnliche. -->
-				<ChevronsUpDown class="h-3.5 w-3.5 opacity-50" aria-hidden="true" />
+				<Icon name="unfold_more" groesse={18} class="opacity-50" />
 			{:else if sortierung.absteigend}
-				<ArrowDown class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+				<Icon name="arrow_downward" groesse={18} class="text-primary" />
 			{:else}
-				<ArrowUp class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+				<Icon name="arrow_upward" groesse={18} class="text-primary" />
 			{/if}
 		</button>
 	</th>

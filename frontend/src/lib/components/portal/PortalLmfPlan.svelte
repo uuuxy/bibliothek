@@ -9,7 +9,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { CalendarDays, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
@@ -96,7 +96,7 @@
 	<LadeFehler titel="LMF-Plan nicht geladen" text={fehler} onerneut={erneutLaden} />
 {:else if termine.length === 0}
 	<SuchZustand
-		symbol={CalendarDays}
+		symbol="calendar_month"
 		titel="Der nächste Plan folgt"
 		hinweis="Sobald die Bibliothek ihn veröffentlicht, steht er hier"
 	/>
@@ -107,7 +107,7 @@
 				variant="secondary"
 				onclick={() => dienst.ladePdf().catch((e) => snackbars.addToast(fehlertext(e), 'error'))}
 			>
-				<Printer class="h-4 w-4" aria-hidden="true" />
+				<Icon name="print" />
 				Als PDF
 			</Button>
 		{/snippet}

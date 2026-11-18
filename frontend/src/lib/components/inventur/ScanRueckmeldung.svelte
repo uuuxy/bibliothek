@@ -13,41 +13,41 @@
   bis der nächste Scan kommt.
 -->
 <script>
-	import { Check, TriangleAlert, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ scan: { success: boolean, warnings: string[], title: string, barcode: string } }} */
 	let { scan } = $props();
 
 	// Ganze Klassennamen, nicht zusammengesetzt: Tailwind findet nur, was wörtlich im
 	// Quelltext steht.
+	/** @type {Record<string, { flaeche: string, marke: string, symbol: import('../ui/iconNamen.js').IconName }>} */
 	const TOENE = {
 		ok: {
 			flaeche: 'bg-success-container text-on-success-container',
 			marke: 'bg-success text-on-success',
-			symbol: Check
+			symbol: 'check'
 		},
 		hinweis: {
 			flaeche: 'bg-warning-container text-on-warning-container',
 			marke: 'bg-warning text-on-warning',
-			symbol: TriangleAlert
+			symbol: 'warning'
 		},
 		abgelehnt: {
 			flaeche: 'bg-error-container text-on-error-container',
 			marke: 'bg-error text-on-error',
-			symbol: X
+			symbol: 'close'
 		}
 	};
 
 	const ton = $derived(
 		!scan.success ? TOENE.abgelehnt : scan.warnings.length > 0 ? TOENE.hinweis : TOENE.ok
 	);
-	const Symbol = $derived(ton.symbol);
 </script>
 
 <div class="rounded-2xl p-6 {ton.flaeche}">
 	<div class="flex items-start space-x-4">
 		<div class="p-2 rounded-full shrink-0 {ton.marke}">
-			<Symbol class="w-6 h-6" aria-hidden="true" />
+			<Icon name={ton.symbol} groesse={24} />
 		</div>
 
 		<div class="flex-1">

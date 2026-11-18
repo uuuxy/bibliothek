@@ -6,7 +6,7 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Pencil, Plus, Printer, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
@@ -79,7 +79,7 @@
 								class="text-label-medium px-2 py-1 bg-warning-container text-on-warning-container rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => (barcodeBearbeiten = true)}
 							>
-								<Plus class="w-3.5 h-3.5" aria-hidden="true" />
+								<Icon name="add" groesse={18} />
 								Barcode scannen
 							</button>
 						{:else}
@@ -91,7 +91,7 @@
 										data-tip="Etikett im Druck-Center drucken"
 										onclick={onEtikett}
 									>
-										<Printer class="h-4 w-4" aria-hidden="true" />
+										<Icon name="print" />
 									</button>
 								{/if}
 								<button
@@ -100,7 +100,7 @@
 									data-tip="Barcode zuweisen oder ändern"
 									onclick={() => (barcodeBearbeiten = true)}
 								>
-									<Pencil class="h-4 w-4" aria-hidden="true" />
+									<Icon name="edit" />
 								</button>
 							</div>
 						{/if}
@@ -121,7 +121,7 @@
 								zustandBearbeiten = true;
 							}}
 						>
-							<Pencil class="h-4 w-4" aria-hidden="true" />
+							<Icon name="edit" />
 						</button>
 					{/if}
 					<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
@@ -136,7 +136,7 @@
 							{#if loescht}
 								<Ladekreis size="sm" farbe="aktuell" />
 							{:else}
-								<Trash class="h-4 w-4" aria-hidden="true" />
+								<Icon name="delete" />
 							{/if}
 						</button>
 					{/if}

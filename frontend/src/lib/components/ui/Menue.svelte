@@ -30,7 +30,7 @@
      wenn der Fokus das Menü verlässt. -->
 <script>
 	import { tick } from 'svelte';
-	import { EllipsisVertical } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 	import { escapeSchliesst } from './escapeSchliesst.js';
 	import { berechneMenueBox } from './menueGeometrie.js';
@@ -136,7 +136,7 @@
 			data-tip={etikett}
 			onclick={() => (offen ? schliessen() : oeffnen())}
 		>
-			<EllipsisVertical class="h-4 w-4" aria-hidden="true" />
+			<Icon name="more_vert" />
 		</Button>
 	{/if}
 </div>
@@ -170,8 +170,7 @@
 				class="m3-state flex min-h-12 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left text-sm text-on-surface focus:outline-none focus-visible:bg-on-surface/8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40"
 			>
 				{#if e.icon}
-					{@const Icon = e.icon}
-					<Icon class="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden="true" />
+					<Icon name={e.icon} groesse={24} class="text-on-surface-variant" />
 				{/if}
 				<span class="min-w-0 flex-1 wrap-break-word">{e.text}</span>
 			</button>

@@ -1,5 +1,5 @@
 <script>
-	import { Check } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/**
 	 * @component FilterChips — die Filter-Chips aus Material 3, einfach wählbar.
@@ -47,7 +47,7 @@
 				: 'border-outline px-4 text-on-surface-variant'}"
 		>
 			{#if gewaehlt}
-				<Check class="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+				<Icon name="check" groesse={18} />
 			{/if}
 			{o.text}
 		</button>

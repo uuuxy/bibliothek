@@ -4,7 +4,7 @@
      /api/class-books (view_books) statt über /api/admin/class-books (edit_books): Sonst
      liefe die Seite für die Helfer ins 403. -->
 <script>
-	import { BookOpen, Plus } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import LadeFehler from '../../../../lib/components/ui/LadeFehler.svelte';
 	import SuchZustand from '../../../../lib/components/ui/SuchZustand.svelte';
@@ -146,7 +146,7 @@
 						isManaging = true;
 					}}
 				>
-					<Plus class="w-4 h-4" aria-hidden="true" />
+					<Icon name="add" />
 					Klassensatz anlegen
 				</Button>
 			{/if}
@@ -162,13 +162,13 @@
 		     auf die Suche nach Daten, die es gibt — sein Suchbegriff passt nur nicht. -->
 		{#if gruppen.length > 0}
 			<SuchZustand
-				symbol={BookOpen}
+				symbol="menu_book"
 				titel="Keine Klasse gefunden"
 				hinweis={`Zu „${klassenSuche}" gibt es keinen Klassensatz. Suchfeld leeren zeigt wieder alle.`}
 			/>
 		{:else}
 			<SuchZustand
-				symbol={BookOpen}
+				symbol="menu_book"
 				titel="Noch keine Klassen angelegt"
 				hinweis={darfPflegen
 					? 'Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen'

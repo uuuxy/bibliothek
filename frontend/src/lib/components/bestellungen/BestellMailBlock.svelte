@@ -10,7 +10,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { formatZeitpunkt } from '../../utils/format.js';
 	import Button from '../ui/Button.svelte';
-	import { MailWarning } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ b: any, darfSenden: boolean, onAktualisieren: () => Promise<unknown> }} */
 	let { b, darfSenden, onAktualisieren } = $props();
@@ -69,7 +69,7 @@
 	class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-error-container px-4 py-3 text-on-error-container"
 >
 	<div class="flex items-start gap-3">
-		<MailWarning size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
+		<Icon name="cancel_schedule_send" class="mt-0.5" />
 		<div>
 			<p class="text-body-medium-emphasized">Die Bestellmail ist nicht rausgegangen</p>
 			<p class="mt-0.5 text-xs">

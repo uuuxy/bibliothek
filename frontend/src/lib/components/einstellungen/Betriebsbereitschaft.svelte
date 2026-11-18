@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
-	import { CircleCheck, TriangleAlert, OctagonAlert, RefreshCw } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 
@@ -25,9 +25,9 @@
 	// traegt deshalb dieselbe Farbe wie „kritisch" und unterscheidet sich am SYMBOL —
 	// ein zweiter Kanal neben der Farbe ist ohnehin die Vorgabe (WCAG 1.4.1).
 	const AUSSEHEN = {
-		kritisch: { symbol: OctagonAlert, farbe: 'text-error', flaeche: 'bg-error-container' },
-		warnung: { symbol: TriangleAlert, farbe: 'text-error', flaeche: 'bg-surface-container-low' },
-		ok: { symbol: CircleCheck, farbe: 'text-primary', flaeche: 'bg-surface' }
+		kritisch: { symbol: 'report', farbe: 'text-error', flaeche: 'bg-error-container' },
+		warnung: { symbol: 'warning', farbe: 'text-error', flaeche: 'bg-surface-container-low' },
+		ok: { symbol: 'check_circle', farbe: 'text-primary', flaeche: 'bg-surface' }
 	};
 
 	async function laden() {
@@ -59,7 +59,7 @@
 			eine Einstellung fehlt, melden sich nirgends. Hier stehen sie.
 		</p>
 		<Button variant="secondary" onclick={laden} disabled={laedt} class="shrink-0">
-			<RefreshCw class="h-4 w-4 {laedt ? 'animate-spin' : ''}" aria-hidden="true" />
+			<Icon name="refresh" class={laedt ? 'animate-spin' : ''} />
 			Neu prüfen
 		</Button>
 	</div>
@@ -83,9 +83,9 @@
 		<div class="divide-y divide-outline-variant border-y border-outline-variant">
 			{#each sortiert as b (b.bereich)}
 				{@const stil = AUSSEHEN[b.stufe] ?? AUSSEHEN.ok}
-				{@const Symbol = stil.symbol}
+
 				<div class="flex gap-4 py-4 {stil.flaeche}">
-					<Symbol class="mt-0.5 h-5 w-5 shrink-0 {stil.farbe}" aria-hidden="true" />
+					<Icon name={stil.symbol} class="mt-0.5 {stil.farbe}" />
 					<div class="min-w-0">
 						<p class="text-on-surface text-body-large-emphasized">{b.bereich}</p>
 						<p class="mt-0.5 text-sm text-on-surface">{b.befund}</p>

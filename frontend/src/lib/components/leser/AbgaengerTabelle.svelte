@@ -6,7 +6,6 @@
      Liste nach gescheitertem Abruf ist nicht „alle entlastet", sonst entlässt die
      Bibliothek Schüler, ohne Bücher einzusammeln. -->
 <script>
-	import { CalendarClock, Check } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -27,13 +26,13 @@
 	<LadeFehler onerneut={onErneut} titel="Abgängerliste nicht geladen" text={ladefehler} />
 {:else if !fenster.offen}
 	<SuchZustand
-		symbol={CalendarClock}
+		symbol="calendar_clock"
 		titel="Abschlussklassen erscheinen hier ab Mai"
 		hinweis="Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen 9H, 10R und 13 mit noch offenen Büchern, zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch Bücher schuldet, steht im Mahnwesen."
 	/>
 {:else if leer}
 	<SuchZustand
-		symbol={Check}
+		symbol="check"
 		titel="Alle Abgänger entlastet"
 		hinweis="Kein Schüler der Abschlussklassen hat noch offene Lehrmittel"
 	/>

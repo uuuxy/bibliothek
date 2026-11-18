@@ -4,7 +4,7 @@
      hinter der Suche nach einem Titel liegen. -->
 <script>
 	import { tick } from 'svelte';
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
 
@@ -37,7 +37,7 @@
 		aria-expanded={formular.open}
 		onclick={onumschalten}
 	>
-		<TriangleAlert class="h-4 w-4" aria-hidden="true" />
+		<Icon name="warning" />
 		Problem melden
 	</Button>
 </div>

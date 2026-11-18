@@ -6,7 +6,7 @@
 	import { baueAusleiherDruckHtml } from '../../utils/ausleiherDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 	import { formatDatum } from '../../utils/format.js';
-	import { Printer, Users } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 
@@ -41,7 +41,7 @@
 
 {#if ausleiher.length === 0}
 	<SuchZustand
-		symbol={Users}
+		symbol="group"
 		titel="Keine Ausleihen"
 		hinweis="Kein Exemplar dieses Titels ist ausgeliehen"
 	/>
@@ -67,7 +67,7 @@
 		{/if}
 		<div class="flex-1"></div>
 		<Button variant="secondary" onclick={druckeAusleiher}>
-			<Printer class="w-4 h-4" aria-hidden="true" />
+			<Icon name="print" />
 			Liste drucken
 		</Button>
 	</div>

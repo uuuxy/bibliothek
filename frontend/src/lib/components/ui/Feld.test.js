@@ -6,8 +6,7 @@ import Feld from './Feld.svelte';
 // Der Fehlerzustand nach Material 3, Text fields: „It's strongly recommended to show an error
 // icon when the text field is in the error state". Die Lage des Symbols misst
 // e2e/feld-fehlersymbol.spec.js im Browser; hier stehen Aufbau und Verhalten.
-const symbol = (/** @type {HTMLElement} */ wurzel) =>
-	wurzel.querySelector('svg.lucide-circle-alert');
+const symbol = (/** @type {HTMLElement} */ wurzel) => wurzel.querySelector('[data-icon="error"]');
 
 const knopf = createRawSnippet(() => ({
 	render: () => '<button type="button" aria-label="Zurücksetzen">↺</button>'

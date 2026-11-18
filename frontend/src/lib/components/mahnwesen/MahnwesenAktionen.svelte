@@ -19,7 +19,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { baueMahnlisteDruckHtml } from '../../utils/mahnlisteDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
-	import { FileText, Mail, Printer, RefreshCw, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * onBescheid bekommt die ID des einen markierten Schülers. Als Prop, weil den Dialog
@@ -64,7 +64,7 @@
 		data-tip="Auswahl aufheben"
 		class="icon-btn px-2 text-on-surface-variant"
 	>
-		<X class="h-4 w-4" aria-hidden="true" />
+		<Icon name="close" />
 	</Button>
 	<span class="text-body-medium-emphasized text-on-surface"
 		>{mahnwesenStore.gewaehlteKennungen.size} ausgewählt</span
@@ -75,7 +75,7 @@
 			{#if mahnwesenStore.drucktPdf}
 				<Ladekreis size="sm" farbe="aktuell" />
 			{:else}
-				<Printer class="h-4 w-4" aria-hidden="true" />
+				<Icon name="print" />
 			{/if}
 			Mahnbriefe drucken
 		</Button>
@@ -84,14 +84,14 @@
 		<!-- Getönt, nicht gefüllt: In diesem Bereich ist „Mahnbriefe drucken" die eine
 		     gefüllte Aktion (M3). -->
 		<Button variant="secondary" onclick={() => onBescheid(einzelnMarkiert)}>
-			<FileText class="h-4 w-4" aria-hidden="true" />
+			<Icon name="description" />
 			Schadensersatz-Bescheid
 		</Button>
 	{/if}
 {:else}
 	<!-- Wie in Verwaltungsprotokoll und Logbuch: Symbol und Wort. -->
 	<Button variant="secondary" onclick={mahnwesenStore.lade}>
-		<RefreshCw class="h-4 w-4" aria-hidden="true" />
+		<Icon name="refresh" />
 		Aktualisieren
 	</Button>
 
@@ -100,7 +100,7 @@
 		onclick={listeDrucken}
 		disabled={mahnwesenStore.gefilterteSchueler.length === 0}
 	>
-		<Printer class="h-4 w-4" aria-hidden="true" />
+		<Icon name="print" />
 		Liste drucken
 	</Button>
 
@@ -119,7 +119,7 @@
 			{#if mahnwesenStore.mahnlauf.laeuft}
 				<Ladekreis size="sm" farbe="aktuell" etikett="Mahnlauf läuft" />
 			{:else}
-				<Mail class="h-4 w-4" aria-hidden="true" />
+				<Icon name="mail" />
 			{/if}
 			Alle anmahnen
 		</Button>

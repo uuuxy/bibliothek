@@ -12,7 +12,7 @@
 </script>
 
 <script>
-	import { X } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import { escapeSchliesst } from './escapeSchliesst.js';
 
 	/** @type {{ titel: string, onschliessen: () => void, children: import('svelte').Snippet }} */
@@ -33,7 +33,7 @@
 			aria-label="Schließen"
 			data-tip="Schließen"
 		>
-			<X class="h-5 w-5" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	</div>
 	<div class="flex flex-col gap-5 px-6 pt-3 pb-6">

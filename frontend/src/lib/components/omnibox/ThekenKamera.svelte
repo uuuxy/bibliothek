@@ -9,7 +9,7 @@
 	 */
 	import KameraScanner from '../../../inventur/lib/components/scanner/KameraScanner.svelte';
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
-	import { X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { onDestroy } from 'svelte';
 
 	let { stoppeKamera, wert = $bindable(), nachScan } = $props();
@@ -56,7 +56,7 @@
 			data-tip="Kamera schließen"
 			aria-label="Kamera schließen"
 		>
-			<X class="h-5 w-5" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	</div>
 	<!-- Eine Zeile, die den Zustand sagt, statt einer festen Aufschrift: Eine Kamera, die

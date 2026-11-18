@@ -7,7 +7,7 @@
 <script>
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
-	import { BookOpen, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/**
@@ -70,7 +70,7 @@
 								)} für {p.titel_name} nachdrucken"
 								class="icon-btn gap-1 px-1.5 text-label-medium text-primary"
 							>
-								<Printer class="h-4 w-4" aria-hidden="true" />
+								<Icon name="print" />
 								{p.etiketten_offen}
 							</button>
 						{/if}
@@ -82,7 +82,7 @@
 								aria-label="Titelsatz von {p.titel_name} öffnen"
 								class="icon-btn text-on-surface-variant"
 							>
-								<BookOpen class="h-4 w-4" aria-hidden="true" />
+								<Icon name="menu_book" />
 							</button>
 						{/if}
 					</div>

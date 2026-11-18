@@ -12,7 +12,7 @@
 <script>
 	import { offlineSync } from '../../stores/offlineSync.svelte.js';
 	import { nachbuchMeldungen } from '../../stores/nachbuchMeldungen.svelte.js';
-	import { CloudOff, Download, ListChecks, TriangleAlert, Upload } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -100,9 +100,9 @@
 	>
 		<div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-1.5">
 			{#if haengt}
-				<TriangleAlert size={18} strokeWidth={2.5} class="shrink-0" />
+				<Icon name="warning" />
 			{:else}
-				<CloudOff size={18} strokeWidth={2.5} class="shrink-0" />
+				<Icon name="cloud_off" />
 			{/if}
 
 			<p class="min-w-0 flex-1 truncate text-body-medium-emphasized">
@@ -149,14 +149,14 @@
 					onclick={() => nachbuchMeldungen.oeffne()}
 					class="shrink-0"
 				>
-					<ListChecks size={16} strokeWidth={2.5} />
+					<Icon name="checklist" />
 					{anzahlText(nachbuchMeldungen.offen, 'Meldung', 'Meldungen')}
 				</Button>
 			{/if}
 
 			{#if offlineSync.wartendeAnzahl > 0}
 				<Button variant="secondary" size="sm" onclick={sichere} class="shrink-0">
-					<Download size={16} strokeWidth={2.5} />
+					<Icon name="download" />
 					Sicherung speichern
 				</Button>
 			{/if}
@@ -178,7 +178,7 @@
 				class="shrink-0"
 				data-tip="Sicherung eines anderen Rechners übernehmen"
 			>
-				<Upload size={16} strokeWidth={2.5} />
+				<Icon name="upload" />
 				Sicherung einspielen
 			</Button>
 		</div>

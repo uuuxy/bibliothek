@@ -11,7 +11,7 @@
 
      Die Menüfläche liegt in SelectListe.svelte. -->
 <script>
-	import { ChevronDown } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
 	import { folgeLage } from './lageFolgen.js';
@@ -172,11 +172,10 @@
 	<span class="min-w-0 flex-1 truncate {beschriftung ? '' : 'text-on-surface-variant'}">
 		{beschriftung || placeholder}
 	</span>
-	<ChevronDown
-		class="h-4 w-4 shrink-0 text-on-surface-variant transition-transform {offen
-			? 'rotate-180'
-			: ''}"
-		aria-hidden="true"
+	<Icon
+		name="arrow_drop_down"
+		groesse={24}
+		class="text-on-surface-variant transition-transform {offen ? 'rotate-180' : ''}"
 	/>
 </button>
 

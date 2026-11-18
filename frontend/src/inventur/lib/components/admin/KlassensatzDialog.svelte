@@ -7,7 +7,7 @@
 	import KlassensatzKlassenwahl from './KlassensatzKlassenwahl.svelte';
 	import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
 	import KlassensatzZusammenfassung from './KlassensatzZusammenfassung.svelte';
-	import { TriangleAlert, X } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 
 	/**
@@ -157,7 +157,7 @@
 						<div
 							class="mb-4 flex items-start gap-2.5 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 						>
-							<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+							<Icon name="warning" class="mt-0.5" />
 							<p>{ueberschriebenText}</p>
 						</div>
 					{/if}
@@ -192,7 +192,7 @@
 				onclick={onClose}
 				class="icon-btn absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-on-surface-variant"
 			>
-				<X class="w-4 h-4" aria-hidden="true" />
+				<Icon name="close" />
 			</button>
 		</div>
 	</Dialog>

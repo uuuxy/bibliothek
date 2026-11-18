@@ -3,7 +3,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { TriangleAlert, CalendarPlus, Undo2 } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import AusleiheRueckgabe from './AusleiheRueckgabe.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import CoverVorschau from '../ui/CoverVorschau.svelte';
@@ -147,7 +147,7 @@
 									{#if extendingIds.has(ausleiheId)}
 										<Ladekreis size="sm" farbe="aktuell" />
 									{:else}
-										<CalendarPlus class="h-4 w-4" aria-hidden="true" />
+										<Icon name="calendar_add_on" />
 									{/if}
 								</button>
 							{/if}
@@ -159,7 +159,7 @@
 									data-tip="Verlust oder Schaden melden"
 									aria-label="Verlust oder Schaden melden"
 								>
-									<TriangleAlert class="h-4 w-4" aria-hidden="true" />
+									<Icon name="warning" />
 								</button>
 							{/if}
 							{#if onReturnClick}
@@ -170,7 +170,7 @@
 									data-tip="Buch zurückgeben"
 									aria-label="Buch zurückgeben"
 								>
-									<Undo2 class="h-4 w-4" aria-hidden="true" />
+									<Icon name="undo" />
 								</button>
 							{/if}
 						</div>

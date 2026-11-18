@@ -9,7 +9,7 @@
 	import { schuetzeUngespeichertes } from '../../stores/verlassenSchutz.svelte.js';
 	import { useLeserakteFormular } from './useLeserakteFormular.svelte.js';
 	import { leserArtText } from '../leser/leserArt.js';
-	import { Check, ChevronLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	// Die Klasse wird gewählt, nicht getippt, damit kein Tippfehler eine Klasse anlegt.
 	const klassenListe = erzeugeKlassenVorschlaege();
@@ -73,7 +73,7 @@
 				data-tip="Zurück"
 				class="icon-btn h-10 w-10 shrink-0 text-on-surface-variant"
 			>
-				<ChevronLeft class="w-5 h-5" aria-hidden="true" />
+				<Icon name="chevron_left" />
 			</button>
 
 			<div class="min-w-0">
@@ -95,7 +95,7 @@
 					<Ladekreis size="sm" farbe="aktuell" />
 					Wird gespeichert …
 				{:else}
-					<Check class="w-4 h-4" aria-hidden="true" />
+					<Icon name="check" />
 					Speichern
 				{/if}
 			</Button>

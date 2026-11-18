@@ -4,7 +4,7 @@
      Auflage. Material 3, Lists:
      „Limit supporting text to one to three lines". -->
 <script>
-	import { BookPlus, Plus } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import CoverVorschau from '../ui/CoverVorschau.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import Menue from '../ui/Menue.svelte';
@@ -15,7 +15,7 @@
 
 	// Material 3, Menus: „Use menus in situations that need extra actions, like: Overflow menus" —
 	// das Plus bleibt die eine sichtbare Aktion der Zeile, alles Weitere steht dahinter.
-	const eintraege = [{ id: 'neue-auflage', text: 'Neue Auflage bestellen …', icon: BookPlus }];
+	const eintraege = [{ id: 'neue-auflage', text: 'Neue Auflage bestellen …', icon: 'library_add' }];
 </script>
 
 <div
@@ -59,7 +59,7 @@
 		data-tip="{r.fehlen} zur Bestellung hinzufügen"
 		class="icon-btn shrink-0 w-9 h-9 border border-outline-variant text-on-surface-variant active:scale-90"
 	>
-		<Plus class="w-4 h-4" aria-hidden="true" />
+		<Icon name="add" />
 	</button>
 	{#if onNeueAuflage}
 		<Menue etikett="Weitere Aktionen zu {r.titel}" {eintraege} onwahl={() => onNeueAuflage?.(r)} />

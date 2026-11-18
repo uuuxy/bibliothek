@@ -6,7 +6,7 @@
      „Schließen" im Kopf und nicht auf der Aufnahme: An der Theke tippt der Handscanner blind und
      endet mit Enter, das nähme sonst ein Foto auf und ersetzte das vorhandene. -->
 <script>
-	import { TriangleAlert, Camera } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
@@ -141,7 +141,7 @@
 				role="alert"
 				class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="warning" />
 				<span>{kameraFehler}</span>
 			</div>
 			<div class="flex justify-end">
@@ -190,7 +190,7 @@
 						<Ladekreis size="sm" farbe="aktuell" />
 						Wird gespeichert …
 					{:else}
-						<Camera class="h-4 w-4" aria-hidden="true" />
+						<Icon name="photo_camera" />
 						Foto aufnehmen
 					{/if}
 				</Button>

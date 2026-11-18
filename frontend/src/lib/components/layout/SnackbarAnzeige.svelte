@@ -1,13 +1,14 @@
 <script>
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { meldungsPlatz, RAND } from './meldungsPlatz.js';
-	import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
+	/** @type {Record<string, import('../ui/iconNamen.js').IconName>} */
 	const symbole = {
-		error: CircleAlert,
-		success: CircleCheck,
-		warning: TriangleAlert,
-		info: Info
+		error: 'error',
+		success: 'check_circle',
+		warning: 'warning',
+		info: 'info'
 	};
 
 	const flaechen = {
@@ -73,7 +74,7 @@
 	bind:clientHeight={hoehe}
 >
 	{#each snackbars.toasts as toast (toast.id)}
-		{@const Symbol = symbole[toast.type] ?? Info}
+		{@const symbol = symbole[toast.type] ?? 'info'}
 		<!-- Fehler sind alert (der Screenreader unterbricht), alles andere status (er
 		     wartet). Maus oder Fokus auf dem Toast halten die Standzeit an — siehe
 		     snackbars.pausieren. -->
@@ -87,7 +88,7 @@
 				toast.type
 			] ?? flaechen.info}"
 		>
-			<Symbol class="h-5 w-5 shrink-0" aria-hidden="true" />
+			<Icon name={symbol} />
 			<span class="wrap-break-word w-full">{toast.message}</span>
 			{#if toast.aktion}
 				<!-- M3-Snackbar: genau eine Folgehandlung, textbetont und rechts neben der
@@ -109,7 +110,7 @@
 				aria-label="Schließen"
 				data-tip="Schließen"
 			>
-				<X class="h-4 w-4" aria-hidden="true" />
+				<Icon name="close" />
 			</button>
 		</div>
 	{/each}

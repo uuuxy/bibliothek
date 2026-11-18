@@ -3,7 +3,6 @@
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
-	import { Search } from '@lucide/svelte';
 	import PortalMeldungen from './PortalMeldungen.svelte';
 	import PortalProblemZeile from './PortalProblemZeile.svelte';
 	import { erzeugeEigeneAnliegen } from './eigeneAnliegen.svelte.js';
@@ -155,7 +154,7 @@
 		{:else if suche.aktiv && !suche.laedt && !suche.fehler}
 			<!-- Nicht bei einem Fehler: Dann ist nichts gefunden, weil nicht gesucht wurde. -->
 			<SuchZustand
-				symbol={Search}
+				symbol="search"
 				titel="Keine Titel gefunden"
 				hinweis={suche.schlagwort
 					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück'

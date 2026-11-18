@@ -8,7 +8,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { menueGruppen, darfSehen } from '../../menue.js';
-	import { ChevronDown } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import NavIcon from './NavIcon.svelte';
 	import Zaehlerpille from '../ui/Zaehlerpille.svelte';
 
@@ -24,9 +24,10 @@
 	});
 
 	// Höhe und Polsterung einer Zeile, für die Ziele und den Eintrag „System" gleich: Über dem
-	// Inhalt behält die Zeile die Höhe der schmalen Leiste, damit unter der Maus nichts rückt.
+	// Inhalt behält die Zeile die Höhe der schmalen Leiste, damit unter der Maus nichts rückt;
+	// pl-2 setzt die Mitte des 24-px-Icons auf dieselben 32 px wie in der schmalen Leiste.
 	const zeile = $derived(
-		schmal ? 'justify-center px-0 py-2.5' : zu ? 'gap-3 pr-3 pl-2.5 py-2.5' : 'gap-3 px-3 py-2'
+		schmal ? 'justify-center px-0 py-2.5' : zu ? 'gap-3 pr-3 pl-2 py-2.5' : 'gap-3 px-3 py-2'
 	);
 
 	/** @param {string} id */
@@ -69,7 +70,7 @@
 		title={item.label}
 		aria-current={uiStore.activeTab === item.id ? 'page' : undefined}
 	>
-		<NavIcon name={item.icon} />
+		<NavIcon name={item.icon} aktiv={uiStore.activeTab === item.id} />
 		{#if !schmal}
 			<span class="animate-fade-in flex-1 whitespace-nowrap text-left">{item.label}</span>
 			<Zaehlerpille anzahl={wartendeArbeit(item.id)} klasse="ml-auto" />
@@ -97,11 +98,10 @@
 						aria-expanded={systemOpen}
 						aria-controls="seitenleiste-system"
 					>
-						<ChevronDown
-							class="h-5 w-5 shrink-0 transition-transform duration-200 {systemOpen
-								? 'rotate-180'
-								: ''}"
-							aria-hidden="true"
+						<Icon
+							name="expand_more"
+							groesse={24}
+							class="transition-transform duration-200 {systemOpen ? 'rotate-180' : ''}"
 						/>
 						{#if !schmal}
 							<span class="animate-fade-in flex-1 whitespace-nowrap text-left">{group.name}</span>

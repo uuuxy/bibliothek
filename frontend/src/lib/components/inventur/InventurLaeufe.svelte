@@ -2,7 +2,6 @@
      aktiv". Kam eine Liste nicht, steht ihr Grund an ihrer Stelle: Ohne die laufenden lüde die
      Seite zu einem zweiten Lauf ein, und der Server verwiese „unten" auf eine Liste, die fehlt. -->
 <script>
-	import { Trash } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Menue from '../ui/Menue.svelte';
@@ -138,7 +137,7 @@
 					{/if}
 					<Menue
 						etikett="Aktionen für „{inventur.label}“"
-						eintraege={[{ id: 'loeschen', text: 'Löschen', icon: Trash }]}
+						eintraege={[{ id: 'loeschen', text: 'Löschen', icon: 'delete' }]}
 						onwahl={() => loeschen(inventur)}
 					/>
 				</div>

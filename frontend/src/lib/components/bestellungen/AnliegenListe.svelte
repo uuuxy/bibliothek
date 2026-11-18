@@ -12,7 +12,7 @@
 	import Button from '../ui/Button.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import { Check, Inbox } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { formatDatum } from '../../utils/format.js';
 
@@ -124,7 +124,7 @@
 		{#snippet aktion()}
 			{#if confirmingId !== a.id}
 				<Button variant="primary" onclick={() => requestConfirm(a.id)}>
-					<Check class="w-4 h-4" aria-hidden="true" />
+					<Icon name="check" />
 					Abhaken
 				</Button>
 			{/if}
@@ -172,7 +172,7 @@
 	{:else if ladefehler}
 		<LadeFehler onerneut={ladeAnliegen} titel="Meldungen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}
-		<SuchZustand symbol={Inbox} titel="Keine offenen Meldungen" />
+		<SuchZustand symbol="inbox" titel="Keine offenen Meldungen" />
 	{:else}
 		<!-- M3 Lists: Ein Abstand trennt die Gruppen, die Linien nur die Zeilen einer Gruppe. -->
 		{#each abschnitte as g (g.titel)}

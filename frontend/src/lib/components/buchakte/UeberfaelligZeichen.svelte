@@ -2,8 +2,8 @@
      Die Farbe des Datums allein sagt es nicht jedem; Leserakte und Buchakte setzen dasselbe
      Zeichen daneben. -->
 <script>
-	import { CircleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 </script>
 
-<CircleAlert class="h-4 w-4 shrink-0 text-error" aria-hidden="true" />
+<Icon name="error" class="text-error" />
 <span class="sr-only">Überfällig</span>

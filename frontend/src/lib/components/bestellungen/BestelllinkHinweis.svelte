@@ -10,7 +10,7 @@
      Form wie BackupHinweis: 3-px-Schweregradstreifen auf ruhigem Grund, ein Satz zur Lage,
      ein Satz zur Folge, ein Knopf, der genau dorthin führt, wo es zu beheben ist. -->
 <script>
-	import { TriangleAlert, ArrowRight } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { verbindeSaetze } from '../../utils/format.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -48,7 +48,7 @@
 		role="alert"
 		class="no-print flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] border-l-warning bg-surface-container-lowest py-3 pr-4 pl-3.5"
 	>
-		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+		<Icon name="warning" class="mt-0.5 text-warning" />
 		<div class="min-w-0 flex-1">
 			<p class="text-body-medium-emphasized text-on-surface">
 				Bestellungen gehen ohne Bestätigungs-Link raus
@@ -64,7 +64,7 @@
 		{#if istAdmin}
 			<Button variant="secondary" size="sm" onclick={einstellungenOeffnen} class="mt-0.5 shrink-0">
 				Einstellungen öffnen
-				<ArrowRight class="h-3.5 w-3.5" />
+				<Icon name="arrow_forward" groesse={18} />
 			</Button>
 		{/if}
 	</div>
@@ -75,7 +75,7 @@
 		role="status"
 		class="no-print flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] border-l-outline bg-surface-container-lowest py-3 pr-4 pl-3.5"
 	>
-		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
+		<Icon name="warning" class="mt-0.5 text-on-surface-variant" />
 		<div class="min-w-0 flex-1">
 			<p class="text-body-medium-emphasized text-on-surface">Bestell-Einstellungen nicht geladen</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">

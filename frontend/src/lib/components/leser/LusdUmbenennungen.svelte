@@ -6,7 +6,7 @@
      stimmen: bestätigt heißt, der bestehende Datensatz (Ausweis, Bücher, Historie) bekommt
      den neuen Namen. „sicher" (Schuleintritt trifft) ist vorangekreuzt, „vermutlich" nicht. -->
 <script>
-	import { ArrowRight, CircleCheck, UserRoundPen } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { anzahlText } from '../../utils/format.js';
@@ -42,7 +42,7 @@
 			class="flex items-center justify-between py-3 cursor-pointer select-none marker:content-none [&::-webkit-details-marker]:hidden"
 		>
 			<div class="min-w-0 flex items-center gap-2">
-				<UserRoundPen class="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+				<Icon name="person_edit" class="text-primary" />
 				<div class="min-w-0">
 					<p class="text-label-large text-on-surface">Vermutlich dieselbe Person</p>
 					<p class="text-xs text-on-surface-variant mt-0.5">
@@ -66,7 +66,7 @@
 					<label class="flex items-start gap-3 cursor-pointer">
 						{#if abgeschlossen}
 							<span class="mt-0.5 w-4 h-4 shrink-0 text-primary" aria-hidden="true">
-								{#if p.bestaetigt}<CircleCheck class="w-4 h-4" />{/if}
+								{#if p.bestaetigt}<Icon name="check_circle" />{/if}
 							</span>
 						{:else}
 							<Kaestchen
@@ -82,7 +82,7 @@
 									{p.alt_nachname}
 									<span class="font-mono text-on-surface-variant">{p.alt_klasse}</span></span
 								>
-								<ArrowRight class="w-3 h-3 text-on-surface-variant shrink-0" aria-hidden="true" />
+								<Icon name="arrow_forward" groesse={18} class="text-on-surface-variant" />
 								<span class="text-on-surface text-body-small-emphasized"
 									>{p.neu_vorname}
 									{p.neu_nachname}

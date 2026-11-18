@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
-	import { CircleCheck, TriangleAlert, OctagonAlert, RefreshCw } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -17,9 +17,9 @@
 	// Dieselben Zeichen wie in der Betriebsbereitschaft: Farben aus den M3-Rollen, und weil M3 kein
 	// warning kennt, unterscheidet sich die Warnung am Symbol (WCAG 1.4.1).
 	const ZEICHEN = {
-		kritisch: { symbol: OctagonAlert, farbe: 'text-error' },
-		warnung: { symbol: TriangleAlert, farbe: 'text-error' },
-		ok: { symbol: CircleCheck, farbe: 'text-primary' }
+		kritisch: { symbol: 'report', farbe: 'text-error' },
+		warnung: { symbol: 'warning', farbe: 'text-error' },
+		ok: { symbol: 'check_circle', farbe: 'text-primary' }
 	};
 
 	async function laden() {
@@ -47,16 +47,16 @@
 	<div class="flex items-start justify-between gap-4">
 		{#if stand}
 			{@const zeichen = ZEICHEN[stand.stufe] ?? ZEICHEN.ok}
-			{@const Symbol = zeichen.symbol}
+
 			<p class="flex items-start gap-3 text-sm font-medium text-on-surface">
-				<Symbol class="h-5 w-5 shrink-0 {zeichen.farbe}" aria-hidden="true" />
+				<Icon name={zeichen.symbol} class={zeichen.farbe} />
 				{stand.befund}
 			</p>
 		{:else}
 			<span></span>
 		{/if}
 		<Button variant="secondary" onclick={laden} disabled={laedt} class="shrink-0">
-			<RefreshCw class="h-4 w-4 {laedt ? 'animate-spin' : ''}" aria-hidden="true" />
+			<Icon name="refresh" class={laedt ? 'animate-spin' : ''} />
 			Neu laden
 		</Button>
 	</div>

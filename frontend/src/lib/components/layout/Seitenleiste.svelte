@@ -4,7 +4,7 @@
 	import { darfVerwerfen } from '../../stores/verlassenSchutz.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
-	import { ChevronsLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import SeitenleisteZiele from './SeitenleisteZiele.svelte';
 	import SeitenleisteFuss from './SeitenleisteFuss.svelte';
 	// Das Zeichen ohne Schriftzug, der Name steht daneben: So setzen Googles Programme Logo und
@@ -67,7 +67,7 @@
 		aria-label={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}
 		data-tip={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}
 	>
-		<ChevronsLeft class="h-4.5 w-4.5 {einklappen ? '' : 'rotate-180'}" aria-hidden="true" />
+		<Icon name="keyboard_double_arrow_left" class={einklappen ? '' : 'rotate-180'} />
 	</button>
 {/snippet}
 

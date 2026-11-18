@@ -8,7 +8,7 @@
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BuchakteVormerken from './BuchakteVormerken.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { Clock, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ vormerkungen: any[], titel: any }} */
 	let { vormerkungen = $bindable(), titel } = $props();
@@ -43,7 +43,7 @@
 	<BuchakteVormerken bind:vormerkungen {titel} />
 
 	{#if vormerkungen.length === 0}
-		<SuchZustand symbol={Clock} titel="Keine Vormerkungen" />
+		<SuchZustand symbol="schedule" titel="Keine Vormerkungen" />
 	{:else}
 		<Tabelle beschriftung="Vormerkungen" class="whitespace-nowrap">
 			<thead>
@@ -76,7 +76,7 @@
 								{#if loescht.has(v.id)}
 									<Ladekreis size="sm" farbe="aktuell" />
 								{:else}
-									<Trash class="w-4 h-4" aria-hidden="true" />
+									<Icon name="delete" />
 								{/if}
 							</button>
 						</td>

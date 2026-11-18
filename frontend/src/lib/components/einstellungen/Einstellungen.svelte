@@ -12,7 +12,7 @@
 	import { apiGet } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { onMount, untrack } from 'svelte';
-	import { ArrowLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import KategorieListe from './KategorieListe.svelte';
 	import KategorieDetail from './KategorieDetail.svelte';
@@ -105,7 +105,7 @@
 					onclick={() => (detailOffen = false)}
 					class="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-primary lg:hidden"
 				>
-					<ArrowLeft size={18} /> Alle Einstellungen
+					<Icon name="arrow_back" /> Alle Einstellungen
 				</button>
 
 				<KategorieDetail {aktiv} {sichtbar} {daten} onSaved={ladeEinstellungen} />

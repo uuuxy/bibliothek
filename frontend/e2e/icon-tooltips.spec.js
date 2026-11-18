@@ -34,7 +34,7 @@ const SCREENS = [
 ];
 
 /** Sichtbare Buttons, deren Inhalt praktisch nur ein Symbol ist. */
-const SYMBOL_BUTTONS = 'button:has(svg), [role="button"]:has(svg)';
+const SYMBOL_BUTTONS = 'button:has(.icon, svg), [role="button"]:has(.icon, svg)';
 
 /**
  * @param {import('@playwright/test').Page} page

@@ -8,7 +8,7 @@
 	import GeraetFelder from './GeraetFelder.svelte';
 	import { anzahlText } from '../../utils/format.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { Pencil, Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * Geräte-Verwaltung, ein Bereich im Medienkatalog und kein eigener Menüpunkt: Ausgebucht
@@ -98,7 +98,7 @@
 			</p>
 		</div>
 		<Button variant="primary" onclick={oeffneAnlegen}>
-			<Plus class="h-4 w-4" aria-hidden="true" />
+			<Icon name="add" />
 			Gerät anlegen
 		</Button>
 	</div>
@@ -121,7 +121,7 @@
 		<LadeFehler onerneut={geraete.lade} titel="Geräte nicht geladen" text={geraete.ladefehler} />
 	{:else if geraete.liste.length === 0}
 		<div class="flex flex-col items-center gap-3 py-16 text-on-surface-variant">
-			<MonitorSmartphone class="h-12 w-12" aria-hidden="true" />
+			<Icon name="devices" groesse={48} />
 			<p class="text-body-medium-emphasized">Noch keine Geräte erfasst</p>
 		</div>
 	{:else}
@@ -161,14 +161,14 @@
 							data-tip="Bearbeiten"
 							aria-label="{g.modellname} bearbeiten"
 						>
-							<Pencil class="h-4 w-4" aria-hidden="true" />
+							<Icon name="edit" />
 						</Button>
 						<Button
 							variant={g.ist_ausleihbar ? 'danger' : 'secondary'}
 							size="sm"
 							onclick={() => schalteDefekt(g)}
 						>
-							<Wrench class="h-3.5 w-3.5" aria-hidden="true" />
+							<Icon name="build" groesse={18} />
 							{g.ist_ausleihbar ? 'Defekt melden' : 'Wieder freigeben'}
 						</Button>
 					</div>

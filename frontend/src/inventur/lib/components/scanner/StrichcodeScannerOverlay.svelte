@@ -2,7 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import { emphasizedAccelerate, emphasizedDecelerate } from '../../../../lib/utils/bewegung.js';
 	import KameraScanner from '$lib/components/scanner/KameraScanner.svelte';
-	import { X } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
 
 	let { isScanning = $bindable(), onScan } = $props();
@@ -33,7 +33,7 @@
 				aria-label="Scanner schließen"
 				data-tip="Scanner schließen"
 			>
-				<X class="w-6 h-6" aria-hidden="true" />
+				<Icon name="close" groesse={24} />
 			</button>
 			<h3 class="text-lg mb-4 text-center">ISBN scannen</h3>
 			<KameraScanner

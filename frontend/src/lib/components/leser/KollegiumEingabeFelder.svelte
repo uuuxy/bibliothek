@@ -19,7 +19,7 @@
      verschlossen, und es entsteht nur der Eintrag in der Leserdatei. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
-	import { Info } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { artMitKonto } from './leserArt.js';
 
 	/** @type {{ art?: string, vorname: string, nachname: string, barcode: string, email: string }} */
@@ -71,7 +71,7 @@
 <div
 	class="flex items-start gap-3 rounded-xl border border-outline-variant px-4 py-3 text-sm text-on-surface-variant"
 >
-	<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
+	<Icon name="info" class="text-outline" />
 	{#if mitKonto}
 		<p>
 			Es entstehen ein Eintrag in der Leserdatei, über den an der Theke Bücher auf diese Person

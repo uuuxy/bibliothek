@@ -45,7 +45,7 @@
 	 *   eigene Liste noch nicht kennt (docs/OFFEN.md 4.25); ihr Etikett sagt „neu".
 	 * @prop {string} [angeboteNeuEtikett] - Name der zweiten Zeile.
 	 */
-	import { X } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import ChipAngebote from './ChipAngebote.svelte';
 	import VorschlagFeld from './VorschlagFeld.svelte';
 
@@ -173,7 +173,7 @@
 						data-tip="„{wert}“ entfernen"
 						aria-label="„{wert}“ entfernen"
 					>
-						<X class="h-4 w-4" aria-hidden="true" />
+						<Icon name="close" groesse={18} />
 					</button>
 				</li>
 			{/each}

@@ -15,7 +15,7 @@
 <script>
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import Ladekreis from './Ladekreis.svelte';
-	import { Image, Slash } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/** children ist der Auslöser. Ohne Angabe erscheint das Bild-Symbol (Bestellliste,
 	 *  wo kein Cover in der Zeile steht). Mit Angabe wird der übergebene Inhalt selbst
@@ -119,7 +119,7 @@
 	{#if children}
 		{@render children()}
 	{:else}
-		<Image class="w-4 h-4" aria-hidden="true" />
+		<Icon name="image" />
 	{/if}
 </button>
 
@@ -133,7 +133,7 @@
 			<div
 				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-on-surface-variant"
 			>
-				<Slash class="w-6 h-6" aria-hidden="true" />
+				<Icon name="hide_image" groesse={24} />
 				<span class="text-label-small leading-tight">Kein Coverbild hinterlegt</span>
 			</div>
 		{:else}

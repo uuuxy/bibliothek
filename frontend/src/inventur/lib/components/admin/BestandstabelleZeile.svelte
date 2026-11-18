@@ -1,5 +1,5 @@
 <script>
-	import { ChevronRight } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
@@ -112,9 +112,9 @@
 	<td class="text-right tabular-nums">{titel.gesamt}</td>
 
 	<td class="text-right">
-		<ChevronRight
-			class="h-5 w-5 text-on-surface-variant opacity-0 transition-opacity group-hover:opacity-100"
-			aria-hidden="true"
+		<Icon
+			name="chevron_right"
+			class="text-on-surface-variant opacity-0 transition-opacity group-hover:opacity-100"
 		/>
 	</td>
 </tr>

@@ -1,5 +1,5 @@
 <script>
-	import { Sparkles } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 	import BuchCover from '../components/ui/BuchCover.svelte';
 
 	/** @type {{ titel: import('./monitorTakt.svelte.js').MonitorTitel[], coverIndex: number }} */
@@ -9,8 +9,7 @@
 <!-- max-w-5xl (1024 px): zehn Cover in einer Reihe — 128 + 9 × 80 px plus neun 16-px-Lücken
      sind 992 px. In max-w-4xl (896 px) rutscht das zehnte Cover allein in eine zweite Zeile. -->
 <div class="flex flex-col items-center gap-8 w-full max-w-5xl">
-	<span class="text-sm font-medium text-primary"
-		><Sparkles class="h-4 w-4" aria-hidden="true" /> Neu eingetroffen</span
+	<span class="text-sm font-medium text-primary"><Icon name="auto_awesome" /> Neu eingetroffen</span
 	>
 	{#if titel.length > 0}
 		<div class="flex gap-4 items-end justify-center flex-wrap">

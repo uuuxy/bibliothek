@@ -10,18 +10,18 @@
 	import { idStore } from './idDesignerStore.svelte.js';
 	import { elementName } from './elementName.js';
 	import Switch from '../components/ui/Switch.svelte';
-	import { Lock, MousePointer2 } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 
 	/** @type {{ side: 'front'|'back', gesperrt?: boolean }} */
 	const { side, gesperrt = false } = $props();
 
 	const eigen = $props.id();
 	const elemente = $derived(side === 'front' ? idStore.front.elements : idStore.back.elements);
-	const Symbol = $derived(gesperrt ? Lock : MousePointer2);
+	const symbol = $derived(gesperrt ? 'lock' : 'arrow_selector_tool');
 </script>
 
 <div class="flex flex-col items-center justify-center py-12 text-center gap-3">
-	<Symbol class="w-10 h-10 text-outline-variant" aria-hidden="true" />
+	<Icon name={symbol} groesse={40} class="text-outline-variant" />
 	<span class="text-sm text-on-surface-variant"
 		>{gesperrt
 			? 'Das Design ändern kann, wer die Einstellungen verwalten darf. Ansehen und Testdruck gehen auch so.'

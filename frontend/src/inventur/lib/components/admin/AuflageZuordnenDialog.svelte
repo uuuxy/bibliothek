@@ -5,7 +5,7 @@
      Dismissive actions are never disabled." Die Regeln stehen im Server
      (internal/repository/auflagen.go); der Dialog bietet nur an, was dort durchgeht. -->
 <script>
-	import { CircleAlert } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import { apiClient, apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { melde } from '$lib/store.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
@@ -164,7 +164,7 @@
 				role="alert"
 				class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 			>
-				<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="error" class="mt-0.5" />
 				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}

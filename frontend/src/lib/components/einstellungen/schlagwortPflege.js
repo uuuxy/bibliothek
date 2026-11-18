@@ -1,4 +1,3 @@
-import { Pencil, Merge, CornerDownRight, Trash } from '@lucide/svelte';
 import { anzahlText, verbindeSaetze } from '../../utils/format.js';
 
 // Die Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was das
@@ -13,13 +12,13 @@ import { anzahlText, verbindeSaetze } from '../../utils/format.js';
  * @param {SchlagwortZeile} z
  */
 export function menueEintraege(z) {
-	const umbenennen = { id: 'umbenennen', text: 'Umbenennen', icon: Pencil };
-	const loeschen = { id: 'loeschen', text: 'Löschen', icon: Trash, trennerDavor: true };
+	const umbenennen = { id: 'umbenennen', text: 'Umbenennen', icon: 'edit' };
+	const loeschen = { id: 'loeschen', text: 'Löschen', icon: 'delete', trennerDavor: true };
 	if (z.verweis_auf_id) return [umbenennen, loeschen];
 	return [
 		umbenennen,
-		{ id: 'zusammenfuehren', text: 'Zusammenführen mit …', icon: Merge },
-		{ id: 'verweis', text: 'Verweis anlegen …', icon: CornerDownRight },
+		{ id: 'zusammenfuehren', text: 'Zusammenführen mit …', icon: 'merge' },
+		{ id: 'verweis', text: 'Verweis anlegen …', icon: 'subdirectory_arrow_right' },
 		loeschen
 	];
 }

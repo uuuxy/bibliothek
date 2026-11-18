@@ -9,7 +9,7 @@
 
      Eigene Datei, weil Werkzeugleiste.svelte mit dieser Zeile über die 200 gelaufen wäre. -->
 <script>
-	import { Printer } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
 	import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
 	import Button from '../components/ui/Button.svelte';
@@ -83,7 +83,7 @@
 		{#if druckt}
 			<Ladekreis size="sm" farbe="aktuell" />
 		{:else}
-			<Printer class="h-4 w-4" aria-hidden="true" />
+			<Icon name="print" />
 		{/if}
 		{knopfText}
 	</Button>

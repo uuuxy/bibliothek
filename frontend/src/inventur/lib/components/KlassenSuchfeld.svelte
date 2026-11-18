@@ -8,7 +8,7 @@
      Medienkatalog, Portal und Theke. Der Pfeil sitzt als nachlaufendes Symbol darin, die
      Vorschlagsliste hängt an der Hülle. -->
 <script>
-	import { ChevronDown } from '@lucide/svelte';
+	import Icon from '../../../lib/components/ui/Icon.svelte';
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 	/**
 	 * @type {{
@@ -39,11 +39,11 @@
 			onblur={() => setTimeout(() => (isKlasseDropdownOpen = false), 150)}
 		>
 			{#snippet nachlaufend()}
-				<ChevronDown
-					class="pointer-events-none h-4 w-4 text-on-surface-variant transition-transform duration-200 {isKlasseDropdownOpen
+				<Icon
+					name="expand_more"
+					class="pointer-events-none text-on-surface-variant transition-transform duration-200 {isKlasseDropdownOpen
 						? 'rotate-180'
 						: ''}"
-					aria-hidden="true"
 				/>
 			{/snippet}
 		</Suchpille>

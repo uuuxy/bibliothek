@@ -10,7 +10,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
-	import { ScanBarcode, Search } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import { formatZeitpunkt } from '../../utils/format.js';
 
@@ -67,10 +67,10 @@
 			autocomplete="off"
 			placeholder="Etikett scannen oder eintippen"
 		>
-			{#snippet vorlaufend()}<ScanBarcode class="h-4 w-4" aria-hidden="true" />{/snippet}
+			{#snippet vorlaufend()}<Icon name="barcode_scanner" />{/snippet}
 		</Feld>
 		<Button type="submit" disabled={laedt || !barcode.trim()}>
-			<Search class="h-4 w-4" aria-hidden="true" />
+			<Icon name="search" />
 			Nachschlagen
 		</Button>
 	</form>

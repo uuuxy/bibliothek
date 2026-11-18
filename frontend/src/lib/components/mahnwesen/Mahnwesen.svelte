@@ -11,7 +11,7 @@
 	import { hatRecht } from '../../menue.js';
 	import KlassenVersandDialog from '../ui/KlassenVersandDialog.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	// Vor „Alle anmahnen" steht ein Dialog statt eines window.confirm, das nur alles oder
@@ -48,7 +48,7 @@
 		<div
 			class="p-4 bg-error-container text-on-error-container flex items-start gap-4 animate-fade-in w-full"
 		>
-			<TriangleAlert class="mt-0.5 h-8 w-8 shrink-0" aria-hidden="true" />
+			<Icon name="warning" groesse={40} class="mt-0.5" />
 			<div>
 				<h2 class="text-lg">Mahnwesen blockiert</h2>
 				<p class="text-sm mt-1">

@@ -1,5 +1,5 @@
 <script>
-	import { Pencil, Search, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -50,7 +50,7 @@
 	<!-- Nicht „Keine Systembenutzer gefunden": Die Konten kamen nicht. -->
 	<LadeFehler titel="Benutzerkonten nicht geladen" text={ladefehler} onerneut={ladeKonten} />
 {:else if gefiltert.length === 0}
-	<SuchZustand symbol={Search} titel="Keine Systembenutzer gefunden" />
+	<SuchZustand symbol="search" titel="Keine Systembenutzer gefunden" />
 {:else}
 	<div class="overflow-x-auto">
 		<Tabelle beschriftung="Benutzerkonten">
@@ -111,7 +111,7 @@
 									data-tip="Bearbeiten"
 									aria-label="{user.vorname} {user.nachname} bearbeiten"
 								>
-									<Pencil class="h-4 w-4" aria-hidden="true" />
+									<Icon name="edit" />
 								</Button>
 								<Button
 									variant="symbol"
@@ -121,7 +121,7 @@
 									data-tip={eigenes ? 'Das eigene Konto lässt sich nicht löschen' : 'Löschen'}
 									aria-label="{user.vorname} {user.nachname} löschen"
 								>
-									<Trash class="h-4 w-4" aria-hidden="true" />
+									<Icon name="delete" />
 								</Button>
 							</div>
 						</td>

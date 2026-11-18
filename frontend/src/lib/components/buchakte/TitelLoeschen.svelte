@@ -5,7 +5,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ onDelete: () => Promise<unknown> | void, class?: string, title?: string }} */
 	let { onDelete, class: klasse = '', title = undefined } = $props();
@@ -27,7 +27,7 @@
 	{#if loescht}
 		<Ladekreis size="sm" farbe="aktuell" />
 	{:else}
-		<Trash class="h-4 w-4" aria-hidden="true" />
+		<Icon name="delete" />
 	{/if}
 	Titel löschen
 </Button>

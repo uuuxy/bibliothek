@@ -4,7 +4,7 @@
      rechts, die Aktion am Rand. Ein eigener Dialog bleibt es, weil er offen bleibt, solange
      gelöscht wird, und den Grund eines gescheiterten Löschens selbst zeigt. -->
 <script>
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
@@ -39,7 +39,7 @@
 				role="alert"
 				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="warning" />
 				<span>{fehler}</span>
 			</div>
 		{/if}

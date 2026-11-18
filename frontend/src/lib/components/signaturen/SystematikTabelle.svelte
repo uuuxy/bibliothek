@@ -8,7 +8,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Pencil, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/**
@@ -152,7 +152,7 @@
 									data-tip="Bearbeiten"
 									aria-label="Sachgruppe {eintrag.kuerzel} bearbeiten"
 								>
-									<Pencil class="h-4 w-4" aria-hidden="true" />
+									<Icon name="edit" />
 								</Button>
 								<Button
 									variant="symbol"
@@ -165,7 +165,7 @@
 									{#if loescht === eintrag.id}
 										<Ladekreis size="sm" farbe="aktuell" />
 									{:else}
-										<Trash class="h-4 w-4" aria-hidden="true" />
+										<Icon name="delete" />
 									{/if}
 								</Button>
 							</div>

@@ -1,7 +1,7 @@
 <script>
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import { ReceiptEuro, CircleCheck, Ban, FileText } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Dialog from '../ui/Dialog.svelte';
@@ -72,7 +72,7 @@
 			</h3>
 			{#if bescheidMoeglich}
 				<Button variant="secondary" onclick={() => (bescheidOffen = true)}>
-					<FileText class="h-4 w-4" aria-hidden="true" />
+					<Icon name="description" />
 					Bescheid erstellen
 				</Button>
 			{/if}
@@ -124,11 +124,11 @@
 								onclick={() => erledige(`/api/schadensfaelle/${f.id}/bezahlt`, 'Zahlung verbucht')}
 								disabled={laeuft}
 							>
-								<CircleCheck class="h-4 w-4" aria-hidden="true" />
+								<Icon name="check_circle" />
 								Bezahlt
 							</Button>
 							<Button variant="danger" onclick={() => (stornoFall = f)} disabled={laeuft}>
-								<Ban class="h-4 w-4" aria-hidden="true" />
+								<Icon name="block" />
 								Stornieren
 							</Button>
 						</div>
@@ -174,7 +174,7 @@
 						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert')}
 					disabled={laeuft || stornoGrund.trim() === ''}
 				>
-					<ReceiptEuro class="h-4 w-4" aria-hidden="true" />
+					<Icon name="receipt_long" />
 					Stornieren
 				</Button>
 			</div>

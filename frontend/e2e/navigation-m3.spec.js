@@ -127,7 +127,7 @@ test.describe('Navigation: Material-3-Rollen', () => {
 		const ohneSymbol = await page.evaluate(() => {
 			const nav = document.querySelector('aside nav');
 			return [...nav.querySelectorAll('button[title]')]
-				.filter((b) => !b.querySelector('svg'))
+				.filter((b) => !b.querySelector('.icon'))
 				.map((b) => b.getAttribute('title'));
 		});
 		expect(ohneSymbol, 'Navigationsziele ohne Symbol').toEqual([]);

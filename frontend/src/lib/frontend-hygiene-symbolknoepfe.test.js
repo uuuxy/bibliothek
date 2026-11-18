@@ -17,8 +17,8 @@ import {
 // display a tooltip with an accessibility label": aria-label und data-tip. title zählt nicht:
 // Er zeigt den Hinweis des Betriebssystems spät und bei Bedienung mit der Tastatur gar nicht.
 //
-// Ein Symbolknopf ist ein <button> oder <Button>, in dem nur Symbole aus @lucide/svelte, der
-// Ladekreis oder ein einzelnes Zeichen wie „✕" stehen. Ausgenommen sind die rechte Hälfte eines
+// Ein Symbolknopf ist ein <button> oder <Button>, in dem nur ein ui/Icon, der Ladekreis oder ein
+// einzelnes Zeichen wie „✕" stehen. Ausgenommen sind die rechte Hälfte eines
 // Split-Buttons (data-split-pfeil) und der Schalter (role="switch"). Wer bewusst keine
 // Sprechblase zeigt, nennt den Grund in data-tip-eigen.
 //
@@ -27,22 +27,11 @@ import {
 // stimmen, misst e2e/icon-trefferflaechen.spec.js.
 
 /**
- * Die Namen, unter denen eine Datei Symbole einbindet, und der Ladekreis, der ein Symbol
- * vertritt, solange eine Anfrage läuft.
- * @param {string} quelle
+ * Die Bauteile, die ein Symbol zeichnen: ui/Icon, das Icon der Navigation und der Ladekreis, der
+ * ein Symbol vertritt, solange eine Anfrage läuft.
  */
-function symbolNamen(quelle) {
-	const namen = new Set(['Ladekreis']);
-	for (const m of quelle.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]@lucide\/svelte['"]/g)) {
-		for (const teil of m[1].split(',')) {
-			const name = teil
-				.trim()
-				.split(/\s+as\s+/)
-				.pop();
-			if (name) namen.add(name);
-		}
-	}
-	return namen;
+function symbolNamen() {
+	return new Set(['Icon', 'NavIcon', 'Ladekreis']);
 }
 
 /**
@@ -81,7 +70,7 @@ function symbolknoepfe(tag) {
 	for (const datei of sammleQuelldateien(srcRoot)) {
 		if (!datei.endsWith('.svelte')) continue;
 		const quelle = readFileSync(datei, 'utf8');
-		const namen = symbolNamen(quelle);
+		const namen = symbolNamen();
 		let ab = 0;
 		for (const k of elemente(ohneKommentare(quelle), tag)) {
 			// Die Zeile zählt in der Quelle mit Kommentaren, sonst zeigte die Meldung zu weit oben.

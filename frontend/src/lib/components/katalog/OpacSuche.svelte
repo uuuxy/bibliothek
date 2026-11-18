@@ -1,5 +1,5 @@
 <script>
-	import { BookOpen, Search, ShieldCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import LogoRelief from '../ui/LogoRelief.svelte';
@@ -63,7 +63,7 @@
 		class="bg-surface-container-lowest border-b border-outline-variant px-6 py-4 flex items-center justify-between relative z-10"
 	>
 		<div class="flex items-center gap-3">
-			<BookOpen class="h-5 w-5" aria-hidden="true" />
+			<Icon name="menu_book" />
 			<div>
 				<h1 class="text-lg text-on-surface leading-tight">Schulbibliothek</h1>
 				<p class="text-sm text-on-surface-variant">Öffentlicher Medienkatalog</p>
@@ -72,7 +72,7 @@
 		<div
 			class="text-xs text-on-surface-variant font-medium flex items-center gap-1.5 bg-surface-container-high px-3 py-1.5 rounded-full"
 		>
-			<ShieldCheck class="h-3.5 w-3.5" aria-hidden="true" />
+			<Icon name="verified_user" groesse={18} />
 			DSGVO-konform · Keine Ausleihdaten sichtbar
 		</div>
 	</header>
@@ -155,13 +155,13 @@
 			</div>
 		{:else if searched && !laedt}
 			<SuchZustand
-				symbol={Search}
+				symbol="search"
 				titel="Keine Titel gefunden"
 				hinweis="Versuche es mit einem anderen Titel oder Autor"
 			/>
 		{:else if !searched}
 			<SuchZustand
-				symbol={BookOpen}
+				symbol="menu_book"
 				titel="Suche nach einem Buch"
 				hinweis="Titel, Autor oder ISBN eingeben"
 			/>

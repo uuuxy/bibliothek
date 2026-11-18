@@ -2,7 +2,7 @@
 
      Was eine Rolle darf, steht im Reiter daneben (BenutzerUndRechte), nicht hier. -->
 <script>
-	import { TriangleAlert, Plus, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { onMount } from 'svelte';
 	import KontenTabelle from './KontenTabelle.svelte';
 	import Zugangsanfragen from './Zugangsanfragen.svelte';
@@ -143,7 +143,7 @@
 		role="alert"
 		class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 	>
-		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<Icon name="warning" />
 		<span class="grow">{fehler}</span>
 		<button
 			class="icon-btn"
@@ -151,7 +151,7 @@
 			data-tip="Meldung schließen"
 			onclick={() => (fehler = null)}
 		>
-			<X class="h-4 w-4" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	</div>
 {/if}
@@ -168,7 +168,7 @@
 	/>
 	<div class="flex">
 		<Button onclick={oeffneNeuesKonto} class="w-full sm:w-auto">
-			<Plus class="h-4 w-4" aria-hidden="true" />
+			<Icon name="add" />
 			Benutzer anlegen
 		</Button>
 	</div>

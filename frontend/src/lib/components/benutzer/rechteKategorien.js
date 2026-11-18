@@ -6,12 +6,11 @@
 // erteilt, muss dem Text trauen können. Die Namen hält internal/api/rechte_paritaet_test.go
 // deckungsgleich mit den Routen; die Texte bleiben Handarbeit, wer eine Route umhängt, zieht
 // die Zeile hier nach.
-import { BookOpen, Settings, ShoppingCart, Users } from '@lucide/svelte';
 
 export const rechteBeschreibungen = [
 	{
 		category: 'Leserdatei',
-		icon: Users,
+		icon: 'group',
 		items: [
 			{
 				key: 'view_students',
@@ -47,7 +46,7 @@ export const rechteBeschreibungen = [
 	},
 	{
 		category: 'Medien & Inventar',
-		icon: BookOpen,
+		icon: 'menu_book',
 		items: [
 			{
 				key: 'view_books',
@@ -78,7 +77,7 @@ export const rechteBeschreibungen = [
 	},
 	{
 		category: 'Bestellungen & Kiosk',
-		icon: ShoppingCart,
+		icon: 'shopping_cart',
 		items: [
 			{
 				key: 'perform_actions',
@@ -114,7 +113,7 @@ export const rechteBeschreibungen = [
 	},
 	{
 		category: 'Administration & System',
-		icon: Settings,
+		icon: 'settings',
 		items: [
 			{
 				key: 'view_stats',

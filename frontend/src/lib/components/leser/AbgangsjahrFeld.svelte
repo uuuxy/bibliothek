@@ -6,7 +6,7 @@
   steuert die DSGVO-Löschung nach dem Abgang von der Schule; wer nie Schüler war, hat keinen.
 -->
 <script>
-	import { RotateCcw } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -65,7 +65,7 @@
 			size="sm"
 			onclick={() => (eingabe = abgangsjahrAm(leser.klasse, new Date()))}
 			data-tip="Automatisch aus Klasse berechnen"
-			><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
+			><Icon name="restart_alt" groesse={18} /> Neu berechnen</Button
 		>
 		<Button size="sm" onclick={speichere} disabled={speichert}>
 			{speichert ? '…' : 'Speichern'}

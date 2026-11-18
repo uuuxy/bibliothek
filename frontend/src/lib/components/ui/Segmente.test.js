@@ -42,7 +42,7 @@ describe('Segmente', () => {
 	it('hält den Platz des Häkchens in jedem Segment frei, damit nichts springt', () => {
 		const { container } = aufbau('offen');
 		// Ein Icon je Segment — die unbenutzten sind unsichtbar, aber im Fluss.
-		const haken = container.querySelectorAll('svg');
+		const haken = container.querySelectorAll('.icon');
 		expect(haken).toHaveLength(optionen.length);
 		const unsichtbar = [...haken].filter((s) => s.getAttribute('class')?.includes('invisible'));
 		expect(unsichtbar).toHaveLength(optionen.length - 1);

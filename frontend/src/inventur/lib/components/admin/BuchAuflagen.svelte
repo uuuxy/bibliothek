@@ -9,7 +9,7 @@
      Lösen fragt nicht nach: Es löscht nichts und lässt sich über den Knopf zurücknehmen. -->
 <script>
 	import { onMount } from 'svelte';
-	import { Plus, Unlink } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { melde } from '$lib/store.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
@@ -117,7 +117,7 @@
 								disabled={loest !== ''}
 								onclick={() => loesen(a)}
 							>
-								<Unlink class="h-4 w-4" aria-hidden="true" />
+								<Icon name="link_off" />
 							</button>
 						</li>
 					{/each}
@@ -126,7 +126,7 @@
 			{/if}
 			<div class="mt-1.5">
 				<Button variant="secondary" onclick={() => (dialogOffen = true)}>
-					<Plus class="h-4 w-4" aria-hidden="true" />
+					<Icon name="add" />
 					Andere Auflage zuordnen
 				</Button>
 			</div>

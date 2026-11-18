@@ -23,7 +23,7 @@
      nur „Kontrollkästchen". Alles Unbenannte (name, value, aria-*, title, onclick …)
      landet unverändert auf dem Eingabeelement. -->
 <script>
-	import { Check, Minus } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/** @type {{
 	 *   checked?: boolean,
@@ -72,9 +72,9 @@
 			class="pointer-events-none col-start-1 row-start-1 grid h-4.5 w-4.5 place-items-center rounded-xs border-2 text-on-primary transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:border-on-surface/38 peer-disabled:peer-checked:border-transparent peer-disabled:peer-checked:bg-on-surface/38 peer-disabled:peer-indeterminate:border-transparent peer-disabled:peer-indeterminate:bg-on-surface/38 {kastenFarbe}"
 		>
 			{#if indeterminate}
-				<Minus class="h-3.5 w-3.5" strokeWidth={3} />
+				<Icon name="remove" groesse={18} />
 			{:else if checked}
-				<Check class="h-3.5 w-3.5" strokeWidth={3} />
+				<Icon name="check" groesse={18} />
 			{/if}
 		</span>
 	</span>

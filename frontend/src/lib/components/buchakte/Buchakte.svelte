@@ -14,7 +14,7 @@
 	import { hatRecht } from '../../menue.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import { nenneFehlende } from '../../utils/aktenTeile.js';
-	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { untrack } from 'svelte';
 
 	/** @type {{ titelId: string | null, onBack: () => void }} */
@@ -81,7 +81,7 @@
 				onclick={onBack}
 				class="flex items-center gap-2 px-3 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors text-label-large cursor-pointer"
 			>
-				<ChevronLeft class="w-4 h-4" aria-hidden="true" />
+				<Icon name="chevron_left" />
 				Zurück zum Katalog
 			</button>
 			<span class="text-on-surface-variant">/</span>
@@ -148,7 +148,7 @@
 		/>
 	{:else}
 		<div class="py-24 flex flex-col items-center text-on-surface-variant gap-3">
-			<FaceSlightlyFrowning class="w-12 h-12" aria-hidden="true" />
+			<Icon name="sentiment_dissatisfied" groesse={48} />
 			<p class="text-body-large-emphasized">Buch nicht gefunden</p>
 			<button
 				onclick={onBack}

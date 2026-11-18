@@ -25,7 +25,7 @@
 	import BuchKarteCover from './BuchKarteCover.svelte';
 	import { formatDatum, jahrgangSpanne } from '../../../lib/utils/format.js';
 	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
-	import { Check, SquarePen } from '@lucide/svelte';
+	import Icon from '../../../lib/components/ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -92,7 +92,7 @@
 	<div class="flex h-9 items-center gap-2 pl-1 text-xs text-on-surface-variant">
 		{#if geprueft}
 			<span class="flex items-center gap-1" data-tip="Geprüft am {geprueft}">
-				<Check class="h-3.5 w-3.5" aria-hidden="true" />
+				<Icon name="check" groesse={18} />
 				<span class="sr-only">Geprüft</span>
 				{geprueft}
 			</span>
@@ -107,7 +107,7 @@
 				data-tip="Schnell bearbeiten"
 				aria-label="Buch schnell bearbeiten"
 			>
-				<SquarePen class="h-4 w-4" aria-hidden="true" />
+				<Icon name="edit_square" />
 			</button>
 		{/if}
 	</div>

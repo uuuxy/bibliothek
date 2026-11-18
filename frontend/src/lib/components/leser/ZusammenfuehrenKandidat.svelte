@@ -3,7 +3,7 @@
      (Abgänger, gesperrt, offene Bücher). Als Karte mit Etikett für die beiden gewählten
      Datensätze, kompakt als Zeile in der Trefferliste. -->
 <script>
-	import { X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ kandidat: any, etikett?: string, kompakt?: boolean, onAbwaehlen?: () => void }} */
 	let { kandidat, etikett = '', kompakt = false, onAbwaehlen = undefined } = $props();
@@ -55,7 +55,7 @@
 			data-tip="Auswahl aufheben"
 			class="icon-btn shrink-0 text-on-surface-variant hover:text-on-surface"
 		>
-			<X class="w-4 h-4" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	{/if}
 </div>

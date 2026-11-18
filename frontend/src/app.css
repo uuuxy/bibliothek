@@ -25,6 +25,7 @@
 @import '@fontsource/roboto/400.css';
 @import '@fontsource/roboto/500.css';
 @import '@fontsource/roboto/700.css';
+@import './styles/icons.css';
 @import './styles/theme-mass.css';
 @import './styles/rollen.css';
 @import './styles/basis.css';

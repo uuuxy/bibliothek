@@ -9,7 +9,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { formatZeitpunkt } from '../../utils/format.js';
-	import { RefreshCw } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import { BEREICHE, kurzeKennung } from './protokollWoerter.js';
 
@@ -64,7 +64,7 @@
 	<div class="flex items-center justify-end gap-4">
 		<ProtokollGrenze anzahl={logs.length} {grenze} />
 		<Button variant="secondary" onclick={fetchLogs}>
-			<RefreshCw class="h-4 w-4" aria-hidden="true" />
+			<Icon name="refresh" />
 			Aktualisieren
 		</Button>
 	</div>

@@ -1,5 +1,5 @@
 <script>
-	import { Check } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/**
 	 * @component Segmente — der Segmented Button aus Material 3 (einfachauswahl).
@@ -54,7 +54,7 @@
 				: ''} {zustand}"
 		>
 			<!-- Immer im Fluss, nur unsichtbar: hält die Breite über alle Zustände fest. -->
-			<Check class="h-4.5 w-4.5 shrink-0 {gewaehlt ? '' : 'invisible'}" aria-hidden="true" />
+			<Icon name="check" groesse={18} class={gewaehlt ? '' : 'invisible'} />
 			{o.text}
 		</button>
 	{/each}

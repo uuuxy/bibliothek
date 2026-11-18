@@ -5,7 +5,7 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // Ratsche: Der Ladeindikator kommt aus ui/Ladekreis.svelte, nicht von Hand.
 //
 // Anlass (08.09.2026): 50 handgebaute `rounded-full … animate-spin`-Kreise in 45 Dateien,
-// zehn Größen und ein Dutzend Farben. Ein rotierendes Lucide-Symbol (`animate-spin` an
+// zehn Größen und ein Dutzend Farben. Ein rotierendes Icon (`animate-spin` an
 // einer Icon-Komponente) bleibt erlaubt — das ist kein Nachbau, sondern ein Symbol.
 // Der Nachbau erkennt sich an der Kombination aus animate-spin und rounded-full in
 // EINER Klassenliste.

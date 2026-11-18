@@ -1,7 +1,7 @@
 <script>
 	import { escapeSchliesst } from './escapeSchliesst.js';
 	import { fokusFalle } from './fokusFalle.js';
-	import { X } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	/**
 	 * Dialog — generic overlay container that accepts snippet render-props.
 	 *
@@ -108,7 +108,7 @@
 							aria-label="Schließen"
 							data-tip="Schließen"
 						>
-							<X class="h-4 w-4" aria-hidden="true" />
+							<Icon name="close" />
 						</button>
 					{/if}
 				</div>

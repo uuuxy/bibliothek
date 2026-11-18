@@ -26,7 +26,7 @@
 	import { mittelBeschriftung } from './mittel.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
-	import { ArrowLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { formatEuro, anzahlText, formatDatum } from '../../utils/format.js';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
@@ -77,7 +77,7 @@
 
 <div bind:this={wurzel} class="space-y-6">
 	<Button variant="secondary" onclick={onBack}>
-		<ArrowLeft class="h-4 w-4" aria-hidden="true" />
+		<Icon name="arrow_back" />
 		Zurück zur Bestellhistorie
 	</Button>
 

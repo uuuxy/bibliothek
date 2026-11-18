@@ -9,7 +9,7 @@
      alles, was vor Migration 063 bestellt wurde, hat keine bestellung_id. Die Ansicht
      sagt das ausdrücklich, statt eine leere Liste für eine Aussage zu halten. -->
 <script>
-	import { CircleCheck, Clock, Ban } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ exemplare: any[] }} */
@@ -65,11 +65,11 @@
 										: 'Etikett steht noch aus'}
 							>
 								{#if e.ist_ausgesondert}
-									<Ban class="h-3.5 w-3.5" aria-hidden="true" />
+									<Icon name="block" groesse={18} />
 								{:else if e.etikett_gedruckt}
-									<CircleCheck class="h-3.5 w-3.5" aria-hidden="true" />
+									<Icon name="check_circle" groesse={18} />
 								{:else}
-									<Clock class="h-3.5 w-3.5" aria-hidden="true" />
+									<Icon name="schedule" groesse={18} />
 								{/if}
 								{e.barcode_id}
 							</span>

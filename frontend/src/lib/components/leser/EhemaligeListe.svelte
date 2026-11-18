@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Archive } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import { grenzeAus, istGekappt } from '../../utils/listenGrenze.js';
@@ -109,7 +109,7 @@
 		<div
 			class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"
 		>
-			<Archive class="h-8 w-8" aria-hidden="true" />
+			<Icon name="archive" groesse={40} />
 		</div>
 		<h3 class="text-on-surface text-title-medium">
 			{suche.trim() ? 'Keine Ehemaligen gefunden' : 'Keine Ehemaligen im Archiv'}

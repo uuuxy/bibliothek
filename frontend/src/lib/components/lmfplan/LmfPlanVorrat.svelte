@@ -11,7 +11,7 @@
      Klasse, die das Vokabular noch nicht kennt („07G1" vor dem August-Import). Was hier
      liegt, wird beim Speichern als ausgelassen gemerkt; der nächste Plan übernimmt das. -->
 <script>
-	import { ChevronDown, ChevronRight } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
@@ -65,9 +65,9 @@
 			onclick={() => (zeigeBewusst = !zeigeBewusst)}
 		>
 			{#if zeigeBewusst}
-				<ChevronDown class="h-4 w-4" aria-hidden="true" />
+				<Icon name="expand_more" />
 			{:else}
-				<ChevronRight class="h-4 w-4" aria-hidden="true" />
+				<Icon name="chevron_right" />
 			{/if}
 			{bewusst.length === 1 ? 'Eine Klasse bleibt' : `${bewusst.length} Klassen bleiben`} draußen
 		</button>

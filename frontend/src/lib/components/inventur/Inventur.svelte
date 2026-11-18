@@ -14,7 +14,7 @@
 	import InventurLaeufe from './InventurLaeufe.svelte';
 	import ScanRueckmeldung from './ScanRueckmeldung.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
-	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { formatZahl } from '../../utils/format.js';
 
 	const ablauf = useInventur();
@@ -71,12 +71,12 @@
 	{#if ablauf.status === 'idle'}
 		{#snippet startknopf()}
 			<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
-				<Plus class="w-5 h-5" aria-hidden="true" />
+				<Icon name="add" />
 				<span>Inventur starten</span>
 			</Button>
 		{/snippet}
 		<SuchZustand
-			symbol={ClipboardCheck}
+			symbol="fact_check"
 			titel="Keine Inventur aktiv"
 			hinweis={darfVerwalten
 				? 'Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt nach einer bestimmten Signatur oder Kategorie scannen.'
@@ -141,7 +141,7 @@
 						{#if ablauf.scanLaeuft}
 							<Ladekreis size="md" />
 						{:else}
-							<ScanBarcode class="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden="true" />
+							<Icon name="barcode_scanner" class="text-on-surface-variant" />
 						{/if}
 					{/snippet}
 				</Suchpille>

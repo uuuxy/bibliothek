@@ -1,5 +1,4 @@
 <script>
-	import { Clock } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { formatDatum, formatZahl } from '../../utils/format.js';
 	/** @type {{ verlauf: any[] }} */
@@ -7,7 +6,7 @@
 </script>
 
 {#if verlauf.length === 0}
-	<SuchZustand symbol={Clock} titel="Noch keine Ausleihen" />
+	<SuchZustand symbol="schedule" titel="Noch keine Ausleihen" />
 {:else}
 	<div class="w-full">
 		<div class="px-1 py-3 border-b border-outline-variant flex items-center justify-between">

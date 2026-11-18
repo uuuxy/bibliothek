@@ -3,7 +3,7 @@
 <script>
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { LockOpen, Lock, CircleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -76,10 +76,10 @@
 	{#snippet header()}
 		<h3 id="sperre-titel" class="dialog-titel flex items-center gap-2">
 			{#if gesperrt}
-				<LockOpen class="w-5 h-5 text-success" aria-hidden="true" />
+				<Icon name="lock_open" class="text-success" />
 				Sperre aufheben
 			{:else}
-				<Lock class="w-5 h-5 text-error" aria-hidden="true" />
+				<Icon name="lock" class="text-error" />
 				Ausleihe sperren
 			{/if}
 		</h3>
@@ -113,7 +113,7 @@
 				role="alert"
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
-				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+				<Icon name="error" class="mt-0.5" />
 				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}

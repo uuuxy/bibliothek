@@ -14,7 +14,7 @@
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { ChevronRight } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import BestellStandChip from './BestellStandChip.svelte';
 	import { mittelBeschriftung } from './mittel.js';
@@ -95,7 +95,7 @@
 					{/if}
 					<!-- Chevron nach rechts: Die Zeile führt weiter, sie klappt nicht mehr auf. -->
 					<td class="text-right">
-						<ChevronRight class="inline-block h-4 w-4 text-on-surface-variant" aria-hidden="true" />
+						<Icon name="chevron_right" class="inline-block text-on-surface-variant" />
 						<span class="sr-only">Bestellung öffnen</span>
 					</td>
 				</tr>

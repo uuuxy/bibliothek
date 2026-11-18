@@ -5,7 +5,7 @@
      die bestätigende erst nach der Wahl bedienbar; Lists: „A list item can include supporting
      text below the label text." -->
 <script>
-	import { Merge, CircleAlert } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import { apiClient, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { snackbars } from '../../../../lib/stores/snackbars.svelte.js';
 	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
@@ -93,7 +93,7 @@
 <Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="titel-zf-titel">
 	{#snippet header()}
 		<h3 id="titel-zf-titel" class="dialog-titel flex items-center gap-2">
-			<Merge class="h-5 w-5 text-primary" aria-hidden="true" />
+			<Icon name="merge" class="text-primary" />
 			Mit anderem Titel zusammenführen
 		</h3>
 	{/snippet}
@@ -144,7 +144,7 @@
 				role="alert"
 				class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 			>
-				<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="error" class="mt-0.5" />
 				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}

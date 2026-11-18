@@ -8,7 +8,7 @@
         Reiter. -->
 <script>
 	import { onMount } from 'svelte';
-	import { TriangleAlert, ArrowRight, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { backupStatus } from '../../stores/backupStatus.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -37,10 +37,7 @@
 		class="no-print mb-5 flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] bg-surface-container-lowest py-3 pr-4 pl-3.5
 			{critical ? 'border-l-error' : 'border-l-warning'}"
 	>
-		<TriangleAlert
-			class="mt-0.5 h-4 w-4 shrink-0 {critical ? 'text-error' : 'text-warning'}"
-			aria-hidden="true"
-		/>
+		<Icon name="warning" class="mt-0.5 {critical ? 'text-error' : 'text-warning'}" />
 		<div class="min-w-0 flex-1">
 			<p class="text-body-medium-emphasized text-on-surface">{backupStatus.message}</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">{backupStatus.hint}</p>
@@ -52,7 +49,7 @@
 			class="mt-0.5 shrink-0"
 		>
 			Betriebsbereitschaft öffnen
-			<ArrowRight class="h-3.5 w-3.5" />
+			<Icon name="arrow_forward" groesse={18} />
 		</Button>
 		<Button
 			variant="symbol"
@@ -62,7 +59,7 @@
 			aria-label="Hinweis für diese Sitzung ausblenden"
 			data-tip="Für diese Sitzung ausblenden, beim nächsten Laden wieder da"
 		>
-			<X class="h-4 w-4" />
+			<Icon name="close" />
 		</Button>
 	</div>
 {/if}

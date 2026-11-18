@@ -8,7 +8,7 @@
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StrichcodeScannerOverlay from '$lib/components/scanner/StrichcodeScannerOverlay.svelte';
 	import { melde } from '$lib/store.svelte.js';
-	import { Camera, RefreshCw } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	/** abfrage: die ISBN-Abfrage der Maske (erzeugeIsbnAbfrage); die Maske wartet vor dem
 	 *  Speichern auf sie. */
@@ -98,7 +98,7 @@
 				{#if abfrage.aktiv}
 					<Ladekreis size="md" />
 				{:else}
-					<RefreshCw class="h-5 w-5" aria-hidden="true" />
+					<Icon name="refresh" />
 				{/if}
 			</button>
 			<button
@@ -109,7 +109,7 @@
 				data-tip="Scan ISBN"
 				aria-label="Scan ISBN"
 			>
-				<Camera class="h-5 w-5" aria-hidden="true" />
+				<Icon name="photo_camera" />
 			</button>
 		</span>
 	{/snippet}

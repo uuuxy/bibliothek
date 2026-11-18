@@ -19,7 +19,7 @@
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BestandsbuchAbschnitt from './BestandsbuchAbschnitt.svelte';
 	import { formatZahl } from '../../utils/format.js';
-	import { BookBookmark, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -97,7 +97,7 @@
 
 <!-- Das Symbol des Menüpunkts „Bestandsbücher". -->
 {#snippet nichts()}
-	<SuchZustand symbol={BookBookmark} titel="Kein {wortSingular} in diesem Zeitraum" />
+	<SuchZustand symbol="book" titel="Kein {wortSingular} in diesem Zeitraum" />
 {/snippet}
 
 <div class="py-6 space-y-6">
@@ -112,7 +112,7 @@
 				href={druckAdresse}
 				class="m3-state ml-auto inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-label-large text-on-primary"
 			>
-				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="print" />
 				Ausdrucken
 			</a>
 		</div>

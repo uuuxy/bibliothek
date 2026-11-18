@@ -18,7 +18,7 @@
 	import KollegiumEingabeFelder from './KollegiumEingabeFelder.svelte';
 	import { leserArtText, istKollegium, artMitKonto } from './leserArt.js';
 	import { normalisiereScan } from '../../utils/scanEinordnen.js';
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
 	let { open = false, klassen = [], klassenFehler = '', onclose, onsuccess } = $props();
@@ -132,7 +132,7 @@
 			<div
 				class="p-4 bg-warning-container rounded-xl flex items-start gap-3 text-body-medium-emphasized text-on-warning-container"
 			>
-				<TriangleAlert class="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
+				<Icon name="warning" class="mt-0.5" />
 				<p>{duplicateConflict}</p>
 			</div>
 		{/if}

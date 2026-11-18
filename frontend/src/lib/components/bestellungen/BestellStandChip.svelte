@@ -3,7 +3,6 @@
      nichts, auffallen soll nur sie. Der gescheiterte Versand steht zuerst, ohne Mail kann der
      Händler nichts bestätigen. -->
 <script>
-	import { CircleCheck, Clock, MailWarning } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 
 	/**
@@ -26,14 +25,14 @@
 {#if bestellung.mail_gescheitert_am}
 	<StatusChip
 		ton="fehler"
-		icon={MailWarning}
+		icon="cancel_schedule_send"
 		text="Mail nicht versendet"
 		tip="Die Bestellmail ist nicht rausgegangen. In der Bestellung lässt sie sich erneut senden."
 	/>
 {:else if bestellung.mit_bestaetigung && bestellung.bestaetigt_am}
 	<StatusChip
 		ton="erfolg"
-		icon={CircleCheck}
+		icon="check_circle"
 		text="Bestätigt"
 		detail={kurzdatum(bestellung.bestaetigt_am)}
 		tip={bestellung.bestaetigt_durch === 'lieferant'
@@ -43,7 +42,7 @@
 {:else if bestellung.mit_bestaetigung}
 	<StatusChip
 		ton="warten"
-		icon={Clock}
+		icon="schedule"
 		text="Wartet auf Händler"
 		tip="Der Lieferant hat die Bestellung noch nicht über den Link bestätigt"
 	/>

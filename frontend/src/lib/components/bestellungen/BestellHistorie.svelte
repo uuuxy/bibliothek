@@ -8,7 +8,6 @@
 	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
-	import { ShoppingBag } from '@lucide/svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE, mittelBeschriftung } from './mittel.js';
 	import { formatEuro, anzahlText } from '../../utils/format.js';
 
@@ -178,7 +177,7 @@
 			/>
 		{:else if bestellungen.length === 0}
 			<SuchZustand
-				symbol={ShoppingBag}
+				symbol="shopping_bag"
 				titel={mittel ? 'Keine Bestellungen in diesem Topf' : 'Noch keine Bestellungen aufgegeben'}
 				hinweis={mittel
 					? 'Den Filter aufheben, um alle zu sehen'

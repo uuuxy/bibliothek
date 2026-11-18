@@ -1,4 +1,6 @@
 <script>
+	import Icon from './Icon.svelte';
+
 	/**
 	 * Der leere Zustand einer Liste: noch nichts gesucht, nichts gefunden oder nichts da.
 	 *
@@ -6,21 +8,19 @@
 	 * wo es einen gibt, der Knopf, der die Liste füllt.
 	 *
 	 * @type {{
-	 *   symbol: any,
+	 *   symbol: import('./iconNamen.js').IconName,
 	 *   titel: string,
 	 *   hinweis?: string,
 	 *   aktion?: import('svelte').Snippet
 	 * }}
 	 */
 	let { symbol, titel, hinweis = '', aktion } = $props();
-
-	const Symbol = $derived(symbol);
 </script>
 
 <div class="text-center py-20 text-on-surface-variant select-none">
 	<!-- mx-auto ist nötig: Tailwinds Preflight setzt svg auf display:block, damit greift
 	     das text-center des Containers nicht — das Symbol klebte sonst links. -->
-	<Symbol class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
+	<Icon name={symbol} groesse={40} class="mx-auto mb-3 block" />
 	<p class="text-xl">{titel}</p>
 	{#if hinweis}
 		<p class="text-sm mt-1 max-w-md mx-auto">{hinweis}</p>

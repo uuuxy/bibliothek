@@ -3,7 +3,7 @@
      Gesperrte) und legt fest, welcher bleibt; Regeln in internal/repository/leser_zusammenfuehren.go,
      Konzept in docs/LUSD.md §5. Kopfzeile und Schließen-Knopf stellt Dialog.svelte. -->
 <script>
-	import { Merge, CircleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -82,7 +82,7 @@
 <Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="zf-titel">
 	{#snippet header()}
 		<h3 id="zf-titel" class="dialog-titel flex items-center gap-2">
-			<Merge class="w-5 h-5 text-primary" aria-hidden="true" />
+			<Icon name="merge" class="text-primary" />
 			Datensatz zusammenführen
 		</h3>
 	{/snippet}
@@ -156,7 +156,7 @@
 				role="alert"
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
-				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+				<Icon name="error" class="mt-0.5" />
 				<p class="text-body-small-emphasized leading-tight">{fehler}</p>
 			</div>
 		{/if}

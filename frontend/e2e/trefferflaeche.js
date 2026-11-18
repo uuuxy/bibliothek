@@ -52,7 +52,7 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 			// Ein Schalter trägt kein Symbol und braucht dieselbe Fläche (Material 3, Switch:
 			// „Target Size 48dp").
 			(knopf.getAttribute('role') === 'switch' ||
-				(knopf.querySelector('svg') !== null &&
+				(knopf.querySelector('.icon, svg') !== null &&
 					// Beschriftete Knöpfe misst control-hoehen.spec.js; eine Zahl neben dem Symbol
 					// zählt nicht als Beschriftung, ein Wort wie „LMF" schon.
 					!/\p{L}/u.test(knopf.textContent || '') &&

@@ -6,9 +6,9 @@
   200-Zeilen-Regel bleibt.
 -->
 <script>
-	import { Download, Upload } from '@lucide/svelte';
 	import LitteraImport from './LitteraImport.svelte';
 	import Button from '../ui/Button.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import BestandImport from './BestandImport.svelte';
 	import ListenImport from './ListenImport.svelte';
@@ -59,13 +59,13 @@
 	}
 </script>
 
-{#snippet adminCard(title, description, Symbol, contentSnippet)}
+{#snippet adminCard(title, description, symbol, contentSnippet)}
 	<!-- Flach über die volle Breite: keine Kachel mit Schatten, nur ein Trennstrich zwischen
 	     den Abschnitten, wie in jeder anderen Einstellungs-Kategorie. -->
 	<div class="border-outline-variant space-y-6 border-b pb-8">
 		<div class="flex items-start gap-4">
 			<div class="bg-primary-container text-on-primary-container rounded-full p-3">
-				<Symbol class="h-6 w-6" aria-hidden="true" />
+				<Icon name={symbol} groesse={24} />
 			</div>
 			<div>
 				<h3 class="text-title-medium text-on-surface">{title}</h3>
@@ -80,13 +80,13 @@
 
 <!-- Umrandet statt gefüllt: Beides sind eigene Werkzeuge der Seite, kein Abschluss eines
      Ablaufs. Gefüllt ist hier nur der Import einer gewählten Datei. -->
-{#snippet actionButton(label, Symbol, onclick, laeuft)}
+{#snippet actionButton(label, symbol, onclick, laeuft)}
 	<Button variant="secondary" size="lg" class="px-6" {onclick} disabled={laeuft}>
 		{#if laeuft}
 			<Ladekreis size="sm" farbe="aktuell" />
 			<span>Wird ausgeführt …</span>
 		{:else}
-			<Symbol class="h-4 w-4" aria-hidden="true" />
+			<Icon name={symbol} />
 			<span>{label}</span>
 		{/if}
 	</Button>
@@ -106,7 +106,7 @@
 				Nationalbibliothek. Der Server arbeitet die Titel im Hintergrund ab.
 			</p>
 
-			{@render actionButton('Fehlende Cover laden', Upload, gleicheCoverAb, isSyncingCovers)}
+			{@render actionButton('Fehlende Cover laden', 'upload', gleicheCoverAb, isSyncingCovers)}
 		</div>
 	</div>
 {/snippet}
@@ -114,7 +114,7 @@
 {#snippet exportContent()}
 	<div class="flex flex-col gap-4">
 		<div>
-			{@render actionButton('Katalog als CSV herunterladen', Download, exportiere, isExporting)}
+			{@render actionButton('Katalog als CSV herunterladen', 'download', exportiere, isExporting)}
 		</div>
 	</div>
 {/snippet}
@@ -126,7 +126,7 @@
 			{@render adminCard(
 				'Daten importieren',
 				'Übernimmt Titel und Exemplare aus Littera oder aus einer Tabelle und lädt fehlende Cover',
-				Upload,
+				'upload',
 				importContent
 			)}
 		{/if}
@@ -134,7 +134,7 @@
 			{@render adminCard(
 				'Daten exportieren',
 				'Lädt den ganzen Katalog als CSV-Datei herunter, zum Weiterbearbeiten in einer Tabelle oder zum Aufheben',
-				Download,
+				'download',
 				exportContent
 			)}
 		{/if}

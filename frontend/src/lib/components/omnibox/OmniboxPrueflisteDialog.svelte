@@ -2,7 +2,7 @@
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
-	import { ClipboardCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * Zubehör-Checkliste beim Geräte-Scan: Der Server unterbricht mit
@@ -42,7 +42,7 @@
 	<Dialog open={true} onclose={abbrechen} ebene="oberst" beschriftetDurch="zubehoer-titel">
 		<div class="p-8">
 			<div class="flex items-center gap-3 mb-2">
-				<ClipboardCheck class="h-8 w-8 text-primary" aria-hidden="true" />
+				<Icon name="fact_check" groesse={40} class="text-primary" />
 				<h2 id="zubehoer-titel" class="dialog-titel">Zubehör prüfen</h2>
 			</div>
 			<p class="text-sm text-on-surface-variant mb-4">

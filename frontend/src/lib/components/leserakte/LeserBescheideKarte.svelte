@@ -11,7 +11,7 @@
 	import { bescheidStatus } from '../mahnwesen/bescheidStatus.js';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Button from '../ui/Button.svelte';
-	import { Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText, formatDatum as datum, formatEuro } from '../../utils/format.js';
 	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -61,7 +61,7 @@
 						</div>
 					</div>
 					<Button variant="secondary" onclick={() => nachdruck(b)}>
-						<Printer class="h-4 w-4" aria-hidden="true" />
+						<Icon name="print" />
 						Nachdruck
 					</Button>
 				</div>

@@ -51,6 +51,9 @@
 		md: 'h-9 px-3 text-label-large',
 		lg: 'h-10 px-4 text-label-large'
 	};
+	// Ein Symbolknopf ist quadratisch ohne den Innenabstand eines Knopfs mit Text, M3 Icon
+	// buttons: Container „extra small“ 32 dp mit Icon 20 dp, Breite „Default“.
+	const symbolSizes = { sm: 'size-8', md: 'size-9', lg: 'size-10' };
 
 	// rounded-full: In Material 3 ist der Button eine Pille (Shape-Skala: Menüs 4 px, Chips 8,
 	// Karten 12, Dialoge 28, Buttons voll).
@@ -89,7 +92,9 @@
 
 <button
 	bind:this={element}
-	class="{baseClasses} {sizes[size]} {variantClasses} {className}"
+	class="{baseClasses} {variant === 'symbol'
+		? symbolSizes[size]
+		: sizes[size]} {variantClasses} {className}"
 	{...rest}
 >
 	{@render children?.()}

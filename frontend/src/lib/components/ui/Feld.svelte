@@ -64,7 +64,7 @@
 	 * text field is in the error state"), vor nachlaufendem Inhalt. Android blendet dort das
 	 * Symbol am Ende aus; hier bleiben die Knöpfe, denn sie führen oft aus dem Fehler heraus.
 	 */
-	import { CircleAlert } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
@@ -170,7 +170,7 @@
 					bind:clientWidth={rechts}
 					class="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1 text-sm text-on-surface-variant"
 				>
-					{#if ungueltig}<CircleAlert class="h-5 w-5 shrink-0 text-error" aria-hidden="true" />{/if}
+					{#if ungueltig}<Icon name="error" groesse={24} class="text-error" />{/if}
 					<span class="pointer-events-auto contents">{@render nachlaufend?.()}</span>
 				</div>
 			{/if}

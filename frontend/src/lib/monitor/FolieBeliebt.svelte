@@ -1,5 +1,5 @@
 <script>
-	import { Flame } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 	import BuchCover from '../components/ui/BuchCover.svelte';
 
 	/** @type {{ titel: import('./monitorTakt.svelte.js').MonitorTitel[] }} */
@@ -8,7 +8,7 @@
 
 <div class="flex flex-col items-center gap-6 w-full max-w-lg">
 	<span class="text-sm font-medium text-primary"
-		><Flame class="h-4 w-4" aria-hidden="true" /> Beliebt diese Woche</span
+		><Icon name="local_fire_department" /> Beliebt diese Woche</span
 	>
 	{#if titel.length > 0}
 		<ol class="w-full flex flex-col gap-3">

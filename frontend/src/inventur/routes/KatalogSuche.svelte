@@ -13,7 +13,6 @@
 	import SuchZustand from '../../lib/components/ui/SuchZustand.svelte';
 	import LadeFehler from '../../lib/components/ui/LadeFehler.svelte';
 	import { fehlertext } from '../../lib/utils/fehlertext.js';
-	import { Search } from '@lucide/svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
 	import { hatRecht } from '../../lib/menue.js';
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
@@ -113,7 +112,7 @@
 			<LadeFehler titel="Katalog nicht geladen" text={ladefehler} onerneut={ladeDaten} />
 		{:else if suche.trim() !== '' && gefilterteTitel.length === 0 && exemplar.stand !== 'laeuft'}
 			<SuchZustand
-				symbol={Search}
+				symbol="search"
 				titel="Keine Titel gefunden"
 				hinweis={hinweisOhneTreffer(suche.trim(), exemplar)}
 			/>

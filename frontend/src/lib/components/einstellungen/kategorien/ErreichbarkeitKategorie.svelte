@@ -14,7 +14,7 @@
 	 */
 	import Feld from '../../ui/Feld.svelte';
 	import Switch from '../../ui/Switch.svelte';
-	import { Copy, Check } from '@lucide/svelte';
+	import Icon from '../../ui/Icon.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { kopiere } from '../../../utils/zwischenablage.js';
@@ -147,10 +147,7 @@
 						data-tip={kopiert === url ? 'Kopiert' : 'Adresse kopieren'}
 						onclick={() => kopiereAdresse(url)}
 					>
-						{#if kopiert === url}<Check class="h-4.5 w-4.5" aria-hidden="true" />{:else}<Copy
-								class="h-4.5 w-4.5"
-								aria-hidden="true"
-							/>{/if}
+						{#if kopiert === url}<Icon name="check" />{:else}<Icon name="content_copy" />{/if}
 					</button>
 				</li>
 			{/each}

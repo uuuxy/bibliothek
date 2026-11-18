@@ -1,4 +1,6 @@
 <script>
+	import Icon from '../ui/Icon.svelte';
+
 	/**
 	 * @component KategorieListe
 	 * Die Kategorienliste der Einstellungen — links auf breiten Bildschirmen, auf
@@ -15,7 +17,7 @@
 	 * sieben Bildschirme durchklickt. Deshalb bricht er um, statt abgeschnitten zu werden: Die
 	 * Detailseite wiederholt ihn nicht, ein „…" ließe keinen Weg zum Rest (M3 „Text truncation").
 	 *
-	 * @prop {{ id: string, titel: string, kurz: string, icon: unknown }[]} kategorien
+	 * @prop {{ id: string, titel: string, kurz: string, icon: import('../ui/iconNamen.js').IconName }[]} kategorien
 	 * @prop {string} aktiv
 	 * @prop {(id: string) => void} onwahl
 	 */
@@ -33,7 +35,7 @@
 				? 'bg-secondary-container text-on-secondary-container'
 				: 'text-on-surface-variant hover:bg-surface-container'}"
 		>
-			<k.icon size={20} strokeWidth={gewaehlt ? 2.25 : 2} class="shrink-0" />
+			<Icon name={k.icon} gefuellt={gewaehlt} />
 			<span class="flex min-w-0 flex-col">
 				<span class="truncate text-sm font-medium">{k.titel}</span>
 				<span class="text-sm {gewaehlt ? 'text-on-secondary-container' : 'text-on-surface-variant'}"

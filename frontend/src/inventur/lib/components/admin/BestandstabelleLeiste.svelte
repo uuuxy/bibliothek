@@ -5,7 +5,7 @@
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { anzahlText } from '../../../../lib/utils/format.js';
-	import { BookOpen, Camera, Plus, RefreshCw, Trash } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -61,29 +61,29 @@
 		     Spacing: „buttons should be close to the content they're affecting“). Die Aktionen für
 		     markierte Titel kommen zuletzt, damit beim Markieren nichts verrutscht. -->
 		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
-			<Plus class="w-4 h-4" aria-hidden="true" />
+			<Icon name="add" />
 			Titel anlegen
 		</Button>
 		<!-- Öffnet die Maske „Titel anlegen" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
 		     an der Kamera im ISBN-Feld und in der Suchpille. -->
 		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
-			<Camera class="w-4 h-4" aria-hidden="true" />
+			<Icon name="photo_camera" />
 			Scanner
 		</Button>
 		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
-			<RefreshCw class="w-4 h-4" aria-hidden="true" />
+			<Icon name="refresh" />
 			Cover herunterladen
 		</Button>
 		{#if anzahlGewaehlt > 0}
 			<Button variant="secondary" onclick={onAssignClass}>
-				<BookOpen class="w-4 h-4" aria-hidden="true" />
+				<Icon name="menu_book" />
 				{anzahlText(anzahlGewaehlt, 'Titel', 'Titel')} zum Klassensatz hinzufügen
 			</Button>
 			<Button variant="danger" onclick={onDelete} disabled={loescht}>
 				{#if loescht}
 					<Ladekreis size="sm" farbe="aktuell" />
 				{:else}
-					<Trash class="w-4 h-4" aria-hidden="true" />
+					<Icon name="delete" />
 				{/if}
 				{anzahlText(anzahlGewaehlt, 'Titel', 'Titel')} löschen
 			</Button>

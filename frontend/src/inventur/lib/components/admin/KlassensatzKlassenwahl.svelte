@@ -4,7 +4,7 @@
 	// der Schüler und die Klassen, die schon eine Buchliste haben (wie in
 	// KlassensatzZuweisenDialog).
 	import { onMount } from 'svelte';
-	import { X } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import {
 		erzeugeKlassenVorschlaege,
@@ -54,7 +54,7 @@
 					aria-label="Klasse {selectedClass} entfernen"
 					data-tip="Klasse entfernen"
 				>
-					<X class="w-4 h-4" aria-hidden="true" />
+					<Icon name="close" />
 				</button>
 			</span>
 		{/each}

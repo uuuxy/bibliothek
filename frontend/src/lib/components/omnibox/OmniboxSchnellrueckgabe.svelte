@@ -5,7 +5,7 @@
      der Zustand nicht allein an der Farbe hängt. Das Häkchen ist das Zeichen des Hauses für
      „gewählt" (ui/Segmente, ui/FilterChips). -->
 <script>
-	import { Check, Undo2 } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import { darfVerwerfen } from '../../stores/verlassenSchutz.svelte.js';
@@ -31,9 +31,9 @@
 		: ''}"
 >
 	{#if an}
-		<Check class="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+		<Icon name="check" />
 	{:else}
-		<Undo2 class="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+		<Icon name="undo" />
 	{/if}
 	Schnellrückgabe
 </Button>

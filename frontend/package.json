@@ -43,7 +43,6 @@
 	},
 	"dependencies": {
 		"@fontsource/roboto": "^5.3.0",
-		"@lucide/svelte": "^1.70.0",
 		"html5-qrcode": "^2.3.8",
 		"idb": "^8.0.4",
 		"pdfjs-dist": "^6.5.438"

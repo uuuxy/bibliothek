@@ -20,7 +20,7 @@
 	 *    eine Snackbar ginge nicht, M3: „Only one snackbar may be displayed at a time", und sie
 	 *    verschwindet von selbst.
 	 */
-	import { TriangleAlert, BookAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import { leserArtText, istKollegium } from '../leser/leserArt.js';
 	import { formatDatum } from '../../utils/format.js';
@@ -32,7 +32,7 @@
 	<div
 		class="bg-warning-container text-on-warning-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 	>
-		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<Icon name="warning" />
 		<span
 			>Fremdrückgabe: Buch war auf {omniboxStore.letzteFremdrueckgabe.vorbesitzerName} verbucht und wurde
 			dort zurückgegeben und
@@ -48,9 +48,9 @@
 		role="status"
 	>
 		{#if hinweis.art === 'auflagen'}
-			<BookCopy class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="library_books" />
 		{:else}
-			<BookAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="warning" />
 		{/if}
 		<span>{hinweis.text}</span>
 	</div>
@@ -60,7 +60,7 @@
 	<div
 		class="bg-primary-container text-on-primary-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 	>
-		<PackageCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<Icon name="inventory_2" />
 		<span>
 			Für {omniboxStore.aktiverLeser.vorname} liegt im Abholfach bereit, bitte direkt mitgeben:
 			{#each omniboxStore.abholbereit as v, i (i)}
@@ -76,7 +76,7 @@
 	<div
 		class="bg-secondary-container text-on-secondary-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 	>
-		<GraduationCap class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<Icon name="school" />
 		<span>
 			{leserArtText(omniboxStore.aktiverLeser.art)} geladen, gescannte Bücher gehen auf
 			<strong class="font-medium">{omniboxStore.aktiverLeser.vorname}</strong>, Frist ein Jahr

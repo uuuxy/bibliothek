@@ -12,7 +12,7 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { istKollegium } from '../leser/leserArt.js';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
@@ -74,7 +74,7 @@
 	<Dialog open={true} onclose={schliesse} beschriftetDurch="loeschen-titel">
 		<div class="p-6 text-on-surface text-left">
 			<h3 id="loeschen-titel" class="dialog-titel flex items-center gap-2">
-				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
+				<Icon name="warning" groesse={24} class="text-error" />
 				<span>{kollege ? 'Kollegen löschen' : 'Schüler löschen'}</span>
 			</h3>
 			{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}

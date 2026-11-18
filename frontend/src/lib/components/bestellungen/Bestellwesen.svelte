@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { ChevronLeft } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -161,7 +161,7 @@
 								aria-controls="bestellpanel"
 								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-outline-variant bg-surface-container-lowest cursor-pointer"
 							>
-								<ChevronLeft class="h-4 w-4 text-on-surface-variant" aria-hidden="true" />
+								<Icon name="chevron_left" class="text-on-surface-variant" />
 								<span
 									class="text-label-medium text-on-surface-variant tracking-wide"
 									style="writing-mode: vertical-rl">Deine Bestellung</span

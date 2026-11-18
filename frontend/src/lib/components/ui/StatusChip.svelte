@@ -1,9 +1,12 @@
 <script>
+	import Icon from './Icon.svelte';
+
 	// Ein Status-Chip nach Material 3.
 	//
 	// M3 kennt für „ein Zustand, den man nur liest" den Chip — nicht das Badge. Deshalb:
 	// Radius 8 px (rounded-md, die Chip-Stufe der Shape-Skala; volle Pille wäre der
-	// Button), Höhe 24 px, Symbol 14 px, getönte Fläche statt Rahmen.
+	// Button), Höhe 24 px, Icon 18 px wie im Chip (Filter chip: Icon 18 dp), getönte Fläche statt
+	// Rahmen.
 	//
 	// Farben sind die Paare container / on-container aus styles/rollen.css; sie halten den
 	// Kontrast auch bei kleinem Text.
@@ -50,8 +53,7 @@
 		<span class="size-2 shrink-0 rounded-full {punkte[punkt]}" aria-hidden="true"></span>
 	{/if}
 	{#if icon}
-		{@const Symbol = icon}
-		<Symbol size={14} strokeWidth={2.5} aria-hidden="true" class="shrink-0" />
+		<Icon name={icon} groesse={18} />
 	{/if}
 	<!-- Ein zusammengesetzter String statt zweier Knoten: Zwischen {#if}-Blöcken frisst der
 	     Formatierer die Leerzeichen, im Browser stand dann „Bestätigt  · 05.08." -->

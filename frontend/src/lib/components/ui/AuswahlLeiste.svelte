@@ -17,7 +17,7 @@
      Die Aktionen kommen als children; das X hebt die Markierung auf. Die Meldungen der Anwendung
      stehen über der Leiste, wenn sie unten ankommt (use:meldungenWeichenAus). -->
 <script>
-	import { X } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
@@ -49,7 +49,7 @@
 				data-tip="Markierung aufheben"
 				onclick={onleeren}
 			>
-				<X class="h-4 w-4" aria-hidden="true" />
+				<Icon name="close" />
 			</Button>
 		</div>
 	</div>

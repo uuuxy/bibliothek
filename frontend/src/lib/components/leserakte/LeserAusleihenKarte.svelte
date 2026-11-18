@@ -1,6 +1,5 @@
 <script>
 	import LeserAusleihenListe from './LeserAusleihenListe.svelte';
-	import { BookOpen } from '@lucide/svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
@@ -16,7 +15,7 @@
 	</div>
 
 	{#if !ausleihen || ausleihen.length === 0}
-		<SuchZustand symbol={BookOpen} titel="Keine Ausleihen" />
+		<SuchZustand symbol="menu_book" titel="Keine Ausleihen" />
 	{:else}
 		<LeserAusleihenListe {ausleihen} {onReturnClick} {onDamageClick} />
 	{/if}

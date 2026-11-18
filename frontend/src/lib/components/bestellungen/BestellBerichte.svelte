@@ -21,7 +21,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
-	import { Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	onMount(() => {
 		bestellStore.loadSuppliers();
@@ -175,7 +175,7 @@
 					? 'm3-state bg-primary text-on-primary'
 					: 'pointer-events-none bg-on-surface/12 text-on-surface/38'}"
 			>
-				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="print" />
 				Als PDF
 			</a>
 			<p class="text-xs text-on-surface-variant">

@@ -1,5 +1,5 @@
 <script>
-	import { Plus } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
@@ -66,7 +66,7 @@
 
 		{#if darfAnlegen}
 			<Button variant="primary" onclick={oncreate}>
-				<Plus class="w-4 h-4" />
+				<Icon name="add" />
 				Leser anlegen
 			</Button>
 		{/if}

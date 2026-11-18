@@ -1,4 +1,5 @@
 <script>
+	import Icon from '../ui/Icon.svelte';
 	import Switch from '../ui/Switch.svelte';
 	/**
 	 * @component RechteMatrix
@@ -52,7 +53,7 @@
 	{#each beschreibungen as cat, _i (_i)}
 		<div>
 			<div class="pb-3 mb-1 border-b border-outline-variant flex items-center gap-3">
-				<cat.icon class="text-on-surface-variant h-5 w-5" aria-hidden="true" />
+				<Icon name={cat.icon} class="text-on-surface-variant" />
 				<h3 class="text-on-surface text-lg tracking-tight">{cat.category}</h3>
 			</div>
 

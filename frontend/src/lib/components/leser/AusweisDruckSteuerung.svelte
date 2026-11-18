@@ -4,7 +4,7 @@
      der Druckknopf, der während des Drucks gesperrt bleibt. Ohne eigenen Rahmen: Wo die Teile
      stehen, legt der Aufrufer fest. -->
 <script>
-	import { IdCard } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -68,7 +68,7 @@
 		{#if druckt}
 			<Ladekreis size="sm" farbe="aktuell" />
 		{:else}
-			<IdCard class="h-4 w-4" />
+			<Icon name="id_card" />
 		{/if}
 		{etikettModus ? 'Etiketten drucken' : 'Ausweise drucken'}
 	</Button>

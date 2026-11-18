@@ -20,7 +20,7 @@
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
 	import KlassensatzErledigte from './KlassensatzErledigte.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { Check } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erledigt_notiz?: string, erledigt_am?: string, erstellt_am: string }} KlassensatzReservierung */
 
@@ -120,7 +120,7 @@
 		{#snippet aktion()}
 			{#if confirmingId !== r.id}
 				<Button variant="primary" onclick={() => requestConfirm(r.id)}>
-					<Check class="w-4 h-4" aria-hidden="true" />
+					<Icon name="check" />
 					Abschließen
 				</Button>
 			{/if}

@@ -52,7 +52,7 @@ Nur, was kein Test leisten kann.
 - [x] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
   Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
 - [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
-- [ ] Icons: Lucide durch Googles Material Symbols ersetzen, die letzte offene Seite der
+- [x] Icons: Lucide durch Googles Material Symbols ersetzen, die letzte offene Seite der
   Abdeckungsliste ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [x] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
   Oberfläche. (5.192)
@@ -113,14 +113,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.191 Icons nach Material 3
-
-Icons ist die letzte Seite von Material 3, die niemand gegen den Code gehalten hat
-([sweeps.md](sweeps.md), Abdeckung der Google-Seiten), und die größte Abweichung: M3 nennt die
-Material Symbols („Use the Material Symbols variable font“, Styles, Icons), das Programm zeichnet
-mit Lucide (179 Dateien, 96 Symbole). Der Wechsel tauscht jedes Symbol und liefert die
-Symbolschrift selbst aus wie Roboto.
 
 ### 5.193 Datumsauswahl nach M3
 

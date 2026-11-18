@@ -1,5 +1,5 @@
 <script>
-	import { Search, Camera } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import { tick } from 'svelte';
 
 	/**
@@ -78,9 +78,10 @@
 </script>
 
 <div class="relative {klasse}">
-	<Search
-		class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-		aria-hidden="true"
+	<Icon
+		name="search"
+		groesse={24}
+		class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
 	/>
 	<input
 		{id}
@@ -115,7 +116,7 @@
 					? 'bg-secondary-container text-on-secondary-container'
 					: 'text-on-surface-variant hover:text-primary'}"
 			>
-				<Camera class="h-5 w-5" aria-hidden="true" />
+				<Icon name="photo_camera" groesse={24} />
 			</button>
 		{/if}
 	</div>

@@ -10,7 +10,6 @@
 	import StatusChip from '../../../lib/components/ui/StatusChip.svelte';
 	import BestandChip from './BestandChip.svelte';
 	import CoverEinblendung from './CoverEinblendung.svelte';
-	import { MapPin } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -66,7 +65,7 @@
 		<BestandChip {gesamt} {verfuegbar} {imZulauf} />
 		{#if signatur}
 			<span class="ml-auto flex min-w-0">
-				<StatusChip text={signatur} icon={MapPin} tip="Signatur {signatur}" kuerzen />
+				<StatusChip text={signatur} icon="location_on" tip="Signatur {signatur}" kuerzen />
 			</span>
 		{/if}
 	</div>

@@ -1,0 +1,59 @@
+/* Icons: Googles Material Symbols, Stil Outlined, als variable Schrift. M3 (Styles, Icons):
+   „Use the Material Symbols variable font to enable dynamic styling in product“. Die Schrift ist
+   eine Teilmenge mit den Icons aus ui/iconNamen.js und den Achsen opsz und FILL
+   (scripts/iconschrift_holen.mjs); sie liegt im Bau und kommt vom eigenen Server wie Roboto.
+   Lizenz: Apache License 2.0.
+
+   font-display: block, wie Googles Anleitung es für die Symbolschrift angibt („&display=block“):
+   Bis die Schrift da ist, bleibt die Fläche leer, statt den Namen des Icons als Wort zu zeigen. */
+@font-face {
+	font-family: 'Material Symbols Outlined';
+	font-style: normal;
+	font-weight: 400;
+	font-display: block;
+	src: url('./schriften/material-symbols-outlined.woff2') format('woff2');
+}
+
+/* In der Ebene components wie die übrigen Bauteile (komponenten.css): Eine Utility an der
+   Fundstelle (block, hidden, mx-auto) setzt sich durch. */
+@layer components {
+	/* Die Regeln aus Googles Anleitung zum Selbst-Hosten („Self-hosting the font“), dazu eine feste
+	   Fläche von 1em, damit die Zeile beim Laden nicht springt. Das Zeichen steht als erzeugter
+	   Inhalt aus data-icon im Knoten, nicht als Text: Der Name taucht weder im Text eines Knopfs
+	   noch beim Kopieren auf.
+
+	   Größe: Das Bauteil, in dem das Icon steht, setzt --icon-groesse nach seinem M3-Token; ohne
+	   Angabe gilt 20 px, M3 (Icons, Optical sizes): „Use 20dp optical size value for dense layouts
+	   on desktop“, zugleich die Größe im Knopf (Button small) und im Icon-Button extra small. Die
+	   optische Größe folgt der Schriftgröße von selbst (font-optical-sizing: auto). */
+	.icon {
+		font-family: 'Material Symbols Outlined';
+		font-weight: normal;
+		font-style: normal;
+		font-size: var(--icon-groesse, 20px);
+		font-optical-sizing: auto;
+		font-feature-settings: 'liga';
+		display: inline-block;
+		flex-shrink: 0;
+		width: 1em;
+		height: 1em;
+		overflow: hidden;
+		line-height: 1;
+		text-transform: none;
+		letter-spacing: normal;
+		word-wrap: normal;
+		white-space: nowrap;
+		direction: ltr;
+		user-select: none;
+		-webkit-font-smoothing: antialiased;
+	}
+	.icon::before {
+		content: attr(data-icon);
+	}
+
+	/* Gefüllt für den gewählten Zustand, M3 (Icons, Fill): „A fill attribute can be used to convey a
+	   state of transition, such as unfilled and filled states.“ */
+	.icon[data-gefuellt] {
+		font-variation-settings: 'FILL' 1;
+	}
+}

@@ -7,7 +7,7 @@
      Der Standort steht am Exemplar: Die Zeile nennt die Standorte der Exemplare im Bestand
      mit ihrer Zahl, gezählt aus den Karten des Reiters „Exemplare". -->
 <script>
-	import { MapPin, SquarePen } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import NummerKopieren from '../ui/NummerKopieren.svelte';
 	import TitelLoeschen from './TitelLoeschen.svelte';
@@ -75,13 +75,13 @@
 			<NummerKopieren nummer={titel.isbn} art={nummerArt} />
 			{#if signatur}
 				<span class="flex items-center gap-1.5">
-					<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+					<Icon name="location_on" groesse={18} />
 					<span class="font-mono">{signatur}</span>
 					{#if standort}<span>· {standort}</span>{/if}
 				</span>
 			{:else if standort}
 				<span class="flex items-center gap-1.5">
-					<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+					<Icon name="location_on" groesse={18} />
 					<span>{standort}</span>
 				</span>
 			{/if}
@@ -113,7 +113,7 @@
 			<div class="mt-6 flex flex-wrap items-center gap-3">
 				{#if onEdit}
 					<Button onclick={onEdit}>
-						<SquarePen class="h-4 w-4" aria-hidden="true" />
+						<Icon name="edit_square" />
 						Titel bearbeiten
 					</Button>
 				{/if}

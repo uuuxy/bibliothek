@@ -7,7 +7,7 @@
 	 * Drag-/Resize-Mechanik bleibt in CanvasFlaeche.svelte: Die Fensterlistener und ihr
 	 * Aufräumen gehören an eine Stelle.
 	 */
-	import { User } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 	import { ausweisTitel } from '../components/leser/leserArt.js';
 	import { NUMMER_FARBE } from './kartenFarben.js';
 
@@ -93,10 +93,7 @@
 		<div
 			class="w-full h-full border border-dashed border-outline-variant bg-surface flex flex-col items-center justify-center overflow-hidden rounded-sm text-on-surface-variant"
 		>
-			<User
-				class="w-1/2 h-1/2 max-h-12 max-w-12 mb-1 opacity-40 pointer-events-none"
-				aria-hidden="true"
-			/>
+			<Icon name="person" class="w-1/2 h-1/2 mb-1 opacity-40 pointer-events-none" />
 			<span class="text-[5px] font-medium pointer-events-none">PASSBILD</span>
 		</div>
 	{:else if isBarcode}

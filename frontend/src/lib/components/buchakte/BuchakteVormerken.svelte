@@ -10,7 +10,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Plus } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ vormerkungen: any[], titel: any }} */
 	let { vormerkungen = $bindable(), titel } = $props();
@@ -78,7 +78,7 @@
 <!-- Vorn bei der Liste wie „<Sache> anlegen“ (ARCHITEKTUR 5.3), das Plus als Symbol. -->
 <div class="flex">
 	<Button onclick={() => (isAdding = !isAdding)}>
-		{#if !isAdding}<Plus class="w-4 h-4" aria-hidden="true" />{/if}
+		{#if !isAdding}<Icon name="add" />{/if}
 		{isAdding ? 'Abbrechen' : 'Schüler vormerken'}
 	</Button>
 </div>

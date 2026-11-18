@@ -15,7 +15,7 @@
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
-	import { BookOpen, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
 	/** @type {{ exemplare: any[], titel: any, ladeAlles: (id: string) => void }} */
@@ -131,7 +131,7 @@
 
 {#if exemplare.length === 0}
 	<SuchZustand
-		symbol={BookOpen}
+		symbol="menu_book"
 		titel="Keine Exemplare"
 		hinweis="„Titel bearbeiten“ trägt den Bestand ein"
 	/>
@@ -170,7 +170,7 @@
 					{#if markierteLoeschen}
 						<Ladekreis size="sm" farbe="aktuell" />
 					{:else}
-						<Trash class="h-4 w-4" aria-hidden="true" />
+						<Icon name="delete" />
 					{/if}
 					Löschen
 				</Button>

@@ -1,5 +1,5 @@
 <script>
-	import { Camera, Search } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { tastaturNavigation } from '../../actions/tastaturNavigation.js';
 
 	let {
@@ -27,10 +27,7 @@
 
 <!-- Lupe, Feld und Kamera-Knopf sind Flex-Geschwister im Pillen-Container (Omnibox.svelte):
      In einer Pille von 48 px kommt die Höhe nicht vom Padding des Feldes. -->
-<Search
-	class="h-5 w-5 shrink-0 text-on-surface group-focus-within:text-primary transition-colors"
-	aria-hidden="true"
-/>
+<Icon name="search" class="text-on-surface group-focus-within:text-primary transition-colors" />
 <input
 	id="omnibox-input"
 	type="text"
@@ -64,5 +61,5 @@
 		? 'bg-secondary-container text-on-secondary-container'
 		: 'text-on-surface-variant hover:text-primary'}"
 >
-	<Camera class="h-5 w-5" aria-hidden="true" />
+	<Icon name="photo_camera" />
 </button>

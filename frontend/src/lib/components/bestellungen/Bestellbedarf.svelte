@@ -1,5 +1,5 @@
 <script>
-	import { CircleCheck, Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -79,7 +79,7 @@
 				download
 				class="m3-state shrink-0 flex items-center gap-2 text-label-medium text-on-surface-variant bg-surface-container-low border border-outline-variant px-3 py-2 rounded-xl"
 			>
-				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<Icon name="print" />
 				<span class="hidden sm:inline">PDF-Bestellliste</span>
 			</a>
 		</div>
@@ -120,7 +120,7 @@
 					Ausleihen
 				</p>
 			{:else}
-				<CircleCheck class="h-5 w-5" aria-hidden="true" />
+				<Icon name="check_circle" />
 				<p class="text-body-medium-emphasized">Kein Schulbuch fehlt</p>
 				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}</p>
 			{/if}

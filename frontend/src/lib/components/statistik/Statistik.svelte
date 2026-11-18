@@ -10,7 +10,7 @@
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { statistikAbruf, statistikParameter } from './statistikAbruf.svelte.js';
-	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau.
 	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
@@ -78,7 +78,7 @@
 			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
 		>
 			<!-- shrink-0: Die gekürzte Zahl daneben drückt das Dreieck sonst zusammen. -->
-			{#if status === 'warn'}<TriangleAlert class="w-6 h-6 shrink-0" aria-hidden="true" />{/if}
+			{#if status === 'warn'}<Icon name="warning" groesse={24} />{/if}
 			<span class="truncate">{value}</span>
 		</span>
 		<span class="text-sm text-on-surface-variant leading-snug">{hint}</span>
@@ -99,7 +99,7 @@
 		class="shrink-0 gap-1"
 	>
 		Alle anzeigen
-		<ChevronRight class="w-3 h-3" aria-hidden="true" />
+		<Icon name="chevron_right" groesse={18} />
 	</Button>
 {/snippet}
 
@@ -124,13 +124,13 @@
 {/snippet}
 
 {#snippet keineAusleihen()}
-	<ChartColumn class="mx-auto mb-2 h-7 w-7" aria-hidden="true" />
+	<Icon name="bar_chart" groesse={24} class="mx-auto mb-2" />
 	Noch keine Ausleihen registriert
 {/snippet}
 
 {#snippet keineLadenhueter()}
 	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
-	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-success" aria-hidden="true" />
+	<Icon name="check_circle" groesse={24} class="mx-auto mb-2 text-success" />
 	Keine Ladenhüter, der Bestand ist in Bewegung
 {/snippet}
 

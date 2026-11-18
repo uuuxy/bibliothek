@@ -17,7 +17,7 @@
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
 	import { rechteDesReiters } from '../../../../lib/components/etiketten/druckCenterReiter.js';
-	import { BookOpen, Printer, X } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import TitelLoeschen from '../../../../lib/components/buchakte/TitelLoeschen.svelte';
 
 	/**
@@ -115,7 +115,7 @@
 			aria-label="Schließen"
 			data-tip="Schließen"
 		>
-			<X class="w-6 h-6" aria-hidden="true" />
+			<Icon name="close" groesse={24} />
 		</button>
 		<h2 class="min-w-0 truncate text-xl text-on-surface">
 			{formular.id ? 'Titel bearbeiten' : 'Titel anlegen'}
@@ -149,7 +149,7 @@
 								class="w-full"
 								data-tip="Etiketten dieses Titels im Druck-Center drucken"
 							>
-								<Printer class="w-4 h-4" aria-hidden="true" />
+								<Icon name="print" />
 								Barcodes drucken
 							</Button>
 						{/if}
@@ -159,7 +159,7 @@
 							class="w-full"
 							data-tip="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
 						>
-							<BookOpen class="w-4 h-4" aria-hidden="true" />
+							<Icon name="menu_book" />
 							Zum Klassensatz hinzufügen
 						</Button>
 						{#if onZusammengefuehrt}

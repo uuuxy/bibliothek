@@ -10,7 +10,7 @@
      Ohne ersten Tag (kein Platz) gibt es nichts anzuklicken — die Zellen bleiben leer. -->
 <script>
 	import { tick } from 'svelte';
-	import { Pin } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
@@ -42,7 +42,7 @@
 				aria-label="Festen Platz Zeile {i + 1} lösen"
 				class="-ml-2.5"
 			>
-				<Pin class="h-4 w-4 text-primary" aria-hidden="true" />
+				<Icon name="keep" class="text-primary" />
 			</Button>
 			{zeile.fest.datum ? wochentag(zeile.fest.datum) : ''}
 		</span>

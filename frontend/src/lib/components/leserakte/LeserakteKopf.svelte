@@ -1,5 +1,5 @@
 <script>
-	import { Camera, Lock, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { ausleiheGesperrt } from '../leser/sperrStatus.js';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import LeserKontoStatus from '../leser/LeserKontoStatus.svelte';
@@ -38,7 +38,7 @@
 		data-tip={schliessenEtikett}
 		aria-label={schliessenEtikett}
 	>
-		<X class="w-5 h-5" aria-hidden="true" />
+		<Icon name="close" />
 	</button>
 
 	<!-- Foto -->
@@ -67,14 +67,14 @@
 			class="icon-btn absolute bottom-1 right-1 bg-secondary-container text-on-secondary-container"
 			data-tip="Passbild aufnehmen"
 		>
-			<Camera class="h-4 w-4" aria-hidden="true" />
+			<Icon name="photo_camera" />
 		</button>
 	</div>
 
 	<!-- Name & Metadaten -->
 	<div class="w-full space-y-2">
 		{#if ausleiheGesperrt(leser)}
-			<StatusChip ton="fehler" text="Ausleihe gesperrt" icon={Lock} />
+			<StatusChip ton="fehler" text="Ausleihe gesperrt" icon="lock" />
 		{/if}
 
 		<h3 class="text-3xl leading-tight wrap-break-word text-on-surface">

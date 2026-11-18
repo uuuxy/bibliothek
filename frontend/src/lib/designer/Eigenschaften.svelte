@@ -17,7 +17,7 @@
 	import { leseKartenBild } from './kartenBild.js';
 	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { fehlertext } from '../utils/fehlertext.js';
-	import { Trash } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 
 	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
 	const { gewaehlteKennung, side, gesperrt = false } = $props();
@@ -81,7 +81,7 @@
 					data-tip="Element löschen"
 					aria-label="Element löschen"
 				>
-					<Trash class="w-4 h-4" aria-hidden="true" />
+					<Icon name="delete" />
 				</button>
 			{/if}
 		</div>

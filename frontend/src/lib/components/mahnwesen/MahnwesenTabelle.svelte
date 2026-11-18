@@ -4,7 +4,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { Mail } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { gemahntSatz } from './mahnungen.js';
 
@@ -102,7 +102,7 @@
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>
-											<Mail class="h-3.5 w-3.5" aria-hidden="true" />
+											<Icon name="mail" groesse={18} />
 										</span>
 									{/if}
 								</div>

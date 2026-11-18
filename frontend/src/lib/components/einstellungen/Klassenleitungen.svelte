@@ -14,7 +14,7 @@
 		klassenPlatzhalter,
 		klassenLadefehler
 	} from '../leser/klassenVorschlaege.svelte.js';
-	import { Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
@@ -142,7 +142,7 @@
 								{#if loeschtKlasse === row.klasse}
 									<Ladekreis size="sm" farbe="aktuell" />
 								{:else}
-									<Trash class="h-4 w-4" aria-hidden="true" />
+									<Icon name="delete" />
 								{/if}
 							</Button>
 						</td>

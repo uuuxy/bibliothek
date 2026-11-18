@@ -1,5 +1,5 @@
 <script>
-	import { Search, Camera } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import { tick } from 'svelte';
 
 	/**
@@ -92,9 +92,10 @@
 <div
 	class="group flex items-center w-full max-w-suche h-12 px-5 bg-surface-container-high rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
 >
-	<Search
-		class="h-5 w-5 shrink-0 text-on-surface group-focus-within:text-primary transition-colors duration-200"
-		aria-hidden="true"
+	<Icon
+		name="search"
+		groesse={24}
+		class="text-on-surface group-focus-within:text-primary transition-colors duration-200"
 	/>
 	<!-- Die vier Abwehr-Attribute gegen Passwortverwalter: LastPass, Dashlane und 1Password
 	     halten ein Textfeld in einem Dialog sonst für ein Anmeldeformular und füllen es
@@ -136,7 +137,7 @@
 				? 'bg-secondary-container text-on-secondary-container'
 				: 'text-on-surface-variant hover:text-primary'}"
 		>
-			<Camera class="h-5 w-5" aria-hidden="true" />
+			<Icon name="photo_camera" groesse={24} />
 		</button>
 	{/if}
 </div>

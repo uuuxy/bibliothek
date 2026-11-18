@@ -6,7 +6,7 @@
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import FilterChips from '../ui/FilterChips.svelte';
-	import { Clock } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -64,7 +64,7 @@
 		<div aria-live="polite">
 			{#if offeneBestaetigungen > 0}
 				<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-warning">
-					<Clock size={15} aria-hidden="true" />
+					<Icon name="schedule" groesse={18} />
 					{offeneBestaetigungen === 1
 						? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
 						: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}

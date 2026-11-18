@@ -5,7 +5,7 @@
 	import SchuelerDokumente from '../leser/SchuelerDokumente.svelte';
 	import { idStore } from '../../designer/idDesignerStore.svelte.js';
 	import { istKollegium } from '../leser/leserArt.js';
-	import { FileText, IdCard, ChevronDown, Layers } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -54,9 +54,9 @@
 	// Beschriftungen erklären sich selbst.
 	/** @type {import('../ui/menueGeometrie.js').Eintrag[]} */
 	const seiten = [
-		{ id: 'both', text: 'Beides', icon: Layers },
-		{ id: 'front', text: 'Nur Vorderseite', icon: IdCard },
-		{ id: 'back', text: 'Nur Rückseite', icon: FileText }
+		{ id: 'both', text: 'Beides', icon: 'layers' },
+		{ id: 'front', text: 'Nur Vorderseite', icon: 'id_card' },
+		{ id: 'back', text: 'Nur Rückseite', icon: 'description' }
 	];
 
 	/** @param {string} side */
@@ -82,7 +82,7 @@
 				{#snippet ausloeser({ offen, umschalten })}
 					<div class="inline-flex rounded-md shadow-sm">
 						<Button type="button" onclick={() => druckeAusweis('both')} class="rounded-r-none">
-							<IdCard class="w-4 h-4" />
+							<Icon name="id_card" />
 							Ausweis drucken
 						</Button>
 						<!-- data-split-pfeil: Die rechte Hälfte ist Teil eines Knopfs mit Beschriftung,
@@ -98,7 +98,7 @@
 							data-split-pfeil
 							class="rounded-l-none border-l-on-primary/25 px-2.5"
 						>
-							<ChevronDown class="w-4 h-4 transition-transform {offen ? 'rotate-180' : ''}" />
+							<Icon name="expand_more" class="transition-transform {offen ? 'rotate-180' : ''}" />
 						</Button>
 					</div>
 				{/snippet}
@@ -111,7 +111,7 @@
 					: undefined}
 			>
 				<Button variant="primary" onclick={() => druckeAusweis('both')} disabled={ohneAusweis}>
-					<IdCard class="w-4 h-4" />
+					<Icon name="id_card" />
 					Ausweis drucken
 				</Button>
 			</span>

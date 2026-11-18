@@ -2,7 +2,7 @@
      Dreistufig: Dry-Run-Vorschau (Server rechnet identisches SQL und rollt zurück)
      → Ausführen-Knopf → rote Bestätigung. Kein window.confirm/Modal. -->
 <script>
-	import { TriangleAlert, CircleCheck, Info } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -120,7 +120,7 @@
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>
+			<Icon name="warning" /><span>{fehler}</span>
 		</div>
 	{/if}
 
@@ -128,7 +128,7 @@
 		<div
 			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
-			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="check_circle" />
 			<span>Schuljahreswechsel abgeschlossen</span>
 		</div>
 		{@render summaryRows(ergebnis)}
@@ -149,7 +149,7 @@
 		<div
 			class="flex items-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm text-on-primary-container"
 		>
-			<Info class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="info" />
 			<span>Unverbindliche Vorschau, es wurde noch nichts geändert</span>
 		</div>
 		{@render summaryRows(probe)}
@@ -157,7 +157,7 @@
 		<div
 			class="flex items-start gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<Icon name="warning" />
 			<span
 				>Dieser Vorgang ist <strong>irreversibel</strong> und betrifft alle aktiven Schüler gleichzeitig.
 				Es gibt keinen automatischen Rückweg, nur ein erneuter LUSD-Import kann einzelne Datensätze danach

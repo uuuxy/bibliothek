@@ -10,7 +10,7 @@
      DNB, die die eigene Liste noch nicht kennt (docs/OFFEN.md 4.25): Zweimal dasselbe Markup
      hätte ChipFeld über die 200-Zeilen-Marke gehoben. Nur ChipFeld setzt es ein. -->
 <script>
-	import { Plus } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 
 	/**
 	 * @prop {string[]} werte - Die angebotenen Werte; leer = keine Zeile.
@@ -33,7 +33,7 @@
 				aria-label="„{wert}“ übernehmen"
 				class="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-outline pr-4 pl-2 text-label-large text-on-surface-variant disabled:cursor-not-allowed disabled:opacity-40"
 			>
-				<Plus class="h-4.5 w-4.5 shrink-0 text-primary" aria-hidden="true" />
+				<Icon name="add" groesse={18} class="text-primary" />
 				{wert}
 			</button>
 		{/each}

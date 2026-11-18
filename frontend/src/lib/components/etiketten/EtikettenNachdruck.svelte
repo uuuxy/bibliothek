@@ -18,7 +18,7 @@
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { Printer, Eraser, Undo2 } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Segmente from '../ui/Segmente.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
@@ -254,9 +254,9 @@
 				class="px-5"
 			>
 				{#if status === 'erledigt'}
-					<Undo2 class="h-4 w-4" aria-hidden="true" />
+					<Icon name="undo" />
 				{:else}
-					<Printer class="h-4 w-4" aria-hidden="true" />
+					<Icon name="print" />
 				{/if}
 				{hauptaktion.anzahl === 0
 					? hauptaktion.leer
@@ -273,7 +273,7 @@
 					onclick={alsGedrucktMarkieren}
 					data-tip="Etikett ist schon am Buch, z. B. vom Lieferanten oder aus dem Altsystem"
 				>
-					<Eraser class="h-4 w-4" aria-hidden="true" />
+					<Icon name="ink_eraser" />
 					{formatZahl(gewaehltOffen.length)} als erledigt vermerken
 				</Button>
 			{/if}
@@ -285,13 +285,13 @@
 					onclick={wiederOeffnen}
 					data-tip="Etikett fehlt doch, z. B. nach einem Papierstau"
 				>
-					<Undo2 class="h-4 w-4" aria-hidden="true" />
+					<Icon name="undo" />
 					{formatZahl(gewaehltErledigt.length)} wieder als offen vermerken
 				</Button>
 			{/if}
 			{#if status === 'erledigt' && gewaehltErledigt.length > 0}
 				<Button variant="ghost" size="lg" disabled={arbeitet} onclick={uebergeben}>
-					<Printer class="h-4 w-4" aria-hidden="true" />
+					<Icon name="print" />
 					{formatZahl(gewaehltErledigt.length)} noch einmal drucken
 				</Button>
 			{/if}

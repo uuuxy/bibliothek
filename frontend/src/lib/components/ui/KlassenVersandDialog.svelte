@@ -1,6 +1,6 @@
 <script>
 	import { untrack } from 'svelte';
-	import { Mail } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import Dialog from './Dialog.svelte';
 	import Button from './Button.svelte';
 	import Kaestchen from './Kaestchen.svelte';
@@ -181,7 +181,7 @@
 			disabled={!absendbar}
 			onclick={() => onconfirm({ klassen: ausgewaehlt, overrideEmail: emailGetrimmt })}
 		>
-			<Mail class="h-4 w-4" />
+			<Icon name="mail" />
 			{ausgewaehlt.length}
 			{ausgewaehlt.length === 1 ? 'Klasse' : 'Klassen'}
 			{aktion}

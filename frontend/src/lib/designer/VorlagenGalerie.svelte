@@ -8,7 +8,7 @@
      Sie ist eine Aktion, kein Zustand: Es gibt keine „aktive" Vorlage, nach dem Anwenden
      ist sie nur noch Ausgangspunkt fürs freie Editieren. -->
 <script>
-	import { ChevronDown } from '@lucide/svelte';
+	import Icon from '../components/ui/Icon.svelte';
 	import { AUSWEIS_VORLAGEN } from './ausweisVorlagen.js';
 	import VorlageMiniatur from './VorlageMiniatur.svelte';
 
@@ -54,11 +54,9 @@
 			: 'border-outline-variant'}"
 	>
 		<span class="min-w-0 flex-1 truncate text-on-surface-variant">Vorlage wählen …</span>
-		<ChevronDown
-			class="h-4 w-4 shrink-0 text-on-surface-variant transition-transform {offen
-				? 'rotate-180'
-				: ''}"
-			aria-hidden="true"
+		<Icon
+			name="expand_more"
+			class="text-on-surface-variant transition-transform {offen ? 'rotate-180' : ''}"
 		/>
 	</button>
 

@@ -9,7 +9,7 @@
      eine Fach, das man gerade ansieht. Der Druck-Knopf sitzt am Fach, nicht an der Seite:
      Der Fachsprecher exportiert sein Fach, nicht die ganze Schule. -->
 <script>
-	import { ChevronDown, Download } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import KlassenBuchKachel from '../../../inventur/lib/components/admin/KlassenBuchKachel.svelte';
 	import { RASTER_ABSTAND } from '../../../inventur/lib/components/BuchKarte.svelte';
 	import { anzahlText, formatZahl } from '../../utils/format.js';
@@ -42,11 +42,9 @@
 			aria-controls={rasterID}
 			class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg py-1 text-left"
 		>
-			<ChevronDown
-				class="h-5 w-5 shrink-0 text-on-surface-variant transition-transform {offen
-					? ''
-					: '-rotate-90'}"
-				aria-hidden="true"
+			<Icon
+				name="expand_more"
+				class="text-on-surface-variant transition-transform {offen ? '' : '-rotate-90'}"
 			/>
 			<span
 				class="inline-flex min-w-26 shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-label-medium tabular-nums text-on-secondary-container"
@@ -66,7 +64,7 @@
 			data-tip="{name}: Bestandsliste als PDF, mit Buchbildern"
 			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-label-large text-on-surface-variant hover:bg-surface-container"
 		>
-			<Download size={18} aria-hidden="true" />
+			<Icon name="download" />
 			Als PDF
 		</a>
 	</div>

@@ -9,7 +9,7 @@
 <script>
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { Check, Pencil, X } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import UeberfaelligZeichen from '../buchakte/UeberfaelligZeichen.svelte';
 	import { formatDatum as datum } from '../../utils/format.js';
@@ -67,7 +67,7 @@
 			aria-label="Rückgabedatum speichern"
 			data-tip="Speichern"
 		>
-			<Check class="h-4 w-4" aria-hidden="true" />
+			<Icon name="check" />
 		</button>
 		<button
 			type="button"
@@ -77,7 +77,7 @@
 			aria-label="Bearbeiten abbrechen"
 			data-tip="Abbrechen"
 		>
-			<X class="h-4 w-4" aria-hidden="true" />
+			<Icon name="close" />
 		</button>
 	</div>
 {:else}
@@ -110,7 +110,7 @@
 				aria-label="Rückgabedatum bearbeiten"
 				data-tip="Rückgabedatum ändern"
 			>
-				<Pencil class="h-4 w-4" aria-hidden="true" />
+				<Icon name="edit" />
 			</button>
 		{/if}
 	</div>

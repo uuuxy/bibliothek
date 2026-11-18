@@ -9,7 +9,7 @@
      eine lange Liste setzt Chrome neben das Feld über die Seite. Kein Feld oder Select, weil
      Feld an der 200-Zeilen-Marke steht und Select nur aus der Liste wählt. -->
 <script>
-	import { ChevronDown } from '@lucide/svelte';
+	import Icon from './Icon.svelte';
 	import Feld from './Feld.svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
@@ -172,9 +172,10 @@
 				onclick={umschalten}
 				class="icon-btn text-on-surface-variant"
 			>
-				<ChevronDown
-					class="h-4 w-4 transition-transform {sichtbar ? 'rotate-180' : ''}"
-					aria-hidden="true"
+				<Icon
+					name="arrow_drop_down"
+					groesse={24}
+					class="transition-transform {sichtbar ? 'rotate-180' : ''}"
 				/>
 			</button>
 		{/if}

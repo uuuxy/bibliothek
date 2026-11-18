@@ -1,5 +1,5 @@
 <script>
-	import { Check } from '@lucide/svelte';
+	import Icon from '../../../../lib/components/ui/Icon.svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import { jahrgangSpanne, anzahlText } from '../../../../lib/utils/format.js';
@@ -97,7 +97,7 @@
 				<div
 					class="absolute top-4 right-4 z-10 bg-primary text-on-primary p-1.5 rounded-full border-2 border-surface-container-lowest"
 				>
-					<Check class="w-5 h-5" aria-hidden="true" />
+					<Icon name="check" />
 				</div>
 			{/if}
 

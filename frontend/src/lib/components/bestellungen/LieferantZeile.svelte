@@ -9,7 +9,7 @@
      (Block in der Zelle — max-width auf <td> ignoriert das Auto-Layout), der volle Text
      steht im title. -->
 <script>
-	import { Pencil, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -126,7 +126,7 @@
 					data-tip="Bearbeiten"
 					aria-label="Lieferant {s.name} bearbeiten"
 				>
-					<Pencil class="h-4 w-4" aria-hidden="true" />
+					<Icon name="edit" />
 				</Button>
 				<Button
 					variant="symbol"
@@ -136,7 +136,7 @@
 					data-tip="Löschen"
 					aria-label="Lieferant {s.name} löschen"
 				>
-					<Trash class="h-4 w-4" aria-hidden="true" />
+					<Icon name="delete" />
 				</Button>
 			</div>
 		</td>

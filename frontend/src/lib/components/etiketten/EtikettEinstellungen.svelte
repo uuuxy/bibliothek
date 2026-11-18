@@ -2,7 +2,7 @@
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
@@ -19,7 +19,7 @@
 			class="animate-fade-in space-y-4 border-l-2 border-primary bg-primary-container/50 p-4 text-left text-on-primary-container"
 		>
 			<div class="flex items-start gap-2.5">
-				<Printer class="h-4 w-4" aria-hidden="true" />
+				<Icon name="print" />
 				<div>
 					<h3 class="text-title-medium">Aktiver Druckauftrag</h3>
 					<p class="mt-1 text-sm leading-relaxed font-medium">

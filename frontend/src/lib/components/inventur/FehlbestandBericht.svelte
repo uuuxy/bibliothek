@@ -13,7 +13,7 @@
      Regals. Der Bericht bleibt stehen, bis er ausdrücklich geschlossen wird, auch über das
      Zurücksetzen der Inventur hinweg; sonst wäre er weg, sobald er entsteht. -->
 <script>
-	import { Printer, X, PackageSearch, Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { baueFehlbestandDruckHtml } from '../../utils/fehlbestandDruck.js';
 	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
@@ -75,7 +75,7 @@
 >
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div class="flex items-start gap-3">
-			<PackageSearch class="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+			<Icon name="manage_search" class="mt-0.5 text-warning" />
 			<div>
 				<h2 class="text-title-medium text-on-surface">
 					Fehlbestand{etikett ? ` — ${etikett}` : ''}
@@ -100,12 +100,12 @@
 					onclick={() => (loeschDialogOffen = true)}
 					data-tip="Weiterhin fehlende Exemplare unwiderruflich aus dem Katalog entfernen"
 				>
-					<Trash class="h-4 w-4" aria-hidden="true" />
+					<Icon name="delete" />
 					{offene.length} endgültig löschen
 				</Button>
 			{/if}
 			<Button variant="secondary" size="sm" onclick={drucken} disabled={offene.length === 0}>
-				<Printer class="h-4 w-4" aria-hidden="true" />
+				<Icon name="print" />
 				Liste drucken
 			</Button>
 			<!-- Eindeutiger Name: „Schließen" allein gibt es auf dieser Ansicht mehrfach —
@@ -117,7 +117,7 @@
 				aria-label="Fehlbestandsbericht schließen"
 				data-tip="Bericht schließen"
 			>
-				<X class="h-4 w-4" aria-hidden="true" />
+				<Icon name="close" />
 				Schließen
 			</Button>
 		</div>

@@ -106,7 +106,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		// Die Liste läuft nicht über ihren Platz hinaus, und die Symbole halten ihr Mindestmaß.
 		// Das Miniaturbild ist ein Bild, kein Symbol; es öffnet die Großansicht des Covers.
 		const mass = await tabelle.evaluate((t) => {
-			const knoepfe = [...t.querySelectorAll('tbody button:has(svg)')].map((b) =>
+			const knoepfe = [...t.querySelectorAll('tbody button:has(.icon)')].map((b) =>
 				b.getBoundingClientRect()
 			);
 			return {

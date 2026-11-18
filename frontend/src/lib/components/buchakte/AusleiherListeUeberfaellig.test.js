@@ -24,7 +24,10 @@ describe('Ausleiher-Liste: überfällig', () => {
 
 	it('setzt an die überfällige Ausleihe ein Zeichen und das Wort', () => {
 		const { container, getByText } = zeige(zeile(-3));
-		expect(container.querySelector('svg[aria-hidden="true"]'), 'das Zeichen fehlt').not.toBeNull();
+		expect(
+			container.querySelector('.icon[aria-hidden="true"]'),
+			'das Zeichen fehlt'
+		).not.toBeNull();
 		expect(getByText('Überfällig').className).toContain('sr-only');
 	});
 

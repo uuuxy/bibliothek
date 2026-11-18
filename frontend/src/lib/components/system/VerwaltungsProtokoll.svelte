@@ -11,7 +11,7 @@
 	import { formatZeitpunkt } from '../../utils/format.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { RefreshCw, ShieldCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 
 	/** @type {any[]} */
@@ -53,7 +53,7 @@
 	<div class="flex items-center justify-end gap-4">
 		<ProtokollGrenze anzahl={logs.length} {grenze} />
 		<Button variant="secondary" onclick={fetchLogs}>
-			<RefreshCw class="h-4 w-4" aria-hidden="true" />
+			<Icon name="refresh" />
 			Aktualisieren
 		</Button>
 	</div>
@@ -65,7 +65,7 @@
 	{:else if fehler}
 		<LadeFehler onerneut={fetchLogs} titel="Verwaltungsprotokoll nicht geladen" text={fehler} />
 	{:else if logs.length === 0}
-		<SuchZustand symbol={ShieldCheck} titel="Keine administrativen Eingriffe protokolliert" />
+		<SuchZustand symbol="verified_user" titel="Keine administrativen Eingriffe protokolliert" />
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">

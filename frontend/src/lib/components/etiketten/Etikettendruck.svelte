@@ -1,5 +1,5 @@
 <script>
-	import { Printer } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { onMount } from 'svelte';
 	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import EtikettEinstellungen from './EtikettEinstellungen.svelte';
@@ -43,7 +43,7 @@
 			{#if druckt}
 				<Ladekreis size="sm" farbe="aktuell" />
 			{:else}
-				<Printer class="h-4 w-4" aria-hidden="true" />
+				<Icon name="print" />
 			{/if}
 			A4-Bogen drucken
 		</Button>

@@ -10,7 +10,7 @@
      item"); `markiert` hebt eine gerade eingeplante Zeile kurz hervor (M3: Auswahl =
      secondary-container), damit man sieht, wohin die Nachbar-Regel sie gesetzt hat. -->
 <script>
-	import { GripVertical } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import LmfPlanKlassenZelle from './LmfPlanKlassenZelle.svelte';
 	import LmfPlanPlatzZellen from './LmfPlanPlatzZellen.svelte';
 	import LmfPlanVermerkZelle from './LmfPlanVermerkZelle.svelte';
@@ -61,9 +61,9 @@
 	     dass man die Zeile ziehen kann; gezogen wird weiter an der ganzen Zeile. -->
 	<td class="text-right tabular-nums">
 		<span class="flex items-center justify-between gap-2">
-			<GripVertical
-				class="h-4 w-4 cursor-grab opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-				aria-hidden="true"
+			<Icon
+				name="drag_indicator"
+				class="cursor-grab opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
 			/>
 			{i + 1}
 		</span>

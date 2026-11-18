@@ -5,7 +5,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { erlaubteBildschirme } from '../../menue.js';
-	import { ChevronRight, CircleCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { anzahlText, formatZahl } from '../../utils/format.js';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
@@ -125,7 +125,7 @@
 			</div>
 		{:else}
 			<div class="flex-1 flex items-center gap-2 text-on-surface-variant text-sm">
-				<CircleCheck class="w-5 h-5 shrink-0 text-success" aria-hidden="true" />
+				<Icon name="check_circle" class="text-success" />
 				Keine überfälligen Ausleihen
 			</div>
 		{/if}
@@ -137,7 +137,7 @@
 				class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-label-large text-primary cursor-pointer"
 			>
 				Im Mahnwesen bearbeiten
-				<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />
+				<Icon name="chevron_right" groesse={18} />
 			</button>
 		{/if}
 	</div>

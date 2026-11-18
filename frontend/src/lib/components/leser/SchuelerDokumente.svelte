@@ -13,7 +13,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
-	import { Printer, TriangleAlert, ShieldCheck } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/**
 	 * @type {{
@@ -73,7 +73,7 @@
 		onclick={zeigeKontoauszug}
 		disabled={kontoauszugLaedt || !(leser.entliehene_buecher?.length > 0)}
 	>
-		{#if kontoauszugLaedt}{@render spinner()}{:else}<Printer class="w-4 h-4 text-primary" />{/if}
+		{#if kontoauszugLaedt}{@render spinner()}{:else}<Icon name="print" class="text-primary" />{/if}
 		Kontoauszug
 	</Button>
 
@@ -96,7 +96,7 @@
 			onclick={zeigeRechnung}
 			disabled={rechnungLaedt || !leser.has_open_damages}
 		>
-			{#if rechnungLaedt}{@render spinner()}{:else}<TriangleAlert class="w-4 h-4 text-error" />{/if}
+			{#if rechnungLaedt}{@render spinner()}{:else}<Icon name="warning" class="text-error" />{/if}
 			Ersatzforderung
 		</Button>
 	</span>
@@ -109,8 +109,9 @@
 		disabled={auskunftLaedt}
 		data-tip="DSGVO-Auskunft (Art. 15) als PDF anzeigen"
 	>
-		{#if auskunftLaedt}{@render spinner()}{:else}<ShieldCheck
-				class="w-4 h-4 text-on-surface-variant"
+		{#if auskunftLaedt}{@render spinner()}{:else}<Icon
+				name="verified_user"
+				class="text-on-surface-variant"
 			/>{/if}
 		DSGVO-Auskunft
 	</Button>

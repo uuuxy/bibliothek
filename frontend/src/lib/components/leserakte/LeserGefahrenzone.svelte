@@ -1,5 +1,5 @@
 <script>
-	import { TriangleAlert } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import { istKollegium } from '../leser/leserArt.js';
 	import { schuelerRechte } from '../leser/schuelerRechte.js';
@@ -43,7 +43,7 @@
 >
 	<div>
 		<h3 class="text-error text-title-medium flex items-center gap-2">
-			<TriangleAlert class="w-5 h-5" />
+			<Icon name="warning" />
 			Gefahrenzone
 		</h3>
 		<p class="text-error/80 text-sm mt-1 max-w-xl">

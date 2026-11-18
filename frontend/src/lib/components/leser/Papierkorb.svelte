@@ -11,7 +11,7 @@
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Trash, Undo2, ShieldOff } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
 	import { erzeugePapierkorb, istAnonymisiert } from './papierkorbListe.svelte.js';
 
@@ -45,7 +45,7 @@
 <div class="w-full border-l-4 border-l-error">
 	<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
 		<h3 class="text-title-medium text-error flex items-center gap-2">
-			<Trash class="h-5 w-5" aria-hidden="true" />
+			<Icon name="delete" />
 			Gelöschte Leser im Papierkorb
 		</h3>
 	</div>
@@ -58,7 +58,7 @@
 		<!-- Ein gescheiterter Abruf ist KEIN leerer Papierkorb: „leer" wäre hier eine
 		     falsche Auskunft über gelöschte Schülerdaten. -->
 		<div class="py-16 flex flex-col items-center justify-center space-y-2 px-6 text-center">
-			<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
+			<Icon name="remove_moderator" groesse={40} class="text-error" />
 			<span role="alert" class="text-body-medium-emphasized text-error"
 				>{papierkorb.ladefehler}</span
 			>
@@ -121,7 +121,7 @@
 											class="inline-flex items-center gap-1.5 rounded-lg bg-surface-container px-2 py-1 text-label-medium text-on-surface-variant"
 											title="Spätestens nach 180 Tagen im Papierkorb tilgt der nächtliche DSGVO-Lauf Name, Adresse und Geburtsdatum. Diese Zeile lässt sich nicht mehr wiederherstellen."
 										>
-											<ShieldOff class="h-4 w-4" aria-hidden="true" />
+											<Icon name="remove_moderator" />
 											anonymisiert (DSGVO)
 										</span>
 									{:else}
@@ -137,7 +137,7 @@
 											{#if papierkorb.stelltHer(s.id)}
 												<Ladekreis size="sm" farbe="aktuell" />
 											{:else}
-												<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
+												<Icon name="undo" />
 											{/if}
 										</button>
 									{/if}
@@ -148,7 +148,7 @@
 											aria-label="Endgültig löschen"
 											class="icon-btn bg-error-container text-on-error-container hover:opacity-80 shadow-sm"
 										>
-											<Trash class="h-4.5 w-4.5" aria-hidden="true" />
+											<Icon name="delete" />
 										</button>
 									{/if}
 								</div>

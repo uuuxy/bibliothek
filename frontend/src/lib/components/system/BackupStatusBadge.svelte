@@ -7,7 +7,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { backupStatus } from '../../stores/backupStatus.svelte.js';
-	import { Check } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ collapsed?: boolean }} */
 	let { collapsed = false } = $props();
@@ -28,7 +28,7 @@
 		{/if}
 	{:else if !backupStatus.needsAction}
 		<div class="flex items-center gap-1.5 px-4 py-2 text-label-small text-success">
-			<Check class="h-3 w-3 shrink-0" aria-hidden="true" />
+			<Icon name="check" groesse={18} />
 			{backupStatus.message}
 		</div>
 	{/if}

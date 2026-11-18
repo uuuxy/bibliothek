@@ -2,7 +2,7 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { Trash } from '@lucide/svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { anzahlText, formatDatum } from '../../utils/format.js';
@@ -73,7 +73,7 @@
 					{#if loescht.has(v.id)}
 						<Ladekreis size="sm" farbe="aktuell" />
 					{:else}
-						<Trash class="w-5 h-5" aria-hidden="true" />
+						<Icon name="delete" />
 					{/if}
 				</button>
 			</div>
