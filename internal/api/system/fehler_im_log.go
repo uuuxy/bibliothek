@@ -112,12 +112,8 @@ func baueFehlerImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechstens 
 	}
 
 	a.Stufe = bereitschaft.StufeKritisch
-	zuletzt := "zuletzt "
-	if a.Anzahl == 1 {
-		zuletzt = ""
-	}
-	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s",
-		fehlermeldungen(a.Anzahl), stunden, zuletzt, zeitpunkt(gruppen[0].Zuletzt, jetzt))
+	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s",
+		fehlermeldungen(a.Anzahl), stunden, mitZuletzt(a.Anzahl, zeitpunkt(gruppen[0].Zuletzt, jetzt)))
 	a.Meldungen = fehlerZeilen(gruppen, jetzt, hoechstens, weitereFehlermeldungen)
 	a.Folge = "Eine Fehlermeldung heißt: Etwas ist schiefgegangen, und das Programm konnte sich nicht selbst helfen"
 	a.Abhilfe = "Die Ursache steht unter jeder Meldung. " + befehlImHandbuch + "."
@@ -137,13 +133,9 @@ func baueWarnungenImLog(gruppen []logger.Fehlergruppe, jetzt time.Time, hoechste
 	if a.Anzahl == 0 {
 		return a
 	}
-	zuletzt := "zuletzt "
-	if a.Anzahl == 1 {
-		zuletzt = ""
-	}
 	a.Stufe = bereitschaft.StufeWarnung
-	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s%s",
-		warnungenText(a.Anzahl), int(logger.FehlerZeitraum.Hours()), zuletzt, zeitpunkt(gruppen[0].Zuletzt, jetzt))
+	a.Befund = fmt.Sprintf("%s in den letzten %d Stunden, %s", warnungenText(a.Anzahl),
+		int(logger.FehlerZeitraum.Hours()), mitZuletzt(a.Anzahl, zeitpunkt(gruppen[0].Zuletzt, jetzt)))
 	a.Meldungen = fehlerZeilen(gruppen, jetzt, hoechstens, weitereWarnungen)
 	a.Folge = "Eine Warnung heißt: Das Programm hat sich selbst geholfen. Häuft sich eine, steckt oft ein Fehler dahinter."
 	a.Abhilfe = "Die Ursache steht unter jeder Meldung. Jede Zeile mit Uhrzeit zeigt der Befehl im Betriebshandbuch " +
@@ -215,10 +207,7 @@ func textDerGruppe(g logger.Fehlergruppe) string {
 
 // zusatzZurMeldung nennt Anzahl, Zeit und Ursache einer Meldung: „2 × · zuletzt 11:47 · Ursache".
 func zusatzZurMeldung(g logger.Fehlergruppe, jetzt time.Time) string {
-	zeit := uhrzeit(g.Zuletzt, jetzt)
-	if g.Anzahl > 1 {
-		zeit = "zuletzt " + zeit
-	}
+	zeit := mitZuletzt(g.Anzahl, uhrzeit(g.Zuletzt, jetzt))
 	teile := []string{fmt.Sprintf("%d ×", g.Anzahl), zeit}
 	if g.Ursache != "" {
 		teile = append(teile, g.Ursache)
@@ -279,4 +268,13 @@ func tageZurueck(zeit, jetzt time.Time) int {
 		return time.Date(j, m, d, 0, 0, 0, 0, time.UTC)
 	}
 	return int(tag(jetzt).Sub(tag(zeit.In(jetzt.Location()))).Hours() / 24)
+}
+
+// mitZuletzt setzt „zuletzt" vor den Zeitpunkt, wenn es mehr als eine Meldung gab; bei einer ist er
+// ihr einziger.
+func mitZuletzt(anzahl int, zeit string) string {
+	if anzahl > 1 {
+		return "zuletzt " + zeit
+	}
+	return zeit
 }

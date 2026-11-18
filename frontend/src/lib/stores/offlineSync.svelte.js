@@ -9,7 +9,7 @@ import { apiClient, leseApiFehler } from '../apiFetch.js';
 import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
-import { verbindeSaetze } from '../utils/format.js';
+import { anzahlText, verbindeSaetze } from '../utils/format.js';
 
 // Endgueltige Ergebnisse: Der Eintrag ist erledigt und fliegt aus der Warteschlange.
 // „wiederholen" ist das einzige, das NICHT endgueltig ist (Server nicht erreichbar, oder
@@ -325,7 +325,7 @@ function erzeugeOfflineSync() {
 	function warneVorDemSchliessen(e) {
 		if (wartendeAnzahl > 0) {
 			e.preventDefault();
-			const msg = `${wartendeAnzahl === 1 ? '1 Vorgang ist' : `${wartendeAnzahl} Vorgänge sind`} nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern", danach darf der Rechner aus.`;
+			const msg = `${anzahlText(wartendeAnzahl, 'Vorgang ist', 'Vorgänge sind')} nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern", danach darf der Rechner aus.`;
 			e.returnValue = msg;
 			return msg;
 		}

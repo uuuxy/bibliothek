@@ -132,7 +132,7 @@ export function erzeugeDesignAblage() {
 			const meiner = ++speicherLauf;
 			// Nacheinander: Den Stand für das nächste Speichern nennt erst die Antwort des laufenden;
 			// zugleich abgeschickt, käme es als Konflikt mit dem eigenen Platz zurück.
-			while (unterwegs) await unterwegs;
+			while (unterwegs !== null) await unterwegs;
 			if (meiner !== speicherLauf) return; // ein neuerer Stand wartet schon
 			unterwegs = sende(body, meiner).finally(() => (unterwegs = null));
 			return unterwegs;

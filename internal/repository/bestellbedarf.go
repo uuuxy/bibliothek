@@ -46,14 +46,17 @@ type BestellbedarfAuflage struct {
 	GesamtBestand    int    `json:"gesamt_bestand"`
 }
 
+// klasseKind ist die Klasse eines Kindes in sqlBedarfKinder, aus der Jahrgang und Abschluss folgen.
+const klasseKind = "s.klasse"
+
 // sqlBedarfKinder zählt je Jahrgang die Kinder von heute und die des nächsten Schuljahres: wer aus
 // dem Jahrgang darunter nachrückt, ohne Abschlussklassen (AbschlussklasseSQL wie die Versetzung).
 // Ohne Kind im Jahrgang darunter, wie in Jahrgang 5, gilt die Zahl von heute.
 var sqlBedarfKinder = `
 	kinder AS (
-		SELECT s.id, ` + JahrgangSQL("s.klasse") + ` AS jahrgang, ` + AbschlussklasseSQL("s.klasse") + ` AS geht_ab
+		SELECT s.id, ` + JahrgangSQL(klasseKind) + ` AS jahrgang, ` + AbschlussklasseSQL(klasseKind) + ` AS geht_ab
 		FROM schueler s
-		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = false AND ` + JahrgangSQL("s.klasse") + ` IS NOT NULL
+		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = false AND ` + JahrgangSQL(klasseKind) + ` IS NOT NULL
 	),
 	jahrgaenge AS (
 		SELECT jahrgang, count(*) AS kinder, count(*) FILTER (WHERE NOT geht_ab) AS bleiben

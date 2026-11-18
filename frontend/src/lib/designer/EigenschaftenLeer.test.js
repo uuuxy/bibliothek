@@ -40,7 +40,7 @@ describe('Ausweis-Designer: ausgeblendetes Element', () => {
 
 		expect(adresse()?.show).toBe(true);
 		expect(schalter.getAttribute('aria-checked')).toBe('true');
-		expect(leinwand.container.querySelectorAll('[data-ausweis-vorschau] > div > *').length).toBe(
+		expect(leinwand.container.querySelectorAll('[data-ausweis-vorschau] > div > *')).toHaveLength(
 			elementeVorher + 1
 		);
 	});
@@ -49,7 +49,7 @@ describe('Ausweis-Designer: ausgeblendetes Element', () => {
 		fuegeTextHinzu('front');
 		const feld = render(Eigenschaften, { gewaehlteKennung: null, side: 'front' });
 		const liste = feld.getByTestId('designer-elemente');
-		expect(liste.querySelectorAll('[role="switch"]').length).toBe(idStore.front.elements.length);
+		expect(liste.querySelectorAll('[role="switch"]')).toHaveLength(idStore.front.elements.length);
 		for (const name of ['Schulname', 'Adresse', 'Logo', 'Passbild', 'Name', 'Strichcode']) {
 			expect(feld.getByLabelText(name), name).toBeTruthy();
 		}

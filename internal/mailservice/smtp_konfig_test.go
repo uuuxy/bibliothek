@@ -26,18 +26,25 @@ func attrappe(t *testing.T) pgxmock.PgxPoolIface {
 }
 
 func konfigZeile(host, port, benutzer string, passwort []byte, absender string) *pgxmock.Rows {
-	return konfigZeileMitPortal(host, port, benutzer, passwort, absender, "", "", nil)
+	return konfigZeileMitPortal(gespeicherteZeile{host: host, port: port, benutzer: benutzer, passwort: passwort, absender: absender})
+}
+
+// gespeicherteZeile sind die Werte der Konfigurationszeile, die ladeSMTPKonfig liest; was fehlt,
+// bleibt leer.
+type gespeicherteZeile struct {
+	host, port, benutzer, absender string
+	passwort                       []byte
+	portalAbsender, portalBenutzer string
+	portalPasswort                 []byte
 }
 
 // konfigZeileMitPortal ist die gespeicherte Zeile samt dem zweiten Absender, der ab Werk die Mails
 // aus Mein Portal nimmt.
-func konfigZeileMitPortal(host, port, benutzer string, passwort []byte, absender,
-	portalAbsender, portalBenutzer string, portalPasswort []byte,
-) *pgxmock.Rows {
+func konfigZeileMitPortal(z gespeicherteZeile) *pgxmock.Rows {
 	return pgxmock.NewRows([]string{"smtp_host", "smtp_port", "smtp_user", "smtp_password_encrypted", "sender_email",
 		"portal_absender_email", "portal_smtp_benutzer", "portal_smtp_passwort_verschluesselt", "portal_absender_fuer",
 		"webmail_adresse", "webmail_benutzer", "webmail_passwort_verschluesselt"}).
-		AddRow(host, port, benutzer, passwort, absender, portalAbsender, portalBenutzer, portalPasswort, []string{"portal"},
+		AddRow(z.host, z.port, z.benutzer, z.passwort, z.absender, z.portalAbsender, z.portalBenutzer, z.portalPasswort, []string{"portal"},
 			"", "", []byte{})
 }
 

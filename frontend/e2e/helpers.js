@@ -297,9 +297,9 @@ export function seedBestellbedarf(anzahl = 8) {
  * @returns {() => void} Aufräumen: Ausleihen und Kinder weg; vor den Titeln aufrufen
  */
 export function seedFehlbestand(marke, exemplare, bestand) {
-	const [zweite, dritte] = querySQL(`
+	const [zweite, dritte] = querySQL(String.raw`
 		SELECT count(*) FILTER (WHERE j = '2'), count(*) FILTER (WHERE j = '3')
-		FROM (SELECT substring(klasse from '^0*([1-9]|1[0-3])(?:\\D|$)') AS j FROM schueler
+		FROM (SELECT substring(klasse from '^0*([1-9]|1[0-3])(?:\D|$)') AS j FROM schueler
 		      WHERE deleted_at IS NULL AND NOT ist_abgaenger) s`)
 		.split('|')
 		.map(Number);

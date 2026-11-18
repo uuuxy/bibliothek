@@ -13,9 +13,8 @@ export function skaliere(ecke, start, dx, dy) {
 	const rechts = ecke === 'ne' || ecke === 'se';
 	const unten = ecke === 'sw' || ecke === 'se';
 	const width = Math.max(5, rechts ? breite + dx : breite - dx);
-	const height = start.proportional
-		? width / (breite / hoehe)
-		: Math.max(3, unten ? hoehe + dy : hoehe - dy);
+	const freieHoehe = Math.max(3, unten ? hoehe + dy : hoehe - dy);
+	const height = start.proportional ? width / (breite / hoehe) : freieHoehe;
 	return {
 		x: rechts ? x : Math.max(0, x + (breite - width)),
 		y: unten ? y : Math.max(0, y + (hoehe - height)),

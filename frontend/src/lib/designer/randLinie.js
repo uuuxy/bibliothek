@@ -7,7 +7,9 @@ import { SICHERHEITSRAND_MM, STRICHCODE_RAND_MM } from './kartenRand.js';
  * @param {{ zuNah: boolean, eingerastet: boolean, aktiv: boolean }} lage
  */
 export function linienStil({ zuNah, eingerastet, aktiv }) {
-	const farbe = zuNah ? 'border-error' : eingerastet ? 'border-primary' : 'border-outline';
+	let farbe = 'border-outline';
+	if (zuNah) farbe = 'border-error';
+	else if (eingerastet) farbe = 'border-primary';
 	return `${farbe} ${aktiv ? 'border-2' : 'border'}`;
 }
 

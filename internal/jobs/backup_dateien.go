@@ -45,6 +45,9 @@ func (d BackupDatei) SicherungsZeit() time.Time {
 	return d.GeaendertAm
 }
 
+// stelleBackupOrdner nennt in der Warnung beim Schließen das Sicherungsverzeichnis.
+const stelleBackupOrdner = "backup dir"
+
 // HatKopf sagt, ob die Sicherung im Verzeichnis mit dem Kopf ihres Formats beginnt. Eine leere
 // oder fremde Datei unter dem Namen einer Sicherung lässt sich nicht zurückspielen; der Stand der
 // Sicherungen zählt sie nicht.
@@ -53,7 +56,7 @@ func (d BackupDatei) HatKopf(verzeichnis string) bool {
 	if err != nil {
 		return false
 	}
-	defer closeutil.Schliesse(wurzel, "backup dir")
+	defer closeutil.Schliesse(wurzel, stelleBackupOrdner)
 	datei, err := wurzel.Open(d.Name)
 	if err != nil {
 		return false
@@ -73,7 +76,7 @@ func LeseBackupDateien(verzeichnis string) ([]BackupDatei, error) {
 		}
 		return nil, err
 	}
-	defer closeutil.Schliesse(wurzel, "backup dir")
+	defer closeutil.Schliesse(wurzel, stelleBackupOrdner)
 	return leseBackups(wurzel)
 }
 
@@ -85,7 +88,7 @@ func leseBackups(wurzel *os.Root) ([]BackupDatei, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer closeutil.Schliesse(verzeichnis, "backup dir")
+	defer closeutil.Schliesse(verzeichnis, stelleBackupOrdner)
 	eintraege, err := verzeichnis.ReadDir(-1)
 	if err != nil {
 		return nil, err

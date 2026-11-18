@@ -38,8 +38,9 @@ func TestLadeSMTPKonfig_PortalAbsenderMitEigenemZugang(t *testing.T) {
 	}
 
 	mock := attrappe(t)
-	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(
-		"smtp.schule.de", "587", "bib", haupt, "bib@schule.de", " portal@schule.de ", "portal", portal))
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(gespeicherteZeile{host: "smtp.schule.de", port: "587",
+		benutzer: "bib", passwort: haupt, absender: "bib@schule.de", portalAbsender: " portal@schule.de ", portalBenutzer: "portal",
+		portalPasswort: portal}))
 
 	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
@@ -76,8 +77,8 @@ func TestLadeSMTPKonfig_PortalAbsenderOhneEigenenZugang(t *testing.T) {
 	}
 
 	mock := attrappe(t)
-	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(
-		"smtp.schule.de", "587", "bib", haupt, "bib@schule.de", "portal@schule.de", "", nil))
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(gespeicherteZeile{host: "smtp.schule.de", port: "587",
+		benutzer: "bib", passwort: haupt, absender: "bib@schule.de", portalAbsender: "portal@schule.de"}))
 
 	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
@@ -99,8 +100,9 @@ func TestLadeSMTPKonfig_UnlesbaresPortalPasswortHaeltNurDiePortalMailsAuf(t *tes
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
 
 	mock := attrappe(t)
-	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(
-		"smtp.schule.de", "587", "", nil, "bib@schule.de", "portal@schule.de", "portal", []byte("kein-gueltiger-geheimtext")))
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(gespeicherteZeile{host: "smtp.schule.de", port: "587",
+		absender: "bib@schule.de", portalAbsender: "portal@schule.de", portalBenutzer: "portal",
+		portalPasswort: []byte("kein-gueltiger-geheimtext")}))
 
 	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
@@ -150,8 +152,8 @@ func TestPostausgang_SendeWaehltDenAbsenderNachDerArt(t *testing.T) {
 // Ab Werk nimmt der zweite Absender nur die Mails aus Mein Portal, wie die gespeicherte Zeile sagt.
 func TestLadeSMTPKonfig_ZweiterAbsenderNimmtDieGespeichertenArten(t *testing.T) {
 	mock := attrappe(t)
-	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(
-		"smtp.schule.de", "587", "", nil, "bib@schule.de", "portal@schule.de", "", nil))
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnRows(konfigZeileMitPortal(gespeicherteZeile{host: "smtp.schule.de", port: "587",
+		absender: "bib@schule.de", portalAbsender: "portal@schule.de"}))
 	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
 		t.Fatalf("ladeSMTPKonfig: %v", err)

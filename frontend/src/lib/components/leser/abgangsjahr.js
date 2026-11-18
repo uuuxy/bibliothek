@@ -16,11 +16,12 @@ export function abgangsjahrAm(klasse, jetzt) {
 	let jahrgang = 11;
 	let abschluss = 13;
 	if (!kl.startsWith('e')) {
-		const ziffern = kl.match(/^\d+/)?.[0] ?? '';
+		const ziffern = /^\d+/.exec(kl)?.[0] ?? '';
 		jahrgang = Number(ziffern);
 		if (ziffern === '' || jahrgang < 1 || jahrgang > 13) return jetzt.getFullYear() + 5;
 		const zweig = kl.slice(ziffern.length).trim();
-		abschluss = zweig.startsWith('h') ? 9 : zweig.startsWith('r') ? 10 : 13;
+		if (zweig.startsWith('h')) abschluss = 9;
+		else if (zweig.startsWith('r')) abschluss = 10;
 	}
 	const basis = jetzt.getMonth() >= 7 ? jetzt.getFullYear() + 1 : jetzt.getFullYear();
 	return basis + Math.max(0, abschluss - jahrgang);
