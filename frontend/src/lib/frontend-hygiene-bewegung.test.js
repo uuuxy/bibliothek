@@ -7,6 +7,8 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // Tokens & specs, Zeile CSS). Tailwinds ease-in, ease-out und ease-in-out sind die Kurven von
 // Material 2; die CSS-Wörter ease, ease-in und ease-out und eigene cubic-bezier()-Werte sind
 // gar keine Kurve von Google. linear bleibt erlaubt: Ein Zeitbalken läuft gleichmäßig.
+// Blind für Kurven aus CSS-Variablen und zusammengesetzten Strings; bei Svelte-Übergängen sieht
+// sie nur, dass `easing` dasteht, nicht welche Funktion.
 const M3_KURVEN = new Set([
 	'0.2,0,0,1', // standard
 	'0,0,0,1', // standard decelerate

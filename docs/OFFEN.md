@@ -52,8 +52,8 @@ Nur, was kein Test leisten kann.
 - [x] Klammern und Schrägstriche in den Texten der Oberfläche wie bei Google: Klammern nur für
   Begriffe und Quellen, kein Schrägstrich zwischen Wahlmöglichkeiten; am Server erledigt. (5.188)
 - [x] Große Lernmittel-Etiketten im Druck-Center der Schule. (5.190)
-- [ ] Die offenen Seiten der Abdeckungsliste gegen den Code halten: Toolbars, Motion,
-  Icons, Alt text ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
+- [ ] Icons: Lucide durch Googles Material Symbols ersetzen, die letzte offene Seite der
+  Abdeckungsliste ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [ ] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
   Oberfläche; dafür gibt es noch keine Prüfung. (5.192)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
@@ -110,17 +110,13 @@ Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
 
-### 5.191 Offene Seiten der Abdeckungsliste
+### 5.191 Icons nach Material 3
 
-Vier Seiten von Material 3 hat niemand gegen den Code gehalten ([sweeps.md](sweeps.md),
-Abdeckung der Google-Seiten): Toolbars (`ui/AuswahlLeiste`, Werkzeugleiste des
-Ausweis-Designers), Motion (Übergänge an rund 100 Stellen), Icons und Alt text (17 Stellen mit
-`alt`).
-
-Icons ist die größte Abweichung: M3 nennt die Material Symbols („Use the Material Symbols variable
-font“, Styles, Icons), das Programm zeichnet mit Lucide (179 Dateien, 96 Symbole). Ein Wechsel
-tauscht jedes Symbol und liefert die Symbolschrift selbst aus wie Roboto; vor dem Bau braucht es
-ein Ja. Die übrigen drei: je Seite lesen, Befund in die Liste, Abweichungen beheben.
+Icons ist die letzte Seite von Material 3, die niemand gegen den Code gehalten hat
+([sweeps.md](sweeps.md), Abdeckung der Google-Seiten), und die größte Abweichung: M3 nennt die
+Material Symbols („Use the Material Symbols variable font“, Styles, Icons), das Programm zeichnet
+mit Lucide (179 Dateien, 96 Symbole). Der Wechsel tauscht jedes Symbol und liefert die
+Symbolschrift selbst aus wie Roboto.
 
 ### 5.192 Klammern und Schrägstriche in PDF und Mail
 

@@ -374,7 +374,8 @@ steht im Kopfkommentar der Datei.
 | `frontend-hygiene-symbolknoepfe.test.js`   | Erkennt Symbole nur an Bauteilen aus `@lucide/svelte`, am Ladekreis und an einem einzelnen Zeichen im Quelltext; ein Symbol aus einem anderen Bauteil oder über `{@render …}` nicht, Attribute aus `{...rest}` auch nicht. Prüft, dass `.icon-btn`, `aria-label` und `data-tip` dastehen, nicht was sie sagen; ob die Fläche im Browser frei ist, misst `e2e/icon-trefferflaechen.spec.js`. |
 | `frontend-hygiene-abbrechen.test.js`       | Erkennt einen schließenden Knopf nur an festem Text oder `aria-label`, die mit „Abbrechen“, „Schließen“ oder „Bleiben“ beginnen; eine Beschriftung aus einem Ausdruck (`{frage.abbruch}`) und `disabled` aus `{...rest}` nicht. Ob das Ergebnis einer Anfrage nach dem Schließen ankommt, prüft sie nicht; das prüft `LeserSperreDialog.test.js` an einem der vier Dialoge, die Fehler bei sich zeigen. |
 | `frontend-hygiene-namen.test.js`           | Nur festes `aria-label="…"` an `<button>`, `<Button>` und `<a>` in `.svelte`; ein `aria-label` mit Ausdruck (`{…}`), Text aus einem Ausdruck im Inhalt, `sr-only` in einer verschachtelten Klassenliste, `role="button"` und `aria-labelledby` nicht. Ob der Name am Bildschirm ankommt, misst `e2e/barrierefreiheit-axe.spec.js` (axe-Regel `label-content-name-mismatch`), aber nur an den Hauptansichten im Grundzustand. |
-| `frontend-hygiene-ladekreis.test.js`       | Nur `.svelte` und nur `animate-spin` + `rounded-full` in EINER Klassenliste; ein Nachbau mit den Klassen auf zwei Elementen oder aus einer Variablen nicht. |
+| `frontend-hygiene-ladekreis.test.js`       | Nur `.svelte` und nur `animate-spin` + `rounded-full` in EINER Klassenliste; ein Nachbau mit den Klassen auf zwei Elementen oder aus einer Variablen nicht. Blinkende Schrift nur mit `animate-pulse` am Element, dessen Text mit „Lade“ beginnt. |
+| `frontend-hygiene-bewegung.test.js`        | Nur literale Kurven in `.svelte`, `.js` und `styles/*.css`; eine Kurve aus einer CSS-Variablen oder einem zusammengesetzten String nicht. Bei Svelte-Übergängen nur, ob `easing` dasteht, nicht welche Funktion; nur Kurven aus `svelte/easing` fallen auf. |
 | `frontend-hygiene-satzzeichen.test.js`     | Den Schlusspunkt nicht bei einem Satz, den ein Block (`{#if}`) im selben Element fortsetzt, und bei einem String mit Leerzeichen am Anfang; Sätze aus Variablen erst, wo sie als Literal stehen. Eine Ordnungszahl vor einem Wort („3. Stunde“) steht als Ausnahme im Test. |
 | `frontend-hygiene-schalter.test.js`        | Nur literale `<input type="checkbox|radio">` und das Wort `peer-checked`; ein Schalter aus ARIA (`role="switch"`) ohne diese Marker nicht. |
 | `frontend-hygiene-schrift.test.js`         | Nur literale Klassen `text-<display\|headline\|title\|body\|label>-<small\|medium\|large>`; eine zusammengesetzte Klasse, eine Größe in `.css` oder im `style`-Attribut nicht. Die erlaubten Rollen liest er aus `theme-mass.css`. Bei Beschriftung und Hinweiszeile: Klassen aus Variablen, eine Hinweiszeile, die nicht direkt auf die Überschrift folgt, und eine Beschriftung, die kein `<label>` ist. Beim Gewicht nur Überschriften in `text-base` und die Rolle `text-label-small`; bei Titeln ab 22 px nur h-Elemente (der Titel von `ui/SuchZustand` ist ein `<p>`). |
@@ -448,7 +449,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Seite | bei uns | Stand |
 | --- | --- | --- |
 | Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen` |
-| Segmented buttons | `ui/Segmente` | gelesen (f5b85aca) |
+| Segmented buttons | `ui/Segmente`, auch im Ausweis-Designer | gelesen (962cba20) |
 | Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip` | gelesen (b78dbb84) |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
 | Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
@@ -470,18 +471,18 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
 | Split button | „Ausweis drucken“ mit Menü in der Leserakte | gelesen (6a5a1562) |
 | Date pickers | 16 Felder `type="date"`: eintippen oder im Kalender des Browsers wählen, wie beim Docked date picker („both options are immediately available“) | Abweichung, entschieden: Der aufgeklappte Kalender sieht aus wie im Browser, nicht wie in M3. Googles Material Web hat keinen Kalender und führt `date` im Textfeld als „not fully supported“; ein eigener Kalender änderte nur das Aussehen |
-| Toolbars | `ui/AuswahlLeiste`, Werkzeugleiste des Ausweis-Designers | **offen** |
+| Toolbars | `ui/AuswahlLeiste` für markierte Zeilen, auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | gelesen (962cba20), alle Stellen |
 | Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |
 | Typography | `styles/theme-mass.css` | Gate: `frontend-hygiene-schrift`, `typo-rollen` |
 | Shape | Ecken der Bauteile | gelesen (ec88f9ae) |
 | Elevation | Schatten von Dialog, Menü, Snackbar | Gate: `m3-bauform` (Rahmen oder Erhebung, nie beides) |
-| Motion | Übergänge und `animate-`-Klassen an rund 100 Stellen | **offen** |
+| Motion | Übergänge auf standard und 200 ms (`styles/theme-mass.css`), Einblendungen auf emphasized decelerate und 400 ms, Svelte-Übergänge über `utils/bewegung.js` | Gate: `frontend-hygiene-bewegung` |
 | Icons | Lucide (`@lucide/svelte`, 179 Dateien); Google: „Use the Material Symbols variable font“ | **offen**, Abweichung |
 | Layout, Spacing | Raster und Abstände (ARCHITEKTUR 5.3) | gelesen (e95fd674) |
 | Interaction states | Hover, Fokus, gedrückt | gelesen (d1273fcf) |
 | Accessibility | Rollen, Namen, Fokus | Gate: `frontend-hygiene-fehlerzeile-rolle`, `frontend-hygiene-namen` |
 | Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`; offen: Klammern und Schrägstriche in PDF und Mail (OFFEN 5.192) |
-| Alt text | 17 Stellen mit `alt` | **offen** |
+| Alt text | 17 Stellen mit `alt`; ein Cover neben seinem Titel mit `dekorativ` | gelesen (3711fd43), alle Stellen |
 | Global writing | Sätze für alle Leser | gelesen (a71a5dd0) |
 
 Gilt hier nicht: FAB, Extended FAB und FAB menu (das Programm hat keinen schwebenden Knopf),
