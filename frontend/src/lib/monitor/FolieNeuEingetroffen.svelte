@@ -30,6 +30,7 @@
 							groesse="kachel"
 							nurGespeichert
 							klasse="shadow-lg"
+							dekorativ
 						/>
 					</div>
 					{#if i === coverIndex}

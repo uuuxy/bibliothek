@@ -21,6 +21,7 @@
 						titel={book.titel}
 						groesse="liste"
 						nurGespeichert
+						dekorativ
 					/>
 					<div class="flex-1 min-w-0">
 						<p class="truncate text-body-large-emphasized">{book.titel}</p>

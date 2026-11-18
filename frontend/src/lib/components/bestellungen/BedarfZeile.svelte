@@ -25,7 +25,7 @@
 	     über `children` vor). Frühere Gegengründe gemessen widerlegt: `loading="lazy"`
 	     erspart die 247 Requests, 5.724 von 8.706 Titeln ohne Exemplar haben ein Cover. -->
 	<CoverVorschau isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel}>
-		<BuchCover coverUrl={r.cover_url || ''} isbn={r.isbn || ''} titel={r.titel} />
+		<BuchCover coverUrl={r.cover_url || ''} isbn={r.isbn || ''} titel={r.titel} dekorativ />
 	</CoverVorschau>
 
 	<div class="min-w-0 flex-1">

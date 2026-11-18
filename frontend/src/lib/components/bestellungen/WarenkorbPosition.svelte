@@ -25,6 +25,7 @@
 			isbn={position.isbn}
 			titel={position.titel}
 			klasse="shrink-0"
+			dekorativ
 		/>
 		<div class="min-w-0 flex-1">
 			<h4 class="truncate text-title-small leading-snug text-on-surface">

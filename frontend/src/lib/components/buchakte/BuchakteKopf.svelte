@@ -135,6 +135,7 @@
 			fach={titel.subject}
 			groesse="kachel"
 			klasse="shadow-2xl"
+			dekorativ
 		/>
 	</div>
 </div>

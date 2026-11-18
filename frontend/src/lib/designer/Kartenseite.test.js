@@ -112,7 +112,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 	it('zeigt das echte Logo statt des Rahmens, sobald eines hinterlegt ist', () => {
 		idStore.front.elements[0].content = 'data:image/png;base64,AAAA';
 
-		const { queryByText, getByAltText } = render(Kartenseite, {
+		const { queryByText, container } = render(Kartenseite, {
 			props: {
 				side: 'front',
 				leser: SCHUELER_OHNE_FOTO,
@@ -122,7 +122,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 		});
 
 		expect(queryByText('LOGO')).toBeNull();
-		expect(getByAltText('Bild')).toBeTruthy();
+		expect(container.querySelector('img[src="data:image/png;base64,AAAA"]')).toBeTruthy();
 	});
 });
 

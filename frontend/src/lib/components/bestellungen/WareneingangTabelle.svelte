@@ -116,6 +116,7 @@
 										isbn={item.isbn}
 										titel={item.titel}
 										groesse="gross"
+										dekorativ
 									/>
 								</td>
 								<td class="text-body-medium-emphasized">{item.titel}</td>

@@ -82,7 +82,7 @@
 			class="w-full h-full border border-dashed border-outline-variant bg-surface/50 flex items-center justify-center overflow-hidden rounded-xs"
 		>
 			{#if el.content}
-				<img src={el.content} class="w-full h-full object-contain pointer-events-none" alt="Bild" />
+				<img src={el.content} class="w-full h-full object-contain pointer-events-none" alt="" />
 			{:else}
 				<span class="text-[5px] text-on-surface-variant font-bold pointer-events-none"
 					>{el.type === 'logo' ? 'LOGO' : 'BILD'}</span

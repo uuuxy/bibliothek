@@ -19,6 +19,7 @@
 				groesse="kachel"
 				nurGespeichert
 				klasse="shadow-2xl ring-4 ring-primary/30"
+				dekorativ
 			/>
 		</div>
 		<div>

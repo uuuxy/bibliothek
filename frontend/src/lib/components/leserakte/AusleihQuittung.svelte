@@ -56,6 +56,7 @@
 									isbn={book.isbn}
 									titel={book.titel}
 									nurGespeichert
+									dekorativ
 								/>
 							</td>
 							<td class="py-3 px-2">

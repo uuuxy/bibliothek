@@ -52,9 +52,9 @@
 	 * @prop {string} [fach] Steht mit dem Titel auf dem Platzhalter der Kachel
 	 * @prop {'klein'|'zeile'|'liste'|'gross'|'kachel'} [groesse]
 	 * @prop {string} [klasse]
-	 * @prop {boolean} [dekorativ] Leerer Alternativtext — für ein Cover INNERHALB eines Knopfs,
-	 *   der den Titel selbst als Text trägt. Sonst sagte ein Screenreader ihn zweimal an
-	 *   („Cover von Emil … Emil …"), WCAG-Technik H2.
+	 * @prop {boolean} [dekorativ] Leerer Alternativtext für ein Cover, neben dem der Titel als
+	 *   Text steht, im selben Knopf oder in derselben Zeile. Sonst sagte ein Screenreader ihn
+	 *   zweimal an, M3 Alt text: „Don’t repeat the caption in alt text“.
 	 * @prop {boolean} [nurGespeichert] Zeigt nur das Cover, das am Titel gespeichert ist, und
 	 *   fragt weder Google Books noch OpenLibrary. Für Listen über Bücher im Bestand: Dort
 	 *   zeigt `CoverVorschau` daneben ebenfalls nur das gespeicherte Bild.

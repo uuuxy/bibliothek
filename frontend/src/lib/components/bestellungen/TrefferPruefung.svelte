@@ -111,6 +111,7 @@
 			isbn={treffer.isbn}
 			titel={treffer.titel}
 			klasse="shrink-0"
+			dekorativ
 		/>
 		<div class="min-w-0">
 			<div class="text-on-surface text-body-medium-emphasized truncate">{treffer.titel}</div>

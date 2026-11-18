@@ -99,7 +99,7 @@
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
 			{#if el.content}
-				<img src={el.content} class="w-full h-full object-contain" alt="Bild" />
+				<img src={el.content} class="w-full h-full object-contain" alt="" />
 			{:else}
 				{@render leerstelle(el.type === 'logo' ? 'LOGO' : 'BILD')}
 			{/if}

@@ -81,6 +81,7 @@
 			titel={treffer.titel || treffer.title}
 			groesse="gross"
 			nurGespeichert
+			dekorativ
 		/>
 
 		<div class="min-w-0 flex-1 basis-48">

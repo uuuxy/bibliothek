@@ -124,6 +124,7 @@
 								titel={book.titel}
 								groesse="kachel"
 								nurGespeichert
+								dekorativ
 							/>
 							<div class="absolute top-2 right-2">
 								{#if book.verfuegbar > 0}
