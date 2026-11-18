@@ -76,7 +76,7 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandLeserUndLesehistorie(ctx conte
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Schüler-Anonymisierung", Frist: fmt.Sprintf("180 Tage (gelöscht) / %d Tage Karenz (Abgänger)", karenzTage), Zeilen: n})
+	stand = append(stand, LoeschRueckstand{Routine: "Schüler-Anonymisierung", Frist: fmt.Sprintf("180 Tage nach dem Löschen, für Abgänger %d Tage Karenz", karenzTage), Zeilen: n})
 
 	// 2. Abgänger endgültig löschen. Die Kulanz steckt in AbgaengerStichjahr (30 Tage
 	//    nach Jahreswechsel) — ein zusätzlicher Tag wäre hier ohne Bedeutung.
@@ -84,7 +84,7 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandLeserUndLesehistorie(ctx conte
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach der Karenz (anonymisiert), ab 30. Januar des Folgejahres", Zeilen: n})
+	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach Karenz und Anonymisierung ab 30. Januar des Folgejahres", Zeilen: n})
 
 	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb).
 	n, err = a.zaehle(ctx, "leser", "", praedikatKollegenPapierkorb(KulanzWaechter))
@@ -216,7 +216,7 @@ func ProtokollAufbewahrungMonateOderVorgabe(v *int) int {
 // eine erlaubte Entscheidung der Schule, kein Fehler.
 func tageText(tage int) string {
 	if tage <= 0 {
-		return "abgeschaltet (0)"
+		return "auf 0 gestellt, also abgeschaltet"
 	}
 	return TageMitZahl(tage)
 }

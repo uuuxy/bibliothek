@@ -62,8 +62,10 @@ function verstoesse(roh, ohneSchlusspunkt = false) {
 const KUERZEL = /^(?=(?:[^\p{Lu}]*\p{Lu}){2})[\p{L}\d.-]+$|^(?:Art\.|§|DIN) /u;
 // Code: ein Pfad, eine Adresse, ein Dateityp, und was weder Leerzeichen noch Großbuchstaben trägt.
 const CODE = /^\.{0,2}\/|^data:|https?:\/\/|^[^\s\p{Lu}]+$/u;
-// Eine Webadresse ohne Schema (kmk.org/service/ferienregelung) ist Code und, in Klammern, eine Quelle.
-const ADRESSE = /[\w-]+(?:\.[\w-]+)*\.[a-z]{2,}\/[^\s()]*/gu;
+// Eine Webadresse ohne Schema (kmk.org/service/ferienregelung) oder ein Dateipfad (docs/STIL.md)
+// ist Code und, in Klammern, eine Quelle. Googles developer documentation style guide (Slashes):
+// „Use forward slashes, as appropriate, in computer file paths and URLs.“
+const ADRESSE = /[\w-]+(?:\.[\w-]+)*\.[a-z]{2,}\/[^\s()]*|(?:[\w-]+\/)+[\w-]+\.[a-z]{2,4}\b/gu;
 
 /** @param {string} roh @returns {string[]} */
 function nebenzeichen(roh) {

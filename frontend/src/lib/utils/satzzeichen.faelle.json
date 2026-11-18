@@ -51,7 +51,9 @@
 			"„LMF Deu 7 / Bie“ ist ein Fach",
 			"image/jpeg",
 			"Plan (kmk.org/service/x)",
-			"Steht unter kmk.org/service/x bereit"
+			"Steht unter kmk.org/service/x bereit",
+			"Der Befehl steht im Betriebshandbuch (docs/DEPLOYMENT.md)",
+			"Vorher scripts/entferne_demo_daten.sql ausführen"
 		],
 		"mit": [
 			"Notiz (optional)",

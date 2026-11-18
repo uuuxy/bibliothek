@@ -123,7 +123,7 @@ func lusdDateiMeldung(err error) string {
 	case errors.As(err, &spalte):
 		return fmt.Sprintf("In der Kopfzeile fehlt die Pflichtspalte „%s“. Ist das die Exportdatei aus der LUSD?", spalte.Spalte)
 	case errors.Is(err, lusd.ErrAltesExcel):
-		return "Die Datei ist ein altes Excel-Binärformat (.xls). " +
+		return "Die Datei hat das alte Excel-Format .xls. " +
 			"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen."
 	case errors.Is(err, csvutil.ErrKodierung):
 		return csvutil.MeldungKodierung
@@ -173,8 +173,8 @@ func lusdLaufFehler(err error) (status int, meldung string) {
 	var wahl *lusd.UmbenennungUngueltigFehler
 	switch {
 	case errors.As(err, &massenabgang):
-		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Abgängern (Schwelle: %d%%). "+
-			"Bitte die Datei prüfen. Ist der Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit "+
+		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Abgängern, die Schwelle liegt bei %d%%. "+
+			"Bitte die Datei prüfen. Ist der Massenabgang zum Schuljahreswechsel beabsichtigt, den Import mit "+
 			"Bestätigung wiederholen.", massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
 	case errors.As(err, &wahl):
 		return http.StatusBadRequest, fmt.Sprintf("Die Zuordnung für %s ist nicht mehr gültig. Bitte die Vorschau neu laden.", fundstelleText(wahl.Fundstelle))

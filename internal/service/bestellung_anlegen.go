@@ -319,7 +319,7 @@ func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, posit
 	statusText := fmt.Sprintf("Im Zulauf - %s", lieferantName)
 	bestellstatus := "im_zulauf"
 	if !position.MitVorabBarcode {
-		statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", lieferantName)
+		statusText = fmt.Sprintf("Bestellt ohne Vorab-Barcode - %s", lieferantName)
 		bestellstatus = "bestellt"
 	}
 

@@ -15,8 +15,8 @@ func TestMeldungImportNummerIstAusweis_NenntZeilenUndZaehltDenRest(t *testing.T)
 		exemplare = append(exemplare, repository.ImportExemplar{Barcode: fmt.Sprintf("A%d", i), Zeile: i + 2})
 	}
 	got := meldungImportNummerIstAusweis(exemplare)
-	const will = "Nichts importiert: Die Zeilen 2 (A0), 3 (A1), 4 (A2), 5 (A3), 6 (A4), 7 (A5), " +
-		"8 (A6), 9 (A7), 10 (A8), 11 (A9) und 2 weitere tragen als Buchnummer die Nummer eines " +
+	const will = "Nichts importiert: Die Zeilen 2 mit A0, 3 mit A1, 4 mit A2, 5 mit A3, 6 mit A4, " +
+		"7 mit A5, 8 mit A6, 9 mit A7, 10 mit A8, 11 mit A9 und 2 weitere tragen als Buchnummer die Nummer eines " +
 		"Leserausweises. Eine Nummer ist entweder ein Buch oder ein Ausweis. Bitte die Buchnummer " +
 		"in der Datei berichtigen und die Datei erneut hochladen."
 	if got != will {

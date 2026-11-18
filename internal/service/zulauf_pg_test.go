@@ -50,7 +50,7 @@ func TestLadeZulauf_AmPostgres(t *testing.T) {
 	}{
 		{"ZUL-PROBE-1", "Im Zulauf - Buchhandlung Probe", &bestellungen[0]},
 		{"ZUL-PROBE-2", "Im Zulauf - Buchhandlung Probe", &bestellungen[0]},
-		{"ZUL-PROBE-3", "Bestellt (ohne Vorab-Barcode) - Buchhandlung Probe", &bestellungen[1]},
+		{"ZUL-PROBE-3", "Bestellt ohne Vorab-Barcode - Buchhandlung Probe", &bestellungen[1]},
 		{"ZUL-PROBE-4", "Im Zulauf - Altlieferant", nil}, // Altbestand vor Migration 063
 	}
 	for _, e := range exemplare {

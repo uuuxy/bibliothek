@@ -69,8 +69,8 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 			Kern:  service.SperreAmLeser(service.ErrGesperrt),
 			Grund: grund,
 		}, "leser", "Die Ausleihe ist gesperrt. Bitte an die Bibliotheksleitung wenden."},
-		{"offener Schaden", service.UebergehbareSperre(service.Sperre("1 unbezahlte(r) Schadensfall/-fälle offen")),
-			"uebergehbar", "Die Ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen"},
+		{"offener Schaden", service.UebergehbareSperre(service.Sperre("1 unbezahlter Schadensfall offen")),
+			"uebergehbar", "Die Ausleihe ist gesperrt: 1 unbezahlter Schadensfall offen"},
 		{"Gerät gesperrt (kein Override)", service.Sperre("Gerät ist aktuell gesperrt"), "",
 			"Die Ausleihe ist gesperrt: Gerät ist aktuell gesperrt"},
 	}
@@ -132,7 +132,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
-		fehler := service.UebergehbareSperre(service.Sperre("1 unbezahlte(r) Schadensfall/-fälle offen"))
+		fehler := service.UebergehbareSperre(service.Sperre("1 unbezahlter Schadensfall offen"))
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluessel))
 
 		if got := w.Header().Get("X-Sperre"); got != "uebergehbar" {

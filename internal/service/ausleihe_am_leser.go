@@ -64,7 +64,7 @@ func (d *AusleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang 
 		return err
 	}
 	if !exemplar.IstLernmittel && anzahlOffene >= einst.MaxAusleihenSchueler {
-		return Sperre("Ausleihlimit von %d Büchern überschritten (aktuell: %d)", einst.MaxAusleihenSchueler, anzahlOffene)
+		return Sperre("Ausleihlimit von %d Büchern überschritten, ausgeliehen sind schon %d", einst.MaxAusleihenSchueler, anzahlOffene)
 	}
 	return nil
 }

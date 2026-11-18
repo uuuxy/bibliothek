@@ -301,7 +301,7 @@ func meldungImportNummerIstAusweis(exemplare []repository.ImportExemplar) string
 	}
 	genannt := make([]string, 0, importAusweisZeilenGrenze)
 	for _, e := range exemplare[:min(len(exemplare), importAusweisZeilenGrenze)] {
-		genannt = append(genannt, fmt.Sprintf("%d (%s)", e.Zeile, e.Barcode))
+		genannt = append(genannt, fmt.Sprintf("%d mit %s", e.Zeile, e.Barcode))
 	}
 	zeilen := strings.Join(genannt, ", ")
 	if rest := len(exemplare) - len(genannt); rest > 0 {

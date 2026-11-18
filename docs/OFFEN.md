@@ -56,7 +56,7 @@ Nur, was kein Test leisten kann.
   Abdeckungsliste ([sweeps.md](sweeps.md), Abdeckung der Google-Seiten). (5.191)
 - [x] Klammern und Schrägstriche in den Texten von PDF und Mail des Servers wie in der
   Oberfläche. (5.192)
-- [ ] Klammern und Schrägstriche in den übrigen Texten des Servers: Meldungen,
+- [x] Klammern und Schrägstriche in den übrigen Texten des Servers: Meldungen,
   Betriebsbereitschaft, Protokoll und Beschriftungen. (5.194)
 - [ ] Datumsauswahl als eigener Kalender nach M3, gebaut nach den Icons
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
@@ -121,19 +121,6 @@ Icons ist die letzte Seite von Material 3, die niemand gegen den Code gehalten h
 Material Symbols („Use the Material Symbols variable font“, Styles, Icons), das Programm zeichnet
 mit Lucide (179 Dateien, 96 Symbole). Der Wechsel tauscht jedes Symbol und liefert die
 Symbolschrift selbst aus wie Roboto.
-
-### 5.194 Klammern und Schrägstriche in den übrigen Texten des Servers
-
-`pruefung/nebenzeichen_ratsche_test.go` prüft die Regel aus [STIL.md](STIL.md) 11 nur für PDF und
-Mail. Dieselbe Regel über alle Zeichenketten unter `internal/` (ohne SQL, Routen, reguläre
-Ausdrücke und Kopfzeilen) findet rund 70 weitere Stellen: Betriebsbereitschaft, Dienste,
-Katalogdienste, Littera-Import, System, LUSD-Import und Mitteltopf, etwa „Die Katalogdienste
-(DNB, Google, OpenLibrary) sind nicht erreichbar“ oder „Ausleihlimit von %d Büchern überschritten
-(aktuell: %d)“. Im Paket `repository` stehen Beschriftungen wie „Leihfrist Bücher (Tage)“
-zwischen SQL-Bruchstücken, die eine Prüfung über alle Zeichenketten nicht trennen kann.
-
-Nächster Schritt: die Regel an die Meldungen hängen, die `meldung_ratsche_test.go` schon
-sammelt, und an die Felder der Betriebsbereitschaft; dann die Funde umschreiben.
 
 ### 5.193 Datumsauswahl nach M3
 

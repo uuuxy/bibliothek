@@ -95,7 +95,7 @@ func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 
 	id := testdaten.LegeSchuelerAn(t, pool, "S-SPERRTUER-1", "Ehemalig", "10R1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id = $1`, id); err != nil {
+		block_reason = 'Automatisierte Abgänger-Sperre wegen offener Vorgänge' WHERE id = $1`, id); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
 	}
 

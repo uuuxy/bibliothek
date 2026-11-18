@@ -316,6 +316,6 @@ func TestTitelExemplare_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 			"nicht am Live-Pfad (Herleitung: %q)", betrag, satz)
 	}
 	if !strings.Contains(satz, "so eingestellt") {
-		t.Errorf("Herleitung = %q, erwartet „Kaufpreis (so eingestellt)\"", satz)
+		t.Errorf("Herleitung = %q, erwartet „Kaufpreis, so eingestellt“", satz)
 	}
 }

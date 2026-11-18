@@ -15,7 +15,7 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 		b.Stufe = StufeKritisch
 		b.Befund = "IMAP_HOST und LDAP_URL sind leer"
 		b.Folge = "Niemand kann sich anmelden"
-		b.Abhilfe = "Den IMAP-Host der Schule oder den Verzeichnisdienst (LDAP_URL) eintragen"
+		b.Abhilfe = "Den IMAP-Host der Schule in IMAP_HOST oder den Verzeichnisdienst in LDAP_URL eintragen"
 	case l.LDAPURL == "":
 		b.Stufe = StufeOK
 		b.Befund = "Anmeldung läuft über " + l.IMAPHost

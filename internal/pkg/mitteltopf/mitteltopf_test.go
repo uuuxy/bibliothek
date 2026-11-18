@@ -124,7 +124,7 @@ func TestErrUngueltig_NenntJedenWertMitSeinemWort(t *testing.T) {
 		if will := "'" + mittel + "' (" + texte.Kurz + ")"; !strings.Contains(ErrUngueltig.Error(), will) {
 			t.Errorf("der Fehlertext %q nennt %s nicht", ErrUngueltig.Error(), will)
 		}
-		if will := "„" + mittel + "“ (" + texte.Kurz + ")"; !strings.Contains(MeldungUngueltig, will) {
+		if will := "„" + mittel + "“ für die " + texte.Kurz; !strings.Contains(MeldungUngueltig, will) {
 			t.Errorf("die Meldung %q nennt %s nicht", MeldungUngueltig, will)
 		}
 	}

@@ -178,7 +178,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 	buecherei, schulbuch := th.bestand(t, "EHM")
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-2", "Ehemalig", "10R1")
 	if _, err := th.pool.Exec(context.Background(), `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`, kind); err != nil {
+		block_reason = 'Automatisierte Abgänger-Sperre zum Schuljahreswechsel' WHERE id = $1`, kind); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
 	}
 	th.legeGeraetAn(t, "G-SPERRWEG-2", "")

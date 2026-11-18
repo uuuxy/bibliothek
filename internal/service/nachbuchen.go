@@ -138,7 +138,7 @@ func (d *AusleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) 
 	if stand.LetzteBewegung != nil && l.gescannt.Before(*stand.LetzteBewegung) {
 		db.Verwerfe(ctx, tx)
 		return d.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
-			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
+			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars am %s",
 				l.gescannt.In(schulzeit.Zone()).Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schulzeit.Zone()).Format("02.01.2006 15:04")))
 	}
 

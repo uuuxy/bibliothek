@@ -115,7 +115,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 	})
 	t.Run("altes Excel", func(t *testing.T) {
 		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, nil),
-			http.StatusBadRequest, "Die Datei ist ein altes Excel-Binärformat (.xls). "+
+			http.StatusBadRequest, "Die Datei hat das alte Excel-Format .xls. "+
 				"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen.")
 	})
 	t.Run("Auswahl unlesbar", func(t *testing.T) {
@@ -174,8 +174,8 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 			http.StatusBadRequest, "Die Zuordnung für Zeile 2 im Blatt „7b“ ist nicht mehr gültig. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
-		const meldung = "4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Bitte die Datei prüfen. Ist der " +
-			"Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit Bestätigung wiederholen."
+		const meldung = "4 von 10 aktiven Schülern würden zu Abgängern, die Schwelle liegt bei 30%. Bitte die Datei prüfen. Ist der " +
+			"Massenabgang zum Schuljahreswechsel beabsichtigt, den Import mit Bestätigung wiederholen."
 		protokoll := leseLogMit(t)
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict, meldung)
 		// Die Rückfrage steht als Warnung im Log, wie jede Abweisung (TestLUSDAbweisung_StehtAlsWarnungImLog).

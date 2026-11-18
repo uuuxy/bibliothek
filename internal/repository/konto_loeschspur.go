@@ -93,7 +93,7 @@ func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbei
 		return 0, err
 	}
 
-	kontext := "Konto mit der Leserzeile gelöscht (Papierkorb)"
+	kontext := "Konto gelöscht, die Leserzeile liegt im Papierkorb"
 	var geloescht int64
 	for _, k := range konten {
 		tag, err := tx.Exec(ctx, `DELETE FROM benutzer WHERE id = $1`, k.kontoID)

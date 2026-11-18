@@ -76,7 +76,7 @@ func bescheidEmpfaengerAus(snapshot map[string]string) pdf.BescheidEmpfaenger {
 	if len(snapshot) == 0 {
 		return pdf.BescheidEmpfaenger{
 			Anrede: "Sehr geehrte Damen und Herren,",
-			Name:   "(Empfängerangaben nach Löschfrist getilgt)",
+			Name:   "Empfängerangaben nach Löschfrist getilgt",
 		}
 	}
 	return pdf.BescheidEmpfaenger{

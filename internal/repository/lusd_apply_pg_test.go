@@ -103,7 +103,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger ohne offene Vorgänge wird entsperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-A", "Max", "Muster", "ABG",
-			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
 
@@ -122,7 +122,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-B", "Lea", "Klein", "ABG",
-			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
 		testdaten.LegeOffeneAusleiheAn(t, pool, id, "B")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
@@ -134,7 +134,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if abgaenger {
 			t.Error("ist_abgaenger muss trotzdem zurückgesetzt sein (er ist wieder aktiv)")
 		}
-		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre wegen offener Vorgänge" {
 			t.Errorf("irreführender Abgänger-Grund muss umbenannt werden, war %v", reason)
 		}
 	})
@@ -142,7 +142,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	t.Run("gesperrter Abgänger mit unbezahltem Schaden bleibt gesperrt", func(t *testing.T) {
 		testdaten.LeereBestandsdaten(t, pool)
 		id := legeGesperrtenAbgaengerAn(t, pool, "R-C", "Tom", "Groß", "ABG",
-			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
+			"Automatisierte Abgänger-Sperre wegen offener Vorgänge")
 		testdaten.LegeOffenenSchadenAn(t, pool, id, "C")
 
 		fuehreAktualisierungAus(t, pool, repository.LUSDAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
@@ -151,7 +151,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if !gesperrt {
 			t.Error("mit unbezahltem Schaden muss die Sperre bestehen bleiben")
 		}
-		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre wegen offener Vorgänge" {
 			t.Errorf("Grund muss umbenannt werden, war %v", reason)
 		}
 	})

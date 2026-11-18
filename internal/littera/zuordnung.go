@@ -59,12 +59,12 @@ func OhneZuordnung(ab *Altbestand) []Gruppenbefund {
 
 // String nennt die Gruppe, wie Littera sie führt, mit Personen- und Ausleihzahl.
 func (b Gruppenbefund) String() string {
-	gruppe := "Lesergruppe " + b.Nummer + " (fehlt in Leser_UG)"
+	gruppe := "Lesergruppe " + b.Nummer + " ohne Eintrag in Leser_UG"
 	switch {
 	case b.Nummer == "":
 		gruppe = "ohne Lesergruppe"
 	case b.Bezeichnung != "":
-		gruppe = fmt.Sprintf("Lesergruppe %s „%s“ (%s)", b.Nummer, b.Bezeichnung, b.Klasse)
+		gruppe = fmt.Sprintf("Lesergruppe %s „%s“ mit Kurzbezeichnung %s", b.Nummer, b.Bezeichnung, b.Klasse)
 	}
 	return fmt.Sprintf("%s: %s, %s", gruppe,
 		stueck(b.Personen, "Person", "Personen"), stueck(b.Ausleihen, "Ausleihe", "Ausleihen"))

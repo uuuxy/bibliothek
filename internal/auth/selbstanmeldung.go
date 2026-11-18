@@ -55,7 +55,7 @@ func SelbstanmeldungStatus() string {
 		return fmt.Sprintf("Selbstanmeldung aktiv für @%s — neue Konten entstehen inaktiv "+
 			"und müssen freigeschaltet werden", d)
 	}
-	return fmt.Sprintf("Selbstanmeldung abgeschaltet (%s nicht gesetzt) — Konten legt "+
+	return fmt.Sprintf("Selbstanmeldung abgeschaltet, weil %s nicht gesetzt ist — Konten legt "+
 		"ausschließlich die Benutzerverwaltung an", selbstanmeldeDomainVariable)
 }
 

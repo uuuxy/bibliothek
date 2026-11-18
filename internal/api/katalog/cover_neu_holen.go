@@ -41,7 +41,7 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer — sonst sieht „Cover neu laden" bei
 			// WLAN-Störung so aus, als gäbe es schlicht kein besseres Cover.
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, meldungKatalogdiensteNichtErreichbar, err)
 			return
 		}
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel", nil)

@@ -10,9 +10,9 @@ package repository
 const (
 	AbgaengerSperrPraefix = "Automatisierte Abgänger-Sperre"
 
-	AbgaengerSperrgrundOffen              = AbgaengerSperrPraefix + " (offene Vorgänge)"
-	AbgaengerSperrgrundKarenz             = AbgaengerSperrPraefix + " (Karenzzeit vor Anonymisierung)"
-	abgaengerSperrgrundSchuljahreswechsel = AbgaengerSperrPraefix + " (Schuljahreswechsel)"
+	AbgaengerSperrgrundOffen              = AbgaengerSperrPraefix + " wegen offener Vorgänge"
+	AbgaengerSperrgrundKarenz             = AbgaengerSperrPraefix + " in der Karenzzeit vor der Anonymisierung"
+	abgaengerSperrgrundSchuljahreswechsel = AbgaengerSperrPraefix + " zum Schuljahreswechsel"
 
 	// sqlAbgaengerSperreAutomatisch ist das Prädikat, an dem SQL die Automatik erkennt.
 	sqlAbgaengerSperreAutomatisch = "block_reason LIKE '" + AbgaengerSperrPraefix + "%'"

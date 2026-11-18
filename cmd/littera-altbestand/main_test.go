@@ -177,7 +177,7 @@ func TestLeserOhneZuordnungHaeltVorDemErstenSchreibenAn(t *testing.T) {
 		t.Errorf("Rückgabe %d, erwartet %d (abgebrochen)", code, rueckgabeAbgebrochen)
 	}
 	ausgabe := puffer.String()
-	if !strings.Contains(ausgabe, "Lesergruppe 1 „Undefinierte Untergruppe“ (UNDEF): 1 Person, 1 Ausleihe") {
+	if !strings.Contains(ausgabe, "Lesergruppe 1 „Undefinierte Untergruppe“ mit Kurzbezeichnung UNDEF: 1 Person, 1 Ausleihe") {
 		t.Errorf("die Gruppe muss mit Zahlen genannt werden, log: %s", ausgabe)
 	}
 	for _, verboten := range []string{"Geheim", "Datenbank"} {

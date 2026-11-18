@@ -299,7 +299,7 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 	if rueckfall {
 		p.s.prot.Warnung(l.ID, l.Lesernummer, fmt.Sprintf(
 			"Klasse „%s“ nennt keinen Jahrgang – Abgangsjahr %d eingesetzt wie bei der Handanlage; "+
-				"das richtige setzt der Abgang (Versetzung, LUSD-Import)", l.Klasse, jahr))
+				"das richtige setzt der Abgang bei Versetzung oder LUSD-Import", l.Klasse, jahr))
 	}
 	return Zielleser{LeserID: id, IstSchueler: true}, nil
 }

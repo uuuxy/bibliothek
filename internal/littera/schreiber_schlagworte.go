@@ -58,8 +58,8 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 		KreisQuellTitel: len(kreise.JeTitel), KreisQuellZuordnungen: kreise.Zuordnungen, KreisOhneWort: kreise.OhneWort,
 	}
 	if q.VerweisWoerter+q.VerweisZuordnungen > 0 {
-		s.prot.Warnung("", "", fmt.Sprintf("Verweise zu Schlagworten nicht übernommen – %d Wörter, %d Zuordnungen "+
-			"(ihre Form ist an echten Daten noch nicht geprüft, docs/OFFEN.md 4.20)", q.VerweisWoerter, q.VerweisZuordnungen))
+		s.prot.Warnung("", "", fmt.Sprintf("Verweise zu Schlagworten nicht übernommen – %d Wörter, %d Zuordnungen; "+
+			"ihre Form ist an echten Daten noch nicht geprüft, docs/OFFEN.md 4.20", q.VerweisWoerter, q.VerweisZuordnungen))
 	}
 
 	vorherZ, vorherW, err := s.zaehleSchlagworte(ctx)

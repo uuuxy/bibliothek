@@ -57,7 +57,7 @@ var spurTilgungen = []SpurTilgung{
 		// auf die getilgte Person. Der Fremdschlüssel (ON DELETE SET NULL) greift erst, wenn
 		// die Leserzeile verschwindet; diese Anweisung räumt den Fall davor, in dem die Zeile
 		// anonymisiert stehen bleibt. Wiederholbar: NULL bleibt NULL.
-		Beschreibung: "benutzer (Verknuepfung zur Leserzeile)",
+		Beschreibung: "benutzer: Verknüpfung zur Leserzeile",
 		sql: `UPDATE benutzer SET leser_id = NULL, aktualisiert_am = NOW()
 			WHERE leser_id = ANY($1::uuid[])`,
 	},
@@ -65,7 +65,7 @@ var spurTilgungen = []SpurTilgung{
 		// Nachbuch-Meldungen: Die Meldung bleibt als Vorgang (Barcode, Ergebnis, Grund), der
 		// Personenbezug fällt, beide Spalten mit dem Leser werden NULL. Wie beim Konto räumt
 		// die Anweisung den Fall, in dem die Zeile anonymisiert stehen bleibt. Wiederholbar.
-		Beschreibung: "nachbuch_meldungen (Ausleiher und Vorbesitzer)",
+		Beschreibung: "nachbuch_meldungen: Ausleiher und Vorbesitzer",
 		sql: `UPDATE nachbuch_meldungen
 			SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = ANY($1::uuid[]) THEN NULL ELSE ausleiher_schueler_id END,
 			    vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = ANY($1::uuid[]) THEN NULL ELSE vorbesitzer_schueler_id END
@@ -85,7 +85,7 @@ var spurTilgungen = []SpurTilgung{
 		// Datensatz-Historie: LegeLeserInPapierkorb legt Vor- und Nachname, Klasse und Barcode
 		// in details ab; das ganze Objekt wird durch die Marke der Anonymisierung ersetzt.
 		// Wiederholbar über die Marke.
-		Beschreibung: "audit_log (Datensatz-Historie, tabelle='schueler')",
+		Beschreibung: "audit_log: Datensatz-Historie, tabelle='schueler'",
 		sql: `UPDATE audit_log
 			SET details = jsonb_build_object('anonymisiert', true, 'grund', $2::text)
 			WHERE tabelle = 'schueler' AND datensatz_id = ANY($1::uuid[])
@@ -98,7 +98,7 @@ var spurTilgungen = []SpurTilgung{
 		// bleibt als Nachweis, dass ein Exemplar unterwegs war; es fallen die Schlüssel mit
 		// Personenbezug, dieselben, die auch die Befristung der Lesehistorie entfernt
 		// (internal/jobs/cron_dsgvo_lesehistorie.go).
-		Beschreibung: "audit_log (Lesehistorie, tabelle='ausleihen')",
+		Beschreibung: "audit_log: Lesehistorie, tabelle='ausleihen'",
 		sql: `UPDATE audit_log
 			SET details = details - 'schueler_id' - 'entleiher'
 			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = ANY($1::text[])`,
@@ -109,7 +109,7 @@ var spurTilgungen = []SpurTilgung{
 		// beschreibung, betrifft). Die Einträge bleiben als Beleg, die Kennung ist danach ein
 		// Pseudonym. Die Befristung der Lesehistorie erreicht diese Zeilen nicht, sie arbeitet
 		// nur auf tabelle = 'ausleihen' (titel_loeschspur_tilgung_pg_test.go).
-		Beschreibung: "audit_log (Personenbezug neben der Leserkennung)",
+		Beschreibung: "audit_log: Personenbezug neben der Leserkennung",
 		sql:          tilgePersonenbezugImProtokoll("audit_log"),
 	},
 	{
@@ -120,7 +120,7 @@ var spurTilgungen = []SpurTilgung{
 		// der Aufbewahrung neben der Kennung) und der Grund einer Sperre, der andere Personen
 		// nennen kann. Die Schlüssel stehen in protokollSchluesselMitPersonenbezug, einer Liste
 		// für beide Protokolle (internal/api/leser/sperrgrund_tilgung_pg_test.go).
-		Beschreibung: "audit_logs (Personenbezug neben der Leserkennung)",
+		Beschreibung: "audit_logs: Personenbezug neben der Leserkennung",
 		sql:          tilgePersonenbezugImProtokoll("audit_logs"),
 	},
 	{
@@ -128,7 +128,7 @@ var spurTilgungen = []SpurTilgung{
 		// Anmeldung) tragen das Konto als ziel_id, nicht den Leser. Name und Adresse fallen
 		// dort mit denen im Löscheintrag des Kontos (kontoSchluesselMitPersonenbezug).
 		// internal/api/konto_eintraege_tilgung_pg_test.go.
-		Beschreibung: "audit_logs (Name und Adresse früherer Zugangskonten)",
+		Beschreibung: "audit_logs: Name und Adresse früherer Zugangskonten",
 		sql:          tilgePersonenbezugFruehererKonten(),
 	},
 	{
@@ -137,7 +137,7 @@ var spurTilgungen = []SpurTilgung{
 		// Beschreibung und der Grund einer Stornierung. Nur bei erledigten Fällen (ist_bezahlt
 		// deckt bezahlt und storniert ab); eine offene Forderung braucht ihre Begründung noch,
 		// und dass ihr Leser anonymisiert wird, verhindert schon das Prädikat in loeschfristen.go.
-		Beschreibung: "schadensfaelle (Freitext erledigter Fälle)",
+		Beschreibung: "schadensfaelle: Freitext erledigter Fälle",
 		sql: `UPDATE schadensfaelle
 			SET beschreibung = '', stornierungsgrund = NULL
 			WHERE schueler_id = ANY($1::uuid[]) AND ist_bezahlt = true
@@ -151,7 +151,7 @@ var spurTilgungen = []SpurTilgung{
 		//
 		// Kein bloßes DELETE: Lag für den Leser schon ein Exemplar zum Abholen bereit, geht es
 		// an den nächsten Wartenden; sonst bliebe das Buch im Abholregal liegen.
-		Beschreibung: "vormerkungen (gelöscht, Warteschlange nachgerückt)",
+		Beschreibung: "vormerkungen: gelöscht, Warteschlange nachgerückt",
 		schritt:      loescheVormerkungenUndRueckeNach,
 	},
 }

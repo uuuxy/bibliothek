@@ -20,8 +20,8 @@ func TestEinstellungenSchreiben_MeldungJePruefung(t *testing.T) {
 		meldung string
 	}{
 		{"Zahlen außerhalb der Spanne", `{"max_overdue_items": 999999, "frist_buch_tage": 0}`,
-			"Nichts gespeichert. Leihfrist Bücher (Tage): 0 liegt außerhalb von 1 bis 365; " +
-				"Max. überfällige Titel: 999999 liegt außerhalb von 1 bis 100."},
+			"Nichts gespeichert. Leihfrist Bücher: 0 liegt außerhalb von 1 bis 365 Tagen; " +
+				"Ab x Medien sperren: 999999 liegt außerhalb von 1 bis 100."},
 		{"Eingangsjahrgang mit Schrägstrich", `{"lmf_eingangsjahrgaenge": "8/9"}`,
 			`Eingangsjahrgänge: "8/9" ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“`},
 		{"Sommerferien unlesbar", `{"sommerferien": "kaputt"}`,
@@ -37,7 +37,7 @@ func TestEinstellungenSchreiben_MeldungJePruefung(t *testing.T) {
 		{"Sommerferien Ende vor Beginn", sommerferienRumpf(`{"jahr":2027,"von":"2027-08-06","bis":"2027-06-28"}`),
 			"Sommerferien 2027: das Ende liegt nicht nach dem Beginn"},
 		{"Sommerferien zu kurz", sommerferienRumpf(`{"jahr":2027,"von":"2027-07-01","bis":"2027-07-10"}`),
-			"Sommerferien 2027: 10 Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)"},
+			"Sommerferien 2027: 10 Tage sind keine Sommerferien, erwartet sind 4 bis 9 Wochen"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

@@ -92,7 +92,7 @@ func (e SommerferienEintrag) pruefe() error {
 	}
 	if tage := z.Bis.Sub(z.Von).Hours() / 24; tage < 28 || tage > 63 {
 		return &SommerferienFehler{Jahr: e.Jahr,
-			Grund: fmt.Sprintf("%d Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)", int(tage)+1)}
+			Grund: fmt.Sprintf("%d Tage sind keine Sommerferien, erwartet sind 4 bis 9 Wochen", int(tage)+1)}
 	}
 	return nil
 }

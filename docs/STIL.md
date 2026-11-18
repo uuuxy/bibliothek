@@ -288,8 +288,9 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   Schrägstrich, Googles developer documentation style guide (Slashes): „Don't use slashes to
   separate alternatives.“ Statt dessen „oder“ und „und“, zwischen Zahlen „von“ („12 von 30
   erfasst“). `frontend-hygiene-satzzeichen.test.js` hält es für die Texte der Oberfläche,
-  `pruefung/nebenzeichen_ratsche_test.go` mit denselben Fällen für die Texte von PDF und Mail. Der
-  Bescheid behält den Wortlaut der Vorlage, die die Schule vorgelegt hat (`nebenVorlage`).
+  `pruefung/nebenzeichen_ratsche_test.go` mit denselben Fällen für alle Texte des Servers. Ein
+  Dateipfad ist wie eine Webadresse Code (Slashes: „Use forward slashes, as appropriate, in
+  computer file paths and URLs.“). Der Bescheid behält den Wortlaut der Vorlage, die die Schule vorgelegt hat (`nebenVorlage`).
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut

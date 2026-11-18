@@ -120,13 +120,13 @@ func (a BescheidAngaben) FehlendeAngaben(schule SchuleAngaben) []string {
 		fehlt = append(fehlt, "Schulnummer")
 	}
 	if a.Aufsicht == "" {
-		fehlt = append(fehlt, "Aufsichtsbehörde (Name und Anschrift)")
+		fehlt = append(fehlt, "Aufsichtsbehörde mit Name und Anschrift")
 	}
 	if a.Schulleitung == "" {
 		fehlt = append(fehlt, "Name der Schulleitung")
 	}
 	if schule.Name == "" || schule.Strasse == "" || schule.Ort == "" {
-		fehlt = append(fehlt, "Anschrift der Schule (Einstellungen → Schule)")
+		fehlt = append(fehlt, "Anschrift der Schule unter Einstellungen → Schule")
 	}
 	return fehlt
 }

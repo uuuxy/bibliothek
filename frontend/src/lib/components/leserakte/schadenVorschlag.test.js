@@ -45,7 +45,8 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	it('trägt den Vorschlag des Servers ein, nicht die alte feste 15', async () => {
 		serverLiefert({
 			betrag: 24.9,
-			herleitung: '3. Verleihjahr → 60 % von 41,50 € (Kaufpreis (kein Neupreis hinterlegt))',
+			herleitung:
+				'3. Verleihjahr → 60 % von 41,50 €, Grundlage Kaufpreis, kein Listenpreis hinterlegt',
 			ist_lernmittel: true
 		});
 

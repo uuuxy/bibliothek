@@ -1990,7 +1990,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('175_absender_fuer_mein_portal.sql'),
 ('176_webmail_fuer_adressabgleich.sql'),
 ('177_zweiter_absender_je_mailart.sql'),
-('178_haendlermail_ohne_klammern.sql')
+('178_haendlermail_ohne_klammern.sql'),
+('179_sperrgrund_und_notiz_ohne_klammern.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

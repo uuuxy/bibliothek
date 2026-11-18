@@ -178,7 +178,7 @@ func bewertePaar(i int, zeile Zeile, s *bestandsSchueler) (paarKandidat, bool) {
 		k.sicher = true
 	case p.geb && (p.nachname || p.vorname || p.klasse || p.adresse || p.eintritt):
 	case p.istNameGleich() && (p.klasse || p.adresse):
-		gruende = append(gruende, "Geburtsdatum abweichend (Korrektur?)")
+		gruende = append(gruende, "Geburtsdatum abweichend, vielleicht eine Korrektur")
 	default:
 		return paarKandidat{}, false
 	}
@@ -186,7 +186,7 @@ func bewertePaar(i int, zeile Zeile, s *bestandsSchueler) (paarKandidat, bool) {
 	// anderen ist. So sehen Zwillinge aus und ein Tippfehler im Vornamen; das Paar wird
 	// angeboten, aber nie vorangekreuzt.
 	if p.geb && !p.vorname && normierterName(zeile.Vorname) != "" && normierterName(s.Vorname) != "" {
-		gruende = append(gruende, "Vorname abweichend (Zwilling?)")
+		gruende = append(gruende, "Vorname abweichend, vielleicht ein Zwilling")
 	}
 	k.grund = strings.Join(gruende, ", ")
 	return k, true

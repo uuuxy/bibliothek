@@ -33,7 +33,7 @@ func (t *Tueren) ISBNSuche() http.HandlerFunc {
 				// Netzausfall ist kein Nicht-Treffer: Bei 404 katalogisiert die Theke
 				// während einer WLAN-Störung Bücher von Hand, die längst in der DNB stehen.
 				slog.Warn("isbn-lookup: Katalogdienste nicht erreichbar", "isbn", isbn, "fehler", err)
-				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", nil)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, meldungKatalogdiensteNichtErreichbar, nil)
 				return
 			}
 			slog.Info("isbn-lookup: keine Angaben gefunden", "isbn", isbn, "fehler", err)

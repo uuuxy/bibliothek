@@ -70,7 +70,7 @@ func TestEinstellungenSchreiben_MeldungNenntFeldUndSpanne(t *testing.T) {
 		t.Fatalf("Status %d, erwartet 400", w.Code)
 	}
 	rumpf := w.Body.String()
-	for _, teil := range []string{"Max. überfällige Titel", "Leihfrist Bücher", "Nichts gespeichert"} {
+	for _, teil := range []string{"Ab x Medien sperren", "Leihfrist Bücher", "Nichts gespeichert"} {
 		if !strings.Contains(rumpf, teil) {
 			t.Errorf("die Meldung enthält %q nicht: %s", teil, rumpf)
 		}

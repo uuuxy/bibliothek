@@ -103,7 +103,7 @@ describe('Sperr-Dialog an der Theke', () => {
 
 	it('merkt sich beim Hinweis die Art „uebergehbar"', async () => {
 		post.mockResolvedValue(
-			antwort403('Die Ausleihe ist gesperrt: 2 überfällige Medien vorhanden (Sperr-Automatik)', {
+			antwort403('Die Ausleihe ist gesperrt: 2 überfällige Medien vorhanden', {
 				'X-Sperre': 'uebergehbar'
 			})
 		);

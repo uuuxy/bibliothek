@@ -100,7 +100,7 @@ test('Leserakte: zwei Datensätze zusammenführen', async ({ page }) => {
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
 		                      ist_abgaenger, ist_gesperrt, block_reason, abgaenger_seit, lusd_bestaetigt_am)
 		VALUES ('Zf${s}', 'Alt${s}', '07A', 'ZFA-${s}', 2031, '2012-03-03',
-		        true, true, 'Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)', NOW(), NOW() - interval '1 year');
+		        true, true, 'Automatisierte Abgänger-Sperre in der Karenzzeit vor der Anonymisierung', NOW(), NOW() - interval '1 year');
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum, lusd_bestaetigt_am)
 		VALUES ('Zf${s}', 'Neu${s}', '08A', 'ZFN-${s}', 2031, '2012-03-03', NOW());
 	`);

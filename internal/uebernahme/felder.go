@@ -39,7 +39,7 @@ func Kuerze(k Kuerzung) string {
 		return k.Wert
 	}
 	k.Protokoll.Warnung(k.QuellID, k.Kennung, fmt.Sprintf(
-		"%s war %d Zeichen lang (Spaltenbreite %d) und wurde gekürzt; Original: %q",
+		"%s war %d Zeichen lang und wurde auf die Spaltenbreite von %d gekürzt; Original: %q",
 		k.Feld, len(runen), k.Max, k.Wert))
 	return string(runen[:k.Max])
 }

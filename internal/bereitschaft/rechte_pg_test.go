@@ -50,7 +50,7 @@ func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
 	if b.Stufe != StufeWarnung {
 		t.Fatalf("Drift muss Warnung sein, ist %q: %s", b.Stufe, b.Befund)
 	}
-	if !strings.Contains(b.Befund, "HELFER/view_students live an, Vorgabe aus") {
+	if !strings.Contains(b.Befund, "view_students für HELFER live an, Vorgabe aus") {
 		t.Errorf("die Meldung nennt die gedriftete Zeile nicht: %s", b.Befund)
 	}
 

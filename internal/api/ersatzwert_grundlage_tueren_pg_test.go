@@ -147,14 +147,14 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 		return nennungen[0].betrag
 	}
 
-	ohne := pruefe(t, "ohne die Einstellung", "(Listenpreis)")
+	ohne := pruefe(t, "ohne die Einstellung", "Grundlage Listenpreis")
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES ('ersatzwert_immer_kaufpreis', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`); err != nil {
 		t.Fatalf("Einstellung setzen: %v", err)
 	}
-	mit := pruefe(t, "mit der Einstellung", "Kaufpreis (so eingestellt)")
+	mit := pruefe(t, "mit der Einstellung", "Kaufpreis, so eingestellt")
 	if mit >= ohne {
 		t.Errorf("mit dem Kaufpreis von 20 € als Grundlage %.2f, mit dem Listenpreis von 41,50 € %.2f: erwartet einen kleineren Betrag", mit, ohne)
 	}

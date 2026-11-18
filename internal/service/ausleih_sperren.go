@@ -115,10 +115,14 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 		return sperrLage{}, err
 	}
 	if offen > 0 {
-		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(Sperre("%d unbezahlte(r) Schadensfall/-fälle offen", offen))
+		schaeden := fmt.Sprintf("%d unbezahlte Schadensfälle", offen)
+		if offen == 1 {
+			schaeden = "1 unbezahlter Schadensfall"
 		}
-		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offen))
+		if !uebergehen {
+			return sperrLage{}, UebergehbareSperre(Sperre("%s offen", schaeden))
+		}
+		lage.uebergangen = append(lage.uebergangen, "Ausleihsperre manuell ignoriert: "+schaeden+" offen")
 	}
 
 	einst, err := ladeAusleihEinstellungen(ctx, q)
@@ -131,10 +135,14 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 		return sperrLage{}, err
 	}
 	if ueberfaellig >= einst.UeberfaelligSperreAbMedien {
-		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(Sperre("%d überfällige Medien vorhanden (Sperr-Automatik)", ueberfaellig))
+		medien := fmt.Sprintf("%d überfällige Medien", ueberfaellig)
+		if ueberfaellig == 1 {
+			medien = "1 überfälliges Medium"
 		}
-		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", ueberfaellig))
+		if !uebergehen {
+			return sperrLage{}, UebergehbareSperre(Sperre("%s vorhanden", medien))
+		}
+		lage.uebergangen = append(lage.uebergangen, "Ausleihsperre manuell ignoriert: "+medien+" vorhanden")
 	}
 	return lage, nil
 }

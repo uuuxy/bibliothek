@@ -129,12 +129,11 @@ func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	case ersatzwert.BasisNeupreis:
 		basis = "Listenpreis"
 	case ersatzwert.BasisKaufpreisErsatzweise:
-		// Ohne Klammer in der Klammer: Der Satz steht in einem Brief.
 		basis = "Kaufpreis, kein Listenpreis hinterlegt"
 	case ersatzwert.BasisKaufpreisGewaehlt:
 		// „so eingestellt" statt „kein Listenpreis hinterlegt": Der Satz sagt, dass die
 		// Schule die Grundlage gewählt hat, und behauptet nichts über die Datenlage.
-		basis = "Kaufpreis (so eingestellt)"
+		basis = "Kaufpreis, so eingestellt"
 	case ersatzwert.BasisKaufpreis:
 		basis = "Kaufpreis"
 	}
@@ -142,10 +141,10 @@ func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	// Schulträgers). Dort gibt es keinen Staffelsatz zu nennen — und der Satz muss
 	// ausdrücklich „ohne Altersabschlag" sagen, weil ein Zustandsabschlag gleich
 	// dahinter stehen kann.
-	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
+	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s, Grundlage %s",
 		v.BasisPreis.Euro(), basis)
 	if v.Verleihjahr > 0 {
-		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
+		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s, Grundlage %s",
 			v.Verleihjahr, v.Prozent, v.BasisPreis.Euro(), basis)
 	}
 	if v.ZustandAbschlag > 0 {

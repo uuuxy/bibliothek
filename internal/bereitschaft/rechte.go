@@ -49,7 +49,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	b := Befund{Bereich: "Rechte-Vorgabe"}
 	if l.RechteLive == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Live-Rechte (role_permissions) konnten nicht gelesen werden"
+		b.Befund = "Die Live-Rechte aus role_permissions konnten nicht gelesen werden"
 		b.Folge = "Ob Menü und API der aktuellen Vorgabe folgen, ist unbekannt"
 		b.Abhilfe = abhilfeDBNeuLaden
 		return b
@@ -107,13 +107,13 @@ func rechteAbweichungen(live map[string]map[string]bool) []string {
 		switch {
 		case !vorhanden:
 			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Rolle, v.Recht, anAus(v.Erlaubt)))
+				fmt.Sprintf("%s für %s fehlt live, Vorgabe %s", v.Recht, v.Rolle, anAus(v.Erlaubt)))
 		// Bei einem freigestellten Paar (db.RechteOptional) ist der Haken in der
 		// Rechte-Matrix der vorgesehene Gebrauch; nur ob die Zeile da ist, zählt.
 		case db.RechteOptional[v.Rolle+"/"+v.Recht]:
 		case liveWert != v.Erlaubt:
 			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Rolle, v.Recht, anAus(liveWert), anAus(v.Erlaubt)))
+				fmt.Sprintf("%s für %s live %s, Vorgabe %s", v.Recht, v.Rolle, anAus(liveWert), anAus(v.Erlaubt)))
 		}
 	}
 	// Gegenrichtung: Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt, etwa eine
@@ -122,7 +122,7 @@ func rechteAbweichungen(live map[string]map[string]bool) []string {
 		for recht, erlaubt := range zeile {
 			if _, kennt := vorgabe[rolle][recht]; !kennt {
 				abweichungen = append(abweichungen,
-					fmt.Sprintf("%s/%s live %s, in der Vorgabe unbekannt", rolle, recht, anAus(erlaubt)))
+					fmt.Sprintf("%s für %s live %s, in der Vorgabe unbekannt", recht, rolle, anAus(erlaubt)))
 			}
 		}
 	}

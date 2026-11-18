@@ -108,7 +108,7 @@ allem, was der Export sonst hergibt, dieselbe Person sind
 
 Zwei Schutzregeln: Ein **abweichender Vorname bei gleichem
 Geburtsdatum** ist ein Gegen-Signal — so sehen Zwillinge aus — und macht ein Paar nie
-„sicher" (Grund nennt „Vorname abweichend (Zwilling?)"). Bei **Gleichstand** zweier
+„sicher" (Grund nennt „Vorname abweichend, vielleicht ein Zwilling"). Bei **Gleichstand** zweier
 Kandidaten mit exakt gleich starken Signalen wird kein Paar gebildet, statt zu raten;
 das Kind bleibt Abgänger + Neuzugang, und der Admin führt bei Bedarf über die Akte
 zusammen (§5).
@@ -130,7 +130,7 @@ Wer bestätigt war und im Export fehlt, wird Abgänger:
 
 | Zustand                                  | Was passiert                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Abgänger-Sperre (offene Vorgänge)" |
+| offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Abgänger-Sperre wegen offener Vorgänge" |
 | nichts offen, Karenz > 0                 | **nur gesperrt**, Grund „… (Karenzzeit vor Anonymisierung)"; der nächtliche Job anonymisiert nach Ablauf          |
 | nichts offen, Karenz = 0                 | sofort anonymisiert                                                                                               |
 

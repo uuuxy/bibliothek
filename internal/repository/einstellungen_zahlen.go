@@ -22,6 +22,9 @@ type zahlFeld struct {
 	wert         *int
 	min, max     int
 	beschriftung string
+	// einheit steht hinter der Spanne im Satz („1 bis 365 Tagen“), wie das Formular sie rechts im
+	// Feld zeigt.
+	einheit string
 }
 
 // zahlenFelder ist die eine Liste für „was wird geschrieben?" (paareAusPatch) und „was ist
@@ -31,30 +34,30 @@ type zahlFeld struct {
 // ergibt keinen Sinn, eine Frist von 0 Tagen ist keine Frist.
 func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 	return []zahlFeld{
-		{"max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 100, "Max. Ausleihen je Schüler"},
-		{"frist_buch_tage", p.FristBuchTage, 1, 365, "Leihfrist Bücher (Tage)"},
-		{"frist_medien_tage", p.FristMedienTage, 1, 365, "Leihfrist Medien (Tage)"},
+		{"max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 100, "Max. Ausleihen", ""},
+		{"frist_buch_tage", p.FristBuchTage, 1, 365, "Leihfrist Bücher", "Tagen"},
+		{"frist_medien_tage", p.FristMedienTage, 1, 365, "Leihfrist Medien", "Tagen"},
 		// 0 heißt sofort sperren.
-		{"max_overdue_days", p.UeberfaelligKarenzTage, 0, 365, "Karenztage bis zur Sperre"},
+		{"max_overdue_days", p.UeberfaelligKarenzTage, 0, 365, "Tage bis Sperre", ""},
 		// Obergrenze 100: Die Sperre wegen Überfälligkeit ist eine Regel des Katalogs. Ein
 		// Wert, der sie abschaltet, wäre ein Ausschalter und stünde als solcher in der
 		// Oberfläche.
-		{"max_overdue_items", p.UeberfaelligSperreAbMedien, 1, 100, "Max. überfällige Titel"},
-		{"bestelllink_gueltigkeit_tage", p.BestelllinkGueltigkeitTage, 1, 365, "Gültigkeit des Bestell-Links (Tage)"},
+		{"max_overdue_items", p.UeberfaelligSperreAbMedien, 1, 100, "Ab x Medien sperren", ""},
+		{"bestelllink_gueltigkeit_tage", p.BestelllinkGueltigkeitTage, 1, 365, "Bestätigungs-Link gültig", "Tagen"},
 		// Untergrenze 1 Tag: Mit 0 Tagen wäre der Bescheid am Tag des Drucks abgelaufen.
-		{"bescheid_frist_tage", p.BescheidFristTage, 1, 365, "Zahlungsfrist des Bescheids (Tage)"},
+		{"bescheid_frist_tage", p.BescheidFristTage, 1, 365, "Zahlungsfrist", "Tagen"},
 		// 0 heißt hier „aus" und ist damit ein Wert; negativ gibt es nicht.
-		{"lesehistorie_tage", p.LesehistorieTage, 0, 3650, "Lesehistorie Schülerbücherei (Tage)"},
-		{"lesehistorie_lernmittel_tage", p.LesehistorieLernmittelTage, 0, 3650, "Lesehistorie Lernmittel (Tage)"},
-		{"anliegen_tage", p.AnliegenTage, 0, 3650, "Erledigte Anliegen (Tage)"},
+		{"lesehistorie_tage", p.LesehistorieTage, 0, 3650, "Lesehistorie Schülerbücherei", "Tagen"},
+		{"lesehistorie_lernmittel_tage", p.LesehistorieLernmittelTage, 0, 3650, "Lesehistorie Lernmittel", "Tagen"},
+		{"anliegen_tage", p.AnliegenTage, 0, 3650, "Erledigte Anliegen aufbewahren", "Tagen"},
 		// Untergrenze 6, anders als bei den drei Fristen darüber: Ohne Protokoll ließe sich
 		// nicht mehr prüfen, wer etwa eine Gebühr storniert hat.
-		{ProtokollAufbewahrungSchluessel, p.ProtokollAufbewahrungMonate, protokollAufbewahrungMonateMinimum, 120, "Aufbewahrung Prüfprotokoll (Monate)"},
-		{"theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 1440, "Theke leeren nach (Minuten)"},
-		{"sperre_minuten", p.SperreMinuten, 0, 1440, "Bildschirmsperre nach (Minuten)"},
+		{ProtokollAufbewahrungSchluessel, p.ProtokollAufbewahrungMonate, protokollAufbewahrungMonateMinimum, 120, "Prüfprotokoll aufbewahren", "Monaten"},
+		{"theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 1440, "Theke leeren nach", "Minuten"},
+		{"sperre_minuten", p.SperreMinuten, 0, 1440, "Sperrbildschirm nach", "Minuten"},
 		// 0 heißt sofort anonymisieren: der schärfste Wert des Schalters, aber ein gewollter.
 		// Er wird angenommen und nicht ersetzt.
-		{AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 3650, "Karenz für Abgänger (Tage)"},
+		{AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 3650, "Abgänger-Karenzzeit", "Tagen"},
 	}
 }
 
@@ -77,8 +80,11 @@ func (p *EinstellungenPatch) PruefeZahlen() error {
 			continue
 		}
 		if *f.wert < f.min || *f.wert > f.max {
-			maengel = append(maengel, fmt.Sprintf("%s: %d liegt außerhalb von %d bis %d",
-				f.beschriftung, *f.wert, f.min, f.max))
+			spanne := fmt.Sprintf("%d bis %d", f.min, f.max)
+			if f.einheit != "" {
+				spanne += " " + f.einheit
+			}
+			maengel = append(maengel, fmt.Sprintf("%s: %d liegt außerhalb von %s", f.beschriftung, *f.wert, spanne))
 		}
 	}
 	if len(maengel) == 0 {

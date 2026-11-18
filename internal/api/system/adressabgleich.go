@@ -33,7 +33,7 @@ const (
 	meldungKeinGlobalesAdressbuch    = "Das Konto sieht im Webmail kein globales Adressbuch"
 	meldungWebmailUnerreichbar       = "Das Webmail ist nicht erreichbar oder antwortet nicht wie Roundcube"
 	meldungWebmailPasswortUnlesbar   = "Das gespeicherte Passwort des Webmails ist nicht lesbar. Bitte neu eintragen."
-	meldungSchulDomainFehlt          = "Die Domain der Schule ist nicht eingestellt (SELBSTANMELDUNG_DOMAIN)"
+	meldungSchulDomainFehlt          = "Die Domain der Schule ist nicht eingestellt: SELBSTANMELDUNG_DOMAIN ist leer"
 	meldungWebmailBenutzerFehlt      = "Bitte den Benutzernamen des Webmails eintragen"
 	meldungWebmailPasswortFehlt      = "Bitte das Passwort des Webmails eintragen"
 	meldungAdressabgleichGescheitert = "Der Abgleich ließ sich nicht ausführen"

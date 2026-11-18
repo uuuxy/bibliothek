@@ -33,8 +33,8 @@ func TestOhneZuordnungNenntGruppeUndZahlen(t *testing.T) {
 	}
 	// Reihenfolge nach dem Schlüssel als Zahl: 9 vor 10 (als Text stünde 10 vorn).
 	erwartet := []string{
-		"Lesergruppe 9 „Undefinierte Untergruppe“ (UNDEF): 2 Personen, 3 Ausleihen",
-		"Lesergruppe 10 (fehlt in Leser_UG): 1 Person, 1 Ausleihe",
+		"Lesergruppe 9 „Undefinierte Untergruppe“ mit Kurzbezeichnung UNDEF: 2 Personen, 3 Ausleihen",
+		"Lesergruppe 10 ohne Eintrag in Leser_UG: 1 Person, 1 Ausleihe",
 	}
 	for i, b := range befund {
 		if b.String() != erwartet[i] {

@@ -158,7 +158,7 @@ func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 		// Übersetzung bekäme der zweite Platz statt des Konflikts einen Serverfehler.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, meldung(ErrKonflikt, "Gerät ist bereits ausgeliehen (woanders verbucht)")
+			return nil, meldung(ErrKonflikt, "Gerät ist bereits ausgeliehen und woanders verbucht")
 		}
 		return nil, err
 	}

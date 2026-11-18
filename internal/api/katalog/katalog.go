@@ -37,6 +37,10 @@ func (t *Tueren) katalogdienste() *katalogdienste.MetadatenClient {
 	return katalogdienste.NewMetadatenClient()
 }
 
+// meldungKatalogdiensteNichtErreichbar steht bei einem Netzausfall statt eines Nicht-Treffers; ISBN-Suche,
+// Titel zur ISBN und „Cover neu laden“ teilen den Satz.
+const meldungKatalogdiensteNichtErreichbar = "Die Katalogdienste DNB, Google und OpenLibrary sind nicht erreichbar. Bitte später erneut versuchen."
+
 // Sätze der Türen zum Exemplar, die mehrere Türen dieses Pakets ausgeben.
 const (
 	meldungExemplarVerliehen     = "Das Exemplar ist noch verliehen. Erst die Rückgabe buchen oder in der Leserakte den Verlust melden."

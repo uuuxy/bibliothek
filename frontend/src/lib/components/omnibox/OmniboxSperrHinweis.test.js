@@ -41,7 +41,7 @@ function sperre(art) {
 		message:
 			art === 'leser'
 				? 'Die Ausleihe ist gesperrt: Manuelle Sperre: Ausweis verloren'
-				: 'Die Ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen',
+				: 'Die Ausleihe ist gesperrt: 1 unbezahlter Schadensfall offen',
 		query: 'B-1',
 		art
 	};

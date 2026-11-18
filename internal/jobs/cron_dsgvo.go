@@ -89,7 +89,7 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 	if anzahl > 0 {
 		slog.Info("Scheduler GDPR Anonymize: successfully anonymized old student records", "anzahl", anzahl)
 		if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "schueler", "ANONYMIZE",
-			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > Karenzzeit)",
+			"DSGVO-Anonymisierung alter Datensätze: seit über 180 Tagen im Papierkorb oder Abgänger nach der Karenzzeit",
 			map[string]any{
 				"betroffene_schueler": anzahl,
 				"karenz_tage":         karenzTage,

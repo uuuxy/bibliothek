@@ -180,7 +180,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	id := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Rück", nachname: "Kehrer", klasse: "9a", barcode: "NM-6", geb: testdaten.Datum(2010, 6, 6), abgaenger: true, bestaetigt: true})
-	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, id); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre wegen offener Vorgänge' WHERE id=$1`, id); err != nil {
 		t.Fatal(err)
 	}
 

@@ -225,7 +225,7 @@ func (a *LeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID stri
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
 		return err
 	}
-	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Purge)"); err != nil {
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung aus dem Papierkorb"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -254,7 +254,7 @@ func (a *LeserAbfragen) LoescheKollegenAusDemPapierkorb(ctx context.Context, les
 	if err != nil {
 		return false, err
 	}
-	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, "", "DSGVO-Löschung (Purge)"); err != nil {
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, "", "DSGVO-Löschung aus dem Papierkorb"); err != nil {
 		return false, err
 	}
 	return true, tx.Commit(ctx)
@@ -274,7 +274,7 @@ func (a *LeserAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID 
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
 		return err
 	}
-	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Abgänger-Cronjob)"); err != nil {
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung nach dem Abgang"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

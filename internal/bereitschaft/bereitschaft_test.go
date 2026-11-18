@@ -304,14 +304,14 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			aendere:  func(l *Lage) { l.RechteLive["HELFER"]["view_students"] = true },
 			bereich:  "Rechte-Vorgabe",
 			stufe:    StufeWarnung,
-			enthaelt: "HELFER/view_students live an, Vorgabe aus",
+			enthaelt: "view_students für HELFER live an, Vorgabe aus",
 		},
 		{
 			name:     "Rechte-Zeile fehlt live",
 			aendere:  func(l *Lage) { delete(l.RechteLive["ADMIN"], "manage_users") },
 			bereich:  "Rechte-Vorgabe",
 			stufe:    StufeWarnung,
-			enthaelt: "ADMIN/manage_users fehlt live",
+			enthaelt: "manage_users für ADMIN fehlt live",
 		},
 		{
 			// Eine umbenannte Rolle, deren Zeilen die Migration nicht mitnahm.
@@ -319,7 +319,7 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			aendere:  func(l *Lage) { l.RechteLive["LEHRER"] = map[string]bool{"view_books": true} },
 			bereich:  "Rechte-Vorgabe",
 			stufe:    StufeWarnung,
-			enthaelt: "LEHRER/view_books live an, in der Vorgabe unbekannt",
+			enthaelt: "view_books für LEHRER live an, in der Vorgabe unbekannt",
 		},
 		{
 			name:     "Admin-Konten nicht lesbar",
@@ -477,7 +477,7 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 // Routinen erhoben, keine überfällige Zeile, keine Frist auf 0.
 func rueckstandSauber() []repository.LoeschRueckstand {
 	return []repository.LoeschRueckstand{
-		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage (gelöscht) / 360 Tage (Abgänger)"},
+		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage nach dem Löschen, für Abgänger 360 Tage Karenz"},
 		{Routine: "Abgänger endgültig löschen", Frist: "30 Tage nach Schuljahresende"},
 		{Routine: "Lesehistorie Schülerbücherei", Frist: "90 Tage"},
 		{Routine: "Lesehistorie Lernmittel", Frist: "730 Tage"},
