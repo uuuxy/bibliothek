@@ -1,5 +1,6 @@
 <script>
 	import { Pencil, Search, Trash } from '@lucide/svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
@@ -44,9 +45,7 @@
 </script>
 
 {#if laedt}
-	<div class="animate-pulse p-12 text-center font-medium text-on-surface-variant">
-		Lade Systembenutzer …
-	</div>
+	<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
 {:else if ladefehler}
 	<!-- Nicht „Keine Systembenutzer gefunden": Die Konten kamen nicht. -->
 	<LadeFehler titel="Benutzerkonten nicht geladen" text={ladefehler} onerneut={ladeKonten} />

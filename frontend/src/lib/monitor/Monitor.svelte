@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../components/ui/Ladekreis.svelte';
 	import { apiFetch } from '../apiFetch.js';
 	import { FOLIEN, FOLIE_MS, MonitorTakt } from './monitorTakt.svelte.js';
 	import FolieBuchDesMonats from './FolieBuchDesMonats.svelte';
@@ -45,7 +46,7 @@
 	<!-- Folie -->
 	<div class="flex-1 flex items-center justify-center px-8 py-16">
 		{#if !takt.slides}
-			<div class="text-on-surface-variant text-xl animate-pulse">Lade Daten …</div>
+			<Ladekreis size="lg" />
 		{:else if takt.folie === 0}
 			<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
 		{:else if takt.folie === 1}

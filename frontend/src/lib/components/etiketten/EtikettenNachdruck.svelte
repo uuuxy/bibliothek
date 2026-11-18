@@ -13,6 +13,7 @@
      gewählten Stufe trägt: ein Ort für Aktionen, in jeder Stufe erreichbar. -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiGet, apiPost } from '../../apiFetch.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -296,9 +297,8 @@
 			{/if}
 		</div>
 	</div>
-
 	{#if laedt}
-		<p class="animate-pulse py-16 text-center text-on-surface-variant">Lade Exemplare …</p>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
 	{:else if ladefehler}
 		<!-- Nicht „Für alle Exemplare wurden Etiketten gedruckt": Die Liste kam nicht. -->
 		<LadeFehler titel="Exemplare nicht geladen" text={ladefehler} onerneut={laden} />

@@ -27,4 +27,17 @@ describe('Ladeindikator kommt aus ui/', () => {
 		}
 		expect(treffer, 'Handgebauter Ladekreis — bitte ui/Ladekreis.svelte nehmen').toEqual([]);
 	});
+
+	// Der zweite Nachbau: blinkende Schrift „Lade …“ statt eines Ladeindikators (M3 Progress
+	// indicators, „Use a loading indicator“ für Wartezeiten von 200 ms bis 5 s).
+	const PULSTEXT = /class="[^"]*\banimate-pulse\b[^"]*"[^>]*>\s*Lade\b/g;
+	it('zeigt das Laden nicht als pulsierenden Text', () => {
+		const treffer = [];
+		for (const datei of sammleQuelldateien(srcRoot)) {
+			if (!datei.endsWith('.svelte')) continue;
+			const n = (ohneKommentare(readFileSync(datei, 'utf8')).match(PULSTEXT) || []).length;
+			if (n) treffer.push(`${relPfad(datei)} (${n})`);
+		}
+		expect(treffer, 'Pulsierender Ladetext — bitte ui/Ladekreis.svelte nehmen').toEqual([]);
+	});
 });

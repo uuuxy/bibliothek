@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiGet } from '../../apiFetch.js';
 	import { abonniereNeuladen } from '../../liveEvents.js';
 	import BestellDetail from './BestellDetail.svelte';
@@ -168,9 +169,7 @@
 		/>
 
 		{#if laedt}
-			<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
-				Lade Bestellhistorie …
-			</div>
+			<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
 		{:else if ladefehler}
 			<LadeFehler
 				onerneut={ladeBestellungen}

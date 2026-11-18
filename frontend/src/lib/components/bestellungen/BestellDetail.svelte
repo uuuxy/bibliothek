@@ -7,6 +7,7 @@
      einzige Bestellung angesehen wird. -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -81,9 +82,7 @@
 	</Button>
 
 	{#if laedt}
-		<div class="animate-pulse py-16 text-center text-base text-on-surface-variant">
-			Lade Bestellung …
-		</div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
 	{:else if fehler}
 		<LadeFehler onerneut={laden} titel="Bestellung nicht geladen" text={fehler} />
 	{:else if bestellung}

@@ -165,9 +165,7 @@
 	</div>
 
 	{#if reservierungen.laedt}
-		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
-			Lade Reservierungen …
-		</div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
 	{:else if reservierungen.ladefehler}
 		<LadeFehler
 			onerneut={reservierungen.laden}
