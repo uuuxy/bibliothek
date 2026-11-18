@@ -35,6 +35,7 @@
 	 *   class?: string,
 	 *   'aria-label'?: string,
 	 *   'aria-describedby'?: string,
+	 *   'aria-required'?: boolean | 'true' | 'false',
 	 *   onchange?: (wert: any) => void
 	 * }}
 	 */

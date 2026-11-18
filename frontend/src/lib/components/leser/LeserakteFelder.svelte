@@ -61,8 +61,9 @@
 
 	// Der Stern markiert, was der Server verlangt — und er hängt an der ART, wie die
 	// Pflicht selbst (chk_leser_schueler_pflichtfelder). Ohne ihn erfährt man erst beim
-	// Speichern, dass ein Feld nicht leer bleiben darf.
-	const schuelerPflicht = $derived(kollege ? '' : ' *');
+	// Speichern, dass ein Feld nicht leer bleiben darf. Er kommt über aria-required wie in ui/Feld:
+	// ohne Leerzeichen, und der Screenreader hört „erforderlich“ statt „Stern“.
+	const pflicht = $derived(kollege ? undefined : 'true');
 </script>
 
 <!-- ── Persönliche Daten ──────────────────────────────── -->
@@ -88,7 +89,8 @@
 		<Feld id="nachname" etikett="Nachname" aria-required="true" bind:value={eingaben.nachname} />
 		<Datumsfeld
 			id="geburtsdatum"
-			etikett="Geburtsdatum{schuelerPflicht}"
+			etikett="Geburtsdatum"
+			aria-required={pflicht}
 			bind:value={eingaben.geburtsdatum}
 			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt'}
 		/>
@@ -103,7 +105,7 @@
 		<!-- Wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die Nachbarn fluchten. -->
 		<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
 			<label for="klasse" class="text-sm font-medium text-on-surface-variant"
-				>Klasse{schuelerPflicht}</label
+				>Klasse{#if pflicht}<span aria-hidden="true">*</span>{/if}</label
 			>
 			<Select
 				id="klasse"
@@ -111,6 +113,7 @@
 				options={klassenOptionen}
 				placeholder="Klasse wählen"
 				disabled={kollege}
+				aria-required={pflicht}
 			/>
 			{#if kollege}
 				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse</span>
@@ -144,7 +147,8 @@
 		/>
 		<Feld
 			id="barcode"
-			etikett="Ausweisnummer{schuelerPflicht}"
+			etikett="Ausweisnummer"
+			aria-required={pflicht}
 			bind:value={eingaben.barcode_id}
 			feld="font-mono"
 		/>

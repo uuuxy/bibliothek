@@ -98,3 +98,29 @@ describe('Stammdaten bearbeiten: Ungespeichertes geht nur nach Rückfrage verlor
 		expect(uiStore.verlassenSperre).toBeNull();
 	});
 });
+
+// M3 (Text fields, Required text indicator): Das Sternchen steht ohne Leerzeichen an der
+// Beschriftung und ist für den Screenreader ausgeblendet; er hört „erforderlich“ aus
+// aria-required. Ein Sternchen im Text der Beschriftung läse er mit.
+describe('Stammdaten bearbeiten: Pflichtfelder nur beim Schüler, wie in ui/Feld', () => {
+	it('markiert Geburtsdatum, Klasse und Ausweisnummer eines Schülers, einer Lehrkraft nicht', () => {
+		const schueler = render(LeserBearbeiten, { leser: MIA, onClose: () => {}, onSave: () => {} });
+		for (const name of [/^Geburtsdatum/, /^Ausweisnummer/])
+			expect(schueler.getByLabelText(name).getAttribute('aria-required'), String(name)).toBe(
+				'true'
+			);
+		expect(schueler.getByRole('combobox', { name: /^Klasse/ }).getAttribute('aria-required')).toBe(
+			'true'
+		);
+		for (const label of schueler.container.querySelectorAll('label'))
+			expect(label.textContent, 'Sternchen mit Leerzeichen im Text').not.toMatch(/\s\*/);
+		schueler.unmount();
+
+		const lehrkraft = render(LeserBearbeiten, {
+			leser: { ...MIA, art: 'lehrkraft', klasse: '' },
+			onClose: () => {},
+			onSave: () => {}
+		});
+		expect(lehrkraft.getByLabelText(/^Geburtsdatum/).getAttribute('aria-required')).toBeNull();
+	});
+});
