@@ -97,3 +97,31 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 		}
 	});
 });
+
+// Googles Token in material-web: Text- und Standard-Symbolknopf kennen gesperrt nur Beschriftung
+// und Symbol bei 38 %, der umrandete dazu den Rand bei 12 %; eine Fläche bei 12 % hat nur ein
+// Knopf, der auch sonst eine hat.
+describe('Button — gesperrt', () => {
+	it('gibt nur Knöpfen mit Fläche die gesperrte Fläche', () => {
+		/** @type {['primary' | 'tonal' | 'ghost' | 'symbol' | 'secondary', string, string][]} */
+		const faelle = [
+			['primary', 'disabled:bg-on-surface/12!', 'disabled:border-transparent!'],
+			['tonal', 'disabled:bg-on-surface/12!', 'disabled:border-transparent!'],
+			['ghost', 'disabled:bg-transparent!', 'disabled:border-transparent!'],
+			['symbol', 'disabled:bg-transparent!', 'disabled:border-transparent!'],
+			['secondary', 'disabled:bg-transparent!', 'disabled:border-on-surface/12!']
+		];
+		for (const [variant, flaeche, rand] of faelle) {
+			const { getByRole, unmount } = render(Button, { variant, disabled: true });
+			const k = klassen(getByRole('button'));
+			expect(k, variant).toEqual(
+				expect.arrayContaining([flaeche, rand, 'disabled:text-on-surface/38!'])
+			);
+			expect(
+				k.filter((c) => c.startsWith('disabled:bg-')),
+				variant
+			).toEqual([flaeche]);
+			unmount();
+		}
+	});
+});

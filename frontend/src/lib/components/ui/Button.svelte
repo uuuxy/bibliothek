@@ -58,11 +58,21 @@
 	// rounded-full: In Material 3 ist der Button eine Pille (Shape-Skala: Menüs 4 px, Chips 8,
 	// Karten 12, Dialoge 28, Buttons voll).
 	//
-	// Gesperrt: ein Zustand für alle Varianten, nach Material 3 — Fläche in der Textfarbe bei
-	// 12 %, Beschriftung bei 38 %, kein Rahmen, kein Schatten. Mit `!`, weil die Klassen der
-	// Variante dieselbe Spezifität haben und dann die Reihenfolge im Stylesheet entschiede.
+	// Gesperrt nach Material 3: Beschriftung und Symbol in on-surface bei 38 %, kein Schatten. Eine
+	// Fläche in on-surface bei 12 % behält nur ein Knopf mit Fläche; Text- und Symbolknopf bleiben
+	// ohne, der umrandete behält den Rand bei 12 % (Googles Token in material-web: text-button
+	// und icon-button kennen nur disabled-label-text und disabled-icon, outlined-button dazu
+	// disabled-outline). Mit `!`, weil die Klassen der Variante dieselbe Spezifität haben und dann
+	// die Reihenfolge im Stylesheet entschiede.
 	const disabledClasses =
-		'disabled:cursor-not-allowed disabled:bg-on-surface/12! disabled:text-on-surface/38! disabled:border-transparent! disabled:shadow-none!';
+		'disabled:cursor-not-allowed disabled:text-on-surface/38! disabled:shadow-none!';
+	const flaecheGesperrt = 'disabled:bg-on-surface/12! disabled:border-transparent!';
+	/** @type {Record<string, string>} */
+	const ohneFlaecheGesperrt = {
+		ghost: 'disabled:bg-transparent! disabled:border-transparent!',
+		symbol: 'disabled:bg-transparent! disabled:border-transparent!',
+		secondary: 'disabled:bg-transparent! disabled:border-on-surface/12!'
+	};
 
 	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`;
 
@@ -94,7 +104,7 @@
 	bind:this={element}
 	class="{baseClasses} {variant === 'symbol'
 		? symbolSizes[size]
-		: sizes[size]} {variantClasses} {className}"
+		: sizes[size]} {ohneFlaecheGesperrt[variant] ?? flaecheGesperrt} {variantClasses} {className}"
 	{...rest}
 >
 	{@render children?.()}

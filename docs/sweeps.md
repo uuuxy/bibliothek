@@ -449,7 +449,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 
 | Seite | bei uns | Stand |
 | --- | --- | --- |
-| Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen` |
+| Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen`, `Button.test` (gesperrt: Fläche nur beim Knopf mit Fläche) |
 | Segmented buttons | `ui/Segmente`, auch im Ausweis-Designer | gelesen (962cba20) |
 | Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip` | gelesen (b78dbb84) |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
