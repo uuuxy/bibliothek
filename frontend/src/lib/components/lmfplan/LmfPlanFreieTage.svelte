@@ -10,6 +10,7 @@
      Feld.svelte), „Übersprungen" liegt darunter über die volle Breite. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import { datumKurz, wochentag } from './lmfplanDienst.js';
@@ -76,7 +77,7 @@
 	onclose={() => (offen = false)}
 	onbestaetigen={hinzufuegen}
 >
-	<Feld id="lmf-freier-tag-datum" etikett="Freier Tag" type="date" bind:value={datum} />
+	<Datumsfeld id="lmf-freier-tag-datum" etikett="Freier Tag" bind:value={datum} />
 	<Feld
 		id="lmf-freier-tag-grund"
 		etikett="Grund"

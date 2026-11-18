@@ -12,7 +12,7 @@
 	import { tick } from 'svelte';
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Select from '../ui/Select.svelte';
 	import { STUNDEN, datumKurz, stundeText, wochentag } from './lmfplanDienst.js';
 
@@ -48,10 +48,9 @@
 		</span>
 	</td>
 	<td>
-		<Feld
+		<Datumsfeld
 			id="lmf-zeile-fest-datum-{i}"
 			aria-label="Fester Tag Zeile {i + 1}"
-			type="date"
 			bind:value={zeile.fest.datum}
 			ungueltig={!zeile.fest.datum}
 			feld="w-40"

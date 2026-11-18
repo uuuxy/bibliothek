@@ -4,6 +4,15 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 // Legt docker-compose.local.yml beim ersten Start an (INITIAL_ADMIN_EMAIL).
+/**
+ * Das Datum eines Datumsfelds (TT.MM.JJJJ) als JJJJ-MM-TT, zum Vergleich mit dem Server.
+ * @param {string} text
+ */
+export function isoAusFeld(text) {
+	const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(text);
+	return m ? `${m[3]}-${m[2]}-${m[1]}` : text;
+}
+
 export const ADMIN_EMAIL = 'admin@schule.example';
 // Mock-IMAP (IMAP_HOST=mock im lokalen Stack) akzeptiert jedes Passwort.
 export const ADMIN_PASSWORD = 'e2e-egal';

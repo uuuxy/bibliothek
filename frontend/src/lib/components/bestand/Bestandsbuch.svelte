@@ -12,7 +12,7 @@
 	import { onMount } from 'svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import FilterChips from '../ui/FilterChips.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -103,8 +103,8 @@
 <div class="py-6 space-y-6">
 	<div class="space-y-4">
 		<div class="flex flex-wrap items-end gap-4">
-			<Feld bind:value={von} etikett="Von" type="date" class="w-44" />
-			<Feld bind:value={bis} etikett="Bis" type="date" class="w-44" />
+			<Datumsfeld bind:value={von} etikett="Von" class="w-44" />
+			<Datumsfeld bind:value={bis} etikett="Bis" class="w-44" />
 			<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
 			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen.
 			     Die Form ist die von ui/Button. -->

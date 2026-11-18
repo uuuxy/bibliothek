@@ -14,7 +14,7 @@
 	import Tabelle from '../../ui/Tabelle.svelte';
 	import Icon from '../../ui/Icon.svelte';
 	import Button from '../../ui/Button.svelte';
-	import Feld from '../../ui/Feld.svelte';
+	import Datumsfeld from '../../ui/Datumsfeld.svelte';
 	import { speichereKategorie, hatAenderungen } from '../einstellungenSpeichern.js';
 	import { meldeFormular } from '../../../stores/verlassenSchutz.svelte.js';
 
@@ -141,11 +141,10 @@
 	</Tabelle>
 
 	<div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
-		<Feld id="sommerferien-von" etikett="Beginn" type="date" bind:value={von} />
-		<Feld
+		<Datumsfeld id="sommerferien-von" etikett="Beginn" bind:value={von} />
+		<Datumsfeld
 			id="sommerferien-bis"
 			etikett="Ende"
-			type="date"
 			bind:value={bis}
 			ungueltig={Boolean(von && bis) && !aufnehmbar}
 			hint={von && bis && !aufnehmbar ? 'Ende nach dem Beginn, im selben Jahr' : ''}

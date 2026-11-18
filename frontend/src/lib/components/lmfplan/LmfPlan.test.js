@@ -242,7 +242,7 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		const gesendet = antworte({ ...STAND, vorschlag: { ...STAND.vorschlag, rahmen: RAHMEN } });
 		render(LmfPlan);
 		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
-		expect(feld.value).toBe('2027-06-24');
+		expect(feld.value).toBe('24.06.2027');
 		expect(screen.getByText('Ende am letzten Tag')).toBeTruthy();
 		expect(screen.queryByLabelText('Erster Tag')).toBeNull();
 		await vi.waitFor(() => expect(gesendet.length).toBeGreaterThan(0));

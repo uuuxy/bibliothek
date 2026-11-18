@@ -13,6 +13,7 @@
 <script>
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import { klassenLadefehler, klassenPlatzhalter } from './klassenVorschlaege.svelte.js';
 
 	/**
@@ -44,9 +45,8 @@
 	placeholder="z. B. Mustermann"
 />
 
-<Feld
+<Datumsfeld
 	etikett="Geburtsdatum"
-	type="date"
 	required
 	bind:value={geburtsdatum}
 	hint="Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder. Ohne Datum würde er beim nächsten Import doppelt angelegt."

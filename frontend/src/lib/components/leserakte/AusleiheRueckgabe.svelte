@@ -10,7 +10,7 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
 	import Icon from '../ui/Icon.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import UeberfaelligZeichen from '../buchakte/UeberfaelligZeichen.svelte';
 	import { formatDatum as datum } from '../../utils/format.js';
 
@@ -51,8 +51,7 @@
 
 {#if bearbeitet}
 	<div class="flex items-center gap-1.5">
-		<Feld
-			type="date"
+		<Datumsfeld
 			bind:value={neuesDatum}
 			aria-label="Rückgabedatum"
 			disabled={speichert}

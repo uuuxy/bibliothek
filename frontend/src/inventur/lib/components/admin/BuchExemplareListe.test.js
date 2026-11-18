@@ -111,7 +111,7 @@ describe('BuchExemplareListe', () => {
 		expect(bestand.id).toBe('buch-bestand');
 		expect(bestand.value).toBe('2');
 		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Zähldatum')).value).toBe(
-			'2026-09-02'
+			'02.09.2026'
 		);
 		const ueberschrift = screen.getByRole('heading', { name: '2 Exemplare' });
 		const FOLGT = Node.DOCUMENT_POSITION_FOLLOWING;

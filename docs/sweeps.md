@@ -471,7 +471,7 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | App bars | Kopfzeile der Seiten | gelesen (aea2a6b9) |
 | Sliders | ein Feld `type="range"` | gelesen (7a9b7eed) |
 | Split button | „Ausweis drucken“ mit Menü in der Leserakte | gelesen (6a5a1562) |
-| Date pickers | 16 Felder `type="date"`: eintippen oder im Kalender des Browsers wählen, wie beim Docked date picker („both options are immediately available“) | **offen**: Der aufgeklappte Kalender sieht aus wie im Browser, nicht wie in M3. Beschlossen ist ein eigener Kalender nach M3, nach den Icons (OFFEN 5.193) |
+| Date pickers | `ui/Datumsfeld` an allen 16 Datumsfeldern: eintippen ohne Eingabemaske oder im Kalender nach dem Docked date picker wählen (`ui/Kalender`), „both options are immediately available“; Tastatur und Rollen wie in Angular Material | Gate: `frontend-hygiene-felder` (kein rohes `<input>`), svelte-check (`ui/Feld` nimmt `type="date"` nicht an), `Datumsfeld.svelte.test`, `datumsfeld-kalender`, `feld-fehlersymbol`, `barrierefreiheit-axe` (offener Kalender) |
 | Toolbars | `ui/AuswahlLeiste` für markierte Zeilen, auch beim Ausweisdruck der Schülerdatei; die Werkzeugleiste des Ausweis-Designers steht oben wie in Googles Editoren | gelesen (962cba20), alle Stellen |
 | Color roles | `styles/rollen.css` | Gate: `frontend-hygiene-farben`, `kontrast` |
 | Typography | `styles/theme-mass.css` | Gate: `frontend-hygiene-schrift`, `typo-rollen` |

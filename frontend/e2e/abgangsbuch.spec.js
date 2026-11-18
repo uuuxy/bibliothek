@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu, isoAusFeld } from './helpers.js';
 
 // Punkt 1 des Protokolls vom 16.09.2026: „Zugangs- und Abgangsbuch fehlen."
 //
@@ -67,10 +67,14 @@ async function pruefeAbgangsbuch(page, s, tag) {
 	const vonFeld = page.getByLabel('Von', { exact: true });
 	const bisFeld = page.getByLabel('Bis', { exact: true });
 	await expect(bisFeld).not.toHaveValue('');
-	expect((await vonFeld.inputValue()) <= heute, 'das laufende Halbjahr hat begonnen').toBe(true);
-	expect((await bisFeld.inputValue()) >= heute, 'das laufende Halbjahr endet nicht vor heute').toBe(
-		true
-	);
+	expect(
+		isoAusFeld(await vonFeld.inputValue()) <= heute,
+		'das laufende Halbjahr hat begonnen'
+	).toBe(true);
+	expect(
+		isoAusFeld(await bisFeld.inputValue()) >= heute,
+		'das laufende Halbjahr endet nicht vor heute'
+	).toBe(true);
 	await vonFeld.fill(tag);
 	await bisFeld.fill(tag);
 	await page.getByRole('button', { name: 'Anzeigen' }).click();

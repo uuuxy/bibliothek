@@ -40,7 +40,7 @@
 	 *
 	 * @prop {string|number} [value] - Gebundener Wert (bindable).
 	 * @prop {string} [etikett] - Beschriftung über dem Feld.
-	 * @prop {'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url'} [type='text']
+	 * @prop {'text'|'number'|'email'|'month'|'password'|'search'|'tel'|'url'} [type='text'] - Datum: ui/Datumsfeld
 	 * @prop {string} [hint=''] - Hilfetext unter dem Feld.
 	 * @prop {boolean} [ungueltig] - Fehlerzustand; wer ihn nutzt, gibt true oder false, nie undefined.
 	 * @prop {string} [class] - Rasterangaben des Aufrufers, z. B. "sm:col-span-2" (nur mit etikett).
@@ -66,7 +66,7 @@
 	 */
 	import Icon from './Icon.svelte';
 
-	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
+	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
 		value = $bindable(),
 		etikett = undefined,

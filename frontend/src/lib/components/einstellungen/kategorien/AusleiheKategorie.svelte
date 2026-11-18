@@ -7,6 +7,7 @@
 	 * darüber, keine Sache für sich.
 	 */
 	import Feld from '../../ui/Feld.svelte';
+	import Datumsfeld from '../../ui/Datumsfeld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import Switch from '../../ui/Switch.svelte';
 	import { untrack } from 'svelte';
@@ -122,7 +123,7 @@
 		</div>
 		{#if leseclubAktiv}
 			<div class="max-w-xs">
-				<Feld bind:value={leseclubZieldatum} etikett="Ferienende" type="date" />
+				<Datumsfeld bind:value={leseclubZieldatum} etikett="Ferienende" />
 			</div>
 		{/if}
 	</div>

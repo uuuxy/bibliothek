@@ -20,6 +20,7 @@
 	import Select from '../ui/Select.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import Icon from '../ui/Icon.svelte';
 
@@ -151,11 +152,10 @@
 					{/if}
 				</div>
 				<div class="grid grid-cols-2 gap-4">
-					<Feld id="von" etikett="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
-					<Feld
+					<Datumsfeld id="von" etikett="Von" bind:value={vonDatum} ungueltig={rangeInvalid} />
+					<Datumsfeld
 						id="bis"
 						etikett="Bis"
-						type="date"
 						bind:value={bisDatum}
 						ungueltig={rangeInvalid}
 						hint={rangeInvalid ? 'Das Von-Datum liegt nach dem Bis-Datum' : ''}

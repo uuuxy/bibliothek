@@ -3,9 +3,8 @@ import { uiLogin, gehZu, seedSQL, uniqueSuffix, einstellungsKategorie } from './
 
 // Material 3, Text fields: „It's strongly recommended to show an error icon when the text field
 // is in the error state." ui/Feld setzt das Symbol rechts ins Feld, vor nachlaufende Knöpfe. Hier
-// wird gemessen: Es liegt im Feld und im Innenabstand, also über keinem Text und keinem Symbol
-// des Browsers (Kalender am Datumsfeld); Knöpfe im Feld bleiben stehen; wer nach dem Fehler
-// tippt, bleibt im Feld.
+// wird gemessen: Es liegt im Feld und im Innenabstand, also über keinem Text; Knöpfe im Feld
+// (ISBN, Kalender am Datumsfeld) bleiben stehen; wer nach dem Fehler tippt, bleibt im Feld.
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -46,6 +45,29 @@ function symbolImFeld(m, wo) {
  */
 async function symbolStehtImFeld(feld, wo) {
 	await expect(async () => symbolImFeld(await miss(feld), wo)).toPass({ timeout: 5000 });
+}
+
+/**
+ * Misst, bis die Lage steht: Das Symbol steht vor den Knöpfen im Feld und über keinem Text, die
+ * Knöpfe bleiben, wo sie vor dem Fehler standen.
+ * @param {import('@playwright/test').Locator} feld
+ * @param {import('@playwright/test').Locator[]} knoepfe
+ * @param {({ x: number } | null)[]} vorher Lage der Knöpfe vor dem Fehler
+ * @param {string} wo
+ */
+async function symbolStehtVorKnoepfen(feld, knoepfe, vorher, wo) {
+	const ersterKnopf = /** @type {{ x: number }} */ (vorher[0]);
+	await expect(async () => {
+		const m = await miss(feld);
+		if (!m.symbol) throw new Error(`${wo}: kein Fehlersymbol im Feld.`);
+		expect(await Promise.all(knoepfe.map((k) => k.boundingBox()))).toEqual(vorher);
+		expect(m.symbol.rechts, `${wo}: Das Symbol liegt nicht vor den Knöpfen.`).toBeLessThanOrEqual(
+			ersterKnopf.x
+		);
+		expect(m.symbol.links, `${wo}: Das Symbol liegt über dem Text.`).toBeGreaterThanOrEqual(
+			m.feld.rechts - m.innenRechts
+		);
+	}).toPass({ timeout: 5000 });
 }
 
 test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Feld', async ({
@@ -101,18 +123,7 @@ test('Buchmaske: Das Symbol steht vor den Knöpfen der ISBN, die Knöpfe bleiben
 	await isbn.fill('12345');
 	await isbn.press('Tab');
 	await expect(isbn).toHaveAttribute('aria-invalid', 'true');
-	const ersterKnopf = /** @type {{ x: number }} */ (vorher[0]);
-	await expect(async () => {
-		const m = await miss(isbn);
-		if (!m.symbol) throw new Error('ISBN: kein Fehlersymbol im Feld.');
-		expect(await Promise.all(knoepfe.map((k) => k.boundingBox()))).toEqual(vorher);
-		expect(m.symbol.rechts, 'Das Symbol liegt nicht vor den Knöpfen.').toBeLessThanOrEqual(
-			ersterKnopf.x
-		);
-		expect(m.symbol.links, 'Das Symbol liegt über dem Text.').toBeGreaterThanOrEqual(
-			m.feld.rechts - m.innenRechts
-		);
-	}).toPass({ timeout: 5000 });
+	await symbolStehtVorKnoepfen(isbn, knoepfe, vorher, 'ISBN');
 });
 
 test('Leserakte: Der Knopf am Ausweisjahr liegt im Feld, das Fehlersymbol auch', async ({
@@ -153,15 +164,20 @@ test('Leserakte: Der Knopf am Ausweisjahr liegt im Feld, das Fehlersymbol auch',
 	}
 });
 
-test('Datumsfeld: Das Symbol liegt neben dem Kalender des Browsers, nicht darauf', async ({
+test('Datumsfeld: Das Symbol steht vor dem Knopf des Kalenders, der Knopf bleibt stehen', async ({
 	page
 }) => {
 	await uiLogin(page);
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'LUSD & Versetzung').click();
 	const bis = page.locator('#sommerferien-bis');
-	await page.locator('#sommerferien-von').fill('2031-07-20');
-	await bis.fill('2031-07-01');
+	const kalender = bis.locator('xpath=..').getByRole('button', { name: 'Kalender öffnen' });
+	// Das Feld steht am unteren Rand des Fensters; fill rollt es ins Bild. Gemessen wird danach,
+	// sonst zählte der Bildlauf als Rücken des Knopfs.
+	await bis.scrollIntoViewIfNeeded();
+	const vorher = [await kalender.boundingBox()];
+	await page.locator('#sommerferien-von').fill('20.07.2031');
+	await bis.fill('01.07.2031');
 	await expect(bis).toHaveAttribute('aria-invalid', 'true');
-	await symbolStehtImFeld(bis, 'Ende der Sommerferien');
+	await symbolStehtVorKnoepfen(bis, [kalender], vorher, 'Ende der Sommerferien');
 });

@@ -314,6 +314,13 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   sichtbares Wort umbenennt, eine Eingabe zur Pflicht macht oder eine Antwort ändert, sucht
   vorher in `frontend/e2e/` (auch in `helpers.js`) nach dem Wort und dem Endpunkt und lässt die
   Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §3).
+- **Ein Browser-Test ist rot mit „strict mode violation … resolved to 3 elements“, nachdem ein
+  Bauteil einen benannten Knopf bekommen hat.** `getByLabel` und `getByRole` mit `name`
+  vergleichen ohne `exact` eine Teilzeichenkette, Groß- und Kleinschreibung gleich: „Ende“ trifft
+  auch „Kalender öffnen“, „OK“ jeden Tag des Oktobers. Abhilfe: `exact: true` an der Stelle.
+- **Ein Browser-Test, der die Lage eines Elements vor und nach einer Eingabe vergleicht, ist rot
+  um wenige Pixel senkrecht.** `fill` rollt ein Feld am Fensterrand ins Bild; gemessen wurde
+  davor. Abhilfe: vor der ersten Messung `scrollIntoViewIfNeeded()`.
 - **Am Arbeitsplatz scheitert jede Spec.** Zuerst die Umgebung: Läuft Docker (`docker info`)?
   Nach einem Update von Playwright fehlen die Browser der neuen Fassung
   (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel

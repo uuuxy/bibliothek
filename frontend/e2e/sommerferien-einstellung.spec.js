@@ -25,7 +25,8 @@ test('Sommerferien: eigenes Jahr eintragen, gespeichert, in der Selbstprüfung s
 	const vorher = await bereich.getByRole('row').count();
 
 	await bereich.getByLabel('Beginn').fill('2031-07-07');
-	await bereich.getByLabel('Ende').fill('2031-08-15');
+	// exact: Ohne trifft „Ende“ auch die Knöpfe „Kalender öffnen“ (Kal-ende-r).
+	await bereich.getByLabel('Ende', { exact: true }).fill('2031-08-15');
 	await bereich.getByRole('button', { name: '2031 aufnehmen' }).click();
 	await expect(bereich.getByRole('row')).toHaveCount(vorher + 1);
 	await expect(bereich.getByRole('row').filter({ hasText: '2031' })).toContainText(

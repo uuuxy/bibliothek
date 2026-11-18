@@ -25,6 +25,7 @@ export const ICON_NAMEN = /** @type {const} */ ([
 	'calendar_add_on',
 	'calendar_clock',
 	'calendar_month',
+	'calendar_today',
 	'call_split',
 	'cancel_schedule_send',
 	'check',

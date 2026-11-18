@@ -18,7 +18,7 @@
 <script>
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import BescheidPositionen from './BescheidPositionen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -112,11 +112,10 @@
 			<div
 				class="flex flex-wrap items-end justify-between gap-4 border-t border-outline-variant pt-4"
 			>
-				<Feld
+				<Datumsfeld
 					id="bescheid-frist"
 					etikett="Zahlungsfrist"
 					hint="Steht als Datum im Brief"
-					type="date"
 					bind:value={formular.frist}
 					feld="w-44"
 				/>

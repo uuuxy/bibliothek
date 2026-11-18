@@ -2,6 +2,7 @@
      (BuchExemplareListe): Die Zahl im Feld ist der Bestand, den die Liste darunter zeigt. -->
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import Datumsfeld from '../../../../lib/components/ui/Datumsfeld.svelte';
 	import { bestandHinweis } from './buchFormularRegeln.js';
 
 	let { formular = $bindable() } = $props();
@@ -18,5 +19,5 @@
 	>
 		{#snippet nachlaufend()}Stück{/snippet}
 	</Feld>
-	<Feld id="buch-zaehldatum" etikett="Zähldatum" type="date" bind:value={formular.lastCounted} />
+	<Datumsfeld id="buch-zaehldatum" etikett="Zähldatum" bind:value={formular.lastCounted} />
 </div>

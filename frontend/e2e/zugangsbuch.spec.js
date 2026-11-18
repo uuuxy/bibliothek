@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu, isoAusFeld } from './helpers.js';
 
 // Die zweite Hälfte von Punkt 1 des Protokolls vom 16.09.2026. Gemessen wird am Draht, was
 // die Bibliothekskraft sieht: Zugänge des laufenden Halbjahres, getrennt nach Topf — und der
@@ -43,7 +43,10 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		const vonFeld = page.getByLabel('Von', { exact: true });
 		const bisFeld = page.getByLabel('Bis', { exact: true });
 		await expect(bisFeld).not.toHaveValue('');
-		expect((await bisFeld.inputValue()) < heute, 'das vorige Halbjahr endet vor heute').toBe(true);
+		expect(
+			isoAusFeld(await bisFeld.inputValue()) < heute,
+			'das vorige Halbjahr endet vor heute'
+		).toBe(true);
 		await vonFeld.fill(tag);
 		await bisFeld.fill(tag);
 		await page.getByRole('button', { name: 'Anzeigen' }).click();

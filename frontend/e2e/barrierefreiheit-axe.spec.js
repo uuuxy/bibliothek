@@ -15,7 +15,14 @@
 // Dieses Gate wurde vor dem ersten Fix ROT gesehen (09.09.2026, 17 von 19 Tests).
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { uiLogin, gehZu, seedSQL, seedBestellung, uniqueSuffix } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	seedBestellung,
+	uniqueSuffix,
+	einstellungsKategorie
+} from './helpers.js';
 
 /** Öffentlich, ohne Anmeldung. */
 const OEFFENTLICH = [
@@ -47,11 +54,11 @@ const INTERN = [
  * Alle WCAG-A/AA-Verstöße einer Seite als lesbare Zeilen. Best-Practice-Regeln von axe
  * (Landmarken-Kür, Überschriften-Reihenfolge) bleiben draußen — Gate ist die Norm.
  * @param {import('@playwright/test').Page} page
+ * @param {string} [bereich] nur dieser Teil der Seite, als CSS-Selektor
  */
-async function verstoesse(page) {
-	const ergebnis = await new AxeBuilder({ page })
-		.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-		.analyze();
+async function verstoesse(page, bereich) {
+	const scan = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
+	const ergebnis = await (bereich ? scan.include(bereich) : scan).analyze();
 	// Bis zu drei Fundstellen je Regel: Eine allein zeigt oft nur die Seitenleiste, die
 	// auf jeder Seite dieselben Treffer liefert — die seitenspezifischen stünden dahinter.
 	return ergebnis.violations.map(
@@ -272,3 +279,29 @@ test('Gerüst: ein <main>, eine Überschrift, Skip-Link als erstes Fokusziel', a
 	if (erstesZiel !== 'a #hauptinhalt') befunde.push(`erstes Tab landet auf „${erstesZiel}"`);
 	expect(befunde).toEqual([]);
 });
+
+// Der Kalender des Datumsfelds steht erst nach einem Klick im Bild, der Scan der Seiten sieht ihn
+// nie. Geprüft werden Tage, Monats- und Jahresliste, hell und dunkel.
+for (const farbschema of /** @type {const} */ (['light', 'dark'])) {
+	test(`axe: offener Kalender des Datumsfelds, ${farbschema}`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: farbschema });
+		await uiLogin(page);
+		await gehZu(page, '/einstellungen');
+		await einstellungsKategorie(page, 'LUSD & Versetzung').click();
+		const bereich = page.getByTestId('sommerferien');
+		await bereich.getByRole('button', { name: 'Kalender öffnen' }).first().click();
+		const kalender = page.getByRole('dialog', { name: 'Datum wählen' });
+		await expect(kalender).toBeVisible();
+		/** @type {string[]} */
+		const befunde = [];
+		for (const ansicht of ['tage', 'monate', 'jahre']) {
+			const menue = kalender.locator(`[data-menue="${ansicht}"]`);
+			if (ansicht !== 'tage') await menue.click();
+			await zurRuhe(page);
+			for (const v of await verstoesse(page, '[aria-label="Datum wählen"]'))
+				befunde.push(`${ansicht}: ${v}`);
+			if (ansicht !== 'tage') await menue.click();
+		}
+		expect(befunde, `Kalender, ${farbschema}`).toEqual([]);
+	});
+}

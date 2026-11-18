@@ -4,7 +4,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { onMount } from 'svelte';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Select from '../ui/Select.svelte';
 	import {
 		erzeugeKlassenVorschlaege,
@@ -88,10 +88,9 @@
 			/>
 		</div>
 
-		<Feld
+		<Datumsfeld
 			id="extendDatum"
 			etikett="Neues Rückgabedatum"
-			type="date"
 			bind:value={neuesDatum}
 			class="w-48"
 		/>

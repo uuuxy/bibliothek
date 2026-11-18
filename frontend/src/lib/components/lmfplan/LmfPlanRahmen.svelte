@@ -16,7 +16,7 @@
      derselben Zeile steht, bekommt es dieselben drei Subgrid-Zeilen wie Feld.svelte
      (Beschriftung, Feld, Hinweis), sonst rutscht das Datumsfeld eine Zeile tiefer. -->
 <script>
-	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Select from '../ui/Select.svelte';
 	import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
 	import { STUNDEN } from './lmfplanDienst.js';
@@ -55,10 +55,9 @@
 		</p>
 	{/if}
 	<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
-		<Feld
+		<Datumsfeld
 			id="lmf-plan-anker-tag"
 			etikett={ende ? 'Letzter Tag' : 'Erster Tag'}
-			type="date"
 			bind:value={entwurf[tagFeld]}
 			hint={ende ? 'Donnerstag vor den Sommerferien' : 'Erster Schultag nach den Sommerferien'}
 		/>

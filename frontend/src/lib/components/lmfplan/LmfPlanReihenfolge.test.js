@@ -161,7 +161,7 @@ describe('LmfPlanReihenfolge', () => {
 		);
 		await menue(getByLabelText, getByRole, 2, 'Datum und Stunde festlegen');
 		const datum = /** @type {HTMLInputElement} */ (getByLabelText('Fester Tag Zeile 2'));
-		expect(datum.value).toBe('2027-06-28');
+		expect(datum.value).toBe('28.06.2027');
 		expect(container.querySelectorAll('tbody tr')[1].textContent).toContain('4. Std.');
 		// Die anderen Zeilen bleiben gerechnet.
 		expect(queryByLabelText('Fester Tag Zeile 1')).toBeNull();
@@ -207,7 +207,7 @@ describe('LmfPlanReihenfolge', () => {
 		const { getByLabelText, queryByLabelText } = zeige(start.map((z) => ({ ...z })));
 		await fireEvent.click(getByLabelText('Stunde Zeile 2: 4. Std., festlegen'));
 		const datum = /** @type {HTMLInputElement} */ (getByLabelText('Fester Tag Zeile 2'));
-		expect(datum.value).toBe('2027-06-28');
+		expect(datum.value).toBe('28.06.2027');
 		const stunde = getByLabelText('Feste Stunde Zeile 2');
 		expect(stunde.textContent).toContain('4. Std.');
 		await Promise.resolve();

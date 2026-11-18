@@ -58,7 +58,7 @@ Nur, was kein Test leisten kann.
   Oberfläche. (5.192)
 - [x] Klammern und Schrägstriche in den übrigen Texten des Servers: Meldungen,
   Betriebsbereitschaft, Protokoll und Beschriftungen. (5.194)
-- [ ] Datumsauswahl als eigener Kalender nach M3, gebaut nach den Icons
+- [x] Datumsauswahl als eigener Kalender nach M3, gebaut nach den Icons
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
@@ -113,18 +113,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.193 Datumsauswahl nach M3
-
-Die 16 Felder `type="date"` klappen den Kalender des Browsers auf, der in Chrome, Safari und
-Firefox verschieden aussieht. Beschlossen ist ein eigener Kalender nach M3, gebaut nach den Icons
-(5.191). Am Computer ist das der Docked date picker, ein Feld, unter dem der Kalender aufklappt:
-„Dates can be added by using a keyboard or by navigating the calendar UI; both options are
-immediately available“. Beim Geburtsdatum bleibt das Eintippen der Hauptweg („Don’t use a modal
-date picker to prompt for dates in the distant past or future, such as a date of birth“).
-Googles Material Web hat keinen Kalender; Tastatur und Screenreader wie in Googles Angular
-Material (src/material/datepicker). Ein neues Bauteil in ui/; die Browser-Tests, die heute ins
-Feld des Browsers schreiben, ziehen mit. Aufwand etwa zwei bis drei Tage.
 
 ### 7.2 Frisches Littera-Backup
 

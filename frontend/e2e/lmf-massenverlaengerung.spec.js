@@ -64,7 +64,7 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 	const futureDate = new Date();
 	futureDate.setFullYear(futureDate.getFullYear() + 1);
 	const dateStr = futureDate.toISOString().split('T')[0];
-	await page.locator('input[type="date"]').fill(dateStr);
+	await page.getByLabel('Neues Rückgabedatum').fill(dateStr);
 
 	await page.getByRole('button', { name: /verlängern/i }).click();
 	// Rückfrage und Erfolgsmeldung sind seit 08.09.2026 M3-Dialog und Toast, keine

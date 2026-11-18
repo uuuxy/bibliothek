@@ -17,6 +17,7 @@
      Abschnitt, denn bei einem Kollegen ist sie das einzige bediente Feld. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
+	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Select from '../ui/Select.svelte';
 	import Abschnitt from '../ui/Abschnitt.svelte';
@@ -85,10 +86,9 @@
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<Feld id="vorname" etikett="Vorname" aria-required="true" bind:value={eingaben.vorname} />
 		<Feld id="nachname" etikett="Nachname" aria-required="true" bind:value={eingaben.nachname} />
-		<Feld
+		<Datumsfeld
 			id="geburtsdatum"
 			etikett="Geburtsdatum{schuelerPflicht}"
-			type="date"
 			bind:value={eingaben.geburtsdatum}
 			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt'}
 		/>

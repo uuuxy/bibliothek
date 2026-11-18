@@ -6,7 +6,8 @@ import {
 	seedSQL,
 	uniqueSuffix,
 	gehZu,
-	menuepunkt
+	menuepunkt,
+	isoAusFeld
 } from './helpers.js';
 
 // LMF-Plan als Reihenfolge (Absprache vom 05.09.2026, am echten Plan der Schule): Der Planer
@@ -58,7 +59,7 @@ function tagNach(/** @type {number} */ n) {
 	return tag;
 }
 
-/** JJJJ-MM-TT, wie ihn ein Datumsfeld und der Server führen. */
+/** JJJJ-MM-TT, wie ihn der Server führt; ein Datumsfeld nimmt ihn auch getippt an. */
 function iso(/** @type {Date} */ tag) {
 	const zwei = (/** @type {number} */ z) => String(z).padStart(2, '0');
 	return `${tag.getFullYear()}-${zwei(tag.getMonth() + 1)}-${zwei(tag.getDate())}`;
@@ -395,12 +396,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await zeile.getByRole('button', { name: new RegExp(`^Datum Zeile ${nummer}:`) }).click();
 	const festerTag = zeile.getByLabel(`Fester Tag Zeile ${nummer}`);
 	await expect(festerTag).toBeFocused();
-	expect(
-		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
-			new Date(`${await festerTag.inputValue()}T12:00:00`)
-		),
-		'vorbelegt mit dem Platz der Zeile'
-	).toBe(vorher.trim());
+	expect(await festerTag.inputValue(), 'vorbelegt mit dem Platz der Zeile').toBe(vorher.trim());
 	await festerTag.fill(iso(tagNach(11)));
 	await expect(zeile).toContainText('Freitag');
 	// Die Zeile darunter fließt weiter: Sie bekommt den Platz, den die feste Zeile hatte.
@@ -446,7 +442,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 		await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
 		await expect(
 			tabelle.getByRole('row').filter({ hasText: klasse }).getByLabel(`Fester Tag Zeile ${nummer}`)
-		).toHaveValue(iso(tagNach(11)));
+		).toHaveValue(kurz(tagNach(11)));
 		await expect(page.getByTestId('lmf-freie-tage')).toContainText(
 			`${kurz(ERSTER_TAG)} Pädagogischer Tag`
 		);
@@ -472,7 +468,7 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveCount(0);
 
 	const letzterTag = page.getByLabel('Letzter Tag');
-	const wert = await letzterTag.inputValue();
+	const wert = isoAusFeld(await letzterTag.inputValue());
 	expect(wert, 'letzter Tag vorbelegt').toMatch(/^\d{4}-\d{2}-\d{2}$/);
 	expect(new Date(`${wert}T12:00:00`).getDay(), 'ein Donnerstag').toBe(4);
 	await expect(page.getByLabel('Ende am letzten Tag')).toContainText('4. Stunde');
