@@ -461,9 +461,9 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 
 | Seite | bei uns | Stand |
 | --- | --- | --- |
-| Buttons, Icon buttons | `ui/Button`, Symbolknöpfe | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen`, `Button.test` (gesperrt: Fläche nur beim Knopf mit Fläche) |
+| Buttons, Icon buttons | `ui/Button`, Symbolknöpfe; seitlich 12 dp (extra small) und 16 dp (small) nach Googles Token, 8 dp zwischen Symbol und Text | Gate: `frontend-hygiene-knoepfe`, `frontend-hygiene-symbolknoepfe`, `control-hoehen`, `icon-trefferflaechen`, `Button.test` (gesperrt: Fläche nur beim Knopf mit Fläche; Rand je Größe) |
 | Segmented buttons | `ui/Segmente`, auch im Ausweis-Designer: 36 px (40 dp bei Dichte 0, das Haus steht auf -1), voll gerundet, Häkchen am gewählten Segment | Gate: `Segmente.test`, `control-hoehen` |
-| Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip`, `LmfKlasseChip`: 32 px, 8 px Ecke, label large, Rahmen outline; Input-Chips ohne Auswahl umrandet (md.comp.input-chip) | Gate: `ChipFeld.test`, `FilterChips.test` |
+| Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip`, `LmfKlasseChip`: 32 px, 8 px Ecke, label large, Rahmen outline, 16 dp Rand und 8 dp auf der Seite mit Symbol; Input-Chips ohne Auswahl umrandet (md.comp.input-chip) | Gate: `ChipFeld.test`, `FilterChips.test` |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
 | Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
 | Menus | `ui/Menue`, `ui/Select`: Baseline-Menü, 112 bis 280 dp breit, 4 px Ecke, surface-container, level2, Einträge 48 dp mit 12 dp Rand und Lücke; offen: Schrift der Einträge (material-web und Android body large, Angular Material label large, das Haus body medium) | Gate: `Menue.test` (Maße), `menue-fuehrt-irgendwohin` (Ziel), `erhebung` (level2) |
