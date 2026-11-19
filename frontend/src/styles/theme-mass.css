@@ -249,13 +249,14 @@
 	--container-suche: 45rem;
 
 	/* ── Breakpoints ──────────────────────────────────────────────────────────
-	   Googles Fensterklassen, M3 (Breakpoints): „Compact: Under 600dp, Medium: 600–839dp,
-	   Expanded: 840–1199dp, Large: 1200–1599dp, Extra-large: 1600dp+". sm beginnt bei medium,
-	   md bei expanded, lg bei large, xl bei extra-large; Tailwinds eigene Stufen (640, 768,
-	   1024, 1280, 1536) entfallen. Gate: e2e/abstaende.spec.js misst den Rand je Klasse. */
+	   sm und md beginnen bei Googles Fensterklassen medium (600) und expanded (840), M3
+	   (Breakpoints). lg und xl bleiben bei 1024 und 1280, weil dort die dichten Seiten
+	   zweispaltig werden (320 px Profil neben der Ausleihliste, Liste neben Formular); M3:
+	   „Expanded and large breakpoints: Two panes are recommended". Gates: e2e/abstaende.spec.js
+	   (Rand je Klasse), e2e/ausleihliste-zeilen.spec.js (zwei Spalten bei 1100 px). */
 	--breakpoint-*: initial;
 	--breakpoint-sm: 600px;
 	--breakpoint-md: 840px;
-	--breakpoint-lg: 1200px;
-	--breakpoint-xl: 1600px;
+	--breakpoint-lg: 1024px;
+	--breakpoint-xl: 1280px;
 }

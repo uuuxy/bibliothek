@@ -135,8 +135,9 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 
 	// Unter 1280 px Fensterbreite beginnt die Navigation eingeklappt (Seitenleiste.svelte). Neben
 	// ihr in voller Breite und der Leserkarte blieb dem Titel bei 1100 px kein Platz und bei
-	// 1200 px 82 px.
-	test('unter 1280 px beginnt die Navigation eingeklappt; bei 1100 px ist jeder Titel zu lesen', async ({
+	// 1200 px 82 px. Ab 1024 px (lg in styles/theme-mass.css) stehen Profil und Ausleihliste
+	// nebeneinander; darunter rutschte die Liste unter das Profil aus dem Blick.
+	test('unter 1280 px beginnt die Navigation eingeklappt; bei 1100 px steht die Ausleihliste neben dem Profil, und jeder Titel ist zu lesen', async ({
 		page
 	}) => {
 		await page.setViewportSize({ width: 1279, height: 900 });
@@ -154,6 +155,14 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
 
 		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
+		// Der Schließen-Knopf steht oben rechts im Profil: Bei zwei Spalten beginnt die Liste
+		// rechts von ihm, bei einer Spalte reicht das Profil über die ganze Breite.
+		const knopf = await page.getByRole('button', { name: 'Akte schließen' }).boundingBox();
+		const liste = await tabelle.boundingBox();
+		expect(
+			liste?.x ?? 0,
+			'die Ausleihliste steht neben dem Profil, nicht darunter'
+		).toBeGreaterThan((knopf?.x ?? Infinity) + (knopf?.width ?? 0));
 		await titelSindZuLesen(page, tabelle);
 		const laeuftUeber = await tabelle.evaluate(
 			(t) => t.scrollWidth > (t.parentElement?.clientWidth ?? 0) + 1
