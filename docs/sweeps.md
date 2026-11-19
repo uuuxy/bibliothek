@@ -496,12 +496,13 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Accessibility | Rollen, Namen, Fokus | Gate: `frontend-hygiene-fehlerzeile-rolle`, `frontend-hygiene-namen` |
 | Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`, `pruefung/nebenzeichen_ratsche_test.go` für alle Texte des Servers |
 | Alt text | jedes `<img>` mit `alt`, leer für Schmuck; ein Cover neben seinem Titel mit `dekorativ`; feste Texte höchstens 140 Zeichen, nicht „Bild von …“, kein Dateiname | Gate: `frontend-hygiene-alttext`, `frontend-hygiene-cover` |
-| Global writing | Sätze für alle Leser | gelesen (a71a5dd0) |
 
 Gilt hier nicht: FAB, Extended FAB und FAB menu (das Programm hat keinen schwebenden Knopf),
 Bottom sheets und Navigation bar (Bauteile für schmale Bildschirme), Time pickers (kein Feld
 mit Uhrzeit), Carousel (die Folien des Monitors laufen von selbst und werden nicht geblättert),
-Button groups (nicht verwendet), XR und Watches.
+Button groups (nicht verwendet), XR und Watches, Global writing (M3: „This guidance is for all
+American English that is localized“; die Oberfläche ist deutsch, ihre Texte halten die Gates der
+Zeile Content design).
 
 ## Prüfung der Prüfungen
 

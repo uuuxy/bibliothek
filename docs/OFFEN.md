@@ -118,14 +118,13 @@ kennt keine Kürzel, dort zählt nur der Name.
 
 ### 5.195 Die übrigen Google-Seiten
 
-Stand: In [sweeps.md](sweeps.md), Abdeckung der Google-Seiten, stehen drei Seiten nur gelesen:
+Stand: In [sweeps.md](sweeps.md), Abdeckung der Google-Seiten, stehen zwei Seiten nur gelesen:
 
 - App bars: Das Programm hat keine Kopfzeile, oben steht die Suchleiste. Am nächsten an Googles
   Small app bar ist der Kopf der Buchakte mit „Zurück zum Katalog"; M3 setzt dort einen
   Zurück-Pfeil als Symbolknopf, den Titel in title large und 64 dp Höhe.
 - Sliders: Das eine Schiebefeld (Zoom im Ausweis-Designer) zeichnet der Browser in der Form des
   Baseline-Sliders. M3 nennt heute für Größe XS eine Spur von 16 dp und einen Griff von 4 × 44 dp.
-- Global writing: Die Seite gilt für amerikanisches Englisch, das übersetzt wird.
 
 Zu entscheiden: die Schrift der Menüeinträge. material-web und Android nennen body large,
 Angular Material und Compose label large; das Haus schreibt body medium (`text-sm`).
