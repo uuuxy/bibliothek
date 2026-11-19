@@ -66,15 +66,17 @@
 		class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-outline-variant"
 	>
 		<div class="flex items-center gap-4 min-w-0">
-			<!-- Back Button -->
-			<button
+			<!-- M3, App bars: „A back arrow, which returns to the previous screen“, derselbe
+			     Symbolknopf wie in Buchakte, Statistik, Bestellung und Einstellungen. -->
+			<Button
+				variant="symbol"
+				class="shrink-0"
 				onclick={zurueck}
 				aria-label="Zurück"
 				data-tip="Zurück"
-				class="icon-btn h-10 w-10 shrink-0 text-on-surface-variant"
 			>
-				<Icon name="chevron_left" />
-			</button>
+				<Icon name="arrow_back" />
+			</Button>
 
 			<div class="min-w-0">
 				<!-- Der Titel nennt die Art statt fest „Schüler": Hier wird jeder Leser bearbeitet,

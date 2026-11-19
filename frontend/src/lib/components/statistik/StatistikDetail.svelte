@@ -73,11 +73,17 @@
 </script>
 
 <Seitenrahmen>
-	<!-- Zurück zur Statistik-Übersicht -->
-	<Button variant="ghost" class="mb-5" onclick={() => (uiStore.activeTab = 'stats')}>
-		<Icon name="chevron_left" />
-		Statistik
-	</Button>
+	<div class="flex h-16 items-center">
+		<Button
+			variant="symbol"
+			class="-ml-1.5"
+			aria-label="Zurück zur Statistik"
+			data-tip="Zurück zur Statistik"
+			onclick={() => (uiStore.activeTab = 'stats')}
+		>
+			<Icon name="arrow_back" />
+		</Button>
+	</div>
 
 	<header class="space-y-4">
 		<div>

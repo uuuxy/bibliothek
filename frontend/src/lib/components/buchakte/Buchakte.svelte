@@ -75,18 +75,19 @@
 </script>
 
 <Seitenrahmen>
-	<!-- Back Button + Breadcrumb -->
-	<div class="flex items-center justify-between">
-		<div class="flex items-center gap-3">
-			<Button variant="ghost" onclick={onBack}>
-				<Icon name="chevron_left" />
-				Zurück zum Katalog
-			</Button>
-			<span class="text-on-surface-variant">/</span>
-			<span class="text-on-surface-variant text-sm truncate max-w-xs"
-				>{akte.buch?.title ?? 'Wird geladen …'}</span
-			>
-		</div>
+	<!-- M3, App bars: „A back arrow, which returns to the previous screen", als Symbolknopf in
+	     64 dp Höhe. Den Titel trägt der Kopf der Akte darunter wie in Gmail der Betreff unter
+	     der Leiste; in der Leiste dürfte er nicht abgeschnitten werden („Don't truncate"). -->
+	<div class="flex h-16 items-center">
+		<Button
+			variant="symbol"
+			class="-ml-1.5"
+			aria-label="Zurück zum Katalog"
+			data-tip="Zurück zum Katalog"
+			onclick={onBack}
+		>
+			<Icon name="arrow_back" />
+		</Button>
 	</div>
 
 	{#if akte.laedt}

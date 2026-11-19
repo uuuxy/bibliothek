@@ -41,9 +41,8 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 	).toBeVisible();
 	await expect(page.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
 
-	// Zurück zur Übersicht. Der Button trägt den Namen „Statistik" (nicht „Zurück");
-	// exact:true, damit er nicht mit „Statistiken" in der Seitenleiste kollidiert.
-	await page.getByRole('button', { name: 'Statistik', exact: true }).click();
+	// Zurück zur Übersicht über den Pfeil der Leiste.
+	await page.getByRole('button', { name: 'Zurück zur Statistik', exact: true }).click();
 
 	// Verlassen der Detailseite über ihr eigenes Suchfeld prüfen — NICHT über die
 	// Überschrift „Ladenhüter": die gibt es auf dem Dashboard als Kachel-Header auch.

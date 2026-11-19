@@ -13,6 +13,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { onMount, untrack } from 'svelte';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import KategorieListe from './KategorieListe.svelte';
 	import KategorieDetail from './KategorieDetail.svelte';
@@ -100,13 +101,17 @@
 			</div>
 
 			<div class="min-w-0 flex-1 {detailOffen ? 'block' : 'hidden lg:block'}">
-				<button
-					type="button"
-					onclick={() => (detailOffen = false)}
-					class="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-primary lg:hidden"
-				>
-					<Icon name="arrow_back" /> Alle Einstellungen
-				</button>
+				<div class="flex h-16 items-center lg:hidden">
+					<Button
+						variant="symbol"
+						class="-ml-1.5"
+						aria-label="Alle Einstellungen"
+						data-tip="Alle Einstellungen"
+						onclick={() => (detailOffen = false)}
+					>
+						<Icon name="arrow_back" />
+					</Button>
+				</div>
 
 				<KategorieDetail {aktiv} {sichtbar} {daten} onSaved={ladeEinstellungen} />
 			</div>

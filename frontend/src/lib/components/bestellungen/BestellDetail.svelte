@@ -76,10 +76,17 @@
 </script>
 
 <div bind:this={wurzel} class="space-y-6">
-	<Button variant="secondary" onclick={onBack}>
-		<Icon name="arrow_back" />
-		Zurück zur Bestellhistorie
-	</Button>
+	<div class="flex h-16 items-center">
+		<Button
+			variant="symbol"
+			class="-ml-1.5"
+			aria-label="Zurück zur Bestellhistorie"
+			data-tip="Zurück zur Bestellhistorie"
+			onclick={onBack}
+		>
+			<Icon name="arrow_back" />
+		</Button>
+	</div>
 
 	{#if laedt}
 		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
