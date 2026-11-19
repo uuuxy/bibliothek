@@ -3,7 +3,7 @@
 // sanitization"): eine Regex-Ersetzung ließ aus `<!-- <!-- -->` wieder einen Kommentar
 // entstehen. Der Fall steht hier als Test, damit ein Rückbau auf `replace` rot wird.
 import { describe, expect, it } from 'vitest';
-import { kommentarZeilen, ohneKommentare } from './hygiene-quellen.js';
+import { elemente, kommentarZeilen, ohneKommentare } from './hygiene-quellen.js';
 
 describe('ohneKommentare', () => {
 	// Dieser Fall beschreibt den Scanner, belegt ihn aber nicht: Eine Regex-Fassung
@@ -36,5 +36,12 @@ describe('kommentarZeilen', () => {
 			"const u = 'https://x'; // hinter Code"
 		].join('\n');
 		expect(kommentarZeilen(quelle)).toEqual(['<!-- x', ' y -->', '/* a */', '// ganze Zeile']);
+	});
+});
+
+describe('elemente', () => {
+	it('findet einen Knopf auch, wenn Prettier den Schluss-Tag umbricht', () => {
+		const quelle = '<button onclick={() => a()}\n\t>Zurück</button\n>\n<button>+</button>';
+		expect(elemente(quelle, 'button').map((k) => k.inhalt)).toEqual(['Zurück', '+']);
 	});
 });

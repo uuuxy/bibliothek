@@ -70,7 +70,10 @@ export function elemente(quelle, tag) {
 		const nachName = start + tag.length + 1;
 		const istTag = !/\w/.test(quelle[nachName] ?? '');
 		const i = istTag ? kopfEnde(quelle, nachName) : nachName;
-		const ende = quelle.indexOf(`</${tag}>`, i);
+		// Prettier bricht einen Schluss-Tag hinter Text um („</button" und „>" in der nächsten Zeile).
+		const schluss = new RegExp(`</${tag}\\s*>`, 'g');
+		schluss.lastIndex = i;
+		const ende = schluss.exec(quelle)?.index ?? -1;
 		if (istTag && ende !== -1 && quelle[i - 1] !== '/') {
 			gefunden.push({ start, kopf: quelle.slice(start, i), inhalt: quelle.slice(i + 1, ende) });
 		}

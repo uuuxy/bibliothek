@@ -57,24 +57,33 @@
 
 	<div class="flex items-center justify-between gap-2 pl-10">
 		<div
-			class="flex items-center overflow-hidden rounded-sm border border-outline-variant bg-surface-container-lowest"
+			class="flex items-center rounded-sm border border-outline-variant bg-surface-container-lowest"
 		>
 			<!-- Unter 1 geht die Menge nicht; entfernt wird die Position über das Kreuz. Der Knopf
 			     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->
-			<button
+			<Button
+				variant="symbol"
+				size="sm"
 				aria-label="Menge verringern"
+				data-tip="Menge verringern"
 				disabled={position.menge <= 1}
 				onclick={() => (position.menge = Math.max(1, position.menge - 1))}
-				class="cursor-pointer px-2.5 py-1 text-on-surface-variant disabled:cursor-default disabled:text-on-surface/38 text-title-medium"
-				>−</button
-			><span
+			>
+				<Icon name="remove" />
+			</Button>
+			<span
 				class="min-w-6 px-2 text-center text-body-medium-emphasized text-on-surface tabular-nums"
 				>{position.menge}</span
-			><button
-				aria-label="Menge erhöhen"
-				onclick={() => (position.menge += 1)}
-				class="cursor-pointer px-2.5 py-1 text-on-surface-variant text-title-medium">+</button
 			>
+			<Button
+				variant="symbol"
+				size="sm"
+				aria-label="Menge erhöhen"
+				data-tip="Menge erhöhen"
+				onclick={() => (position.menge += 1)}
+			>
+				<Icon name="add" />
+			</Button>
 		</div>
 		{#if bestellStore.preiseErfassen}
 			<div class="flex items-center gap-1.5">
