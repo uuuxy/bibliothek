@@ -102,9 +102,9 @@
 	{#if gewaehlteExemplare.length > 0}
 		<AuswahlLeiste
 			satz={gewaehlteExemplare.length === 1
-				? '1 Exemplar markiert'
-				: `${gewaehlteExemplare.length} Exemplare markiert`}
-			beschriftung="Aktionen für die markierten Positionen"
+				? '1 Exemplar ausgewählt'
+				: `${gewaehlteExemplare.length} Exemplare ausgewählt`}
+			beschriftung="Aktionen für die ausgewählten Positionen"
 			onleeren={() => (gewaehlteExemplare = [])}
 		>
 			<Button onclick={bucheAlleEin} disabled={laeuft}>

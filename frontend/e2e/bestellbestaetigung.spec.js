@@ -437,12 +437,12 @@ test('Im Wareneingang bleiben markierte Exemplare markiert, wenn der Händler be
 		// Per Tastatur: Safari gibt einem Kästchen beim Anklicken keinen Fokus.
 		await kaestchen.focus();
 		await page.keyboard.press('Space');
-		await expect(page.getByText('2 Exemplare markiert')).toBeVisible();
+		await expect(page.getByText('2 Exemplare ausgewählt')).toBeVisible();
 
 		await haendlerBestaetigt(browser, token);
 
 		await expect(kopf.getByText(BESTAETIGT)).toBeVisible();
-		await expect(page.getByText('2 Exemplare markiert')).toBeVisible();
+		await expect(page.getByText('2 Exemplare ausgewählt')).toBeVisible();
 		await expect(kaestchen).toBeChecked();
 		await expect(kaestchen).toBeFocused();
 	} finally {

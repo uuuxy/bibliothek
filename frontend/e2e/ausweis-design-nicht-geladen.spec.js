@@ -96,7 +96,7 @@ test.describe('Ausweis-Design nicht geladen', () => {
 		await expect(page.locator('tbody tr').filter({ hasText: vorname })).toHaveCount(1);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 		const knopf = page
-			.getByRole('region', { name: /Aktionen für die markierten/ })
+			.getByRole('region', { name: /Aktionen für die ausgewählten/ })
 			.getByRole('button', { name: 'Ausweise drucken' });
 
 		await knopf.click();

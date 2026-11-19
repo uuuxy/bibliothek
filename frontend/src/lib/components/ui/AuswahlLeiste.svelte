@@ -45,8 +45,8 @@
 			<Button
 				variant="symbol"
 				size="sm"
-				aria-label="Markierung aufheben"
-				data-tip="Markierung aufheben"
+				aria-label="Auswahl aufheben"
+				data-tip="Auswahl aufheben"
 				onclick={onleeren}
 			>
 				<Icon name="close" />

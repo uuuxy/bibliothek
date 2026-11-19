@@ -9,17 +9,17 @@ import AuswahlLeiste from './AuswahlLeiste.svelte';
 describe('AuswahlLeiste: Form nach M3', () => {
 	it('ist 64 dp hoch, voll gerundet, auf surface-container und mit 8 dp zwischen den Teilen', () => {
 		const { getByRole } = render(AuswahlLeiste, {
-			satz: '3 markiert',
-			beschriftung: 'Markierte Zeilen',
+			satz: '3 ausgewählt',
+			beschriftung: 'Ausgewählte Zeilen',
 			onleeren: () => {},
 			children: createRawSnippet(() => ({ render: () => '<button>Löschen</button>' }))
 		});
 		const leiste = /** @type {HTMLElement} */ (
-			getByRole('region', { name: 'Markierte Zeilen' }).firstElementChild
+			getByRole('region', { name: 'Ausgewählte Zeilen' }).firstElementChild
 		);
 		expect(leiste.className.split(/\s+/)).toEqual(
 			expect.arrayContaining(['h-16', 'rounded-full', 'bg-surface-container', 'gap-2'])
 		);
-		expect(getByRole('button', { name: 'Markierung aufheben' })).toBeTruthy();
+		expect(getByRole('button', { name: 'Auswahl aufheben' })).toBeTruthy();
 	});
 });

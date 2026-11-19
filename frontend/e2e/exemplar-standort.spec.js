@@ -58,7 +58,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 
 	// Ändern: erst mit einem eingetragenen Standort frei.
 	await page.getByRole('checkbox', { name: `Exemplar ${b} auswählen` }).check();
-	const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Exemplare' });
+	const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Exemplare' });
 	await leiste.getByRole('button', { name: 'Standort ändern' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Standort ändern' });
 	await expect(dialog).toContainText('Gilt für 1 Exemplar');
@@ -99,7 +99,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	await page.getByRole('tab', { name: /^Exemplare/ }).click();
 	await page.getByRole('checkbox', { name: `Exemplar ${a} auswählen` }).check();
 	await leiste.getByRole('button', { name: 'Alle auswählen' }).click();
-	await expect(leiste).toContainText('3 markiert');
+	await expect(leiste).toContainText('3 ausgewählt');
 	await leiste.getByRole('button', { name: 'Standort ändern' }).click();
 	await expect(dialog).toContainText('Gilt für 3 Exemplare');
 	await dialog.getByLabel('Standort entfernen').check();
@@ -125,7 +125,7 @@ test('Standort: ein Scan in den offenen Dialog ändert nichts', async ({ page })
 	await page.getByRole('tab', { name: /^Exemplare/ }).click();
 	await page.getByRole('checkbox', { name: `Exemplar ${barcodes[0]} auswählen` }).check();
 	await page
-		.getByRole('region', { name: 'Aktionen für die markierten Exemplare' })
+		.getByRole('region', { name: 'Aktionen für die ausgewählten Exemplare' })
 		.getByRole('button', { name: 'Standort ändern' })
 		.click();
 	const dialog = page.getByRole('dialog', { name: 'Standort ändern' });

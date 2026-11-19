@@ -149,8 +149,8 @@
 			{/if}
 			{#if markiert.length > 0}
 				<AuswahlLeiste
-					satz="{markiert.length} markiert"
-					beschriftung="Aktionen für die markierten Schlagworte"
+					satz="{markiert.length} ausgewählt"
+					beschriftung="Aktionen für die ausgewählten Schlagworte"
 					onleeren={() => auswahl.clear()}
 				>
 					<Button variant="danger" onclick={() => loeschen(markiert)}>

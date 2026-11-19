@@ -82,6 +82,13 @@ export function elemente(quelle, tag) {
 	return gefunden;
 }
 
+/** Die Köpfe aller Elemente eines Tags, auch der ohne Inhalt (`<Kaestchen … />`).
+ * @param {string} quelle @param {string} tag */
+export const koepfe = (quelle, tag) =>
+	[...quelle.matchAll(new RegExp(`<${tag}\\b`, 'g'))].map((m) =>
+		quelle.slice(m.index, kopfEnde(quelle, m.index + tag.length + 1) + 1)
+	);
+
 /**
  * Die Stelle des „>", das den Kopf schließt: das erste ab von außerhalb von Klammern und
  * Anführungszeichen, ohne ein solches das Ende der Quelle.

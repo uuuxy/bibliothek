@@ -574,7 +574,7 @@ Liste.
   entsteht eine Zugangsanfrage, die ein Admin freischaltet. Eine **Rolle** vergibt dieses
   Formular nie. Bei Praktikum und Fachbereich ist das Feld verschlossen: Es entsteht nur der
   Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
-- **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
+- **Stapelaktionen**: Klasse auswählen → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
   der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Wer nichts mehr offen
   hat, bleibt bis zum Ende der Karenzzeit darin stehen; danach ist der Eintrag anonymisiert und
@@ -645,7 +645,7 @@ abgelaufen_ → _Übergeben_ (Original und Buchungsbeleg an die Aufsicht); _übe
 mehr zu veranlassen; _Rückgabe nach Übergabe_ → die Aufsicht informieren. Die Zahl am Reiter ist,
 was bei der Schule liegt. Erledigte Briefe (bezahlt, storniert) stehen nur noch in der Akte.
 
-**Schadensersatz-Bescheid:** In der Mahnliste genau einen Schüler markieren und _Schadensersatz-
+**Schadensersatz-Bescheid:** In der Mahnliste genau einen Schüler auswählen und _Schadensersatz-
 Bescheid_ drücken; außerdem _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte im
 Reiter _Gebühren & Schäden_. Der Dialog zeigt die überfälligen Bücher des Kindes und seine offenen
 Forderungen mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
@@ -907,7 +907,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Klassenleitungen        | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Preise erfassen                                                                                                                                                                                                                                                                                                                                                                |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
-| Schlagworte             | Wörter am Titel umbenennen und zusammenführen (alle Titel ändern sich mit), löschen — auch mehrere auf einmal: vorn markieren, unten „Löschen“ —, Verweise für andere Schreibweisen („Tierfantasy“ → „Fantasy“), Filter-Markierung fürs Portal. Die Suche oben findet jedes Wort und jeden Verweis; gezeigt werden höchstens 200 Treffer, und die Zeile darunter sagt, wie viele es sind                                                                                                                                                |
+| Schlagworte             | Wörter am Titel umbenennen und zusammenführen (alle Titel ändern sich mit), löschen — auch mehrere auf einmal: vorn auswählen, unten „Löschen“ —, Verweise für andere Schreibweisen („Tierfantasy“ → „Fantasy“), Filter-Markierung fürs Portal. Die Suche oben findet jedes Wort und jeden Verweis; gezeigt werden höchstens 200 Treffer, und die Zeile darunter sagt, wie viele es sind                                                                                                                                                |
 | Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |
 | Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                                                                                                                              |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger, Schalter „Auch Warnungen mailen“                                                                                                                                                                                                                                                                        |

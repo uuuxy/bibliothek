@@ -33,12 +33,12 @@ test('Eigentum: Karte zeigt die Herkunft, markierte Exemplare werden mit Grund g
 	await expect(page.getByText('laut Littera: „Land Hessen“')).toBeVisible();
 	await expect(page.getByText('Vorgabe, weil kein Lernmittel')).toBeVisible();
 
-	// Markieren: Die gemeinsame Leiste erscheint mit „Alle auswählen".
+	// Auswählen: Die gemeinsame Leiste erscheint mit „Alle auswählen".
 	await page.getByRole('checkbox', { name: `Exemplar ${b} auswählen` }).check();
-	const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Exemplare' });
-	await expect(leiste).toContainText('1 markiert');
+	const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Exemplare' });
+	await expect(leiste).toContainText('1 ausgewählt');
 	await leiste.getByRole('button', { name: 'Alle auswählen' }).click();
-	await expect(leiste).toContainText('2 markiert');
+	await expect(leiste).toContainText('2 ausgewählt');
 
 	// Ändern: erst mit Auswahl und Grund frei.
 	await leiste.getByRole('button', { name: 'Eigentum ändern' }).click();

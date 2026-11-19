@@ -24,13 +24,13 @@ test('Leserdatei: Umschalt+Klick wählt einen Bereich, Strg+A alle, im Suchfeld 
 		const suche = page.getByRole('searchbox', { name: 'Leser suchen' });
 		await suche.fill(vorname);
 		const kaestchen = (/** @type {number} */ n) =>
-			page.getByRole('checkbox', { name: `${vorname} Probe${n} für den Ausweisdruck markieren` });
+			page.getByRole('checkbox', { name: `${vorname} Probe${n} für den Ausweisdruck auswählen` });
 		await expect(kaestchen(6)).toBeVisible();
-		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Schüler' });
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Schüler' });
 
 		await kaestchen(2).click();
 		await kaestchen(5).click({ modifiers: ['Shift'] });
-		await expect(leiste).toContainText('4 Schüler markiert');
+		await expect(leiste).toContainText('4 Schüler ausgewählt');
 		for (const n of [2, 3, 4, 5]) await expect(kaestchen(n)).toBeChecked();
 		for (const n of [1, 6]) await expect(kaestchen(n)).not.toBeChecked();
 		expect(
@@ -47,11 +47,11 @@ test('Leserdatei: Umschalt+Klick wählt einen Bereich, Strg+A alle, im Suchfeld 
 				f.selectionEnd
 			])
 		).toEqual([0, vorname.length]);
-		await expect(leiste).toContainText('4 Schüler markiert');
+		await expect(leiste).toContainText('4 Schüler ausgewählt');
 
 		await kaestchen(5).focus();
 		await page.keyboard.press('ControlOrMeta+a');
-		await expect(leiste).toContainText('6 Schüler markiert');
+		await expect(leiste).toContainText('6 Schüler ausgewählt');
 		for (const n of [1, 2, 3, 4, 5, 6]) await expect(kaestchen(n)).toBeChecked();
 	} finally {
 		seedSQL(`DELETE FROM schueler WHERE id IN (${ids});`);

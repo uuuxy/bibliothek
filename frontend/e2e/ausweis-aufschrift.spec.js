@@ -184,7 +184,7 @@ test('Wer die Schule nachträgt, druckt sie, ohne die Seite neu zu laden', async
 		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(nachname);
 		await expect(page.locator('tbody tr').filter({ hasText: nachname })).toHaveCount(1);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
-		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		const balken = page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
 		await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
 		await expect(page.getByRole('status').filter({ hasText: 'Musterschule' })).toBeVisible();
 		const karte = page.locator('.print-section-card .print-card-box').first();

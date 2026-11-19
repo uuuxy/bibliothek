@@ -62,7 +62,7 @@ async function markiereLeser(page, vorname) {
 	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 	await expect(page.locator('tbody tr').filter({ hasText: vorname })).toHaveCount(1);
 	await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
-	return page.getByRole('region', { name: /Aktionen für die markierten/ });
+	return page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
 }
 
 /** @param {Awaited<ReturnType<typeof druckseite>>} lage @param {string} wo */

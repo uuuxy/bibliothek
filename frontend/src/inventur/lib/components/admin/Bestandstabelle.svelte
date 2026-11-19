@@ -80,6 +80,7 @@
 							data-auswahl-alle
 							aria-label="Alle Bücher auswählen"
 							checked={auswahl.alleGewaehlt(titelListe)}
+							indeterminate={auswahl.anzahl > 0 && !auswahl.alleGewaehlt(titelListe)}
 							onclick={() => auswahl.alleUmschalten(titelListe)}
 						/>
 					</th>

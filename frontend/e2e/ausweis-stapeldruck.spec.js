@@ -43,12 +43,12 @@ test.describe('Ausweis-Stapeldruck', () => {
 		await expect(page.locator('tbody tr').filter({ hasText: `Stapel${marke}` })).toHaveCount(3);
 
 		// Ohne Markierung darf kein Aktionsbalken stehen.
-		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeHidden();
+		await expect(page.getByRole('region', { name: /Aktionen für die ausgewählten/ })).toBeHidden();
 
 		// Kopf-Checkbox markiert genau die angezeigten Treffer.
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
-		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		const balken = page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
 		await expect(balken).toBeVisible();
 		await expect(balken).toContainText('3');
 		// Xena ("Vorkurs") hat keinen erkennbaren Jahrgang — davor muss gewarnt werden.
@@ -66,9 +66,9 @@ test.describe('Ausweis-Stapeldruck', () => {
 		expect(inhalt).toContain(`31.07.${schuljahrEnde + 2}`); // 8G2: Jahrgang 8 → Ende 10
 		expect(inhalt).toContain('31.07.–'); // Vorkurs: kein Jahrgang, nicht ableitbar
 
-		// Markierung aufheben räumt Balken UND Druckbereich ab — ein unsichtbar im DOM
+		// Auswahl aufheben räumt Balken UND Druckbereich ab — ein unsichtbar im DOM
 		// hängender Kartensatz wäre sonst der nächste Fehldruck.
-		await balken.getByRole('button', { name: 'Markierung aufheben' }).click();
+		await balken.getByRole('button', { name: 'Auswahl aufheben' }).click();
 		await expect(balken).toBeHidden();
 		await expect(page.locator('.print-section-card')).toHaveCount(0);
 	});
@@ -83,7 +83,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 		// ist die Markierung nach dem ersten Klick weg (stopPropagation in der Zelle).
 		await page.getByRole('checkbox', { name: /Hein Stapel/ }).check();
 
-		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toContainText(
+		await expect(page.getByRole('region', { name: /Aktionen für die ausgewählten/ })).toContainText(
 			'1'
 		);
 		// Immer noch die Liste, nicht das Profil.

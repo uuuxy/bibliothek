@@ -105,7 +105,7 @@ describe('Buchakte: markierte Exemplare löschen', () => {
 		);
 		expect(bleibt.checked).toBe(true);
 		expect(screen.queryByLabelText('Exemplar B-1 auswählen')).toBeNull();
-		expect(screen.getByText('1 markiert')).toBeTruthy();
+		expect(screen.getByText('1 ausgewählt')).toBeTruthy();
 	});
 });
 

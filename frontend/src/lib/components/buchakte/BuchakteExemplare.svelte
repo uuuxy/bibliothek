@@ -155,8 +155,8 @@
 	     Pflegeseite der Schlagworte. -->
 	{#if gewaehlteExemplare.size > 0 && darfBearbeiten}
 		<AuswahlLeiste
-			satz="{gewaehlteExemplare.size} markiert"
-			beschriftung="Aktionen für die markierten Exemplare"
+			satz="{gewaehlteExemplare.size} ausgewählt"
+			beschriftung="Aktionen für die ausgewählten Exemplare"
 			onleeren={() => gewaehlteExemplare.clear()}
 		>
 			{#if gewaehlteExemplare.size < exemplare.length}

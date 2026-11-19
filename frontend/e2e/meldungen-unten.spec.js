@@ -77,7 +77,7 @@ test('Eine Meldung rückt über die Auswahlleiste, die unten am Rand klebt', asy
 		await gehZu(page, `/medienkatalog/buch/${id}`);
 		await page.getByRole('tab', { name: /^Exemplare/ }).click();
 		await page.getByRole('checkbox', { name: `Exemplar B-mu-${s}-1 auswählen` }).check();
-		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Exemplare' });
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Exemplare' });
 		await expect(leiste).toBeVisible();
 		const l = await kasten(leiste);
 		// Sie klebt 16 px über dem Rand der Arbeitsfläche, die unten 24 px Innenabstand hat: dort,
@@ -135,9 +135,9 @@ test('Eine Meldung rückt über die Leiste der Leserdatei, die unten am Rand kle
 		await gehZu(page, '/schuelerdatei');
 		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 		await page
-			.getByRole('checkbox', { name: `${vorname} Probe1 für den Ausweisdruck markieren` })
+			.getByRole('checkbox', { name: `${vorname} Probe1 für den Ausweisdruck auswählen` })
 			.check();
-		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Schüler' });
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Schüler' });
 		await expect(leiste).toBeVisible();
 		const l = await kasten(leiste);
 		expect(720 - (l.y + l.height), 'Die Leiste klebt nicht unten.').toBeCloseTo(40, 0);

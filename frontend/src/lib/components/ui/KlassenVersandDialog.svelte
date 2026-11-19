@@ -104,16 +104,17 @@
 
 	<div class="p-6 space-y-5">
 		<div class="space-y-2" use:mehrfachauswahl>
-			<div class="flex items-baseline justify-between gap-3">
-				<p class="text-sm text-on-surface-variant">{beschreibung}</p>
-				<button
-					type="button"
-					class="text-label-medium text-primary shrink-0 cursor-pointer"
+			<p class="text-sm text-on-surface-variant">{beschreibung}</p>
+			<!-- Das Kästchen für alle steht über den Kästchen der Zeilen (M3, Checkbox: „A parent
+			     checkbox allows for easy selection or deselection of all items“). -->
+			<div class="px-3 py-1">
+				<Kaestchen
 					data-auswahl-alle
-					onclick={() => (ausgewaehlt = alleGewaehlt ? [] : klassen.map((k) => k.klasse))}
-				>
-					{alleGewaehlt ? 'Keine' : 'Alle'}
-				</button>
+					etikett="Alle auswählen"
+					checked={alleGewaehlt}
+					indeterminate={ausgewaehlt.length > 0 && !alleGewaehlt}
+					onchange={() => (ausgewaehlt = alleGewaehlt ? [] : klassen.map((k) => k.klasse))}
+				/>
 			</div>
 
 			<!-- Jede Zeile nennt, was verschickt wird (Klasse, Umfang) und wohin: Die Adresse

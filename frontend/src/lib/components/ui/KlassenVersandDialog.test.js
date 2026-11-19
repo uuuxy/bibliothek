@@ -41,6 +41,32 @@ describe('KlassenVersandDialog', () => {
 		expect(beschriftung(senden(getByRole))).toBe('3 Klassen anmahnen');
 	});
 
+	it('„Alle auswählen“ zeigt den Strich, sobald eine Klasse fehlt, und schaltet alle um', async () => {
+		const { getByRole, getAllByRole } = render(KlassenVersandDialog, {
+			...texte,
+			open: true,
+			klassen,
+			onclose: () => {},
+			onconfirm: () => {}
+		});
+		const alle = /** @type {HTMLInputElement} */ (
+			getByRole('checkbox', { name: 'Alle auswählen' })
+		);
+		expect(alle.checked).toBe(true);
+		expect(alle.indeterminate).toBe(false);
+
+		await fireEvent.click(getAllByRole('checkbox')[1]);
+		expect(alle.indeterminate).toBe(true);
+		expect(beschriftung(senden(getByRole))).toBe('2 Klassen anmahnen');
+
+		await fireEvent.click(alle);
+		expect(alle.indeterminate).toBe(false);
+		expect(beschriftung(senden(getByRole))).toBe('3 Klassen anmahnen');
+
+		await fireEvent.click(alle);
+		expect(beschriftung(senden(getByRole))).toBe('0 Klassen anmahnen');
+	});
+
 	it('übergibt nur die angehakten Klassen und die getrimmte Override-Adresse', async () => {
 		const onconfirm = vi.fn();
 		const { getByRole, getByLabelText } = render(KlassenVersandDialog, {

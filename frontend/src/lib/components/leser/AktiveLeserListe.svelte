@@ -97,7 +97,7 @@
 									checked={alleGewaehlt}
 									indeterminate={teilweise}
 									onchange={onToggleAlle}
-									aria-label="Alle angezeigten Leser für den Ausweisdruck markieren"
+									aria-label="Alle angezeigten Leser für den Ausweisdruck auswählen"
 								/>
 							</th>
 						{/if}
@@ -134,7 +134,7 @@
 									<Kaestchen
 										checked={auswahl.has(s.id)}
 										onchange={() => onToggle?.(s.id)}
-										aria-label="{s.vorname} {s.nachname} für den Ausweisdruck markieren"
+										aria-label="{s.vorname} {s.nachname} für den Ausweisdruck auswählen"
 									/>
 								</td>
 							{/if}

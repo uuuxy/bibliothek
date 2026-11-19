@@ -46,7 +46,7 @@
 						indeterminate={markiert > 0 && !alle}
 						disabled={zeilen.length === 0}
 						onchange={onalle}
-						aria-label="Alle angezeigten Schlagworte markieren"
+						aria-label="Alle angezeigten Schlagworte auswählen"
 					/>
 				</th>
 				<th>Schlagwort</th>
@@ -62,7 +62,7 @@
 						<Kaestchen
 							checked={auswahl.has(z.id)}
 							onchange={() => onumschalten(z.id)}
-							aria-label="„{z.wort}“ markieren"
+							aria-label="„{z.wort}“ auswählen"
 						/>
 					</td>
 					<td>

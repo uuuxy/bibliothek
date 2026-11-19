@@ -40,6 +40,7 @@
 						data-auswahl-alle
 						aria-label="Alle auswählen"
 						checked={alleGewaehlt}
+						indeterminate={gewaehlt.length > 0 && !alleGewaehlt}
 						onchange={onalleUmschalten}
 					/>
 				</th>

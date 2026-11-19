@@ -140,13 +140,13 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 		// Knopf im Kopf der Seite war bei einer langen Lieferung aus dem Bild.
 		await expect(page.getByRole('button', { name: 'Einbuchen', exact: true })).toHaveCount(0);
 		await page.getByRole('checkbox', { name: `E2E Scroll-Zulauf ${s} 1 auswählen` }).check();
-		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Positionen' });
-		await expect(leiste).toContainText('1 Exemplar markiert');
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Positionen' });
+		await expect(leiste).toContainText('1 Exemplar ausgewählt');
 		await page.getByText(`E2E Scroll-Zulauf ${s} 8`).scrollIntoViewIfNeeded();
 		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
 		await page.getByText('Wähle die Positionen aus').scrollIntoViewIfNeeded();
 		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
-		await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
+		await leiste.getByRole('button', { name: 'Auswahl aufheben' }).click();
 		await expect(leiste).toHaveCount(0);
 	} finally {
 		// Acht Titel mit je einem Exemplar im Zulauf blieben sonst im Wareneingang stehen

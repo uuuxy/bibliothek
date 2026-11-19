@@ -137,8 +137,8 @@
 					<!-- Letztes Kind der Spalte: Die Leiste klebt unten unter ihrer Liste. -->
 					{#if gewaehlt.markierte.length > 0}
 						<AuswahlLeiste
-							satz="{anzahlText(gewaehlt.markierte.length, 'Schüler', 'Schüler')} markiert"
-							beschriftung="Aktionen für die markierten Schüler"
+							satz="{anzahlText(gewaehlt.markierte.length, 'Schüler', 'Schüler')} ausgewählt"
+							beschriftung="Aktionen für die ausgewählten Schüler"
 							onleeren={gewaehlt.leeren}
 						>
 							<AusweisDruckSteuerung

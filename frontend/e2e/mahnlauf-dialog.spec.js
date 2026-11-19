@@ -65,9 +65,10 @@ test('Mahnlauf: Auswahl und Override-Adresse landen im Request', async ({ page }
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Mahnlauf konfigurieren' })).toBeVisible();
 
-	// Beim Öffnen ist alles vorgewählt: die Beschriftung nennt die Zahl der Klassen.
+	// Beim Öffnen ist alles vorgewählt: die Beschriftung nennt die Zahl der Klassen. Gezählt
+	// werden die Kästchen der Klassen, nicht das Kästchen „Alle auswählen“ darüber.
 	const senden = dialog.getByRole('button', { name: /anmahnen$/ });
-	const checkboxen = dialog.getByRole('checkbox');
+	const checkboxen = dialog.locator('input[type="checkbox"]:not([data-auswahl-alle])');
 	const anzahl = await checkboxen.count();
 	expect(anzahl).toBeGreaterThan(1);
 	await expect(senden).toContainText(`${anzahl}`);
@@ -112,7 +113,7 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 		.click();
 
 	const dialog = page.getByRole('dialog');
-	const checkboxen = dialog.getByRole('checkbox');
+	const checkboxen = dialog.locator('input[type="checkbox"]:not([data-auswahl-alle])');
 	const anzahl = await checkboxen.count();
 	await checkboxen.first().uncheck();
 	await dialog.getByLabel(/Alternative Empfänger/).fill('vertretung@schule.de');

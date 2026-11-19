@@ -85,7 +85,7 @@ test.describe('Schüler-Etiketten', () => {
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
-		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		const balken = page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
 		await expect(balken.getByRole('button', { name: 'Etiketten drucken' })).toBeVisible();
 		await expect(balken.getByRole('spinbutton')).toHaveValue('1');
 
@@ -133,7 +133,7 @@ test.describe('Schüler-Etiketten', () => {
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
-		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		const balken = page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
 		await expect(balken.getByRole('button', { name: 'Ausweise drucken' })).toBeVisible();
 		await expect(balken.getByRole('spinbutton')).toHaveCount(0);
 		await expect(page.locator('.print-section-card .print-card-box')).toHaveCount(2);

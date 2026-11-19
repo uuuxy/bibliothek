@@ -28,7 +28,7 @@ test('Schlagwort-Pflege: mehrere Wörter auf einmal löschen', async ({ page }) 
 		INSERT INTO schlagworte (wort, verweis_auf) SELECT '${zauberei}', id FROM schlagworte WHERE wort = '${magie}';
 	`);
 	const markieren = (/** @type {string} */ wort) =>
-		page.getByRole('checkbox', { name: `„${wort}“ markieren` }).check();
+		page.getByRole('checkbox', { name: `„${wort}“ auswählen` }).check();
 
 	try {
 		await uiLogin(page);
@@ -43,25 +43,25 @@ test('Schlagwort-Pflege: mehrere Wörter auf einmal löschen', async ({ page }) 
 		// hakte es sich an, ohne dass etwas markiert war (Kaestchen hält einen eigenen Stand,
 		// solange die Eigenschaft sich nicht ändert).
 		const suche = page.getByRole('searchbox', { name: 'Schlagwort suchen' });
-		const alle = page.getByRole('checkbox', { name: 'Alle angezeigten Schlagworte markieren' });
+		const alle = page.getByRole('checkbox', { name: 'Alle angezeigten Schlagworte auswählen' });
 		await suche.fill(`${s}-kein-treffer`);
 		await expect(page.getByText('Kein Schlagwort passt zur Suche')).toBeVisible();
 		await expect(alle).toBeDisabled();
 		await suche.fill(s);
 		await expect(alle).toBeEnabled();
 
-		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Schlagworte' });
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Schlagworte' });
 		await expect(leiste).toBeHidden();
 		await markieren(magie);
 		await markieren(muehle);
-		await expect(leiste).toContainText('2 markiert');
+		await expect(leiste).toContainText('2 ausgewählt');
 
 		// Die Symbole erklären sich mit der Blase der Anwendung (data-tip), nicht mit dem
 		// Tooltip des Browsers. Das Gate icon-tooltips sieht beide nicht: Es markiert nichts,
 		// und es öffnet die Kategorie Schlagworte nicht.
 		const blase = page.locator('[data-tooltip-blase]');
-		await leiste.getByRole('button', { name: 'Markierung aufheben' }).hover();
-		await expect(blase).toHaveText('Markierung aufheben');
+		await leiste.getByRole('button', { name: 'Auswahl aufheben' }).hover();
+		await expect(blase).toHaveText('Auswahl aufheben');
 		await page.getByRole('button', { name: `Aktionen für „${muehle}“` }).hover();
 		await expect(blase).toHaveText(`Aktionen für „${muehle}“`);
 		await page.mouse.move(0, 0);

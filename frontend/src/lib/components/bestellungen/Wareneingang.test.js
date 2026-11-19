@@ -74,7 +74,7 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		holen.mockResolvedValue([gruppe(['e1', 'e2'])]);
 		const screen = render(Wareneingang, { ...offen, incomingShipments: [gruppe(['e1', 'e2'])] });
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Titel A auswählen' }));
-		expect(screen.getByText('2 Exemplare markiert')).toBeTruthy();
+		expect(screen.getByText('2 Exemplare ausgewählt')).toBeTruthy();
 		const anfragen = holen.mock.calls.length;
 
 		const bestaetigt = [gruppe(['e1', 'e2'], { bestaetigt_am: '2026-10-12T10:00:00Z' })];
@@ -85,7 +85,7 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 
 		expect(holen.mock.calls).toHaveLength(anfragen + 1);
 		expect(screen.getByText('Bestätigt · 12.10.')).toBeTruthy();
-		expect(screen.getByText('2 Exemplare markiert')).toBeTruthy();
+		expect(screen.getByText('2 Exemplare ausgewählt')).toBeTruthy();
 		expect(screen.getByRole('checkbox', { name: 'Titel A auswählen' })).toHaveProperty(
 			'checked',
 			true
@@ -99,10 +99,10 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Titel A auswählen' }));
 
 		await screen.rerender({ incomingShipments: [gruppe(['e1'])] });
-		expect(screen.getByText('1 Exemplar markiert')).toBeTruthy();
+		expect(screen.getByText('1 Exemplar ausgewählt')).toBeTruthy();
 
 		await screen.rerender({ incomingShipments: [] });
-		expect(screen.queryByText(/markiert/)).toBeNull();
+		expect(screen.queryByText(/ausgewählt/)).toBeNull();
 	});
 
 	// Bucht ein anderer Platz die Zeile ein, auf der der Fokus steht, fällt er auf den Anfang des Inhalts
