@@ -457,8 +457,8 @@ Liste sagt je Seite von Material 3, wie weit sie gegen den ganzen Code gehalten 
 heißt, eine Prüfung meldet neue Abweichungen; **gelesen** heißt, die Seite wurde für einzelne
 Änderungen gelesen (jüngster Commit, der sie nennt), ohne Prüfung über alle Stellen; **offen**
 heißt, niemand hat sie gegen den Code gehalten. Von dort kommen die nächsten Funde. Die Seiten
-stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/foundations` und
-`/styles`, gezählt im November 2026. Wer eine Seite prüft, trägt hier Commit und Gate nach.
+stammen aus den Übersichten `m3.material.io/components` (38 Einträge), `/foundations` mit ihren
+Unterseiten und `/styles`, gezählt im November 2026. Wer eine Seite prüft, trägt hier Commit und Gate nach.
 
 | Seite | bei uns | Stand |
 | --- | --- | --- |
@@ -496,14 +496,29 @@ stammen aus den Übersichten `m3.material.io/components` (40 Bauteile), `/founda
 | Interaction states | Schicht beim Zeigen (8 %) und im Fokus (10 %) in der Farbe des Inhalts, Ring nach Googles md-focus-ring (3 px secondary, 2 px außen, innen bei Zeilen), Welle beim Drücken nach md-ripple (`utils/welle.js`), Textfeld mit Rahmen in on-surface beim Zeigen und 12 %/38 % gesperrt | Gate: `zustaende` (Ring an jedem Fokusstopp der Seiten, Schicht, Textfeld, Welle), `frontend-hygiene-zustaende` (kein Farbwechsel beim Zeigen, kein eigener Ring) |
 | Accessibility | Rollen, Namen, Fokus | Gate: `frontend-hygiene-fehlerzeile-rolle`, `frontend-hygiene-namen` |
 | Content design, Style guide | alle Texte von Oberfläche und Server | Gate: `frontend-hygiene-satzzeichen`, `frontend-hygiene-einzahl`, `frontend-hygiene-leerwert`, `pruefung/meldung_ratsche_test.go`, `pruefung/nebenzeichen_ratsche_test.go` für alle Texte des Servers |
-| Alt text | jedes `<img>` mit `alt`, leer für Schmuck; ein Cover neben seinem Titel mit `dekorativ`; feste Texte höchstens 140 Zeichen, nicht „Bild von …“, kein Dateiname | Gate: `frontend-hygiene-alttext`, `frontend-hygiene-cover` |
+| Alt text | jedes `<img>` mit `alt`, leer für Schmuck; ein Cover neben seinem Titel mit `dekorativ`; feste Texte höchstens 125 Zeichen (Accessibility writing & text; Alt text nennt 140), nicht „Bild von …“, kein Dateiname | Gate: `frontend-hygiene-alttext`, `frontend-hygiene-cover` |
+| Accessibility writing & text | Alt-Text bis 125 Zeichen, Wesentliches in Bildunterschrift und Text daneben statt im Bild, Kontrast 4,5:1 und 3:1 für große Schrift | Gate: `frontend-hygiene-alttext`, `kontrast` |
+| Interaction: Inputs | an Gesperrtem der Pfeil wie in material-web (`:host([disabled]) { cursor: default }`), nie der Verbotszeiger; Welle beim Klicken, Schicht beim Zeigen, Ring bei Tab; Escape schließt Menü, Dialog und Seitenblatt; offen: Escape an der Theke leert das Scanfeld, M3: „should not remove already-typed text“ (OFFEN 5.195) | Gate: `frontend-hygiene-zustaende` (Pfeil an Gesperrtem), `zustaende`, `escapeSchliesst.test`, `escapeRegel.test`, `escape-kurzbefehl` |
+| Interaction: Selection | gewählte Zeile mit Kästchen und secondary-container (`ui/Tabelle`), Häkchen in Segmenten, ein aktives Ziel in Navigation und Reitern; die Kästchen stehen immer da; offen: Kästchen erst beim Zeigen, wo Auswählen Nebensache ist (OFFEN 5.195) | Gate: `frontend-hygiene-tabellen` (Rezept der gewählten Zeile einmal in `ui/Tabelle`), `Segmente.test`, `navigation-m3`, `frontend-hygiene-reiter` |
+| Desktop | Knöpfe ab der Fensterklasse medium in ihrer Breite, Textfelder höchstens so breit wie eine Maske; was beim Zeigen erscheint, erscheint auch im Fokus; Kontextmenü über den Knopf ⋮; gezogen wird nur im LMF-Plan (durchscheinende Zeile, Einfügelinie); offen: ein Weg mit einem Klick statt Ziehen, Mehrfachauswahl mit Umschalt- und Strg-Taste, Masken mittig (OFFEN 5.195) | Gate: `frontend-hygiene-knoepfe` (`w-full` nur unter 600 dp), `feldbreite`, `frontend-hygiene-zustaende` (Einblendung beim Zeigen) |
+| Design tokens | Farben, Schrift, Ecken, Abstände, Schatten und Bewegung nur aus den Skalen in `styles/rollen.css` und `styles/theme-mass.css`; M3: „Use design tokens instead of hardcoded values“ | Gate: `frontend-hygiene-farben`, `frontend-hygiene-schrift`, `frontend-hygiene-layout` (Form-Skala), `frontend-hygiene-abstaende`, `erhebung`, `frontend-hygiene-bewegung` |
 
 Gilt hier nicht: FAB, Extended FAB und FAB menu (das Programm hat keinen schwebenden Knopf),
 Bottom sheets und Navigation bar (Bauteile für schmale Bildschirme), Time pickers (kein Feld
 mit Uhrzeit), Carousel (die Folien des Monitors laufen von selbst und werden nicht geblättert),
 Button groups (nicht verwendet), XR und Watches, Global writing (M3: „This guidance is for all
 American English that is localized“; die Oberfläche ist deutsch, ihre Texte halten die Gates der
-Zeile Content design).
+Zeile Content design), Scroll fields (nicht verwendet; M3: „an expressive way to select from a
+list of options“, umgesetzt nur in Jetpack Compose), Bidirectionality & RTL (keine Sprache, die
+von rechts nach links läuft), Notifications (das Programm zeigt keine Benachrichtigungen des
+Geräts).
+
+Ohne Regel am Code: Usability und Building for all beschreiben ein Vorgehen („Test and iterate
+to validate designs“, Fragen zur Zusammenarbeit mit den Nutzern), Canonical examples und Scaffold
+Ausgangspunkte („Use these canonical examples as a starting point“), Customization den Weg zu
+einem eigenen Farbschema (das Ergebnis halten die Gates der Zeile Color roles). Gestures nennt die
+Gesten am Touchscreen; Tippen, Scrollen und Zoomen führt der Browser aus, das Programm legt keine
+eigene Geste fest, Auswählen und Menüs gehen mit einem Tippen.
 
 ## Prüfung der Prüfungen
 

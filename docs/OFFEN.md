@@ -43,8 +43,8 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
-- [ ] Die übrigen Google-Seiten: Kopf der Buchakte als App bar, Schrift der Menüeinträge
-  entscheiden ([sweeps.md](sweeps.md), Abdeckung). (5.195)
+- [ ] Die übrigen Google-Seiten: acht Punkte entscheiden, vom Kopf der Buchakte als App bar bis
+  zum Sperrhinweis an der Theke ([sweeps.md](sweeps.md), Abdeckung). (5.195)
 - [x] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
   kein langer Strich. (5.185)
 - [x] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
@@ -124,16 +124,34 @@ Stand: In [sweeps.md](sweeps.md), Abdeckung der Google-Seiten, steht eine Seite 
   Small app bar ist der Kopf der Buchakte mit „Zurück zum Katalog"; M3 setzt dort einen
   Zurück-Pfeil als Symbolknopf, den Titel in title large und 64 dp Höhe.
 
-Zu entscheiden: die Schrift der Menüeinträge. material-web und Android nennen body large,
-Angular Material und Compose label large; das Haus schreibt body medium (`text-sm`).
+Zu entscheiden, je mit Googles Satz:
+
+- Schrift der Menüeinträge: material-web und Android nennen body large, Angular Material und
+  Compose label large; das Haus schreibt body medium (`text-sm`).
+- LMF-Plan: Zeilen lassen sich nur ziehen, „Nach oben" und „Nach unten" im Menü ⋮ fielen mit
+  08b07aaa4 weg. M3, Desktop: „All drag-and-drop actions should include a single-click
+  alternative, like a + icon button that opens a menu."
+- Escape an der Theke leert das Scanfeld und schließt die Akte. M3, Inputs: „The Escape key
+  should remove the text cursor when typing, but should not remove already-typed text."
+- Kästchen in Tabellen stehen immer da. M3, Selection: „On desktop, checkboxes are always
+  visible when selection is the primary activity. When selection is secondary, checkboxes (or
+  other indicators) are displayed: As a single checkbox for that item on hover". Am Tablet ohne
+  Maus gibt es kein Zeigen; M3 wählt dort mit langem Druck, den das Programm nicht kennt.
+- Mehrfachauswahl geht nur Kästchen für Kästchen. M3, Desktop: „Select a range: Shift + click",
+  „Select all: Control + A, or Cmd + A (Mac)".
+- Masken stehen höchstens 44rem breit am linken Rand. M3, Desktop: „If keeping a single pane on
+  desktop, cap and center the content width".
+- Sperr- und Vormerkhinweis an der Theke (`OmniboxSperrHinweis`, `OmniboxVormerkungHinweis`)
+  sind von Hand gebaute Dialoge mit Emoji, 4 px rotem Rand und mittigem Text; M3, Dialogs, setzt
+  Titel, Text und die Knöpfe am Ende. `frontend-hygiene-dialoge` sieht sie nicht.
 
 Abweichung mit Grund: Die Navigation klappt unter 1280 px ein, Googles Klasse large beginnt bei
 1200 px. Erst ab 1280 px passt der Titel in der Ausleihliste der Leserakte neben die
 aufgeklappte Navigation (`e2e/ausleihliste-zeilen.spec.js`).
 
 Nächster Schritt: entscheiden, ob der Kopf der Buchakte eine App bar mit Zurück-Pfeil wird (Google
-Drive zeigt Pfade dagegen als Brotkrume wie jetzt); für die Menüschrift eine der beiden Quellen
-wählen.
+Drive zeigt Pfade dagegen als Brotkrume wie jetzt), dazu die Punkte oben; für die Menüschrift
+eine der beiden Quellen wählen.
 
 ### 7.2 Frisches Littera-Backup
 
