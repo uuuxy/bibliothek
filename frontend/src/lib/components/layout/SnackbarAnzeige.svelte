@@ -2,7 +2,21 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { meldungsPlatz, RAND } from './meldungsPlatz.js';
 	import Icon from '../ui/Icon.svelte';
-	import Button from '../ui/Button.svelte';
+
+	/** @type {Record<string, import('../ui/iconNamen.js').IconName>} */
+	const symbole = {
+		error: 'error',
+		success: 'check_circle',
+		warning: 'warning',
+		info: 'info'
+	};
+
+	const flaechen = {
+		error: 'bg-error text-on-error',
+		success: 'bg-success text-on-success',
+		warning: 'bg-warning text-on-warning',
+		info: 'bg-inverse-surface text-inverse-on-surface'
+	};
 
 	let hoehe = $state(0);
 	let platz = $state({ links: 0, unten: RAND });
@@ -60,40 +74,41 @@
 	bind:clientHeight={hoehe}
 >
 	{#each snackbars.toasts as toast (toast.id)}
+		{@const symbol = symbole[toast.type] ?? 'info'}
 		<!-- Fehler sind alert (der Screenreader unterbricht), alles andere status (er
 		     wartet). Maus oder Fokus auf dem Toast halten die Standzeit an — siehe
 		     snackbars.pausieren.
-		     Eine Fläche für jede Meldung, wie Googles Snackbar (material-components-android:
-		     backgroundTint colorSurfaceInverse, Text colorOnSurfaceInverse in body medium, Ecke
-		     corner extra small, Erhebung 6 dp = level3) und ohne Zeichen davor (M3, Snackbar:
-		     „Avoid adding icons to snackbars"). -->
+		     Farbe und Zeichen je Art weichen von Googles Snackbar ab: Hier laufen auch Fehler und
+		     Warnungen durch, und die sollen sich auf einen Blick vom Erfolg abheben. -->
 		<div
 			role={toast.type === 'error' ? 'alert' : 'status'}
 			onmouseenter={() => snackbars.pausieren(toast.id)}
 			onmouseleave={() => snackbars.fortsetzen(toast.id)}
 			onfocusin={() => snackbars.pausieren(toast.id)}
 			onfocusout={() => snackbars.fortsetzen(toast.id)}
-			class="pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-1 rounded-sm bg-inverse-surface py-1 pr-2 pl-4 text-sm text-inverse-on-surface shadow-level3"
+			class="pointer-events-auto flex items-start gap-2 px-4 py-3 rounded-sm text-sm max-w-sm w-full shadow-level3 {flaechen[
+				toast.type
+			] ?? flaechen.info}"
 		>
-			<span class="w-full py-2 wrap-break-word">{toast.message}</span>
+			<Icon name={symbol} />
+			<span class="wrap-break-word w-full">{toast.message}</span>
 			{#if toast.aktion}
-				<!-- Genau eine Folgehandlung als Textknopf in inverse-primary (actionTextColor
-				     colorPrimaryInverse; M3: „The text label shouldn't share the same color as the
-				     text button"). Sie schließt die Meldung selbst. -->
-				<Button
-					variant="ghost"
-					class="shrink-0 whitespace-nowrap text-inverse-primary"
+				<!-- M3-Snackbar: genau eine Folgehandlung, textbetont und rechts neben der
+				     Meldung. Sie schließt den Toast selbst — die Meldung hat ihren Zweck
+				     erfüllt, sobald man ihr gefolgt ist. -->
+				<button
 					onclick={() => {
 						toast.aktion?.onClick();
 						snackbars.removeToast(toast.id);
 					}}
+					class="ml-2 shrink-0 rounded-sm px-1 whitespace-nowrap underline underline-offset-2 text-label-large"
 				>
 					{toast.aktion.label}
-				</Button>
+				</button>
 			{/if}
 			<button
 				onclick={() => snackbars.removeToast(toast.id)}
-				class="icon-btn shrink-0"
+				class="icon-btn ml-2 shrink-0 opacity-70"
 				aria-label="Schließen"
 				data-tip="Schließen"
 			>

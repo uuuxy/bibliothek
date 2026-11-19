@@ -63,33 +63,37 @@ describe('SnackbarAnzeige: Platz', () => {
 	});
 });
 
-// Googles Snackbar: eine Fläche für jede Meldung (inverse-surface, Erhebung level3), kein
-// Zeichen vor dem Text (M3: „Avoid adding icons to snackbars"), die Folgehandlung als Textknopf
-// in inverse-primary, Schließen in der Farbe des Texts.
-describe('SnackbarAnzeige: Form nach M3', () => {
-	it('zeigt Fehler, Erfolg und Hinweis auf derselben Fläche ohne Zeichen', () => {
+// Jede Art trägt ihre Farbe und ihr Zeichen (Abweichung von Googles Snackbar, docs/sweeps.md):
+// Fehler und Warnungen laufen auch durch diese Leiste und sollen sich auf einen Blick vom Erfolg
+// abheben. Erhebung level3 wie Googles Snackbar; die Folgehandlung nimmt die Farbe des Texts.
+describe('SnackbarAnzeige: Farbe und Zeichen je Art', () => {
+	it('zeigt Fehler rot, Erfolg grün, Warnung orange und Hinweis dunkel, je mit Zeichen', () => {
 		const { container } = render(SnackbarAnzeige);
-		for (const typ of /** @type {const} */ (['error', 'success', 'warning', 'info'])) {
+		const arten = /** @type {const} */ ([
+			['error', 'bg-error text-on-error', 'error'],
+			['success', 'bg-success text-on-success', 'check_circle'],
+			['warning', 'bg-warning text-on-warning', 'warning'],
+			['info', 'bg-inverse-surface text-inverse-on-surface', 'info']
+		]);
+		for (const [typ, flaeche, zeichen] of arten) {
 			snackbars.addToast(`Meldung ${typ}`, typ);
 			flushSync();
 			const meldung = /** @type {HTMLElement} */ (
 				container.querySelector('[role=alert], [role=status]')
 			);
-			expect(meldung.className).toContain('bg-inverse-surface');
-			expect(meldung.className).toContain('text-inverse-on-surface');
+			expect(meldung.className).toContain(flaeche);
 			expect(meldung.className).toContain('shadow-level3');
-			expect(meldung.className).not.toMatch(/\bbg-(error|success|warning)\b/);
-			expect(meldung.firstElementChild?.textContent?.trim()).toBe(`Meldung ${typ}`);
+			expect(meldung.firstElementChild?.getAttribute('data-icon')).toBe(zeichen);
+			expect(meldung.textContent).toContain(`Meldung ${typ}`);
 		}
 	});
 
-	it('trägt die Folgehandlung als Textknopf in inverse-primary', () => {
+	it('trägt die Folgehandlung unterstrichen in der Farbe des Texts', () => {
 		const { getByRole } = render(SnackbarAnzeige);
-		snackbars.addToast('Gespeichert', 'success', { label: 'Rückgängig', onClick: () => {} });
+		snackbars.addToast('Nicht gespeichert', 'error', { label: 'Erneut', onClick: () => {} });
 		flushSync();
-		const aktion = getByRole('button', { name: 'Rückgängig' });
-		expect(aktion.className).toContain('text-inverse-primary');
-		expect(aktion.className).not.toContain('underline');
-		expect(getByRole('button', { name: 'Schließen' }).className).not.toContain('opacity');
+		const aktion = getByRole('button', { name: 'Erneut' });
+		expect(aktion.className).toContain('underline');
+		expect(aktion.className).not.toMatch(/\btext-(inverse-)?(primary|on-surface)\b/);
 	});
 });
