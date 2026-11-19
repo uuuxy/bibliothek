@@ -157,6 +157,7 @@
 								<Button
 									variant="symbol"
 									size="sm"
+									loeschen
 									onclick={() => loeschen(eintrag)}
 									disabled={loescht !== null}
 									data-tip="Löschen"

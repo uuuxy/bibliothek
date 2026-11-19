@@ -3,6 +3,7 @@
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { anzahlText, formatDatum } from '../../utils/format.js';
@@ -63,10 +64,12 @@
 					{/if}
 				</div>
 				<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" daneben. -->
-				<button
+				<Button
+					variant="symbol"
+					size="sm"
+					loeschen
 					onclick={() => loescheVormerkung(v.id)}
 					disabled={loescht.has(v.id)}
-					class="icon-btn text-error disabled:cursor-default disabled:text-on-surface/38"
 					data-tip="Vormerkung löschen"
 					aria-label="Vormerkung löschen"
 				>
@@ -75,7 +78,7 @@
 					{:else}
 						<Icon name="delete" />
 					{/if}
-				</button>
+				</Button>
 			</div>
 		{/each}
 	</div>

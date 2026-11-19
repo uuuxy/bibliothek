@@ -134,6 +134,7 @@
 							<Button
 								variant="symbol"
 								size="sm"
+								loeschen
 								onclick={() => loescheZuordnung(row.klasse)}
 								disabled={loeschtKlasse !== null}
 								aria-label="Zuordnung für {row.klasse} löschen"

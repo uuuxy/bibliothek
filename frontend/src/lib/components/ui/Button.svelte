@@ -3,6 +3,7 @@
 	 *   children?: any,
 	 *   variant?: 'primary' | 'secondary' | 'tonal' | 'danger' | 'success' | 'danger-solid' | 'ghost' | 'symbol',
 	 *   size?: 'sm' | 'md' | 'lg',
+	 *   loeschen?: boolean,
 	 *   class?: string,
 	 *   element?: HTMLButtonElement,
 	 *   href?: string,
@@ -12,6 +13,7 @@
 		children,
 		variant = 'primary',
 		size = 'md',
+		loeschen = false,
 		class: className = '',
 		element = $bindable(),
 		href,
@@ -104,9 +106,13 @@
 			.join(' ');
 	});
 
+	// Ein Symbolknopf, der löscht oder entfernt, wird beim Zeigen rot, und die Schicht nimmt die
+	// Fehlerfarbe mit. Abweichung von M3 mit Grund in docs/sweeps.md (Interaction states).
+	const zeigen = $derived(loeschen ? 'hover:text-error' : '');
+
 	const klassen = $derived(
 		`${baseClasses} ${variant === 'symbol' ? symbolSizes[size] : sizes[size]} ` +
-			`${ohneFlaecheGesperrt[variant] ?? flaecheGesperrt} ${variantClasses} ${className}`
+			`${ohneFlaecheGesperrt[variant] ?? flaecheGesperrt} ${variantClasses} ${zeigen} ${className}`
 	);
 </script>
 

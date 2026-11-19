@@ -127,6 +127,7 @@
 							<Button
 								variant="symbol"
 								size="sm"
+								loeschen
 								onclick={() => entfernen(z.jahr)}
 								data-tip="Sommerferien {z.jahr} entfernen"
 								aria-label="Sommerferien {z.jahr} entfernen"

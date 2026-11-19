@@ -131,6 +131,7 @@
 				<Button
 					variant="symbol"
 					size="sm"
+					loeschen
 					onclick={() => onRemove(s)}
 					disabled={loescht}
 					data-tip="Löschen"

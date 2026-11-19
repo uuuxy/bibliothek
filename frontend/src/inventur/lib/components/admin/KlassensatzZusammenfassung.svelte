@@ -47,14 +47,16 @@
 				<p class="font-medium text-on-surface grow truncate leading-tight">
 					{book.title}
 				</p>
-				<button
+				<Button
+					variant="symbol"
+					size="sm"
+					loeschen
 					onclick={() => onToggleBook(book.id)}
-					class="icon-btn text-on-surface-variant"
 					data-tip="Buch entfernen"
 					aria-label="Buch entfernen"
 				>
 					<Icon name="close" />
-				</button>
+				</Button>
 			</div>
 		{/each}
 	{/if}

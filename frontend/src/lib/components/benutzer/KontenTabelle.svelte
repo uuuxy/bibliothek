@@ -116,6 +116,7 @@
 								<Button
 									variant="symbol"
 									size="sm"
+									loeschen
 									onclick={() => frageLoeschen(user)}
 									disabled={eigenes}
 									data-tip={eigenes ? 'Das eigene Konto lässt sich nicht löschen' : 'Löschen'}

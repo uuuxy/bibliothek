@@ -109,16 +109,18 @@
 								imZulauf={a.im_zulauf}
 								diese={a.id === formular.id}
 							/>
-							<button
+							<Button
+								variant="symbol"
+								size="sm"
+								loeschen
 								type="button"
-								class="icon-btn text-on-surface-variant"
 								data-tip="Aus den Auflagen lösen"
 								aria-label={`${auflagenBeschriftung(a)} aus den Auflagen lösen`}
 								disabled={loest !== ''}
 								onclick={() => loesen(a)}
 							>
 								<Icon name="link_off" />
-							</button>
+							</Button>
 						</li>
 					{/each}
 				</ul>

@@ -9,7 +9,8 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 //   Die Schicht und die Welle beim Drücken kommen aus styles/komponenten.css und
 //   utils/welle.js; eine Fläche, die beim Zeigen die Farbe wechselt, ein Symbol, das beim
 //   Zeigen rot wird, oder ein Knopf, der beim Drücken schrumpft, steht daneben. Erlaubt ist die
-//   Schicht selbst als Fläche mit 8 % (hover:bg-…/8, Kästchen und Radio nach material-web).
+//   Schicht selbst als Fläche mit 8 % (hover:bg-…/8, Kästchen und Radio nach material-web),
+//   dazu, als Abweichung mit Grund, das Lösch-Symbol aus ui/Button.
 // - Den Tastaturfokus zeichnet der Ring nach Googles md-focus-ring in komponenten.css; ein
 //   eigener Ring oder Umriss an einer Stelle wiche in Farbe, Breite und Abstand ab.
 // - Gesperrt zeigt der Zeiger den Pfeil wie in material-web (`:host([disabled]) { cursor:
@@ -39,6 +40,13 @@ const TOKEN = {
 	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': /^hover:shadow-level2$/
 };
 
+/** Abweichungen von Googles Zuständen, mit Grund in docs/sweeps.md (Interaction states). */
+const ABWEICHUNG = {
+	// Ein Symbolknopf, der löscht oder entfernt, kündigt das beim Zeigen in der Fehlerfarbe an
+	// (Button loeschen); dass jeder solche Knopf es trägt, hält frontend-hygiene-symbolknoepfe.
+	'src/lib/components/ui/Button.svelte': /^hover:text-error$/
+};
+
 const VERBOTEN =
 	/(?<![\w-])((?:group-)?(?:hover|active):(?:bg|text|opacity|shadow|scale|border|ring|from|via|to)(?:-[\w./[\]-]+)?)/g;
 // Die Schicht als Fläche mit 8 %, eine beim Zeigen eingeblendete Aktion wie in Gmail und der
@@ -65,7 +73,8 @@ describe('Zustände nach M3 am Quelltext', () => {
 			const pfad = relPfad(f);
 			const quelle = ohneKommentare(readFileSync(f, 'utf8'));
 			for (const [, klasse] of quelle.matchAll(VERBOTEN)) {
-				if (ERLAUBT.test(klasse) || TOKEN[pfad]?.test(klasse)) continue;
+				if (ERLAUBT.test(klasse) || TOKEN[pfad]?.test(klasse) || ABWEICHUNG[pfad]?.test(klasse))
+					continue;
 				funde.push(`${pfad}: ${klasse}`);
 			}
 		}

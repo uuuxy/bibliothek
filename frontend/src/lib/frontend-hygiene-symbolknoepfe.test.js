@@ -63,9 +63,39 @@ function fehlt(kopf, tag) {
 	];
 }
 
+// Ein Symbolknopf, der löscht oder entfernt, wird beim Zeigen rot: Abweichung von M3 mit Grund
+// in docs/sweeps.md (Interaction states). Die Regel steht einmal in ui/Button (loeschen); erkannt
+// wird ein solcher Knopf am Namen („löschen“, „entfernen“) oder am Symbol delete und link_off.
+const LOESCHT = /l(?:ö|oe)schen|entfernen/i;
+const LOESCH_SYMBOL = /<Icon name="(?:delete|link_off)"/;
+/** Knöpfe, die löschen und trotzdem nicht rot werden, mit Grund. */
+const KEIN_LOESCHKNOPF = {
+	// Das Kreuz gehört zum Eingabe-Chip und behält beim Zeigen seine Farbe (material-web, input
+	// chip: hover-trailing-icon-color gleich trailing-icon-color).
+	'src/lib/components/ui/ChipFeld.svelte': 'Kreuz des Eingabe-Chips',
+	'src/inventur/lib/components/admin/KlassensatzKlassenwahl.svelte': 'Kreuz des Eingabe-Chips',
+	// „Endgültig löschen“ steht schon auf einer Fläche in der Fehlerfarbe (error-container).
+	'src/lib/components/leser/Papierkorb.svelte': 'Fläche in error-container'
+};
+
+/** @param {string} kopf @param {string} inhalt */
+function loeschtEtwas(kopf, inhalt) {
+	const namen = [...kopf.matchAll(/\s(?:aria-label|data-tip)=("[^"]*"|\{[^}]*\})/g)]
+		.map((m) => m[1])
+		.join(' ');
+	return LOESCHT.test(namen) || LOESCH_SYMBOL.test(inhalt);
+}
+
+/** @param {string} kopf */
+function traegtLoeschen(kopf) {
+	return (
+		/^<Button\b/.test(kopf) && /\svariant="symbol"/.test(kopf) && /\sloeschen(?![\w=])/.test(kopf)
+	);
+}
+
 /** @param {'button' | 'Button'} tag */
 function symbolknoepfe(tag) {
-	/** @type {{ ort: string, fehlt: string[] }[]} */
+	/** @type {{ ort: string, fehlt: string[], kopf: string, inhalt: string }[]} */
 	const treffer = [];
 	for (const datei of sammleQuelldateien(srcRoot)) {
 		if (!datei.endsWith('.svelte')) continue;
@@ -79,7 +109,12 @@ function symbolknoepfe(tag) {
 			if (/\sdata-split-pfeil\b|\srole="switch"/.test(k.kopf)) continue;
 			if (!nurSymbol(k.inhalt, namen)) continue;
 			const zeile = stelle === -1 ? '?' : quelle.slice(0, stelle).split('\n').length;
-			treffer.push({ ort: `${relPfad(datei)}:${zeile}`, fehlt: fehlt(k.kopf, tag) });
+			treffer.push({
+				ort: `${relPfad(datei)}:${zeile}`,
+				fehlt: fehlt(k.kopf, tag),
+				kopf: k.kopf,
+				inhalt: k.inhalt
+			});
 		}
 	}
 	return treffer;
@@ -152,5 +187,56 @@ describe('Symbolknöpfe haben Trefferfläche, Namen und Sprechblase', () => {
 			'Ein Symbolknopf braucht .icon-btn (48 px Trefferfläche), aria-label für den ' +
 				'Screenreader und data-tip, die Sprechblase für die Maus (M3 Icon buttons).'
 		).toEqual([]);
+	});
+});
+
+describe('Lösch-Symbolknöpfe werden beim Zeigen rot', () => {
+	const alle = () => [...symbolknoepfe('button'), ...symbolknoepfe('Button')];
+	const datei = (/** @type {string} */ ort) => ort.replace(/:[^:]*$/, '');
+
+	it('der Detektor erkennt Löschen am Namen und am Symbol', () => {
+		expect(loeschtEtwas('<button aria-label="Exemplar löschen"', '<Icon name="delete" />')).toBe(
+			true
+		);
+		expect(
+			loeschtEtwas('<Button aria-label="x" data-tip="Entfernen"', '<Icon name="close" />')
+		).toBe(true);
+		expect(loeschtEtwas('<button aria-label={`${a} lösen`}', '<Icon name="link_off" />')).toBe(
+			true
+		);
+		expect(
+			loeschtEtwas('<button aria-label="Schließen" data-tip="Schließen"', '<Icon name="close" />')
+		).toBe(false);
+		expect(traegtLoeschen('<Button variant="symbol" size="sm" loeschen onclick={x}')).toBe(true);
+		expect(traegtLoeschen('<Button\n\tvariant="symbol"\n\tloeschen\n')).toBe(true);
+		expect(traegtLoeschen('<Button variant="symbol" loeschenNach={x}')).toBe(false);
+		expect(traegtLoeschen('<button class="icon-btn hover:text-error" loeschen')).toBe(false);
+	});
+
+	it('jeder Lösch-Symbolknopf ist ein Button variant="symbol" mit loeschen', () => {
+		const knoepfe = alle().filter(
+			(k) => loeschtEtwas(k.kopf, k.inhalt) && !(datei(k.ort) in KEIN_LOESCHKNOPF)
+		);
+		// Fände der Detektor keinen, bliebe die Ratsche still grün.
+		expect(knoepfe.length).toBeGreaterThan(10);
+		expect(
+			knoepfe.filter((k) => !traegtLoeschen(k.kopf)).map((k) => k.ort),
+			'Ein Symbolknopf, der löscht oder entfernt, ist <Button variant="symbol" loeschen>: ' +
+				'Er wird beim Zeigen rot (docs/sweeps.md, Interaction states).'
+		).toEqual([]);
+	});
+
+	it('loeschen steht nur an Knöpfen, die löschen, und jede Ausnahme trifft noch einen', () => {
+		expect(
+			alle()
+				.filter((k) => traegtLoeschen(k.kopf) && !loeschtEtwas(k.kopf, k.inhalt))
+				.map((k) => k.ort)
+		).toEqual([]);
+		const getroffen = new Set(
+			alle()
+				.filter((k) => loeschtEtwas(k.kopf, k.inhalt))
+				.map((k) => datei(k.ort))
+		);
+		expect(Object.keys(KEIN_LOESCHKNOPF).filter((d) => !getroffen.has(d))).toEqual([]);
 	});
 });

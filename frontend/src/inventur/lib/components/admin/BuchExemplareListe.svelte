@@ -10,6 +10,7 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '../../../../lib/components/ui/Icon.svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { exemplarStatus } from '../../../../lib/components/buchakte/exemplarStatus.js';
@@ -137,10 +138,12 @@
 									>
 								{/if}
 							</div>
-							<button
+							<Button
+								variant="symbol"
+								size="sm"
+								loeschen
 								data-tip="Exemplar löschen"
 								aria-label="Exemplar löschen"
-								class="icon-btn text-on-surface-variant disabled:cursor-default disabled:text-on-surface/38"
 								onclick={() => loescheExemplar(ex)}
 								disabled={loescht.has(ex.id)}
 							>
@@ -149,7 +152,7 @@
 								{:else}
 									<Icon name="delete" />
 								{/if}
-							</button>
+							</Button>
 						</div>
 					{/each}
 				</div>

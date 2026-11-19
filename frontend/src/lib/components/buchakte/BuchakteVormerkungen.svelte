@@ -9,6 +9,7 @@
 	import BuchakteVormerken from './BuchakteVormerken.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 
 	/** @type {{ vormerkungen: any[], titel: any }} */
 	let { vormerkungen = $bindable(), titel } = $props();
@@ -66,10 +67,12 @@
 						</td>
 						<td class="text-right">
 							<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie in der Leserakte. -->
-							<button
+							<Button
+								variant="symbol"
+								size="sm"
+								loeschen
 								onclick={() => loescheVormerkung(v.id)}
 								disabled={loescht.has(v.id)}
-								class="icon-btn text-error disabled:cursor-default disabled:text-on-surface/38"
 								data-tip="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>
@@ -78,7 +81,7 @@
 								{:else}
 									<Icon name="delete" />
 								{/if}
-							</button>
+							</Button>
 						</td>
 					</tr>
 				{/each}

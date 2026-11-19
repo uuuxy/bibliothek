@@ -89,6 +89,7 @@
 				<Button
 					variant="symbol"
 					size="sm"
+					loeschen
 					onclick={onDelete}
 					data-tip="Buchliste löschen"
 					aria-label="Buchliste löschen"

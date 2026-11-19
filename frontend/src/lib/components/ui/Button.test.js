@@ -162,3 +162,26 @@ describe('Button — als Link', () => {
 		expect(container.querySelector('button')?.disabled).toBe(true);
 	});
 });
+
+// Abweichung von M3 mit Grund in docs/sweeps.md (Interaction states): Ein Symbolknopf, der
+// löscht oder entfernt, steht in on-surface-variant und wird beim Zeigen rot; gesperrt bleibt er
+// grau, weil die gesperrte Farbe mit ! gewinnt.
+describe('Button — Lösch-Symbol', () => {
+	it('wird mit loeschen beim Zeigen rot und steht sonst wie jeder Symbolknopf', () => {
+		const { container } = render(Button, { variant: 'symbol', loeschen: true });
+		expect(klassen(/** @type {Element} */ (container.querySelector('button')))).toEqual(
+			expect.arrayContaining([
+				'text-on-surface-variant',
+				'hover:text-error',
+				'disabled:text-on-surface/38!'
+			])
+		);
+	});
+
+	it('wird ohne loeschen beim Zeigen nicht rot', () => {
+		const { container } = render(Button, { variant: 'symbol' });
+		expect(klassen(/** @type {Element} */ (container.querySelector('button')))).not.toContain(
+			'hover:text-error'
+		);
+	});
+});

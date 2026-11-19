@@ -7,6 +7,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
@@ -126,10 +127,12 @@
 					{/if}
 					<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
 					{#if darfLoeschen && !ex.ist_ausgesondert}
-						<button
+						<Button
+							variant="symbol"
+							size="sm"
+							loeschen
 							aria-label="Exemplar löschen"
 							data-tip="Exemplar löschen"
-							class="icon-btn text-on-surface-variant disabled:cursor-default disabled:text-on-surface/38"
 							onclick={onDelete}
 							disabled={loescht}
 						>
@@ -138,7 +141,7 @@
 							{:else}
 								<Icon name="delete" />
 							{/if}
-						</button>
+						</Button>
 					{/if}
 				</div>
 			{/if}

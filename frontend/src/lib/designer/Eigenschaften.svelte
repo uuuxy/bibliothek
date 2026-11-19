@@ -18,6 +18,7 @@
 	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { fehlertext } from '../utils/fehlertext.js';
 	import Icon from '../components/ui/Icon.svelte';
+	import Button from '../components/ui/Button.svelte';
 
 	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
 	const { gewaehlteKennung, side, gesperrt = false } = $props();
@@ -75,14 +76,16 @@
 		<div class="flex items-center justify-between">
 			<h3 class="text-title-medium text-on-surface">{elementName(el)}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
-				<button
+				<Button
+					variant="symbol"
+					size="sm"
+					loeschen
 					onclick={loesche}
-					class="icon-btn text-on-surface-variant"
 					data-tip="Element löschen"
 					aria-label="Element löschen"
 				>
 					<Icon name="delete" />
-				</button>
+				</Button>
 			{/if}
 		</div>
 

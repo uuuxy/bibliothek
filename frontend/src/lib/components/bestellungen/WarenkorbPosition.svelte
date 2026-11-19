@@ -10,6 +10,7 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { MITTEL, anderesMittel } from './mittel.js';
 	import Icon from '../ui/Icon.svelte';
+	import Button from '../ui/Button.svelte';
 
 	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { position } = $props();
@@ -41,14 +42,17 @@
 				</div>
 			{/if}
 		</div>
-		<button
+		<Button
+			variant="symbol"
+			size="sm"
+			loeschen
 			onclick={() => bestellStore.removeFromCart(position)}
 			aria-label="Entfernen"
 			data-tip="Entfernen"
-			class="icon-btn shrink-0 text-on-surface-variant"
+			class="shrink-0"
 		>
 			<Icon name="close" />
-		</button>
+		</Button>
 	</div>
 
 	<div class="flex items-center justify-between gap-2 pl-10">
