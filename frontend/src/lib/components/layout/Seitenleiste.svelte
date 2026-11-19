@@ -13,10 +13,10 @@
 	import { MediaQuery } from 'svelte/reactivity';
 	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
-	// Unter 1280 px Fensterbreite (Tailwind `xl`) beginnt die Navigation eingeklappt: Erst ab
-	// dieser Breite hat der Titel in der Ausleihliste der Leserakte neben ihr Platz zum Lesen
-	// (e2e/ausleihliste-zeilen.spec.js). Wer den Doppelpfeil benutzt, hat gewählt, und die
-	// Wahl gilt bis zum Neuladen vor der Fensterbreite.
+	// Unter 1280 px Fensterbreite beginnt die Navigation eingeklappt, obwohl Googles Klasse large
+	// schon bei 1200 beginnt: Erst ab 1280 hat der Titel in der Ausleihliste der Leserakte neben
+	// ihr Platz zum Lesen (e2e/ausleihliste-zeilen.spec.js). Wer den Doppelpfeil benutzt, hat
+	// gewählt, und die Wahl gilt bis zum Neuladen vor der Fensterbreite.
 	const schmalesFenster = new MediaQuery('(width < 80rem)');
 	const zu = $derived(uiStore.sidebarWahl ?? schmalesFenster.current);
 
