@@ -43,8 +43,8 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
-- [ ] Die übrigen Google-Seiten: Kopf der Buchakte als App bar, Schiebefeld im Designer nach M3,
-  Schrift der Menüeinträge entscheiden ([sweeps.md](sweeps.md), Abdeckung). (5.195)
+- [ ] Die übrigen Google-Seiten: Kopf der Buchakte als App bar, Schrift der Menüeinträge
+  entscheiden ([sweeps.md](sweeps.md), Abdeckung). (5.195)
 - [x] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
   kein langer Strich. (5.185)
 - [x] Große Überschriften (22 und 24 px): festlegen, welche normal und welche halbfett steht, und
@@ -118,13 +118,11 @@ kennt keine Kürzel, dort zählt nur der Name.
 
 ### 5.195 Die übrigen Google-Seiten
 
-Stand: In [sweeps.md](sweeps.md), Abdeckung der Google-Seiten, stehen zwei Seiten nur gelesen:
+Stand: In [sweeps.md](sweeps.md), Abdeckung der Google-Seiten, steht eine Seite nur gelesen:
 
 - App bars: Das Programm hat keine Kopfzeile, oben steht die Suchleiste. Am nächsten an Googles
   Small app bar ist der Kopf der Buchakte mit „Zurück zum Katalog"; M3 setzt dort einen
   Zurück-Pfeil als Symbolknopf, den Titel in title large und 64 dp Höhe.
-- Sliders: Das eine Schiebefeld (Zoom im Ausweis-Designer) zeichnet der Browser in der Form des
-  Baseline-Sliders. M3 nennt heute für Größe XS eine Spur von 16 dp und einen Griff von 4 × 44 dp.
 
 Zu entscheiden: die Schrift der Menüeinträge. material-web und Android nennen body large,
 Angular Material und Compose label large; das Haus schreibt body medium (`text-sm`).
@@ -133,8 +131,9 @@ Abweichung mit Grund: Die Navigation klappt unter 1280 px ein, Googles Klasse la
 1200 px. Erst ab 1280 px passt der Titel in der Ausleihliste der Leserakte neben die
 aufgeklappte Navigation (`e2e/ausleihliste-zeilen.spec.js`).
 
-Nächster Schritt: den Kopf der Buchakte und das Schiebefeld nach M3 bauen, nach Freigabe der
-Bilder; für die Menüschrift eine der beiden Quellen wählen.
+Nächster Schritt: entscheiden, ob der Kopf der Buchakte eine App bar mit Zurück-Pfeil wird (Google
+Drive zeigt Pfade dagegen als Brotkrume wie jetzt); für die Menüschrift eine der beiden Quellen
+wählen.
 
 ### 7.2 Frisches Littera-Backup
 

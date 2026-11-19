@@ -73,12 +73,14 @@
 		<div class="flex items-center gap-2">
 			<input
 				type="range"
+				aria-label="Zoom"
 				min="80"
 				max="300"
 				step="5"
 				value={zoom}
 				oninput={(e) => onZoom(parseInt(/** @type {HTMLInputElement} */ (e.currentTarget).value))}
-				class="accent-primary h-1 bg-secondary-container rounded-lg cursor-pointer flex-1"
+				class="m3-schieber flex-1"
+				style:--anteil={(zoom - 80) / (300 - 80)}
 			/>
 			<span class="text-body-medium-emphasized text-primary w-10 text-right">{zoom}%</span>
 		</div>

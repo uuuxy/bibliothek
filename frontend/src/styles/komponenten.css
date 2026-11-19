@@ -165,6 +165,70 @@
 		}
 	}
 
+	/* ── Schiebefeld ──────────────────────────────────────────────────────────
+	   Googles Slider in Größe XS (M3, Sliders, Specs: „Track height 16dp", „Track shape 8dp",
+	   „Handle height 44dp", „Handle width 4dp"; aktive Spur und Griff primary, übrige Spur
+	   secondary-container), zwischen Griff und Spur 6 dp wie in Compose (ThumbTrackGapSize).
+	   Den Wert als Anteil von 0 bis 1 setzt der Aufrufer in --anteil; die Spur zeichnet ein
+	   Verlauf, weil der Browser nur eine Spur kennt. Der Fokusring sitzt am Griff. */
+	.m3-schieber {
+		appearance: none;
+		height: 2.75rem;
+		background: transparent;
+		cursor: pointer;
+		--spur-aktiv: var(--color-primary);
+		--spur-rest: var(--color-secondary-container);
+		--griff: calc(2px + (100% - 4px) * var(--anteil, 0));
+		--spur: linear-gradient(
+			to right,
+			var(--spur-aktiv) 0 calc(var(--griff) - 8px),
+			transparent calc(var(--griff) - 8px) calc(var(--griff) + 8px),
+			var(--spur-rest) calc(var(--griff) + 8px) 100%
+		);
+	}
+	.m3-schieber:disabled {
+		cursor: not-allowed;
+		--spur-aktiv: color-mix(in srgb, var(--color-on-surface) 38%, transparent);
+		--spur-rest: color-mix(in srgb, var(--color-on-surface) 12%, transparent);
+	}
+	.m3-schieber::-webkit-slider-runnable-track {
+		height: 1rem;
+		border-radius: 0.5rem;
+		background: var(--spur);
+	}
+	.m3-schieber::-moz-range-track {
+		height: 1rem;
+		border-radius: 0.5rem;
+		background: var(--spur);
+	}
+	.m3-schieber::-webkit-slider-thumb {
+		appearance: none;
+		width: 4px;
+		height: 2.75rem;
+		margin-top: -0.875rem;
+		border-radius: 2px;
+		background: var(--spur-aktiv);
+	}
+	.m3-schieber::-moz-range-thumb {
+		width: 4px;
+		height: 2.75rem;
+		border: 0;
+		border-radius: 2px;
+		background: var(--spur-aktiv);
+	}
+	.m3-schieber:focus-visible {
+		outline: none;
+		animation: none;
+	}
+	.m3-schieber:focus-visible::-webkit-slider-thumb {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
+	}
+	.m3-schieber:focus-visible::-moz-range-thumb {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
+	}
+
 	/* ── Icon-Buttons ─────────────────────────────────────────────────────────
 	   Ein Knopf, der nur ein Symbol trägt, ist mindestens 32 px groß (Material 3, Icon buttons:
 	   Container „extra small" 32 dp) und hat eine Trefferfläche von 48 × 48 px: „Extra small and
