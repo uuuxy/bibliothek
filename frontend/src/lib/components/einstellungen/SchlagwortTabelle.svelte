@@ -12,6 +12,7 @@
 	 */
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import Switch from '../ui/Switch.svelte';
 	import Menue from '../ui/Menue.svelte';
 	import { menueEintraege } from './schlagwortPflege.js';
@@ -32,7 +33,7 @@
 	const alle = $derived(zeilen.length > 0 && markiert === zeilen.length);
 </script>
 
-<div class="overflow-x-auto">
+<div class="overflow-x-auto" use:mehrfachauswahl>
 	<Tabelle beschriftung="Schlagworte mit Titelzahl, Filter und Aktionen">
 		<thead>
 			<tr>
@@ -40,6 +41,7 @@
 					<!-- Ohne Zeilen gesperrt: Kaestchen hält einen eigenen Stand, solange `checked` sich
 					     nicht ändert — über einer leeren Liste blieb es sonst angehakt. -->
 					<Kaestchen
+						data-auswahl-alle
 						checked={alle}
 						indeterminate={markiert > 0 && !alle}
 						disabled={zeilen.length === 0}

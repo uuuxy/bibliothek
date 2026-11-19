@@ -15,6 +15,7 @@
 	import TabelleSortierKopf from '../ui/TabelleSortierKopf.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
 	import LeserAvatar from './LeserAvatar.svelte';
@@ -85,13 +86,14 @@
 			Keine Leser im Verzeichnis gefunden
 		</div>
 	{:else}
-		<div class="overflow-x-auto w-full text-left">
+		<div class="overflow-x-auto w-full text-left" use:mehrfachauswahl>
 			<Tabelle beschriftung="Leserinnen und Leser">
 				<thead class="text-title-small">
 					<tr>
 						{#if auswaehlbar}
 							<th class="w-10">
 								<Kaestchen
+									data-auswahl-alle
 									checked={alleGewaehlt}
 									indeterminate={teilweise}
 									onchange={onToggleAlle}

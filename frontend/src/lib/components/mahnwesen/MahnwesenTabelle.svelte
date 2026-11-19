@@ -6,6 +6,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Icon from '../ui/Icon.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import { gemahntSatz } from './mahnungen.js';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
@@ -53,12 +54,13 @@
 	     Kasten: Schülerdatei, Abgänger, Medienkatalog und Inventur stehen alle
 	     edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
 	<div class="w-full pb-6">
-		<div class="overflow-x-auto w-full">
+		<div class="overflow-x-auto w-full" use:mehrfachauswahl>
 			<Tabelle beschriftung="Überfällige Ausleihen nach Schüler" class="whitespace-nowrap">
 				<thead class="font-medium">
 					<tr>
 						<th class="w-12 text-center">
 							<Kaestchen
+								data-auswahl-alle
 								checked={alleGewaehlt}
 								{indeterminate}
 								onclick={toggleAll}

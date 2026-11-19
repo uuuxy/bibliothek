@@ -5,6 +5,7 @@
 	import BestandstabelleZeile from '$lib/components/admin/BestandstabelleZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../../../lib/actions/mehrfachauswahl.js';
 
 	/**
 	 * @type {{
@@ -70,12 +71,13 @@
 		{onRetryCovers}
 	/>
 
-	<div class="overflow-x-auto">
+	<div class="overflow-x-auto" use:mehrfachauswahl>
 		<Tabelle beschriftung="Titel im Bestand">
 			<thead class="font-medium">
 				<tr>
 					<th class="w-10">
 						<Kaestchen
+							data-auswahl-alle
 							aria-label="Alle Bücher auswählen"
 							checked={auswahl.alleGewaehlt(titelListe)}
 							onclick={() => auswahl.alleUmschalten(titelListe)}

@@ -983,6 +983,11 @@ frontend/src
   sortiert, ordnete die Liste nur die Zeilen um, die die Kappung durchgelassen hat
   ([sweeps.md](sweeps.md), „Sortierung hinter der Kappung"; sortierbare Spaltenköpfe:
   `ui/TabelleSortierKopf.svelte`).
+- **Jede Liste mit Kästchen trägt `use:mehrfachauswahl`** (`actions/mehrfachauswahl.js`):
+  Umschalt+Klick wählt einen Bereich, Strg/Cmd+A alle (Material 3, Desktop: „Select a range:
+  Shift + click", „Select all: Control + A, or Cmd + A (Mac)"). Das Kästchen oder der Knopf für
+  alle trägt `data-auswahl-alle`, sonst klickt die Aktion jedes leere Kästchen; sie klickt selbst,
+  damit jede Liste ihren Zustand behält. Ratsche `frontend-hygiene-mehrfachauswahl.test.js`.
 - **Gekürzter Text braucht einen Weg zum Rest.** Material 3 („Text truncation"): „Don't cut
   off text without providing a way for users to view it." Wo es keinen gibt, läuft der Text
   um — auf Papier immer. Die Sprechblase des Hauses (`data-tip`, `actions/tooltip.js`)

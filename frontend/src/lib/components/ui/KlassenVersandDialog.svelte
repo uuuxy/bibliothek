@@ -4,6 +4,7 @@
 	import Dialog from './Dialog.svelte';
 	import Button from './Button.svelte';
 	import Kaestchen from './Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import Feld from './Feld.svelte';
 	import { anzahlText } from '../../utils/format.js';
 
@@ -102,12 +103,13 @@
 	{/snippet}
 
 	<div class="p-6 space-y-5">
-		<div class="space-y-2">
+		<div class="space-y-2" use:mehrfachauswahl>
 			<div class="flex items-baseline justify-between gap-3">
 				<p class="text-sm text-on-surface-variant">{beschreibung}</p>
 				<button
 					type="button"
 					class="text-label-medium text-primary shrink-0 cursor-pointer"
+					data-auswahl-alle
 					onclick={() => (ausgewaehlt = alleGewaehlt ? [] : klassen.map((k) => k.klasse))}
 				>
 					{alleGewaehlt ? 'Keine' : 'Alle'}

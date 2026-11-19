@@ -984,15 +984,17 @@ das Browser-Gate misst (§19): Das erste **Tab** auf jeder Seite landet auf „Z
 springen" (überspringt die Seitenleiste), **Tab** wandert durch Felder und Knöpfe,
 **Enter/Leertaste** löst aus, **Escape** schließt den obersten Dialog und gibt den Fokus an
 die Stelle zurück, von der er kam. In Listen öffnet der **Name** (Schüler) beziehungsweise
-der **Titel** (Buch, Signaturen-Regal) die Akte. Im LMF-Planer lassen sich Zeilen außer per
-Ziehen auch über ihr Zeilenmenü verschieben (nach oben, nach unten, an den Anfang, ans Ende).
+der **Titel** (Buch, Signaturen-Regal) die Akte. In Listen mit Kästchen wählt **Strg+A**
+(Mac: **Cmd+A**) alle Zeilen und **Umschalt+Klick** alle Zeilen bis zum zuletzt geklickten
+Kästchen; in einem Textfeld markiert Strg+A weiter den Text.
 Wer im Betriebssystem „Bewegung reduzieren" eingestellt hat, sieht keine Ein- und
 Ausblendungen. Meldungen am unteren Rand bleiben stehen, solange die Maus oder der Fokus
 darauf liegt. An der Theke hält das Scanfeld den Fokus — das ist gewollt, der Scanner tippt
 blind. Steht der Sperr-Dialog („Ausleihe blockiert"), liegt der Fokus auf „Abbrechen": Ein
 weiterer Scan bricht dort ab, statt eine Sperre aufzuheben oder zu übergehen.
 
-Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers (§19, Bekannte Lücken). Ein
+Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers (§19, Bekannte Lücken) und
+die Reihenfolge im LMF-Planer, die nur das Ziehen am Griff ändert. Ein
 Durchgang mit einem Screenreader hat nicht stattgefunden.
 
 ## Wenn etwas nicht geht

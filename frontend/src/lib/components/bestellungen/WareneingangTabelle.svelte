@@ -3,6 +3,7 @@
 	import Button from '../ui/Button.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import BestellStandChip from './BestellStandChip.svelte';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
@@ -50,13 +51,13 @@
 	}
 </script>
 
-<div>
+<div use:mehrfachauswahl>
 	<div class="flex items-center justify-between mb-3">
 		<h3 class="text-title-medium text-on-surface-variant">
 			{anzahlText(totalItems, 'Exemplar', 'Exemplare')} erwartet
 		</h3>
 		{#if incomingShipments.length > 0}
-			<Button variant="ghost" size="sm" onclick={toggleAll}>
+			<Button variant="ghost" size="sm" onclick={toggleAll} data-auswahl-alle>
 				{alleGewaehlt ? 'Auswahl aufheben' : 'Alle auswählen'}
 			</Button>
 		{/if}

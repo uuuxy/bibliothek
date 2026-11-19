@@ -4,6 +4,7 @@
      Inventur: Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
 <script>
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { formatDatum } from '../../utils/format.js';
 	/** @type {{
@@ -25,7 +26,7 @@
 
 <!-- border-separate statt collapse: Bei `collapse` gehören die Rahmen der Tabelle, nicht
      der Zelle — an einem klebenden Kopf verschwindet die Trennlinie dann beim Scrollen. -->
-<div class="w-full overflow-x-auto">
+<div class="w-full overflow-x-auto" use:mehrfachauswahl>
 	<Tabelle beschriftung="Exemplare ohne Etikett" sticky>
 		<thead>
 			<tr>
@@ -36,6 +37,7 @@
 				{/snippet}
 				<th class="w-12">
 					<Kaestchen
+						data-auswahl-alle
 						aria-label="Alle auswählen"
 						checked={alleGewaehlt}
 						onchange={onalleUmschalten}

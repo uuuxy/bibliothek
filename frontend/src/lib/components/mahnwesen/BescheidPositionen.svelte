@@ -11,6 +11,7 @@
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import { gemahntSatz } from './mahnungen.js';
 	import { betragGueltig } from './bescheidFormular.svelte.js';
 	import { formatDatum as datum } from '../../utils/format.js';
@@ -38,56 +39,59 @@
 	]);
 </script>
 
-{#each gruppen as g (g.art)}
-	{#if g.items.length > 0}
-		<section class="space-y-2">
-			<h3 class="text-label-medium text-on-surface">{g.titel}</h3>
-			{#each g.items as p (p.key)}
-				{@const ungueltig = gewaehlt[p.key] && !betragGueltig(betraege[p.key])}
-				<div class="flex items-start gap-3 border-b border-outline-variant py-2 last:border-0">
-					<div class="pt-1">
-						<Kaestchen
-							bind:checked={gewaehlt[p.key]}
-							etikett=""
-							aria-label="{p.titel} in den Bescheid aufnehmen"
-							disabled={p.topf !== 'land'}
-						/>
-					</div>
-					<div class="min-w-0 flex-1">
-						<div class="truncate text-body-medium-emphasized text-on-surface">{p.titel}</div>
-						<div class="text-xs text-on-surface-variant">
-							{p.isbn || 'ohne ISBN'} · {p.herleitung}
+<!-- Ein Behälter für beide Gruppen: Umschalt+Klick und Strg/Cmd+A gelten über alle Positionen. -->
+<div class="space-y-5" use:mehrfachauswahl>
+	{#each gruppen as g (g.art)}
+		{#if g.items.length > 0}
+			<section class="space-y-2">
+				<h3 class="text-label-medium text-on-surface">{g.titel}</h3>
+				{#each g.items as p (p.key)}
+					{@const ungueltig = gewaehlt[p.key] && !betragGueltig(betraege[p.key])}
+					<div class="flex items-start gap-3 border-b border-outline-variant py-2 last:border-0">
+						<div class="pt-1">
+							<Kaestchen
+								bind:checked={gewaehlt[p.key]}
+								etikett=""
+								aria-label="{p.titel} in den Bescheid aufnehmen"
+								disabled={p.topf !== 'land'}
+							/>
 						</div>
-						{#if p.quelle === 'ausleihe'}
+						<div class="min-w-0 flex-1">
+							<div class="truncate text-body-medium-emphasized text-on-surface">{p.titel}</div>
 							<div class="text-xs text-on-surface-variant">
-								Fällig seit {datum(p.faellig_seit)} · {gemahntSatz(
-									p.mahnstufe,
-									p.letztes_mahndatum
-								)} · wird mit dem Brief als Verlust gebucht
+								{p.isbn || 'ohne ISBN'} · {p.herleitung}
 							</div>
-						{/if}
-						{#if p.topf !== 'land'}
-							<div class="text-xs text-on-surface-variant">
-								Buch der Schülerbücherei, gehört nicht auf den Bescheid des Landes
-							</div>
-						{/if}
+							{#if p.quelle === 'ausleihe'}
+								<div class="text-xs text-on-surface-variant">
+									Fällig seit {datum(p.faellig_seit)} · {gemahntSatz(
+										p.mahnstufe,
+										p.letztes_mahndatum
+									)} · wird mit dem Brief als Verlust gebucht
+								</div>
+							{/if}
+							{#if p.topf !== 'land'}
+								<div class="text-xs text-on-surface-variant">
+									Buch der Schülerbücherei, gehört nicht auf den Bescheid des Landes
+								</div>
+							{/if}
+						</div>
+						<div class="flex shrink-0 items-start gap-1.5">
+							<Feld
+								type="number"
+								step="0.01"
+								min="0.01"
+								bind:value={betraege[p.key]}
+								aria-label="Betrag für {p.titel}"
+								feld="w-24 text-right"
+								disabled={!gewaehlt[p.key]}
+								{ungueltig}
+								hint={ungueltig ? 'Betrag eintragen' : ''}
+							/>
+							<span class="pt-2 text-sm text-on-surface-variant">€</span>
+						</div>
 					</div>
-					<div class="flex shrink-0 items-start gap-1.5">
-						<Feld
-							type="number"
-							step="0.01"
-							min="0.01"
-							bind:value={betraege[p.key]}
-							aria-label="Betrag für {p.titel}"
-							feld="w-24 text-right"
-							disabled={!gewaehlt[p.key]}
-							{ungueltig}
-							hint={ungueltig ? 'Betrag eintragen' : ''}
-						/>
-						<span class="pt-2 text-sm text-on-surface-variant">€</span>
-					</div>
-				</div>
-			{/each}
-		</section>
-	{/if}
-{/each}
+				{/each}
+			</section>
+		{/if}
+	{/each}
+</div>

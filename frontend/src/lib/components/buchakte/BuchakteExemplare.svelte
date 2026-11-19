@@ -8,6 +8,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import ExemplarKarte from './ExemplarKarte.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import ExemplarEigentumDialog from './ExemplarEigentumDialog.svelte';
 	import ExemplarStandortDialog from './ExemplarStandortDialog.svelte';
@@ -136,7 +137,7 @@
 		hinweis="„Titel bearbeiten“ trägt den Bestand ein"
 	/>
 {:else}
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" use:mehrfachauswahl>
 		{#each exemplare as ex (ex.id)}
 			<ExemplarKarte
 				{darfBearbeiten}

@@ -10,6 +10,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import { formatZahl } from '../../utils/format.js';
 
@@ -44,7 +45,7 @@
 	<div class="space-y-4 border-b border-outline-variant py-5">
 		<h3 class="text-title-medium text-on-surface-variant">{SCHRITT}</h3>
 
-		<div class="space-y-2">
+		<div class="space-y-2" use:mehrfachauswahl>
 			<span class="block text-xs font-medium text-on-surface-variant">{ueberschrift}</span>
 			{#if etikettenStore.laedtExemplare}
 				<div class="flex items-center justify-center py-4">
@@ -65,6 +66,7 @@
 				     deselection of all items“). Es wirkt auf das, was zu sehen ist. -->
 				{#if etikettenStore.vorhandeneExemplare.length > 1 && sichtbar > 0}
 					<Kaestchen
+						data-auswahl-alle
 						etikett={alleText}
 						checked={etikettenStore.auswahlSichtbar === 'alle'}
 						indeterminate={etikettenStore.auswahlSichtbar === 'teil'}
