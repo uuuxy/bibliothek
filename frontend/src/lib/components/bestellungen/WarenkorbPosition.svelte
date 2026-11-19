@@ -61,7 +61,7 @@
 				aria-label="Menge verringern"
 				disabled={position.menge <= 1}
 				onclick={() => (position.menge = Math.max(1, position.menge - 1))}
-				class="cursor-pointer px-2.5 py-1 text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38 text-title-medium"
+				class="cursor-pointer px-2.5 py-1 text-on-surface-variant disabled:cursor-default disabled:text-on-surface/38 text-title-medium"
 				>−</button
 			><span
 				class="min-w-6 px-2 text-center text-body-medium-emphasized text-on-surface tabular-nums"

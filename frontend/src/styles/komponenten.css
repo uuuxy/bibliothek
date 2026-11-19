@@ -187,7 +187,7 @@
 		);
 	}
 	.m3-schieber:disabled {
-		cursor: not-allowed;
+		cursor: default;
 		--spur-aktiv: color-mix(in srgb, var(--color-on-surface) 38%, transparent);
 		--spur-rest: color-mix(in srgb, var(--color-on-surface) 12%, transparent);
 	}

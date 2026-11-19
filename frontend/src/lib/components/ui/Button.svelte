@@ -70,7 +70,7 @@
 	// disabled-outline). Mit `!`, weil die Klassen der Variante dieselbe Spezifität haben und dann
 	// die Reihenfolge im Stylesheet entschiede.
 	const disabledClasses =
-		'disabled:cursor-not-allowed disabled:text-on-surface/38! disabled:shadow-none!';
+		'disabled:cursor-default disabled:text-on-surface/38! disabled:shadow-none!';
 	const flaecheGesperrt = 'disabled:bg-on-surface/12! disabled:border-transparent!';
 	/** @type {Record<string, string>} */
 	const ohneFlaecheGesperrt = {

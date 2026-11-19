@@ -5,7 +5,8 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // Ratsche: Alt-Texte nach Material 3 (Content design, Alt text).
 // - Jedes Bild trägt alt; ein Bild, das nichts sagt, ein leeres: „An image can be marked
 //   decorative using a null alt attribute, such as alt=”” in HTML".
-// - Höchstens 140 Zeichen: „Don’t write more than 140 characters of alt text."
+// - Höchstens 125 Zeichen: Alt text nennt „Don’t write more than 140 characters of alt text.",
+//   Accessibility writing & text „a short label (up to 125 characters)"; 125 hält beide.
 // - Nicht mit „Bild von" beginnen: „Screen readers announce 'image' when they come across an
 //   image", davor stünde es doppelt.
 // - Kein Dateiname: „Avoid leaving the automatically generated file number as alt text."
@@ -65,7 +66,7 @@ describe('Alt-Texte nach M3', () => {
 		for (const b of alle) {
 			const fest = /\salt="([^"]*)"/.exec(b.kopf)?.[1];
 			if (!fest) continue;
-			if (fest.length > 140) funde.push(`${b.pfad}: länger als 140 Zeichen`);
+			if (fest.length > 125) funde.push(`${b.pfad}: länger als 125 Zeichen`);
 			if (BILD_VON.test(fest.trim())) funde.push(`${b.pfad}: „${fest}" beginnt mit „Bild"`);
 			if (DATEI.test(fest)) funde.push(`${b.pfad}: „${fest}" ist ein Dateiname`);
 		}

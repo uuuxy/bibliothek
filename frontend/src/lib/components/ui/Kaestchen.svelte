@@ -73,7 +73,7 @@
 			bind:checked
 			{indeterminate}
 			{disabled}
-			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full transition-colors disabled:cursor-not-allowed {schichtFarbe}"
+			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full transition-colors disabled:cursor-default {schichtFarbe}"
 			{...rest}
 		/>
 		<span
@@ -92,7 +92,7 @@
 {#if etikett}
 	<label
 		class="inline-flex items-center gap-3 text-sm text-on-surface select-none {disabled
-			? 'cursor-not-allowed opacity-60'
+			? 'cursor-default opacity-60'
 			: 'cursor-pointer'} {klasse}"
 	>
 		{@render kasten('')}

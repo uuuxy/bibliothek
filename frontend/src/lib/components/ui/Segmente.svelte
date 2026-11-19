@@ -43,7 +43,7 @@
 	{#each optionen as o, i (o.wert)}
 		{@const gewaehlt = o.wert === wert}
 		{@const zustand = disabled
-			? `cursor-not-allowed text-on-surface/38 ${gewaehlt ? 'bg-on-surface/12' : ''}`
+			? `cursor-default text-on-surface/38 ${gewaehlt ? 'bg-on-surface/12' : ''}`
 			: `cursor-pointer ${gewaehlt ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface'}`}
 		<button
 			type="button"

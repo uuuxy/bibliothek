@@ -108,7 +108,7 @@
 		(mehrzeilig ? 'w-full py-2 leading-relaxed ' : /\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
 			'rounded-sm border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
 			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 read-only:text-on-surface-variant ' +
-			'disabled:cursor-not-allowed disabled:border-on-surface/12 disabled:text-on-surface/38 ' +
+			'disabled:cursor-default disabled:border-on-surface/12 disabled:text-on-surface/38 ' +
 			(ungueltig
 				? 'border-error hover:border-on-error-container focus:border-error focus:ring-error '
 				: 'border-outline hover:border-on-surface focus:border-primary focus:ring-primary ') +

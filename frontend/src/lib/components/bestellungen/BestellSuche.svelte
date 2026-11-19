@@ -127,7 +127,7 @@
 							onclick={() => !isDuplicate && waehleTitel(b)}
 							disabled={isDuplicate}
 							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base {isDuplicate
-								? 'opacity-50 cursor-not-allowed'
+								? 'opacity-50 cursor-default'
 								: ''}"
 						>
 							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />

@@ -132,7 +132,7 @@
 											disabled={papierkorb.stelltHer(s.id)}
 											data-tip="Wiederherstellen"
 											aria-label="Wiederherstellen"
-											class="icon-btn bg-success-container text-on-success-container disabled:cursor-not-allowed"
+											class="icon-btn bg-success-container text-on-success-container disabled:cursor-default"
 										>
 											{#if papierkorb.stelltHer(s.id)}
 												<Ladekreis size="sm" farbe="aktuell" />

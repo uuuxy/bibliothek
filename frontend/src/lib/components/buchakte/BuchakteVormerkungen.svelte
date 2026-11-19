@@ -69,7 +69,7 @@
 							<button
 								onclick={() => loescheVormerkung(v.id)}
 								disabled={loescht.has(v.id)}
-								class="icon-btn text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
+								class="icon-btn text-error disabled:cursor-default disabled:text-on-surface/38"
 								data-tip="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>

@@ -31,7 +31,7 @@
 				onclick={() => nimm(wert)}
 				{disabled}
 				aria-label="„{wert}“ übernehmen"
-				class="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-outline pr-4 pl-2 text-label-large text-on-surface-variant disabled:cursor-not-allowed disabled:opacity-40"
+				class="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-outline pr-4 pl-2 text-label-large text-on-surface-variant disabled:cursor-default disabled:opacity-40"
 			>
 				<Icon name="add" groesse={18} class="text-primary" />
 				{wert}

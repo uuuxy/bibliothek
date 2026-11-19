@@ -138,7 +138,7 @@
 							{#if darfFristAendern}
 								<button
 									type="button"
-									class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/38"
+									class="icon-btn text-primary disabled:cursor-default disabled:text-on-surface/38"
 									onclick={() => verlaengere(book)}
 									disabled={extendingIds.has(ausleiheId)}
 									data-tip="Um die Standard-Leihfrist verlängern"

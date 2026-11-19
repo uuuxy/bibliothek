@@ -129,7 +129,7 @@
 						<button
 							aria-label="Exemplar löschen"
 							data-tip="Exemplar löschen"
-							class="icon-btn text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
+							class="icon-btn text-on-surface-variant disabled:cursor-default disabled:text-on-surface/38"
 							onclick={onDelete}
 							disabled={loescht}
 						>

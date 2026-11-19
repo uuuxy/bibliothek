@@ -78,7 +78,7 @@
 			onkeydown={() => {}}
 			onpointerenter={() => onaktiv(i)}
 			class="m3-state flex h-12 cursor-pointer items-center gap-3 px-3 text-sm
-				{o.disabled ? 'cursor-not-allowed opacity-40' : ''}
+				{o.disabled ? 'cursor-default opacity-40' : ''}
 				{o.value === value
 				? 'bg-secondary-container text-on-secondary-container'
 				: i === aktiv

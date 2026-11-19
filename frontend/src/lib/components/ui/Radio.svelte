@@ -41,7 +41,7 @@
 			bind:group
 			{value}
 			{disabled}
-			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full transition-colors hover:bg-on-surface/8 focus-visible:bg-on-surface/10 checked:hover:bg-primary/8 checked:focus-visible:bg-primary/10 disabled:cursor-not-allowed"
+			class="peer col-start-1 row-start-1 h-10 w-10 cursor-pointer appearance-none rounded-full transition-colors hover:bg-on-surface/8 focus-visible:bg-on-surface/10 checked:hover:bg-primary/8 checked:focus-visible:bg-primary/10 disabled:cursor-default"
 			{...rest}
 		/>
 		<span
@@ -60,7 +60,7 @@
 {#if etikett}
 	<label
 		class="inline-flex items-center gap-3 text-sm text-on-surface select-none {disabled
-			? 'cursor-not-allowed opacity-60'
+			? 'cursor-default opacity-60'
 			: 'cursor-pointer'} {klasse}"
 	>
 		{@render knopf('')}
