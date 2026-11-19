@@ -12,12 +12,15 @@ und `**.css` daran.
 Das Designziel ist der echte Material-3-Look (Google). Oberste Anforderung ist Konsistenz,
 nicht der Einzelfall.
 
-**Maßstab ist Google, auch für den Bestand.** Was Google regelt (Material 3, sonst Googles
-eigene Apps), gilt für jede Stelle des Programms, nicht nur für die gerade geänderte. Eine
-Abweichung braucht den Beleg, dass Google schweigt; eine eigene Entscheidung ersetzt ihn nicht.
+**Maßstab ist ein einheitliches Programm; Google ist die Quelle für das Wie, auch für den
+Bestand.** Was Google regelt (Material 3, sonst Googles eigene Apps), gilt für jede Stelle des
+Programms, nicht nur für die gerade geänderte. Eine Abweichung braucht den Beleg, dass Google
+schweigt, oder eine getroffene Entscheidung, die mit Grund in `docs/sweeps.md` steht
+(„Abweichung mit Grund“); sie gilt vor Google. Eine Wahl beim Bauen ersetzt beides nicht.
+Sichtbares, das funktioniert, ändert sich nur auf ausdrücklichen Auftrag, vorher mit Bildern.
 Welche Google-Seite gegen den ganzen Code gehalten ist, steht in `docs/sweeps.md` (Abdeckung der
 Google-Seiten); eine Seite, die dort fehlt oder offen steht, ist ungeprüft. Prüfrunden laufen
-entlang dieser Liste.
+entlang dieser Liste, legen ihre Funde vor und bauen nichts ohne Auftrag.
 
 **Vor jeder Oberflächen-Änderung die zuständige M3-Seite lesen** — auch vor einer einzelnen
 Zeile Hinweistext. Nicht aus dem Gedächtnis entscheiden: Eine Einschätzung „aus dem Kopf" lag
