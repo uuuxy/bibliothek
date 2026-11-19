@@ -3,7 +3,13 @@ import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { authStore } from '../../stores/authStore.svelte.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
+import { omniboxStore } from '../../stores/omnibox.svelte.js';
 import Seitenleiste from './Seitenleiste.svelte';
+
+// Der Weg zur Ausleihe gibt dem Scanfeld nach 50 ms den Fokus (omnibox.svelte.js,
+// fokussiereScanfeld). Ohne Abräumen feuert der Zeitgeber nach dem Abbau von jsdom ins Leere und
+// reißt den Lauf mit („document is not defined", CI zu 57c192833).
+afterEach(() => omniboxStore.stoppeZeitgeber());
 
 /** Die Antwort des Browsers auf die Breitenabfrage; `matches` heißt „schmaler als 1280 px“. */
 class Fensterbreite extends EventTarget {
