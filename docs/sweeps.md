@@ -468,7 +468,7 @@ Unterseiten und `/styles`, gezählt im November 2026. Wer eine Seite prüft, tr�
 | Chips | `ui/ChipFeld`, `ui/FilterChips`, `ui/ChipAngebote`, `ui/StatusChip`, `LmfKlasseChip`: 32 px, 8 px Ecke, label large, Rahmen outline, 16 dp Rand und 8 dp auf der Seite mit Symbol; Input-Chips ohne Auswahl umrandet (md.comp.input-chip) | Gate: `ChipFeld.test`, `FilterChips.test` |
 | Dialogs | `ui/Dialog`, `ui/BestaetigungsDialog`, `ui/EingabeDialog` | Gate: `frontend-hygiene-dialoge`, `frontend-hygiene-dialogtitel`, `frontend-hygiene-abbrechen`, `barrierefreiheit-dialog` |
 | Lists | `ui/Tabelle` (M3 hat keine Datentabelle) | Gate: `frontend-hygiene-tabellen` |
-| Menus | `ui/Menue`, `ui/Select`: Baseline-Menü, 112 bis 280 dp breit, 4 px Ecke, surface-container, level2, Einträge 48 dp mit 12 dp Rand und Lücke; offen: Schrift der Einträge (material-web und Android body large, Angular Material label large, das Haus body medium) | Gate: `Menue.test` (Maße), `menue-fuehrt-irgendwohin` (Ziel), `erhebung` (level2) |
+| Menus | `ui/Menue`, `ui/Select`: Baseline-Menü, 112 bis 280 dp breit, 4 px Ecke, surface-container, level2, Einträge 48 dp mit 12 dp Rand und Lücke, Schrift der Einträge in Menü und Auswahlliste body large wie in material-web (menu-item und list-item: label-text-size body-large) | Gate: `Menue.test` (Maße, Schrift), `SelectAria.test` (Schrift), `menue-fuehrt-irgendwohin` (Ziel), `erhebung` (level2) |
 | Navigation drawer, Navigation rail | `layout/Seitenleiste`, aufgeklappt und schmal | Gate: `navigation-m3`; Gewicht nach Googles Token: Ziel 500, aktives Ziel 700 |
 | Progress indicators, Loading indicator | `ui/Ladekreis` | Gate: `frontend-hygiene-ladekreis` |
 | Switch | `ui/Switch` | Gate: `frontend-hygiene-schalter`, `schalter` |

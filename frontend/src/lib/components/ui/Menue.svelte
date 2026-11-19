@@ -167,7 +167,7 @@
 				aria-disabled={e.disabled || undefined}
 				onclick={() => waehlen(e)}
 				onpointerenter={() => (aktiv = i)}
-				class="m3-state flex min-h-12 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left text-sm text-on-surface aria-disabled:cursor-default aria-disabled:opacity-40"
+				class="m3-state flex min-h-12 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left text-base text-on-surface aria-disabled:cursor-default aria-disabled:opacity-40"
 			>
 				{#if e.icon}
 					<Icon name={e.icon} groesse={24} class="text-on-surface-variant" />

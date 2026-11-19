@@ -142,3 +142,16 @@ describe('Select: gesperrter Eintrag', () => {
 		expect(screen.getByRole('combobox').textContent).toContain('Anna');
 	});
 });
+
+// Die Einträge der Auswahlliste in body large wie in material-web (select-option über list-item:
+// label-text-size body-large, 1rem), dieselbe Schrift wie im Menü.
+describe('Select: Schrift der Einträge', () => {
+	it('setzt jeden Eintrag in body large', async () => {
+		const screen = render(Select, { options: optionen, value: 'a' });
+		tippe(screen.getByRole('combobox'), 'ArrowDown');
+		await Promise.resolve();
+		const eintraege = screen.getAllByRole('option');
+		expect(eintraege).toHaveLength(3);
+		for (const e of eintraege) expect(e.className.split(/\s+/)).toContain('text-base');
+	});
+});
