@@ -144,7 +144,7 @@
 			<p class="text-xs text-on-surface-variant">
 				Alle anderen Lieferanten bekommen einfach nur die Bestellmail
 			</p>
-			<Button type="submit" size="lg" class="w-full" disabled={legtAn}>
+			<Button type="submit" size="lg" class="w-full sm:w-auto" disabled={legtAn}>
 				{legtAn ? 'Wird gespeichert …' : 'Lieferanten speichern'}
 			</Button>
 		</form>

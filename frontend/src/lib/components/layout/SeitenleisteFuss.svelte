@@ -73,7 +73,7 @@
 				</span>
 			</div>
 		{/if}
-		<Button variant="secondary" size="sm" onclick={onLogout} class="w-full gap-1.5">
+		<Button variant="secondary" size="sm" onclick={onLogout} class="w-full sm:w-auto gap-1.5">
 			<Icon name="logout" groesse={18} />
 			<span>Abmelden</span>
 		</Button>

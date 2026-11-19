@@ -44,7 +44,7 @@
 				onclick={() => {
 					omniboxStore.vormerkungHinweis = null;
 				}}
-				class="w-full text-lg"
+				class="w-full sm:w-auto text-lg"
 			>
 				Verstanden
 			</Button>

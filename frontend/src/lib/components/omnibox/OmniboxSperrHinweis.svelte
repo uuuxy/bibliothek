@@ -108,7 +108,12 @@
 						{amLeser ? 'Aufheben' : 'Übergehen'} kann nur, wer Schülerdaten bearbeiten darf
 					</p>
 				{:else if amLeser}
-					<Button variant="success" size="lg" onclick={hebeSperreAuf} class="w-full text-lg">
+					<Button
+						variant="success"
+						size="lg"
+						onclick={hebeSperreAuf}
+						class="w-full sm:w-auto text-lg"
+					>
 						Sperre aufheben
 					</Button>
 				{:else}
@@ -116,7 +121,7 @@
 						variant="danger-solid"
 						size="lg"
 						onclick={() => nochmal(true)}
-						class="w-full text-lg"
+						class="w-full sm:w-auto text-lg"
 					>
 						Einmalig ignorieren
 					</Button>
@@ -127,7 +132,7 @@
 					size="lg"
 					bind:element={abbruchKnopf}
 					onclick={schliessen}
-					class="mt-2 w-full">Abbrechen</Button
+					class="mt-2 w-full sm:w-auto">Abbrechen</Button
 				>
 			</div>
 		</div>

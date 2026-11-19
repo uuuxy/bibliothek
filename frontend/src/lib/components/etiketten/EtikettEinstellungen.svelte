@@ -29,7 +29,11 @@
 					</p>
 				</div>
 			</div>
-			<Button variant="secondary" class="w-full" onclick={etikettenStore.leereDruckauftrag}>
+			<Button
+				variant="secondary"
+				class="w-full sm:w-auto"
+				onclick={etikettenStore.leereDruckauftrag}
+			>
 				Anderes Buch wählen
 			</Button>
 		</div>

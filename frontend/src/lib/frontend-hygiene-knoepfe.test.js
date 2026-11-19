@@ -142,3 +142,20 @@ describe('Ein Link, der wie ein Knopf aussieht, ist ui/Button', () => {
 		expect(funde, 'Link als Knopf gebaut: <Button href=…> aus ui/Button nehmen').toEqual([]);
 	});
 });
+
+// M3, Desktop, Adapt components: „On desktop, maintain default component widths and padding,
+// and don't stretch these components to fill the pane." Auf dem Handy darf ein Knopf die Breite
+// füllen („work well on mobile"), ab der Fensterklasse medium (600 dp, sm:) nicht mehr.
+// Sieht nicht: Breiten aus einem Ausdruck und einen Knopf, den ein Raster oder flex-1 dehnt.
+describe('Ein Knopf füllt am Desktop nicht die Breite', () => {
+	it('nimmt w-full nur unterhalb der Fensterklasse medium', () => {
+		const funde = sammleQuelldateien(srcRoot)
+			.filter((f) => f.endsWith('.svelte'))
+			.flatMap((f) =>
+				knoepfe(ohneKommentare(readFileSync(f, 'utf8')))
+					.filter((k) => /\bw-full\b/.test(k.kopf) && !/\b(?:sm|md):w-auto\b/.test(k.kopf))
+					.map((k) => `${relPfad(f)}: ${k.kopf.replace(/\s+/g, ' ').slice(0, 80)}`)
+			);
+		expect(funde, 'w-full sm:w-auto: am Desktop behält der Knopf seine Breite').toEqual([]);
+	});
+});

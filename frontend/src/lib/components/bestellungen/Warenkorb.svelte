@@ -78,7 +78,7 @@
 				size="lg"
 				onclick={() => bestellStore.submitOrder()}
 				disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
-				class="w-full"
+				class="w-full sm:w-auto"
 			>
 				{#if bestellStore.submitting}
 					<Ladekreis size="sm" farbe="aktuell" />

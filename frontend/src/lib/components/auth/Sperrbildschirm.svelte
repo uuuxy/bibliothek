@@ -107,7 +107,12 @@
 			disabled={leerlaufSperre.entsperreLaeuft}
 			placeholder="Passwort"
 		/>
-		<Button type="submit" size="lg" disabled={leerlaufSperre.entsperreLaeuft} class="w-full">
+		<Button
+			type="submit"
+			size="lg"
+			disabled={leerlaufSperre.entsperreLaeuft}
+			class="w-full sm:w-auto"
+		>
 			{#if leerlaufSperre.entsperreLaeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
 				Prüfe …

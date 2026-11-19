@@ -102,7 +102,7 @@
 				hint={passwortFehlt ? 'Bitte dein Passwort eintragen' : ''}
 			/>
 		</div>
-		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full">
+		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full sm:w-auto">
 			{#if authStore.isLoggingIn}
 				<Ladekreis size="sm" farbe="aktuell" />
 				Anmelden …

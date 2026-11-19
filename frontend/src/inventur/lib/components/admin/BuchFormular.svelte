@@ -146,7 +146,7 @@
 							<Button
 								variant="secondary"
 								onclick={etikettenDrucken}
-								class="w-full"
+								class="w-full sm:w-auto"
 								data-tip="Etiketten dieses Titels im Druck-Center drucken"
 							>
 								<Icon name="print" />
@@ -156,7 +156,7 @@
 						<Button
 							variant="secondary"
 							onclick={onAssignClass}
-							class="w-full"
+							class="w-full sm:w-auto"
 							data-tip="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
 						>
 							<Icon name="menu_book" />

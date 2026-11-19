@@ -24,7 +24,7 @@
 <Button
 	variant="secondary"
 	onclick={oeffnen}
-	class="w-full"
+	class="w-full sm:w-auto"
 	data-tip="Ein Buch, das zweimal im Katalog steht, zu einem Titel machen"
 >
 	<Icon name="merge" />

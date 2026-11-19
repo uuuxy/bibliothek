@@ -66,7 +66,7 @@
 		     Maske für jeden). -->
 		<Button
 			variant={gesperrt ? 'success' : 'danger'}
-			class="w-full"
+			class="w-full sm:w-auto"
 			onclick={onLock}
 			disabled={kollege}
 		>

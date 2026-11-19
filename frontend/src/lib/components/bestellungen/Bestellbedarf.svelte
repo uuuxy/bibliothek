@@ -164,7 +164,7 @@
 			{#if gefiltert.length > maxVisible}
 				<!-- Hausbauteil statt rohem <button> mit text-xs (12 px kennt M3 fuer keinen Knopf).
 				     typo-rollen sah ihn nie: erscheint erst ab 61 Titeln, auf dem Zielsystem (247) immer. -->
-				<Button variant="ghost" class="w-full" onclick={() => (maxVisible += 60)}>
+				<Button variant="ghost" class="w-full sm:w-auto" onclick={() => (maxVisible += 60)}>
 					Weitere {gefiltert.length - maxVisible} anzeigen
 				</Button>
 			{/if}
