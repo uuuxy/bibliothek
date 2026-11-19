@@ -193,12 +193,12 @@
 	}
 	.m3-schieber::-webkit-slider-runnable-track {
 		height: 1rem;
-		border-radius: 0.5rem;
+		border-radius: var(--radius-md);
 		background: var(--spur);
 	}
 	.m3-schieber::-moz-range-track {
 		height: 1rem;
-		border-radius: 0.5rem;
+		border-radius: var(--radius-md);
 		background: var(--spur);
 	}
 	.m3-schieber::-webkit-slider-thumb {
