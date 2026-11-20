@@ -110,3 +110,20 @@ func TestFerientabelle_LueckeUndZahlendreher(t *testing.T) {
 		t.Errorf("Gegenprobe: ein plausibles Jahr muss durchgehen: %v", err)
 	}
 }
+
+// Vier und neun Wochen sind Sommerferien, gezählt mit Beginn und Ende. Die Prüfung zählte einen Tag
+// zu wenig: Genau vier Wochen lehnte sie mit „28 Tage sind keine Sommerferien“ ab, und 64 Tage ließ
+// sie durch.
+func TestNormalisiereSommerferien_VierBisNeunWochen(t *testing.T) {
+	for bis, gilt := range map[string]bool{
+		"2031-07-27": false, // 27 Tage
+		"2031-07-28": true,  // 28 Tage, vier Wochen
+		"2031-09-01": true,  // 63 Tage, neun Wochen
+		"2031-09-02": false, // 64 Tage
+	} {
+		_, err := NormalisiereSommerferien(`[{"jahr":2031,"von":"2031-07-01","bis":"` + bis + `"}]`)
+		if (err == nil) != gilt {
+			t.Errorf("2031-07-01 bis %s: Fehler %v, erwartet gültig=%v", bis, err, gilt)
+		}
+	}
+}

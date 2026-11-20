@@ -90,9 +90,11 @@ func (e SommerferienEintrag) pruefe() error {
 	if !z.Bis.After(z.Von) {
 		return &SommerferienFehler{Jahr: e.Jahr, Grund: "das Ende liegt nicht nach dem Beginn"}
 	}
-	if tage := z.Bis.Sub(z.Von).Hours() / 24; tage < 28 || tage > 63 {
+	// Gezählt werden die Ferientage mit Beginn und Ende, wie die Meldung sie nennt: 2031-07-01 bis
+	// 2031-07-28 sind 28 Tage, genau vier Wochen.
+	if tage := int(z.Bis.Sub(z.Von).Hours()/24) + 1; tage < 28 || tage > 63 {
 		return &SommerferienFehler{Jahr: e.Jahr,
-			Grund: fmt.Sprintf("%d Tage sind keine Sommerferien, erwartet sind 4 bis 9 Wochen", int(tage)+1)}
+			Grund: fmt.Sprintf("%d Tage sind keine Sommerferien, erwartet sind 4 bis 9 Wochen", tage)}
 	}
 	return nil
 }
