@@ -43,3 +43,21 @@ func TestHaeufigererTrenner(t *testing.T) {
 		}
 	}
 }
+
+// Eine Liste aus Excel mit drei Spalten und Semikolon trägt in den Daten mehr Kommas als
+// Semikolons: Titel mit Zusatz und Namen wie „Schurf, Bernd". Entscheiden darf nur die Kopfzeile;
+// über die ganze Datei gezählt wurde die Liste als Komma-Liste gelesen.
+func TestHaeufigererTrenner_NachDerKopfzeile(t *testing.T) {
+	faelle := map[string]rune{
+		"Titel;Autor;ISBN\nDeutschbuch 7, Neue Ausgabe, Band 1;Schurf, Bernd;9783060626755\nMathe, Band 2, Teil A;Müller, Eva;9783060000000\n": ';',
+		"\n\nTitel;Autor\nA, B, C;D, E\n":             ';',
+		"\"Titel, Untertitel\";ISBN\nA;1\n":           ';',
+		"Title,Author,ISBN\nBook; Part 1,Smith,978\n": ',',
+		"ISBN\n978;3\n978;4\n":                        ';',
+	}
+	for text, want := range faelle {
+		if got := HaeufigererTrenner(text); got != want {
+			t.Errorf("HaeufigererTrenner(%q) = %q, erwartet %q", text, got, want)
+		}
+	}
+}

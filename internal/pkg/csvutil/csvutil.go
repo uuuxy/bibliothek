@@ -20,12 +20,48 @@ func BaueLeser(inhalt []byte, trenner func(text string) rune) (*csv.Reader, erro
 	return leser, nil
 }
 
-// HaeufigererTrenner wählt Semikolon oder Komma danach, was in der ganzen Datei häufiger steht.
+// HaeufigererTrenner wählt Semikolon oder Komma nach der ersten Zeile mit Inhalt, meist der
+// Kopfzeile, gezählt außerhalb von Anführungszeichen. In den Daten stehen Kommas in Titeln und
+// Namen („Schurf, Bernd"); gezählt über die ganze Datei, läsen sie eine Liste mit drei Spalten und
+// Semikolon als Komma-Liste. Steht in der ersten Zeile keins von beiden, zählt die ganze Datei.
 func HaeufigererTrenner(text string) rune {
-	if strings.Count(text, ";") > strings.Count(text, ",") {
+	for _, zeile := range strings.Split(text, "\n") {
+		if strings.TrimSpace(zeile) == "" {
+			continue
+		}
+		semikolon, komma := zaehleTrennerAusserhalbVonAnfuehrung(zeile)
+		if semikolon+komma > 0 {
+			return mehrSemikolonAlsKomma(semikolon, komma)
+		}
+		break
+	}
+	return mehrSemikolonAlsKomma(strings.Count(text, ";"), strings.Count(text, ","))
+}
+
+// mehrSemikolonAlsKomma liefert ';' nur, wenn Semikolons überwiegen; sonst ','.
+func mehrSemikolonAlsKomma(semikolon, komma int) rune {
+	if semikolon > komma {
 		return ';'
 	}
 	return ','
+}
+
+// zaehleTrennerAusserhalbVonAnfuehrung zählt Semikolons und Kommas einer Zeile, die nicht in
+// Anführungszeichen stehen.
+func zaehleTrennerAusserhalbVonAnfuehrung(zeile string) (semikolon, komma int) {
+	inAnfuehrung := false
+	for _, zeichen := range zeile {
+		switch {
+		case zeichen == '"':
+			inAnfuehrung = !inAnfuehrung
+		case inAnfuehrung:
+		case zeichen == ';':
+			semikolon++
+		case zeichen == ',':
+			komma++
+		}
+	}
+	return semikolon, komma
 }
 
 // entschaerfeZelle stellt einer Zelle ein Apostroph voran, wenn sie mit =, +, -, @ oder einem
