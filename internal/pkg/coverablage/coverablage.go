@@ -7,7 +7,12 @@
 package coverablage
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,17 +93,61 @@ func Loesche(coverURL string) error {
 // der Pfad ändern, eine Verknüpfung in uploads genügt.
 func Schreibe(name string, inhalt []byte) error {
 	return mitAngelegterWurzel(func(wurzel *os.Root) error {
-		datei, err := wurzel.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-		if err != nil {
-			return fmt.Errorf("datei %q konnte nicht angelegt werden: %w", name, err)
-		}
-		defer closeutil.Schliesse(datei, "upload file")
-
-		if _, err := datei.Write(inhalt); err != nil {
+		if err := SchreibeUeberZwischendatei(wurzel, name, inhalt); err != nil {
 			return fmt.Errorf("datei %q konnte nicht geschrieben werden: %w", name, err)
 		}
 		return nil
 	})
+}
+
+// SchreibeUeberZwischendatei legt inhalt unter name in wurzel ab: erst unter einem eigenen
+// vorläufigen Namen, geschlossen, dann umbenannt. Wer die Datei zugleich ausliefert, sieht so nie
+// eine halbe, und ein Fehler beim Schließen hinterlässt keine. Zwei gleichzeitige Schreiber kommen
+// einander nicht in die Quere: Jeder hat seine Zwischendatei, der spätere ersetzt den früheren ganz.
+//
+// Liegt unter name eine Verknüpfung oder ein Ordner, lehnt es ab wie Loesche: Das Umbenennen
+// folgte ihr zwar nicht, ersetzte sie aber still, und eine Verknüpfung in der Ablage ist ein Befund.
+func SchreibeUeberZwischendatei(wurzel *os.Root, name string, inhalt []byte) error {
+	if info, err := wurzel.Lstat(name); err == nil && !info.Mode().IsRegular() {
+		return fmt.Errorf("unter %q liegt keine Datei", name)
+	}
+	zufall := make([]byte, 8)
+	if _, err := rand.Read(zufall); err != nil {
+		return err
+	}
+	vorlaeufig := name + ".teil-" + hex.EncodeToString(zufall)
+	if err := schreibeGanz(wurzel, vorlaeufig, inhalt); err != nil {
+		return err
+	}
+	if err := wurzel.Rename(vorlaeufig, name); err != nil {
+		entferneZwischendatei(wurzel, vorlaeufig)
+		return err
+	}
+	return nil
+}
+
+// schreibeGanz legt eine neue Datei an, schreibt inhalt und schließt sie; ein Fehler beim Schließen
+// zählt wie einer beim Schreiben. Scheitert es nach dem Anlegen, entfernt es die Datei wieder.
+func schreibeGanz(wurzel *os.Root, name string, inhalt []byte) error {
+	datei, err := wurzel.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return err
+	}
+	_, err = datei.Write(inhalt)
+	if schliessFehler := datei.Close(); schliessFehler != nil && err == nil {
+		err = schliessFehler
+	}
+	if err != nil {
+		entferneZwischendatei(wurzel, name)
+	}
+	return err
+}
+
+// entferneZwischendatei räumt eine angefangene Zwischendatei weg; scheitert das, steht es im Log.
+func entferneZwischendatei(wurzel *os.Root, name string) {
+	if err := wurzel.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		slog.Warn("coverablage: Zwischendatei nicht entfernt", "datei", name, "fehler", err)
+	}
 }
 
 // IstVorhanden sagt, ob name schon als Datei direkt in der Wurzel liegt.

@@ -2,7 +2,6 @@ package katalog
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/pkg/clientip"
 	"bibliothek/internal/pkg/closeutil"
+	"bibliothek/internal/pkg/coverablage"
 	"bibliothek/internal/pkg/coverquelle"
 	"bibliothek/internal/pkg/httpresp"
 	"bibliothek/internal/pkg/ratelimit"
@@ -143,29 +143,12 @@ func (c coverAbruf) holeUndKonvertiere(ctx context.Context, root *os.Root, adres
 	return schreibeCoverDatei(root, dateiname, fertig)
 }
 
-// schreibeCoverDatei legt das fertige Cover im Cache ab. Eine angefangene Datei wird bei einem
-// Fehler wieder entfernt.
+// schreibeCoverDatei legt das fertige Cover im Cache ab, über eine Zwischendatei: liefereCoverAusCache
+// prüft nur, ob der Name da ist, und gibt die Datei ein Jahr lang in den Browser-Cache. Eine halb
+// geschriebene stünde dort ein Jahr lang als kaputtes Bild. 0600 wie bei den hochgeladenen Covern:
+// Ausgeliefert wird über den Server, nicht über das Dateisystem.
 func schreibeCoverDatei(root *os.Root, dateiname string, fertig []byte) error {
-	// 0600 wie in internal/pkg/coverablage/coverablage.go, nicht 0666: Im Container fängt die umask das meist
-	// ab, aber „meist" ist bei Dateirechten keine Zusage. Nur dieser Prozess muss die Dateien je
-	// anfassen; ausgeliefert werden sie über den Server, nicht über das Dateisystem.
-	datei, err := root.OpenFile(dateiname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	_, err = datei.Write(fertig)
-	// Ein gescheitertes Close kann eine abgeschnittene Datei hinterlassen; es zählt wie ein
-	// Fehler beim Schreiben.
-	if cerr := datei.Close(); cerr != nil && err == nil {
-		err = cerr
-	}
-	if err != nil {
-		if rerr := root.Remove(dateiname); rerr != nil { // die angefangene Datei entfernen
-			slog.Warn("cover cache: cleanup failed", "datei", dateiname, "fehler", rerr)
-		}
-		return err
-	}
-	return nil
+	return coverablage.SchreibeUeberZwischendatei(root, dateiname, fertig)
 }
 
 // Cover liefert das Cover eines Titels als WebP aus dem Cache; fehlt es, lädt die Tür es von
