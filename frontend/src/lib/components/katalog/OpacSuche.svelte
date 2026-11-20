@@ -24,12 +24,18 @@
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let debounce;
 
+	// Jede Suche zählt lauf hoch; eine Antwort, die nach einer neueren eintrifft, verwirft sich.
+	// Sonst überschriebe die langsame Suche nach „Ma" die Treffer für „Mathematik 7".
+	let lauf = 0;
+
 	async function starteSuche() {
+		const meine = ++lauf;
 		const q = suche.trim();
 		ladefehler = '';
 		if (!q) {
 			ergebnisse = [];
 			searched = false;
+			laedt = false;
 			return;
 		}
 		laedt = true;
@@ -39,13 +45,16 @@
 			// apiFetch merkt sich den Stand des Servers.
 			const res = await apiFetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
 			if (!res.ok) throw new Error(await leseApiFehler(res));
-			ergebnisse = await res.json();
-			gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || ergebnisse.length;
+			const liste = await res.json();
+			if (meine !== lauf) return;
+			ergebnisse = liste;
+			gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || liste.length;
 		} catch (e) {
+			if (meine !== lauf) return;
 			ergebnisse = [];
 			ladefehler = fehlertext(e);
 		} finally {
-			laedt = false;
+			if (meine === lauf) laedt = false;
 		}
 	}
 

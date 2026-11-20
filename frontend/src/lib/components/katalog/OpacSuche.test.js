@@ -137,3 +137,39 @@ describe('OpacSuche: die Suche scheitert', () => {
 		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});
 });
+
+// Eine langsame ältere Suche kam nach einer neueren an und überschrieb deren Treffer: Wer „Ma“
+// tippte, kurz wartete und „Mathematik 7“ fertig schrieb, sah am Ende die Treffer für „Ma“.
+describe('OpacSuche: Reihenfolge der Antworten', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it('zeigt die Treffer der neuesten Suche, auch wenn eine ältere später antwortet', async () => {
+		vi.useFakeTimers();
+		/** @type {(wert: any) => void} */
+		let alteAntwort = () => {};
+		const titel = (/** @type {string} */ name) => ({
+			ok: true,
+			json: async () => [{ id: name, titel: name, autor: '', verfuegbar: 1, gesamt: 1 }],
+			headers: new Headers({ 'X-Treffer-Gesamt': '1' })
+		});
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockImplementationOnce(() => new Promise((erfuelle) => (alteAntwort = erfuelle)))
+				.mockImplementationOnce(async () => titel('Mathematik 7 Arbeitsheft'))
+		);
+		const screen = render(OpacSuche);
+		await suche(screen, 'Ma');
+		await suche(screen, 'Mathematik 7');
+		expect(screen.getByRole('heading', { name: 'Mathematik 7 Arbeitsheft' })).toBeTruthy();
+
+		alteAntwort(titel('Malbuch'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(screen.queryByRole('heading', { name: 'Malbuch' })).toBeNull();
+		expect(screen.getByRole('heading', { name: 'Mathematik 7 Arbeitsheft' })).toBeTruthy();
+	});
+});
