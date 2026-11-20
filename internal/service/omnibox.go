@@ -46,8 +46,11 @@ type OmniboxErgebnis struct {
 	// VorgemerktFuer nennt Name und Klasse des Schülers, für den das Buch bereitliegt.
 	VorgemerktFuer string
 	// RegalfreigabeBarcode ist das Exemplar im Abholfach, das zurück ins Regal muss, weil der
-	// Schüler ein anderes Exemplar desselben Titels genommen hat.
+	// Schüler ein anderes Exemplar desselben Titels genommen hat; außer AbholfachJetztFuer nennt
+	// den Nächsten in der Warteschlange, dann bleibt es im Fach.
 	RegalfreigabeBarcode string
+	// AbholfachJetztFuer nennt Name und Klasse des Nachrückers (AusleihErgebnis).
+	AbholfachJetztFuer string
 	// AufsichtInformieren ist gesetzt, wenn das zurückgebrachte Buch auf einem Bescheid steht,
 	// der schon bei der Schulaufsicht liegt; sie ist unverzüglich zu informieren. Es ist ein
 	// eigenes Feld und keine Meldung, weil die Theke es als Aufgabe sehen muss.
@@ -472,6 +475,7 @@ func (d *OmniboxDienst) uebernimmAusleihErgebnis(ausleihErg *AusleihErgebnis, er
 	erg.VormerkungTitel = ausleihErg.VormerkungTitel
 	erg.VorgemerktFuer = ausleihErg.VorgemerktFuer
 	erg.RegalfreigabeBarcode = ausleihErg.RegalfreigabeBarcode
+	erg.AbholfachJetztFuer = ausleihErg.AbholfachJetztFuer
 	erg.AuflagenHinweis = ausleihErg.AuflagenHinweis
 	erg.KlassenHinweis = ausleihErg.KlassenHinweis
 	erg.DoppeltHinweis = ausleihErg.DoppeltHinweis

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"bibliothek/internal/repository"
 
@@ -32,9 +33,12 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("BC-A-123"))
+	// Niemand wartet auf den Titel: Das Exemplar gehört ins Regal.
+	mock.ExpectQuery("v.status = 'wartend'").WithArgs("titel1").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 
 	resp := &AusleihErgebnis{}
-	if err := entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", resp); err != nil {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", time.Now(), resp); err != nil {
 		t.Fatalf("entferneErfuellteVormerkung: %v", err)
 	}
 
@@ -63,7 +67,7 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 	// kein barcode-Lookup erwartet.
 
 	resp := &AusleihErgebnis{}
-	if err := entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp); err != nil {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", time.Now(), resp); err != nil {
 		t.Fatalf("entferneErfuellteVormerkung: %v", err)
 	}
 
@@ -91,7 +95,7 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 		WillReturnError(pgx.ErrNoRows)
 
 	resp := &AusleihErgebnis{}
-	if err := entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", resp); err != nil {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", time.Now(), resp); err != nil {
 		t.Fatalf("entferneErfuellteVormerkung: %v", err)
 	}
 
@@ -117,7 +121,7 @@ func TestRegalfreigabe_FehlerGehtAnDenRufer(t *testing.T) {
 
 	ursache := errors.New("verbindung abgebrochen")
 	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").WillReturnError(ursache)
-	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", &AusleihErgebnis{}); !errors.Is(err, ursache) {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", time.Now(), &AusleihErgebnis{}); !errors.Is(err, ursache) {
 		t.Errorf("entferneErfuellteVormerkung bei Datenbankfehler = %v, erwartet %v", err, ursache)
 	}
 
@@ -125,7 +129,7 @@ func TestRegalfreigabe_FehlerGehtAnDenRufer(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").WillReturnError(pgx.ErrNoRows)
 	resp := &AusleihErgebnis{}
-	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", resp); err != nil || resp.RegalfreigabeBarcode != "" {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", time.Now(), resp); err != nil || resp.RegalfreigabeBarcode != "" {
 		t.Errorf("entferneErfuellteVormerkung ohne reserviertes Exemplar = %v, Hinweis %q, erwartet nil und keinen", err, resp.RegalfreigabeBarcode)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

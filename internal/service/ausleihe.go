@@ -34,8 +34,12 @@ type AusleihErgebnis struct {
 	VorgemerktFuer string
 	// RegalfreigabeBarcode ist gesetzt, wenn für den Schüler ein anderes Exemplar desselben
 	// Titels im Abholfach lag und er ein Exemplar aus dem Regal genommen hat. Das Exemplar im
-	// Fach muss zurück ins Regal; sonst läge es dort, obwohl es frei ausleihbar ist.
+	// Fach muss zurück ins Regal, außer AbholfachJetztFuer nennt einen Nachrücker; sonst läge es
+	// dort, obwohl es frei ausleihbar ist.
 	RegalfreigabeBarcode string
+	// AbholfachJetztFuer nennt Name und Klasse des Nächsten in der Warteschlange, dem das
+	// liegengelassene Exemplar (RegalfreigabeBarcode) zugeteilt wurde: Es bleibt im Fach.
+	AbholfachJetztFuer string
 	// AuflagenHinweis ist gesetzt, wenn Kinder derselben Klasse eine andere Auflage des
 	// ausgeliehenen Schulbuchs haben. Er ist nur ein Hinweis, die Ausleihe ist gebucht.
 	AuflagenHinweis *repository.AuflagenMischung

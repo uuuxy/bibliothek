@@ -188,7 +188,7 @@ func (d *AusleihDienst) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *n
 		return nil, nil, err
 	}
 	if vorgang.istSchueler() {
-		if err := entferneErfuellteVormerkung(ctx, sp, l.exemplar, l.leser.ID, erg); err != nil {
+		if err := entferneErfuellteVormerkung(ctx, sp, l.exemplar, l.leser.ID, d.heute(), erg); err != nil {
 			return nil, nil, err
 		}
 	}

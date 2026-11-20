@@ -168,3 +168,34 @@ func TestAusleihe_AnderesExemplarNenntDasBereitgelegte(t *testing.T) {
 		t.Errorf("%d Vormerkungen nach der Ausleihe, erwartet keine", n)
 	}
 }
+
+// Wartet ein anderer auf den Titel, bekommt er das liegengelassene Exemplar: Es bleibt im Fach,
+// und die Antwort nennt ihn. Vorher ging es zurück ins Regal, und der Wartende wartete weiter,
+// bis irgendwann ein anderes Exemplar zurückkam.
+func TestAusleihe_AnderesExemplarGehtAnDenNaechstenWartenden(t *testing.T) {
+	v := newVormerkTheke(t)
+	titelID, nummern := v.titel(t, "Nachruecken", "Fach", "Regal")
+	vorgemerkt := v.leser(t, "Erster", "schueler")
+	v.legeBereit(t, titelID, vorgemerkt, nummern["Fach"])
+	wartend := v.leser(t, "Zweiter", "schueler")
+	if _, err := v.pool.Exec(context.Background(), `INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, wartend); err != nil {
+		t.Fatalf("wartende Vormerkung: %v", err)
+	}
+
+	res, err := v.leihe(t, nummern["Regal"], vorgemerkt)
+	if err != nil || res.Art != "ausleihe" {
+		t.Fatalf("Ausleihe: %+v, Fehler %v", res, err)
+	}
+	if res.RegalfreigabeBarcode != nummern["Fach"] || res.AbholfachJetztFuer != "Vormerktheke Zweiter, 06C" {
+		t.Errorf("Hinweis %q für %q, erwartet %s für „Vormerktheke Zweiter, 06C“", res.RegalfreigabeBarcode, res.AbholfachJetztFuer, nummern["Fach"])
+	}
+	var status, bereit string
+	if err := v.pool.QueryRow(context.Background(), `SELECT v.status, coalesce(e.barcode_id, '')
+		FROM vormerkungen v LEFT JOIN buecher_exemplare e ON e.id = v.bereitgestellt_exemplar_id
+		WHERE v.titel_id = $1 AND v.schueler_id = $2`, titelID, wartend).Scan(&status, &bereit); err != nil {
+		t.Fatalf("Vormerkung des Zweiten: %v", err)
+	}
+	if status != "abholbereit" || bereit != nummern["Fach"] {
+		t.Errorf("Vormerkung des Zweiten: %s mit %q, erwartet abholbereit mit %s", status, bereit, nummern["Fach"])
+	}
+}

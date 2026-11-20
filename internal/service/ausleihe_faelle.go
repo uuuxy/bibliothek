@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"bibliothek/internal/repository"
 
@@ -97,11 +98,12 @@ func deuteAnlegeFehler(err error) error {
 
 // entferneErfuellteVormerkung löscht die Vormerkung des Schülers für den Titel, den er gerade
 // ausgeliehen hat. Lag für ihn ein anderes Exemplar im Abholfach als das, das er genommen hat,
-// muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler der
-// Datenbank gibt die Funktion zurück: Nach ihm ist die Transaktion abgebrochen, und die Ausleihe
-// ließe sich ohnehin nicht festschreiben. Gibt es nur das reservierte Exemplar nicht mehr,
-// entfällt der Hinweis.
-func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, erg *AusleihErgebnis) error {
+// bekommt es der Nächste in der Warteschlange (repository.RueckeNachMitExemplar), sonst muss es
+// zurück ins Regal: Seine Nummer geht als Hinweis in die Antwort, mit dem Nachrücker, wenn es im
+// Fach bleibt. Einen Fehler der Datenbank gibt die Funktion zurück: Nach ihm ist die Transaktion
+// abgebrochen, und die Ausleihe ließe sich ohnehin nicht festschreiben. Gibt es nur das
+// reservierte Exemplar nicht mehr, entfällt der Hinweis.
+func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, jetzt time.Time, erg *AusleihErgebnis) error {
 	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, exemplar.TitelID, schuelerID)
 	if err != nil {
 		return fmt.Errorf("erfüllte vormerkung entfernen: %w", err)
@@ -118,7 +120,12 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repos
 	if err != nil {
 		return fmt.Errorf("nummer des reservierten exemplars laden: %w", err)
 	}
+	fuer, err := repository.RueckeNachMitExemplar(ctx, tx, *bereitgestellt, exemplar.TitelID, jetzt)
+	if err != nil {
+		return fmt.Errorf("warteschlange für das liegengelassene exemplar: %w", err)
+	}
 	erg.RegalfreigabeBarcode = barcode
+	erg.AbholfachJetztFuer = fuer
 	return nil
 }
 
@@ -137,7 +144,7 @@ func (d *AusleihDienst) verarbeiteAusleihe(
 	}
 
 	if vorgang.istSchueler() {
-		if err := entferneErfuellteVormerkung(ctx, tx, exemplar, vorgang.leserID, erg); err != nil {
+		if err := entferneErfuellteVormerkung(ctx, tx, exemplar, vorgang.leserID, d.heute(), erg); err != nil {
 			return nil, err
 		}
 	}

@@ -40,6 +40,9 @@ type eingabeAntwort struct {
 	// RegalfreigabeBarcode: das vorgemerkte Exemplar im Abholfach, das zurück ins Regal muss,
 	// weil der Leser ein anderes Exemplar desselben Titels genommen hat.
 	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
+	// AbholfachJetztFuer: Das liegengelassene Exemplar bleibt im Abholfach, für den Nächsten in der
+	// Warteschlange, den dieses Feld nennt.
+	AbholfachJetztFuer string `json:"abholfach_jetzt_fuer,omitempty"`
 	// AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen
 	// Schadensersatz-Bescheid; die Schulaufsicht ist unverzüglich zu informieren. Getrennt von
 	// Meldung, weil es eine Aufgabe ist und keine Erfolgsmeldung.

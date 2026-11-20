@@ -141,12 +141,12 @@ export function erzeugeOmniboxAntwort({
 			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${leseLeser()?.vorname}`
 		);
 		// Der Schüler hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen: Das
-		// reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
+		// muss zurück ins Regal; wartet ein anderer, hat der Server es ihm zugeteilt.
 		if (daten.regalfreigabe_barcode) {
-			melde(
-				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen`,
-				'warning'
-			);
+			const wohin = daten.abholfach_jetzt_fuer
+				? `bleibt im Abholfach, jetzt für ${daten.abholfach_jetzt_fuer}`
+				: 'zurück ins Regal räumen';
+			melde(`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} ${wohin}`, 'warning');
 		}
 		// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
 		// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört

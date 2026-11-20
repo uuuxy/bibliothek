@@ -151,6 +151,27 @@ describe('Theke: Ausleihe', () => {
 			'warning'
 		);
 	});
+
+	// Wartet ein anderer auf den Titel, bekommt er das liegengelassene Exemplar: Es bleibt im Fach.
+	it('sagt, für wen das liegengelassene Exemplar im Abholfach bleibt', async () => {
+		const store = neuerStore(IDA);
+
+		await scanne(store, {
+			type: 'ausleihe',
+			book: { titel: 'Mathe 7' },
+			regalfreigabe_barcode: 'B-518-2',
+			abholfach_jetzt_fuer: 'Mia Muster, 07A'
+		});
+
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			'Hinweis: Reserviertes Exemplar B-518-2 bleibt im Abholfach, jetzt für Mia Muster, 07A',
+			'warning'
+		);
+		expect(snackbars.addToast).not.toHaveBeenCalledWith(
+			'Hinweis: Reserviertes Exemplar B-518-2 zurück ins Regal räumen',
+			'warning'
+		);
+	});
 });
 
 describe('Theke: Hinweis des Servers', () => {

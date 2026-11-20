@@ -285,6 +285,7 @@ func zurEingabeAntwort(ergebnis *service.OmniboxErgebnis) *eingabeAntwort {
 		VormerkungTitel:      ergebnis.VormerkungTitel,
 		VorgemerktFuer:       ergebnis.VorgemerktFuer,
 		RegalfreigabeBarcode: ergebnis.RegalfreigabeBarcode,
+		AbholfachJetztFuer:   ergebnis.AbholfachJetztFuer,
 		AufsichtInformieren:  ergebnis.AufsichtInformieren,
 		Abholbereit:          zuAbholbereitenVormerkungen(ergebnis.Abholbereit),
 		AuflagenHinweis:      ergebnis.AuflagenHinweis,

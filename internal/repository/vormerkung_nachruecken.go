@@ -49,6 +49,37 @@ func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplar
 	return tag.RowsAffected() > 0, nil
 }
 
+// RueckeNachMitExemplar teilt ein Exemplar aus dem Abholfach, das sein Schüler liegen ließ, dem
+// nächsten Wartenden desselben Titels zu (bedieneNaechstenWartenden). fuer nennt ihn mit Klasse,
+// wie die Theke ihn bei einer Rückgabe nennt; leer heißt: Niemand wartet, und das Exemplar gehört
+// ins Regal. Gefragt wird zuerst, ob jemand wartet: Ohne Wartenden bleibt es bei einer Abfrage.
+func RueckeNachMitExemplar(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, err error) {
+	wartet, err := ersteZeile[bool](ctx, db, `SELECT EXISTS (
+		SELECT 1 FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
+		WHERE v.titel_id = $1 AND v.status = 'wartend' AND `+sqlWartenderDarfAbholen+`)`, titelID)
+	if err != nil || !wartet {
+		return "", err
+	}
+	bedient, err := bedieneNaechstenWartenden(ctx, db, exemplarID, titelID, jetzt)
+	if err != nil || !bedient {
+		return "", err
+	}
+	return ersteZeile[string](ctx, db, `SELECT s.vorname || ' ' || s.nachname
+		       || CASE WHEN coalesce(s.klasse, '') <> '' THEN ', ' || s.klasse ELSE '' END
+		FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
+		WHERE v.bereitgestellt_exemplar_id = $1 AND v.status = 'abholbereit'`, exemplarID)
+}
+
+// ersteZeile liest den einen Wert der ersten Zeile; eine leere Antwort ist pgx.ErrNoRows.
+func ersteZeile[T any](ctx context.Context, db SpurenDatenbank, sql string, args ...any) (T, error) {
+	zeilen, err := db.Query(ctx, sql, args...)
+	if err != nil {
+		var leer T
+		return leer, err
+	}
+	return pgx.CollectOneRow(zeilen, pgx.RowTo[T])
+}
+
 // loescheVormerkungenUndRueckeNach ist der Schritt der Vormerkungen in der Tilgung der Spuren:
 // Es löscht alle Vormerkungen der genannten Schüler (die Notiz ist personenbezogen) und lässt
 // für jedes dabei frei werdende Exemplar die Warteschlange nachrücken. Geliefert wird die Zahl
