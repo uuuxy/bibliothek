@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"time"
 
 	"bibliothek/internal/apierrors"
+	"bibliothek/internal/auth"
 	"bibliothek/internal/pkg/kennung"
 )
 
@@ -60,13 +62,35 @@ const bearbeitungsfristVorgabe = 15 * time.Second
 // ohne HTTP-Aufbau prüfbar ist — eine Ausnahmeliste, die man nur im Betrieb testen
 // kann, ist genau die Sorte Schutz, die man irrtümlich für wirksam hält.
 func anfrageFrist(pfad string, vorgabe time.Duration) time.Duration {
-	for _, praefix := range langLaufendePfade {
-		if strings.HasPrefix(pfad, praefix) {
-			return langLaufendeFrist
-		}
+	if istLangLaufend(pfad) {
+		return langLaufendeFrist
+	}
+	if slices.Contains(anmeldePfade, pfad) {
+		return anmeldungsFrist
 	}
 	return vorgabe
 }
+
+// istLangLaufend sagt, ob der Pfad in langLaufendePfade steht.
+func istLangLaufend(pfad string) bool {
+	for _, praefix := range langLaufendePfade {
+		if strings.HasPrefix(pfad, praefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// anmeldePfade brauchen mehr als die Frist eines Scans: Die Prüfung am Mailserver oder
+// Verzeichnisdienst darf 15 Sekunden dauern, danach kommen Sitzung und Rechte oder, bei gestörtem
+// Server, die Prüfung gegen den Prüfwert der Sitzung. Die Türen setzen ihre eigene Frist
+// (auth.AnmeldeFrist); eine kürzere hier kappte sie, und genau der Weg für den gestörten Server
+// fände einen abgelaufenen Kontext vor. Die Lesefrist der Verbindung bleibt die Vorgabe: Eine
+// Anmeldung ist klein.
+var anmeldePfade = []string{"/login", "/api/auth/entsperren"}
+
+// anmeldungsFrist lässt der Frist der Türen Luft für das Schreiben der Antwort.
+const anmeldungsFrist = auth.AnmeldeFrist + 5*time.Second
 
 // erweitereLesefristFuerLangeUploads hebt die Lesefrist der Verbindung für genau die
 // Endpunkte an, die große Dateien entgegennehmen.
@@ -84,7 +108,7 @@ func anfrageFrist(pfad string, vorgabe time.Duration) time.Duration {
 // fehlenden freiwilligen Schnittstelle, wäre ein Rätsel.
 func erweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if anfrageFrist(r.URL.Path, LesefristVorgabe) != LesefristVorgabe {
+		if istLangLaufend(r.URL.Path) {
 			if err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(langLaufendeFrist)); err != nil {
 				slog.Warn("Lesefrist nicht verlängerbar, es gilt die Vorgabe", "pfad", r.URL.Path, "fehler", err)
 			}

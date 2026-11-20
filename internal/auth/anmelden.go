@@ -111,11 +111,12 @@ type anmeldeAntwort struct {
 	Rechte   []string `json:"permissions"`
 }
 
-// anmeldeFrist umfasst den Server des Kontos (imapFrist, ldapFrist), die Schritte in der
+// AnmeldeFrist umfasst den Server des Kontos (imapFrist, ldapFrist), die Schritte in der
 // Datenbank danach und das Warten bis zur Absage (mindestdauerAbsage). Sie liegt über imapFrist,
 // sonst endete der Kontext zwischen „Passwort richtig" und dem Anlegen der Sitzung, und eine
-// richtige, langsame Anmeldung zählte als Fehlversuch (TestAnmeldeFrist_LaesstIMAPLuft).
-const anmeldeFrist = imapFrist + 10*time.Second
+// richtige, langsame Anmeldung zählte als Fehlversuch (TestAnmeldeFrist_LaesstIMAPLuft). Die
+// Frist der Mitte für /login und /api/auth/entsperren liegt darüber (internal/api/middleware.go).
+const AnmeldeFrist = imapFrist + 10*time.Second
 
 // mindestdauerAbsage ist die kürzeste Zeit bis zur Antwort „E-Mail-Adresse oder Passwort stimmt
 // nicht". Eine Eingabe ohne Konto erreicht keinen Server und wäre in Millisekunden abgelehnt, ein
@@ -152,7 +153,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		anfrage.Email = strings.TrimSpace(anfrage.Email)
 		eingabe := anmeldeEingabe{eingabe: anfrage.Email, email: ErgaenzeSchulDomain(anfrage.Email)}
 
-		ctx, cancel := context.WithTimeout(r.Context(), anmeldeFrist)
+		ctx, cancel := context.WithTimeout(r.Context(), AnmeldeFrist)
 		defer cancel()
 
 		passwort, ok := pruefeAnmeldedaten(w, anfrage)

@@ -190,8 +190,8 @@ func TestPruefeIMAPAnmeldung_HaengtKeineDomainAn(t *testing.T) {
 // Die Tür der Anmeldung muss dem Mailserver Luft lassen, sonst endet ihr Kontext zwischen
 // „Passwort richtig" und dem Lesen des Kontos.
 func TestAnmeldeFrist_LaesstIMAPLuft(t *testing.T) {
-	if anmeldeFrist <= imapFrist+2*time.Second {
-		t.Fatalf("anmeldeFrist (%v) muss deutlich über imapFrist (%v) liegen", anmeldeFrist, imapFrist)
+	if AnmeldeFrist <= imapFrist+2*time.Second {
+		t.Fatalf("AnmeldeFrist (%v) muss deutlich über imapFrist (%v) liegen", AnmeldeFrist, imapFrist)
 	}
 }
 

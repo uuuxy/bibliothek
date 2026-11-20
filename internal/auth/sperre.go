@@ -69,7 +69,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), anmeldeFrist)
+		ctx, cancel := context.WithTimeout(r.Context(), AnmeldeFrist)
 		defer cancel()
 
 		pruefung := entsperrPruefung{

@@ -18,7 +18,7 @@ import (
 )
 
 // imapFrist ist die eine Frist für Verbinden und Anmelden am Mailserver. Die Tür der Anmeldung
-// lässt ihr Luft (anmeldeFrist > imapFrist): Sonst endete ihr Kontext zwischen der gelungenen
+// lässt ihr Luft (AnmeldeFrist > imapFrist): Sonst endete ihr Kontext zwischen der gelungenen
 // Anmeldung am Mailserver und dem Lesen des Kontos, und eine richtige Anmeldung zählte als
 // Fehlversuch.
 const imapFrist = 15 * time.Second

@@ -34,7 +34,7 @@ const (
 const ldapPlatzhalter = "%s"
 
 // ldapFrist ist die eine Frist für Verbinden, Dienstkonto, Suche und Anmeldung am
-// Verzeichnisdienst. Sie ist so lang wie die des Mailservers, damit anmeldeFrist beiden Luft lässt.
+// Verzeichnisdienst. Sie ist so lang wie die des Mailservers, damit AnmeldeFrist beiden Luft lässt.
 const ldapFrist = imapFrist
 
 // ldapBefehlsfrist gilt je Anfrage an den Verzeichnisdienst; go-ldap wartet sonst ohne Ende auf

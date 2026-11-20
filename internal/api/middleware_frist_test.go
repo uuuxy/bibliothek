@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"bibliothek/internal/auth"
 )
 
 // Nur der Live-Strom läuft ohne Bearbeitungsfrist. Ein Pfad, der /events nur als Teilwort
@@ -51,6 +53,10 @@ func TestAnfrageFrist(t *testing.T) {
 		{"/api/lusd/preview", langLaufendeFrist, "Vorschau liest dieselbe Datei"},
 		{"/api/admin/mahnungen/bulk-print", langLaufendeFrist, "Sammeldruck ueber alle Klassen"},
 		{"/api/admin/settings/adressabgleich/lauf", langLaufendeFrist, "Webmail-Abruf darf zwei Minuten dauern"},
+		// Anmelden und Entsperren setzen auth.AnmeldeFrist; die Frist der Mitte darf sie nicht kappen,
+		// sonst fände der Weg bei gestörtem Mailserver einen abgelaufenen Kontext vor.
+		{"/login", anmeldungsFrist, "Anmeldung wartet bis zu 15 s auf den Mailserver"},
+		{"/api/auth/entsperren", anmeldungsFrist, "Entsperren prüft wie die Anmeldung"},
 
 		// Alltagspfade behalten die kurze Frist, sonst hält ein hängender Scan
 		// minutenlang eine Verbindung zur Datenbank fest.
@@ -102,5 +108,19 @@ func TestUUIDPruefungGreiftAmMux(t *testing.T) {
 	aussen.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/dinge/kein-uuid", nil))
 	if rec.Code == http.StatusBadRequest {
 		t.Error("unerwartet: von aussen umschlossen greift die Pruefung doch — Befund neu bewerten")
+	}
+}
+
+// Die Frist der Mitte für Anmelden und Entsperren liegt über der Frist der Türen, und die Lesefrist
+// der Verbindung bleibt die Vorgabe: Eine verlängerte Lesefrist ließe eine langsam tröpfelnde
+// Anmeldung die Verbindung fünf Minuten halten.
+func TestAnmeldungsFrist_UeberDerFristDerTuerenOhneLangeLesefrist(t *testing.T) {
+	if anmeldungsFrist <= auth.AnmeldeFrist {
+		t.Errorf("anmeldungsFrist = %v, erwartet mehr als auth.AnmeldeFrist (%v)", anmeldungsFrist, auth.AnmeldeFrist)
+	}
+	for _, pfad := range anmeldePfade {
+		if istLangLaufend(pfad) {
+			t.Errorf("%s gilt als lang laufend und bekäme die lange Lesefrist", pfad)
+		}
 	}
 }

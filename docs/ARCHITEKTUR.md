@@ -1621,7 +1621,7 @@ Stand: 31.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | `erweitereLesefristFuerLangeUploads` | angehoben für Import-Routen                | Steht **vor** dem Body-Limit, also vor jedem Lesen — danach gesetzt käme sie zu spät       |
 | `http.Server.IdleTimeout`          | 120 s                                        | Getrennt gesetzt, damit nicht `ReadTimeout` beide Fristen aneinanderkettet                 |
 | `http.Server.WriteTimeout`         | **bewusst nicht gesetzt**                    | `/events` ist definitionsgemäß eine Antwort, die nie endet; ein globaler Wert würde jede Live-Verbindung kappen |
-| `fristMiddleware`                | `bearbeitungsfristVorgabe` (je Route)       | Begrenzt die Bearbeitungsdauer im Handler                                                  |
+| `fristMiddleware`                | `bearbeitungsfristVorgabe` (je Route)       | Begrenzt die Bearbeitungsdauer im Handler; `/login` und `/api/auth/entsperren` bekommen `anmeldungsFrist`, mehr als `auth.AnmeldeFrist`, ohne längere Lesefrist |
 | Caddy                              | 300 s Header, 600 s Read/Write               | Muss ≥ der längsten Anwendungsfrist sein — läuft die kürzeste Frist vorne weg, bricht der Vorgang dort ab, wo niemand die Meldung sieht |
 
 ---
