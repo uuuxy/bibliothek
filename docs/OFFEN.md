@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 18.11.2026
+Stand: 20.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -43,6 +43,8 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
+- [ ] Kleine Funde aus einer Durchsicht des Codes: 23 Stellen in fünf Gruppen, je Fund ein
+  Commit mit einem Test, der am alten Code rot wird. (5.196)
 - [x] Die übrigen Google-Seiten: acht Punkte entscheiden, vom Kopf der Buchakte als App bar bis
   zum Sperrhinweis an der Theke ([sweeps.md](sweeps.md), Abdeckung). (5.195)
 - [x] Texte der Oberfläche wie die Meldungen des Servers setzen: ein einzelner Satz ohne Punkt,
@@ -115,6 +117,68 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.196 Kleine Funde aus einer Durchsicht des Codes
+
+Am Code nachgeprüft; keiner schadet still (Regel 4: B).
+
+**Falsche oder fehlende Meldung**
+- Konto anlegen oder ändern: Ein unbekannter Rollenname wird still zu `mitarbeiter`, statt
+  abgelehnt zu werden (`internal/api/benutzer/konto_pruefungen.go`).
+- Frist von Hand vorziehen (Rückruf): Die Tür lehnt bei einem gesperrten Leser ab, obwohl nichts
+  verliehen wird (`internal/api/theke/ausleihe.go`).
+- Klassensatz anlegen: Die Warnung, ein vorhandener werde überschrieben, trifft nicht zu, und beim
+  Wechsel der Klasse geht die Buchauswahl verloren (`KlassensatzDialog.svelte`).
+- Geräteverwaltung: „Bearbeiten“ und „Defekt“ stehen auch ohne das Recht `edit_books` da; der
+  Server lehnt dann ab (`GeraeteVerwaltung.svelte`).
+
+**Seltene Eingaben oder Daten**
+- Eigene Sommerferien: Die Prüfung der Länge zählt einen Tag falsch
+  (`internal/pkg/lmfplan/ferien_einstellung.go`).
+- CSV-Import: Das Trennzeichen wird im ganzen Text gezählt statt in der Kopfzeile; Kommas in
+  Titeln führen zum falschen Trennzeichen (`internal/pkg/csvutil/csvutil.go`).
+- Verfügbarkeit: Ein Exemplar im Abholfach zählt als sofort verfügbar (`SQLBestandVerfuegbar` in
+  `internal/repository/bestand_sql.go`).
+- Bestelldetail und Bestätigung an den Lieferanten: Der Schlüssel der Liste (Titel und ISBN) ist
+  bei zwei gleichen Positionen doppelt (`BestellBestaetigung.svelte`,
+  `BestellDetailPositionen.svelte`).
+- Öffentlicher Katalog: Eine langsame ältere Suche kann die Treffer einer neueren überschreiben
+  (`OpacSuche.svelte`).
+
+**Gleichzeitige Zugriffe, sehr unwahrscheinlich**
+- Leser in den Papierkorb: Die Prüfung auf offene Ausleihen und Forderungen läuft ohne Sperre
+  (`internal/repository/leser_loeschen.go`).
+- LMF-Plan: Veröffentlichen und Verwerfen im selben Augenblick können Fristen ohne Plan
+  hinterlassen (`internal/api/lernmittel/lmf_plan_veroeffentlichung.go`).
+- Regalfreigabe: Wird ein anderes Exemplar ausgeliehen, rückt die Warteschlange der Vormerkungen
+  nicht nach (`entferneErfuellteVormerkung` in `internal/service/ausleihe_faelle.go`).
+
+**Dateien und Sicherung**
+- `cmd/restore-backup`: Der Fehler beim Schließen der wiederhergestellten Datei geht verloren.
+- Cover-Cache und Cover-Upload schreiben ohne Zwischendatei: Zwei gleichzeitige Abrufe können eine
+  halbe Datei hinterlassen, ein Fehler beim Schließen geht verloren (`internal/api/katalog/cover.go`,
+  `internal/pkg/coverablage/coverablage.go`).
+- `scripts/backup.sh`: Ein zweiter Lauf von Hand am selben Tag überschreibt die Tagessicherung und
+  löscht sie, wenn er scheitert.
+
+**Einmal-Werkzeuge und Aufräumen**
+- `cmd/rotate-encryption-key`: Der neue Schlüssel kommt als Argument und steht im Klartext im
+  Protokoll; er gehört in eine Umgebungsvariable oder an die Eingabe, ohne Ausgabe.
+- Littera-Übernahme: Ein gültiger fremder Barcode wird verworfen, wenn das Littera-Etikett fehlt
+  oder unlesbar ist (`internal/littera/schreiber_barcodes.go`).
+- `littera-altbestand -ausleihen` ohne `-personen` oder `-bestand` schreibt zuerst den Katalog und
+  verwirft dann alle Ausleihen; die Angaben gehören vor dem Schreiben geprüft.
+- `/api/auth/domain` antwortet ohne `Content-Type: application/json`
+  (`internal/auth/schuldomain.go`).
+- Lieferant anlegen: Die Felder werden nicht getrimmt, die Adresse nicht geprüft, und das
+  Umschalten des Hauptlieferanten läuft nicht in einer Transaktion
+  (`internal/api/bestellung/lieferanten.go`).
+- `scripts/import_isbns.go`: `ILIKE` ohne Maskierung von `%` und `_`; ein Titel mit mehreren
+  Treffern fällt nicht auf.
+- Theke leeren und Abmelden: Fehlerbanner mit den nicht gebuchten Nummern, die letzte
+  Fremdrückgabe und das Abholfach bleiben im Speicher (zu sehen erst mit einem Leser, jeder Scan
+  setzt sie zurück); Mahnwesen und Bescheide bleiben nach dem Abmelden geladen
+  (`thekeLeeren.js`, `authStore.handleLogout`).
 
 ### 7.2 Frisches Littera-Backup
 
