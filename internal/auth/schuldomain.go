@@ -34,6 +34,7 @@ type domainAntwort struct {
 // angemeldet ist: Beschriftung und Hinweis am Feld richten sich danach.
 func Domain() http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.SchreibeJSON(w, domainAntwort{Domain: SelbstanmeldeDomain(), LDAP: leseLDAPKonfig().istEingerichtet()})
 	}
 }

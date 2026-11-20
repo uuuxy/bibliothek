@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -50,6 +51,11 @@ func TestDomain_NenntDieDomainDerSchule(t *testing.T) {
 		}
 		if got := rec.Body.String(); got != tt.want && got != tt.want+"\n" {
 			t.Errorf("Antwort bei %q = %q, erwartet %s", tt.eingetragen, got, tt.want)
+		}
+		// Wie jede JSON-Antwort mit Inhaltstyp: Ohne ihn liefert Go „text/plain", und mit
+		// X-Content-Type-Options: nosniff behandelt ein strenger Client die Antwort als Text.
+		if typ := rec.Header().Get("Content-Type"); !strings.HasPrefix(typ, "application/json") {
+			t.Errorf("Content-Type = %q, erwartet application/json", typ)
 		}
 	}
 }
