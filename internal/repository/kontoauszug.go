@@ -15,14 +15,15 @@ type KontoauszugBuch struct {
 	Rueckgabedatum time.Time
 }
 
-// LadeKontoauszugBuecher lädt die offenen Ausleihen eines Schülers, die früheste Frist
-// zuerst. Eine unlesbare Zeile wird übersprungen.
+// LadeKontoauszugBuecher lädt die offenen Ausleihen eines Lesers, Bücher und Geräte, die
+// früheste Frist zuerst. Eine unlesbare Zeile wird übersprungen.
 func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
 	query := `
-		SELECT t.titel, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
+		SELECT COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist
 		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN geraete g ON a.geraet_id = g.id
 		WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
 		ORDER BY a.rueckgabe_frist ASC
 	`

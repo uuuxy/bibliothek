@@ -1,0 +1,31 @@
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/svelte';
+import LeserAusleihenListe from './LeserAusleihenListe.svelte';
+
+// Ein verliehenes Gerät steht in der Akte wie ein Buch. Verlust oder Schaden meldet die
+// Geräteverwaltung, nicht der Schadensfall eines Exemplars; zurückgeben geht wie beim Buch.
+describe('Ausleihliste: Gerät', () => {
+	/** @param {boolean} geraet */
+	const zeile = (geraet) => ({
+		id: 'x-1',
+		ausleihe_id: 'a-1',
+		barcode_id: 'G-1',
+		titel: geraet ? 'iPad 9' : 'Der Zauberberg',
+		ist_geraet: geraet,
+		ausgeliehen_am: '2026-11-01T10:00:00Z',
+		rueckgabe_frist: '2026-11-15T10:00:00Z'
+	});
+	const aktionen = { onReturnClick: () => {}, onDamageClick: () => {} };
+
+	it('bietet am Gerät kein „Verlust oder Schaden melden“ und nennt die Rückgabe des Geräts', () => {
+		const screen = render(LeserAusleihenListe, { ausleihen: [zeile(true)], ...aktionen });
+		expect(screen.queryByRole('button', { name: 'Verlust oder Schaden melden' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Gerät zurückgeben' })).toBeTruthy();
+	});
+
+	it('behält am Buch beide Aktionen', () => {
+		const screen = render(LeserAusleihenListe, { ausleihen: [zeile(false)], ...aktionen });
+		expect(screen.getByRole('button', { name: 'Verlust oder Schaden melden' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Buch zurückgeben' })).toBeTruthy();
+	});
+});

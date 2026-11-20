@@ -32,17 +32,18 @@ type MahnbriefEmpfaenger struct {
 }
 
 // sqlMahnbriefe liest zu den gewählten Ausleihen, was auf dem Mahnbrief steht: je Schüler
-// Anschrift und die offenen Bücher mit abgelaufener Frist. Die Sicht schueler lässt das
+// Anschrift und die offenen Bücher und Geräte mit abgelaufener Frist. Die Sicht schueler lässt das
 // Kollegium aus, ein Schüler im Papierkorb bekommt keinen Brief. Die Briefe einer Klasse
 // liegen beieinander, die der Ehemaligen am Ende.
 const sqlMahnbriefe = `
 	SELECT s.id, s.vorname, s.nachname,
 	       coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
-	       t.titel, coalesce(e.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist,
+	       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist,
 	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int)
 	FROM ausleihen a
-	JOIN buecher_exemplare e ON a.exemplar_id = e.id
-	JOIN buecher_titel t    ON e.titel_id = t.id
+	LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+	LEFT JOIN buecher_titel t    ON e.titel_id = t.id
+	LEFT JOIN geraete g          ON a.geraet_id = g.id
 	JOIN schueler s         ON a.schueler_id = s.id
 	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
 	  AND a.rueckgabe_frist < CURRENT_TIMESTAMP

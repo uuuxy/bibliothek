@@ -61,14 +61,15 @@ func (g *klassenGruppen) merke(klasse string, ehemalig bool, schuelerID, name st
 func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, klassenFilter string) ([]MahnwesenKlasse, error) {
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse, s.ist_abgaenger,
-		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
-		       coalesce(e.barcode_id,''),
+		       COALESCE(t.titel, g.modellname, ''), coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+		       COALESCE(e.barcode_id, g.barcode_id, ''),
 		       a.rueckgabe_frist,
 		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig,
 		       a.mahnstufe, a.letztes_mahndatum
 		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t    ON e.titel_id = t.id
+		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		LEFT JOIN buecher_titel t    ON e.titel_id = t.id
+		LEFT JOIN geraete g          ON a.geraet_id = g.id
 		-- Die Sicht schueler und nicht die Tabelle leser: Gemahnt werden Schüler, nicht
 		-- das Kollegium (Entscheidung zum Lehrer-Anliegen). Der INNER JOIN lässt die
 		-- Ausleihen von Kollegen aus dem Mahnlauf fallen — vor Migration 125 taten das

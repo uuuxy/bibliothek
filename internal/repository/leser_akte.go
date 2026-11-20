@@ -33,6 +33,9 @@ type LaufendeAusleihe struct {
 	// nur Ausleihen mit ist_handapparat = false; ohne das Feld rechnete die Akte ihr eigenes
 	// „überfällig" aus dem Datum und färbte die Zeile nach einem Jahr rot.
 	IstDauerleihe bool `json:"ist_dauerleihe"`
+	// IstGeraet heißt: Die Zeile ist ein Gerät; Titel trägt den Modellnamen. Verlust oder Schaden
+	// meldet die Geräteverwaltung, nicht die Akte.
+	IstGeraet bool `json:"ist_geraet"`
 }
 
 // HatFoto sagt, ob zu dem Leser ein verschlüsseltes Foto gespeichert ist.
@@ -57,25 +60,27 @@ func (a *LeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string
 	return ZaehleOffeneSchaeden(ctx, a.db, leserID)
 }
 
-// LadeLaufendeAusleihen liest die offenen Ausleihen des Lesers mit Exemplar und Titel, die
-// jüngste zuerst.
+// LadeLaufendeAusleihen liest die offenen Ausleihen des Lesers mit Exemplar und Titel oder mit
+// dem Gerät, die jüngste zuerst.
 func (a *LeserAbfragen) LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error) {
 	query := `
-		SELECT 
-			e.id, 
+		SELECT
+			COALESCE(e.id, g.id),
 			a.id AS ausleihe_id,
-			e.barcode_id, 
-			t.titel, 
-			coalesce(t.autor, ''), 
+			COALESCE(e.barcode_id, g.barcode_id, ''),
+			COALESCE(t.titel, g.modellname, ''),
+			coalesce(t.autor, ''),
 			coalesce(t.isbn, ''),
 			coalesce(t.cover_url, ''),
-			t.ist_lernmittel,
+			coalesce(t.ist_lernmittel, false),
 			a.ausgeliehen_am,
 			a.rueckgabe_frist,
-			a.ist_handapparat
+			a.ist_handapparat,
+			a.geraet_id IS NOT NULL
 		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN geraete g ON a.geraet_id = g.id
 		WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
 		ORDER BY a.ausgeliehen_am DESC
 	`
@@ -100,6 +105,7 @@ func (a *LeserAbfragen) LadeLaufendeAusleihen(ctx context.Context, leserID strin
 			&b.AusgeliehenAm,
 			&b.RueckgabeFrist,
 			&b.IstDauerleihe,
+			&b.IstGeraet,
 		); err != nil {
 			return nil, err
 		}

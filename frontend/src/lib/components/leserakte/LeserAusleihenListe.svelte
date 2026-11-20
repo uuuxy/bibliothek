@@ -151,7 +151,8 @@
 									{/if}
 								</button>
 							{/if}
-							{#if onDamageClick}
+							<!-- Verlust oder Schaden an einem Gerät meldet die Geräteverwaltung. -->
+							{#if onDamageClick && !book.ist_geraet}
 								<button
 									type="button"
 									class="icon-btn text-error"
@@ -167,8 +168,8 @@
 									type="button"
 									class="icon-btn text-success"
 									onclick={() => onReturnClick(book.barcode_id)}
-									data-tip="Buch zurückgeben"
-									aria-label="Buch zurückgeben"
+									data-tip={book.ist_geraet ? 'Gerät zurückgeben' : 'Buch zurückgeben'}
+									aria-label={book.ist_geraet ? 'Gerät zurückgeben' : 'Buch zurückgeben'}
 								>
 									<Icon name="undo" />
 								</button>

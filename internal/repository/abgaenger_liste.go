@@ -84,18 +84,19 @@ type AbgaengerAusleihe struct {
 func LadeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nurIDs []string) ([]AbgaengerAusleihe, error) {
 	detailQuery := `
 		SELECT s.id, s.vorname, s.nachname, s.klasse,
-		       t.titel,
-		       coalesce(e.barcode_id, '') AS ex_barcode,
+		       COALESCE(t.titel, g.modellname, '') AS titel,
+		       COALESCE(e.barcode_id, g.barcode_id, '') AS ex_barcode,
 		       a.ausgeliehen_am,
 		       a.rueckgabe_frist
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN geraete g ON a.geraet_id = g.id
 		WHERE ` + abgaengerBedingung + `
 		  AND ($1 = '' OR s.klasse = $1)
 		  AND ($2::uuid[] IS NULL OR s.id = ANY($2::uuid[]))
-		ORDER BY s.klasse COLLATE deutsch, s.nachname COLLATE deutsch, t.titel COLLATE deutsch
+		ORDER BY s.klasse COLLATE deutsch, s.nachname COLLATE deutsch, COALESCE(t.titel, g.modellname, '') COLLATE deutsch
 	`
 	rows, err := db.Query(ctx, detailQuery, klasse, nurIDs)
 	if err != nil {
