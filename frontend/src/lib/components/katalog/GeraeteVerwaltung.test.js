@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import GeraeteVerwaltung from './GeraeteVerwaltung.svelte';
 import { apiFetch, apiClient } from '../../apiFetch.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 
-vi.mock('../../apiFetch.js', () => ({
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn(), put: vi.fn() },
 	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
@@ -18,6 +20,7 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.f
 describe('GeraeteVerwaltung', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		authStore.currentUser = { permissions: ['view_books', 'edit_books'] };
 	});
 
 	it('unterscheidet „Schrank leer" von „nicht geladen"', async () => {
@@ -88,5 +91,27 @@ describe('GeraeteVerwaltung: Bearbeiten', () => {
 		await waitFor(() =>
 			expect(apiClient.put).toHaveBeenCalledWith('/api/geraete/g1', { seriennummer: 'DMPXK12345' })
 		);
+	});
+});
+
+// Anlegen, Ändern und „Defekt melden" verlangt der Server mit edit_books, die Liste nur mit
+// view_books. Ein Konto ohne edit_books sah die Knöpfe und bekam erst nach dem Ausfüllen ein 403.
+describe('GeraeteVerwaltung ohne edit_books', () => {
+	it('zeigt die Liste ohne Anlegen, Bearbeiten und Defekt melden', async () => {
+		authStore.currentUser = { permissions: ['view_books'] };
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ id: 'g1', modellname: 'Tablet 9', barcode_id: 'G-1', ist_ausleihbar: true }
+				]
+			})
+		);
+		const { findByText, queryByRole } = render(GeraeteVerwaltung);
+
+		expect(await findByText('Tablet 9')).toBeTruthy();
+		expect(queryByRole('button', { name: /Gerät anlegen/ })).toBeNull();
+		expect(queryByRole('button', { name: 'Tablet 9 bearbeiten' })).toBeNull();
+		expect(queryByRole('button', { name: /Defekt melden/ })).toBeNull();
 	});
 });

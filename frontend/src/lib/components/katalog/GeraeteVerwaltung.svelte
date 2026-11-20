@@ -9,6 +9,13 @@
 	import { anzahlText } from '../../utils/format.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Icon from '../ui/Icon.svelte';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menue.js';
+
+	// Anlegen, Ändern und „Defekt melden" hängen am Server an edit_books (routen_katalog.go), die
+	// Liste an view_books. Ohne das Recht bleibt die Liste lesbar und verliert nur die Aktionen, wie
+	// KlassenKarte und Signaturen: niemandem einen Knopf anbieten, der im 403 endet.
+	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	/**
 	 * Geräte-Verwaltung, ein Bereich im Medienkatalog und kein eigener Menüpunkt: Ausgebucht
@@ -97,10 +104,12 @@
 				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste bestätigt
 			</p>
 		</div>
-		<Button variant="primary" onclick={oeffneAnlegen}>
-			<Icon name="add" />
-			Gerät anlegen
-		</Button>
+		{#if darfBearbeiten}
+			<Button variant="primary" onclick={oeffneAnlegen}>
+				<Icon name="add" />
+				Gerät anlegen
+			</Button>
+		{/if}
 	</div>
 
 	{#if formularOffen}
@@ -153,25 +162,27 @@
 					</span>
 					<!-- Bearbeiten als Symbolknopf wie in jeder Zeile; „Defekt melden" schaltet einen Zustand
 					     um, den ein Symbol allein nicht sagt. 16 px Abstand für die Trefferfläche. -->
-					<div class="flex shrink-0 items-center gap-4">
-						<Button
-							variant="symbol"
-							size="sm"
-							onclick={() => oeffneBearbeiten(g)}
-							data-tip="Bearbeiten"
-							aria-label="{g.modellname} bearbeiten"
-						>
-							<Icon name="edit" />
-						</Button>
-						<Button
-							variant={g.ist_ausleihbar ? 'danger' : 'secondary'}
-							size="sm"
-							onclick={() => schalteDefekt(g)}
-						>
-							<Icon name="build" groesse={18} />
-							{g.ist_ausleihbar ? 'Defekt melden' : 'Wieder freigeben'}
-						</Button>
-					</div>
+					{#if darfBearbeiten}
+						<div class="flex shrink-0 items-center gap-4">
+							<Button
+								variant="symbol"
+								size="sm"
+								onclick={() => oeffneBearbeiten(g)}
+								data-tip="Bearbeiten"
+								aria-label="{g.modellname} bearbeiten"
+							>
+								<Icon name="edit" />
+							</Button>
+							<Button
+								variant={g.ist_ausleihbar ? 'danger' : 'secondary'}
+								size="sm"
+								onclick={() => schalteDefekt(g)}
+							>
+								<Icon name="build" groesse={18} />
+								{g.ist_ausleihbar ? 'Defekt melden' : 'Wieder freigeben'}
+							</Button>
+						</div>
+					{/if}
 				</li>
 			{/each}
 		</ul>
