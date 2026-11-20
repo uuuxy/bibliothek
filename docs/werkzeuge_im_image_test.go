@@ -26,7 +26,7 @@ import (
 // und ein Wegwerf-Container mit eigenem Einstieg (compose run --entrypoint), den der
 // Totalverlust und die Meldungen der Skripte nennen.
 var werkzeugAufrufe = []*regexp.Regexp{
-	regexp.MustCompile(`(?:compose exec|exec)(?: -[a-zA-Z]+)* (?:backend|bibliothek-backend|"\$\{BACKEND_CONTAINER\}") \./([a-zA-Z0-9_-]+)`),
+	regexp.MustCompile(`(?:compose exec|exec)(?: -[a-zA-Z]+(?: [A-Z][A-Z0-9_]*)?)* (?:backend|bibliothek-backend|"\$\{BACKEND_CONTAINER\}") \./([a-zA-Z0-9_-]+)`),
 	regexp.MustCompile(`--entrypoint \./([a-zA-Z0-9_-]+) backend`),
 }
 

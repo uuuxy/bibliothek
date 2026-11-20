@@ -44,7 +44,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"internal/repository/ausleihe_schranken.go":      {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn, TestVormerkungLegeAn_NurFuerSchueler)"},
 	"internal/repository/vormerkung_theke.go":        {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"internal/repository/vormerkung.go":              {3, "LegeAn prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
-	"internal/repository/vormerkung_nachruecken.go":  {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
+	"internal/repository/vormerkung_nachruecken.go":  {3, "Nachrücken im Abholfach, die Frage, ob jemand wartet, und der Name des Nachrückers — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"internal/repository/ausleihe_frist.go":          {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},
 	"internal/repository/mahnwesen_ueberfaellige.go": {1, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der Abfrage)"},
 	"internal/repository/mahnbriefe.go":              {2, "Das Blatt folgt der Auswahl der Mahnliste (Schüler, nicht das Kollegium), und ErhoeheMahnstufe zählt, was auf dem Blatt steht"},

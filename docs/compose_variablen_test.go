@@ -124,7 +124,8 @@ func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
 // mit Parameter gelesen wird, bleibt unsichtbar. Geprüft wird nur docker-compose.yml, nicht
 // die lokale Datei.
 var composeAusnahmen = map[string]string{
-	"TEST_DATABASE_URL": "internal/pgtest — nur für Tests, im Container gibt es keine Test-Datenbank",
+	"TEST_DATABASE_URL":        "internal/pgtest — nur für Tests, im Container gibt es keine Test-Datenbank",
+	"NEUER_APP_ENCRYPTION_KEY": "cmd/rotate-encryption-key — nur beim Wechsel des Schlüssels, per docker compose exec -e übergeben; der laufende Server soll ihn nicht kennen (SECURITY.md)",
 }
 
 var (
