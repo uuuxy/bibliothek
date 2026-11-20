@@ -251,3 +251,35 @@ func TestKeinStandortSchalter(t *testing.T) {
 		t.Errorf("String() = %q", got)
 	}
 }
+
+// Ein Lauf mit -ausleihen ohne -bestand oder -personen schrieb erst den Katalog und verwarf dann
+// jede Ausleihe, weil Buch und Leser aus demselben Lauf fehlten. Er hält jetzt an, bevor er ein
+// Protokoll anlegt oder die Datenbank anspricht.
+func TestAusleihenOhneBestandOderPersonenHaeltVorDemSchreibenAn(t *testing.T) {
+	for _, s := range []schalter{
+		{ausleihen: true, bestand: true},
+		{ausleihen: true, personen: true},
+	} {
+		if err := s.pruefeAusleihen(); err == nil {
+			t.Errorf("pruefeAusleihen(%+v) = nil, erwartet einen Fehler", s)
+		}
+	}
+	if err := (schalter{ausleihen: true, bestand: true, personen: true}).pruefeAusleihen(); err != nil {
+		t.Errorf("pruefeAusleihen mit allen drei = %v, erwartet nil", err)
+	}
+
+	t.Chdir(t.TempDir())
+	var puffer bytes.Buffer
+	defer log.SetOutput(log.Writer())
+	log.SetOutput(&puffer)
+	s := schalter{ausleihen: true, bestand: true, datenbankURL: "postgres://nicht-erreichbar.invalid/x"}
+	if code := uebertrage(s, ohneZuordnung()); code != rueckgabeAbgebrochen {
+		t.Errorf("Rückgabe %d, erwartet %d (abgebrochen)", code, rueckgabeAbgebrochen)
+	}
+	if ausgabe := puffer.String(); !strings.Contains(ausgabe, "-ausleihen braucht") || strings.Contains(ausgabe, "Datenbank") {
+		t.Errorf("erwartet die Meldung zu -ausleihen und keinen Verbindungsversuch, log: %s", ausgabe)
+	}
+	if _, err := os.Stat(protokollPfad); !os.IsNotExist(err) {
+		t.Errorf("vor dem Halt darf kein Protokoll entstehen (%s): %v", protokollPfad, err)
+	}
+}

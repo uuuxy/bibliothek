@@ -48,7 +48,9 @@ go run ./cmd/littera-altbestand -csv ./littera-export -db "$DATABASE_URL"
 (Vorgabe aus). Die Vorgabe ist Absicht: Der geprüfte Export ist ein Stand von 2010
 (Schüler-Geburtsjahre 1989–2001, letzte Ausleihe 2010). Personen und Ausleihen daraus
 legen Schüler an, die heute Mitte dreißig sind, und melden ein Viertel des Bestands als
-verliehen. Für einen aktuellen Export sind beide Schalter richtig.
+verliehen. Für einen aktuellen Export sind beide Schalter richtig. `-ausleihen` verlangt
+`-bestand` und `-personen` im selben Lauf, weil die Ausleihen Buch und Leser über die Kennungen
+dieses Laufs finden; sonst hält das Werkzeug an, bevor es schreibt.
 
 **Barcodes:** `-barcodes littera` (Vorgabe) schreibt den Wert, den ein Scanner vom
 Buchetikett liest — eine **EAN-13**, nicht die daneben gedruckte Exemplarnummer:

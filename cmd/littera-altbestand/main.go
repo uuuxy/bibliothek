@@ -29,6 +29,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -73,6 +74,17 @@ func (w *werteliste) String() string { return strings.Join(*w, ", ") }
 
 func (w *werteliste) Set(wert string) error {
 	*w = append(*w, wert)
+	return nil
+}
+
+// pruefeAusleihen hält einen Lauf mit -ausleihen ohne -bestand oder -personen an, bevor er
+// schreibt: Die Ausleihen finden Buch und Leser über die Kennungen, die derselbe Lauf vergibt
+// (BestandBericht.ExemplarIDs, PersonenBericht.Zielleser). Ohne sie schriebe der Lauf erst den
+// Katalog und verwürfe dann jede Ausleihe, und ein zweiter Lauf hielte an PruefeZielbestand an.
+func (s schalter) pruefeAusleihen() error {
+	if s.ausleihen && (!s.bestand || !s.personen) {
+		return errors.New("-ausleihen braucht im selben Lauf -bestand und -personen")
+	}
 	return nil
 }
 
@@ -143,7 +155,7 @@ func leseSchalter() schalter {
 	flag.BoolVar(&s.bestand, "bestand", true, "Titel und Exemplare übernehmen")
 	flag.BoolVar(&s.personen, "personen", false,
 		"alle Leser übernehmen: Schüler, alle anderen ins Kollegium (hält an bei einer Gruppe ohne Zuordnung)")
-	flag.BoolVar(&s.ausleihen, "ausleihen", false, "Ausleihen übernehmen (setzt -personen voraus)")
+	flag.BoolVar(&s.ausleihen, "ausleihen", false, "Ausleihen übernehmen (setzt -bestand und -personen im selben Lauf voraus)")
 	flag.StringVar(&s.barcodes, "barcodes", string(littera.BarcodeLittera),
 		"littera = EAN-13 vom vorhandenen Etikett (was der Scanner liest), neu = frische B-XXXXX aus barcode_seq")
 	flag.IntVar(&s.batchGroesse, "batch", 200, "Datensätze je Transaktion")
@@ -216,6 +228,10 @@ func berichteStandorte(b littera.StandortBilanz) {
 func uebertrage(s schalter, ab *littera.Altbestand) int {
 	if code := zuordnungGeprueft(ab, s.personen); code != rueckgabeOK {
 		return code
+	}
+	if err := s.pruefeAusleihen(); err != nil {
+		log.Printf("FEHLER: %v. Es wird nichts geschrieben.", err)
+		return rueckgabeAbgebrochen
 	}
 	if s.datenbankURL == "" {
 		log.Print("FEHLER: -db fehlt und DATABASE_URL ist nicht gesetzt")
