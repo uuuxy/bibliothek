@@ -804,7 +804,7 @@ verloren gebucht und stehen weiter im Abgangsbuch. (§6)
 
 Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen pro Monat;
 Überfällige nach Dauer; **Renner** (meistausgeliehen) und **Ladenhüter** (seit über zwei Jahren
-nicht ausgeliehen) mit Detailseite und Filter. Ohne Schülernamen — die Statistik zählt
+nicht ausgeliehen, mit Exemplar im Bestand und ohne offene Ausleihe) mit Detailseite und Filter. Ohne Schülernamen — die Statistik zählt
 Ausleihen, nicht Personen. Ein bestelltes Buch zählt erst zum Bestand, wenn es eingetroffen
 ist. (§11)
 

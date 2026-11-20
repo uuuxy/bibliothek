@@ -187,7 +187,9 @@ func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter st
 // ausgeliehen, oder noch nie ausgeliehen und bereits seit >2 Jahren im Bestand. Der
 // Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
 // — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
-// versehentlich entsorgt werden.
+// versehentlich entsorgt werden. Ein Titel ohne Exemplar im Bestand ist schon ausgesondert, und
+// einer mit offener Ausleihe ist in Gebrauch, auch wenn sie älter als zwei Jahre ist
+// (Mehrjahresband): Beide stehen nicht auf der Liste.
 func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit int) ([]Ladenhueter, error) {
 	ladenhueter := []Ladenhueter{}
 	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
@@ -201,11 +203,13 @@ func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit 
 		LEFT JOIN ausleihen a ON e.id = a.exemplar_id
 		WHERE 1=1 %s
 		GROUP BY t.id, t.titel, t.autor, t.isbn, t.subject, t.signatur, t.erscheinungsjahr
-		HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
-		    OR (MAX(a.ausgeliehen_am) IS NULL AND MIN(e.erstellt_am) < NOW() - INTERVAL '2 years')
+		HAVING count(e.id) FILTER (WHERE %s) > 0
+		   AND NOT coalesce(bool_or(a.id IS NOT NULL AND a.rueckgabe_am IS NULL), false)
+		   AND (MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
+		        OR (MAX(a.ausgeliehen_am) IS NULL AND MIN(e.erstellt_am) < NOW() - INTERVAL '2 years'))
 		ORDER BY last_loan ASC NULLS FIRST
 		LIMIT %d
-	`, typFilter, limit)
+	`, typFilter, SQLExemplarImBestand, limit)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
 		return nil, err

@@ -522,8 +522,9 @@ Für die Schulleitung und Bibliotheks-Administration aggregiert das System Echtz
 Zwei Listen mit Detailseite (`/statistiken/renner`, `/statistiken/ladenhueter`; Abfragen in
 `internal/repository/statistik.go`): **Renner** sind die meistausgeliehenen Titel des gewählten
 Zeitraums; **Ladenhüter** sind Titel, die seit mehr als zwei Jahren nicht mehr ausgeliehen
-wurden — oder nie, wenn ihr ältestes Exemplar vor mehr als zwei Jahren angelegt wurde. Beide
-Listen lassen sich
+wurden — oder nie, wenn ihr ältestes Exemplar vor mehr als zwei Jahren angelegt wurde. Ein
+Titel ohne Exemplar im Bestand ist schon ausgesondert, einer mit offener Ausleihe in Gebrauch
+(Mehrjahresband); beide stehen nicht unter den Ladenhütern. Beide Listen lassen sich
 nach Fachbereich und Systematik filtern und clientseitig nach Titel/Autor durchsuchen; das
 `?limit=`-Argument ist serverseitig gedeckelt. Beide Listen enthalten keine Schülerdaten —
 sie zählen Ausleihen, nicht Ausleiher (siehe PII_MATRIX).
