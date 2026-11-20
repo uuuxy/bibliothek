@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -217,11 +216,11 @@ func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []re
 		return t.speichereTitelEinzeln(ctx, zuSchreiben, gescheitert, ersterFehler)
 	}
 
-	// #nosec G115 - die Zahl ist durch maxImportZeilen (5000) begrenzt
+	// #nosec G115 - die Zahl ist durch maxImportZeilen (100000) begrenzt
 	importiert += int32(anzahl)
 	if importiert == 0 {
 		// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
-		// #nosec G115 - die Länge ist durch maxImportZeilen (5000) begrenzt
+		// #nosec G115 - die Länge ist durch maxImportZeilen (100000) begrenzt
 		importiert = int32(len(zuSchreiben))
 	}
 	return importiert, gescheitert, ersterFehler
@@ -276,9 +275,12 @@ func (t *Tueren) importiereListe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	zuSchreiben, gescheitert, ersterFehler := t.verarbeiteImportZeilen(r.Context(), datenZeilen, spalten)
-	importiert, gescheitert, ersterFehler := t.speichereImportierteTitel(r.Context(), zuSchreiben, gescheitert, ersterFehler)
-
-	status, antwort := importAntwort(importiert, gescheitert, ersterFehler)
+	var importiert int32
+	status, antwort := pruefeImportMenge(zuSchreiben)
+	if antwort == nil {
+		importiert, gescheitert, ersterFehler = t.speichereImportierteTitel(r.Context(), zuSchreiben, gescheitert, ersterFehler)
+		status, antwort = importAntwort(importiert, gescheitert, ersterFehler)
+	}
 	if ersterFehler != nil {
 		slog.Warn("Listenimport: Zeilen nicht gespeichert", "gescheitert", gescheitert, "fehler", ersterFehler)
 	}
@@ -286,6 +288,23 @@ func (t *Tueren) importiereListe(w http.ResponseWriter, r *http.Request) {
 		t.schliesseImportLauf(r.Context(), schluessel, importiert > 0, status, antwort)
 	}
 	tuer.AntworteJSON(w, status, antwort)
+}
+
+// pruefeImportMenge lehnt eine Liste ab, die zusammen mehr Exemplare anlegte, als eine Vergabe
+// Nummern zieht. Sie prüft vor dem Schreiben, damit nichts halb importiert wird: Der Rückfall auf
+// einzelne Titel (speichereTitelEinzeln) zöge die Nummern sonst Zeile für Zeile. antwort ist
+// nil, wenn die Liste passt.
+func pruefeImportMenge(eintraege []repository.KatalogTitel) (int, map[string]any) {
+	summe := 0
+	for _, e := range eintraege {
+		summe += e.Bestand
+	}
+	if summe <= repository.HoechstensNummernJeVergabe {
+		return 0, nil
+	}
+	return http.StatusBadRequest, map[string]any{"error": fmt.Sprintf(
+		"Nichts importiert: Die Liste nennt zusammen %d Exemplare, auf einmal gehen höchstens %d. Steht in der Spalte des Bestands wirklich die Stückzahl?",
+		summe, repository.HoechstensNummernJeVergabe)}
 }
 
 // importAntwort formt das Ergebnis eines Laufs — eine Stelle, weil dieselbe Antwort
@@ -425,13 +444,13 @@ func leseKlassenstufe(stufeText string) int {
 	return stufe
 }
 
-// leseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, MaxInt32]
-// werden übernommen: negative Bestände sind Datenfehler, und die DB-Spalte ist int4 —
-// der Bulk-Upsert konvertiert nach int32. Ungültiges wird wie ein Parse-Fehler
-// behandelt (Bestand 0).
+// leseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, HoechsterBestandJeTitel]
+// werden übernommen: Negative Bestände sind Datenfehler, und eine größere Zahl ist meist eine
+// Artikel- oder Bestellnummer in einer Liste ohne Kopfzeile (errateSpaltenAusInhalt). Ungültiges
+// wird wie ein Parse-Fehler behandelt (Bestand 0).
 func leseBestand(s string) int {
 	n, err := strconv.Atoi(s)
-	if err != nil || n < 0 || n > math.MaxInt32 {
+	if err != nil || n < 0 || n > repository.HoechsterBestandJeTitel {
 		return 0
 	}
 	return n

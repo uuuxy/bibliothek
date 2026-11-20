@@ -196,7 +196,7 @@ func baueTitelStapel(eintraege []KatalogTitel) titelStapel {
 		daten.coverURLs[i] = b.CoverURL
 		daten.faecher[i] = b.Fach
 		daten.zweige[i] = b.Zweig
-		// #nosec G115 - leseBestand begrenzt den Bestand beim Import auf [0, MaxInt32]
+		// #nosec G115 - leseBestand begrenzt den Bestand beim Import auf [0, HoechsterBestandJeTitel]
 		daten.bestaende[i] = int32(b.Bestand)
 		daten.zuletztGezaehlt[i] = b.ZuletztGezaehlt
 		daten.medientypen[i] = b.Medientyp

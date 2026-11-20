@@ -192,13 +192,28 @@ func bereinigeTitelEingabe(eingabe *titelAnfrage) error {
 	eingabe.Untertitel = strings.TrimSpace(eingabe.Untertitel)
 	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
 
-	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
-		return apierrors.BadRequest("Der Bestand darf nicht negativ sein", nil)
+	if fehler := pruefeBestand(eingabe.Bestand); fehler != nil {
+		return fehler
 	}
 	if eingabe.BestandGesehen != nil && *eingabe.BestandGesehen < 0 {
 		return apierrors.BadRequest("Der gesehene Bestand darf nicht negativ sein", nil)
 	}
 	return pruefeListenpreis(eingabe.Listenpreis)
+}
+
+// pruefeBestand prüft das Feld „Bestand" beim Anlegen und beim Ändern, bevor eine Exemplarnummer
+// gezogen wird. nil heißt: nicht mitgeschickt.
+func pruefeBestand(bestand *int) error {
+	if bestand == nil {
+		return nil
+	}
+	if *bestand < 0 {
+		return apierrors.BadRequest("Der Bestand darf nicht negativ sein", nil)
+	}
+	if *bestand > repository.HoechsterBestandJeTitel {
+		return apierrors.BadRequest(fmt.Sprintf("Der Bestand darf höchstens %d Exemplare betragen", repository.HoechsterBestandJeTitel), nil)
+	}
+	return nil
 }
 
 // pruefeListenpreis nennt den erlaubten Bereich, bevor die Datenbank ablehnt

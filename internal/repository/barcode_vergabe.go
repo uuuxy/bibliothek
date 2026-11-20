@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -25,6 +26,19 @@ import (
 // Bestand liegt der nächste Zug garantiert im freien Bereich; mehr als eine
 // Wiederholung braucht es nur, wenn parallel von Hand eine Nummer eingetragen wird.
 const barcodeZiehVersuche = 3
+
+// HoechsterBestandJeTitel ist die größte Zahl, die das Feld „Bestand" der Maske und eine Zeile des
+// Listenimports annehmen. Mehr Exemplare eines Titels hat keine Schule; eine größere Zahl ist ein
+// Tippfehler oder eine ISBN im falschen Feld, und jede Nummer, die sie zöge, wäre verbraucht.
+const HoechsterBestandJeTitel = 5000
+
+// HoechstensNummernJeVergabe begrenzt eine Vergabe aus barcode_seq. Eine Zahl in Millionen hielte
+// weder der Server noch die Datenbank im Speicher, und die Sequenz rückte vor dem Abbruch vor.
+const HoechstensNummernJeVergabe = 200000
+
+// errZuVieleNummern meldet eine Vergabe über HoechstensNummernJeVergabe. Die Türen prüfen die
+// Zahl vorher; kommt eine größere hier an, fehlt an einer Tür die Prüfung.
+var errZuVieleNummern = errors.New("zu viele Exemplarnummern auf einmal")
 
 // barcodeNummerMuster erkennt die maschinell vergebenen Nummern. Die Ziffernlänge ist
 // begrenzt, damit eine von Hand eingetippte Fantasienummer ("B-999999999999999999999")
@@ -53,6 +67,9 @@ func ZieheFreienExemplarBarcode(ctx context.Context, db Datenbank) (string, erro
 func zieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
 	if anzahl <= 0 {
 		return nil, nil
+	}
+	if anzahl > HoechstensNummernJeVergabe {
+		return nil, fmt.Errorf("%w: %d verlangt, höchstens %d", errZuVieleNummern, anzahl, HoechstensNummernJeVergabe)
 	}
 
 	frei := make([]string, 0, anzahl)

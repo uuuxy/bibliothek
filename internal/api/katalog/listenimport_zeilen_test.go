@@ -1,7 +1,10 @@
 package katalog
 
 import (
+	"net/http"
 	"testing"
+
+	"bibliothek/internal/repository"
 )
 
 func TestLeseKlassenstufe(t *testing.T) {
@@ -42,7 +45,8 @@ func TestLeseBestand(t *testing.T) {
 		{"Leerer String", "", 0},
 		{"Kein Zahlwert", "abc", 0},
 		{"Negativ ist Datenfehler", "-3", 0},
-		{"Obergrenze int32 noch erlaubt", "2147483647", 2147483647},
+		{"Grenze je Titel noch erlaubt", "5000", 5000},
+		{"Über der Grenze je Titel, etwa eine Artikelnummer", "20260415", 0},
 		{"Über int32 würde beim Bulk-Upsert überlaufen", "2147483648", 0},
 		{"Absurd großer Wert", "5000000000", 0},
 	}
@@ -86,5 +90,26 @@ func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
 		if buch.Fach != f.want {
 			t.Errorf("Fach-Spalte %q → Subject %q, erwartet %q", f.spalte, buch.Fach, f.want)
 		}
+	}
+}
+
+// Eine Liste ohne Kopfzeile, deren Zahlenspalte keine Stückzahl ist, legte zusammen Millionen
+// Exemplare an. Geprüft wird die Summe, bevor eine Zeile geschrieben ist.
+func TestPruefeImportMenge(t *testing.T) {
+	zeilen := func(n int) []repository.KatalogTitel {
+		eintraege := make([]repository.KatalogTitel, n)
+		for i := range eintraege {
+			eintraege[i].Bestand = repository.HoechsterBestandJeTitel
+		}
+		return eintraege
+	}
+	passend := repository.HoechstensNummernJeVergabe / repository.HoechsterBestandJeTitel
+
+	if status, antwort := pruefeImportMenge(zeilen(passend)); antwort != nil {
+		t.Errorf("pruefeImportMenge(%d Zeilen) = %d %v, erwartet: passt", passend, status, antwort)
+	}
+	status, antwort := pruefeImportMenge(zeilen(passend + 1))
+	if status != http.StatusBadRequest || antwort == nil {
+		t.Errorf("pruefeImportMenge(%d Zeilen) = %d %v, erwartet 400 mit Meldung", passend+1, status, antwort)
 	}
 }

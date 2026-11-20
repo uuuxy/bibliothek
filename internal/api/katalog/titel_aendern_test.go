@@ -11,6 +11,7 @@ import (
 	"bibliothek/internal/db"
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/tuertest"
 
 	"github.com/google/go-cmp/cmp"
@@ -100,6 +101,18 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 			},
 			wantErr: true,
 			errMsg:  "Der Bestand darf nicht negativ sein",
+		},
+		// Eine ISBN im Feld „Bestand" zog Nummern in Millionen und brachte Server und Datenbank um
+		// ihren Speicher; geprüft wird, bevor eine Nummer gezogen ist.
+		{
+			name:    "Bestand über der Grenze",
+			eingabe: titelAnfrage{Bestand: zeigerAuf(repository.HoechsterBestandJeTitel + 1)},
+			wantErr: true,
+			errMsg:  "Der Bestand darf höchstens 5000 Exemplare betragen",
+		},
+		{
+			name:    "Bestand an der Grenze",
+			eingabe: titelAnfrage{Bestand: zeigerAuf(repository.HoechsterBestandJeTitel)},
 		},
 		// chk_listenpreis_nonneg lehnte ab, bevor die Tür prüfte: Beim Ändern
 		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.

@@ -161,6 +161,10 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 			apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
 			return
 		}
+		if fehler := pruefeBestand(eingabe.Bestand); fehler != nil {
+			apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
+			return
+		}
 		schlagworte, fehler := schlagworteAusAnfrage(eingabe.Schlagworte)
 		if fehler != nil {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler), nil)
