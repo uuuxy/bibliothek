@@ -138,6 +138,11 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 
 		return
 	}
+	var verliehen *repository.BestandVerliehen
+	if errors.As(fehler, &verliehen) {
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusConflict, verliehen.Meldung(), nil)
+		return
+	}
 	if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Buch nicht gefunden", nil)
 		return

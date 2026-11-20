@@ -257,6 +257,30 @@ func (e *BestandVeraltet) Error() string {
 	return fmt.Sprintf("bestand veraltet: gesehen %d, aktuell %d", *e.Gesehen, e.Aktuell)
 }
 
+// BestandVerliehen lehnt eine Bestandsänderung ab, die verliehene Exemplare aussondern müsste:
+// Ihre Ausleihe bliebe offen und mahnte weiter. Die Tür antwortet mit 409.
+type BestandVerliehen struct {
+	Verliehen int
+	Moeglich  int
+}
+
+func (e *BestandVerliehen) Error() string {
+	return fmt.Sprintf("bestand: %d exemplare verliehen, höchstens %d aussonderbar", e.Verliehen, e.Moeglich)
+}
+
+// Meldung ist der Satz für die Maske.
+func (e *BestandVerliehen) Meldung() string {
+	verliehen := fmt.Sprintf("%d Exemplare sind verliehen", e.Verliehen)
+	if e.Verliehen == 1 {
+		verliehen = "1 Exemplar ist verliehen"
+	}
+	if e.Moeglich == 0 {
+		return "Nichts gespeichert: " + verliehen + ", der Bestand kann nicht sinken. Verliehene Exemplare erst zurücknehmen."
+	}
+	return fmt.Sprintf("Nichts gespeichert: %s, der Bestand sinkt höchstens um %d. Verliehene Exemplare erst zurücknehmen.",
+		verliehen, e.Moeglich)
+}
+
 // Meldung ist der Satz für die Maske. Ohne gesehene Zahl kommt die Anfrage von einer Seite,
 // die vor dem Update geladen wurde: Sie kann die Zahl nicht mitschicken, bis sie neu lädt.
 func (e *BestandVeraltet) Meldung() string {
@@ -316,8 +340,8 @@ func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q Datenbank, titel
 }
 
 // gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
-// expectedStock erreicht. Ausgesondert wird nur aus dem Bestand: Bestellte Exemplare lassen
-// sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
+// expectedStock erreicht. Ausgesondert wird nur aus dem Bestand und nur, was nicht verliehen
+// ist: Bestellte und verliehene Exemplare lassen sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
 // (sqlGeerbterStandort). Jedes ausgesonderte Exemplar steht mit bearbeiterID im
 // Protokoll (protokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
 func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, titelID string, aktuellerBestand, erwarteterBestand int, bearbeiterID string) error {
@@ -348,7 +372,7 @@ func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, tit
 		return err
 	}
 
-	// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
+	// 1. Nicht ausgeliehene Exemplare aussondern
 	//
 	// ist_ausleihbar = false gehört dazu, wie in den anderen Aussonderungswegen
 	// (internal/repository/exemplar_aussondern.go, schaden.go, exemplar_status.go): Ein ausgesondertes
@@ -372,25 +396,10 @@ func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, tit
 		return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
 	}
 
-	// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
+	// Verliehene Exemplare sondert die Zahl nicht aus: Ihre Ausleihe bliebe offen. Die Ablehnung
+	// rollt mit der Transaktion des Aufrufers auch Schritt 1 zurück.
 	if len(ausgesondert) < auszusondern {
-		ersatzAbfrage := `
-				UPDATE buecher_exemplare
-				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
-				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
-				WHERE id IN (
-					SELECT e.id
-					FROM buecher_exemplare e
-					WHERE e.titel_id = $1 AND ` + SQLExemplarImBestand + `
-					LIMIT $2
-				)
-				RETURNING id::text
-			`
-		rest, err := sondereAus(ctx, q, ersatzAbfrage, titelID, auszusondern-len(ausgesondert))
-		if err != nil {
-			return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
-		}
-		ausgesondert = append(ausgesondert, rest...)
+		return &BestandVerliehen{Verliehen: aktuellerBestand - len(ausgesondert), Moeglich: len(ausgesondert)}
 	}
 	return protokolliereAussonderung(ctx, q, ausgesondert, bearbeiterID, AussonderungsWegBestandskorrektur, nil)
 }

@@ -184,26 +184,21 @@ func TestGleicheBestandAb(t *testing.T) {
 		}
 	})
 
-	t.Run("decrease stock - fallback to used", func(t *testing.T) {
+	t.Run("decrease stock - lehnt verliehene ab", func(t *testing.T) {
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
 		erwarteSperreDerExemplare(mock, "book-123")
-		// Zwei ungenutzte aussondern, aber nur eines gefunden.
+		// Zwei ungenutzte aussondern, aber nur eines gefunden: Die übrigen vier sind verliehen.
 		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
 			WithArgs("book-123", 2).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-1"))
 
-		// Rückfall für das übrige eine.
-		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
-			WithArgs("book-123", 1).
-			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-2"))
-		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
-
 		err := abfragen.gleicheBestandAb(ctx, mock, "book-123", 3, "bearbeiter-1")
-		if err != nil {
-			t.Fatalf("abfragen.gleicheBestandAb: %v", err)
+		var verliehen *BestandVerliehen
+		if !errors.As(err, &verliehen) || verliehen.Verliehen != 4 || verliehen.Moeglich != 1 {
+			t.Fatalf("abfragen.gleicheBestandAb: Fehler %v, erwartet BestandVerliehen{Verliehen: 4, Moeglich: 1}", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)
@@ -251,4 +246,20 @@ func erwarteAussonderungsSpur(mock pgxmock.PgxPoolIface, exemplarIDs ...string) 
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(exemplarIDs, "bearbeiter-1", AussonderungsWegBestandskorrektur, ProtokollAktionAusgesondert, "{}").
 		WillReturnResult(pgxmock.NewResult("INSERT", int64(len(exemplarIDs))))
+}
+
+// Der Satz der Ablehnung stimmt in Zahl und Fall: ein Exemplar, kein freies.
+func TestBestandVerliehen_Meldung(t *testing.T) {
+	for _, f := range []struct {
+		verliehen, moeglich int
+		soll                string
+	}{
+		{2, 1, "Nichts gespeichert: 2 Exemplare sind verliehen, der Bestand sinkt höchstens um 1. Verliehene Exemplare erst zurücknehmen."},
+		{1, 0, "Nichts gespeichert: 1 Exemplar ist verliehen, der Bestand kann nicht sinken. Verliehene Exemplare erst zurücknehmen."},
+		{3, 0, "Nichts gespeichert: 3 Exemplare sind verliehen, der Bestand kann nicht sinken. Verliehene Exemplare erst zurücknehmen."},
+	} {
+		if ist := (&BestandVerliehen{Verliehen: f.verliehen, Moeglich: f.moeglich}).Meldung(); ist != f.soll {
+			t.Errorf("Meldung(%d, %d) = %q, erwartet %q", f.verliehen, f.moeglich, ist, f.soll)
+		}
+	}
 }
