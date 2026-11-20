@@ -32,12 +32,6 @@
 	const buecher = erzeugeBuecherListe();
 	let speichert = $state(false);
 
-	$effect(() => {
-		if (gewaehlteKlassen.length === 0 && gewaehlteKennungen.size > 0) {
-			gewaehlteKennungen = new Set();
-		}
-	});
-
 	onMount(async () => {
 		if (initialGroup) {
 			gewaehlteKlassen = [initialGroup.className];
@@ -52,12 +46,13 @@
 		buecher.liste.filter((/** @type {any} */ b) => gewaehlteKennungen.has(b.id))
 	);
 
-	// Der Speicherpfad ersetzt: aendereKlassensaetze löscht die Zuweisungen aller Zielklassen und
+	// „Bücher verwalten" ersetzt: aendereKlassensaetze löscht die Zuweisungen aller Zielklassen und
 	// schreibt danach die Auswahl hinein (internal/repository/klassensaetze.go). Wer zu 05F1 noch 06A2
-	// dazunimmt, löscht deren Satz; die Warnung unten nennt die betroffenen Klassen.
+	// dazunimmt, löscht deren Satz; die Warnung unten nennt die betroffenen Klassen. „Klassensatz
+	// anlegen" ergänzt nur (OrdneTitelKlassenZu) und ersetzt nichts.
 	const ueberschriebeneKlassen = $derived(
 		gewaehlteKlassen
-			.filter((/** @type {string} */ name) => name !== initialGroup?.className)
+			.filter((/** @type {string} */ name) => initialGroup && name !== initialGroup.className)
 			.map((/** @type {string} */ name) =>
 				vorhandeneGruppen.find((/** @type {any} */ g) => g.className === name)
 			)

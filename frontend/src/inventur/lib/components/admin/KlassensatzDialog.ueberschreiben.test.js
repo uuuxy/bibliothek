@@ -8,8 +8,10 @@ vi.mock('../../../../lib/apiFetch.js', async (original) => ({
 
 import KlassensatzDialog from './KlassensatzDialog.svelte';
 
-// Hat eine gewählte Zielklasse schon einen Klassensatz, ersetzt das Speichern ihn. Der Hinweis
-// nennt jede dieser Klassen; nennte er nur die erste, fiele der Satz der zweiten unbemerkt weg.
+// Nimmt „Bücher verwalten" eine Zielklasse dazu, die schon einen Klassensatz hat, ersetzt das
+// Speichern ihn. Der Hinweis nennt jede dieser Klassen; nennte er nur die erste, fiele der Satz der
+// zweiten unbemerkt weg. „Klassensatz anlegen" ergänzt nur und warnt deshalb nicht.
+const verwaltet = { className: '5c', books: [{ id: 9 }] };
 const vorhandeneGruppen = [
 	{ className: '5a', books: [{ id: 1 }] },
 	{ className: '5b', books: [{ id: 1 }, { id: 2 }] }
@@ -23,7 +25,9 @@ async function waehle(screen, klasse) {
 
 describe('Klassensatz: Hinweis auf ersetzte Klassensätze', () => {
 	it('nennt die eine Klasse, deren Satz ersetzt wird', async () => {
-		const screen = render(KlassensatzDialog, { props: { vorhandeneGruppen } });
+		const screen = render(KlassensatzDialog, {
+			props: { vorhandeneGruppen, initialGroup: verwaltet }
+		});
 		await waehle(screen, '5a');
 
 		expect(
@@ -34,7 +38,9 @@ describe('Klassensatz: Hinweis auf ersetzte Klassensätze', () => {
 	});
 
 	it('nennt jede Klasse, deren Satz ersetzt wird', async () => {
-		const screen = render(KlassensatzDialog, { props: { vorhandeneGruppen } });
+		const screen = render(KlassensatzDialog, {
+			props: { vorhandeneGruppen, initialGroup: verwaltet }
+		});
 		await waehle(screen, '5a');
 		await waehle(screen, '5b');
 
@@ -43,5 +49,31 @@ describe('Klassensatz: Hinweis auf ersetzte Klassensätze', () => {
 				'5a mit 1 Buch und 5b mit 2 Büchern haben bereits einen Klassensatz. Beim Speichern werden sie durch die Auswahl hier ersetzt.'
 			)
 		).toBeTruthy();
+	});
+});
+
+// „Klassensatz anlegen" schickt an /api/admin/class-books/add, und das ergänzt (ON CONFLICT DO
+// NOTHING). Der Hinweis, der Satz werde ersetzt, stimmte dort nicht.
+describe('Klassensatz anlegen: kein Hinweis auf Ersetzen', () => {
+	it('warnt nicht, wenn die Klasse schon einen Satz hat', async () => {
+		const screen = render(KlassensatzDialog, { props: { vorhandeneGruppen } });
+		await waehle(screen, '5a');
+
+		expect(screen.queryByText(/Beim Speichern wird er durch die Auswahl hier ersetzt/)).toBeNull();
+	});
+});
+
+// Wer in „Bücher verwalten" die Klasse entfernt, um eine andere zu wählen, behält die Auswahl der
+// Bücher. Vorher leerte ein $effect sie, sobald keine Klasse mehr gewählt war.
+describe('Bücher verwalten: Klasse wechseln', () => {
+	it('behält die Auswahl, wenn die einzige Klasse entfernt wird', async () => {
+		const screen = render(KlassensatzDialog, {
+			props: { vorhandeneGruppen, initialGroup: verwaltet }
+		});
+		await vi.waitFor(() => expect(screen.getByText('1', { selector: 'div' })).toBeTruthy());
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Klasse 5c entfernen' }));
+
+		expect(screen.getByText('1', { selector: 'div' })).toBeTruthy();
 	});
 });
