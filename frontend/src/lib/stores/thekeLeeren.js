@@ -50,6 +50,10 @@ export function thekeLeeren() {
 	// Die Meldungsliste nennt Namen und Klassen: Sie geht mit zu, wenn die Theke geleert
 	// wird — sonst stünde sie nach fünf Minuten Pause offen vor dem nächsten Bediener.
 	nachbuchMeldungen.schliesse();
+	// Das rote Banner steht außerhalb der Akte und trägt die Nummern nicht gebuchter Scans; die
+	// Zeile zur Fremdrückgabe nennt, bei wem das Buch war. Beide stünden sonst beim Nächsten da.
+	omniboxStore.rueckmeldung.clearFehlerBanner();
+	omniboxStore.letzteFremdrueckgabe = null;
 	omniboxStore.vormerkungHinweis = null;
 	omniboxStore.sperrHinweis = null;
 	omniboxStore.prueflisteAnfrage = null;

@@ -331,3 +331,18 @@ describe('Das Zusammenführen an der Theke, wenn sie geleert wird', () => {
 		expect(omniboxStore.aktiverLeser, 'der nächste Bediener sähe Mias Konto').toBeNull();
 	});
 });
+
+// Das Banner mit den Nummern nicht gebuchter Scans steht außerhalb der Akte und blieb nach dem
+// Leeren stehen, ebenso die Zeile zur Fremdrückgabe mit dem Namen, bei dem das Buch war.
+describe('Theke leeren: Banner und Fremdrückgabe', () => {
+	it('leert das Banner der nicht gebuchten Scans und die Zeile zur Fremdrückgabe', () => {
+		omniboxStore.rueckmeldung.nenneNichtGebucht(['A-12345']);
+		omniboxStore.letzteFremdrueckgabe = { vorbesitzerName: 'Mia Muster' };
+		expect(omniboxStore.rueckmeldung.fehler).toContain('A-12345');
+
+		thekeLeeren();
+
+		expect(omniboxStore.rueckmeldung.fehler).toBe('');
+		expect(omniboxStore.letzteFremdrueckgabe).toBeNull();
+	});
+});
