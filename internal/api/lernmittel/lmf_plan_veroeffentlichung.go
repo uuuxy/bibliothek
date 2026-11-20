@@ -14,7 +14,6 @@ package lernmittel
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"bibliothek/internal/api/tuer"
@@ -22,8 +21,6 @@ import (
 	"bibliothek/internal/db"
 	"bibliothek/internal/repository"
 	"bibliothek/internal/service"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // lmfEingangsjahrgaenge liest die Einstellung; ohne lesbaren Wert gilt die Vorgabe.
@@ -94,23 +91,22 @@ func (t *Tueren) veroeffentlicheLMFPlan(r *http.Request) (lmfPlanSpeicherAntwort
 		return keine, false, err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
-	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return keine, false, apierrors.NotFound("Kein Plan vorhanden", pgx.ErrNoRows)
-	}
-	if err != nil {
-		return keine, false, apierrors.Internal("LMF-Plan laden", err)
-	}
-	antwort := lmfPlanSpeicherAntwort{LMFPlanStand: stand, Ausfaelle: []lmfPlanAusfall{}}
-	if stand.Plan.VeroeffentlichtAm != nil {
-		return antwort, false, nil
-	}
-	// Stempel und Fristen stehen in einer Transaktion, wie beim Speichern.
+	// Stempel und Fristen stehen in einer Transaktion, wie beim Speichern, und wie dort erst
+	// gesperrt, dann gelesen: Ein Verwerfen zugleich ist danach fertig, und dann gibt es keinen
+	// Plan mehr (404 statt 500).
 	tx, err := t.DB.Pool.Begin(r.Context())
 	if err != nil {
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.Verwerfe(r.Context(), tx)
+	stand, err := sperreUndLadeNeuestenPlan(r.Context(), abfragen, tx, art)
+	if err != nil {
+		return keine, false, err
+	}
+	antwort := lmfPlanSpeicherAntwort{LMFPlanStand: stand, Ausfaelle: []lmfPlanAusfall{}}
+	if stand.Plan.VeroeffentlichtAm != nil {
+		return antwort, false, nil
+	}
 	if antwort.LMFPlanStand, err = abfragen.VeroeffentlichePlan(r.Context(), tx, stand.Plan.ID, t.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}

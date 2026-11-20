@@ -16,6 +16,7 @@ package lernmittel
 // (lmf_plan_veroeffentlichung.go).
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -447,25 +448,42 @@ func (t *Tueren) LMFPlanVerwerfen() http.HandlerFunc {
 
 // verwerfeLMFPlan löscht den neuesten Plan der Art, bringt die Fristen seiner Klassen
 // zurück und nennt, wie viele Ausleihen das traf.
+// sperreUndLadeNeuestenPlan nimmt die Sperre des Speicherns (SperreNeuestenPlan) und liest danach
+// den neuesten Plan der Art. Gelesen wird am Pool: Wer ihn vorher geändert hat, hat die Sperre erst
+// mit seinem Abschluss freigegeben.
+func sperreUndLadeNeuestenPlan(ctx context.Context, abfragen *repository.LMFAbfragen, tx pgx.Tx, art string) (repository.LMFPlanStand, error) {
+	if _, err := abfragen.SperreNeuestenPlan(ctx, tx, art); err != nil {
+		return repository.LMFPlanStand{}, apierrors.Internal("LMF-Plan sperren", err)
+	}
+	stand, err := abfragen.LadeNeuestenPlan(ctx, art)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return stand, apierrors.NotFound("Kein Plan vorhanden", pgx.ErrNoRows)
+	}
+	if err != nil {
+		return stand, apierrors.Internal("LMF-Plan laden", err)
+	}
+	return stand, nil
+}
+
 func (t *Tueren) verwerfeLMFPlan(r *http.Request) (int64, error) {
 	art, err := leseLMFPlanArt(r)
 	if err != nil {
 		return 0, err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
-	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, apierrors.NotFound("Kein Plan vorhanden", pgx.ErrNoRows)
-	}
-	if err != nil {
-		return 0, apierrors.Internal("LMF-Plan laden", err)
-	}
-	// Löschen und Rückkehr der Fristen stehen in einer Transaktion, wie beim Speichern.
+	// Löschen und Rückkehr der Fristen stehen in einer Transaktion, wie beim Speichern, und wie
+	// dort erst gesperrt, dann gelesen (SperreNeuestenPlan): Ein Veröffentlichen zugleich ist
+	// danach fertig, und der Stand hier sieht es. Gelesen vor der Sperre, hielte das Verwerfen
+	// einen eben veröffentlichten Plan für einen Entwurf, und seine Fristen blieben stehen.
 	tx, err := t.DB.Pool.Begin(r.Context())
 	if err != nil {
 		return 0, apierrors.Internal("Transaktion", err)
 	}
 	defer db.Verwerfe(r.Context(), tx)
+	stand, err := sperreUndLadeNeuestenPlan(r.Context(), abfragen, tx, art)
+	if err != nil {
+		return 0, err
+	}
 	if _, err := abfragen.LoeschePlan(r.Context(), tx, stand.Plan.ID); err != nil {
 		return 0, apierrors.Internal("LMF-Plan löschen", err)
 	}

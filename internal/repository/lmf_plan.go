@@ -125,7 +125,8 @@ const lmfPlanSperre int64 = 751_2026
 // wenn es noch keinen Plan der Art gibt. Ein zweites Speichern wartet, bis das erste fertig ist,
 // und sieht dessen Stempel. Die Sperre der Zeile allein hielte es nicht auf, solange es keinen
 // Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt; deshalb zuerst lmfPlanSperre.
-// Die Zeile bleibt gesperrt, damit Veröffentlichen und Verwerfen auf das Speichern warten.
+// Veröffentlichen und Verwerfen nehmen dieselbe Sperre, bevor sie den Plan lesen; so laufen alle
+// drei nacheinander, und jeder sieht den Stand des vorigen.
 func (a *LMFAbfragen) SperreNeuestenPlan(ctx context.Context, tx pgx.Tx, art string) (string, error) {
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lmfPlanSperre); err != nil {
 		return "", err
