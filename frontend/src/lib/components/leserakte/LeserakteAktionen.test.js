@@ -75,3 +75,29 @@ describe('Ausweis drucken in der Leserakte', () => {
 		expect(pfeil.className.split(/\s+/)).not.toContain('rounded-l-sm');
 	});
 });
+
+// Den Kontoauszug gibt es für jeden Leser, auch für eine Lehrkraft. Die Ersatzforderung bleibt ein
+// Schreiben an die Eltern eines Schülers.
+describe('Dokumente in der Leserakte einer Lehrkraft', () => {
+	it('bietet den Kontoauszug an, die Ersatzforderung nicht', () => {
+		const screen = render(LeserakteAktionen, {
+			leser: {
+				id: 'l1',
+				vorname: 'Katrin',
+				nachname: 'Wendlandt',
+				art: 'lehrkraft',
+				barcode_id: 'L-1',
+				entliehene_buecher: [{ id: 'e1' }]
+			},
+			kontoauszugLaedt: false,
+			rechnungLaedt: false,
+			zeigeKontoauszug: vi.fn(),
+			zeigeRechnung: vi.fn(),
+			onPrint: vi.fn(),
+			gueltigBis: null,
+			onGueltigBis: vi.fn()
+		});
+		expect(screen.getByRole('button', { name: 'Kontoauszug' })).toHaveProperty('disabled', false);
+		expect(screen.queryByRole('button', { name: 'Ersatzforderung' })).toBeNull();
+	});
+});

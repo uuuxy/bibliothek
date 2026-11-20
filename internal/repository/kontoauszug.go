@@ -13,13 +13,16 @@ type KontoauszugBuch struct {
 	Barcode        string
 	Ausleihdatum   time.Time
 	Rueckgabedatum time.Time
+	// Dauerleihe ist die Ausleihe an jemanden, der kein Schüler ist (ausleihen.ist_handapparat):
+	// Sie hat keine Frist und wird nie überfällig.
+	Dauerleihe bool
 }
 
 // LadeKontoauszugBuecher lädt die offenen Ausleihen eines Lesers, Bücher und Geräte, die
 // früheste Frist zuerst. Eine unlesbare Zeile wird übersprungen.
 func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
 	query := `
-		SELECT COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist
+		SELECT COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat
 		FROM ausleihen a
 		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
@@ -36,7 +39,7 @@ func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.U
 	var buecher []KontoauszugBuch
 	for rows.Next() {
 		var b KontoauszugBuch
-		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum); err != nil {
+		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum, &b.Dauerleihe); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
 		buecher = append(buecher, b)
@@ -54,13 +57,13 @@ type KontoauszugKopf struct {
 	Klasse   string
 }
 
-// LadeKontoauszugKopf liest Name und Klasse eines Schülers, der nicht im Papierkorb liegt;
-// pgx.ErrNoRows sonst.
-func LadeKontoauszugKopf(ctx context.Context, db Datenbank, schuelerID uuid.UUID) (KontoauszugKopf, error) {
+// LadeKontoauszugKopf liest Name und Klasse eines Lesers, der nicht im Papierkorb liegt, Schüler
+// oder Kollegium; ohne Klasse ist sie leer. pgx.ErrNoRows sonst.
+func LadeKontoauszugKopf(ctx context.Context, db Datenbank, leserID uuid.UUID) (KontoauszugKopf, error) {
 	var k KontoauszugKopf
 	err := db.QueryRow(ctx, `
-			SELECT vorname, nachname, klasse
-			FROM schueler WHERE id = $1 AND deleted_at IS NULL
-		`, schuelerID).Scan(&k.Vorname, &k.Nachname, &k.Klasse)
+			SELECT vorname, nachname, coalesce(klasse, '')
+			FROM leser WHERE id = $1 AND deleted_at IS NULL
+		`, leserID).Scan(&k.Vorname, &k.Nachname, &k.Klasse)
 	return k, err
 }

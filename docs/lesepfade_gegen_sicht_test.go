@@ -65,7 +65,6 @@ var lesepfadeGeprueft = map[string]struct {
 	"internal/repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
 	"internal/repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn)"},
 	"internal/repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
-	"internal/repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs.
 	"internal/repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie internal/repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
 	"internal/repository/buch_in_klasse.go":  {2, "Hinweis an der Theke, wenn sonst niemand in der KLASSE das Buch hat — Klassen haben nur Schüler; dieselbe Klassendefinition wie internal/repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},

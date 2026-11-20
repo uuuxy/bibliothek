@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ladeKontoauszugBuecher lädt die aktuell ausgeliehenen Bücher eines Schülers
+// ladeKontoauszugBuecher lädt die aktuell ausgeliehenen Bücher und Geräte eines Lesers
 // (Frist aufsteigend).
 func ladeKontoauszugBuecher(ctx context.Context, pool db.Pool, schuelerID uuid.UUID) ([]pdf.KontoauszugBuch, error) {
 	zeilen, err := repository.LadeKontoauszugBuecher(ctx, pool, schuelerID)
@@ -46,7 +46,7 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 		kopf, err := repository.LadeKontoauszugKopf(ctx, t.DB.Pool, schuelerID)
 		schueler := pdf.KontoauszugSchueler(kopf)
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht gefunden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 			return
 		}
 		if err != nil {

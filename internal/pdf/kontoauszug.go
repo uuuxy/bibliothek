@@ -29,6 +29,8 @@ type KontoauszugBuch struct {
 	Barcode        string
 	Ausleihdatum   time.Time
 	Rueckgabedatum time.Time
+	// Dauerleihe hat keine Frist und wird nie überfällig.
+	Dauerleihe bool
 }
 
 // KontoauszugEintrag bündelt einen Schüler mit seinen Büchern für den Druck vieler Auszüge,
@@ -106,7 +108,7 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 		),
 		row.New(15).Add(
 			col.New().Add(marotoText(
-				fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s, Klasse %s", schueler.Vorname, schueler.Nachname, schueler.Klasse),
+				kontoauszugUeberschrift(schueler),
 				props.Text{Size: 14, Style: fontstyle.Bold, Align: align.Center},
 			)),
 		),
@@ -133,14 +135,18 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 
 	// Nur die lesbare Nummer, kein Strichcode: Der Auszug ist zum Lesen da, nicht zum Scannen
 	// an der Theke, und ein Bild je Zeile füllte das Blatt ohne Nutzen.
-	ueberfaellig := 0
+	ueberfaellig, mitFrist := 0, 0
 	for _, buch := range buecher {
-		// Überfällig wie in der Leserakte (utils/ueberfaellig.js), ohne deren Ausnahme für die
-		// Dauerleihe: Die hat nur, wer kein Schüler ist. Wort und fette Schrift statt Farbe, weil
-		// die Schule schwarz-weiß druckt.
+		// Überfällig wie in der Leserakte (utils/ueberfaellig.js): Eine Dauerleihe hat keine Frist.
+		// Wort und fette Schrift statt Farbe, weil die Schule schwarz-weiß druckt.
 		rueckgabe := buch.Rueckgabedatum.In(schulzeit.Zone()).Format(datumsformat)
 		rueckgabeText := props.Text{Size: 10}
-		if buch.Rueckgabedatum.Before(jetzt) {
+		if buch.Dauerleihe {
+			rueckgabe = "ohne Frist"
+		} else {
+			mitFrist++
+		}
+		if !buch.Dauerleihe && buch.Rueckgabedatum.Before(jetzt) {
 			ueberfaellig++
 			rueckgabe += " überfällig"
 			rueckgabeText.Style = fontstyle.Bold
@@ -167,7 +173,8 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 				marotoText("Freigabe zum Schulabgang: Datum und Unterschrift des Bibliotheksteams", props.Text{Size: 9, Style: fontstyle.Italic}),
 			)),
 		)
-	} else {
+	} else if mitFrist > 0 {
+		// Der Satz spricht von Fristen; Dauerleihen haben keine.
 		zeilen = append(zeilen, row.New(10).Add(col.New().Add(
 			marotoText(kontoauszugHinweis(ueberfaellig), props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
 		)))
@@ -178,6 +185,14 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 
 // kontoauszugHinweis ist der Satz unter der Liste. Ist etwas überfällig, bittet er um die
 // Rückgabe, statt vor Mahnungen zu warnen, die schon fällig sind.
+// kontoauszugUeberschrift nennt den Leser und, wenn er eine hat, die Klasse.
+func kontoauszugUeberschrift(leser KontoauszugSchueler) string {
+	if leser.Klasse == "" {
+		return fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s", leser.Vorname, leser.Nachname)
+	}
+	return fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s, Klasse %s", leser.Vorname, leser.Nachname, leser.Klasse)
+}
+
 func kontoauszugHinweis(ueberfaellig int) string {
 	switch ueberfaellig {
 	case 0:

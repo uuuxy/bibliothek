@@ -2,10 +2,9 @@
   @component
   SchuelerDokumente — Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
 
-  Die ersten beiden gehören einem Kollegen nicht: Sie lesen die Sicht `schueler`
-  (internal/api/leser/kontoauszug.go, internal/api/schaden/rechnung.go) und beantworten seine ID mit „nicht
-  gefunden"; die Ersatzforderung ist ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft
-  gibt es für jeden Leser. Beieinander statt dreimal dieselbe Bedingung.
+  Kontoauszug und DSGVO-Auskunft gibt es für jeden Leser. Die Ersatzforderung gehört einem
+  Kollegen nicht: Sie liest die Sicht `schueler` (internal/api/schaden/rechnung.go) und ist ein
+  Schreiben an die Eltern.
 -->
 <script>
 	import Button from '../ui/Button.svelte';
@@ -66,17 +65,17 @@
 	<Ladekreis size="sm" />
 {/snippet}
 
-{#if !kollege}
-	<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
-	<Button
-		variant="secondary"
-		onclick={zeigeKontoauszug}
-		disabled={kontoauszugLaedt || !(leser.entliehene_buecher?.length > 0)}
-	>
-		{#if kontoauszugLaedt}{@render spinner()}{:else}<Icon name="print" class="text-primary" />{/if}
-		Kontoauszug
-	</Button>
+<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
+<Button
+	variant="secondary"
+	onclick={zeigeKontoauszug}
+	disabled={kontoauszugLaedt || !(leser.entliehene_buecher?.length > 0)}
+>
+	{#if kontoauszugLaedt}{@render spinner()}{:else}<Icon name="print" class="text-primary" />{/if}
+	Kontoauszug
+</Button>
 
+{#if !kollege}
 	<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle.
 
      data-tip am UMSCHLAG, nicht am Knopf: Ein disabled-Element bekommt keine

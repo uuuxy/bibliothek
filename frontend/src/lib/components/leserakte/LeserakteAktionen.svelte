@@ -37,11 +37,9 @@
 	// Toolbar mit einem Dauer-Umschalter zuzustellen.
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
-	// Zwei der Dokumente gibt es für einen Kollegen nicht: Kontoauszug und Ersatzforderung
-	// lesen die Sicht `schueler` (internal/api/leser/kontoauszug.go, internal/api/schaden/rechnung.go) und
-	// beantworten seine ID mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist
-	// schlechter als keiner, und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern
-	// eines Schülers. Die DSGVO-Auskunft gibt es für jeden Leser (SchuelerDokumente).
+	// Die Ersatzforderung gibt es für einen Kollegen nicht: Sie liest die Sicht `schueler`
+	// (internal/api/schaden/rechnung.go) und ist ein Schreiben an die Eltern eines Schülers.
+	// Kontoauszug und DSGVO-Auskunft gibt es für jeden Leser (SchuelerDokumente).
 	const kollege = $derived(istKollegium(leser));
 
 	// Ohne Ausweisnummer gibt es keinen Ausweis zu drucken: Die Karte trüge ein leeres

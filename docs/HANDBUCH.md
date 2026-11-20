@@ -524,8 +524,9 @@ Liste.
   ohne sie. Ebenso fragt sie, wenn man bei offener Maske einen anderen Menüpunkt wählt
   (_Verwerfen und weiter_); beim Schließen oder Neuladen des Fensters fragt der Browser.
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
-  Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
-  DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine
+  Schaden), DSGVO-Auskunft. Die Ersatzforderung gibt es nur beim Schüler, Kontoauszug und
+  DSGVO-Auskunft für jeden Leser (im Kontoauszug eines Kollegen steht „ohne Frist“ statt eines
+  Datums); beim Kollegen nennt sie auch sein Zugangskonto, seine
   Wünsche und Reservierungen im Portal, seine Klassenleitungen und die Vorgänge, die er selbst
   bearbeitet hat — mit Zeitpunkt und Handlung, ohne Angaben zu anderen Personen. Die Vorgänge
   aus dem Protokoll stehen in Worten auf dem Blatt (Ausleihe, Rückgabe, Sperre, Stornierung),
