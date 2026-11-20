@@ -28,7 +28,7 @@
 	<p class="text-sm text-on-surface-variant italic">Keine Positionen gespeichert</p>
 {:else}
 	<ul class="divide-y divide-outline-variant">
-		{#each positionen as p (p.titel_name + p.isbn)}
+		{#each positionen as p (p.id)}
 			<li class="flex items-start gap-4 py-4">
 				<!-- Nur das gespeicherte Cover: Die Liste zeigt Bücher aus dem Bestand und fragt
 				     dafür keine fremde Quelle. -->

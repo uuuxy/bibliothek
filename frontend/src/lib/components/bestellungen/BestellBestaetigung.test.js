@@ -62,3 +62,18 @@ describe('Bestellbestätigung des Lieferanten: laden', () => {
 		expect(screen.queryByText('Dieser Link ist nicht mehr gültig')).toBeNull();
 	});
 });
+
+// Zwei Titel ohne ISBN mit gleichem Namen (zwei Ausgaben eines Arbeitshefts) gaben denselben
+// Schlüssel der Liste, und Svelte brach die Seite mit each_key_duplicate ab. Die Seite des
+// Lieferanten trägt keine Kennung der Position; die Reihenfolge ist der Schlüssel.
+describe('Bestellbestätigung des Lieferanten: Positionen', () => {
+	it('zeigt zwei Positionen mit gleichem Titel ohne ISBN', async () => {
+		const zwei = { titel_name: 'Lesebuch 5', isbn: '', menge: 1 };
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(200, { ...BESTELLUNG, positionen: [zwei, { ...zwei, menge: 3 }] })
+		);
+		render(BestellBestaetigung);
+
+		await vi.waitFor(() => expect(screen.getAllByText('Lesebuch 5')).toHaveLength(2));
+	});
+});

@@ -151,7 +151,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each bestellung.positionen as p (p.titel_name + p.isbn)}
+						{#each bestellung.positionen as p, i (i)}
 							<tr>
 								<td class="font-medium">{p.titel_name}</td>
 								{#if zeigeISBN}<td>{p.isbn}</td>{/if}
