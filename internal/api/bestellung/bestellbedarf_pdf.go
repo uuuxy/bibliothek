@@ -54,11 +54,19 @@ func baueBestelllistePDF(bedarf []repository.Bestellbedarf) *gofpdf.Fpdf {
 
 	schreibeBestelllisteKopf(pdf, tr)
 
-	pdf.SetFont(pdfzeichen.Schrift, "", 8)
+	_, seitenhoehe := pdf.GetPageSize()
+	_, _, _, unten := pdf.GetMargins()
 	for _, b := range bedarf {
-		pdf.CellFormat(62, 6, tr(b.Titel), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(35, 6, tr(b.Autor), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(33, 6, tr(b.ISBN), "1", 0, "L", false, 0, "")
+		// Jede Seite mit Zeilen trägt die Spaltenköpfe.
+		if pdf.GetY()+6 > seitenhoehe-unten {
+			pdf.AddPage()
+			schreibeBestelllisteKopf(pdf, tr)
+		}
+		// Zu lange Texte stehen gekürzt da: gofpdf druckt Überlanges über die Nachbarzelle.
+		pdf.SetFont(pdfzeichen.Schrift, "", 8)
+		pdf.CellFormat(62, 6, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.Titel, 62)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(35, 6, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.Autor, 35)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(33, 6, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.ISBN, 33)), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(16, 6, strconv.Itoa(b.Bedarf), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(16, 6, strconv.Itoa(b.GesamtBestand), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(18, 6, strconv.Itoa(b.Fehlen), "1", 1, "C", false, 0, "")
