@@ -64,11 +64,13 @@ func fuehreAus(argumente []string, stdout io.Writer) error {
 
 	// 3. Ziel bestimmen: Datei oder stdout (für `| psql`).
 	ziel := stdout
+	var datei *os.File
 	if len(argumente) == 2 {
-		datei, err := os.OpenFile(argumente[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Argument des Betreibers
+		datei, err = os.OpenFile(argumente[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Argument des Betreibers
 		if err != nil {
 			return fmt.Errorf("ausgabedatei %q konnte nicht erstellt werden: %w", argumente[1], err)
 		}
+		// Schließt im Fehlerweg; im Erfolgsweg schließt Close unten und meldet seinen Fehler.
 		defer func() { _ = datei.Close() }() //nolint:errcheck
 		ziel = datei
 	}
@@ -89,7 +91,12 @@ func fuehreAus(argumente []string, stdout io.Writer) error {
 		}
 	}
 
-	if len(argumente) == 2 {
+	if datei != nil {
+		// Erst Close schreibt den Rest aus dem Puffer des Systems; scheitert es (volle Platte,
+		// Netzlaufwerk), ist die SQL-Datei unvollständig und darf nicht als geschrieben gelten.
+		if err := datei.Close(); err != nil {
+			return fmt.Errorf("ausgabedatei %q konnte nicht geschlossen werden, sie ist unvollständig: %w", argumente[1], err)
+		}
 		fmt.Fprintf(os.Stderr, "restore-backup: SQL nach %q geschrieben. Einspielen mit: psql -U <user> -d <db> -f %s\n", argumente[1], argumente[1])
 	}
 	return nil
