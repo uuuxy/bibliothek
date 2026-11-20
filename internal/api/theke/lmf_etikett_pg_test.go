@@ -6,7 +6,6 @@ package theke
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -50,8 +49,9 @@ func TestAltesLMFEtikett_BuchtAmNetz(t *testing.T) {
 	}
 }
 
-// Die Meldung zu einem ausgesonderten Exemplar nennt seine Nummer, nicht das gescannte Etikett.
-func TestAltesLMFEtikett_MeldungNenntDieNummer(t *testing.T) {
+// Ein verliehenes Buch, das inzwischen ausgesondert ist, geht über sein altes Etikett bei einem
+// anderen Leser als Fremdrückgabe zurück; die Antwort nennt seine Nummer, nicht das Etikett.
+func TestAltesLMFEtikett_AusgesondertGehtZurueckUndNenntDieNummer(t *testing.T) {
 	w := baueNachbuchWelt(t)
 	alt := w.gibAltesLMFEtikett(t)
 	if code, r, rumpf := w.scanne(t, alt, uuid.NewString(), w.anna); code != http.StatusOK || r.Art != "ausleihe" {
@@ -61,16 +61,15 @@ func TestAltesLMFEtikett_MeldungNenntDieNummer(t *testing.T) {
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE id = $1`, w.exemplarID); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
-
-	code, _, rumpf := w.scanne(t, alt, uuid.NewString(), w.ben)
-	var ablehnung struct {
-		Fehler string `json:"error"`
+	code, r, rumpf := w.scanne(t, alt, uuid.NewString(), w.ben)
+	if code != http.StatusOK || r.Art != "rueckgabe" || !r.Fremdrueckgabe {
+		t.Fatalf("Scan des ausgesonderten Buchs bei Ben: %d %s, erwartet die Fremdrückgabe", code, rumpf)
 	}
-	if err := json.Unmarshal([]byte(rumpf), &ablehnung); err != nil {
-		t.Fatalf("Ablehnung: %v (%s)", err, rumpf)
+	if r.Exemplar == nil || r.Exemplar.BarcodeID != w.code {
+		t.Errorf("die Antwort nennt %+v, erwartet die Nummer %s statt des alten Etiketts", r.Exemplar, w.code)
 	}
-	if code != http.StatusBadRequest || !strings.Contains(ablehnung.Fehler, w.code) || strings.Contains(ablehnung.Fehler, alt) {
-		t.Errorf("Ablehnung %d %q, erwartet 400 mit der Nummer %s statt des alten Etiketts", code, ablehnung.Fehler, w.code)
+	if n, _ := w.offen(t); n != 0 {
+		t.Errorf("nach der Fremdrückgabe %d offene Ausleihen, erwartet keine", n)
 	}
 }
 

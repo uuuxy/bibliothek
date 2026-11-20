@@ -98,9 +98,8 @@ func (d *AusleihDienst) BucheAmLeser(
 ) (*AusleihErgebnis, error) {
 	erg := &AusleihErgebnis{}
 
-	if !exemplar.IstAusleihbar {
-		return nil, meldung(ErrUngueltigerZustand, "Dieses Buchexemplar ist nicht ausleihbar")
-	}
+	// Ob das Exemplar gesperrt ist, prüft sperreUndPruefeExemplar unter der Zeilensperre und nur
+	// für eine neue Ausleihe: Ein gesperrtes verliehenes Buch muss sich zurückgeben lassen.
 
 	// Die Sperren prüft erst der Schritt nach dem Lesen der Ausleihe: Sie hängen davon ab, ob
 	// das Buch diesem Leser gehört.

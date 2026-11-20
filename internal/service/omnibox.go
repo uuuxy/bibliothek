@@ -354,9 +354,10 @@ func (d *OmniboxDienst) verarbeiteSuche(ctx context.Context, text string, erg *O
 
 // versucheReaktivierung behandelt ein gesperrtes oder ausgesondertes Exemplar: Liegt keine
 // offene Ausleihe vor, holt der Scan es zurück (Umlauf und Forderung in einer Transaktion) und
-// endet mit „info"; ausgeliehen wird erst mit dem nächsten Scan. fertig heißt, dass das
-// Ergebnis steht.
-func (d *OmniboxDienst) versucheReaktivierung(ctx context.Context, nummer string, exemplar *repository.Exemplar, bearbeiterID string, erg *OmniboxErgebnis) (fertig bool, err error) {
+// endet mit „info"; ausgeliehen wird erst mit dem nächsten Scan. Ist es verliehen, bleibt der
+// Scan eine Rückgabe wie bei Geräten: Die Sperre gilt der Ausleihe, nicht der Rückgabe. fertig
+// heißt, dass das Ergebnis steht.
+func (d *OmniboxDienst) versucheReaktivierung(ctx context.Context, exemplar *repository.Exemplar, bearbeiterID string, erg *OmniboxErgebnis) (fertig bool, err error) {
 	offeneAusleihe, err := d.ausleihAbfragen.FindeOffene(ctx, exemplar.ID)
 	if err != nil {
 		return false, err
@@ -376,11 +377,7 @@ func (d *OmniboxDienst) versucheReaktivierung(ctx context.Context, nummer string
 		erg.Art = "info"
 		return true, nil
 	}
-
-	if exemplar.IstAusgesondert {
-		return false, meldung(ErrUngueltigerZustand, "Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", nummer)
-	}
-	return false, meldung(ErrUngueltigerZustand, "Buchexemplar ist nicht ausleihbar")
+	return false, nil
 }
 
 // holeExemplarZurueck ist der Scan am Netz über dem Baustein repository.HoleExemplarZurueck, in
@@ -431,9 +428,9 @@ func (d *OmniboxDienst) verarbeiteExemplar(ctx context.Context, eingabe OmniboxE
 		return meldung(ErrNichtGefunden, "Buchexemplar-Barcode %s wurde nicht gefunden", eingabe.Text)
 	}
 
-	// Ein gesperrtes oder ausgesondertes Exemplar holt der Scan zurück.
+	// Ein gesperrtes oder ausgesondertes Exemplar holt der Scan zurück, ein verliehenes nimmt er an.
 	if !exemplar.IstAusleihbar || exemplar.IstAusgesondert {
-		fertig, err := d.versucheReaktivierung(ctx, exemplar.BarcodeID, exemplar, eingabe.BearbeiterID, erg)
+		fertig, err := d.versucheReaktivierung(ctx, exemplar, eingabe.BearbeiterID, erg)
 		if err != nil {
 			return err
 		}

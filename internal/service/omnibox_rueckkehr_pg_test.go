@@ -248,3 +248,68 @@ func TestScanHoltGesperrtesExemplarZurueck(t *testing.T) {
 		t.Error("das Exemplar ist nach dem Scan weiter gesperrt")
 	}
 }
+
+// Ein verliehenes Buch, das im Status-Dialog gesperrt oder ausgesondert wurde, muss sich
+// zurückgeben lassen wie ein Gerät (geraet_rueckgabe_sperre_pg_test.go): Die Sperre gilt der
+// Ausleihe, nicht der Rückgabe. Nach der Rückgabe bleibt es gesperrt.
+func TestScanNimmtGesperrtesVerliehenesBuchZurueck(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
+	titelID := testdaten.LegeTitelAn(t, pool, "Gesperrt-verliehen-Testband")
+	besitzer := testdaten.LegeSchuelerAn(t, pool, "SCH-GV-1", "Besitzer", "07A")
+	anderer := testdaten.LegeSchuelerAn(t, pool, "SCH-GV-2", "Anderer", "07A")
+
+	studentRepo := repository.NewLeserAbfragen(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
+	loanRepo := repository.NewAusleihAbfragen(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	ausleihe := NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo)
+	svc := NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo, ausleihe,
+		NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo))
+
+	sperren := map[string]string{
+		"gesperrt":     `UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`,
+		"ausgesondert": `UPDATE buecher_exemplare SET ist_ausleihbar = false, ist_ausgesondert = true, aussonderung_grund = 'BESTANDSKORREKTUR' WHERE id = $1`,
+	}
+	amLeser := map[string]*string{"ohne Leser": nil, "beim Besitzer": &besitzer, "bei einem anderen": &anderer}
+	nummer := 0
+	for sperre, sql := range sperren {
+		for wo, leser := range amLeser {
+			t.Run(sperre+" "+wo, func(t *testing.T) {
+				nummer++
+				barcode := fmt.Sprintf("B-GV-%d", nummer)
+				exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
+				ex, err := bookRepo.FindeExemplar(ctx, barcode)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := ausleihe.BucheAmLeser(ctx, ex, &besitzer, bearbeiter, false); err != nil {
+					t.Fatalf("Ausleihe: %v", err)
+				}
+				if _, err := pool.Exec(ctx, sql, exemplarID); err != nil {
+					t.Fatal(err)
+				}
+
+				res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: barcode, BearbeiterID: bearbeiter, AktiverLeserID: leser})
+				if err != nil {
+					t.Fatalf("Rückgabe-Scan: %v", err)
+				}
+				var offen int
+				var ausleihbar bool
+				if err := pool.QueryRow(ctx, `
+					SELECT (SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL), ist_ausleihbar
+					FROM buecher_exemplare WHERE id = $1`, exemplarID).Scan(&offen, &ausleihbar); err != nil {
+					t.Fatal(err)
+				}
+				if offen != 0 {
+					t.Errorf("Scan: Art %q, die Ausleihe ist noch offen", res.Art)
+				}
+				if ausleihbar {
+					t.Error("das Exemplar ist nach der Rückgabe wieder ausleihbar, erwartet bleibt es gesperrt")
+				}
+			})
+		}
+	}
+}
