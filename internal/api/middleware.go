@@ -36,6 +36,9 @@ var langLaufendePfade = []string{
 	"/api/admin/sync-",      // Cover-Abgleich über den ganzen Bestand
 	"/api/lusd/",            // LUSD-Vorschau und -Import (ganze Jahrgänge)
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
+	// Adressabgleich von Hand: Anmeldung am Webmail und Abruf des Adressbuchs dürfen zwei Minuten
+	// dauern (adressabgleich.gesamtfrist), die Maske wartet 150 Sekunden.
+	"/api/admin/settings/adressabgleich/lauf",
 }
 
 // LesefristVorgabe ist die Frist, in der eine gewöhnliche Anfrage vollständig

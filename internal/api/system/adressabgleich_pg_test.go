@@ -179,3 +179,24 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 		t.Errorf("Stand nach der Ablehnung %+v, erwartet den Satz der Ablehnung", stand)
 	}
 }
+
+// Endet die Anfrage, bevor der Lauf fertig ist (Frist abgelaufen, Browser getrennt), muss der
+// Stand trotzdem geschrieben werden: Gerade dann soll die Maske den gescheiterten Lauf zeigen und
+// nicht den vorletzten.
+func TestAdressabgleich_StandUeberlebtDasEndeDerAnfrage(t *testing.T) {
+	pool := pgtest.Pool(t)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, adressabgleichStandSchluessel)
+	})
+	beendet, abbrechen := context.WithCancel(context.Background())
+	abbrechen()
+
+	if _, err := srv.fuehreAdressabgleichAus(beendet, false, ""); err == nil {
+		t.Fatal("fuehreAdressabgleichAus mit beendetem Kontext: kein Fehler, erwartet der Abbruch")
+	}
+	stand := srv.ladeAdressabgleichStand(context.Background())
+	if stand == nil || stand.Fehler == "" {
+		t.Errorf("Stand nach dem Abbruch = %+v, erwartet einen gespeicherten Fehler", stand)
+	}
+}

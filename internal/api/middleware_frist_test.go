@@ -50,6 +50,7 @@ func TestAnfrageFrist(t *testing.T) {
 		{"/api/lusd/import", langLaufendeFrist, "LUSD-Import umfasst ganze Jahrgaenge"},
 		{"/api/lusd/preview", langLaufendeFrist, "Vorschau liest dieselbe Datei"},
 		{"/api/admin/mahnungen/bulk-print", langLaufendeFrist, "Sammeldruck ueber alle Klassen"},
+		{"/api/admin/settings/adressabgleich/lauf", langLaufendeFrist, "Webmail-Abruf darf zwei Minuten dauern"},
 
 		// Alltagspfade behalten die kurze Frist, sonst hält ein hängender Scan
 		// minutenlang eine Verbindung zur Datenbank fest.

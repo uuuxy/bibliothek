@@ -202,7 +202,11 @@ func (t *Tueren) trageAdressenEin(ctx context.Context, uebernahmen []adressabgle
 	}
 }
 
+// schreibeAdressabgleichStand schreibt auch, wenn die Anfrage schon geendet hat (Frist abgelaufen,
+// Browser getrennt): Gerade dann soll die Maske den gescheiterten Lauf zeigen.
 func (t *Tueren) schreibeAdressabgleichStand(ctx context.Context, stand adressabgleichStand) {
+	ctx, abbrechen := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer abbrechen()
 	wert, err := json.Marshal(stand)
 	if err == nil {
 		err = repository.NewBetriebszustandAbfragen(t.DB.Pool).SchreibeEinstellungswert(ctx, adressabgleichStandSchluessel, string(wert))
