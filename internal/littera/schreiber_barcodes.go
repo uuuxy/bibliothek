@@ -72,17 +72,18 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 	if s.opt.Barcodes != BarcodeLittera {
 		return ""
 	}
-	nummer, ok := s.etikettAmBuch(e)
-	if !ok {
-		s.prot.Warnung(e.ID, e.Exemplarnummer,
-			"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden – "+
-				"neue Nummer aus barcode_seq, das Buch braucht ein neues Etikett")
-		return ""
-	}
-	// Ein hinterlegter Fremdbarcode gewinnt: Dann klebt ein Ersatzetikett am Buch, und
-	// der gerechnete EAN-13 stünde nirgends.
-	if fremd != "" {
-		nummer = fremd
+	// Ein hinterlegter Fremdbarcode gewinnt: Dann klebt ein Ersatzetikett am Buch, und der
+	// gerechnete EAN-13 stünde nirgends. Ob sich das Littera-Etikett bilden ließe, zählt dann
+	// nicht; fehlt seine Exemplarnummer, trägt das Buch trotzdem das Ersatzetikett.
+	nummer := fremd
+	if nummer == "" {
+		var ok bool
+		if nummer, ok = s.etikettAmBuch(e); !ok {
+			s.prot.Warnung(e.ID, e.Exemplarnummer,
+				"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden – "+
+					"neue Nummer aus barcode_seq, das Buch braucht ein neues Etikett")
+			return ""
+		}
 	}
 	if len(nummer) > uebernahme.MaxBarcode {
 		s.prot.Warnung(e.ID, nummer,

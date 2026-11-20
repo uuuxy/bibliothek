@@ -27,6 +27,18 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 		}
 	})
 
+	// Das Ersatzetikett klebt am Buch, auch wenn die Littera-Exemplarnummer fehlt oder unlesbar
+	// ist. Vorher brach barcodeWunsch dann ab und vergab eine neue B-Nummer, die am Buch nirgends
+	// steht: An der Theke fand der Scan des Ersatzetiketts nichts.
+	t.Run("Fremdbarcode gewinnt auch ohne bildbares Littera-Etikett", func(t *testing.T) {
+		for _, nummer := range []string{"", "ungültig"} {
+			e := Exemplar{ID: "E6", Exemplarnummer: nummer, Bibliotheksnummer: "13"}
+			if got := s.barcodeWunsch(e, "FREMD456"); got != "FREMD456" {
+				t.Errorf("Exemplarnummer %q: s.barcodeWunsch(e, \"FREMD456\") = %q, erwartet das Ersatzetikett", nummer, got)
+			}
+		}
+	})
+
 	t.Run("Opt BarcodeNeu liefert leeren Wunsch", func(t *testing.T) {
 		opt := OptionenVorgabe(time.Now())
 		opt.Barcodes = BarcodeNeu

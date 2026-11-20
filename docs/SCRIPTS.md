@@ -125,7 +125,8 @@ Etikett klebt, liefert ein Buch mit doppeltem Etikett am Scanner die Nummer des 
 das die Nummer behalten hat.
 
 Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
-gegen die EAN-13 des Etiketts. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
+gegen die EAN-13 des Etiketts, auch wenn sich diese aus fehlender oder unlesbarer
+Exemplarnummer gar nicht bilden ließe. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
 die Nummer des Kartenherstellers (`B12345678901`), und die steht in keinem Stammdatenfeld.
 Beide Dateien sind optional; fehlen sie, rechnet der Import mit den Littera-Nummern.
 
