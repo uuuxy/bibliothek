@@ -54,6 +54,8 @@ raeume_auf() {
   echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage, Logs: ${RETENTION_LOG_TAGE} Tage)..."
   find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
   find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
+  # Zwischendateien eines hart abgebrochenen Laufs; eine im Klartext trägt alle Namen.
+  find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.teil.*" -mmin +1440 -exec rm -f {} \;
   if [ -d "$LOG_DIR" ]; then
     find "$LOG_DIR" -type f -name "backend_*.log" -mtime "+${RETENTION_LOG_TAGE}" -exec rm -f {} \;
   fi
@@ -83,6 +85,13 @@ BACKUP_BASIS="$BACKUP_DIR/bibliothek_backup_$TIMESTAMP.sql.gz"
 
 echo "Starte Backup für Datenbank '$DB_NAME' aus Container '$CONTAINER_NAME'..."
 
+# Geschrieben wird unter vorläufigem Namen, umbenannt erst nach der Prüfung: Ein zweiter Lauf am
+# selben Tag schnitte sonst die gültige Sicherung des Morgens ab, und scheiterte er, löschte das
+# rm im Fehlerzweig sie ganz. Die trap räumt die Zwischendatei auch bei Strg+C weg; bleibt sie nach
+# einem harten Abbruch liegen, nimmt raeume_auf sie nach einem Tag.
+VORLAEUFIG=""
+trap '[ -n "$VORLAEUFIG" ] && rm -f "$VORLAEUFIG"' EXIT
+
 # umask im Subshell, nicht chmod danach: Läge zwischen Anlegen und Rechtesetzen eine
 # Lücke, wäre die Datei genau während des Schreibens für alle lesbar.
 #
@@ -94,10 +103,12 @@ if krypto_moeglich; then
   # Der Regelweg: pg_dump → gzip → Verschlüsselung, alles in EINER Pipe. Der Klartext
   # berührt die Platte nie, nicht einmal für Sekunden.
   BACKUP_FILE="${BACKUP_BASIS}.enc"
+  VORLAEUFIG="${BACKUP_FILE}.teil.$$"
   if (umask 077; set -o pipefail; \
       docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" -d "$DB_NAME" \
-      | gzip | krypto_pipe > "$BACKUP_FILE") \
-     && pruefe_enc_datei "$BACKUP_FILE" && pruefe_enc_rundweg "$BACKUP_FILE"; then
+      | gzip | krypto_pipe > "$VORLAEUFIG") \
+     && pruefe_enc_datei "$VORLAEUFIG" && pruefe_enc_rundweg "$VORLAEUFIG" \
+     && mv -f "$VORLAEUFIG" "$BACKUP_FILE"; then
     echo "Backup erfolgreich (verschlüsselt, Rückweg geprüft): $BACKUP_FILE"
     # Die Datei liegt auf dem Host, das Werkzeug im Image: Sie geht über die Standardeingabe
     # hinein. Ein Wegwerf-Container statt docker exec, weil das Backend beim Wiederherstellen
@@ -106,8 +117,8 @@ if krypto_moeglich; then
     echo "  Einspielen: docs/resilience_and_recovery.md, Abschnitt 2b"
   else
     echo "FEHLER: Backup fehlgeschlagen (Dump, Verschlüsselung oder Rückweg-Prüfung)!"
-    # Die angefangene Datei nicht liegen lassen: Sie sieht wie ein Backup aus.
-    rm -f "$BACKUP_FILE"
+    # Die angefangene Datei nicht liegen lassen; eine Sicherung von heute bleibt, wie sie war.
+    rm -f "$VORLAEUFIG"
     exit 1
   fi
 else
@@ -118,12 +129,14 @@ else
   echo "WARNUNG: Ihn löscht erst ein späterer Lauf, frühestens nach ${RETENTION_KLARTEXT_TAGE} Tagen —"
   echo "WARNUNG: bitte selbst entsorgen (shred -u), sobald er nicht mehr gebraucht wird."
   BACKUP_FILE="$BACKUP_BASIS"
+  VORLAEUFIG="${BACKUP_FILE}.teil.$$"
   if (umask 077; set -o pipefail; \
-      docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > "$BACKUP_FILE"); then
+      docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > "$VORLAEUFIG") \
+     && mv -f "$VORLAEUFIG" "$BACKUP_FILE"; then
     echo "Backup erfolgreich (unverschlüsselt): $BACKUP_FILE"
   else
     echo "FEHLER: Backup fehlgeschlagen!"
-    rm -f "$BACKUP_FILE"
+    rm -f "$VORLAEUFIG"
     exit 1
   fi
 fi
