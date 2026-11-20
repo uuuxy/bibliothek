@@ -75,6 +75,12 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 		}
 	}
 
+	rolle, bekannt := normalisiereRolle(req.Rolle)
+	if !bekannt {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungRolleUnbekannt, nil)
+		return
+	}
+
 	// Einen Administrator darf nur ein Administrator anlegen (siehe admin_schutz.go).
 	if !pruefeAdminVergabe(w, r, req.Rolle) {
 		return
@@ -104,8 +110,6 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 	if !ok {
 		return
 	}
-
-	rolle := normalisiereRolle(req.Rolle)
 
 	// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
 	// von selbst (Trigger trg_benutzer_hat_leserzeile).
@@ -287,7 +291,11 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen
 		aenderung.BarcodeGenannt, aenderung.Barcode = true, nummer
 	}
 	if req.Rolle != nil {
-		rolle := normalisiereRolle(*req.Rolle)
+		rolle, bekannt := normalisiereRolle(*req.Rolle)
+		if !bekannt {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungRolleUnbekannt, nil)
+			return aenderung, false
+		}
 		aenderung.Rolle = &rolle
 	}
 	return aenderung, true

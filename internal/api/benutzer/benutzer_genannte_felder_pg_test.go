@@ -153,7 +153,7 @@ func TestKontoAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 
 	t.Run("ein genanntes Pflichtfeld darf nicht leer sein", func(t *testing.T) {
 		vorher := lies(t)
-		for _, rumpf := range []string{`{"vorname":""}`, `{"nachname":" "}`, `{"email":""}`, `{"email":"keine-adresse"}`, `{"rolle":""}`} {
+		for _, rumpf := range []string{`{"vorname":""}`, `{"nachname":" "}`, `{"email":""}`, `{"email":"keine-adresse"}`, `{"rolle":""}`, `{"rolle":"kolleguim"}`} {
 			if code := aendere(t, rumpf); code != http.StatusBadRequest {
 				t.Errorf("%s: Status %d, erwartet 400", rumpf, code)
 			}

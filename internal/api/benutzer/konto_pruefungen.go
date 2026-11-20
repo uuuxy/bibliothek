@@ -15,21 +15,25 @@ import (
 // Admin-Konten (admin_schutz.go), weil es drei verschiedene Fragen sind: „ist die Eingabe
 // wohlgeformt", „wer ruft auf", „was tut die Tür".
 
-// normalisiereRolle bildet die Rolle der Eingabe auf einen Wert ab, den die Datenbank kennt;
-// eine unbekannte Rolle wird "mitarbeiter".
+// normalisiereRolle bildet die Rolle der Eingabe auf einen Wert ab, den die Datenbank kennt.
+// bekannt=false: Diese Rolle gibt es nicht, und die Tür lehnt ab.
 //
-// Die Rückfallebene ist die harmloseste Rolle, nicht die nächstliegende: Ein Tippfehler darf
-// nie nach oben führen. Wer "admin" schreiben will, muss es genau treffen, und vergeben darf
-// es zusätzlich nur, wer pruefeAdminVergabe passiert.
-func normalisiereRolle(rolle string) string {
+// Eine Rückfallebene gibt es nicht: "mitarbeiter" sieht und ändert Schülerdaten, und ein
+// Tippfehler wie "kolleguim" bekäme sonst mehr Rechte als gemeint. Vergeben darf "admin"
+// zusätzlich nur, wer pruefeAdminVergabe passiert.
+func normalisiereRolle(rolle string) (normalisiert string, bekannt bool) {
 	klein := strings.ToLower(strings.TrimSpace(rolle))
 	switch klein {
 	case "admin", "leitung", "kollegium", "mitarbeiter", "helfer":
-		return klein
+		return klein, true
 	default:
-		return "mitarbeiter"
+		return "", false
 	}
 }
+
+// meldungRolleUnbekannt steht, wenn eine Anfrage eine Rolle nennt, die es nicht gibt. Die
+// Benutzerverwaltung bietet nur bekannte an; die Meldung trifft ein Skript oder einen alten Namen.
+const meldungRolleUnbekannt = "Diese Rolle gibt es nicht. Erlaubt sind admin, leitung, kollegium, mitarbeiter und helfer."
 
 // pruefeEmailEindeutig prüft, dass kein anderes Konto die E-Mail trägt (ausgenommeneID leer
 // bei einem neuen Konto, sonst die eigene Kennung). Bei einem Konflikt oder Fehler der

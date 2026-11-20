@@ -28,3 +28,20 @@ func TestKontoAnlegen_NameAusLeerzeichenAbgewiesen(t *testing.T) {
 		}
 	}
 }
+
+// Eine Rolle, die es nicht gibt, legt kein Konto an. Vorher wurde sie still „mitarbeiter“.
+func TestKontoAnlegen_UnbekannteRolleAbgewiesen(t *testing.T) {
+	for _, rolle := range []string{"lehrer", "kolleguim", "helferin"} {
+		repo := &eskalationsAttrappe{rollen: map[string]string{}}
+		srv := &Tueren{Basis: &tuer.Basis{}}
+		w := httptest.NewRecorder()
+		rumpf := `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","rolle":"` + rolle + `"}`
+		srv.KontoAnlegen(repo).ServeHTTP(w, anfrageAls(t, http.MethodPost, "/api/benutzer", rumpf, "admin-1", auth.RolleAdmin))
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Rolle %q: Status %d, erwartet 400", rolle, w.Code)
+		}
+		if repo.angelegt {
+			t.Errorf("Rolle %q: Konto angelegt", rolle)
+		}
+	}
+}

@@ -9,22 +9,23 @@ import (
 	"bibliothek/internal/auth"
 )
 
-// Die Rolle Leitung muss vergebbar sein. normalisiereRolle ist die Stelle, an
-// der eine unbekannte Rolle auf die harmloseste zurückfällt — stünde „leitung" nicht in
-// der Liste, würde jede Vergabe still zu „mitarbeiter", und die Auswahl in der
-// Benutzerverwaltung sähe nur so aus, als hätte sie gewirkt.
+// Die Rolle Leitung muss vergebbar sein: Stünde „leitung" nicht in der Liste von
+// normalisiereRolle, lehnte die Tür jede Vergabe ab.
 func TestNormalisiereRolle_KenntLeitung(t *testing.T) {
-	faelle := map[string]string{
-		"leitung":   "leitung",
-		"LEITUNG":   "leitung",
-		" Leitung ": "leitung",
-		// Die Rückfallebene bleibt die harmloseste Rolle, nicht die nächstliegende:
-		// Ein Tippfehler darf niemals nach oben führen.
-		"leitungg": "mitarbeiter",
+	for _, eingabe := range []string{"leitung", "LEITUNG", " Leitung "} {
+		if got, bekannt := normalisiereRolle(eingabe); got != "leitung" || !bekannt {
+			t.Errorf("normalisiereRolle(%q) = %q, %v; erwartet \"leitung\", true", eingabe, got, bekannt)
+		}
 	}
-	for eingabe, erwartet := range faelle {
-		if got := normalisiereRolle(eingabe); got != erwartet {
-			t.Errorf("normalisiereRolle(%q) = %q, erwartet %q", eingabe, got, erwartet)
+}
+
+// Eine unbekannte Rolle fiel still auf „mitarbeiter" zurück, und die darf Schülerdaten sehen und
+// ändern: Ein Tippfehler oder der alte Name „lehrer" vergab mehr Rechte als „kollegium" oder
+// „helfer". Jetzt gibt es keine Rückfallebene.
+func TestNormalisiereRolle_KenntKeineUnbekannte(t *testing.T) {
+	for _, eingabe := range []string{"leitungg", "kolleguim", "helferin", "lehrer", ""} {
+		if got, bekannt := normalisiereRolle(eingabe); bekannt {
+			t.Errorf("normalisiereRolle(%q) = %q, true; erwartet unbekannt", eingabe, got)
 		}
 	}
 }
