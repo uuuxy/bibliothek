@@ -161,8 +161,7 @@ func (a *LeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limi
 		WHERE s.deleted_at IS NULL
 		  AND s.anonymized_at IS NULL
 		  AND ` + leserSuchBedingung(false) + `
-		ORDER BY ` + leserSuchRang + `,
-			s.nachname ASC, s.vorname ASC
+		ORDER BY ` + leserSuchRang + `, ` + sqlNamenfolge + `
 		LIMIT $3
 	`
 	rows, err := a.db.Query(ctx, query, tokens, tokens[0], limit)

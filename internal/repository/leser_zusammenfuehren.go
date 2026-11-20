@@ -617,7 +617,7 @@ func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.Pool, ausserID,
 		WHERE s.deleted_at IS NULL AND s.anonymized_at IS NULL AND s.id <> $4
 		  AND (s.art = 'schueler') = ((SELECT art FROM leser WHERE id = $4) = 'schueler')
 		  AND `+leserSuchBedingung(true)+`
-		ORDER BY `+leserSuchRang+`, s.nachname, s.vorname
+		ORDER BY `+leserSuchRang+`, `+sqlNamenfolge+`
 		LIMIT $3`, tokens, tokens[0], limit, ausserID)
 	if err != nil {
 		return nil, err

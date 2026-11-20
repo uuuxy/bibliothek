@@ -190,9 +190,9 @@ func klassenSortierung(zweig, reihenfolge string) string {
 
 	stufeZahl := JahrgangSQL("cb.class_name")
 	if reihenfolge == "desc" {
-		return sortierung + stufeZahl + ` DESC, cb.class_name DESC, b.titel ASC`
+		return sortierung + stufeZahl + ` DESC, cb.class_name COLLATE deutsch DESC, b.titel COLLATE deutsch ASC`
 	}
-	return sortierung + stufeZahl + ` ASC, cb.class_name ASC, b.titel ASC`
+	return sortierung + stufeZahl + ` ASC, cb.class_name COLLATE deutsch ASC, b.titel COLLATE deutsch ASC`
 }
 
 // leseKlassensatzTitel liest eine Zeile der Klassenübersicht: die Klasse und ihr Buch, mit der

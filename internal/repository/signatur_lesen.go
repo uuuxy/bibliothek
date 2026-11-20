@@ -24,7 +24,7 @@ func LadeSignaturGruppen(ctx context.Context, db Datenbank) ([]SignaturGruppe, e
 			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
 			WHERE COALESCE(btrim(t.signatur), '') <> ''
 			GROUP BY `+regal+`
-			ORDER BY `+regal+`
+			ORDER BY `+regal+` COLLATE deutsch
 		`)
 	if err != nil {
 		return nil, err

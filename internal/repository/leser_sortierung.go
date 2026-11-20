@@ -71,11 +71,11 @@ func (s LeserSortierung) sqlSortierung(art listenArt, suchRang string) string {
 
 	switch s.Spalte {
 	case SortiereName:
-		return gruppe + "s.nachname" + richtung + ", s.vorname" + richtung
+		return gruppe + "s.nachname COLLATE deutsch" + richtung + ", s.vorname COLLATE deutsch" + richtung
 	case SortiereKlasse:
-		return gruppe + "s.klasse" + richtung + ", s.nachname, s.vorname"
+		return gruppe + "s.klasse COLLATE deutsch" + richtung + ", " + sqlNamenfolge
 	case SortiereAusgeliehen:
-		return gruppe + "ausgeliehen_anzahl" + richtung + ", s.nachname, s.vorname"
+		return gruppe + "ausgeliehen_anzahl" + richtung + ", " + sqlNamenfolge
 	}
 
 	// Vorgabe. Bei einer Suche zuerst die besten Treffer, aber nur, solange der Benutzer nicht
@@ -86,10 +86,14 @@ func (s LeserSortierung) sqlSortierung(art listenArt, suchRang string) string {
 	// „Kollegium oben" ist eine Regel, die der Benutzer sieht, und eine Regel, die je nach
 	// Suchfeld gilt oder nicht, ist keine.
 	if suchRang != "" {
-		return gruppe + suchRang + ", s.nachname ASC, s.vorname ASC"
+		return gruppe + suchRang + ", " + sqlNamenfolge
 	}
 	if art == listeEhemalige {
-		return "s.abgaenger_jahr DESC, s.nachname, s.vorname"
+		return "s.abgaenger_jahr DESC, " + sqlNamenfolge
 	}
-	return gruppe + "s.klasse, s.nachname, s.vorname"
+	return gruppe + "s.klasse COLLATE deutsch, " + sqlNamenfolge
 }
+
+// sqlNamenfolge ordnet Leser nach Nachname und Vorname in der deutschen Kollation (Migration 165):
+// In der Vorgabe der Datenbank stünde „Öztürk“ hinter „Zimmermann“.
+const sqlNamenfolge = "s.nachname COLLATE deutsch, s.vorname COLLATE deutsch"

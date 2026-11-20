@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"slices"
 	"testing"
 )
 
@@ -121,5 +122,52 @@ func TestLeserSortierungIstErlaubt(t *testing.T) {
 		if ist := (LeserSortierung{Spalte: f.spalte}).IstErlaubt(); ist != f.soll {
 			t.Errorf("Erlaubt(%q) = %v, erwartet %v", f.spalte, ist, f.soll)
 		}
+	}
+}
+
+// Die Vorgabe der Datenbank ordnet nach Bytes: „Öztürk“ hinter „Zimmermann“ und „10a“ vor „5a“.
+// Leserliste und Thekensuche ordnen wie die übrigen Listen in der Kollation deutsch.
+func TestLeserSortierung_DeutscheReihenfolge(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	legeSuchSchuelerAn(t, pool, "UML-1", "Umlauttest", "Zimmermann")
+	legeSuchSchuelerAn(t, pool, "UML-2", "Umlauttest", "Öztürk")
+	legeSuchSchuelerAn(t, pool, "UML-3", "Umlauttest", "Otto")
+	if _, err := pool.Exec(ctx, `UPDATE leser SET klasse = CASE barcode_id
+		WHEN 'UML-1' THEN '5a' WHEN 'UML-2' THEN '10a' WHEN 'UML-3' THEN '10a' END
+		WHERE barcode_id LIKE 'UML-%'`); err != nil {
+		t.Fatalf("Klassen setzen: %v", err)
+	}
+	repo := NewLeserAbfragen(pool)
+	liste := func(sortierung LeserSortierung) []string {
+		t.Helper()
+		zeilen, err := repo.LadeLeserListe(ctx, nil, "UML", sortierung)
+		if err != nil {
+			t.Fatalf("LadeLeserListe: %v", err)
+		}
+		var out []string
+		for _, z := range zeilen {
+			out = append(out, z.Nachname)
+		}
+		return out
+	}
+	if ist, soll := liste(LeserSortierung{Spalte: SortiereName}), []string{"Otto", "Öztürk", "Zimmermann"}; !slices.Equal(ist, soll) {
+		t.Errorf("Leserliste nach Name: %v, erwartet %v", ist, soll)
+	}
+	if ist, soll := liste(LeserSortierung{Spalte: SortiereKlasse}), []string{"Zimmermann", "Otto", "Öztürk"}; !slices.Equal(ist, soll) {
+		t.Errorf("Leserliste nach Klasse: %v, erwartet %v (5a vor 10a)", ist, soll)
+	}
+
+	treffer, _, err := repo.FindeUnscharf(ctx, "Umlauttest", 10)
+	if err != nil {
+		t.Fatalf("FindeUnscharf: %v", err)
+	}
+	var namen []string
+	for _, l := range treffer {
+		namen = append(namen, l.Nachname)
+	}
+	if soll := []string{"Otto", "Öztürk", "Zimmermann"}; !slices.Equal(namen, soll) {
+		t.Errorf("Thekensuche: %v, erwartet %v", namen, soll)
 	}
 }
