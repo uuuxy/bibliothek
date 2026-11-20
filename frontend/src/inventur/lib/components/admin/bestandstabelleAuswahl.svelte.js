@@ -31,11 +31,14 @@ export function erzeugeAuswahl() {
 		/** Auswahl auf die sichtbaren Zeilen beschränken (im $effect der Tabelle).
 		 *  @param {Zeile[]} zeilen */
 		angleichen(zeilen) {
-			// Bewusst eine Liste statt eines Set: Der Wert lebt nur in dieser Funktion und
-			// wird nie beobachtet — prefer-svelte-reactivity zielt auf Sammlungen im
-			// Zustand, nicht auf lokale Zwischenschritte.
-			const sichtbar = zeilen.map((z) => z.id);
-			const rest = ids.filter((id) => sichtbar.includes(id));
+			// Ein Objekt als Nachschlagetabelle statt includes auf einer Liste: Der Abgleich wuchs mit
+			// dem Quadrat der Zahl, bei 11.000 markierten Titeln 0,6 s je Tastendruck. Kein Set: Das
+			// verlangte in einer .svelte.js ein SvelteSet (prefer-svelte-reactivity), beobachtet wird
+			// es aber nie, wie in auflagenSuche.
+			/** @type {Record<string, true>} */
+			const sichtbar = Object.create(null);
+			for (const z of zeilen) sichtbar[z.id] = true;
+			const rest = ids.filter((id) => sichtbar[id] === true);
 			if (rest.length !== ids.length) ids = rest;
 		},
 		/** @param {Zeile[]} zeilen */
