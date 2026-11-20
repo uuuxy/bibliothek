@@ -82,11 +82,7 @@ func zieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 		if err != nil {
 			return nil, err
 		}
-		for _, bc := range kandidaten {
-			if !belegt[bc] {
-				frei = append(frei, bc)
-			}
-		}
+		frei = append(frei, unbelegte(kandidaten, belegt)...)
 		if len(frei) == anzahl {
 			return frei, nil
 		}
@@ -95,6 +91,17 @@ func zieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 		}
 	}
 	return nil, fmt.Errorf("barcode_seq liefert nur bereits vergebene Nummern – Sequenzstand prüfen")
+}
+
+// unbelegte liefert die Kandidaten, die noch an keinem Exemplar hängen.
+func unbelegte(kandidaten []string, belegt map[string]bool) []string {
+	frei := make([]string, 0, len(kandidaten))
+	for _, bc := range kandidaten {
+		if !belegt[bc] {
+			frei = append(frei, bc)
+		}
+	}
+	return frei
 }
 
 // exemplarNummer setzt eine Zahl aus barcode_seq in die gedruckte Form: „B-" und mindestens fünf

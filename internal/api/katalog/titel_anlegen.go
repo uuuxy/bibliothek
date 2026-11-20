@@ -27,6 +27,10 @@ func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe titelAnfrage) bool 
 		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die ISBN ist ungültig", nil)
 		return false
 	}
+	if fehler := pruefeBestand(eingabe.Bestand); fehler != nil {
+		apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
+		return false
+	}
 	return true
 }
 
@@ -158,10 +162,6 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 			return
 		}
 		if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
-			apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
-			return
-		}
-		if fehler := pruefeBestand(eingabe.Bestand); fehler != nil {
 			apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
 			return
 		}

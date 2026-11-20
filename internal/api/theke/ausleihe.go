@@ -210,14 +210,8 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	// die Sperre aus, die aus überfälligen Ausleihen berechnet wird. Ein vorgezogenes Datum
 	// (Rückruf) bleibt auch bei Sperre erlaubt, auch wenn es noch in der Zukunft liegt: Die Frist
 	// rückt nur näher und hebt die Sanktion nicht auf.
-	if neuesDatum.After(time.Now()) {
-		gesperrt, _, geprueft := t.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
-		if !geprueft {
-			return
-		}
-		if gesperrt && !t.ziehtFristVor(ctx, w, ausleiheID, neuesDatum) {
-			return
-		}
+	if !t.fristTrotzSperreErlaubt(ctx, w, ausleiheID, neuesDatum) {
+		return
 	}
 
 	id, gesetzteFrist, err := repository.SetzeAusleihFrist(ctx, t.DB.Pool, ausleiheID, neuesDatum)
@@ -300,6 +294,20 @@ func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsA
 		tage = einstellungen.FristBuchTage
 	}
 	return tage, einstellungen.Sommerferien
+}
+
+// fristTrotzSperreErlaubt sagt, ob die Frist von Hand gesetzt werden darf: Ein Datum in der
+// Vergangenheit immer, eines in der Zukunft bei einer Sperre nur, wenn es die Frist näher rückt.
+// Bei false ist die Anfrage beantwortet.
+func (t *Tueren) fristTrotzSperreErlaubt(ctx context.Context, w http.ResponseWriter, ausleiheID string, neuesDatum time.Time) bool {
+	if !neuesDatum.After(time.Now()) {
+		return true
+	}
+	gesperrt, _, geprueft := t.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
+	if !geprueft {
+		return false
+	}
+	return !gesperrt || t.ziehtFristVor(ctx, w, ausleiheID, neuesDatum)
 }
 
 // ziehtFristVor lässt die Frist einer gesperrten Ausleihe nur näher rücken: Ein Datum nach der

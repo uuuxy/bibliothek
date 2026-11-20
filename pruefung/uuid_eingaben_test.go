@@ -429,8 +429,10 @@ func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
 			streng++
 		}
 	}
-	if len(namen.dekodierer) != 2 || streng != 1 || len(namen.roh) != 1 || namen.validator == "" {
-		t.Fatalf("internal/api/tuer: erwartet zwei Dekodierer, einer davon streng, einen rohen Leser und einen "+
+	// Drei Dekodierer: LeseAnfrage, LeseAnfrageStreng und LeseFreiwilligeAnfrage für einen Rumpf,
+	// den eine Tür nicht verlangt.
+	if len(namen.dekodierer) != 3 || streng != 1 || len(namen.roh) != 1 || namen.validator == "" {
+		t.Fatalf("internal/api/tuer: erwartet drei Dekodierer, einer davon streng, einen rohen Leser und einen "+
 			"Validator; gefunden %v, %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
 			namen.dekodierer, namen.roh, namen.validator)
 	}

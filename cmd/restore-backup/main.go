@@ -75,20 +75,8 @@ func fuehreAus(argumente []string, stdout io.Writer) error {
 		ziel = datei
 	}
 
-	// Höchstens 100 GB entpacken, gegen eine Entpack-Bombe (G110).
-	grenze := int64(100 << 30)
-	begrenzt := io.LimitReader(entpacker, grenze)
-
-	n, err := io.Copy(ziel, begrenzt)
-	if err != nil {
-		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
-	}
-	if n == grenze {
-		// Liegt dahinter noch etwas, ist das ein Fehler und kein stilles Abschneiden.
-		rest := make([]byte, 1)
-		if _, err := entpacker.Read(rest); err != io.EOF {
-			return fmt.Errorf("dekomprimierung fehlgeschlagen: maximale größe (100GB) überschritten")
-		}
+	if err := entpackeBegrenzt(ziel, entpacker); err != nil {
+		return err
 	}
 
 	if datei != nil {
@@ -98,6 +86,23 @@ func fuehreAus(argumente []string, stdout io.Writer) error {
 			return fmt.Errorf("ausgabedatei %q konnte nicht geschlossen werden, sie ist unvollständig: %w", argumente[1], err)
 		}
 		fmt.Fprintf(os.Stderr, "restore-backup: SQL nach %q geschrieben. Einspielen mit: psql -U <user> -d <db> -f %s\n", argumente[1], argumente[1])
+	}
+	return nil
+}
+
+// entpackeBegrenzt kopiert höchstens 100 GB aus dem Entpacker nach ziel, gegen eine Entpack-Bombe
+// (G110). Liegt dahinter noch etwas, ist das ein Fehler und kein stilles Abschneiden.
+func entpackeBegrenzt(ziel io.Writer, entpacker io.Reader) error {
+	grenze := int64(100 << 30)
+	n, err := io.Copy(ziel, io.LimitReader(entpacker, grenze))
+	if err != nil {
+		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
+	}
+	if n == grenze {
+		rest := make([]byte, 1)
+		if _, err := entpacker.Read(rest); err != io.EOF {
+			return fmt.Errorf("dekomprimierung fehlgeschlagen: maximale größe (100GB) überschritten")
+		}
 	}
 	return nil
 }

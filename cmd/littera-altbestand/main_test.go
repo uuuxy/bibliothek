@@ -277,7 +277,7 @@ func TestAusleihenOhneBestandOderPersonenHaeltVorDemSchreibenAn(t *testing.T) {
 		t.Errorf("Rückgabe %d, erwartet %d (abgebrochen)", code, rueckgabeAbgebrochen)
 	}
 	if ausgabe := puffer.String(); !strings.Contains(ausgabe, "-ausleihen braucht") || strings.Contains(ausgabe, "Datenbank") {
-		t.Errorf("erwartet die Meldung zu -ausleihen und keinen Verbindungsversuch, log: %s", ausgabe)
+		t.Errorf("log = %q, erwartet die Meldung zu -ausleihen und keinen Verbindungsversuch", ausgabe)
 	}
 	if _, err := os.Stat(protokollPfad); !os.IsNotExist(err) {
 		t.Errorf("vor dem Halt darf kein Protokoll entstehen (%s): %v", protokollPfad, err)
