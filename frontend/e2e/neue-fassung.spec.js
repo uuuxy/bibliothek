@@ -21,27 +21,30 @@ test('der Server nennt den Stand, mit dem die Seite geladen ist', async ({ page 
 	await expect(page.getByText(HINWEIS)).toBeHidden();
 });
 
-// Ab jetzt nennt der Server einen anderen Stand, das Fenster bleibt offen: wie nach einem Update,
-// ohne den Stack neu zu bauen.
+// Mit server.neu nennt der Server einen anderen Stand, das Fenster bleibt offen: wie nach einem
+// Update, ohne den Stack neu zu bauen. Die Umleitung steht vor dem ersten Aufruf der Seite und
+// schaltet nur den Stand um: Mitten in der Sitzung eingerichtet, kam in der CI einmal keine
+// Anfrage mehr bei ihr an.
 const umgeleitet = (/** @type {URL} */ url) =>
 	url.pathname.startsWith('/api/') || url.pathname === '/health';
 
 /** @param {import('@playwright/test').Page} page */
-async function serverNenntNeuenStand(page) {
+async function leiteUm(page) {
+	const server = { neu: false };
 	await page.route(umgeleitet, async (route) => {
 		const antwort = await route.fetch();
-		await route.fulfill({
-			response: antwort,
-			headers: { ...antwort.headers(), 'x-oberflaechenstand': '/assets/index-neue-fassung.js' }
-		});
+		const stand = server.neu ? { 'x-oberflaechenstand': '/assets/index-neue-fassung.js' } : {};
+		await route.fulfill({ response: antwort, headers: { ...antwort.headers(), ...stand } });
 	});
+	return server;
 }
 
 test('ein anderer Stand am Server zeigt den Hinweis, und „Neu laden" lädt die Seite neu', async ({
 	page
 }) => {
+	const server = await leiteUm(page);
 	await uiLogin(page);
-	await serverNenntNeuenStand(page);
+	server.neu = true;
 	await menuepunkt(page, 'Medienkatalog').click();
 
 	const hinweis = page.getByRole('status').filter({ hasText: HINWEIS });
@@ -59,13 +62,14 @@ test('ein anderer Stand am Server zeigt den Hinweis, und „Neu laden" lädt die
 
 // Nach einem Rückbau nennt der Server wieder den Stand des Fensters; dann ist nichts neu zu laden.
 test('nennt der Server wieder den Stand des Fensters, geht der Hinweis weg', async ({ page }) => {
+	const server = await leiteUm(page);
 	await uiLogin(page);
-	await serverNenntNeuenStand(page);
+	server.neu = true;
 	await menuepunkt(page, 'Medienkatalog').click();
 	const hinweis = page.getByRole('status').filter({ hasText: HINWEIS });
 	await expect(hinweis).toBeVisible();
 
-	await page.unrouteAll({ behavior: 'ignoreErrors' });
+	server.neu = false;
 	await menuepunkt(page, 'Leserdatei').click();
 	await expect(hinweis).toBeHidden();
 });
@@ -73,6 +77,7 @@ test('nennt der Server wieder den Stand des Fensters, geht der Hinweis weg', asy
 // Der öffentliche Katalog hat keine Anmeldung und keine Live-Leitung: Er erfährt den Stand aus
 // der Antwort auf die Suche.
 test('der öffentliche Katalog zeigt den Hinweis nach einer Suche', async ({ page }) => {
+	const server = await leiteUm(page);
 	await page.goto('/katalog');
 	const suchfeld = page.getByRole('searchbox', { name: 'Im Medienkatalog suchen' });
 	const hinweis = page.getByRole('status').filter({ hasText: HINWEIS });
@@ -90,7 +95,7 @@ test('der öffentliche Katalog zeigt den Hinweis nach einer Suche', async ({ pag
 	await expect(ergebnis).toBeVisible();
 	await expect(hinweis).toBeHidden();
 
-	await serverNenntNeuenStand(page);
+	server.neu = true;
 	await suchfeld.fill('Roman');
 	await expect(hinweis).toBeVisible();
 
