@@ -21,6 +21,13 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// Die zwei Gründe, aus denen ein Leser nicht in den Papierkorb geht; die Vorprüfung und die Prüfung
+// in der Transaktion nennen sie gleich.
+const (
+	meldungLoeschenOffeneAusleihen   = "Der Leser hat noch entliehene Exemplare und lässt sich deshalb nicht löschen"
+	meldungLoeschenOffeneForderungen = "Der Leser hat noch unbezahlte Forderungen und lässt sich deshalb nicht löschen"
+)
+
 // pruefeLeserLoeschbar prüft, ob ein Schüler gelöscht werden darf. Rückgabe
 // (0, nil) bedeutet löschbar; andernfalls der passende HTTP-Status samt Fehler.
 func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, error) {
@@ -39,7 +46,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 		return http.StatusInternalServerError, err
 	}
 	if hatOffeneAusleihen {
-		return http.StatusBadRequest, apierrors.BadRequest("Der Leser hat noch entliehene Exemplare und lässt sich deshalb nicht löschen", nil)
+		return http.StatusBadRequest, apierrors.BadRequest(meldungLoeschenOffeneAusleihen, nil)
 	}
 
 	hatOffeneSchaeden, err := repository.HatLeserUnbezahlteForderungen(ctx, t.DB.Pool, id)
@@ -47,7 +54,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 		return http.StatusInternalServerError, err
 	}
 	if hatOffeneSchaeden {
-		return http.StatusBadRequest, apierrors.BadRequest("Der Leser hat noch unbezahlte Forderungen und lässt sich deshalb nicht löschen", nil)
+		return http.StatusBadRequest, apierrors.BadRequest(meldungLoeschenOffeneForderungen, nil)
 	}
 
 	return 0, nil
@@ -80,6 +87,17 @@ func kontoregel(darfKonten, istAdmin bool) func(repository.KontoDerLeserzeile) e
 // antworteLoeschenAbgelehnt übersetzt das Scheitern des Papierkorbs: ein Einwand der Kontoregel
 // mit seinem Satz, alles andere als Störung.
 func antworteLoeschenAbgelehnt(w http.ResponseWriter, err error) {
+	// Die Transaktion prüft unter der Sperre der Leserzeile noch einmal; dazwischen kann an der
+	// Theke eine Ausleihe entstanden sein.
+	var blockiert *repository.LoeschenBlockiertFehler
+	if errors.As(err, &blockiert) {
+		meldung := meldungLoeschenOffeneForderungen
+		if blockiert.OffeneAusleihen > 0 {
+			meldung = meldungLoeschenOffeneAusleihen
+		}
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, err)
+		return
+	}
 	if errors.Is(err, errZugangOhneKontenrecht) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
 			"Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer & Rechte verwalten“ darf.", err)

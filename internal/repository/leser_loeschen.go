@@ -29,16 +29,23 @@ func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID strin
 
 	// Was der Eintrag nennt, wird vorher gelesen, aus der Tabelle leser und nicht aus der Sicht
 	// schueler: Die zeigt nur Schüler, und für einen Kollegen liefe der Weg ins Leere.
+	//
+	// FOR UPDATE und die Prüfung danach in derselben Transaktion: Eine Ausleihe an der Theke
+	// sperrt dieselbe Zeile (SperreLeserzeile). Ohne Sperre käme eine Ausleihe zwischen der
+	// Vorprüfung der Tür und diesem Schritt durch, und der Leser läge mit dem Buch im Papierkorb.
 	var vorname, nachname, klasse, barcodeID, art string
 	var abgaengerJahr int
 	err = tx.QueryRow(ctx,
 		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(klasse,''),
 		        coalesce(barcode_id,''), coalesce(abgaenger_jahr, 0), art
-		 FROM leser WHERE id = $1`,
+		 FROM leser WHERE id = $1 FOR UPDATE`,
 		leserID,
 	).Scan(&vorname, &nachname, &klasse, &barcodeID, &abgaengerJahr, &art)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
+	}
+	if err := pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
+		return err
 	}
 
 	// Ein bestehender Grund der Sperre bleibt stehen (COALESCE über NULLIF), wie in
@@ -113,7 +120,7 @@ func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID strin
 	return tx.Commit(ctx)
 }
 
-// pruefeKeineOffenenVorgaenge lehnt das endgültige Löschen ab, solange ein Buch draußen oder
+// pruefeKeineOffenenVorgaenge lehnt das Löschen ab, solange ein Buch draußen oder
 // eine Forderung unbezahlt ist: In beiden Fällen besteht noch ein Grund, die Daten zu behalten.
 func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string) error {
 	var offeneAusleihen int
@@ -193,9 +200,9 @@ func (e *LoeschenBlockiertFehler) Error() string {
 	case e.NichtImPapierkorb:
 		return "endgültiges löschen blockiert: nicht im papierkorb"
 	case e.OffeneAusleihen > 0:
-		return fmt.Sprintf("endgültiges löschen blockiert: %d offene ausleihen", e.OffeneAusleihen)
+		return fmt.Sprintf("löschen blockiert: %d offene ausleihen", e.OffeneAusleihen)
 	}
-	return fmt.Sprintf("endgültiges löschen blockiert: %d unbezahlte schadensfälle", e.UnbezahlteSchadensfaelle)
+	return fmt.Sprintf("löschen blockiert: %d unbezahlte schadensfälle", e.UnbezahlteSchadensfaelle)
 }
 
 // LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig; was dabei
