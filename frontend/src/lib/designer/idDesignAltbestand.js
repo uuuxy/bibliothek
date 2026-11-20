@@ -137,3 +137,29 @@ export function heileAltBaender(elements) {
 	}
 	return out;
 }
+
+/**
+ * Die höchste Nummer unter den Kennungen eigener Elemente (el-<n>). Der Zähler des Designers muss
+ * darüber beginnen, sonst vergibt er nach dem Neuladen eine Kennung ein zweites Mal.
+ * @param {any[]} elements @returns {number}
+ */
+export function hoechsteKennung(elements) {
+	let hoechste = 0;
+	for (const el of elements) {
+		const nummer = Number(/^el-(\d+)$/.exec(el?.id)?.[1] ?? 0);
+		if (nummer > hoechste) hoechste = nummer;
+	}
+	return hoechste;
+}
+
+/**
+ * Gibt jedem Element, dessen Kennung schon vergeben ist, eine neue: Ein so gespeichertes Design
+ * ließe sich sonst nicht zeichnen. @param {any[]} elements @param {() => string} neueKennung
+ */
+export function trenneDoppelteKennungen(elements, neueKennung) {
+	const vergeben = new Set();
+	for (const el of elements) {
+		if (vergeben.has(el.id)) el.id = neueKennung();
+		vergeben.add(el.id);
+	}
+}

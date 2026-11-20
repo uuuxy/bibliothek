@@ -1,5 +1,5 @@
 import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
-import { heileAltBaender } from './idDesignAltbestand.js';
+import { heileAltBaender, hoechsteKennung, trenneDoppelteKennungen } from './idDesignAltbestand.js';
 import { merkeDesignGeladen } from './designSitzung.js';
 import {
 	HINTERGRUND_VORDERSEITE,
@@ -484,6 +484,9 @@ export function applyDesign(data) {
 	}
 	applySeite(idStore.front, data.front);
 	applySeite(idStore.back, data.back);
+	const alle = [...idStore.front.elements, ...idStore.back.elements];
+	_nextId = Math.max(_nextId, hoechsteKennung(alle));
+	trenneDoppelteKennungen(alle, nextId);
 	schule = { name: data.schule?.name ?? '', adresse: data.schule?.adresse ?? '' };
 	wendeSchulstammdatenAn();
 }
@@ -496,20 +499,14 @@ function applySeite(ziel, quelle) {
 	if (!quelle || typeof quelle !== 'object') return;
 	if (Array.isArray(quelle.elements)) {
 		// Die Klassenzeile ('details') wird beim Laden ENTFERNT, nicht nur ausgeblendet.
-		//
-		// Ein Ausweis mit Klasse müsste jedes Schuljahr neu gedruckt werden — für eine
-		// Karte, die sonst die ganze Schulzeit gilt, ist das sinnlos. Der Ausweis trägt
-		// deshalb Name, Foto und Barcode; die Klasse steht im System, wo sie sich ohne
-		// Nachdruck ändern lässt.
-		//
+		// Ein Ausweis mit Klasse müsste jedes Schuljahr neu gedruckt werden; die Klasse
+		// steht im System, wo sie sich ohne Nachdruck ändert.
 		// Der Filter muss hier stehen und nicht nur in defaultFrontElements(): Das Design
 		// wird zentral gespeichert (alle Arbeitsplätze teilen eines). Eine geänderte
 		// Vorgabe erreicht eine laufende Installation nie, weil applyDesign() die
 		// Elemente aus der Datenbank lädt. Ohne diese Zeile trüge jede bestehende
-		// Installation die Klassenzeile für immer weiter — derselbe Weg, auf dem schon
-		// der Musterstadt-Kopf hängenblieb.
-		// Und aus demselben Grund werden Bild-Bänder früherer Vorlagen-Fassungen hier in
-		// Farbflächen übersetzt (idDesignAltbestand.js).
+		// Installation die Klassenzeile für immer weiter. Aus demselben Grund werden hier
+		// Bild-Bänder früherer Vorlagen in Farbflächen übersetzt (idDesignAltbestand.js).
 		ziel.elements = heileAltBaender(
 			quelle.elements.filter((/** @type {any} */ el) => el?.type !== 'details')
 		);

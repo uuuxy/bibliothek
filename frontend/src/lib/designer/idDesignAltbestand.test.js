@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { heileAltBaender } from './idDesignAltbestand.js';
-import { applyDesign, idStore, resetDesign } from './idDesignerStore.svelte.js';
+import {
+	applyDesign,
+	fuegeRahmenHinzu,
+	fuegeTextHinzu,
+	idStore,
+	resetDesign
+} from './idDesignerStore.svelte.js';
 
 // So sah das Kopfband der Vorlage „Schwarz-Grün" bis zum Umbau auf Farbflächen aus:
 // ein Bild-Element mit eingebettetem SVG (schwarzes Rechteck + grüne Linie).
@@ -89,6 +95,34 @@ describe('applyDesign heilt den Altbestand beim Laden', () => {
 		expect(idStore.front.elements.map((e) => e.id)).toEqual(['kopfband', 'kopflinie']);
 		expect(idStore.front.elements.every((e) => e.type === 'box')).toBe(true);
 		expect(idStore.back.elements.map((e) => e.id)).toEqual(['back-kopfband', 'back-kopflinie']);
+	});
+});
+
+// Eigene Elemente zählen ihre Kennung hoch (el-101, el-102 …). Nach dem Neuladen begann der Zähler
+// wieder vorn und vergab Kennungen, die das gespeicherte Design schon trug; die Karte ließ sich dann
+// nicht mehr zeichnen.
+describe('applyDesign: Kennungen eigener Elemente', () => {
+	beforeEach(() => resetDesign());
+	/** @param {any} el */
+	const kopie = (el) => JSON.parse(JSON.stringify(el));
+
+	it('ein neues Element bekommt keine Kennung, die das geladene Design schon trägt', () => {
+		fuegeTextHinzu('front');
+		const text = kopie(idStore.front.elements.at(-1));
+		const naechste = `el-${Number(text.id.slice(3)) + 1}`;
+		applyDesign({ front: { elements: [{ ...text, id: naechste }] } });
+		fuegeTextHinzu('front');
+		const kennungen = idStore.front.elements.map((e) => e.id);
+		expect(new Set(kennungen).size).toBe(kennungen.length);
+	});
+
+	it('doppelte Kennungen aus einem gespeicherten Design werden beim Laden getrennt', () => {
+		fuegeRahmenHinzu('front');
+		const flaeche = kopie(idStore.front.elements.at(-1));
+		applyDesign({ front: { elements: [flaeche, { ...flaeche }] }, back: { elements: [flaeche] } });
+		const kennungen = [...idStore.front.elements, ...idStore.back.elements].map((e) => e.id);
+		expect(new Set(kennungen).size).toBe(3);
+		expect(kennungen[0]).toBe(flaeche.id);
 	});
 });
 
