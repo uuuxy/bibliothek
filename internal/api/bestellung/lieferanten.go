@@ -3,7 +3,9 @@ package bestellung
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -78,28 +80,37 @@ type lieferantAendernAnfrage struct {
 	KundennummerSchultraeger *string `json:"kundennummer_schultraeger"`
 }
 
-// setzeHauptlieferant macht genau einen Lieferanten zum Hauptlieferanten und nimmt das
-// Merkmal allen anderen — in dieser Reihenfolge, in einer Transaktion.
+// legeLieferantAn legt den Lieferanten an und macht ihn, wenn verlangt, zum Hauptlieferanten, in
+// einer Transaktion: Scheitert das Umschalten, bleibt kein halb angelegter Händler stehen, den ein
+// zweiter Klick verdoppelte.
 //
-// Die Reihenfolge ist der Schutz, nicht nur Kosmetik: Der Teil-Index
-// idx_lieferanten_ein_hauptlieferant lässt nur eine Zeile mit true zu. Würde erst der
-// neue gesetzt und danach der alte geräumt, bräche das UPDATE mit einer
-// Unique-Verletzung ab — und zwar erst beim zweiten Wechsel, also lange nach dem Einbau.
-// Deshalb zuerst räumen, dann setzen.
-//
-// Ohne Transaktion bliebe zwischen den beiden Schritten ein Moment ganz ohne
-// Hauptlieferanten; an mehreren Arbeitsplätzen gleichzeitig ist das kein theoretischer
-// Fall (siehe docs zum Mehrplatzbetrieb).
-func setzeHauptlieferant(ctx context.Context, pool db.Pool, id string) error {
-	tx, err := pool.Begin(ctx)
+// Das Merkmal kommt nicht im INSERT: Der Teil-Index idx_lieferanten_ein_hauptlieferant lässt nur
+// eine Zeile mit true zu, und SetzeHauptlieferant räumt den bisherigen zuerst.
+func (t *Tueren) legeLieferantAn(ctx context.Context, req lieferantAnlegenAnfrage) (id string, erstelltAm time.Time, err error) {
+	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		return err
+		return "", time.Time{}, err
 	}
 	defer db.Verwerfe(ctx, tx)
-	if _, err := repository.SetzeHauptlieferant(ctx, tx, id); err != nil {
-		return err
+	id, erstelltAm, err = repository.LegeLieferantAn(ctx, tx, req.Name, req.Email, req.Kundennummer, kundennummerSchultraeger(req))
+	if err != nil {
+		return "", time.Time{}, err
 	}
-	return tx.Commit(ctx)
+	if req.IstHauptlieferant {
+		if _, err := repository.SetzeHauptlieferant(ctx, tx, id); err != nil {
+			return "", time.Time{}, err
+		}
+	}
+	return id, erstelltAm, tx.Commit(ctx)
+}
+
+// pruefeLieferantenAdresse verlangt eine Adresse, an die eine Bestellmail gehen kann. Eine
+// ungültige fiele sonst erst beim Versand auf, wenn die Bestellung hinausgehen soll.
+func pruefeLieferantenAdresse(email string) error {
+	if adresse, err := mail.ParseAddress(email); err != nil || adresse.Address != email {
+		return apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine E-Mail-Adresse. An sie gehen die Bestellungen.", email), nil)
+	}
+	return nil
 }
 
 // Lieferanten liefert alle Lieferanten, den Hauptlieferanten zuerst.
@@ -132,14 +143,21 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 			return
 		}
 
+		req.Name = strings.TrimSpace(req.Name)
+		req.Email = strings.TrimSpace(req.Email)
+		req.Kundennummer = strings.TrimSpace(req.Kundennummer)
 		if req.Name == "" || req.Email == "" || req.Kundennummer == "" {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte Name, E-Mail-Adresse und Kundennummer angeben", nil)
+			return
+		}
+		if err := pruefeLieferantenAdresse(req.Email); err != nil {
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 
 		ctx := r.Context()
 
-		neueID, erstelltAm, err := repository.LegeLieferantAn(ctx, t.DB.Pool, req.Name, req.Email, req.Kundennummer, kundennummerSchultraeger(req))
+		neueID, erstelltAm, err := t.legeLieferantAn(ctx, req)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -147,17 +165,6 @@ func (t *Tueren) LieferantAnlegen() http.HandlerFunc {
 		// An diese Adresse gehen Bestellungen. Der Eintrag nennt den Händler, nicht die Adresse.
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantAngelegt,
 			map[string]any{"lieferant_id": neueID, "name": req.Name})
-
-		// Bewusst nicht im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
-		// Teil-Index den Anlegevorgang ab — der neue Lieferant wäre gar nicht erst
-		// entstanden, nur weil ein Haken gesetzt war. Erst anlegen, dann umschalten;
-		// dabei räumt setzeHauptlieferant den bisherigen weg.
-		if req.IstHauptlieferant {
-			if err := setzeHauptlieferant(ctx, t.DB.Pool, neueID); err != nil {
-				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
 
 		tuer.AntworteJSON(w, http.StatusCreated, lieferantAntwort{
 			ID:                       neueID,
@@ -189,8 +196,18 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, wert := range []*string{req.Name, req.Email, req.Kundennummer} {
-		if wert != nil && *wert == "" {
+		if wert == nil {
+			continue
+		}
+		*wert = strings.TrimSpace(*wert)
+		if *wert == "" {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Name, E-Mail-Adresse und Kundennummer dürfen nicht leer sein", nil)
+			return
+		}
+	}
+	if req.Email != nil {
+		if err := pruefeLieferantenAdresse(*req.Email); err != nil {
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
 		}
 	}

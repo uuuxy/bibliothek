@@ -104,6 +104,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	t.Run("ein genanntes Pflichtfeld darf nicht leer sein, ein unbekanntes Feld wird abgelehnt", func(t *testing.T) {
 		vorher := lies(t, alt)
 		for _, rumpf := range []string{`{"name":""}`, `{"email":""}`, `{"customerNumber":""}`, `{"emial":"vertippt@test.invalid"}`,
+			`{"name":"   "}`, `{"customerNumber":" "}`, `{"email":"keine-adresse"}`, `{"email":"Händler <h@test.invalid>"}`,
 			`{"name":"NGF-Anders","hauptlieferant":true}`} {
 			if code := abgelehnt(t, alt, rumpf); code != http.StatusBadRequest {
 				t.Errorf("%s: Status %d, erwartet 400", rumpf, code)
@@ -111,6 +112,26 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 		if nachher := lies(t, alt); nachher != vorher {
 			t.Errorf("eine abgelehnte Anfrage hat geschrieben: %+v, vorher %+v", nachher, vorher)
+		}
+	})
+
+	// Anlegen prüft wie Ändern: Leerzeichen zählen als leer, und die Adresse muss eine sein, an die
+	// eine Bestellmail gehen kann. Vorher kamen beide durch und fielen erst beim Versand auf.
+	t.Run("Anlegen trimmt die Felder und prüft die Adresse", func(t *testing.T) {
+		for _, rumpf := range []string{
+			`{"name":"  ","email":"leer@test.invalid","customerNumber":"K-1"}`,
+			`{"name":"NGF-Falsch","email":"keine-adresse","customerNumber":"K-1"}`,
+		} {
+			req := httptest.NewRequest(http.MethodPost, "/api/lieferanten", strings.NewReader(rumpf))
+			rec := httptest.NewRecorder()
+			srv.LieferantAnlegen()(rec, req)
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("%s: Status %d, erwartet 400", rumpf, rec.Code)
+			}
+		}
+		id := lieferantAnlegenUeberTuer(t, srv, `{"name":" NGF-Getrimmt ","email":" ngf-getrimmt@test.invalid ","customerNumber":" K-9 "}`).ID
+		if s := lies(t, id); s.name != "NGF-Getrimmt" || s.email != "ngf-getrimmt@test.invalid" || s.nummer != "K-9" {
+			t.Errorf("gespeichert: %+v, erwartet die Felder ohne Leerzeichen", s)
 		}
 	})
 
