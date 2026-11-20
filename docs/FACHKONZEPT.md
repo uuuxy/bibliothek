@@ -914,7 +914,7 @@ Etiketten und bestätigt; der Token steht im Pfad und wird deshalb nie protokoll
 
 ---
 
-## 17. Einstellungen — die 16 Kategorien
+## 17. Einstellungen — die 17 Kategorien
 
 Erreichbar unter _System → Einstellungen_ (`/einstellungen`, `components/einstellungen/kategorien.js`).
 Jede Kategorie wird **einzeln** gespeichert: `PUT /api/einstellungen` nimmt nur die Felder dieser

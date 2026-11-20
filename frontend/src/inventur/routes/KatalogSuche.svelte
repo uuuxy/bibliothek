@@ -25,7 +25,6 @@
 	} from '$lib/exemplarImKatalog.svelte.js';
 
 	let suche = $state('');
-	let gewaehlterTitel = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
 	// Der Stift auf der Kachel gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
 	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Kachel.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
@@ -84,18 +83,6 @@
 			ladefehler = fehlertext(e);
 		}
 	}
-
-	// Synchronize appState.selectedBook with local gewaehlterTitel
-	$effect(() => {
-		if (appState.selectedBook) {
-			gewaehlterTitel = appState.selectedBook;
-		}
-	});
-	$effect(() => {
-		if (gewaehlterTitel === null) {
-			appState.selectedBook = null;
-		}
-	});
 </script>
 
 <div class="w-full text-on-surface font-sans">
