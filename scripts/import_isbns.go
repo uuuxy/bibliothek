@@ -43,27 +43,35 @@ func main() {
 	datei, leser := oeffneCSV(*csvPfad, *trenner, *mitKopfzeile)
 	defer datei.Close()
 
-	// 4. Die Anweisung einmal vorbereiten. UPDATE nur, wenn der Titel passt (ILIKE, ohne Rücksicht
-	// auf Groß- und Kleinschreibung) und das Feld isbn leer oder NULL ist. Der Titel der Datei
-	// geht in die Form, in der die Datenbank Titel speichert.
-	abfrage := `
+	// 4. Die Anweisungen einmal vorbereiten. Gesucht wird der Titel gleich ohne Rücksicht auf
+	// Groß- und Kleinschreibung, nicht per ILIKE: Darin wirkten % und _ eines Titels („100% Mathe“)
+	// als Platzhalter und träfen fremde Titel. Der Titel der Datei geht in die Form, in der die
+	// Datenbank Titel speichert. Gesetzt wird nur bei genau einem Titel ohne ISBN.
+	suche, err := verbindung.PrepareContext(context.Background(), `
+		SELECT id FROM buecher_titel
+		WHERE lower(titel) = lower(titeltext_normalform($1))
+		  AND (isbn IS NULL OR trim(isbn) = '')
+		LIMIT 2`)
+	if err != nil {
+		log.Fatalf("Fehler beim Vorbereiten der Suche: %v", err)
+	}
+	defer suche.Close()
+	setze, err := verbindung.PrepareContext(context.Background(), `
 		UPDATE buecher_titel
 		SET isbn = $1, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE titel ILIKE titeltext_normalform($2)
-		  AND (isbn IS NULL OR trim(isbn) = '')
-		RETURNING id;
-	`
-	anweisung, err := verbindung.PrepareContext(context.Background(), abfrage)
+		WHERE id = $2 AND (isbn IS NULL OR trim(isbn) = '')
+		RETURNING id`)
 	if err != nil {
-		log.Fatalf("Fehler beim Vorbereiten des SQL-Statements: %v", err)
+		log.Fatalf("Fehler beim Vorbereiten des Updates: %v", err)
 	}
-	defer anweisung.Close()
+	defer setze.Close()
 
 	log.Println("Starte ISBN-Import... (dies kann einen Moment dauern)")
 
 	// Zähler für den Bericht.
 	var erfolgreich int
 	var nichtGefunden int
+	var mehrdeutig int
 	var fehlerhaft int
 
 	// 5. Zeile für Zeile verarbeiten.
@@ -78,11 +86,13 @@ func main() {
 			continue
 		}
 
-		switch verarbeiteISBNZeile(anweisung, zeile, *spalteTitel, *spalteISBN) {
+		switch verarbeiteISBNZeile(suche, setze, zeile, *spalteTitel, *spalteISBN) {
 		case "ok":
 			erfolgreich++
 		case "notfound":
 			nichtGefunden++
+		case "mehrdeutig":
+			mehrdeutig++
 		case "fehler":
 			fehlerhaft++
 		}
@@ -94,6 +104,7 @@ func main() {
 	fmt.Println("========================================")
 	fmt.Printf("Erfolgreich gemerged          : %d\n", erfolgreich)
 	fmt.Printf("Nicht gefunden / bereits voll : %d\n", nichtGefunden)
+	fmt.Printf("Mehrere Titel, nichts gesetzt : %d\n", mehrdeutig)
 	fmt.Printf("Fehlerhafte CSV-Zeilen        : %d\n", fehlerhaft)
 	fmt.Println("========================================")
 	fmt.Println("HINWEIS: Es wurden gemäß Vorgabe KEINE neuen Datensätze per INSERT angelegt.")
@@ -137,8 +148,10 @@ func oeffneCSV(pfad, trenner string, mitKopfzeile bool) (*os.File, *csv.Reader) 
 }
 
 // verarbeiteISBNZeile trägt die ISBN einer CSV-Zeile beim passenden Titel nach und liefert den
-// Ausgang: "ok", "notfound", "fehler" oder "" (leere Werte, nichts zu tun).
-func verarbeiteISBNZeile(anweisung *sql.Stmt, zeile []string, spalteTitel, spalteISBN int) string {
+// Ausgang: "ok", "notfound", "mehrdeutig", "fehler" oder "" (leere Werte, nichts zu tun).
+// Mehrdeutig heißt: Mehrere Titel ohne ISBN tragen diesen Namen, etwa zwei Ausgaben eines
+// Arbeitshefts; welcher die ISBN bekommt, entscheidet die Datei nicht, also keiner.
+func verarbeiteISBNZeile(suche, setze *sql.Stmt, zeile []string, spalteTitel, spalteISBN int) string {
 	// Stehen die angegebenen Spalten überhaupt in dieser Zeile?
 	hoechsteSpalte := spalteTitel
 	if spalteISBN > hoechsteSpalte {
@@ -154,16 +167,49 @@ func verarbeiteISBNZeile(anweisung *sql.Stmt, zeile []string, spalteTitel, spalt
 		return "" // leere Werte: nichts zu tun
 	}
 
-	var kennung string
-	err := anweisung.QueryRowContext(context.Background(), isbn, titel).Scan(&kennung)
+	kennung, ausgang := einzigerTitelOhneISBN(suche, titel)
+	if ausgang != "" {
+		return ausgang
+	}
+	err := setze.QueryRowContext(context.Background(), isbn, kennung).Scan(&kennung)
+	if err == sql.ErrNoRows {
+		return "notfound" // inzwischen von anderer Seite gesetzt
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// sql.ErrNoRows heißt: UPDATE hat 0 Zeilen geändert (Titel unbekannt oder schon mit
-			// ISBN).
-			return "notfound"
-		}
 		log.Printf("Kritischer Datenbankfehler bei Titel '%s': %v", titel, err)
 		return "fehler"
 	}
 	return "ok"
+}
+
+// einzigerTitelOhneISBN liefert die Kennung des einen Titels ohne ISBN mit diesem Namen; sonst
+// ist ausgang "notfound", "mehrdeutig" oder "fehler".
+func einzigerTitelOhneISBN(suche *sql.Stmt, titel string) (kennung, ausgang string) {
+	zeilen, err := suche.QueryContext(context.Background(), titel)
+	if err != nil {
+		log.Printf("Kritischer Datenbankfehler bei Titel '%s': %v", titel, err)
+		return "", "fehler"
+	}
+	defer zeilen.Close()
+	var kennungen []string
+	for zeilen.Next() {
+		var id string
+		if err := zeilen.Scan(&id); err != nil {
+			log.Printf("Kritischer Datenbankfehler bei Titel '%s': %v", titel, err)
+			return "", "fehler"
+		}
+		kennungen = append(kennungen, id)
+	}
+	if err := zeilen.Err(); err != nil {
+		log.Printf("Kritischer Datenbankfehler bei Titel '%s': %v", titel, err)
+		return "", "fehler"
+	}
+	switch len(kennungen) {
+	case 0:
+		return "", "notfound"
+	case 1:
+		return kennungen[0], ""
+	}
+	log.Printf("Mehrere Titel ohne ISBN heißen '%s' – nichts gesetzt", titel)
+	return "", "mehrdeutig"
 }
