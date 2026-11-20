@@ -208,14 +208,14 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	// Wie bei den beiden Verlängerungen: Eine Frist in der Zukunft machte die Ausleihe eines
 	// gesperrten Lesers wieder „nicht überfällig", setzte die Mahnfolge zurück und hebelte so
 	// die Sperre aus, die aus überfälligen Ausleihen berechnet wird. Ein vorgezogenes Datum
-	// (Rückruf) bleibt auch bei Sperre erlaubt: Es hebt die Sanktion nicht auf.
+	// (Rückruf) bleibt auch bei Sperre erlaubt, auch wenn es noch in der Zukunft liegt: Die Frist
+	// rückt nur näher und hebt die Sanktion nicht auf.
 	if neuesDatum.After(time.Now()) {
 		gesperrt, _, geprueft := t.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
 		if !geprueft {
 			return
 		}
-		if gesperrt {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Ausleihe ist gesperrt. Ihre Frist lässt sich nicht verlängern, die Sperre soll zur Rückgabe führen.", nil)
+		if gesperrt && !t.ziehtFristVor(ctx, w, ausleiheID, neuesDatum) {
 			return
 		}
 	}
@@ -300,6 +300,25 @@ func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsA
 		tage = einstellungen.FristBuchTage
 	}
 	return tage, einstellungen.Sommerferien
+}
+
+// ziehtFristVor lässt die Frist einer gesperrten Ausleihe nur näher rücken: Ein Datum nach der
+// bisherigen Frist lehnt es ab. Bei false ist die Anfrage beantwortet.
+func (t *Tueren) ziehtFristVor(ctx context.Context, w http.ResponseWriter, ausleiheID string, neuesDatum time.Time) bool {
+	alteFrist, err := repository.LadeFristDerOffenenAusleihe(ctx, t.DB.Pool, ausleiheID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusleiheNichtGefunden, nil)
+		return false
+	}
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("frist der gesperrten ausleihe lesen: %w", err))
+		return false
+	}
+	if neuesDatum.After(alteFrist) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Ausleihe ist gesperrt. Ihre Frist lässt sich nicht verlängern, die Sperre soll zur Rückgabe führen.", nil)
+		return false
+	}
+	return true
 }
 
 // sperreDerAusleihe fragt die Regel der Theke (pruefeAusleihSperre) für eine Verlängerung oder

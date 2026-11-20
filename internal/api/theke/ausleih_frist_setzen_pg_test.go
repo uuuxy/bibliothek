@@ -103,6 +103,22 @@ func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 		}
 	})
 
+	// Ein Rückruf darf auch in der Zukunft liegen: Die Frist bis zum Sommer rückt auf nächste Woche
+	// vor. Abgelehnt wurde das, weil die Tür nur das neue Datum mit heute verglich.
+	ausleiheBisSommer := testdaten.LegeAusleiheMitFristAn(t, pool, sidGesperrt, "Buch Rückruf", time.Now().AddDate(0, 2, 0))
+	t.Run("gesperrt + vorgezogenes Datum in der Zukunft (Rückruf) ist erlaubt", func(t *testing.T) {
+		w := call(ausleiheBisSommer, time.Now().AddDate(0, 0, 7).Format("2006-01-02"))
+		if w.Code != http.StatusOK {
+			t.Fatalf("Rückruf auf nächste Woche muss gehen, war %d: %s", w.Code, w.Body.String())
+		}
+	})
+	t.Run("gesperrt + Datum nach der bisherigen Frist wird verweigert", func(t *testing.T) {
+		w := call(ausleiheBisSommer, time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("w.Code = %d, erwartet 403: %s", w.Code, w.Body.String())
+		}
+	})
+
 	// Ein Kollege wird nie gesperrt, auch hier nicht, wenn an seinem Konto noch eine alte
 	// Sperre steht. Rot gesehen am Rückbau: ohne die Art in pruefeAusleihSperre 403.
 	t.Run("Kollege mit alter Sperre + Zukunftsdatum geht durch", func(t *testing.T) {

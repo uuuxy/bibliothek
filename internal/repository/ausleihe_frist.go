@@ -17,6 +17,15 @@ func SperreOffeneAusleiheMitFrist(ctx context.Context, tx pgx.Tx, ausleiheID str
 	return frist, err
 }
 
+// LadeFristDerOffenenAusleihe liest die Frist einer offenen Ausleihe ohne Sperre der Zeile.
+// pgx.ErrNoRows, wenn es die Ausleihe nicht gibt oder sie zurückgegeben ist.
+func LadeFristDerOffenenAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (time.Time, error) {
+	var frist time.Time
+	err := db.QueryRow(ctx, `SELECT rueckgabe_frist FROM ausleihen WHERE id = $1 AND rueckgabe_am IS NULL`,
+		ausleiheID).Scan(&frist)
+	return frist, err
+}
+
 // VerlaengereAusleihe setzt die neue Frist einer offenen Ausleihe und beginnt die Mahnfolge
 // neu: Sonst überspränge dasselbe Buch beim nächsten Überziehen die erste Mahnstufe. Liefert
 // Kennung und gespeicherte Frist; pgx.ErrNoRows, wenn die Ausleihe nicht mehr offen ist.
