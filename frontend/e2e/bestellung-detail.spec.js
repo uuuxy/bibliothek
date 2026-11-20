@@ -15,7 +15,8 @@
 // Der Bestellweg verschickt nach dem Speichern die Bestellmail, und der lokale Stack trägt
 // den Mailserver aus der .env. Der Lieferant hat hier deshalb eine Adresse, die keine ist:
 // Der Versand scheitert an ihr, bevor eine Verbindung entsteht (internal/mailservice/mail_sender.go,
-// TestSende_UngueltigerEmpfaenger), und der Handler antwortet trotzdem mit 200.
+// TestSende_UngueltigerEmpfaenger), und der Handler antwortet trotzdem mit 200. Angelegt wird er
+// in der Datenbank: Die Tür der Lieferanten nimmt nur Adressen an, an die eine Mail gehen kann.
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
@@ -40,13 +41,10 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 	// --- Eine echte Bestellung über den echten Weg aufgeben ---------------------
 	// Nur so entstehen Exemplare MIT bestellung_id; ein INSERT von Hand prüfte die
 	// Ansicht gegen Daten, die der Produktivpfad so nie erzeugt.
-	const lieferantRes = await apiPost(page, '/api/lieferanten', {
-		name: LIEFERANT,
-		email: KEINE_ADRESSE,
-		customerNumber: 'K-DETAIL'
-	});
-	expect(lieferantRes.ok(), `Lieferant anlegen: ${await lieferantRes.text()}`).toBeTruthy();
-	const lieferantId = (await lieferantRes.json()).id;
+	const lieferantId = querySQL(
+		`WITH neu AS (INSERT INTO lieferanten (name, email, kundennummer) VALUES ('${LIEFERANT}', '${KEINE_ADRESSE}', 'K-DETAIL') RETURNING id) SELECT id FROM neu`
+	);
+	expect(lieferantId, 'Lieferant angelegt').toBeTruthy();
 
 	const bestellRes = await apiPost(page, '/api/bestellungen', {
 		supplier_id: lieferantId,
