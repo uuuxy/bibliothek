@@ -130,6 +130,7 @@ func (a *ReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, e
 		         AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 		         AND NOT EXISTS (SELECT 1 FROM ausleihen a
 		                         WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+		         AND `+sqlExemplarNichtImAbholfach+`
 		) v
 		ORDER BY r.erledigt ASC,
 		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,

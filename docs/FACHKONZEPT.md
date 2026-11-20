@@ -849,7 +849,10 @@ Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor, ISB
 (Volltext über `search_vector` **oder** Teilstring; ein Verweis findet sein Schlagwort, §13;
 `internal/api/portal/opac.go`), Trefferkarte mit Cover und
 „N von M verfügbar". Gezählt werden nur ausleihbare, nicht ausgesonderte Exemplare ohne offene
-Ausleihe. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
+Ausleihe, die nicht für eine Vormerkung im Abholfach liegen, solange die Abholfrist läuft; so
+zählen Katalog, Suche, Klassensätze und Lernmittel (`repository.SQLBestandVerfuegbar`,
+`sqlFilterVerfuegbar`), mit derselben Bedingung, mit der die Theke das Exemplar einem anderen
+verweigert. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
 öffentlichen Seiten** (`repository.OeffentlichSichtbar`, für Katalog und Monitor
 dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`, ein Feld am Titel, Migration 093) und
 mindestens ein Exemplar im Haus (nicht

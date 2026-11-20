@@ -97,7 +97,7 @@ var lernmittelFilterSQL = `
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND a.id IS NOT NULL) AS verliehen,
-	COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+	` + sqlFilterVerfuegbar + ` AS verfuegbar,
 	` + sqlFilterImZulauf + ` AS im_zulauf`
 
 const lernmittelJoins = `

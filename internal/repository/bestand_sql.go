@@ -31,7 +31,21 @@ const (
 	SQLBestandVerfuegbar = `(SELECT count(*) FROM buecher_exemplare e
 		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.ist_ausleihbar = true
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL))`
+		                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+		  AND ` + sqlExemplarNichtImAbholfach + `)`
+
+	// sqlExemplarNichtImAbholfach schließt ein Exemplar aus, das für eine Vormerkung im Abholfach
+	// liegt, solange die Abholfrist läuft: dieselbe Bedingung, mit der die Theke es einem anderen
+	// Leser verweigert (FindeVormerkungAmExemplar). Das Exemplar ist als `e` gebunden. NOT IN mit
+	// einer Liste ohne Bezug auf `e` wertet die Datenbank einmal aus statt je Exemplar.
+	sqlExemplarNichtImAbholfach = `e.id NOT IN (SELECT v.bereitgestellt_exemplar_id FROM vormerkungen v
+		WHERE v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP
+		  AND v.bereitgestellt_exemplar_id IS NOT NULL)`
+
+	// sqlFilterVerfuegbar zählt wie SQLBestandVerfuegbar in Abfragen, die die Exemplare als `e`
+	// und die offene Ausleihe als `a` joinen (Katalogliste, Suche, Klassensätze, Lernmittel).
+	sqlFilterVerfuegbar = `COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+		AND a.id IS NULL AND ` + sqlExemplarNichtImAbholfach + `)`
 
 	// SQLBestandImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare.
 	// Dieselbe Grenze wie SQLBestandGesamt, nur die andere Seite von bestellstatus: Beide

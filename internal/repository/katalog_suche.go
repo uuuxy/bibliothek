@@ -69,7 +69,7 @@ func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 	rows, err := q.Query(ctx, fmt.Sprintf(`
 		SELECT bt.id, bt.titel, COALESCE(bt.autor, ''), COALESCE(bt.isbn, ''),
 		       COALESCE(bt.cover_url, ''),
-		       COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+		       `+sqlFilterVerfuegbar+` AS verfuegbar,
 		       COUNT(e.id) FILTER (WHERE %s) AS gesamt,
 		       %s AS im_zulauf,
 		       count(*) OVER () AS treffer

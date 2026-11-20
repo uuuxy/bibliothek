@@ -119,7 +119,7 @@ func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string
 			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject,
 			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url,
 			COALESCE(b.isbn, '') AS isbn,
-			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+			` + sqlFilterVerfuegbar + ` AS verfuegbar,
 			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 			` + sqlFilterImZulauf + ` AS im_zulauf,
 			cb.quelle, cb.leser,
