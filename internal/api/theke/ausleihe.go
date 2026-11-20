@@ -138,7 +138,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 // ok=false: Die Fehlerantwort ist geschrieben.
 func leseGezeigteFrist(w http.ResponseWriter, r *http.Request) (*time.Time, bool) {
 	var req verlaengerungsAnfrage
-	if r.ContentLength > 0 && !tuer.LeseAnfrage(w, r, &req) {
+	if !tuer.LeseFreiwilligeAnfrage(w, r, &req) {
 		return nil, false
 	}
 	if req.FristBisher == "" {

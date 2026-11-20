@@ -219,13 +219,10 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 // leseErledigtNotiz liest die freiwillige Notiz aus dem Rumpf. Ohne Rumpf ist sie leer; ein
 // Rumpf, der sich nicht lesen lässt, ist ein 400.
 func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
-	if r.Body == nil || r.ContentLength == 0 {
-		return "", true
-	}
 	var body struct {
 		Notiz string `json:"notiz"`
 	}
-	if !tuer.LeseAnfrage(w, r, &body) {
+	if !tuer.LeseFreiwilligeAnfrage(w, r, &body) {
 		return "", false
 	}
 	return kuerze(strings.TrimSpace(body.Notiz), 500), true

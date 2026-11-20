@@ -329,10 +329,14 @@ func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinm
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
 		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
 	}))
+	ohneLaenge := false
 	verlaengere := func(fristBisher time.Time) *httptest.ResponseRecorder {
 		t.Helper()
 		rumpf := `{"frist_bisher":"` + fristBisher.Format(time.RFC3339) + `"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleihe+"/verlaengern", strings.NewReader(rumpf))
+		if ohneLaenge {
+			req.ContentLength = -1
+		}
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
@@ -345,7 +349,11 @@ func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinm
 	}
 	nachErster := testdaten.LadeFrist(t, pool, ausleihe)
 
+	// Ohne Längenangabe im Kopf (HTTP/2, chunked) verwarf die Tür den Rumpf, und der zweite Auftrag
+	// verlängerte noch einmal. Sie liest ihn jetzt auch dann.
+	ohneLaenge = true
 	zweite := verlaengere(gezeigt)
+	ohneLaenge = false
 	if zweite.Code != http.StatusConflict {
 		t.Fatalf("zweiter Auftrag mit der alten Frist: Status %d, erwartet 409: %s", zweite.Code, zweite.Body.String())
 	}

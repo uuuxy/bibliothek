@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -146,6 +147,27 @@ func begrenzterDecoder(w http.ResponseWriter, r *http.Request) *json.Decoder {
 // nicht (rumpfgrenze_ratsche_test.go).
 func DekodiereRumpf(w http.ResponseWriter, r *http.Request, ziel any) error {
 	return begrenzterDecoder(w, r).Decode(ziel)
+}
+
+// LeseFreiwilligeAnfrage liest einen Rumpf, den eine Tür nicht verlangt, wie LeseAnfrage; ohne
+// Rumpf bleibt ziel, wie es ist. Ob einer kommt, sagt erst das Lesen: Bei HTTP/2 oder chunked steht
+// keine Länge im Kopf (ContentLength -1), und eine Prüfung auf > 0 verwürfe den Rumpf still.
+func LeseFreiwilligeAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
+	if r.Body == nil || r.ContentLength == 0 {
+		return true
+	}
+	if err := DekodiereRumpf(w, r, ziel); err != nil {
+		if errors.Is(err, io.EOF) {
+			return true
+		}
+		AntworteUnlesbar(w, err)
+		return false
+	}
+	if err := Pruefer.Struct(ziel); err != nil {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, Pruefmeldung(err), err)
+		return false
+	}
+	return true
 }
 
 // AntworteUnlesbar antwortet auf einen Rumpf, der sich nicht lesen ließ: mit 413 und der Grenze,
