@@ -490,7 +490,9 @@ eingefügt scheitert ein Befehl mit `<neu>` harmlos an der bash-Syntax, die Zeil
 
 **Auf dem Server** (kein Go nötig — das Binary liegt im Image, und im Container sind
 `APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt). Alles in **derselben**
-Shell-Sitzung ausführen, damit `$NEU` erhalten bleibt:
+Shell-Sitzung ausführen, damit `$NEUER_APP_ENCRYPTION_KEY` erhalten bleibt. Das Werkzeug liest den neuen
+Schlüssel aus dieser Variablen; `-e NEUER_APP_ENCRYPTION_KEY` ohne Wert reicht ihn in den Container,
+ohne dass er in der Prozessliste des Servers steht wie ein Argument:
 
 ```bash
 cd /root/bibliothek
@@ -504,19 +506,19 @@ mkdir -p backups
 gzip -t backups/vor-rotation.sql.gz && ls -lh backups/vor-rotation.sql.gz
 
 # 1. Schlüssel erzeugen und merken
-NEU=$(openssl rand -hex 32)
-echo "Neuer Schlüssel: $NEU"
+export NEUER_APP_ENCRYPTION_KEY=$(openssl rand -hex 32)
+echo "Neuer Schlüssel: $NEUER_APP_ENCRYPTION_KEY"
 
 # 2. Probelauf — liest und rechnet alles durch, schreibt nichts
-docker compose exec -T backend ./rotate-encryption-key -neu "$NEU" -pruefen
+docker compose exec -T -e NEUER_APP_ENCRYPTION_KEY backend ./rotate-encryption-key -pruefen
 ```
 
 Erst wenn dort **„Probelauf erfolgreich"** steht, weiter — und die nächsten drei Zeilen
 zusammen absenden, weil die Anwendung dazwischen nicht lesen kann:
 
 ```bash
-docker compose exec -T backend ./rotate-encryption-key -neu "$NEU"
-echo "APP_ENCRYPTION_KEY=$NEU" >> .env
+docker compose exec -T -e NEUER_APP_ENCRYPTION_KEY backend ./rotate-encryption-key
+echo "APP_ENCRYPTION_KEY=$NEUER_APP_ENCRYPTION_KEY" >> .env
 docker compose up -d backend
 ```
 
@@ -540,11 +542,11 @@ rm backups/vor-rotation.sql.gz
 **Lokal / ohne Container:**
 
 ```bash
-NEU=$(openssl rand -hex 32)
+export NEUER_APP_ENCRYPTION_KEY=$(openssl rand -hex 32)
 read -rsp "Alter APP_ENCRYPTION_KEY: " ALT; echo
 
 APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
-  go run ./cmd/rotate-encryption-key -neu "$NEU" -pruefen
+  go run ./cmd/rotate-encryption-key -pruefen
 ```
 
 > **Reihenfolge beachten, wenn noch `ENFORCE_PROD_SECRETS=false` in der `.env` steht:**

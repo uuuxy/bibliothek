@@ -11,10 +11,12 @@
 // Schlüssel, alles in einer Transaktion: Entweder ist am Ende alles umgeschlüsselt oder nichts.
 // Ein Abbruch mitten im Lauf hinterlässt keinen halb lesbaren Bestand.
 //
-// Aufruf:
+// Aufruf (der neue Schlüssel steht in NEUER_APP_ENCRYPTION_KEY):
 //
-//	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu>
-//	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu> -pruefen
+//	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -pruefen
+//	APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key
+//
+// Ohne NEUER_APP_ENCRYPTION_KEY erzeugt es einen Schlüssel und zeigt ihn nur an.
 //
 // -pruefen macht einen vollständigen Probelauf ohne zu schreiben. Immer zuerst damit laufen
 // lassen, und vorher eine Sicherung ziehen.
@@ -37,18 +39,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// neuerSchluesselVariable nennt den neuen Schlüssel. Er kommt aus der Umgebung wie der alte und
+// nicht als Argument: Ein Argument steht während des Laufs in der Prozessliste des Servers, und
+// `docker compose exec -e NEUER_APP_ENCRYPTION_KEY` reicht den Wert weiter, ohne ihn zu nennen.
+const neuerSchluesselVariable = "NEUER_APP_ENCRYPTION_KEY"
+
 func main() {
-	neuerSchluessel := flag.String("neu", "", "neuer Schlüssel (32 Zeichen oder 64 Hex-Zeichen); leer = einen erzeugen und nur anzeigen")
 	nurPruefen := flag.Bool("pruefen", false, "Probelauf: alles entschlüsseln und neu verschlüsseln, aber nichts speichern")
 	flag.Parse()
 
-	if *neuerSchluessel == "" {
+	neuerSchluessel := os.Getenv(neuerSchluesselVariable)
+	if neuerSchluessel == "" {
 		erzeugt := make([]byte, 32)
 		if _, err := rand.Read(erzeugt); err != nil {
 			log.Fatalf("FATAL: Zufallsschlüssel konnte nicht erzeugt werden: %v", err)
 		}
 		fmt.Printf("Vorschlag für einen neuen Schlüssel (64 Hex-Zeichen):\n\n  %s\n\n"+
-			"Damit erneut aufrufen:\n  -neu %s -pruefen\n", hex.EncodeToString(erzeugt), hex.EncodeToString(erzeugt))
+			"In %s legen und mit -pruefen erneut aufrufen (docs/SECURITY.md).\n", hex.EncodeToString(erzeugt), neuerSchluesselVariable)
 		return
 	}
 
@@ -56,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: alter Schlüssel (%s) nicht brauchbar: %v", crypto.SchluesselVariable, err)
 	}
-	neuSchluessel, err := crypto.SchluesselAus(*neuerSchluessel)
+	neuSchluessel, err := crypto.SchluesselAus(neuerSchluessel)
 	if err != nil {
 		log.Fatalf("FATAL: neuer Schlüssel nicht brauchbar: %v", err)
 	}
@@ -95,7 +102,7 @@ func main() {
 	}
 
 	log.Printf("Fertig: %d Datensätze umgeschlüsselt.", gesamt)
-	log.Printf("JETZT in der .env eintragen und den Stack neu starten:\n  %s=%s",
-		crypto.SchluesselVariable, *neuerSchluessel)
+	log.Printf("JETZT den Wert aus %s als %s in die .env eintragen und den Stack neu starten.",
+		neuerSchluesselVariable, crypto.SchluesselVariable)
 	log.Printf("Bis dahin läuft die Anwendung mit dem ALTEN Schlüssel und kann die Daten nicht mehr lesen.")
 }
