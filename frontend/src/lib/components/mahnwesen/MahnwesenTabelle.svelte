@@ -69,7 +69,7 @@
 						</th>
 						<th>Schüler</th>
 						<th>Klasse</th>
-						<th>Medien</th>
+						<th>Ausleihen</th>
 						<th>Status</th>
 					</tr>
 				</thead>
@@ -125,7 +125,7 @@
 									title={schueler.medien.map((m) => m.titel).join(', ')}
 								>
 									{schueler.medien.length}
-									{schueler.medien.length === 1 ? 'Buch' : 'Bücher'}
+									{schueler.medien.length === 1 ? 'Ausleihe' : 'Ausleihen'}
 								</span>
 							</td>
 							<!-- Oben steht, was hinausging: wie oft und wann zuletzt ein Mahnbrief

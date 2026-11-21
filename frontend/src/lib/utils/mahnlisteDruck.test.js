@@ -52,7 +52,7 @@ describe('baueMahnlisteDruckHtml', () => {
 		expect(html.toLowerCase()).not.toContain('onload=');
 	});
 
-	it('druckt je Buch eine Zeile: Klasse, Kind, Buch, Frist und wie oft gemahnt', () => {
+	it('druckt je Ausleihe eine Zeile: Klasse, Kind, Titel, Frist und wie oft gemahnt', () => {
 		const html = baueMahnlisteDruckHtml(
 			[
 				{
@@ -84,7 +84,7 @@ describe('baueMahnlisteDruckHtml', () => {
 			]
 		]);
 		expect(html).toContain(
-			'<th class="schmal">Klasse</th><th>Schüler</th><th>Buch</th>' +
+			'<th class="schmal">Klasse</th><th>Schüler</th><th>Titel</th>' +
 				'<th class="schmal">Fällig seit</th><th class="schmal">Gemahnt</th>'
 		);
 	});
@@ -111,7 +111,7 @@ describe('baueMahnlisteDruckHtml', () => {
 	});
 
 	// Ein Blatt aus einem Reiter oder einer Klasse sähe ohne diese Zeile aus wie die ganze Liste.
-	it('nennt den Ausschnitt und zählt Kinder und Bücher', () => {
+	it('nennt den Ausschnitt und zählt Kinder und Ausleihen, auch Geräte', () => {
 		const kinder = [
 			{ name: 'A', klasse: '5a', medien: [{ titel: 'X' }, { titel: 'Y' }] },
 			{ name: 'B', klasse: '5a', medien: [{ titel: 'Z' }] }
@@ -119,13 +119,15 @@ describe('baueMahnlisteDruckHtml', () => {
 		const meta = (/** @type {string} */ html) => html.match(/<p class="meta">(.*?)<\/p>/)?.[1];
 
 		expect(meta(baueMahnlisteDruckHtml(kinder, ALLES, TAG))).toBe(
-			'Erstellt am: 05.10.2026 | Ansicht: Alle | alle Klassen | 2 Kinder, 3 Bücher'
+			'Erstellt am: 05.10.2026 | Ansicht: Alle | alle Klassen | 2 Kinder, 3 Ausleihen'
 		);
 		expect(
 			meta(
 				baueMahnlisteDruckHtml([kinder[1]], { ansicht: 'Mahnung', klasse: '5a', suche: ' b ' }, TAG)
 			)
-		).toBe('Erstellt am: 05.10.2026 | Ansicht: Eskaliert | Klasse 5a | Suche: b | 1 Kind, 1 Buch');
+		).toBe(
+			'Erstellt am: 05.10.2026 | Ansicht: Eskaliert | Klasse 5a | Suche: b | 1 Kind, 1 Ausleihe'
+		);
 	});
 
 	it('nennt im Fenstertitel dasselbe wie in der Überschrift des Blatts', () => {

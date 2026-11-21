@@ -43,7 +43,7 @@ test('Mahnwesen: überfälliger Schüler erscheint, „Liste drucken" druckt ihn
 	await expect(druckzeile).toContainText('8M');
 	await expect(druckzeile).toContainText(`E2E-Mahnbuch-${suffix}`);
 	await expect(druckzeile).toContainText('noch nicht gemahnt');
-	await expect(blatt.locator('p.meta')).toContainText('1 Kind, 1 Buch');
+	await expect(blatt.locator('p.meta')).toContainText('1 Kind, 1 Ausleihe');
 });
 
 // Der Weg der Mahnbriefe: Kind anhaken, „Mahnbriefe drucken", danach nennt die Liste die

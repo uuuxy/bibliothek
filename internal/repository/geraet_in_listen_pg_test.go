@@ -55,7 +55,7 @@ func TestGeraeteAusleihe_StehtInAllenListenDesLesers(t *testing.T) {
 	})
 	t.Run("Kontoauszug", func(t *testing.T) {
 		buecher, err := LadeKontoauszugBuecher(ctx, pool, uuid.MustParse(leserID))
-		if err != nil || len(buecher) != 1 || buecher[0].Titel != modell || buecher[0].Barcode != barcode {
+		if err != nil || len(buecher) != 1 || buecher[0].Titel != modell || buecher[0].Barcode != barcode || !buecher[0].IstGeraet {
 			t.Errorf("LadeKontoauszugBuecher = %+v, %v; erwartet das Gerät", buecher, err)
 		}
 	})
@@ -89,7 +89,7 @@ func TestGeraeteAusleihe_StehtInAllenListenDesLesers(t *testing.T) {
 	})
 	t.Run("Abgängerliste", func(t *testing.T) {
 		zeilen, err := LadeAbgaengerAusleihen(ctx, pool, "10R1", []string{leserID})
-		if err != nil || len(zeilen) != 1 || zeilen[0].Titel != modell {
+		if err != nil || len(zeilen) != 1 || zeilen[0].Titel != modell || !zeilen[0].IstGeraet {
 			t.Errorf("LadeAbgaengerAusleihen = %+v, %v; erwartet das Gerät", zeilen, err)
 		}
 	})

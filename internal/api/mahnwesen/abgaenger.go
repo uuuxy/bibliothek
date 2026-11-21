@@ -111,6 +111,7 @@ func (t *Tueren) ladeAbgaengerKontoauszuege(ctx context.Context, klasse string, 
 			Barcode:        a.ExemplarBarcode,
 			Ausleihdatum:   a.AusgeliehenAm,
 			Rueckgabedatum: a.Frist,
+			IstGeraet:      a.IstGeraet,
 		})
 	}
 

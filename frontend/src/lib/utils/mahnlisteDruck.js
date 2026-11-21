@@ -38,7 +38,7 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 		`Ansicht: ${ANSICHTEN[sicht.ansicht] ?? sicht.ansicht}`,
 		sicht.klasse ? `Klasse ${sicht.klasse}` : 'alle Klassen',
 		sicht.suche.trim() ? `Suche: ${sicht.suche.trim()}` : '',
-		`${anzahlText(geordnet.length, 'Kind', 'Kinder')}, ${anzahlText(zeilen.length, 'Buch', 'Bücher')}`
+		`${anzahlText(geordnet.length, 'Kind', 'Kinder')}, ${anzahlText(zeilen.length, 'Ausleihe', 'Ausleihen')}`
 	]
 		.filter(Boolean)
 		.join(' | ');
@@ -49,7 +49,7 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 		spalten: [
 			{ text: 'Klasse', klasse: 'schmal' },
 			'Schüler',
-			'Buch',
+			'Titel',
 			{ text: 'Fällig seit', klasse: 'schmal' },
 			{ text: 'Gemahnt', klasse: 'schmal' }
 		],

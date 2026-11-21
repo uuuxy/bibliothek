@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
@@ -31,6 +32,8 @@ type KontoauszugBuch struct {
 	Rueckgabedatum time.Time
 	// Dauerleihe hat keine Frist und wird nie überfällig.
 	Dauerleihe bool
+	// IstGeraet heißt: Die Zeile ist ein verliehenes Gerät; Titel trägt den Modellnamen.
+	IstGeraet bool
 }
 
 // KontoauszugEintrag bündelt einen Schüler mit seinen Büchern für den Druck vieler Auszüge,
@@ -135,7 +138,7 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 
 	// Nur die lesbare Nummer, kein Strichcode: Der Auszug ist zum Lesen da, nicht zum Scannen
 	// an der Theke, und ein Bild je Zeile füllte das Blatt ohne Nutzen.
-	ueberfaellig, mitFrist := 0, 0
+	ueberfaelligeBuecher, ueberfaelligeGeraete, mitFrist := 0, 0, 0
 	for _, buch := range buecher {
 		// Überfällig wie in der Leserakte (utils/ueberfaellig.js): Eine Dauerleihe hat keine Frist.
 		// Wort und fette Schrift statt Farbe, weil die Schule schwarz-weiß druckt.
@@ -147,7 +150,11 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 			mitFrist++
 		}
 		if !buch.Dauerleihe && buch.Rueckgabedatum.Before(jetzt) {
-			ueberfaellig++
+			if buch.IstGeraet {
+				ueberfaelligeGeraete++
+			} else {
+				ueberfaelligeBuecher++
+			}
 			rueckgabe += " überfällig"
 			rueckgabeText.Style = fontstyle.Bold
 		}
@@ -176,15 +183,13 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 	} else if mitFrist > 0 {
 		// Der Satz spricht von Fristen; Dauerleihen haben keine.
 		zeilen = append(zeilen, row.New(10).Add(col.New().Add(
-			marotoText(kontoauszugHinweis(ueberfaellig), props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
+			marotoText(kontoauszugHinweis(ueberfaelligeBuecher, ueberfaelligeGeraete), props.Text{Size: 10, Style: fontstyle.Italic, Align: align.Center}),
 		)))
 	}
 
 	return zeilen
 }
 
-// kontoauszugHinweis ist der Satz unter der Liste. Ist etwas überfällig, bittet er um die
-// Rückgabe, statt vor Mahnungen zu warnen, die schon fällig sind.
 // kontoauszugUeberschrift nennt den Leser und, wenn er eine hat, die Klasse.
 func kontoauszugUeberschrift(leser KontoauszugSchueler) string {
 	if leser.Klasse == "" {
@@ -193,13 +198,24 @@ func kontoauszugUeberschrift(leser KontoauszugSchueler) string {
 	return fmt.Sprintf("Bibliotheks-Kontoauszug für %s %s, Klasse %s", leser.Vorname, leser.Nachname, leser.Klasse)
 }
 
-func kontoauszugHinweis(ueberfaellig int) string {
-	switch ueberfaellig {
-	case 0:
+// kontoauszugHinweis ist der Satz unter der Liste. Ist etwas überfällig, bittet er um die
+// Rückgabe, statt vor Mahnungen zu warnen, die schon fällig sind. Bücher und Geräte nennt er
+// getrennt: Ein Tablet ist kein Buch, und wer nur Bücher hat, liest denselben Satz wie bisher.
+func kontoauszugHinweis(buecher, geraete int) string {
+	switch {
+	case buecher == 0 && geraete == 0:
 		return "Bitte beachte die Rückgabefristen, um Mahnungen zu vermeiden."
-	case 1:
+	case buecher == 1 && geraete == 0:
 		return "Ein Buch ist überfällig. Bitte gib es so bald wie möglich zurück."
-	default:
-		return fmt.Sprintf("%d Bücher sind überfällig. Bitte gib sie so bald wie möglich zurück.", ueberfaellig)
+	case buecher == 0 && geraete == 1:
+		return "Ein Gerät ist überfällig. Bitte gib es so bald wie möglich zurück."
 	}
+	var teile []string
+	if buecher > 0 {
+		teile = append(teile, anzahlText(buecher, "Buch", "Bücher"))
+	}
+	if geraete > 0 {
+		teile = append(teile, anzahlText(geraete, "Gerät", "Geräte"))
+	}
+	return strings.Join(teile, " und ") + " sind überfällig. Bitte gib sie so bald wie möglich zurück."
 }

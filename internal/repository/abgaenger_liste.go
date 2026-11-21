@@ -76,6 +76,8 @@ type AbgaengerAusleihe struct {
 	ExemplarBarcode string
 	AusgeliehenAm   time.Time
 	Frist           time.Time
+	// IstGeraet heißt: Die Zeile ist ein verliehenes Gerät; Titel trägt den Modellnamen.
+	IstGeraet bool
 }
 
 // LadeAbgaengerAusleihen liefert die offenen Ausleihen der Abgänger nach Klasse, Nachname und
@@ -87,7 +89,8 @@ func LadeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nu
 		       COALESCE(t.titel, g.modellname, '') AS titel,
 		       COALESCE(e.barcode_id, g.barcode_id, '') AS ex_barcode,
 		       a.ausgeliehen_am,
-		       a.rueckgabe_frist
+		       a.rueckgabe_frist,
+		       a.geraet_id IS NOT NULL
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
 		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
@@ -108,7 +111,7 @@ func LadeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nu
 	for rows.Next() {
 		var a AbgaengerAusleihe
 		if err := rows.Scan(&a.SchuelerID, &a.Vorname, &a.Nachname, &a.Klasse,
-			&a.Titel, &a.ExemplarBarcode, &a.AusgeliehenAm, &a.Frist); err != nil {
+			&a.Titel, &a.ExemplarBarcode, &a.AusgeliehenAm, &a.Frist, &a.IstGeraet); err != nil {
 			return nil, err
 		}
 		ausleihen = append(ausleihen, a)

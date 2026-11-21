@@ -69,4 +69,16 @@ describe('MahnwesenTabelle', () => {
 		expect(liste.queryByText('Mahnung')).toBeNull();
 		expect(liste.queryByText('1. Erinnerung')).toBeNull();
 	});
+
+	// Die Liste trägt auch verliehene Geräte; ein Tablet ist kein Buch.
+	it('zählt je Kind die überfälligen Ausleihen', () => {
+		const liste = render(MahnwesenTabelle);
+		expect(liste.getByRole('columnheader', { name: 'Ausleihen' })).toBeTruthy();
+		expect(
+			within(liste.getByRole('row', { name: /Ida Zweimal/ })).getByText(/2 Ausleihen/)
+		).toBeTruthy();
+		expect(
+			within(liste.getByRole('row', { name: /Timo Nochnie/ })).getByText(/1 Ausleihe\b/)
+		).toBeTruthy();
+	});
 });

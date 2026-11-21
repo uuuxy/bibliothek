@@ -50,6 +50,11 @@ func TestKontoauszug_KennzeichnetUeberfaelliges(t *testing.T) {
 	buch := func(titel string, frist time.Time) KontoauszugBuch {
 		return KontoauszugBuch{Titel: titel, Barcode: "105785", Ausleihdatum: frist.AddDate(0, 0, -21), Rueckgabedatum: frist}
 	}
+	geraet := func(modell string, frist time.Time) KontoauszugBuch {
+		g := buch(modell, frist)
+		g.Barcode, g.IstGeraet = "G-7", true
+		return g
+	}
 	schueler := KontoauszugSchueler{Vorname: "Max", Nachname: "Mustermann", Klasse: "05F"}
 
 	faelle := []struct {
@@ -68,6 +73,27 @@ func TestKontoauszug_KennzeichnetUeberfaelliges(t *testing.T) {
 			name:     "zwei überfällig",
 			buecher:  []KontoauszugBuch{buch("Fokus Physik 8", abgelaufen), buch("Fokus Physik 8", abgelaufen)},
 			gedruckt: []string{datum(abgelaufen) + " überfällig", "2 Bücher sind überfällig. Bitte gib sie so bald wie möglich zurück."},
+		},
+		// Ein verliehenes Gerät ist kein Buch: Der Satz nennt es als Gerät, Bücher daneben getrennt.
+		{
+			name:     "ein Gerät überfällig",
+			buecher:  []KontoauszugBuch{geraet("iPad 9", abgelaufen), buch("Zeitreise Band 1", laufend)},
+			gedruckt: []string{datum(abgelaufen) + " überfällig", "Ein Gerät ist überfällig. Bitte gib es so bald wie möglich zurück."},
+			fehlt:    []string{"Ein Buch ist überfällig."},
+		},
+		{
+			name:     "Buch und Gerät überfällig",
+			buecher:  []KontoauszugBuch{buch("Fokus Physik 8", abgelaufen), geraet("iPad 9", abgelaufen)},
+			gedruckt: []string{"1 Buch und 1 Gerät sind überfällig. Bitte gib sie so bald wie möglich zurück."},
+			fehlt:    []string{"2 Bücher sind überfällig."},
+		},
+		{
+			name: "zwei Bücher und zwei Geräte überfällig",
+			buecher: []KontoauszugBuch{
+				buch("Fokus Physik 8", abgelaufen), buch("Zeitreise Band 1", abgelaufen),
+				geraet("iPad 9", abgelaufen), geraet("Taschenrechner", abgelaufen),
+			},
+			gedruckt: []string{"2 Bücher und 2 Geräte sind überfällig. Bitte gib sie so bald wie möglich zurück."},
 		},
 		{
 			name:     "nichts überfällig",

@@ -16,13 +16,16 @@ type KontoauszugBuch struct {
 	// Dauerleihe ist die Ausleihe an jemanden, der kein Schüler ist (ausleihen.ist_handapparat):
 	// Sie hat keine Frist und wird nie überfällig.
 	Dauerleihe bool
+	// IstGeraet heißt: Die Zeile ist ein verliehenes Gerät; Titel trägt den Modellnamen.
+	IstGeraet bool
 }
 
 // LadeKontoauszugBuecher lädt die offenen Ausleihen eines Lesers, Bücher und Geräte, die
 // früheste Frist zuerst. Eine unlesbare Zeile wird übersprungen.
 func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
 	query := `
-		SELECT COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat
+		SELECT COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat,
+		       a.geraet_id IS NOT NULL
 		FROM ausleihen a
 		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
@@ -39,7 +42,7 @@ func LadeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.U
 	var buecher []KontoauszugBuch
 	for rows.Next() {
 		var b KontoauszugBuch
-		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum, &b.Dauerleihe); err != nil {
+		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum, &b.Dauerleihe, &b.IstGeraet); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
 		buecher = append(buecher, b)
