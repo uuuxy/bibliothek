@@ -1,6 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
+// Jeder Test räumt seine Schüler über die Ausweisnummer wieder ab. Blieben sie liegen, wüchse
+// mit jedem Lauf die Liste der Klassen im LMF-Plan („bleiben draußen“, zuletzt 386 Klassen
+// „ZZZ-…“), aus der lmf-plan.spec.js einen Chip zieht.
+/** @type {string[]} */
+const angelegt = [];
+test.afterEach(() => {
+	if (angelegt.length === 0) return;
+	seedSQL(
+		`DELETE FROM schueler WHERE barcode_id IN (${angelegt.map((b) => `'${b}'`).join(', ')});`
+	);
+	angelegt.length = 0;
+});
+
 // Die Schülersuche fand Leute nicht — je nachdem, wie ihre Klasse heißt.
 //
 // Die Schülerdatei filterte im BROWSER über die Liste, die sie geladen hatte, und die ist
@@ -13,6 +26,7 @@ import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 test('Leserdatei findet auch Schüler hinter der 500er-Grenze', async ({ page }) => {
 	const s = uniqueSuffix();
 	const nachname = `Zzunsichtbar${s}`;
+	angelegt.push(`E2E-SUCH-${s}`);
 
 	seedSQL(`
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -35,6 +49,7 @@ test('Leserdatei findet auch Schüler hinter der 500er-Grenze', async ({ page })
 // Browser-Filter (Teilstring über "vorname nachname"). Sie ist dieselbe wie an der Theke.
 test('Schülersuche: Reihenfolge und Schreibweise des Namens sind egal', async ({ page }) => {
 	const s = uniqueSuffix();
+	angelegt.push(`E2E-SUCH2-${s}`);
 
 	seedSQL(`
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -70,6 +85,7 @@ test('Leserdatei sucht auch nach Klasse — allein und zusammen mit einem Namen'
 	page
 }) => {
 	const s = uniqueSuffix();
+	angelegt.push(`E2E-KL1-${s}`, `E2E-KL2-${s}`);
 	const klasse = `9z${s}`.slice(0, 20);
 
 	seedSQL(`
@@ -98,6 +114,7 @@ test('Leserdatei sucht auch nach Klasse — allein und zusammen mit einem Namen'
 // TITELsuche. Ein getippter Nachname lief deshalb zuverlässig ins Leere.
 test('Ausleihe: Enter auf einen eindeutigen Namen öffnet das Schülerkonto', async ({ page }) => {
 	const s = uniqueSuffix();
+	angelegt.push(`E2E-OMNI-${s}`);
 	const nachname = `Eindeutig${s}`;
 
 	seedSQL(`
