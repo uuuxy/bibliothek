@@ -42,7 +42,7 @@ test('Scan-Dauerfeuer: drei Bücher in schneller Folge werden alle verbucht', as
 	}
 
 	// Alle drei Ausleihen müssen ankommen — Profil zählt mit
-	await expect(page.getByText(`3 entliehene Bücher`)).toBeVisible({ timeout: 15000 });
+	await expect(page.getByText(`3 Ausleihen`)).toBeVisible({ timeout: 15000 });
 	for (const n of [1, 2, 3]) {
 		await expect(page.getByText(`E2E-Feuer${n}-${suffix}`).first()).toBeVisible();
 	}

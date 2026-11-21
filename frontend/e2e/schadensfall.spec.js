@@ -72,7 +72,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	// trägt): Seit der Gebühren-Sektion (16.08.2026) taucht derselbe Titel rechtmäßig
 	// in der Forderungsliste wieder auf — ein seitenweites not.toBeVisible würde die
 	// neue Wahrheit als Fehler melden.
-	const ausleihKarte = page.locator('div:has(> div > h3:text-matches("entliehenes? B"))');
+	const ausleihKarte = page.locator('div:has(> div > h3:text-matches("[0-9]+ Ausleihen?"))');
 	// Wache gegen leer-grünes Scoping: Erst belegen, dass der Karten-Locator überhaupt
 	// etwas findet — sonst wäre das not.toBeVisible darunter vakuum-grün.
 	await expect(ausleihKarte).toBeVisible();

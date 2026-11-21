@@ -47,7 +47,7 @@ andere Programm am Rechner (Editor, Tabelle) bekäme aber ß statt Bindestrich.
 Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status mit dem
-   offenen Betrag, entliehene Bücher, Vormerkungen; Gebühren stehen im eigenen Reiter.
+   offenen Betrag, Ausleihen, Vormerkungen; Gebühren stehen im eigenen Reiter.
 2. **Buch scannen** → ausgeliehen. Frist wird automatisch berechnet (Lernmittel bis zum
    Donnerstag vor den Sommerferien, in der Oberstufe bis zum 31.07.; andere Medien nach Tagen
    oder, bei eingeschaltetem Ferien-Leseclub, bis

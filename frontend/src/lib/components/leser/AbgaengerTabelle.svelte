@@ -38,12 +38,12 @@
 	/>
 {:else}
 	<div bind:this={liste} class="overflow-x-auto">
-		<Tabelle beschriftung="Abgänger mit offenen Büchern">
+		<Tabelle beschriftung="Abgänger mit offenen Ausleihen">
 			<thead>
 				<tr>
 					<th>Klasse</th>
 					<th>Name</th>
-					<th>Offene Bücher</th>
+					<th>Offene Ausleihen</th>
 					<th>Sperr-Status</th>
 				</tr>
 			</thead>
@@ -65,7 +65,7 @@
 						<td class="font-medium">{student.vorname} {student.nachname}</td>
 						<td>
 							{student.offene_buecher}
-							{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}
+							{student.offene_buecher === 1 ? 'Ausleihe' : 'Ausleihen'}
 							{#if student.ueberfaellig > 0}
 								<span class="font-medium text-error">
 									· {student.ueberfaellig} überfällig

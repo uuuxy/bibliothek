@@ -10,7 +10,8 @@
 <div class="w-full h-full pt-2">
 	<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
 		<h3 class="text-title-medium text-on-surface-variant">
-			{anzahlText(ausleihen?.length, 'entliehenes Buch', 'entliehene Bücher')}
+			<!-- Die Liste trägt auch verliehene Geräte, darum zählt die Überschrift Ausleihen. -->
+			{anzahlText(ausleihen?.length, 'Ausleihe', 'Ausleihen')}
 		</h3>
 	</div>
 

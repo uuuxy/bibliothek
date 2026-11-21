@@ -42,7 +42,7 @@
 
 	async function loescheLeser() {
 		if (leser?.entliehene_buecher && leser.entliehene_buecher.length > 0) {
-			fehler = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
+			fehler = 'Löschen nicht möglich: Dieser Leser hat noch offene Ausleihen';
 			return;
 		}
 		const { id, vorname, nachname } = leser;
@@ -82,7 +82,7 @@
 					role="alert"
 					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-body-medium-emphasized"
 				>
-					Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher
+					Löschen nicht möglich: Dieser Leser hat noch offene Ausleihen
 				</div>
 				<div class="mt-6 flex justify-end">
 					<Button variant="secondary" onclick={schliesse}>Schließen</Button>

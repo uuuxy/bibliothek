@@ -68,7 +68,7 @@
      die Liste breit genug ist. Autor und Nummer stehen beim Zeigen auf dem Titel.
      Ohne eigenen Scrollkasten; gescrollt wird die Akte. -->
 <div class="@container">
-	<Tabelle beschriftung="Ausgeliehene Bücher">
+	<Tabelle beschriftung="Ausleihen">
 		<thead>
 			<tr>
 				<th class="w-full">Titel</th>
@@ -87,23 +87,34 @@
 					     sich, statt die Tabelle zu weiten. -->
 					<td class="w-full max-w-0">
 						<div class="flex items-center gap-3">
-							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht. -->
-							<div class="shrink-0">
-								<CoverVorschau
-									isbn={book.isbn || ''}
-									coverUrl={book.cover_url || ''}
-									titel={book.titel}
+							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht.
+							     Ein Gerät hat kein Cover: Es zeigt das Symbol der Geräteverwaltung in der
+							     Fläche des Covers, damit die Titel bündig bleiben (M3 Lists: „A leading icon
+							     should provide a quick visual cue that relates to the item's label text“). -->
+							{#if book.ist_geraet}
+								<span
+									class="flex h-7 aspect-2/3 shrink-0 items-center justify-center text-on-surface-variant"
 								>
-									<BuchCover
-										coverUrl={book.cover_url || ''}
+									<Icon name="devices" />
+								</span>
+							{:else}
+								<div class="shrink-0">
+									<CoverVorschau
 										isbn={book.isbn || ''}
+										coverUrl={book.cover_url || ''}
 										titel={book.titel}
-										groesse="klein"
-										dekorativ
-										nurGespeichert
-									/>
-								</CoverVorschau>
-							</div>
+									>
+										<BuchCover
+											coverUrl={book.cover_url || ''}
+											isbn={book.isbn || ''}
+											titel={book.titel}
+											groesse="klein"
+											dekorativ
+											nurGespeichert
+										/>
+									</CoverVorschau>
+								</div>
+							{/if}
 							<!-- Abgeschnitten statt überlappend: Reicht die Breite nicht einmal für das
 							     Kennzeichen, ragt es nicht in die Spalte daneben. -->
 							<div class="flex min-w-0 items-center gap-3 overflow-hidden">

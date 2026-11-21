@@ -98,9 +98,9 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
-		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
+		const tabelle = page.getByRole('table', { name: 'Ausleihen' });
 		await titelSindZuLesen(page, tabelle);
 
 		// Die Liste läuft nicht über ihren Platz hinaus, und die Symbole halten ihr Mindestmaß.
@@ -152,9 +152,9 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
-		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
+		const tabelle = page.getByRole('table', { name: 'Ausleihen' });
 		// Der Schließen-Knopf steht oben rechts im Profil: Bei zwei Spalten beginnt die Liste
 		// rechts von ihm, bei einer Spalte reicht das Profil über die ganze Breite.
 		const knopf = await page.getByRole('button', { name: 'Akte schließen' }).boundingBox();
@@ -191,11 +191,11 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
 		const blase = page.locator('[data-tooltip-blase]');
 		await page
-			.getByRole('table', { name: 'Ausgeliehene Bücher' })
+			.getByRole('table', { name: 'Ausleihen' })
 			.getByText(TITEL[0], { exact: true })
 			.hover();
 		await page.clock.runFor(400);
@@ -203,7 +203,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 
 		// Fünf Minuten ohne Bedienung: Die Theke leert sich, der Zeiger liegt noch dort.
 		await page.clock.fastForward('05:10');
-		await expect(page.getByText('12 entliehene Bücher')).toHaveCount(0);
+		await expect(page.getByText('12 Ausleihen')).toHaveCount(0);
 		await expect(blase, 'die Sprechblase steht ohne ihre Zeile da').toBeHidden();
 
 		// Dasselbe an einem Knopf, der bleibt: Hinter dem Sperrbildschirm ist er ausgeblendet.
@@ -225,9 +225,9 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
-		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
+		const tabelle = page.getByRole('table', { name: 'Ausleihen' });
 		await expect(tabelle.getByRole('columnheader', { name: 'Barcode' })).toBeVisible();
 		await expect(tabelle.getByRole('cell', { name: nummer(0), exact: true })).toBeVisible();
 		for (const titel of TITEL) {

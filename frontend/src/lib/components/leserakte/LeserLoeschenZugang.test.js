@@ -108,6 +108,12 @@ describe('Löschen in der Akte: der Dialog sagt, was geschieht', () => {
 		});
 		expect(screen.getByRole('button', { name: 'In den Papierkorb' })).toBeTruthy();
 	});
+
+	// Die Liste trägt auch verliehene Geräte: Wer nur noch ein Tablet hat, hat keine Bücher.
+	it('nennt offene Ausleihen, wenn noch etwas verliehen ist, auch ein Gerät', () => {
+		const mitGeraet = { ...schueler, entliehene_buecher: [{ id: 'g', ist_geraet: true }] };
+		expect(saetze(mitGeraet)).toContain('Dieser Leser hat noch offene Ausleihen');
+	});
 });
 
 describe('Löschen in der Akte: vom Zugang nur, wenn es einen gibt', () => {

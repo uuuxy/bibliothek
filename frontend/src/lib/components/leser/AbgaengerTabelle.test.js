@@ -99,5 +99,9 @@ describe('AbgaengerTabelle', () => {
 			getByRole('button', { name: /^09H1 Anna Test .*1 überfällig.*Profil anzeigen$/ })
 		).toBeTruthy();
 		expect(getByText(/1 überfällig/)).toBeTruthy();
+		// Die Zahl zählt auch verliehene Geräte, darum heißt sie Ausleihen.
+		expect(getByRole('table', { name: 'Abgänger mit offenen Ausleihen' })).toBeTruthy();
+		expect(getByText('Offene Ausleihen')).toBeTruthy();
+		expect(getByText(/2 Ausleihen/)).toBeTruthy();
 	});
 });

@@ -123,7 +123,7 @@
 					<th>Abgang</th>
 					<th>Name</th>
 					<th>Ausweisnummer</th>
-					<th>Offene Bücher</th>
+					<th>Offene Ausleihen</th>
 					<th>Sperr-Status</th>
 				</tr>
 			</thead>
@@ -147,7 +147,7 @@
 						<td>
 							{#if s.ausgeliehen_count > 0}
 								{s.ausgeliehen_count}
-								{s.ausgeliehen_count === 1 ? 'Buch' : 'Bücher'}
+								{s.ausgeliehen_count === 1 ? 'Ausleihe' : 'Ausleihen'}
 								{#if s.ueberfaellig_count > 0}
 									<span class="font-medium text-error">· {s.ueberfaellig_count} überfällig</span>
 								{/if}

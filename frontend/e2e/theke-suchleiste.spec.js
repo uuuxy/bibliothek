@@ -86,7 +86,7 @@ test.describe.serial('Theke: Suchleiste', () => {
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
 		await scanne(page, AUSWEIS);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
 		const vorher = await page.evaluate(lage);
 		expect(vorher?.abstandZumInhalt, 'Abstand von der Leiste zum Inhalt').toBe(24);

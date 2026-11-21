@@ -61,11 +61,11 @@ test('Leserakte: zwölf Ausleihen stehen in einer Liste ohne eigenen Scrollkaste
 	try {
 		await uiLogin(page);
 		await oeffneSchuelerProfil(page, `Scroll${s}`);
-		await expect(page.getByText('12 entliehene Bücher')).toBeVisible();
+		await expect(page.getByText('12 Ausleihen')).toBeVisible();
 
 		const lage = await page.evaluate(scrollLage, {
-			beschriftung: 'Ausgeliehene Bücher',
-			ueberschrift: '12 entliehene Bücher'
+			beschriftung: 'Ausleihen',
+			ueberschrift: '12 Ausleihen'
 		});
 		expect(lage, 'Tabelle oder Überschrift der Ausleihliste nicht gefunden').not.toBeNull();
 		expect(

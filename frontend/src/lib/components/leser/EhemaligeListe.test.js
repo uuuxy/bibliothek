@@ -40,7 +40,7 @@ describe('EhemaligeListe', () => {
 		vi.mocked(apiFetch).mockReset();
 	});
 
-	it('lädt über /api/schueler?status=ehemalige und zeigt Abgang, Name, offene Bücher', async () => {
+	it('lädt über /api/schueler?status=ehemalige und zeigt Abgang, Name, offene Ausleihen', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(ehemalige));
 		const { findByRole, getByText } = render(EhemaligeListe, { onSelect: () => {} });
 
@@ -52,6 +52,9 @@ describe('EhemaligeListe', () => {
 		expect(getByText('2026')).toBeTruthy();
 		expect(getByText(/1 überfällig/)).toBeTruthy();
 		expect(getByText('Sperre aktiv')).toBeTruthy();
+		// Die Zahl zählt auch verliehene Geräte, darum heißt sie Ausleihen.
+		expect(getByText('Offene Ausleihen')).toBeTruthy();
+		expect(getByText(/1 Ausleihe\b/)).toBeTruthy();
 	});
 
 	// Ohne Suchwort kappt der Server die Liste und nennt die Grenze. Ohne den Satz sähen 500
