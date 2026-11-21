@@ -72,6 +72,9 @@ test('nennt der Server wieder den Stand des Fensters, geht der Hinweis weg', asy
 	server.neu = false;
 	await menuepunkt(page, 'Leserdatei').click();
 	await expect(hinweis).toBeHidden();
+	// Die Leserdatei lädt noch nach; eine Umleitung, die beim Testende läuft, scheitert mit
+	// „Test ended" hier oder im nächsten Test.
+	await page.unrouteAll({ behavior: 'ignoreErrors' });
 });
 
 // Der öffentliche Katalog hat keine Anmeldung und keine Live-Leitung: Er erfährt den Stand aus
