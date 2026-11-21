@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 16.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 22.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -992,6 +992,8 @@ frontend/src
   off text without providing a way for users to view it." Wo es keinen gibt, läuft der Text
   um — auf Papier immer. Die Sprechblase des Hauses (`data-tip`, `actions/tooltip.js`)
   erscheint an einer Tabellenzelle nur mit der Maus und ist dort kein Weg für die Tastatur.
+  An gekürztem Text erscheint sie nur, wenn er wirklich abgeschnitten ist; Text, der ganz
+  dasteht, wiederholt sie nicht (`actions/blaseUeberfluessig.js`).
 - **Farben kommen aus den Rollen in `styles/rollen.css`, in einem hellen und einem dunklen
   Schema.** Das dunkle (`.schema-dunkel`) steht an `<html>`, wenn der Rechner es gewählt hat, und
   an Bereichen, die immer dunkel sind (Flur-Monitor, Kamera-Sucher). Ein Bereich, der Papier

@@ -7,7 +7,8 @@
  * Hälfte den nativen title-Tooltip: Optik des Betriebssystems, rund eine Sekunde
  * Verzögerung, und bei Tastaturbedienung erscheint er überhaupt nicht.
  *
- * Verwendung: `data-tip="Titelsatz öffnen"` an das Element schreiben. Mehr nicht.
+ * Verwendung: `data-tip="Titelsatz öffnen"` an das Element schreiben. Mehr nicht. Wiederholt die
+ * Blase nur Text, der ganz dasteht, bleibt sie weg (`blaseUeberfluessig.js`).
  *
  * Warum EIN delegierter Zuhörer am document und keine Action pro Element:
  * `use:` lässt sich nur an DOM-Elemente hängen, nicht an Svelte-Komponenten — der
@@ -25,6 +26,8 @@
  * Die Blase ist `aria-hidden`: Der Screenreader liest bereits das aria-label des Buttons.
  * Ohne das würde er die Erklärung zweimal ansagen.
  */
+
+import { blaseUeberfluessig } from './blaseUeberfluessig.js';
 
 const ZEIGE_NACH_MS = 150; // kurz genug, um zu helfen; lang genug, um beim Vorbeifahren nicht zu flackern
 const ABSTAND_PX = 8;
@@ -86,7 +89,7 @@ function positioniere(ziel, el) {
 /** @param {HTMLElement} ziel */
 function zeige(ziel) {
 	const text = ziel.dataset.tip;
-	if (!text || !zielSteht(ziel)) return;
+	if (!text || !zielSteht(ziel) || blaseUeberfluessig(ziel, text)) return;
 	const el = holeBlase();
 	el.textContent = text;
 	try {
@@ -167,13 +170,9 @@ export function initTooltips() {
 		if (e.key === 'Escape') verstecke();
 	};
 
-	// Beim Scrollen wandert das Ziel — die Blase geht MIT, statt zu verschwinden.
-	//
-	// Zuerst stand hier verstecke(). Das war aus zwei Gründen falsch: Im Betrieb blinkt die
-	// Beschriftung weg, sobald man die Tabelle unter dem Zeiger scrollt. Und es löschte den
-	// 150-ms-Timer — beim Anfahren eines weiter unten liegenden Symbols scrollt der Browser
-	// es erst in den Blick, das Scroll-Ereignis kam nach dem mouseover und nahm die gerade
-	// geplante Blase wieder mit. Sichtbar wurde das als „erscheint mal, mal nicht".
+	// Beim Scrollen geht die Blase mit ihrem Ziel, statt zu verschwinden: Verstecken ließe sie
+	// unter dem Zeiger wegblinken und nähme den geplanten Timer mit, wenn der Browser ein Ziel
+	// erst in den Blick scrollt.
 	const beiScroll = () => {
 		if (offenFuer?.isConnected && blase?.isConnected) positioniere(offenFuer, blase);
 	};

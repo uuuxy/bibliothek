@@ -107,3 +107,80 @@ describe('Sprechblase: Tastaturfokus', () => {
 		expect(zeigen).not.toHaveBeenCalled();
 	});
 });
+
+// An gekürztem Text ist die Blase der Weg zum Rest; steht der Text ganz da, wiederholte sie ihn
+// nur und bleibt weg. jsdom rechnet kein Layout, die Breiten setzt der Test.
+describe('Sprechblase: gekürzter Text', () => {
+	/** @type {() => void} */
+	let abmelden;
+	/** @type {ReturnType<typeof vi.fn>} */
+	let zeigen;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		zeigen = vi.fn();
+		Object.assign(HTMLElement.prototype, { showPopover: zeigen, hidePopover: vi.fn() });
+		abmelden = initTooltips();
+	});
+	afterEach(() => {
+		abmelden();
+		vi.useRealTimers();
+		document.body.innerHTML = '';
+	});
+
+	/**
+	 * @param {string} html
+	 * @param {Record<string, [number, number]>} breiten Kennung → [sichtbare Breite, Breite des Inhalts]
+	 */
+	function zeigeAufTitel(html, breiten) {
+		document.body.innerHTML = html;
+		for (const [id, [sichtbar, inhalt]] of Object.entries(breiten)) {
+			const el = /** @type {HTMLElement} */ (document.getElementById(id));
+			Object.defineProperty(el, 'clientWidth', { configurable: true, value: sichtbar });
+			Object.defineProperty(el, 'scrollWidth', { configurable: true, value: inhalt });
+		}
+		document.getElementById('titel')?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+		vi.advanceTimersByTime(200);
+	}
+
+	it('steht der Titel ganz da, bleibt die Blase weg', () => {
+		zeigeAufTitel('<span id="titel" data-tip="Tintenherz">Tintenherz</span>', {
+			titel: [120, 120]
+		});
+		expect(zeigen).not.toHaveBeenCalled();
+	});
+
+	it('ist der Titel abgeschnitten, zeigt die Blase ihn ganz', () => {
+		zeigeAufTitel('<span id="titel" data-tip="Tintenherz">Tintenherz</span>', { titel: [60, 120] });
+		expect(zeigen).toHaveBeenCalledTimes(1);
+	});
+
+	it('kürzt die Zelle darüber mit Auslassungszeichen, zählt das auch', () => {
+		zeigeAufTitel(
+			'<div id="zelle" style="text-overflow: ellipsis"><span id="titel" data-tip="Tintenherz">Tintenherz</span></div>',
+			{ zelle: [60, 120] }
+		);
+		expect(zeigen).toHaveBeenCalledTimes(1);
+	});
+
+	it('ein Bereich mit Bildlauf darüber schneidet nichts ab', () => {
+		zeigeAufTitel(
+			'<div id="bereich" style="overflow: auto"><span id="titel" data-tip="Tintenherz">Tintenherz</span></div>',
+			{ bereich: [300, 900] }
+		);
+		expect(zeigen).not.toHaveBeenCalled();
+	});
+
+	it('sagt die Blase mehr als der Text, erscheint sie', () => {
+		zeigeAufTitel('<span id="titel" data-tip="Tintenherz · Funke">Tintenherz</span>', {});
+		expect(zeigen).toHaveBeenCalledTimes(1);
+	});
+
+	it('steht der Text nur für den Bildschirmleser da, erscheint sie', () => {
+		zeigeAufTitel(
+			'<button id="titel" data-tip="Löschen"><span id="leser" class="sr-only">Löschen</span></button>',
+			{ leser: [1, 52] }
+		);
+		expect(zeigen).toHaveBeenCalledTimes(1);
+	});
+});
