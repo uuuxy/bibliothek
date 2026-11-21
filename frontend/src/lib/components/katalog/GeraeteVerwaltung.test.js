@@ -17,10 +17,15 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.f
 // 12.09.2026 stand derselbe Satz da, wenn der Abruf gescheitert war — mit der Einladung,
 // Laptops ein zweites Mal anzulegen, die längst im Bestand stehen (Register,
 // Bestands-Durchgang 10.09.2026).
+// Jeder Test beginnt mit edit_books, der Test ohne das Recht nimmt es sich selbst. Die CI mischt
+// die Reihenfolge (--sequence.shuffle): Ein Recht aus dem Test davor gilt dort nicht.
+beforeEach(() => {
+	authStore.currentUser = { permissions: ['view_books', 'edit_books'] };
+});
+
 describe('GeraeteVerwaltung', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
-		authStore.currentUser = { permissions: ['view_books', 'edit_books'] };
 	});
 
 	it('unterscheidet „Schrank leer" von „nicht geladen"', async () => {
