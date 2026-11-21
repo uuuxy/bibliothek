@@ -147,7 +147,7 @@
 						dekorativ
 					/>
 					<div class="min-w-0 flex-1">
-						<p class="text-body-medium-emphasized text-on-surface truncate" title={row.titel}>
+						<p class="text-body-medium-emphasized text-on-surface truncate" data-tip={row.titel}>
 							{row.titel}
 						</p>
 						<p class="text-xs text-on-surface-variant truncate">

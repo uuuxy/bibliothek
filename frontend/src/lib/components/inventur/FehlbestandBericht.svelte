@@ -169,8 +169,12 @@
 										aria-label="{e.titel} als gefunden markieren und zurück in Umlauf bringen"
 									/>
 								{:else}
-									<span class="text-sm text-on-surface-variant" title="Bereits endgültig gelöscht"
-										>–</span
+									<span
+										class="text-sm text-on-surface-variant"
+										data-tip="Bereits endgültig gelöscht"
+										><span aria-hidden="true">–</span><span class="sr-only"
+											>Bereits endgültig gelöscht</span
+										></span
 									>
 								{/if}
 							</td>

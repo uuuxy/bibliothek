@@ -8,11 +8,14 @@ import PortalTrefferkarte from './PortalTrefferkarte.svelte';
 
 const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
 
-/** @param {Record<string, any>} book */
-const aufbau = (book) =>
+/**
+ * @param {Record<string, any>} book
+ * @param {string} [success]
+ */
+const aufbau = (book, success = '') =>
 	render(PortalTrefferkarte, {
 		treffer: { id: 't1', titel: 'Natura 2', ...book },
-		formular: { open: false, success: '', anzahl: 1 },
+		formular: { open: false, success, anzahl: 1 },
 		meldung: zu,
 		warteschlange: [],
 		ontoggle: vi.fn(),
@@ -23,6 +26,17 @@ const aufbau = (book) =>
 	});
 
 describe('PortalTrefferkarte', () => {
+	// Wann der eigene Satz an der Reihe ist, stand nur in der Sprechblase über „✓ Gesendet“: am
+	// Tablet ohne Maus nie zu sehen (M3 Tooltips: „Don't hide critical information within tooltips“).
+	it('zeigt nach dem Senden den ganzen Satz, auch den Platz in der Schlange', () => {
+		const s = aufbau(
+			{ gesamt: 30, verfuegbar: 30 },
+			'Reservierungsanfrage gesendet, dein Satz ist nach 8a an der Reihe'
+		);
+		expect(
+			s.getByText('✓ Reservierungsanfrage gesendet, dein Satz ist nach 8a an der Reihe')
+		).toBeTruthy();
+	});
 	it('nennt neben dem Bestand im Haus, was bestellt ist', () => {
 		const s = aufbau({ gesamt: 10, verfuegbar: 10, im_zulauf: 20 });
 

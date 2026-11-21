@@ -52,8 +52,8 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	await page.getByPlaceholder(/Benötigt ab/i).fill('E2E Notiz — bitte ignorieren');
 	await page.getByRole('button', { name: 'Anfrage senden' }).click();
 
-	// Erfolgs-Feedback im Portal (die Karte zeigt das Badge "✓ Gesendet")
-	await expect(page.getByText('✓ Gesendet')).toBeVisible();
+	// Erfolgs-Feedback im Portal: Die Karte nennt die gesendete Anfrage.
+	await expect(page.getByText('✓ Reservierungsanfrage gesendet')).toBeVisible();
 
 	// DB-Zustand: Anfrage liegt mit Klasse und Anzahl in klassensatz_reservierungen
 	const row = querySQL(`

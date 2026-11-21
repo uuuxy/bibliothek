@@ -101,7 +101,7 @@
 										<span
 											role="img"
 											class="text-on-surface-variant shrink-0 flex items-center"
-											title="Keine Eltern-E-Mail hinterlegt"
+											data-tip="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>
 											<Icon name="mail" groesse={18} />
@@ -118,14 +118,16 @@
 								<!-- Text statt Cover-Stapel: Ab drei, vier überfälligen Büchern wurde die
 								     Reihe aus Miniaturen plus "+N"-Badge selbst zur Ratearbeit — welches
 								     Cover zu welchem Titel gehört, war ohnehin nicht zu erkennen. Wie bei
-								     Abgänger zählt hier nur, WIE VIELE es sind; der Titeltext im title-
-								     Attribut bleibt für den Hover-Fall erhalten. -->
+								     Abgänger zählt hier nur, WIE VIELE es sind; die Titel stehen in der Sprechblase
+								     und für den Bildschirmleser daneben. -->
 								<span
 									class="text-sm text-on-surface-variant"
-									title={schueler.medien.map((m) => m.titel).join(', ')}
+									data-tip={schueler.medien.map((m) => m.titel).join(', ')}
 								>
 									{schueler.medien.length}
-									{schueler.medien.length === 1 ? 'Ausleihe' : 'Ausleihen'}
+									{schueler.medien.length === 1 ? 'Ausleihe' : 'Ausleihen'}<span class="sr-only"
+										>: {schueler.medien.map((m) => m.titel).join(', ')}</span
+									>
 								</span>
 							</td>
 							<!-- Oben steht, was hinausging: wie oft und wann zuletzt ein Mahnbrief

@@ -68,7 +68,7 @@ describe('KollegiumPortal', () => {
 
 		await sucheUndOeffneFormular(screen);
 
-		expect(await screen.findByText('✓ Gesendet')).toBeTruthy();
+		expect(await screen.findByText(/^✓ Reservierungsanfrage gesendet/)).toBeTruthy();
 
 		// Der Kern: Der Weg zur nächsten Reservierung ist offen — ohne Reload.
 		const erneut = await screen.findByRole('button', { name: 'Weitere Klasse reservieren' });
@@ -161,7 +161,7 @@ describe('KollegiumPortal', () => {
 		await sucheUndOeffneFormular(screen);
 
 		expect(await screen.findByText('Titel ist gesperrt.')).toBeTruthy();
-		expect(screen.queryByText('✓ Gesendet')).toBeNull();
+		expect(screen.queryByText(/^✓ Reservierungsanfrage gesendet/)).toBeNull();
 		expect(screen.getByRole('button', { name: /Anfrage senden/ }).hasAttribute('disabled')).toBe(
 			false
 		);
@@ -400,5 +400,5 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
 
 	// Die Bestätigung sagt, hinter wem der eigene Satz an der Reihe ist.
-	expect(await screen.findByTitle(/dein Satz ist nach 8a an der Reihe/)).toBeTruthy();
+	expect(await screen.findByText(/dein Satz ist nach 8a an der Reihe/)).toBeTruthy();
 });

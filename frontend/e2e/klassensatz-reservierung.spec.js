@@ -139,9 +139,7 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 	await expect(page.getByRole('status')).toContainText(`du stellst dich hinter k8a${s} an`);
 	await page.getByLabel('Klasse oder Kurs*').fill(`k9b${s}`);
 	await page.getByRole('button', { name: /Anfrage senden/ }).click();
-	await expect(
-		page.getByTitle(new RegExp(`dein Satz ist nach k8a${s} an der Reihe`))
-	).toBeVisible();
+	await expect(page.getByText(new RegExp(`dein Satz ist nach k8a${s} an der Reihe`))).toBeVisible();
 
 	// Und die eigene Reservierung erscheint sofort als zweiter Chip in der Schlange.
 	await expect(page.getByText(`reserviert für k9b${s}`)).toBeVisible();

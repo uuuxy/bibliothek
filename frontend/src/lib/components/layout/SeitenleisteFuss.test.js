@@ -11,6 +11,10 @@ describe('SeitenleisteFuss eingeklappt', () => {
 			benutzer: { vorname: 'Erika', nachname: 'Muster', rolle: 'admin' },
 			onLogout: () => {}
 		});
-		expect(screen.getByTitle('Erika Muster · Administrator')).toBeTruthy();
+		// Die Sprechblase zeigt Name und Rolle, der Bildschirmleser liest sie statt der Initialen.
+		expect(
+			screen.container.querySelector('[data-tip="Erika Muster · Administrator"]')
+		).not.toBeNull();
+		expect(screen.getByText('Erika Muster · Administrator')).toBeTruthy();
 	});
 });

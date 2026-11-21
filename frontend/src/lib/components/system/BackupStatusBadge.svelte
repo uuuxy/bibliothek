@@ -18,7 +18,8 @@
 {#if backupStatus.data}
 	{#if collapsed}
 		{#if backupStatus.needsAction}
-			<div class="flex justify-center py-2" title={backupStatus.message}>
+			<div class="flex justify-center py-2" data-tip={backupStatus.message}>
+				<span class="sr-only">{backupStatus.message}</span>
 				<span
 					class="h-2.5 w-2.5 animate-pulse rounded-full {backupStatus.data.status === 'critical'
 						? 'bg-error'

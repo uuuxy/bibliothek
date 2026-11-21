@@ -91,7 +91,7 @@
 		<td>
 			<span
 				class="block max-w-52 truncate text-on-surface text-body-medium-emphasized"
-				title={s.name}>{s.name}</span
+				data-tip={s.name}>{s.name}</span
 			>
 			<!-- Nur die Abweichung wird benannt: „Bestellmail" in jeder Zeile wäre
 			     Rauschen. Auffallen soll die eine Zeile, die anders ist. -->
@@ -106,7 +106,7 @@
 			{/if}
 		</td>
 		<td>
-			<span class="block max-w-60 truncate" title={s.email}>{s.email}</span>
+			<span class="block max-w-60 truncate" data-tip={s.email}>{s.email}</span>
 			<span class="block text-xs text-on-surface-variant whitespace-nowrap">
 				Kd.-Nr. {s.customerNumber || '–'}
 				<!-- Die zweite Nummer nur, wenn es sie gibt — sonst gilt dieselbe. -->

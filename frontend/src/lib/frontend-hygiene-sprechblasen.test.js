@@ -2,16 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-quellen.js';
 
-// Knöpfe und Links zeigen ihre Sprechblase über data-tip (actions/tooltip.js, M3 „plain tooltip“):
-// nach 150 ms und auch beim Fokus mit der Tastatur. Der title des Browsers kam rund eine Sekunde
-// später, in der Optik des Betriebssystems und bei Bedienung mit der Tastatur gar nicht; standen
-// beide in einer Maske, sahen zwei Sprechblasen verschieden aus.
+// Jede Sprechblase kommt über data-tip (actions/tooltip.js, M3 „plain tooltip“): nach 150 ms und
+// auch beim Fokus mit der Tastatur. Der title des Browsers kam rund eine Sekunde später, in der
+// Optik des Betriebssystems und bei Bedienung mit der Tastatur gar nicht; standen beide in einer
+// Maske, sahen zwei Sprechblasen verschieden aus. Das gilt auch für gekürzten Text, wie im Titel
+// der Leserakte. Sagt die Sprechblase etwas, das sonst nicht dasteht, braucht der Bildschirmleser
+// es daneben als sr-only oder aria-label: data-tip liest er nicht vor.
 //
 // Ausnahme: die Ziele der Seitenleiste. An ihrem title findet menuepunkt() in e2e/helpers.js
-// jeden Menüpunkt (ARCHITEKTUR 11.5). Sieht nicht: title an anderen Elementen (an gekürztem Text
-// zeigt er den vollen Wortlaut) und Attribute, die über {...rest} kommen.
+// jeden Menüpunkt (ARCHITEKTUR 11.5). Ausgenommen ist auch <abbr>, dessen title die Abkürzung
+// auflöst. Sieht nicht: Attribute, die über {...rest} kommen.
 const TITLE_AN_BEDIENELEMENT =
-	/<(?:button|Button|a)\b(?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?\stitle=/;
+	/<(?!title\b|abbr\b)[A-Za-z][\w.:-]*\b(?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?\s(?:title=|\{title\})/;
 const AUSNAHMEN = new Map([
 	[
 		'src/lib/components/layout/SeitenleisteZiele.svelte',
@@ -19,7 +21,7 @@ const AUSNAHMEN = new Map([
 	]
 ]);
 
-describe('Sprechblasen an Knöpfen und Links über data-tip', () => {
+describe('Sprechblasen über data-tip', () => {
 	const dateien = sammleQuelldateien(srcRoot).filter((f) => f.endsWith('.svelte'));
 	const mitTitle = dateien
 		.filter((f) => TITLE_AN_BEDIENELEMENT.test(ohneKommentare(readFileSync(f, 'utf8'))))
@@ -31,10 +33,10 @@ describe('Sprechblasen an Knöpfen und Links über data-tip', () => {
 			expect(mitTitle, 'Ausnahme ohne Fundstelle').toContain(datei);
 	});
 
-	it('kein Knopf und kein Link trägt die Sprechblase des Browsers', () => {
+	it('kein Element trägt die Sprechblase des Browsers', () => {
 		expect(
 			mitTitle.filter((f) => !AUSNAHMEN.has(f)),
-			'title an einem Knopf oder Link — data-tip nehmen (actions/tooltip.js)'
+			'title an einem Element — data-tip nehmen (actions/tooltip.js), und was nur dort steht, für den Bildschirmleser daneben'
 		).toEqual([]);
 	});
 
@@ -43,15 +45,19 @@ describe('Sprechblasen an Knöpfen und Links über data-tip', () => {
 			'<button class="x" title="Kopieren">',
 			'<Button variant="secondary"\n\ttitle={text}\n>',
 			'<a href={url} title="PDF">',
-			'<button onclick={() => (a = b > 1)} title="x">'
+			'<button onclick={() => (a = b > 1)} title="x">',
+			'<span title={voll}>gekürzt</span>',
+			'<div\n\tclass="x"\n\ttitle="Hinweis"\n>',
+			'<Button variant="ghost" {title}>'
 		]) {
 			expect(TITLE_AN_BEDIENELEMENT.test(form), form).toBe(true);
 		}
 		for (const form of [
 			'<button data-tip="Kopieren">',
-			'<span title={voll}>gekürzt</span>',
+			'<span data-tip={voll}>gekürzt</span>',
 			'<abbr title="x">',
-			'<button aria-label="x">Text</button> <span title="y">'
+			'<title>Bibliothek</title>',
+			'<SuchZustand titel="Nichts gefunden" />'
 		]) {
 			expect(TITLE_AN_BEDIENELEMENT.test(form), form).toBe(false);
 		}

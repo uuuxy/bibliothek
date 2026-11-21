@@ -153,12 +153,12 @@
 								nurGespeichert
 								dekorativ
 							/>
-							<span class="truncate text-body-medium-emphasized" title={book.titel}
+							<span class="truncate text-body-medium-emphasized" data-tip={book.titel}
 								>{book.titel}</span
 							>
 						</div>
 					</td>
-					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="truncate max-w-48" data-tip={book.autor}>{book.autor}</td>
 					<td class="tabular-nums text-right text-body-medium-emphasized">{num(book.count)}×</td>
 				</tr>
 			{/each}
@@ -176,10 +176,10 @@
 		<tbody>
 			{#each topWarmers as book (book.id)}
 				<tr>
-					<td class="truncate max-w-64 text-body-medium-emphasized" title={book.titel}
+					<td class="truncate max-w-64 text-body-medium-emphasized" data-tip={book.titel}
 						>{book.titel}</td
 					>
-					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="truncate max-w-48" data-tip={book.autor}>{book.autor}</td>
 					<td class="text-warning tabular-nums text-right text-body-medium-emphasized"
 						>{book.letzte_aus}</td
 					>

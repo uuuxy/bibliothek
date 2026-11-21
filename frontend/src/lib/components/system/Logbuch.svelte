@@ -121,7 +121,7 @@
 										<span class="font-medium text-on-surface-variant italic">System</span>
 										<span class="block text-sm text-on-surface-variant">automatischer Vorgang</span>
 									{:else}
-										<span class="font-medium text-on-surface" title={log.bearbeiter_id}
+										<span class="font-medium text-on-surface" data-tip={log.bearbeiter_id}
 											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
 										>
 										<!-- Die Bearbeiter-UUID ist in fast jeder Zeile dieselbe und verdoppelte die

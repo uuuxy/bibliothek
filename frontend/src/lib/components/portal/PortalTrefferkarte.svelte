@@ -174,7 +174,10 @@
 				</Button>
 			</div>
 			{#if formular.success}
-				<span class="text-xs font-medium text-primary" title={formular.success}>✓ Gesendet</span>
+				<!-- Der ganze Satz steht da, nicht nur in einer Sprechblase: Wann der Satz an der Reihe
+				     ist, braucht auch, wer am Tablet ohne Maus reserviert (M3 Tooltips: „Don't hide
+				     critical information within tooltips“). -->
+				<span class="text-right text-xs font-medium text-primary">✓ {formular.success}</span>
 			{/if}
 		</div>
 	</div>

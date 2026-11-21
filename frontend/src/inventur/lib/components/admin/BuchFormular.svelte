@@ -170,7 +170,7 @@
 							<TitelLoeschen
 								{onDelete}
 								class="w-full"
-								title="Diesen Titel mit allen Exemplaren löschen"
+								tip="Diesen Titel mit allen Exemplaren löschen"
 							/>
 						{/if}
 					</div>

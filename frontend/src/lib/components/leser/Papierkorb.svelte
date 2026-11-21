@@ -119,10 +119,15 @@
 										     sondern eine Falle. -->
 										<span
 											class="inline-flex items-center gap-1.5 rounded-lg bg-surface-container px-2 py-1 text-label-medium text-on-surface-variant"
-											title="Der nächtliche DSGVO-Lauf hat Name, Adresse und Geburtsdatum getilgt. Diese Zeile lässt sich nicht mehr wiederherstellen und wird nach 180 Tagen im Papierkorb endgültig gelöscht."
+											data-tip="Der nächtliche DSGVO-Lauf hat Name, Adresse und Geburtsdatum getilgt. Diese Zeile lässt sich nicht mehr wiederherstellen und wird nach 180 Tagen im Papierkorb endgültig gelöscht."
 										>
 											<Icon name="remove_moderator" />
 											anonymisiert (DSGVO)
+											<span class="sr-only"
+												>Der nächtliche DSGVO-Lauf hat Name, Adresse und Geburtsdatum getilgt. Diese
+												Zeile lässt sich nicht mehr wiederherstellen und wird nach 180 Tagen im
+												Papierkorb endgültig gelöscht.</span
+											>
 										</span>
 									{:else}
 										<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" in der

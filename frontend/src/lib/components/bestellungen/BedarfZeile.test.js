@@ -62,8 +62,11 @@ describe('BedarfZeile', () => {
 		const onAddToCart = vi.fn();
 		const screen = render(BedarfZeile, { r: buch, onAddToCart });
 		expect(
-			screen.getByTitle('Bestand, gemessen am Bedarf im nächsten Schuljahr').textContent?.trim()
-		).toBe('3 von 5');
+			screen.container
+				.querySelector('[data-tip="Bestand, gemessen am Bedarf im nächsten Schuljahr"]')
+				?.textContent?.replace(/\s+/g, ' ')
+				.trim()
+		).toBe('Bestand, gemessen am Bedarf im nächsten Schuljahr: 3 von 5');
 		await fireEvent.click(
 			screen.getByRole('button', {
 				name: '2 Exemplare von Lambacher Schweizer 7 zur Bestellung hinzufügen'

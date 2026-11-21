@@ -150,7 +150,7 @@
 						<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
 							<h3
 								class="line-clamp-2 text-title-medium leading-snug wrap-break-word text-on-surface"
-								title={book.titel}
+								data-tip={book.titel}
 							>
 								{book.titel}
 							</h3>

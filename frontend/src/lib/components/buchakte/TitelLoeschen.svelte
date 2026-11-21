@@ -7,8 +7,8 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Icon from '../ui/Icon.svelte';
 
-	/** @type {{ onDelete: () => Promise<unknown> | void, class?: string, title?: string }} */
-	let { onDelete, class: klasse = '', title = undefined } = $props();
+	/** @type {{ onDelete: () => Promise<unknown> | void, class?: string, tip?: string }} */
+	let { onDelete, class: klasse = '', tip = undefined } = $props();
 
 	let loescht = $state(false);
 
@@ -23,7 +23,13 @@
 	}
 </script>
 
-<Button variant="ghost" onclick={loesche} disabled={loescht} class="text-error {klasse}" {title}>
+<Button
+	variant="ghost"
+	onclick={loesche}
+	disabled={loescht}
+	class="text-error {klasse}"
+	data-tip={tip}
+>
 	{#if loescht}
 		<Ladekreis size="sm" farbe="aktuell" />
 	{:else}

@@ -41,7 +41,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 		await page.getByLabel('Klasse oder Kurs*').fill(`8G${s}`);
 		await page.getByLabel('Anzahl').fill('3');
 		await page.getByRole('button', { name: 'Anfrage senden' }).click();
-		await expect(page.getByText('✓ Gesendet')).toBeVisible();
+		await expect(page.getByText(/^✓ Reservierungsanfrage gesendet/)).toBeVisible();
 
 		expect(
 			querySQL(`

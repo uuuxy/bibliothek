@@ -140,7 +140,7 @@
 								class="min-w-0 flex-1 truncate text-right text-xs {emailGetrimmt
 									? 'font-medium text-primary'
 									: 'text-on-surface-variant'}"
-								title={ziel}
+								data-tip={ziel}
 							>
 								{ziel}
 							</span>

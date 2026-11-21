@@ -30,9 +30,11 @@
 	<div class="no-print flex shrink-0 flex-col items-center gap-3 p-4">
 		<div
 			class="bg-surface-container-highest text-on-surface-variant flex h-8 w-8 cursor-default items-center justify-center rounded-full text-label-medium"
-			title="{benutzer?.vorname} {benutzer?.nachname} · {rollenName(benutzer?.rolle)}"
+			data-tip="{benutzer?.vorname} {benutzer?.nachname} · {rollenName(benutzer?.rolle)}"
 		>
-			{initialen}
+			<span aria-hidden="true">{initialen}</span><span class="sr-only"
+				>{benutzer?.vorname} {benutzer?.nachname} · {rollenName(benutzer?.rolle)}</span
+			>
 		</div>
 		<button
 			onclick={onLogout}
@@ -42,7 +44,7 @@
 		>
 			<Icon name="logout" />
 		</button>
-		<span class="text-on-surface-variant cursor-default" title="DSGVO: {DSGVO_HINWEIS}">
+		<span class="text-on-surface-variant cursor-default" data-tip="DSGVO: {DSGVO_HINWEIS}">
 			<Icon name="verified_user" vorlesen="DSGVO: {DSGVO_HINWEIS}" />
 		</span>
 	</div>
@@ -84,10 +86,11 @@
 		     deshalb auf der Ratsche in frontend-hygiene.test.js. -->
 		<div
 			class="text-on-surface-variant flex items-center justify-center gap-1.5 text-center text-sm"
-			title={DSGVO_HINWEIS}
+			data-tip={DSGVO_HINWEIS}
 		>
 			<Icon name="verified_user" groesse={18} />
 			<span>Scans nach 14 Tagen anonymisiert</span>
+			<span class="sr-only">{DSGVO_HINWEIS}</span>
 		</div>
 	</div>
 {/if}

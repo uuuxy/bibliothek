@@ -31,10 +31,7 @@
 {#snippet roleToggle(item, roleLabel, roleKey)}
 	{@const isUpdating = updatingKeys[`${roleKey}-${item.key}`]}
 	{@const wert = rechteJeRolle[roleKey]?.[item.key] ?? false}
-	<div
-		class="flex items-center gap-3"
-		title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
-	>
+	<div class="flex items-center gap-3">
 		<span class="text-body-small-emphasized text-on-surface-variant tracking-wider w-24 text-right"
 			>{roleLabel}</span
 		>
@@ -50,6 +47,12 @@
 {/snippet}
 
 <div class="space-y-12">
+	<!-- Gesperrte Schalter bekommen keinen Fokus: Die Erklärung steht sichtbar über der Matrix,
+	     nicht in einer Sprechblase (M3 Tooltips: „Don't hide critical information within
+	     tooltips“). -->
+	{#if schreibgeschuetzt}
+		<p class="text-sm text-on-surface-variant">Nur ein Administrator kann die Rechte ändern</p>
+	{/if}
 	{#each beschreibungen as cat, _i (_i)}
 		<div>
 			<div class="pb-3 mb-1 border-b border-outline-variant flex items-center gap-3">

@@ -134,7 +134,7 @@
 								{#if ex.zustand_notiz}
 									<span
 										class="text-label-small text-on-surface-variant truncate max-w-37.5"
-										title={ex.zustand_notiz}>{ex.zustand_notiz}</span
+										data-tip={ex.zustand_notiz}>{ex.zustand_notiz}</span
 									>
 								{/if}
 							</div>

@@ -44,8 +44,9 @@
 	     date". Bestand gegen Bedarf; was fehlt, legt das Plus in den Warenkorb. -->
 	<div
 		class="text-right shrink-0 leading-tight text-body-medium-emphasized tabular-nums text-on-surface-variant"
-		title="Bestand, gemessen am Bedarf im nächsten Schuljahr"
+		data-tip="Bestand, gemessen am Bedarf im nächsten Schuljahr"
 	>
+		<span class="sr-only">Bestand, gemessen am Bedarf im nächsten Schuljahr:</span>
 		{r.gesamt_bestand} von {r.bedarf}
 	</div>
 
