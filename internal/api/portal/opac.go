@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
@@ -46,6 +47,9 @@ func schreibeLeereTrefferliste(w http.ResponseWriter) {
 	httpresp.Schreibe(w, []byte("[]"))
 }
 
+// opacSuchtextMax ist die längste Eingabe, mit der die öffentliche Suche die Datenbank fragt.
+const opacSuchtextMax = 200
+
 // OPACSuche sucht im öffentlichen Katalog: GET /api/public/opac/suche?q=…, ohne Anmeldung und
 // deshalb ohne Angaben zu Ausleihen oder Lesern (DSGVO).
 //
@@ -56,7 +60,7 @@ func schreibeLeereTrefferliste(w http.ResponseWriter) {
 func (t *Tueren) OPACSuche() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		if q == "" {
+		if q == "" || utf8.RuneCountInString(q) > opacSuchtextMax {
 			schreibeLeereTrefferliste(w)
 			return
 		}
