@@ -36,7 +36,7 @@ func hashDesTokens(token string) string {
 // Der Fehler geht an den Aufrufer zurück, statt nur in einer Logzeile zu enden: Ein
 // gescheiterter Widerruf heißt, dass das Token bis zu seinem natürlichen Ablauf gültig bleibt
 // (bis zu zwölf Stunden). Wer danach „abgemeldet" meldet, meldet etwas, das nicht stattgefunden
-// hat (Frage 5 in docs/sweeps.md).
+// hat (Frage 5 in docs/invarianten.md).
 //
 // Null betroffene Zeilen sind kein Fehlschlag: Dasselbe Token ist dann schon widerrufen, das
 // Ziel ist erreicht (repository.WiderrufeToken).
