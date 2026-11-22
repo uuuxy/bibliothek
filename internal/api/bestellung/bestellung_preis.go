@@ -11,6 +11,7 @@ import (
 	"bibliothek/internal/pkg/betrag"
 	"bibliothek/internal/pkg/clientip"
 	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -24,10 +25,6 @@ import (
 type positionspreisAnfrage struct {
 	Einzelpreis *betrag.Cent `json:"einzelpreis"`
 }
-
-// hoechstpreis begrenzt den Einzelpreis so, dass Menge mal Preis in die Summe der Bestellung
-// passt (NUMERIC(10,2)).
-const hoechstpreis = betrag.Cent(9_999_999)
 
 const aktionBestellpreisGeaendert = "BESTELLPREIS_GEAENDERT"
 
@@ -47,8 +44,8 @@ func (t *Tueren) aenderePositionspreis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	preis := *req.Einzelpreis
-	if preis < 0 || preis > hoechstpreis {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Preis muss zwischen 0 und 99.999,99 € liegen", nil)
+	if preis < 0 || preis > service.HoechsterEinzelpreis {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPreisUngueltig, nil)
 		return
 	}
 

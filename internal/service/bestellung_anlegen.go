@@ -118,7 +118,12 @@ var (
 	ErrLieferantUnbekannt = errors.New("der Lieferant ist nicht mehr angelegt, bitte einen anderen wählen")
 	ErrTitelUnbekannt     = errors.New("der Titel steht nicht mehr im Katalog, bitte aus dem Warenkorb nehmen")
 	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
+	ErrPreisUngueltig     = errors.New("der Preis muss zwischen 0 und 99.999,99 € liegen")
 )
+
+// HoechsterEinzelpreis begrenzt den Einzelpreis einer Position so, dass Menge mal Preis in die
+// Summe der Bestellung passt (NUMERIC(10,2)); er gilt beim Anlegen und beim Ändern.
+const HoechsterEinzelpreis = betrag.Cent(9_999_999)
 
 // BestellpositionFehler nennt die Position des Warenkorbs, an der das Anlegen scheiterte. Die
 // Nummer zählt wie die Liste im Warenkorb, ab 1; ohne sie ließe sich der Warenkorb nicht
@@ -279,6 +284,9 @@ func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, posit
 
 	if position.Menge <= 0 || position.Menge > 200 {
 		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, position.Menge)
+	}
+	if position.Preis < 0 || position.Preis > HoechsterEinzelpreis {
+		return nil, ErrPreisUngueltig
 	}
 
 	titel, err := d.katalogAbfragen.LadeTitel(ctx, tx, position.TitelID)
