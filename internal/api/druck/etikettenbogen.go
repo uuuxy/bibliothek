@@ -22,6 +22,11 @@ type etikettenbogenAnfrage struct {
 	Etiketten     []buchetikett.Etikett `json:"items"`
 }
 
+// MaxBuchEtiketten deckelt einen Druckauftrag. Jedes Etikett kostet ein Strichcode-Bild, und die
+// Erzeugung läuft weiter, wenn die Anfrage abgelaufen ist; einige Aufträge mit 150.000 Einträgen
+// zugleich legten den Server lahm. 5000 Etiketten sind über 200 Bögen.
+const MaxBuchEtiketten = 5000
+
 // Etikettenbogen liefert die Etiketten eines Druckauftrags als Bogen im PDF. Signatur,
 // Anschaffungsjahr und Topf trägt der Server nach (buchetikett.ErgaenzeServerfelder), weil der
 // Browser nur Barcode, Titel und Autor schickt.
@@ -34,6 +39,11 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 
 		if len(req.Etiketten) == 0 {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Exemplare angegeben", nil)
+			return
+		}
+		if len(req.Etiketten) > MaxBuchEtiketten {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Höchstens %d Etiketten je Druckauftrag, gewählt sind %d",
+				MaxBuchEtiketten, len(req.Etiketten)), nil)
 			return
 		}
 
