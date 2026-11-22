@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,5 +118,20 @@ func TestOberflaeche_UnbekannterEndpunkt(t *testing.T) {
 				t.Errorf("Status %d, Meldung %q, erwartet 404 und %q", rec.Code, antwort.Fehler, want)
 			}
 		})
+	}
+}
+
+// Die Meldung geht ins Log (apierrors): Der Token der Bestellseite steht deshalb auch hier nicht.
+func TestOberflaeche_UnbekannterEndpunktNenntKeinenToken(t *testing.T) {
+	t.Chdir(t.TempDir())
+	router := NewServer(&db.Verbindung{}, nil, sse.NewBroker(), ServerKonfig{}).Routes()
+	req := httptest.NewRequest(http.MethodDelete, "/api/public/bestellung/GEHEIM123/gibt-es-nicht", nil)
+	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "probe"})
+	req.Header.Set("X-CSRF-Token", "probe")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	rumpf := rec.Body.String()
+	if rec.Code != http.StatusNotFound || strings.Contains(rumpf, "GEHEIM123") || !strings.Contains(rumpf, "/api/public/bestellung/***/gibt-es-nicht") {
+		t.Errorf("Status %d, Antwort %s, erwartet 404 mit maskiertem Token", rec.Code, rumpf)
 	}
 }

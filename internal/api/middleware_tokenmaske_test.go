@@ -8,10 +8,14 @@ import "testing"
 // die Seite selbst und ihre Aufrufe der Schnittstelle.
 func TestMaskiereToken(t *testing.T) {
 	faelle := map[string]string{
-		"/api/public/bestellung/GEHEIM123":                                   "/api/public/bestellung/***",
-		"/api/public/bestellung/GEHEIM123/bestaetigen":                       "/api/public/bestellung/***/bestaetigen",
-		"/api/public/bestellung/GEHEIM123/etiketten/klein":                   "/api/public/bestellung/***/etiketten/klein",
-		"/bestellung/GEHEIM123":                                              "/bestellung/***",
+		"/api/public/bestellung/GEHEIM123":                 "/api/public/bestellung/***",
+		"/api/public/bestellung/GEHEIM123/bestaetigen":     "/api/public/bestellung/***/bestaetigen",
+		"/api/public/bestellung/GEHEIM123/etiketten/klein": "/api/public/bestellung/***/etiketten/klein",
+		"/bestellung/GEHEIM123":                            "/bestellung/***",
+		// Mit doppeltem Schrägstrich führt der Router zur selben Seite.
+		"//api/public/bestellung/GEHEIM123":                                  "/api/public/bestellung/***",
+		"/api//public/bestellung/GEHEIM123/bestaetigen":                      "/api/public/bestellung/***/bestaetigen",
+		"//bestellung/GEHEIM123/":                                            "/bestellung/***",
 		"/api/bestellungen/11111111-1111-1111-1111-111111111111/bestaetigen": "/api/bestellungen/11111111-1111-1111-1111-111111111111/bestaetigen",
 		"/api/public/opac/suche":                                             "/api/public/opac/suche",
 		"/health":                                                            "/health",

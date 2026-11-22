@@ -228,8 +228,10 @@ Zuschnitt begrenzt den Schaden:
   gleich aus, sonst verriete die Antwort, dass ein geratener Token einmal echt war.
 - **Nicht in Logfiles:** Der Token steht im Pfad, also maskiert `maskiereToken`
   (`internal/api/middleware.go`) ihn in **allen drei** Logzeilen — Request-Log, 500er-Stacktrace
-  und Panic-Recovery. Ohne das enthielte ein weitergereichtes Logfile funktionierende Links
-  und entwertete die Hash-Speicherung.
+  und Panic-Recovery — und in der Meldung „Unbekannter Endpunkt“, die mit der Fehlerantwort ins
+  Log geht. Geprüft wird der bereinigte Pfad, damit ein doppelter Schrägstrich die Maske nicht
+  umgeht. Ohne das enthielte ein weitergereichtes Logfile funktionierende Links und entwertete
+  die Hash-Speicherung.
 - **CSRF gilt weiter:** Die Seite nutzt den normalen Double-Submit-Weg; ein POST ohne
   `X-CSRF-Token` wird mit 403 abgewiesen (nachgewiesen am laufenden Server).
 

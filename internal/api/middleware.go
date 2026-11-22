@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path"
 	"runtime/debug"
 	"slices"
 	"strings"
@@ -346,11 +347,13 @@ var tokenPfade = []string{"/api/public/bestellung/", "/bestellung/"}
 // Datenbank. Ein Token darin wäre ein funktionierender Link — genau das, was die
 // Hash-Speicherung in der Datenbank verhindern soll.
 func maskiereToken(pfad string) string {
+	// Der Router führt „//bestellung/…" zur selben Seite; geprüft wird deshalb der bereinigte Pfad.
+	sauber := path.Clean("/" + pfad)
 	for _, praefix := range tokenPfade {
-		if !strings.HasPrefix(pfad, praefix) {
+		if !strings.HasPrefix(sauber, praefix) {
 			continue
 		}
-		rest := strings.TrimPrefix(pfad, praefix)
+		rest := strings.TrimPrefix(sauber, praefix)
 		if i := strings.Index(rest, "/"); i >= 0 {
 			return praefix + "***" + rest[i:]
 		}

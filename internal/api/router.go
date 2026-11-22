@@ -369,7 +369,7 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 		// Die App-Shell bleibt für alles andere richtig: /schuelerdatei, /bestellungen und jede
 		// andere Route der Oberfläche gibt es nur im Browser.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Unbekannter Endpunkt: %s %s", r.Method, r.URL.Path), nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Unbekannter Endpunkt: %s %s", r.Method, maskiereToken(r.URL.Path)), nil)
 			return
 		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
