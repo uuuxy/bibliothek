@@ -96,7 +96,7 @@ describe('Ausweis-Design laden', () => {
 
 // Scheiterte das Speichern, stand „Speichern fehlgeschlagen", ohne Grund und ohne zweiten Versuch.
 // Der Stand ging erst mit der nächsten Änderung hinaus; änderte nach dem Netzausfall niemand mehr
-// etwas, nie (OFFEN.md 5.106, in Chromium, Firefox und WebKit).
+// etwas, nie (in Chromium, Firefox und WebKit).
 describe('Ausweis-Design speichern', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();

@@ -155,7 +155,7 @@ describe('offlineSync.starteAbgleich', () => {
 	});
 
 	// Warten hilft nicht bei einer Antwort, die sich von selbst nicht ändert
-	// (Rasterdurchgang 16.09.2026, OFFEN.md 5.19): 403, weil der gerade angemeldete Mensch
+	// (Rasterdurchgang 16.09.2026): 403, weil der gerade angemeldete Mensch
 	// nicht buchen darf. Bis hierher endete die Runde genauso still wie bei 502 und lief
 	// jede Minute erneut ins Leere; im Band stand weiter nur „noch nicht im System".
 	it('merkt sich eine Ablehnung, bei der Warten nicht hilft (403)', async () => {
@@ -276,8 +276,8 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	});
 });
 
-// Eine nachgesendete Ausleihe trägt ihre Person als active_leser_id mit (OFFEN.md 2.2,
-// Commit 4). Seit Migration 125 ist das EIN Feld — vorher schickte der Payload-Bauer für eine
+// Eine nachgesendete Ausleihe trägt ihre Person als active_leser_id mit.
+// Seit Migration 125 ist das EIN Feld — vorher schickte der Payload-Bauer für eine
 // Lehrkraft gar nichts, und der Server buchte aus der Ausleihe still eine Rückgabe.
 describe('offlineSync: die Ausleihe trägt ihren Leser mit', () => {
 	beforeEach(async () => {
@@ -323,7 +323,7 @@ describe('offlineSync: die Ausleihe trägt ihren Leser mit', () => {
 	});
 });
 
-// Erledigt ist nur, was der Server WIE GESCANNT gebucht hat (OFFEN.md 2.2, Commit 6). Bis
+// Erledigt ist nur, was der Server WIE GESCANNT gebucht hat. Bis
 // zum 15.09.2026 galt als erledigt: success, jeder 4xx außer 429 und „Server nannte den Index
 // nicht"; der Antworttyp wurde nie mit der Absicht verglichen, und ein liegengebliebener
 // Eintrag (5xx, 429) wurde ohne Pause sofort erneut gesendet.

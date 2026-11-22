@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 153: Sonderkonten sind eine Art des Lesers (docs/OFFEN.md 5.18)
+-- Migration 153: Sonderkonten sind eine Art des Lesers
 -- =============================================================================
 -- Entschieden am 30.09.2026: Praktikum, Sekretariat, U-plus und Fachbereich stehen als Art
 -- neben Schüler, Lehrkraft und LiV. Littera führt diese Konten als eigene Lesergruppen; die

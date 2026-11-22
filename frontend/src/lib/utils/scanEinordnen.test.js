@@ -45,7 +45,7 @@ describe('Scan ohne Netz einordnen', () => {
 	});
 
 	it('nennt ein Geraet beim Namen statt es still zu verwerfen', () => {
-		// Geraete offline stehen nicht im Umfang (OFFEN.md 2.4) — sie haengen an einer
+		// Geraete offline stehen nicht im Umfang — sie haengen an einer
 		// Checkliste, die es ohne Netz nicht gibt. Der Bediener soll das erfahren.
 		expect(ein('G-17')).toEqual({ art: 'geraet', nummer: 'G-17' });
 	});
@@ -137,7 +137,7 @@ describe('Handscanner mit amerikanischer Tastatur an einem deutschen Rechner', (
 	});
 });
 
-// Ein Etikett von VOR dem 17.09.2026 (OFFEN.md 9.2). Damals druckte die Anwendung Code 39
+// Ein Etikett von VOR dem 17.09.2026. Damals druckte die Anwendung Code 39
 // MIT Prüfzeichen; das Lesegerät gibt es als Teil der Nummer zurück. Online löst der
 // Server das auf — ohne Netz muss die Theke dasselbe können, sonst gälte ein Buch offline
 // als unklar, das online gebucht wird.

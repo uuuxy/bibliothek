@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Ein Buch aus der Maske „Titel anlegen" ist danach zu finden, und eine vergebene ISBN führt zu
-// ihrem Titel. Ohne Exemplar zeigt keine Suche einen Titel (docs/OFFEN.md 9.4): Mit der
+// ihrem Titel. Ohne Exemplar zeigt keine Suche einen Titel: Mit der
 // Vorgabe Bestand 0 hieß das Speichern „erfolgreich", das Buch stand nirgends, und der zweite
 // Versuch endete mit „existiert bereits". Gefragt wird, sobald die ISBN im Feld steht — wie in
 // Littera bei der Eingabe, nicht erst beim Speichern.

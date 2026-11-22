@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Nach dem Zusammenführen zweier Datensätze hält die Theke ihren aktiven Schüler auf das
-// Ziel um (OFFEN.md 3.2, 15.09.2026). Bis dahin blieb die gelöschte Kennung stehen: Die
+// Ziel um. Bis dahin blieb die gelöschte Kennung stehen: Die
 // Akte zeigte schon das Ziel, aber jede weitere Buchung — und jeder Eintrag in der
 // Offline-Warteschlange (enqueueOfflineAction mit aktiverLeser.id) — lief auf einen
 // Datensatz, den es nicht mehr gab.

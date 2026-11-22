@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 // Ein Doppelklick auf „DSGVO-Auskunft" erteilte die Auskunft zweimal: zwei Tabs und zwei
-// Einträge im Protokoll, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// Einträge im Protokoll, in Chromium, Firefox und WebKit.
 describe('DSGVO-Auskunft: eine Auskunft je Klick', () => {
 	it('fragt bei einem zweiten Klick vor der Antwort nicht noch einmal an', async () => {
 		/** @type {(antwort: any) => void} */

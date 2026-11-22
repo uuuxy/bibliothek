@@ -54,7 +54,7 @@ describe('BestellSuche: ein DNB-Treffer bringt seinen Schlagwort-Vorschlag ins F
 		expect(apiPost).toHaveBeenCalledWith('/api/buecher/aus-isbn', { isbn: '9783751200530' });
 		const angebot = await screen.findByRole('button', { name: '„Krieg“ übernehmen' });
 		await vi.waitFor(() => expect(/** @type {HTMLButtonElement} */ (angebot).disabled).toBe(false));
-		// Die Normdatei-Wörter, die die Liste noch nicht kennt (docs/OFFEN.md 4.25), in eigener Zeile.
+		// Die Normdatei-Wörter, die die Liste noch nicht kennt, in eigener Zeile.
 		const neu = screen.getByRole('group', { name: 'Neue Schlagworte aus der DNB' });
 		expect(neu.textContent).toContain('Judo');
 	});

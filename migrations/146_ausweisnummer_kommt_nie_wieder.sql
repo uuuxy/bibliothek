@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 146: Eine Ausweisnummer kommt nie wieder — auch nicht nach dem Löschen
 -- =============================================================================
--- docs/OFFEN.md 5.23, freigegeben am 24.09.2026. ausweis_nummer_start() (Migration 136)
+-- Freigegeben am 24.09.2026. ausweis_nummer_start() (Migration 136)
 -- rechnete „höchste A-Nummer in leser + 1". Verschwand die höchste Nummer aus der Tabelle,
 -- gab der Generator sie an die nächste Person, und eine noch vorhandene Karte buchte an der
 -- Theke auf sie. Verschwinden kann eine Nummer auf fünf Wegen, alle am Verhalten

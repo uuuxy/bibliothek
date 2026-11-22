@@ -148,7 +148,7 @@ describe('BuchExemplareListe', () => {
 
 // Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE: Nach „Exemplar erfolgreich
 // gelöscht" stand „Exemplar nicht gefunden oder schon ausgebucht", in Chromium, Firefox und
-// WebKit (OFFEN.md 5.106).
+// WebKit.
 describe('BuchExemplareListe: Exemplar löschen', () => {
 	it('schickt kein zweites DELETE, solange das erste läuft', async () => {
 		/** @type {(antwort: any) => void} */

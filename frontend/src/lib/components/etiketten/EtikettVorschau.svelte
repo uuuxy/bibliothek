@@ -11,7 +11,7 @@
 	import { anzahlText } from '../../utils/format.js';
 
 	// Die Vorschau ist das Druck-PDF des Servers, wie bei Chrome: Eine eigene Zeichnung im Browser
-	// lief auseinander, ihr fehlten Schulname, Jahr und Vermerk (docs/OFFEN.md 5.114). Gezeigt wird
+	// lief auseinander, ihr fehlten Schulname, Jahr und Vermerk. Gezeigt wird
 	// die erste Seite in zwei Dritteln von A4, in einer schmaleren Spalte verkleinert; alle Bogen
 	// zeigt das PDF, das „A4-Bogen drucken" öffnet.
 	const HOECHSTBREITE_PX = (140 * 96) / 25.4;

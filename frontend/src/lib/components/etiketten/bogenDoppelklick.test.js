@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 // Ein Doppelklick auf „A4-Bogen drucken" schickte den Bogen zweimal und öffnete ihn in zwei Tabs,
-// in Chromium, Firefox und WebKit (OFFEN.md 5.106). Gedruckt worden wären dieselben Etiketten
+// in Chromium, Firefox und WebKit. Gedruckt worden wären dieselben Etiketten
 // zweimal.
 describe('Etikettendruck: ein Bogen je Klick', () => {
 	it('schickt den Bogen bei einem zweiten Klick vor der Antwort nicht noch einmal', async () => {

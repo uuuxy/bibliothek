@@ -97,7 +97,7 @@ describe('SchlagwortDnbVorschlag', () => {
 
 	// Die Zeile sagte bei jedem Fehler „Die DNB ist nicht erreichbar", auch bei „Keine gültige ISBN"
 	// und ohne Netz: Wer eine falsche Prüfziffer eingetippt hatte, versuchte es später vergeblich
-	// noch einmal (OFFEN.md 5.106).
+	// noch einmal.
 	it('nennt den Grund des Servers und ohne Netz den Netzfehler', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(400, { error: 'Keine gültige ISBN' }));
 		const { screen } = knopf();

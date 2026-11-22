@@ -343,7 +343,7 @@ describe('authStore: Abmeldung, die den Server nicht erreicht', () => {
 
 	// 503 heißt: Das Löschcookie kam an, der Widerruf am Server nicht (internal/api/abmeldung.go).
 	// Dieser Browser ist abgemeldet, die Sitzung selbst gilt bis zu ihrem Ablauf weiter.
-	// Entschieden am 13.09.2026 (OFFEN.md 3.4): abmelden wie bisher, dazu ein sichtbarer Hinweis.
+	// Entschieden am 13.09.2026: abmelden wie bisher, dazu ein sichtbarer Hinweis.
 	it('503: abgemeldet, aber mit Hinweis, dass die Sperre am Server nicht bestätigt ist', async () => {
 		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 }));

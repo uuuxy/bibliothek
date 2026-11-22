@@ -315,7 +315,7 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 // Ging die Antwort auf eine Verlängerung verloren, verlängerte der zweite Auftrag noch einmal: Aus
 // 21 Tagen wurden 42, und die Leserakte meldete nur „Verlängert bis …". Nennt die Oberfläche die
 // Frist, die sie zeigte, und steht am Server schon eine andere, antwortet die Tür mit 409 und der
-// jetzigen Frist (OFFEN.md 5.106).
+// jetzigen Frist.
 func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinmal(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

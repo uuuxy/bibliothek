@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 145: Ein aktives Konto ist nie ohne Ausweisnummer — Leeren zieht eine neue
 -- =============================================================================
--- Entschieden am 24.09.2026 (docs/OFFEN.md 5.16). Migration 136 vergibt die Nummer beim
+-- Entschieden am 24.09.2026. Migration 136 vergibt die Nummer beim
 -- Anlegen und bei der Freischaltung eines Kontos; eine Nummer, die die Verwaltung danach
 -- leert, blieb leer (entschieden am 16.09.2026, als der Hinweis am Feld noch „Leer lassen"
 -- sagte). Der Ausweisdruck lieferte dann eine leere Zeile. Künftig zieht Leeren eine neue

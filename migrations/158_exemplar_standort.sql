@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 158: Standort am Exemplar (docs/OFFEN.md 5.53, Schritt 1)
+-- Migration 158: Standort am Exemplar
 -- =============================================================================
 -- Wo ein Buch steht, wenn es nicht an seinem Platz nach der Signatur steht, führt Littera je
 -- Exemplar (Exemplar.Sonderstandort: „Videoschrank", „Lehrerschrank"). Zusätzlich hat die

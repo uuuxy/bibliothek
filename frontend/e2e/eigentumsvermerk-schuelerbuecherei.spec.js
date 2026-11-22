@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie } from './helpers.js';
 
-// Die zweite Einstellung „Eigentumsvermerk Schülerbücherei" (OFFEN.md 4.21, entschieden am
+// Die zweite Einstellung „Eigentumsvermerk Schülerbücherei" (entschieden am
 // 21.09.2026) — der Weg vom Feld bis in die Tabelle. Was der Wert auf dem Etikett bewirkt,
 // prüfen die Go-Tests am fertigen PDF (internal/api/druck/etiketten_topf_pg_test.go); hier steht, was nur
 // der Browser zeigen kann: Das Feld ist da, es speichert unter SEINEM Schlüssel, und es

@@ -10,7 +10,7 @@ import (
 // dadurch nichts, weil der Lauf eine Datei am vollen Namen erkennt, aber die Nummern versprechen
 // eine Ordnung, die sie nicht halten. Die vier bleiben, wie sie sind: Umnummerieren wäre
 // gefährlich, weil die Einträge in schema_migrations am Dateinamen hängen. Eine neue doppelte
-// Nummer weist dieser Test ab (bewertung/datenbank-pruefbericht.md, Befund F7).
+// Nummer weist dieser Test ab.
 func TestKeineNeuenDoppeltenMigrationsnummern(t *testing.T) {
 	eingefroren := map[string]bool{"003": true, "008": true, "021": true, "022": true}
 

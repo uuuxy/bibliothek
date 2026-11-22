@@ -112,7 +112,7 @@ describe('Sweep: verschluckte Fehlantworten', () => {
 			}`;
 		expect(findeVerschluckteFehlantworten('probe.js', neutralerErsatz)).toHaveLength(1);
 
-		// Dieselbe Form 2 in der UND-Kette und in der Verneinung (OFFEN.md 5.12, 22.09.2026):
+		// Dieselbe Form 2 in der UND-Kette und in der Verneinung:
 		// Bis dahin verlangte der Dreisatz GENAU `res.ok` als Bedingung — dieselbe Lücke,
 		// die Form 1 am 12.09.2026 hatte.
 		const undKetteDreisatz = `

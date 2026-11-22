@@ -103,7 +103,7 @@ describe('Lieferanten', () => {
 });
 
 // Ein zweiter Klick auf „Löschen" vor der Antwort schickte ein zweites DELETE, und nach dem
-// Löschen stand „Lieferant nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// Löschen stand „Lieferant nicht gefunden", in Chromium, Firefox und WebKit.
 describe('Lieferanten: Löschen', () => {
 	it('schickt einen zweiten Klick nicht, solange das Löschen läuft', async () => {
 		/** @type {(wert?: unknown) => void} */

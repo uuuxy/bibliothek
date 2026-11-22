@@ -6,7 +6,7 @@
 -- gebucht. Gesetzt wurde der Stempel von den Schreibern — und die Auswahl stand nirgends:
 -- Aussondern, Bestandskorrektur, Schadensmeldung und Soft-Delete stempelten, „Verloren"
 -- und Reaktivieren im Status-Editor, der Inventur-Abschluss und repository/damage.go nicht
--- (OFFEN.md 5.15, Durchgang vom 15.09.2026). Der Test dazu prüfte eine feste Liste; ein
+-- (Durchgang vom 15.09.2026). Der Test dazu prüfte eine feste Liste; ein
 -- neuer Schreiber ohne Stempel bliebe grün.
 --
 -- Jetzt stempelt die Datenbank, sobald ist_ausgesondert oder ist_ausleihbar kippt und der

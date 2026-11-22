@@ -172,8 +172,8 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "create_reservations", false},
 	// Die Vormerkungen kann der Admin dem Helfer in der Matrix öffnen; ab Werk sind sie zu. Die
 	// Warteliste nennt Name und Klasse, dieselben Felder, die der Helfer beim Scan des Ausweises
-	// sieht, aber verknüpft mit dem, was jemand lesen will
-	// (bewertung/sicherheitsbefund-vormerkungen.md). Das Paar steht in RechteOptional; die
+	// sieht, aber verknüpft mit dem, was jemand lesen will.
+	// Das Paar steht in RechteOptional; die
 	// Selbstprüfung meldet den Haken nicht als Abweichung.
 	{"HELFER", "manage_vormerkungen", false},
 	{"HELFER", "view_graduates", false},

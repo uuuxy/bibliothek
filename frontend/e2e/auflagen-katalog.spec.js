@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Die Suche zeigt ein Buch einmal (docs/OFFEN.md 4.18, Stufe 6; entschieden am 17.09.2026:
+// Die Suche zeigt ein Buch einmal (entschieden am 17.09.2026:
 // „einen Treffer mit der Gesamtzahl und darunter die Aufschlüsselung je Auflage"). Zwei
 // Auflagen desselben Buchs, die 3. mit zwei Exemplaren, die 4. mit einem. Nach dem Titel
 // getroffen steht die neueste oben; nach der ISBN der alten Auflage steht diese oben — gezählt

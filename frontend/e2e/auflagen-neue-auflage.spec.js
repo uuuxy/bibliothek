@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix, seedFehlbestand } from './helpers.js';
 
-// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): Die alte Auflage steht im
+// „Neue Auflage bestellen": Die alte Auflage steht im
 // Bestellbedarf, der Besteller gibt im Menü der Zeile die ISBN der neuen ein, bestätigt den
 // Vorschlag — und danach steht das Buch als eine Zeile mit beiden Auflagen da, die neue liegt
 // im Warenkorb (Topf Land) und ist ein Lernmittel. Die neue Auflage liegt schon im Katalog,

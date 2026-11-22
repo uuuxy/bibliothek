@@ -105,8 +105,7 @@ describe('Reservierungs-Listen des Portals', () => {
 });
 
 // Ohne Antwort ist offen, ob die Reservierung angekommen ist: Die Warteschlange zeigt es, und
-// ein zweites Senden trägt denselben Schlüssel, der Server legt nichts doppelt an
-// (OFFEN.md 5.106).
+// ein zweites Senden trägt denselben Schlüssel, der Server legt nichts doppelt an.
 describe('Klassensatz reservieren ohne Antwort', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();

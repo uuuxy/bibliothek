@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 167: Lernmittel mit LMF-Nummer bekommen eine kurze Nummer (OFFEN 5.94, Stufe 2)
+-- Migration 167: Lernmittel mit LMF-Nummer bekommen eine kurze Nummer
 -- =============================================================================
 -- Jedes Exemplar trägt eine kurze Nummer wie in Littera, auch ein Lernmittel, das mit seiner
 -- LMF-Nummer (LMF-, ISBN-13, laufende Nummer, etwa LMF-9783060158423-001) übernommen wurde. Die

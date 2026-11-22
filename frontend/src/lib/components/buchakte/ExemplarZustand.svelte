@@ -1,7 +1,6 @@
 <!-- @component ExemplarZustand — was die Exemplar-Karte über den Zustand sagt:
      Menschentext (`zustand_notiz`), der erfasste Wertverlust in Prozent
-     (`zustand_abwertung_prozent`, Migration 127) und der heutige Ersatzwert
-     (OFFEN.md 9.8, Stufe 2b).
+     (`zustand_abwertung_prozent`, Migration 127) und der heutige Ersatzwert.
 
      Eigenes Bauteil, weil die Karte an der 200-Zeilen-Ratsche steht: Die Zustandszeile
      wächst mit jeder neuen Angabe, die Karte darf es nicht.

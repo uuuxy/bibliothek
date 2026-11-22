@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 161: Gescheiterter Versand der Bestellmail (docs/OFFEN.md 5.5)
+-- Migration 161: Gescheiterter Versand der Bestellmail
 -- =============================================================================
 -- Scheitert die Mail an den Lieferanten, ist die Bestellung trotzdem gespeichert. Bisher
 -- stand der gescheiterte Versand nirgends an ihr: Die Meldung blieb fünf Sekunden auf dem

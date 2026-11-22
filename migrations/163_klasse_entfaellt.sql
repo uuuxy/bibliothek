@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 163: Die „Klasse" am Titel entfällt (docs/OFFEN.md 5.5, Stufe 3)
+-- Migration 163: Die „Klasse" am Titel entfällt
 -- =============================================================================
 -- buecher_titel trug zwei Angaben zum Jahrgang: grade_level („Klasse", eine Zahl) und die Spanne
 -- jahrgang_von bis jahrgang_bis. Mit der Klasse rechnete kein Ablauf: Inventur nach Klasse,

@@ -4,7 +4,7 @@
 -- Littera-Übernahme), ein Konto bekam keine: konto_hat_leserzeile (Migration 125) legte die
 -- Leserzeile eines Kollegen ohne Ausweis an, und der Ausweisdruck lieferte dann ein kaputtes
 -- Bild und eine leere Zeile auf der Karte. Entschieden am 16.09.2026, freigegeben am
--- 22.09.2026 (docs/OFFEN.md 5.16). Gemessen am Testserver am 21.09.2026: 8 von 41 Lesern
+-- 22.09.2026. Gemessen am Testserver am 21.09.2026: 8 von 41 Lesern
 -- ohne Nummer, alle 8 Lehrkräfte.
 --
 -- Die Nummer vergab bisher repository.SequenceRepository.GetNextSequence in Go (höchste
@@ -51,7 +51,7 @@ $$;
 -- Verwaltung oder bei der Freischaltung einer Zugangsanfrage. Eine offene Anfrage bekommt
 -- keine: Eine vergebene Nummer wird nie recycelt, und wer eine hat, steht in der Leserdatei
 -- (repository.loescheUnberuehrteLeserzeile). Die Zeile einer abgelehnten Anfrage bliebe
--- sonst als Waise stehen — der Fund aus docs/OFFEN.md 5.18.
+-- sonst als Waise stehen.
 --
 -- Aufgeschoben bis zum Commit (CONSTRAINT TRIGGER … INITIALLY DEFERRED), weil die
 -- Freischaltung in derselben Transaktion danach die Leserzeile schreibt:

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
-// Gemischte Auflagen an der Theke (docs/OFFEN.md 4.18, Stufe 5): Ein Kind der 7B hat die
+// Gemischte Auflagen an der Theke: Ein Kind der 7B hat die
 // 3. Auflage, ein zweites bekommt die 4. Auflage desselben Buchs. Die Ausleihe geht durch, und
 // über dem Konto steht die Zeile, welche Auflage die Klasse schon hat — entschieden am
 // 25.09.2026: wie die Fremdrückgabe, kein Dialog.

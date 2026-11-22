@@ -93,7 +93,7 @@ test('Lieferant öffnet den Link ohne Anmeldung, druckt Etiketten und bestätigt
 	await expect(page.getByRole('button', { name: 'Bestellung jetzt bestätigen' })).toHaveCount(0);
 });
 
-// Der Händler bekommt am selben Tag zwei gleich aussehende Links (OFFEN.md 4.11, entschieden
+// Der Händler bekommt am selben Tag zwei gleich aussehende Links (entschieden
 // am 21.09.2026): Die Seite nennt den Topf, und zur Bestellung für die Schülerbücherei gibt es
 // das große Lernmittel-Etikett „Eigentum des Landes" nicht — weder als Knopf noch an der Tür.
 const GROSSER_KNOPF = /Große Lernmittel-Etiketten/;

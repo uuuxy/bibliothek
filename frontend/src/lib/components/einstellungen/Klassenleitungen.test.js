@@ -55,7 +55,7 @@ const ZEILE = { klasse: '05F', lehrer_email: 'lehrkraft@schule.example' };
 
 // Ein zweiter Klick vor der Antwort schickte ein zweites DELETE: Nach „Zuordnung für 05F
 // gelöscht." stand „Kein Eintrag für diese Klasse". Ging die Antwort verloren, blieb die gelöschte
-// Zeile stehen. Beides in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// Zeile stehen. Beides in Chromium, Firefox und WebKit.
 describe('Klassenleitungen: Löschen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

@@ -221,7 +221,7 @@ describe('TrefferPruefung: Schlagworte', () => {
 		});
 	});
 
-	// Normdatei-Wörter, die die Liste noch nicht kennt (docs/OFFEN.md 4.25, entschieden am
+	// Normdatei-Wörter, die die Liste noch nicht kennt (entschieden am
 	// 30.09.2026): eine eigene Zeile „Neue Schlagworte aus der DNB", nie vorbelegt. Erst ein
 	// Klick übernimmt das Wort; gespeichert wird es wie jedes andere.
 	it('bietet neue Normdatei-Wörter in eigener Zeile an und schreibt nur, was jemand übernimmt', async () => {
@@ -352,7 +352,7 @@ describe('TrefferPruefung: Schlagworte', () => {
 });
 
 // Bei langsamer Antwort auf Signatur und Kennzeichen legte ein Doppelklick den Titel zweimal in
-// den Warenkorb, die Menge stand bei 2, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// den Warenkorb, die Menge stand bei 2, in Chromium, Firefox und WebKit.
 describe('TrefferPruefung: ein zweiter Klick', () => {
 	beforeEach(() => vi.clearAllMocks());
 

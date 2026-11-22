@@ -1,5 +1,5 @@
-<!-- @component AuflageZuordnenDialog — eine andere Auflage desselben Buchs zuordnen
-     (docs/OFFEN.md 4.18, Stufe 2). Aufbau wie SchuelerZusammenfuehrenDialog: suchen, wählen,
+<!-- @component AuflageZuordnenDialog — eine andere Auflage desselben Buchs zuordnen.
+     Aufbau wie SchuelerZusammenfuehrenDialog: suchen, wählen,
      bestätigen. Material 3, Dialogs: „Dialogs should contain a maximum of two actions" — eine
      bestätigende und eine abbrechende; „Disable confirming actions until a choice is made.
      Dismissive actions are never disabled." Die Regeln stehen im Server

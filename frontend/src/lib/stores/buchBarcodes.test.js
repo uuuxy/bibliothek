@@ -21,7 +21,7 @@ function unveraendert() {
 	return /** @type {any} */ ({ status: 304, ok: false });
 }
 
-// Die Barcode-Liste altert unbemerkt (OFFEN.md 5.19, entschieden am 16.09.2026:
+// Die Barcode-Liste altert unbemerkt (entschieden am 16.09.2026:
 // stündlich nachfassen).
 //
 // Geholt wurde die Liste beim Anmelden — und ein Kiosk-Tab steht zwölf Stunden offen.

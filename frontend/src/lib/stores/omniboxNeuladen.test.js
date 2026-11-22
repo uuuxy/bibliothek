@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 
 // Die Reihe der Theke liegt nur im Speicher (omniboxReihe.svelte.js). Antwortet der Server
 // nicht, wartet ein Scan bis zu 10 s, bevor er ohne Netz abgelegt wird; ein Neuladen in dieser
-// Zeit verwürfe ihn und die Scans dahinter ohne Meldung (docs/OFFEN.md 5.83). Der Browser fragt
+// Zeit verwürfe ihn und die Scans dahinter ohne Meldung. Der Browser fragt
 // deshalb vorher. Eigene Datei, damit kein Store eines anderen Tests mitfragt.
 
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));

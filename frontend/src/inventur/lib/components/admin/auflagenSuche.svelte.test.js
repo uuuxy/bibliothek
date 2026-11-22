@@ -8,7 +8,7 @@ vi.mock('../../../../lib/apiFetch.js', () => ({
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { erzeugeAuflagenSuche, kandidaten, AUFLAGEN_TREFFER_MAX } from './auflagenSuche.svelte.js';
 
-// Die Suche des Dialogs „Andere Auflage zuordnen" (docs/OFFEN.md 4.18, Stufe 2). Sie fragt
+// Die Suche des Dialogs „Andere Auflage zuordnen". Sie fragt
 // die Titel-Verwaltung zweimal — mit und ohne Exemplare —, weil eine alte Auflage oft keins
 // mehr hat. Angeboten wird nur, was der Server zusammenfasst: Lernmittel, die noch nicht zu
 // diesem Buch gehören.

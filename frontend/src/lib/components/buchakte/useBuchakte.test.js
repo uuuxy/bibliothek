@@ -145,7 +145,7 @@ describe('useBuchakte.ladeAlles', () => {
 		const akte = useBuchakte();
 		await akte.ladeAlles('A');
 
-		// Mit dem Grund des Servers (OFFEN.md 5.106); ohne Rumpf „Fehler <Status>".
+		// Mit dem Grund des Servers; ohne Rumpf „Fehler <Status>".
 		expect(akte.fehlendeListen).toEqual([
 			{ name: 'Ausleiher', grund: 'Datenbank nicht erreichbar' },
 			{ name: 'Historie', grund: 'Fehler 500' }

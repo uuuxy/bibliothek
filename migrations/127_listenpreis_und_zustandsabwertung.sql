@@ -1,7 +1,7 @@
 -- Migration 127: Der Listenpreis am Titel und die Zustands-Abwertung am Exemplar.
 --
 -- Beides verlangt die Anforderungsliste „Mahnverfahren" des Medienzentrums, bestätigt in
--- der Sichtung vom 16.09.2026 (docs/OFFEN.md 9.8):
+-- der Sichtung vom 16.09.2026:
 --
 --   Nr. 2  „Bei der Katalogisierung und Rückgabe von Büchern sollen Beschädigungen
 --          dokumentiert und mit einem prozentualen Abwertungswert versehen werden können

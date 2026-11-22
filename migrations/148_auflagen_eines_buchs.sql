@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 148: Auflagen eines Schulbuchs zusammenfassen (docs/OFFEN.md 4.18)
+-- Migration 148: Auflagen eines Schulbuchs zusammenfassen
 -- =============================================================================
 -- Eine neue Auflage ist ein eigener Titel mit eigener ISBN — richtig so, sie hat andere
 -- Seitenzahlen, und jedes Exemplar bleibt an seiner Auflage. Gezählt wird aber am Buch:

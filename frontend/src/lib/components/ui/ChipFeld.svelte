@@ -43,7 +43,7 @@
 	 *   eingetragen. Was schon gewählt ist, steht nicht mehr darunter.
 	 * @prop {string} [angeboteEtikett] - Name dieser Zeile, sichtbar und für Screenreader.
 	 * @prop {string[]} [angeboteNeu] - Eine zweite Zeile darunter, etwa Normdatei-Wörter, die die
-	 *   eigene Liste noch nicht kennt (docs/OFFEN.md 4.25); ihr Etikett sagt „neu".
+	 *   eigene Liste noch nicht kennt; ihr Etikett sagt „neu".
 	 * @prop {string} [angeboteNeuEtikett] - Name der zweiten Zeile.
 	 */
 	import Icon from './Icon.svelte';

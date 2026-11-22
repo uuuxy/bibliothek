@@ -131,7 +131,7 @@ describe('Papierkorb', () => {
 	});
 
 	// Ein Doppelklick schickte zwei Anfragen; die zweite meldete „Schüler nicht im Papierkorb
-	// gefunden", obwohl die erste den Leser zurückgeholt hatte (OFFEN.md 5.106).
+	// gefunden", obwohl die erste den Leser zurückgeholt hatte.
 	it('schickt bei einem zweiten Klick vor der Antwort keine zweite Anfrage', async () => {
 		/** @type {(antwort: any) => void} */
 		let liefere = () => {};

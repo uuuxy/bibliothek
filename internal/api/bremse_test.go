@@ -150,8 +150,7 @@ func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testi
 }
 
 // Wer selbst ein Konto hat, leert den Zähler der Adresse nicht mit einer eigenen Anmeldung: Sonst
-// riete er knapp unter der Grenze die Passwörter anderer, meldete sich an und riete weiter
-// (OFFEN 5.97).
+// riete er knapp unter der Grenze die Passwörter anderer, meldete sich an und riete weiter.
 func TestAnmeldeBremse_ErfolgLeertDenZaehlerNicht(t *testing.T) {
 	var b anmeldeBremse
 

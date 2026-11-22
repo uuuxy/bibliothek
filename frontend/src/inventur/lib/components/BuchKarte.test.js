@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import BuchKarte from './BuchKarte.svelte';
 
-// Zwei Kommentare widersprachen sich (OFFEN.md 5.9): BuchKarte.svelte sagte, der Stift
+// Zwei Kommentare widersprachen sich: BuchKarte.svelte sagte, der Stift
 // öffne trotz stopPropagation auch die Akte, weil der Flächen-Handler „als direkter
 // Listener vor Sveltes Delegation feuert"; e2e/cover-aendern.spec.js sagte, der Stift
 // öffne die Titel-Verwaltung, nicht die Akte. Gemessen am gebauten Bauteil: Welche der
@@ -44,7 +44,7 @@ describe('BuchKarte — wohin die Klicks gehen', () => {
 	});
 });
 
-// Ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6): Die Kachel zählt die Summe
+// Ein Buch in mehreren Auflagen: Die Kachel zählt die Summe
 // (book.buch, aus buecherJeBuch) und sagt darunter, woraus sie besteht.
 describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 	it('zeigt die Summe und die Aufschlüsselung', () => {

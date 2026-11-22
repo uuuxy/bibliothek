@@ -30,7 +30,7 @@ export function fensterAusAntwort(antwort, treffer) {
 		// Ein eben angelegter Titel ist noch kein Lernmittel — TrefferPruefung fragt nach.
 		ist_lernmittel: Boolean(antwort.ist_lernmittel),
 		// Schlagworte, die der DNB-Satz nennt — aus der Liste und neu; nur angeboten,
-		// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20, 4.25).
+		// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20).
 		schlagwort_vorschlaege: antwort.schlagwort_vorschlaege ?? [],
 		schlagwort_vorschlaege_neu: antwort.schlagwort_vorschlaege_neu ?? [],
 		dnb_vorschlag_da: antwort.exists === false

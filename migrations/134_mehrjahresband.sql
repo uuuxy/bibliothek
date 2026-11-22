@@ -7,7 +7,7 @@
 -- Buch gebraucht wird. Zwei Felder für eine Zahl laufen auseinander, und der
 -- Littera-Import schreibt nur die Spanne. Deshalb: Die Zahl kommt aus jahrgang_bis, der
 -- Schalter sagt, ob das Buch über die Spanne beim Kind bleibt oder wie jedes Schulbuch am
--- Rückgabetermin der Klasse zurückkommt (docs/OFFEN.md 9.6). Gemessen am Testserver am
+-- Rückgabetermin der Klasse zurückkommt. Gemessen am Testserver am
 -- 22.09.2026: kein Titel trug einen ziel_jahrgang — die Spalte fällt ohne Datenverlust.
 --
 -- Der Schalter gilt nur an einem Lernmittel (bei einem Buch der Schülerbücherei liest ihn

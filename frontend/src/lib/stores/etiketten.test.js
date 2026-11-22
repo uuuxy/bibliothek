@@ -105,7 +105,7 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 		vi.clearAllMocks();
 	});
 
-	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).
+	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich.
 	it('meldet eine Fehlantwort als Ladefehler mit dem Grund des Servers', async () => {
 		apiFetchMock.mockResolvedValueOnce(
 			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
@@ -245,7 +245,7 @@ describe('etikettenStore: Titelsuche, späte Antwort', () => {
 	});
 
 	// Ohne Antwort blieb das Feld ohne Treffer und ohne Meldung, als gäbe es den Titel nicht
-	// (OFFEN.md 5.106, in Chromium, Firefox und WebKit).
+	// (in Chromium, Firefox und WebKit).
 	it('nennt auch ohne Antwort den Grund', async () => {
 		// mockImplementationOnce: Ein abgelehntes Promise aus dem Aufsetzen gälte bis zum Ablauf der
 		// Wartezeit als unbehandelt.

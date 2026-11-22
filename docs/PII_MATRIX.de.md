@@ -1,6 +1,6 @@
 # PII-Matrix — Schülerdaten je Endpunkt
 
-Abschluss von Befund **F2** der unabhängigen Prüfung (`bewertung/datenbank-pruefbericht.md`):
+Abschluss von Befund **F2** einer unabhängigen Prüfung der Datenbank:
 Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
 `internal/api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
@@ -50,7 +50,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 `Token` (Link-Token ist der Ausweis), `selbst-prüfend` (Handler validiert das
 Session-Cookie selbst) oder `Sitzung` (`VerlangeAnmeldung`).
 
-**Leitplanken (aus den Sicherheitsbefunden, `bewertung/sicherheitsbefund-*.md`):**
+**Leitplanken aus zwei Sicherheitsbefunden:**
 `view_books` und `perform_actions` besitzt die Helfer-Rolle ab Werk — Routen mit
 Stufe ≥2 dürfen NIE allein dahinter liegen. Stufe 1 hinter Helfer-Rechten ist die
 bewusste Theken-Ausnahme (Theken-Sicht `thekenLeser`, `internal/api/theke/theken_leser.go`). Der

@@ -260,7 +260,7 @@ describe('Benutzerliste: Namen für Vorleseprogramme', () => {
 
 // Ging die Antwort verloren, hatte der Server schon gewirkt: Die Liste zeigte das gelöschte Konto
 // weiter und das angelegte nicht, und der zweite Versuch meldete „Konto nicht gefunden" oder „gibt
-// es bereits". In Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// es bereits". In Chromium, Firefox und WebKit.
 describe('Benutzerliste: nach einem Fehler neu laden', () => {
 	const NEU = { ...KONTO, id: 'u2', vorname: 'Nele', nachname: 'Neu', email: 'nele@test.local' };
 

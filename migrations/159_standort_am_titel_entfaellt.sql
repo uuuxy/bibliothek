@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 159: Der Standort am Titel entfällt (docs/OFFEN.md 5.53, Schritt 3)
+-- Migration 159: Der Standort am Titel entfällt
 -- =============================================================================
 -- Seit Migration 158 steht der Standort am Exemplar. Was die Titelmaske als „Standort / Regal"
 -- am Titel geführt hat (erweiterte_eigenschaften.standort), geht an die Exemplare des Titels,

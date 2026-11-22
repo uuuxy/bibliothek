@@ -5,7 +5,7 @@
 -- und niemand sieht warum. Bis hierher prüfte das allein die Littera-Übernahme, für ihren
 -- eigenen Lauf (schreiber_personen.go: „Ausweisnummer ist schon der Barcode eines Buchs").
 -- Wer von Hand eine Ausweisnummer eintrug oder ein Buch umetikettierte, wurde nicht
--- gebremst (OFFEN.md 5.15, Durchgang vom 15.09.2026).
+-- gebremst (Durchgang vom 15.09.2026).
 --
 -- Die Regel hängt an beiden Tabellen, nach dem Muster von Migration 118 (Ausweis über zwei
 -- Personentabellen): ein Wächter, ein CONSTRAINT-Name, den der Code auswertet.

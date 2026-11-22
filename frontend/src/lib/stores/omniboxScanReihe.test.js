@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 
 // Ein Handscanner wartet nicht auf die Antwort. Ein Scan, der eintrifft, solange die vorige
 // Buchung läuft, wird eingereiht und danach gebucht; verworfen bliebe er unbemerkt, in der
-// Schnellrückgabe bliebe das Buch verliehen (docs/OFFEN.md 5.56). Dieselbe Nummer noch
+// Schnellrückgabe bliebe das Buch verliehen. Dieselbe Nummer noch
 // einmal fällt weg wie bisher: Gebucht gäbe sie das eben geliehene Buch gleich zurück.
 //
 // Weiter geht die Reihe nur nach einer glatten Buchung. Sonst wird, was wartet, nicht

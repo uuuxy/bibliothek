@@ -12,7 +12,7 @@ import WebcamAufnahme from './WebcamAufnahme.svelte';
 
 // Scheiterte das Speichern des Passbilds, holte „Erneut versuchen" eine zweite Kamera, ohne die
 // erste anzuhalten. Die erste lief danach weiter, auch nach dem Schließen des Dialogs, in
-// Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// Chromium, Firefox und WebKit.
 describe('Passbild: der zweite Versuch nach einem gescheiterten Speichern', () => {
 	/** @type {{ stop: import('vitest').Mock }[]} */
 	let spuren;

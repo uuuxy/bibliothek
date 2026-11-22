@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 168: Eine LMF-Nummer ist nie die Nummer eines Exemplars (OFFEN 5.94, Stufe 3)
+-- Migration 168: Eine LMF-Nummer ist nie die Nummer eines Exemplars
 -- =============================================================================
 -- Seit Migration 167 trägt jedes Exemplar eine kurze Nummer; die LMF-Nummer eines alten
 -- Etiketts steht in lmf_barcode. Die Regel hält das für jeden Schreiber fest: Eine LMF-Nummer

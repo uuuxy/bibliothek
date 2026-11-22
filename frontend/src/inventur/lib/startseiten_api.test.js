@@ -200,7 +200,7 @@ describe('buecherSuchen: Schlagworte und Verweise', () => {
 	});
 });
 
-// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6). werkId und
+// Ein Buch in mehreren Auflagen ist eine Kachel. werkId und
 // werkRang kommen vom Server (1 = die neueste Auflage); gezählt wird über alle Auflagen der
 // ganzen Liste, oben steht die getroffene.
 describe('buecherJeBuch', () => {

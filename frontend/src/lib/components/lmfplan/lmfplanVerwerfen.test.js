@@ -14,7 +14,7 @@ import { serverAntwort } from '../../serverAntwort.js';
 import { erzeugePlaner } from './lmfplanPlaner.svelte.js';
 
 // Ein zweiter Auftrag zum Verwerfen vor der Antwort schickte ein zweites DELETE: Nach „Plan
-// verworfen." stand „Kein Plan vorhanden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// verworfen." stand „Kein Plan vorhanden", in Chromium, Firefox und WebKit.
 describe('LMF-Planer: Verwerfen', () => {
 	it('verwirft bei einem zweiten Auftrag vor der Antwort nicht noch einmal', async () => {
 		/** @type {(antwort: any) => void} */

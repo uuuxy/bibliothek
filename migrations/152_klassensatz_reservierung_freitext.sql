@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 152: Die Klasse einer Klassensatz-Reservierung ist Freitext (docs/OFFEN.md 5.18)
+-- Migration 152: Die Klasse einer Klassensatz-Reservierung ist Freitext
 -- =============================================================================
 -- Festgelegt am 30.09.2026: Die Klasse an einer Klassensatz-Reservierung zeigt das Programm nur
 -- an, es rechnet nicht damit — die Bibliothek sieht, für wen die Bücher sind. Seit Migration 079

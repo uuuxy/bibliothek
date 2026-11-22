@@ -107,7 +107,7 @@ describe('useLeserakte.ladeAkte', () => {
 		expect(st.bescheide, 'der Bescheid von A steht unter dem Namen von B').toEqual([]);
 	});
 
-	// Ein gescheiterter Abruf ist kein „kein Bescheid" (Review 14.09.2026, OFFEN.md 1.5): Eltern
+	// Ein gescheiterter Abruf ist kein „kein Bescheid" (Review 14.09.2026): Eltern
 	// stehen mit dem Brief in der Bibliothek, GET …/bescheide läuft in 503 — die Akte zeigte
 	// keine Karte, und die Auskunft lautete „bei uns liegt kein Bescheid vor". Seit dem
 	// 15.09.2026 steht der Ausfall in fehlendeListen, wie in der Buch-Akte (useBuchakte).
@@ -140,7 +140,7 @@ describe('useLeserakte.ladeAkte', () => {
 	});
 
 	// Der Grund des Servers stand nicht da: „Nicht geladen: Vormerkungen" und bei der Akte selbst
-	// „Die Daten dieses Lesers konnten nicht abgerufen werden" (OFFEN.md 5.106).
+	// „Die Daten dieses Lesers konnten nicht abgerufen werden".
 	it('nennt den Grund, wenn die Akte oder eine Liste nicht kam', async () => {
 		antwortenJe({ vormerkungen: serverAntwort(503, { error: 'Datenbank nicht erreichbar' }) });
 		const st = useLeserakte();
@@ -293,7 +293,7 @@ describe('useLeserakte.ladeAkte', () => {
 
 // Der Mensch an der Theke liest den Satz des Servers, nicht seinen JSON-Rumpf.
 //
-// Fund (OFFEN.md 5.12): Die Ersatzforderung antwortet mit {"error": "…"}, und der Toast
+// Fund: Die Ersatzforderung antwortet mit {"error": "…"}, und der Toast
 // zeigte `Error: {"error":"…"}` — mit Klammern und Anführungszeichen. Wer an der Theke
 // steht, soll lesen können, was los ist.
 describe('useLeserakte: Fehlermeldungen', () => {

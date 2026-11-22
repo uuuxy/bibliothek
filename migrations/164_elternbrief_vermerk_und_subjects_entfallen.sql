@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 164: Der Elternbrief-Vermerk und die Tabelle subjects entfallen (docs/OFFEN.md 5.67)
+-- Migration 164: Der Elternbrief-Vermerk und die Tabelle subjects entfallen
 -- =============================================================================
 -- schadensfaelle.elternbrief_generiert und elternbrief_generiert_am hielten fest, ob der
 -- Elternbrief zu einem Schadensfall gedruckt war. Den Brief gibt es nicht mehr; seitdem liest

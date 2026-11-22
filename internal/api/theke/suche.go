@@ -52,7 +52,7 @@ func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen 
 
 		// Reduktion auf die Theken-Sicht: /api/search hängt an perform_actions
 		// (auch Helfer-Rolle) — Adresse, Eltern-Mail und Geburtsdatum gehören
-		// nicht in diese Antwort (bewertung/sicherheitsbefund-kiosk-suche.md).
+		// nicht in diese Antwort.
 		// zuThekenLesern liefert nie nil, damit das JSON ein leeres Array trägt.
 		ergebnis := suchErgebnis{
 			Leser:       zuThekenLesern(leser),

@@ -3,7 +3,7 @@ import { uiLogin, gehZu, menuepunkt, seedSQL, querySQL, uniqueSuffix } from './h
 
 // Das Schließen-Symbol der Buchmaske verwirft, was nicht gespeichert ist. Vorher fragt es, wie
 // Material 3 es für den Full-screen dialog verlangt („Dismissing"); an einer Maske, an der
-// niemand getippt hat, fragt es nicht (docs/OFFEN.md 5.75). Dasselbe gilt für den Wechsel der
+// niemand getippt hat, fragt es nicht. Dasselbe gilt für den Wechsel der
 // Seite und des Reiters und für das Schließen des Fensters (5.79).
 const s = uniqueSuffix().slice(0, 6);
 const TITEL = `Verwerfen ${s}`;

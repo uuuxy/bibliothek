@@ -51,7 +51,7 @@ test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" blei
 	const aendern = page.getByRole('button', { name: 'Cover ändern' });
 	await expect(aendern, 'die sichtbare Aktion muss da sein').toBeVisible();
 
-	// Seit dem 22.09.2026 steht daneben „Cover neu holen" (OFFEN.md 4.16): die automatische
+	// Seit dem 22.09.2026 steht daneben „Cover neu holen": die automatische
 	// Suche für EINEN Titel statt des Sammellaufs über den ganzen Bestand.
 	await expect(page.getByRole('button', { name: 'Cover neu holen' })).toBeVisible();
 
@@ -98,7 +98,7 @@ test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" blei
 
 // Nach einem gescheiterten Hochladen ging dieselbe Datei kein zweites Mal hinaus: Das Dateifeld
 // hielt sie noch, und der Browser meldet kein change, wenn die Wahl gleich bleibt (Chromium und
-// WebKit; Firefox schickte sie). Gewählt wird über den Dateidialog wie von Hand (OFFEN.md 5.106).
+// WebKit; Firefox schickte sie). Gewählt wird über den Dateidialog wie von Hand.
 test('Cover: nach einem gescheiterten Hochladen geht dieselbe Datei noch einmal hinaus', async ({
 	page
 }, info) => {

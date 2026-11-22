@@ -172,8 +172,7 @@ describe('scanSchutz: das Enter eines Scans gilt nicht', () => {
 	});
 });
 
-// „Titel bearbeiten" hat kein <form>: Ohne diese Aktion speicherte dort nur der Klick
-// (docs/OFFEN.md 5.87).
+// „Titel bearbeiten" hat kein <form>: Ohne diese Aktion speicherte dort nur der Klick.
 describe('enterSpeichert: Enter in einem einzeiligen Feld speichert die Maske', () => {
 	/** @param {string} html @param {HTMLElement} [huelle] */
 	function maske(html, huelle = document.body) {

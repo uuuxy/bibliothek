@@ -155,7 +155,7 @@ describe('BuchakteVormerkungen', () => {
 
 // Ein zweiter Auftrag vor der Antwort schickte eine zweite Anfrage: Nach „Erfolgreich vorgemerkt"
 // stand „Dieser Schüler hat den Titel bereits vorgemerkt", nach „Vormerkung gelöscht" stand
-// „Vormerkung nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// „Vormerkung nicht gefunden", in Chromium, Firefox und WebKit.
 describe('BuchakteVormerkungen: ein Auftrag zur Zeit', () => {
 	const leereWarteschlange = () => new Promise((weiter) => setTimeout(weiter));
 

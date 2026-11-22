@@ -70,7 +70,7 @@ describe('format.js — eine deutsche Schreibweise', () => {
 	});
 
 	// Nichts im Regal, alles bestellt: Der Titel steht in der Trefferliste, weil der Zulauf
-	// als vorhanden zählt — der Satz muss sagen, warum (docs/OFFEN.md 5.5).
+	// als vorhanden zählt — der Satz muss sagen, warum.
 	it('Bestand: „2 bestellt" statt „Keine Exemplare", wenn nur der Zulauf etwas hat', () => {
 		expect(bestandSatz(0, 0, 2)).toBe('2 bestellt');
 		expect(bestandSatz(0, 0, 0)).toBe('Keine Exemplare');

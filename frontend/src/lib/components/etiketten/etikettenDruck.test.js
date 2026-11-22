@@ -85,7 +85,7 @@ describe('druckeBogen', () => {
 	});
 
 	// Scheiterte der Vermerk nach dem Druck, stand das nur in der Konsole: Die Etiketten blieben
-	// unter „Fehlende Etiketten" und wurden womöglich ein zweites Mal gedruckt (OFFEN.md 5.106).
+	// unter „Fehlende Etiketten" und wurden womöglich ein zweites Mal gedruckt.
 	it.each([
 		[
 			'bei einer Ablehnung',

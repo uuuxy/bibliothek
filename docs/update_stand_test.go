@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// update.sh spielt am Schulserver nur Releases ein und folgt am Testserver main (OFFEN 5.31),
+// update.sh spielt am Schulserver nur Releases ein und folgt am Testserver main,
 // mit frischem Datenbank-Image und frischen Basis-Images in beiden Fällen. Die Tests fahren das
 // echte Skript in einem Wegwerf-Repo: drei Commits auf main, die ersten zwei als v1.0.0 und
 // v1.1.0 getaggt, der Server auf dem ersten. docker ist ein Stellvertreter im PATH, der jeden

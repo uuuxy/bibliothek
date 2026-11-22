@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Ein Fehler der Warteschlange heißt nicht „gespeichert" (OFFEN.md 2.2, Commit 5). Bis zum
+// Ein Fehler der Warteschlange heißt nicht „gespeichert". Bis zum
 // 15.09.2026 schluckten enqueueOfflineAction, ladeWarteschlange und dequeueOfflineAction jeden
 // IndexedDB-Fehler (privates Fenster, gesperrte Website-Daten, voller Speicher): Die Theke
 // meldete „Offline: gespeichert" mit Erfolgston, das Band zeigte 0 — und der Scan war weg.

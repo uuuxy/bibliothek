@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, gehZu, uniqueSuffix, scanneWieScanner } from './helpers.js';
 
-// Der Standort am Exemplar (docs/OFFEN.md 5.53): Die Karte nennt ihn, markierte Exemplare
+// Der Standort am Exemplar: Die Karte nennt ihn, markierte Exemplare
 // bekommen ihn über „Standort ändern", und Kopf der Akte und Titel-Verwaltung nennen die
 // Standorte der Exemplare mit ihrer Zahl. Regeln und Grenzen prüfen die Go-Tests
 // (internal/api/katalog/exemplar_standort_pg_test.go); hier steht der Weg durch den Browser bis in die Tabelle.

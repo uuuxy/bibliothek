@@ -22,8 +22,7 @@ func vollerTestLeser() repository.Leser {
 }
 
 // verbotenInThekenAntwort sind die Feldinhalte und Schlüssel, die eine Antwort
-// auf einem perform_actions-Endpunkt (Theke/Helfer) nie tragen darf —
-// Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md.
+// auf einem perform_actions-Endpunkt (Theke/Helfer) nie tragen darf.
 var verbotenInThekenAntwort = []string{
 	"MARKER-STRASSE", "MARKER-ELTERN", "MARKER-PLZ", "MARKER-ORT", "MARKER-NR",
 	"2012-05-14", "strasse", "eltern_email", "geburtsdatum", "plz", "block_reason",

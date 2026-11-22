@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 162: Jahrgang am Titel — „unbekannt" ist eine eigene Angabe (docs/OFFEN.md 5.5)
+-- Migration 162: Jahrgang am Titel — „unbekannt" ist eine eigene Angabe
 -- =============================================================================
 -- jahrgang_von und jahrgang_bis trugen an jedem Titel ohne Angabe die Vorgabe 5 und 10. Ein
 -- Titel für die Jahrgänge 5 bis 10 war damit von einem Titel ohne Angabe nicht zu

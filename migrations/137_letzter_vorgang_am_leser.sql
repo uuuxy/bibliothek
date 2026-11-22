@@ -1,6 +1,6 @@
 -- Migration 137: Die Karenz-Uhr bekommt eine eigene Spalte — leser.letzter_vorgang_am
 --
--- Entschieden am 16.09.2026, freigegeben am 22.09.2026 (docs/OFFEN.md 4.12).
+-- Entschieden am 16.09.2026, freigegeben am 22.09.2026.
 --
 -- Der Fall. Die Uhr vor der Anonymisierung (repository.KarenzUhr) rechnete den letzten
 -- Vorgang über zwei Unterabfragen aus: die späteste Rückgabe in `ausleihen` und den

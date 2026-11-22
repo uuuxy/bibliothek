@@ -36,7 +36,7 @@
 	let eigentumOffen = $state(false);
 	// Standort markierter Exemplare (5.53): derselbe Weg, eigener Dialog.
 	let standortOffen = $state(false);
-	// Das Etikett entsteht im Druck-Center, im Reiter „Buch-Etiketten" (OFFEN.md 5.5). Wer ihn
+	// Das Etikett entsteht im Druck-Center, im Reiter „Buch-Etiketten". Wer ihn
 	// nicht öffnen darf, bekäme statt des Bogens einen anderen Reiter.
 	const darfEtikett = $derived(
 		rechteDesReiters('labels').every((recht) => hatRecht(authStore.currentUser, recht))

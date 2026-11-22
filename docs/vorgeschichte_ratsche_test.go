@@ -25,8 +25,8 @@ import (
 //
 // Blindheit: Vorgeschichte ohne volles Datum („früher", „bis dahin", „im Juli") und ein zweites
 // Datum in einer Zeile, die schon eines trägt. Die Ratsche zählt nur; ob ein Datum im Bestand
-// Vorgeschichte ist, liest ein Mensch. OFFEN.md zählt sie mit Absicht nicht, .jules/ und
-// bewertung/ liegen außerhalb.
+// Vorgeschichte ist, liest ein Mensch. OFFEN.md zählt sie mit Absicht nicht, .jules/ liegt
+// außerhalb.
 
 // bestandVorgeschichte nennt je Dokument die Zeilen mit Datum und was sie sind. Die Zahl darf
 // sinken, nie steigen; wer eine Zeile streicht, trägt die neue Zahl hier ein.

@@ -10,7 +10,7 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.f
 import { apiClient } from '../../apiFetch.js';
 import NeueAuflageDialog from './NeueAuflageDialog.svelte';
 
-// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): Die ISBN holt den Titel über
+// „Neue Auflage bestellen": Die ISBN holt den Titel über
 // POST /api/buecher/aus-isbn, der Dialog zeigt ihn als Vorschlag, und erst die Bestätigung
 // fasst zusammen (POST …/neue-auflage) und reicht ihn an den Warenkorb weiter. Ein eben aus
 // der DNB angelegter Titel ist noch kein Lernmittel — vorher wird er eins, sonst wiese der

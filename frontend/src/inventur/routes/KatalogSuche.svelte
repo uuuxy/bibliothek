@@ -55,7 +55,7 @@
 		exemplar.titelId ? (buecher.find((b) => b.id === exemplar.titelId) ?? null) : null
 	);
 
-	// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6).
+	// Ein Buch in mehreren Auflagen ist eine Kachel.
 	let gefilterteTitel = $derived(
 		buecherJeBuch(buecher, mitTitelDesExemplars(titelDesExemplars, buecherSuchen(buecher, suche)))
 	);

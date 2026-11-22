@@ -31,7 +31,7 @@
 	 */
 	let { titel, gewaehlt, onOpenDetail, onToggleSelect } = $props();
 
-	// Die Standorte der Exemplare im Bestand, gezählt vom Server (docs/OFFEN.md 5.53).
+	// Die Standorte der Exemplare im Bestand, gezählt vom Server.
 	const standort = $derived(standortZeile(titel.standorte));
 	const jahrgang = $derived(jahrgangSpanne(titel.jahrgangVon, titel.jahrgangBis));
 </script>

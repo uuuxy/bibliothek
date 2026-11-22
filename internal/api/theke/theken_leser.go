@@ -7,8 +7,8 @@ import "bibliothek/internal/repository"
 // Wohnanschrift, Eltern-Mail und Geburtsdatum fehlen hier bewusst und dürfen nie dazukommen:
 // /api/action und /api/search hängen am Recht perform_actions, das auch die Helfer-Rolle
 // trägt, und der Seed verspricht dieser Rolle ausdrücklich keinen Zugriff auf Schülerprofile.
-// Der volle repository.Leser-Datensatz an dieser Stelle war ein Sicherheitsbefund
-// (bewertung/sicherheitsbefund-kiosk-suche.md). Die vollen Profile gibt es nur hinter
+// Der volle repository.Leser-Datensatz an dieser Stelle war ein Sicherheitsbefund.
+// Die vollen Profile gibt es nur hinter
 // view_students (/api/schueler…).
 type thekenLeser struct {
 	ID string `json:"id"`

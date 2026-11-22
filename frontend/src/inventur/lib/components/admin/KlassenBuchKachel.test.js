@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 import KlassenBuchKachel from './KlassenBuchKachel.svelte';
 import BuchKarte, { KACHEL } from '../BuchKarte.svelte';
 
-// Die Kachel eines Klassensatzes mit gemischten Auflagen (docs/OFFEN.md 4.18, Stufe 5):
+// Die Kachel eines Klassensatzes mit gemischten Auflagen:
 // GetClassGroups liefert `auflagen` nur, wenn Kinder der Klasse eine andere Auflage als die der
 // Kachel haben (internal/repository/klassensaetze.go) — dann steht die Aufschlüsselung auf der Kachel.
 const buch = (/** @type {any} */ extra = {}) => ({
@@ -44,7 +44,7 @@ describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 	});
 });
 
-// Portal „Schulbücher" (docs/OFFEN.md 4.18, Stufe 6): Eine Zeile für ein Buch in mehreren
+// Portal „Schulbücher": Eine Zeile für ein Buch in mehreren
 // Auflagen trägt die Summe und auflagenBestand (inventur.LernmittelTitel) — die Kachel sagt,
 // woraus die Summe besteht. Das Feld heißt anders als `auflagen` (Kinder je Auflage im
 // Klassensatz), damit die beiden Aufschlüsselungen sich nicht vermengen.

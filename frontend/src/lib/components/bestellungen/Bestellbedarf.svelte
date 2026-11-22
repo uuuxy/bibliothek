@@ -26,7 +26,7 @@
 		vorschlaege.reduce((/** @type {number} */ s, /** @type {any} */ r) => s + (r.fehlen || 0), 0)
 	);
 
-	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
+	// „Neue Auflage bestellen": die Zeile, deren Dialog offen ist.
 	/** @type {any | null} */
 	let neueAuflageFuer = $state(null);
 

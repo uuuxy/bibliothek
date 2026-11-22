@@ -4,8 +4,7 @@ import InventurStartDialog from './InventurStartDialog.svelte';
 
 // Ein zweiter Klick auf „Starten" vor der Antwort schickte einen zweiten Start. Der
 // Server lehnt ihn ab, weil der Bereich schon läuft; nach dem Abschluss stand dann „Für diesen
-// Bereich läuft bereits eine Inventur", obwohl keine lief. Gleich in Chromium, Firefox und WebKit
-// (OFFEN.md 5.106).
+// Bereich läuft bereits eine Inventur", obwohl keine lief. Gleich in Chromium, Firefox und WebKit.
 describe('InventurStartDialog: Start', () => {
 	it('schickt keinen zweiten Start, solange der erste läuft', async () => {
 		/** @type {() => void} */

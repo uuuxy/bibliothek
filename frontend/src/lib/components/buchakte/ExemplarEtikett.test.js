@@ -10,8 +10,8 @@ import {
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 /**
- * Das Etikett eines Exemplars entsteht im Druck-Center, auf dem Bogen nach der Vorlage
- * (OFFEN.md 5.5). Die Buchakte übergibt nur — über dieselbe druckWarteschlange wie Wareneingang und
+ * Das Etikett eines Exemplars entsteht im Druck-Center, auf dem Bogen nach der Vorlage.
+ *Die Buchakte übergibt nur — über dieselbe druckWarteschlange wie Wareneingang und
  * Nachdruck. Den Knopf bekommt nur, wer im Druck-Center den Reiter „Buch-Etiketten" öffnen
  * darf (view_books, POST /api/print/labels): Sonst endete der Klick auf einem anderen Reiter.
  */

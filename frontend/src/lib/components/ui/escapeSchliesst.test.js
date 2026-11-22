@@ -51,7 +51,7 @@ describe('escapeSchliesst', () => {
 
 	// Ein offenes Auswahlfeld IM Dialog verbraucht die Taste.
 	//
-	// Fund (OFFEN.md 5.9): `ui/Select` schließt mit Escape seine Liste und ruft
+	// Fund: `ui/Select` schließt mit Escape seine Liste und ruft
 	// preventDefault. Dieser Lauscher hängt am window und kam danach trotzdem dran —
 	// EIN Tastendruck schloss die Liste UND den ganzen Dialog, und die halb ausgefüllte
 	// Eingabe war weg. Wer eine Auswahl wieder zuklappt, will nicht das Formular

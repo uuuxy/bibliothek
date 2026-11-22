@@ -5,7 +5,7 @@ vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
 import { apiFetch } from '../apiFetch.js';
 import { ladeStandorte, standorteAusExemplaren, standortZeile } from './standorte.js';
 
-// Der Standort steht am Exemplar (docs/OFFEN.md 5.53). Kopf der Buchakte und Titel-Verwaltung
+// Der Standort steht am Exemplar. Kopf der Buchakte und Titel-Verwaltung
 // nennen die Standorte eines Titels in derselben Zeile; der Kopf zählt sie aus den Karten, die
 // Titel-Verwaltung bekommt sie gezählt vom Server. Beide zählen nur den Bestand.
 

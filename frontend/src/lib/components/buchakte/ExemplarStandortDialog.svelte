@@ -1,5 +1,5 @@
-<!-- @component ExemplarStandortDialog — den Standort markierter Exemplare ändern
-     (docs/OFFEN.md 5.53), das Geschwister von ExemplarEigentumDialog. Die Form kommt aus
+<!-- @component ExemplarStandortDialog — den Standort markierter Exemplare ändern,
+     das Geschwister von ExemplarEigentumDialog. Die Form kommt aus
      ui/EingabeDialog wie in der Schlagwort-Pflege: ein Feld, ein Kästchen, zwei Aktionen.
 
      Das Feld ist nicht vorbelegt, weil die markierten Exemplare verschiedene Standorte tragen

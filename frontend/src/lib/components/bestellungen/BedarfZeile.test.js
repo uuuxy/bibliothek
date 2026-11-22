@@ -4,7 +4,7 @@ import BedarfZeile from './BedarfZeile.svelte';
 import Bestellbedarf from './Bestellbedarf.svelte';
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
 
-// Der Bestellbedarf zählt am Buch (docs/OFFEN.md 4.18, Stufe 3): Gehört ein Titel zu einem
+// Der Bestellbedarf zählt am Buch: Gehört ein Titel zu einem
 // Buch mit mehreren Auflagen, ist die Zeile das Buch — Titel und ISBN der neuesten Auflage,
 // die Summe als Zahl, darunter die Auflagen einzeln (GET /api/bestellungen,
 // internal/repository/bestellbedarf.go).

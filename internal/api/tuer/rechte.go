@@ -160,7 +160,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 // HatRecht prüft in einer Tür ein zusätzliches Recht, wenn ihre Route schon hinter einem
 // schwächeren liegt: für Antworten, die je nach Aufrufer mehr oder weniger zeigen. Die Liste
 // der Geräte zeigt die Verfügbarkeit jedem mit view_books, den Namen des Ausleihers nur mit
-// view_students (bewertung/sicherheitsbefund-kiosk-suche.md). Ein Fehler zählt als nein: Im
+// view_students. Ein Fehler zählt als nein: Im
 // Zweifel zeigt die Tür weniger, nie mehr.
 func (b *Basis) HatRecht(r *http.Request, recht string) bool {
 	claims, ok := auth.ClaimsAusKontext(r.Context())

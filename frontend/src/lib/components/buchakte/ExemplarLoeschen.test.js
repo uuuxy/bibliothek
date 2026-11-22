@@ -111,7 +111,7 @@ describe('Buchakte: markierte Exemplare löschen', () => {
 
 // Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE: Nach „Exemplar erfolgreich
 // gelöscht" stand „Exemplar nicht gefunden oder schon ausgebucht", beim Löschen der markierten
-// „2 von 2 Exemplaren nicht gelöscht", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// „2 von 2 Exemplaren nicht gelöscht", in Chromium, Firefox und WebKit.
 describe('Buchakte: ein Auftrag je Exemplar', () => {
 	const leereWarteschlange = () => new Promise((weiter) => setTimeout(weiter));
 	/** @type {((antwort: any) => void)[]} */

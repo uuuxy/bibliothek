@@ -11,7 +11,7 @@ vi.mock('$lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 import AuflageZuordnenDialog from './AuflageZuordnenDialog.svelte';
 
-// Der Dialog „Andere Auflage zuordnen" (docs/OFFEN.md 4.18, Stufe 2). Material 3, Dialogs:
+// Der Dialog „Andere Auflage zuordnen". Material 3, Dialogs:
 // „Disable confirming actions until a choice is made. Dismissive actions are never
 // disabled." Dazu: Gehört der gewählte Titel schon zu einem Buch, kommen dessen Auflagen
 // mit — das steht vor dem Klick da, und wenn die Nachfrage scheitert, sagt der Dialog das.

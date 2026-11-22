@@ -45,7 +45,7 @@
 	);
 	// Das Register „Kollegium" (klasse='lehrer') ist mit Migration 072 gefallen:
 	// Lehrkräfte sind Personal-Konten, ihre Handapparat-Ausleihen laufen bewusst
-	// ohne Mahn-Eskalation (1 Jahr Frist) — siehe Befund F4, bewertung/.
+	// ohne Mahn-Eskalation (1 Jahr Frist).
 </script>
 
 <Reiter

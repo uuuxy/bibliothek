@@ -12,8 +12,8 @@
 -- der Oberfläche vergleicht die Normalform, die Datenbank nicht.
 --
 -- Eine Zeile, deren Normalform auch ein ANDERER Titel ergibt, bleibt stehen: Zwei Titel mit
--- derselben ISBN sind eine Dublette, und ob man sie zusammenlegt, entscheidet ein Mensch
--- (docs/OFFEN.md 4.18: „Zusammengelegt wird nichts"). Die Migration scheitert daran nicht,
+-- derselben ISBN sind eine Dublette, und ob man sie zusammenlegt, entscheidet ein Mensch.
+-- Die Migration scheitert daran nicht,
 -- sie nennt die Zahl als NOTICE.
 --
 -- Idempotent: Beim zweiten Lauf gibt es nichts mehr abzuweichen. Der Trigger auf

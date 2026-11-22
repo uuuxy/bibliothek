@@ -6,7 +6,7 @@ import {
 	mehrjahresbandHinweis
 } from './buchFormularRegeln.js';
 
-// Mehrjahresband (docs/OFFEN.md 9.6): ein Kästchen am Werk, die Zahl kommt aus der Spanne
+// Mehrjahresband: ein Kästchen am Werk, die Zahl kommt aus der Spanne
 // „bis". Ein neues Buch beginnt ohne Haken; fehlte der Wert in der Vorlage,
 // schickte der Anlegen-Weg das Feld nie mit (siehe den Kommentar an leeresBuchFormular).
 // Der Hinweis rechnet dieselbe Regel wie der Server (internal/repository/titel_spanne.go).
@@ -56,7 +56,7 @@ describe('buchFormularRegeln: Mehrjahresband', () => {
 	});
 });
 
-// Ein Titel ohne Exemplar steht in keinem Katalog (docs/OFFEN.md 9.4). Ein neues Buch beginnt
+// Ein Titel ohne Exemplar steht in keinem Katalog. Ein neues Buch beginnt
 // deshalb mit einem Exemplar, und wer 0 einträgt, liest vor dem Speichern, wo der Titel landet.
 describe('buchFormularRegeln: Bestand eines neuen Buchs', () => {
 	it('die Vorlage beginnt mit einem Exemplar', () => {

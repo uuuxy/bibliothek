@@ -12,7 +12,7 @@ import { appState } from './store.svelte.js';
 import { holeBuecherListe, holeBuchDetail } from './admin_api.js';
 import { serverAntwort } from '../../lib/serverAntwort.js';
 
-// Die Titelverwaltung hat zwei Sichten derselben Liste (docs/OFFEN.md 9.4, 22.09.2026):
+// Die Titelverwaltung hat zwei Sichten derselben Liste:
 // den Katalog und die Aufräumsicht mit den Titeln ohne Exemplar. Die Sicht reist als
 // Parameter `bestand=ohne` zur einen Tür GET /api/books — der Katalog ohne Parameter.
 describe('admin_api: holeBuecherListe', () => {

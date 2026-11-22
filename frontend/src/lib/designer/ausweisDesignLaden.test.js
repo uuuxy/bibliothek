@@ -145,7 +145,7 @@ describe('designFuerDruck', () => {
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
-	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).
+	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich.
 	it('druckt nicht mit den Standardwerten: Scheitert der Abruf, steht die Meldung mit dem Grund da', async () => {
 		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));
 

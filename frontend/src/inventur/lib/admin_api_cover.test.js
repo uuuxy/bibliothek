@@ -9,7 +9,7 @@ import { apiFetch } from '../../lib/apiFetch.js';
 import { coverNeuHolen, exportiereCSV, holeExterneCover, retryExterneCover } from './admin_api.js';
 import { serverAntwort } from '../../lib/serverAntwort.js';
 
-// „Cover neu holen" (OFFEN.md 4.16, 22.09.2026): Die Auskunft des Servers — kein Cover
+// „Cover neu holen": Die Auskunft des Servers — kein Cover
 // bei den Katalogdiensten (404), Dienste nicht erreichbar (502) — muss den Menschen
 // erreichen, nicht eine Vorgabe-Meldung. Und der Erfolg liefert den neuen Pfad.
 /** @param {boolean} ok @param {number} status @param {any} body */

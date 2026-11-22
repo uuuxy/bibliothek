@@ -41,8 +41,7 @@ describe('erzeugeKlassenVorschlaege', () => {
 		expect(vorschlaege.ladefehler).toBe('');
 	});
 
-	// Mit dem Grund des Servers: Bis zur Leserakte im Durchgang aus OFFEN.md 5.106 stand an jeder
-	// Klassenwahl derselbe Satz, gleich was der Server antwortete.
+	// Mit dem Grund des Servers statt eines festen Satzes, gleich was er antwortet.
 	it('meldet einen gescheiterten Abruf mit Grund, statt „Keine Klassen" zu behaupten', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(false));
 

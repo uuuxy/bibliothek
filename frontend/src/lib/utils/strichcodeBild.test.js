@@ -32,7 +32,7 @@ describe('Adresse des Strichcode-Bildes', () => {
 	});
 });
 
-// OFFEN.md 5.5 (22.09.2026): Die Barcode-Höhe im Druck war fest (8 mm), egal wie hoch
+// Die Barcode-Höhe im Druck war fest (8 mm), egal wie hoch
 // das Element im Designer gezogen war. Jetzt bestimmt das Element die Bildgröße — in
 // Druckauflösung, für Bildschirm und Papier aus derselben Funktion.
 describe('Strichcode-Bildgröße aus dem Element', () => {

@@ -53,7 +53,7 @@ export function erzeugeOmniboxBuchung({
 	clearFehlerBanner
 }) {
 	// Zählt, wie oft die Theke geleert wurde (thekeLeeren.js): Eine Antwort von vorher lädt keinen
-	// Leser, öffnet keine Rückfrage und merkt keinen Ausweis mehr (docs/OFFEN.md 5.74).
+	// Leser, öffnet keine Rückfrage und merkt keinen Ausweis mehr.
 	let stand = 0;
 	function verwirfLaufendeAntworten() {
 		stand += 1;

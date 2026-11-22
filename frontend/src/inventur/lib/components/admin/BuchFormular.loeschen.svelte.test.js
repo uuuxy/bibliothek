@@ -11,8 +11,7 @@ import BuchFormular from './BuchFormular.svelte';
 import { leeresBuchFormular } from './buchFormularRegeln.js';
 
 // „Titel löschen" in der Maske: Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE,
-// und nach „Titel gelöscht." stand „Titel nicht gefunden", in Chromium, Firefox und WebKit
-// (OFFEN.md 5.106).
+// und nach „Titel gelöscht." stand „Titel nicht gefunden", in Chromium, Firefox und WebKit.
 describe('BuchFormular: Titel löschen', () => {
 	it('nimmt keinen zweiten Auftrag an, solange der erste läuft', async () => {
 		/** @type {() => void} */

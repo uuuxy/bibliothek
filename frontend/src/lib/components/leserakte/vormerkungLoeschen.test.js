@@ -19,7 +19,7 @@ import LeserVormerkungenKarte from './LeserVormerkungenKarte.svelte';
 
 // Ein zweiter Auftrag, während das Löschen einer Vormerkung lief, schickte eine zweite Anfrage;
 // nach „Vormerkung gelöscht" stand dann „Vormerkung nicht gefunden", in Chromium, Firefox und
-// WebKit (OFFEN.md 5.106).
+// WebKit.
 describe('Vormerkung löschen: ein Auftrag je Vormerkung', () => {
 	it('schickt bei einem zweiten Klick vor der Antwort keine zweite Anfrage', async () => {
 		/** @type {(antwort: any) => void} */

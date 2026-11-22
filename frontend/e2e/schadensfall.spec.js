@@ -15,7 +15,7 @@ const angelegt = raeumtNachJedemFallAuf(test);
 // Profil sichtbar — samt „Bescheid erstellen" an der Gebühren-Karte (seit 15.09.2026) und
 // Rechnung-PDF-Smoke über den offenen Betrag. Der frühere Elternbrief (PDF-Popup nach dem
 // Melden) öffnet nicht mehr: Er verlangte Barzahlung in der Bibliothek und widersprach dem
-// Bescheid des Landes (OFFEN.md 5.2); der Brief ist jetzt ein eigener Schritt.
+// Bescheid des Landes; der Brief ist jetzt ein eigener Schritt.
 test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();

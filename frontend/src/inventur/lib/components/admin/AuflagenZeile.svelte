@@ -1,4 +1,4 @@
-<!-- @component AuflagenZeile — eine Auflage in einer Liste (docs/OFFEN.md 4.18): links, woran
+<!-- @component AuflagenZeile — eine Auflage in einer Liste: links, woran
      man sie unterscheidet (Auflage und Jahr), darunter Titel, ISBN und Verlag, rechts der
      Bestand in denselben Worten wie im Katalog (bestandSatz). Material 3, Lists: Beschriftung
      mit Zusatztext, „Trailing text can provide additional meta-information about a list item,

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 149: Eine verworfene Inventur ist kein Abschluss (docs/OFFEN.md 5.32)
+-- Migration 149: Eine verworfene Inventur ist kein Abschluss
 -- =============================================================================
 -- „Verwerfen" (AbortInventurSession) beendet eine Inventur ohne Verlustbuchung. Es schrieb
 -- dieselben Spalten wie der Abschluss — abgeschlossen_am und verloren_gemeldet = 0 —, und die

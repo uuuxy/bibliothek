@@ -36,7 +36,7 @@ async function speichern(page) {
 	await page.getByRole('button', { name: 'Speichern' }).click();
 	const rumpf = JSON.parse((await anfrage).postData() || 'null');
 	// Nach dem Speichern schließt die Maske, die Akte steht wieder da, und die Meldung bleibt
-	// (docs/OFFEN.md 5.76: sie verschwand mit der Maske).
+	// (sie verschwand mit der Maske).
 	await expect(page.getByRole('button', { name: 'Bearbeiten' })).toBeVisible();
 	await expect(
 		page.getByRole('status').filter({ hasText: 'Änderungen gespeichert' })

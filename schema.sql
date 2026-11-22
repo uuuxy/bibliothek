@@ -495,7 +495,7 @@ CREATE TABLE buecher_titel (
     -- eigener Titel mit eigener ISBN; dieses Feld ist das, was die beiden Zeilen in einer
     -- Liste unterscheidbar macht.
     auflage VARCHAR(50),
-    -- Migration 148: das Buch, zu dem diese Auflage gehört (docs/OFFEN.md 4.18). NULL heißt:
+    -- Migration 148: das Buch, zu dem diese Auflage gehört. NULL heißt:
     -- keine andere Auflage zugeordnet. Geschrieben nur über internal/repository/auflagen.go, nicht
     -- über AendereTitel; ein Werk löscht nur diese Datei, nachdem sie den letzten Titel gelöst
     -- hat — SET NULL fängt einen übersehenen auf.
@@ -738,7 +738,7 @@ CREATE TABLE buecher_exemplare (
     -- Zustand der Bestell-Pipeline (Migration 071): NULL = kein laufender
     -- Bestellvorgang. Ersetzt die früheren Magie-Texte "Im Zulauf…"/"Bestellt…"
     -- in zustand_notiz — die Notiz ist seither reiner Menschentext und steuert
-    -- nichts mehr (Befund F1, bewertung/datenbank-pruefbericht.md).
+    -- nichts mehr.
     bestellstatus TEXT DEFAULT NULL CONSTRAINT chk_exemplar_bestellstatus CHECK (bestellstatus IN ('bestellt', 'im_zulauf')),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1282,7 +1282,7 @@ FOR EACH ROW EXECUTE FUNCTION leser_stempel_schaden();
 
 -- Table: audit_log (Audit trail for immutable security logs)
 --
--- ⚠ VERWECHSLUNGSGEFAHR (Befund F6, bewertung/datenbank-pruefbericht.md): Es gibt
+-- ⚠ VERWECHSLUNGSGEFAHR: Es gibt
 -- ZWEI Protokoll-Tabellen, einen Buchstaben auseinander. Merkregel:
 --   audit_log  (ohne s) = FACHLICHE Datensatz-Historie: wer hat welchen Datensatz
 --                         in welcher Tabelle angefasst (tabelle/aktion/datensatz_id,

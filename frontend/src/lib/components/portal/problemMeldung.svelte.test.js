@@ -103,7 +103,7 @@ describe('Problem melden', () => {
 	});
 
 	// Ohne Antwort ist offen, ob die Meldung angekommen ist. Ein zweites Senden legte sie doppelt
-	// an (Probe in Chromium, Firefox und WebKit, OFFEN.md 5.106); die eigenen Meldungen zeigen
+	// an (Probe in Chromium, Firefox und WebKit); die eigenen Meldungen zeigen
 	// es vorher. Die Eingabe bleibt, falls sie nicht angekommen ist.
 	it('liest nach einem Fehler ohne Antwort die eigenen Meldungen neu', async () => {
 		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server'));

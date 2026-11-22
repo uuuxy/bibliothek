@@ -8,7 +8,7 @@ import { apiFetch, apiPut } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import ExemplarStandortDialog from './ExemplarStandortDialog.svelte';
 
-// Der Standort markierter Exemplare (docs/OFFEN.md 5.53). Was hier schiefgehen kann: eine
+// Der Standort markierter Exemplare. Was hier schiefgehen kann: eine
 // Änderung ohne Wahl (ein leeres Feld löschte den Standort aller markierten Exemplare),
 // „entfernen" als Wort statt als leerer Wert an den Server, und ein Scan ins offene Feld,
 // der zum Standort würde.

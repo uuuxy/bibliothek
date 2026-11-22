@@ -5,7 +5,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // tauchen in der Trefferliste auf."
 //
 // Am 17.09.2026 war entschieden, sie NICHT zu verstecken, sondern den Bestand zu sagen. Die
-// Schule hat am 22.09.2026 anders entschieden (docs/OFFEN.md 9.4): Ein Titel ohne Exemplar
+// Schule hat am 22.09.2026 anders entschieden: Ein Titel ohne Exemplar
 // steht in keinem Katalog und in keiner Trefferliste — die Verwaltung erreicht ihn über die
 // Aufräumsicht der Titel-Verwaltung. Der Titel mit Exemplaren sagt weiter seinen Bestand:
 // „0 von 2 verfügbar" ist im Schuljahr der Normalfall und darf nicht wie eine Sackgasse
@@ -16,7 +16,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 //
 // Ein Titel, dessen Exemplare alle bestellt sind, steht in der Liste (der Zulauf zählt als
 // vorhanden) und sagt seit dem 22.09.2026 „2 bestellt" statt „Keine Exemplare" — sonst
-// schickte die Liste den Kollegen ins Regal (docs/OFFEN.md 5.5).
+// schickte die Liste den Kollegen ins Regal.
 test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne Exemplare', async ({
 	page
 }) => {

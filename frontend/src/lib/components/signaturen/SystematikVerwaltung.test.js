@@ -112,7 +112,7 @@ describe('Sachgruppen: offene Zeile beim Nachladen', () => {
 });
 
 // Ein zweiter Auftrag zum Löschen vor der Antwort schickte ein zweites DELETE: Nach „Sachgruppe
-// gelöscht." stand „Sachgruppe nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// gelöscht." stand „Sachgruppe nicht gefunden", in Chromium, Firefox und WebKit.
 describe('Sachgruppen: Löschen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

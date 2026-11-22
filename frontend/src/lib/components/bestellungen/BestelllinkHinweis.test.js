@@ -13,7 +13,7 @@ import BestelllinkHinweis from './BestelllinkHinweis.svelte';
 const HINWEIS = 'Bestell-Einstellungen nicht geladen';
 
 // Bei jedem ersten Öffnen des Bestellwesens stand „Bestell-Einstellungen nicht geladen", bis die
-// Konfiguration kam, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// Konfiguration kam, in Chromium, Firefox und WebKit.
 describe('BestelllinkHinweis', () => {
 	it('schweigt, solange die Konfiguration aussteht, und meldet erst ihr Ausbleiben', async () => {
 		/** @type {(e: Error) => void} */

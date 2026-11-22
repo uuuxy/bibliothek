@@ -130,7 +130,7 @@ describe('AusweiseJeKlasse: der Reiter druckt die Ausweise einer ganzen Klasse',
 });
 
 // Die Klasse wird gewählt, nicht getippt. Kam die Klassenliste nicht, blieb die Auswahl leer,
-// ohne ein Wort, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// ohne ein Wort, in Chromium, Firefox und WebKit.
 describe('AusweiseJeKlasse: die Klassenliste kommt nicht', () => {
 	beforeEach(() => vi.clearAllMocks());
 

@@ -14,7 +14,7 @@ internal/pgtest/grundzustand.go: unreachable func: grundzustand.setzeZurueck
 internal/pgtest/grundzustand.go: unreachable func: grundzustand.leereBelegte
 internal/pgtest/grundzustand.go: unreachable func: grundzustand.schreibeZeilenZurueck
 # Dazu Anweisungen an die Testdatenbank (vorher Helfer in Testdateien von internal/api/; die Tests der
-# Türen stehen in mehr als einem Paket, docs/OFFEN.md 5.65).
+# Türen stehen in mehr als einem Paket).
 internal/pgtest/anweisungen.go: unreachable func: InTx
 internal/pgtest/anweisungen.go: unreachable func: ZaehleZeilen
 internal/pgtest/anweisungen.go: unreachable func: RaeumeAuf
@@ -95,7 +95,7 @@ internal/xlsxtest/xlsxtest.go: unreachable func: legeBlattAn
 internal/xlsxtest/xlsxtest.go: unreachable func: fuelleBlatt
 
 # Testinfrastruktur per Paket-Design: Zeilen in der Testdatenbank anlegen und leeren (vorher
-# Helfer in Testdateien von internal/api/, die Tests mehrerer Themen brauchen; docs/OFFEN.md 5.65).
+# Helfer in Testdateien von internal/api/, die Tests mehrerer Themen brauchen).
 # Wird ausschließlich von *_test.go importiert.
 internal/testdaten/testdaten.go: unreachable func: LeereBestandsdaten
 internal/testdaten/testdaten.go: unreachable func: Datum
@@ -149,7 +149,7 @@ internal/testweg/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
 # dazu die Attrappe der DNB und einen Transport aus einer Funktion (vorher Helfer in Testdateien
 # von internal/api/ und inventur/, die Tests mehrerer Pakete brauchen) und Konto mit Sitzung für Tests
-# über den ganzen Router, die im Ordner eines Themas stehen (docs/OFFEN.md 5.65). Wird
+# über den ganzen Router, die im Ordner eines Themas stehen. Wird
 # ausschließlich von *_test.go importiert.
 internal/tuertest/leitung.go: unreachable func: BeobachteLeitung
 internal/tuertest/leitung.go: unreachable func: leseEreignisse
@@ -174,8 +174,8 @@ internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 
 # Testinfrastruktur per Paket-Design: der ganze Router mit einem angemeldeten Admin-Konto, für
-# Tests über den Router, die als eigenes Testpaket im Ordner eines Themas stehen
-# (docs/OFFEN.md 5.65). Das Paket bindet internal/api/ ein und wird ausschließlich von *_test.go
+# Tests über den Router, die als eigenes Testpaket im Ordner eines Themas stehen.
+# Das Paket bindet internal/api/ ein und wird ausschließlich von *_test.go
 # importiert.
 internal/routertest/routertest.go: unreachable func: MitSitzung
 internal/routertest/routertest.go: unreachable func: MitSitzungUeber

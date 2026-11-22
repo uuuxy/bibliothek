@@ -42,7 +42,7 @@ test.afterAll(async ({ request }) => {
 test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet in der Datenbank', async ({
 	page
 }) => {
-	// Auswählen statt tippen (seit 30.09.2026, docs/OFFEN.md 5.18): Angeboten werden nur
+	// Auswählen statt tippen (seit 30.09.2026): Angeboten werden nur
 	// Klassen, die es gibt. Ein Wegwerf-Schüler macht die Test-Klasse zu einer.
 	querySQL(`
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)

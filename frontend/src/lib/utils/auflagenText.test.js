@@ -8,7 +8,7 @@ import {
 import pruefung from './auflagenText.faelle.json';
 
 // Wie eine Auflage in Listen heißt: Titel derselben Reihe unterscheiden sich oft nur in
-// Auflage und Jahr (docs/OFFEN.md 4.18). Die JavaScript-Seite der geteilten Prüffälle — der
+// Auflage und Jahr. Die JavaScript-Seite der geteilten Prüffälle — der
 // Ausdruck (internal/pdf/schulbuecher.go) liest dieselbe Datei in
 // TestAuflagenBeschriftung_WieImBrowser.
 describe('auflagenBeschriftung und auflagenAufschluesselung, geteilte Prüffälle', () => {

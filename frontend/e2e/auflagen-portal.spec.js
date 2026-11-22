@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
-// Mein Portal → „Schulbücher" (docs/OFFEN.md 4.18, Stufe 6): Ein Buch in zwei Auflagen ist
+// Mein Portal → „Schulbücher": Ein Buch in zwei Auflagen ist
 // eine Kachel, die Fach-Karte zählt es als einen Titel, und die Kachel sagt, woraus die Zahl
 // besteht. Nach der ISBN der alten Auflage gesucht, bleibt es ein Buch mit allen Exemplaren.
 const LEHRER_EMAIL = 'e2e-lehrer-auflagen@test.local';

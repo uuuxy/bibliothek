@@ -9,7 +9,7 @@ import {
 } from './helpers.js';
 
 // Die Meldungen stehen unten und mittig über der Fläche rechts der Navigation und rücken über
-// eine Leiste am unteren Rand (OFFEN 5.78). Material 3, Snackbar, „Placement": „Snackbars should
+// eine Leiste am unteren Rand. Material 3, Snackbar, „Placement": „Snackbars should
 // be placed at the bottom of a UI, in front of the main content. In some cases, snackbars can
 // be nudged upwards to avoid overlapping with other UI elements near the bottom"; „Avoid
 // placing snackbars in front of navigation components". Die Rechnung steht in

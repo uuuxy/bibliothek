@@ -96,7 +96,7 @@
 
 {#snippet hinweiseDerKlasse()}
 	{#if titel.auflagenBestand?.length}
-		<!-- Ein Buch in mehreren Auflagen (Portal „Schulbücher", docs/OFFEN.md 4.18, Stufe 6):
+		<!-- Ein Buch in mehreren Auflagen (Portal „Schulbücher"):
 			     Die Zahlen darüber sind die Summe; hier steht, woraus sie besteht — wie auf der
 			     Kachel des Medienkatalogs. -->
 		<span class="text-xs text-on-surface-variant" data-testid="schulbuch-auflagen"
@@ -111,7 +111,7 @@
 		</span>
 	{/if}
 	{#if titel.auflagen?.length}
-		<!-- Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): Kinder der Klasse haben eine
+		<!-- Gemischte Auflagen: Kinder der Klasse haben eine
 			     andere Auflage als die der Kachel — andere Auflagen haben andere Seitenzahlen.
 			     Begleittext unter dem Cover, in der Warnrolle wie die Zeile
 			     an der Theke; auf der Fläche die Rolle selbst, nicht der Container. -->

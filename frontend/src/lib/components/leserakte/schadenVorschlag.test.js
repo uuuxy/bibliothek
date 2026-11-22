@@ -11,7 +11,7 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 
-// Gate gegen die Rückkehr der festen 15,00 € (OFFEN.md 9.3 a).
+// Gate gegen die Rückkehr der festen 15,00 €.
 //
 // Bis zum 17.09.2026 stand im Feld „Ersatzbetrag" ein `$state(15.0)` — eine Zahl ohne
 // jeden Bezug zum Buch. Das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das:
@@ -90,7 +90,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	});
 
 	// Mit dem Grund: Ohne ihn hieß jeder Fehlschlag gleich, ob das Netz fehlte oder der Server
-	// den Vorschlag ablehnte (OFFEN.md 5.106).
+	// den Vorschlag ablehnte.
 	it.each([
 		[
 			'ohne Antwort',

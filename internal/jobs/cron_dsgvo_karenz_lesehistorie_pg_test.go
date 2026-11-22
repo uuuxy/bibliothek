@@ -120,7 +120,7 @@ func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen, Karenz 90 — die Zeile muss noch 85 Tage stehen bleiben. " +
-			"Anonymisiert: Der Lesehistorie-Lauf hat der Karenz-Uhr ihre Grundlage genommen (OFFEN.md 4.12)")
+			"Anonymisiert: Der Lesehistorie-Lauf hat der Karenz-Uhr ihre Grundlage genommen")
 	}
 	if !anonymisiert(alt) {
 		t.Error("ALT: Rückgabe vor 95 Tagen liegt außerhalb der Karenz 90 — muss anonymisiert sein")

@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto';
 // „Theke leeren" (Abmelden, Frist ohne Bedienung) bringt die Theke in einen Zustand ohne
 // Personendaten, auch während ein Scan unterwegs ist. Seine Antwort darf danach keinen Leser
 // mehr laden, keine Rückfrage öffnen und keinen Ausweis merken: Sonst sähe der nächste Bediener
-// das Konto des vorigen Lesers, und sein nächster Scan buchte auf ihn (docs/OFFEN.md 5.74).
+// das Konto des vorigen Lesers, und sein nächster Scan buchte auf ihn.
 // Was der Server gebucht hat, bleibt gebucht; ein Buch, dessen Versand scheitert, geht mit
 // seinem Schnappschuss in die Warteschlange.
 

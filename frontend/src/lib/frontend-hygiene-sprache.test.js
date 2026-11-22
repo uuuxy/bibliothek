@@ -200,7 +200,7 @@ describe('Datei- und Ordnernamen der Oberfläche sind deutsch', () => {
 });
 
 // Ratsche: Namen innerhalb der Dateien sind deutsch (docs/STIL.md, Abschnitt 13), Stufe 2 des
-// Umbaus (OFFEN 5.66). Gezählt werden die Namen, die eine Quelldatei erklärt (let, const, var,
+// Umbaus. Gezählt werden die Namen, die eine Quelldatei erklärt (let, const, var,
 // function, class), ohne Kommentare, zerlegt an Großbuchstaben, gegen dieselbe Liste wie die
 // Pfade und dazu Wörter, die in Namen häufig sind und in Pfaden nicht vorkamen. Wörter von Svelte
 // und dem Web (value, event, submit, open) stehen nicht darin, ebenso wenig die Bauteile von M3.
@@ -286,7 +286,7 @@ describe('Namen innerhalb der Dateien der Oberfläche sind deutsch', () => {
 	});
 });
 
-// Ratsche: Props sind deutsch (docs/STIL.md, Abschnitt 13), Stufe 3 des Umbaus (OFFEN 5.66).
+// Ratsche: Props sind deutsch (docs/STIL.md, Abschnitt 13), Stufe 3 des Umbaus.
 // Gezählt werden die Schlüssel in `let { … } = $props()` jeder Komponente, mit derselben Liste wie
 // die Namen. Englisch bleiben nach Abschnitt 13 die Ereignisse (on…), `class` und `children`, die
 // Svelte und das Web vorgeben.

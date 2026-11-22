@@ -34,7 +34,7 @@ async function bisZurBestaetigung() {
 }
 
 // Ein Doppelklick auf „Schuljahr wechseln" führte den Wechsel aus: Die Bestätigung erscheint an
-// derselben Stelle, und der zweite Klick traf sie, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// derselben Stelle, und der zweite Klick traf sie, in Chromium, Firefox und WebKit.
 describe('Schuljahreswechsel: die Bestätigung', () => {
 	beforeEach(() => {
 		apiFetchMock.mockReset();
@@ -72,7 +72,7 @@ const lief =
 	'ein weiteres Mal versetzen; der nächste geht ab dem 27.04.2027 um 22:15 Uhr.';
 
 // Nach einer verlorenen Antwort stand die Vorschau mit „es wurde noch nichts geändert" da, obwohl
-// der Wechsel gelaufen war, in Chromium, Firefox und WebKit (OFFEN.md 5.106). Ob er lief, weiß
+// der Wechsel gelaufen war, in Chromium, Firefox und WebKit. Ob er lief, weiß
 // nur der Server; die Ansicht fragt ihn mit einer neuen Vorschau.
 describe('Schuljahreswechsel: nach einem Fehler beim Ausführen', () => {
 	/**

@@ -20,7 +20,7 @@ import {
 } from './ohne-netz.js';
 import { beobachteDatenanfragen } from './messhilfe.js';
 
-// Zehn Stunden nach der letzten Passworteingabe sperrt der Server die Anmeldung (OFFEN 5.96). Wer
+// Zehn Stunden nach der letzten Passworteingabe sperrt der Server die Anmeldung. Wer
 // in dem Moment eine Maske offen hat, verliert nichts: Statt abzumelden, kommt der
 // Sperrbildschirm mit dem Grund, das Passwort schließt auf, die Eingabe steht noch da, und
 // Speichern geht danach.

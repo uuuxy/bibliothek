@@ -86,7 +86,7 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 // verzeichne zählt nach dem Status der Antwort, unter der Sperre: Nur 401 zählt als
 // Fehlversuch. Eine gelungene Anmeldung leert den Zähler nicht, er läuft mit seinem Fenster ab:
 // Sonst riete, wer selbst ein Konto hat, knapp unter der Grenze die Passwörter anderer, meldete
-// sich an und riete weiter (OFFEN 5.97).
+// sich an und riete weiter.
 //
 // 403 zählt nicht: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert" war das
 // Passwort richtig. Die Tür zählt deshalb nicht (internal/auth/anmelden.go), und diese Schicht darf

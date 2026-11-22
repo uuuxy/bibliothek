@@ -9,10 +9,10 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 //   Kennung des Quell-Datensatzes gelöscht. Die Akte lädt das Ziel selbst nach; der
 //   Aufrufer muss SEINEN aktiven Schüler umhängen, sonst bucht die nächste Aktion auf die
 //   gelöschte Kennung. Die Schülerdatei tat das seit dem 03.09.2026, die Theke nicht
-//   (OFFEN.md 3.2) — und dort landet die Kennung auch in der Offline-Warteschlange.
+//   — und dort landet die Kennung auch in der Offline-Warteschlange.
 // - `fehlendeListen` an LeserakteAusleihen und LeserakteGebuehren: Ohne das Prop
 //   schweigt der Reiter über einen gescheiterten Abruf, und eine leere Karte liest sich als
-//   „nichts offen" (OFFEN.md 1.5).
+//   „nichts offen".
 
 /**
  * Alle Start-Tags einer Komponente in einer .svelte-Datei, jeweils bis zum schließenden `>`
@@ -49,7 +49,7 @@ describe('Einbauorte der Schülerakte', () => {
 
 	// „Buch zurückgeben" an der Theke geht über gibZurueck, das die Absicht kennt — nicht
 	// über eingabe + fuehreAktionAus, das offline aus dem geladenen Schüler eine Ausleihe
-	// machte (OFFEN.md 2.2, Commit 3, 15.09.2026).
+	// machte.
 	//
 	// Die Akte hängt seit dem 16.09.2026 in OmniboxAktiverLeser.svelte: Dort entscheidet die
 	// Art des Lesers, ob die Theke die Akte oder die schmale Karte zeigt (Migration 125).

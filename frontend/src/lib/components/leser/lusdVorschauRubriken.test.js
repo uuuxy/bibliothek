@@ -27,7 +27,7 @@ describe('lusdVorschauRubriken: Karenzzeit-Rückfall', () => {
 	});
 });
 
-// OFFEN.md 5.6 (22.09.2026): Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber
+// Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber
 // verschiedenen Klassen, fielen still zu einer Person zusammen — die Vorschau zeigte nur
 // „1 doppelte Zeile zusammengelegt". Jetzt steht die Person mit beiden Klassen in einer
 // eigenen Rubrik; der Hinweis hängt am Modus, weil mit LUSD-ID die Identität sicher ist.

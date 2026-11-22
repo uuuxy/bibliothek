@@ -273,7 +273,7 @@ describe('Inventur: eine Liste kommt nicht', () => {
 });
 
 // „Verwerfen" überging die Antwort des Servers: Lehnte er ab, blieb die Inventur in der Liste
-// stehen, und nichts sagte, warum. Gleich in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// stehen, und nichts sagte, warum. Gleich in Chromium, Firefox und WebKit.
 describe('Inventur verwerfen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

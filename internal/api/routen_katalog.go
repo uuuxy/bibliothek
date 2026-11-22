@@ -144,8 +144,8 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 
 	// Vormerkungen
 	vormerkungsAbfragen := repository.NewVormerkungsAbfragen(s.DB.Pool)
-	// Eigenes enges Recht manage_vormerkungen, nicht view_books
-	// (bewertung/sicherheitsbefund-vormerkungen.md, Weg 2): Die Liste verknüpft Namen von
+	// Eigenes enges Recht manage_vormerkungen, nicht view_books:
+	// Die Liste verknüpft Namen von
 	// Schülern mit ihrem Leseinteresse und erlaubt Anlegen und Löschen für jeden Leser. Sie zeigt
 	// aber nur die Felder der Theke (Name, Klasse); dafür das volle view_students zu verlangen
 	// (Leserakte, Adressen, Mahnwesen), wäre zu grob, Helfer verlören die Warteliste ganz. Admin,

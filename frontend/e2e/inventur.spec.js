@@ -112,7 +112,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 });
 
 // Eine verworfene Inventur steht unter „Frühere Inventuren" als verworfen, nicht als
-// „vollständig", und bietet keinen Fehlbestand an (docs/OFFEN.md 5.32, Migration 149).
+// „vollständig", und bietet keinen Fehlbestand an (Migration 149).
 // „Verwerfen" schrieb dieselben Spalten wie ein Abschluss ohne Verlust; wer die Liste las,
 // hielt den Bereich für geprüft.
 test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ page }) => {
@@ -189,7 +189,7 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
 });
 
 // Unter „Frühere Inventuren" standen nur die zehn jüngsten; ältere waren samt
-// Fehlbestandsbericht nicht mehr erreichbar (docs/OFFEN.md 5.112). „Mehr laden" holt sie, und eine
+// Fehlbestandsbericht nicht mehr erreichbar. „Mehr laden" holt sie, und eine
 // frühere Inventur lässt sich nach der Rückfrage löschen.
 test('Inventur: ältere frühere Inventuren über „Mehr laden“, eine davon löschen', async ({
 	page

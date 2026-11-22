@@ -83,8 +83,8 @@ describe('Omnibox offline', () => {
 		omniboxStore.eingabe = '';
 	});
 
-	// Der Eintrag trägt die Person VOM SCAN, nicht die vom Zeitpunkt des Scheiterns
-	// (OFFEN.md 2.2, Commit 1). Bis dahin las speichereOfflineAktion Person und Absicht erst
+	// Der Eintrag trägt die Person VOM SCAN, nicht die vom Zeitpunkt des Scheiterns.
+	// Bis dahin las speichereOfflineAktion Person und Absicht erst
 	// nach der hängenden Anfrage (Timeout 10 s): Escape oder „Theke leeren" in dieser Zeit,
 	// und das Buch ging als Rückgabe ohne Person in die Warteschlange.
 	it('hält Person und Absicht beim Scan fest, nicht erst beim Scheitern', async () => {
@@ -108,7 +108,7 @@ describe('Omnibox offline', () => {
 		expect(q[0].gescannt_am).toBeGreaterThan(0);
 	});
 
-	// Nur ein gescheiterter VERSAND gehört in die Warteschlange (OFFEN.md 2.2, Commit 2). Bis
+	// Nur ein gescheiterter VERSAND gehört in die Warteschlange. Bis
 	// dahin lag verarbeiteAktionsErgebnis im selben catch: Ein TypeError aus der Auswertung
 	// einer gelungenen 200-Antwort wurde eingereiht — mit demselben Idempotenz-Schlüssel, den
 	// der Server schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
@@ -131,7 +131,7 @@ describe('Omnibox offline', () => {
 		);
 	});
 
-	// „Buch zurückgeben" in der Akte ist eine RÜCKGABE — auch offline (OFFEN.md 2.2, Commit 3).
+	// „Buch zurückgeben" in der Akte ist eine RÜCKGABE — auch offline.
 	// Online entscheidet der Server (das Buch liegt beim geladenen Schüler → Rückgabe); offline
 	// entschied bis zum 15.09.2026 nur „Schüler geladen?", und der Knopf reihte eine Ausleihe
 	// ein. Beim Nachbuchen wäre daraus eine Rückgabe geworden (Buch schon bei ihm) — beim
@@ -145,8 +145,8 @@ describe('Omnibox offline', () => {
 		expect(q.map((e) => e.leser_id)).toEqual(['schueler-7', 'schueler-7']);
 	});
 
-	// Mit geladenem Kollegen ist ein Offline-Buch eine Ausleihe an ihn (OFFEN.md 2.2,
-	// Commit 4; Entscheidung (b) vom 13.09.2026). Bis dahin entschied nur aktiverLeser, und
+	// Mit geladenem Kollegen ist ein Offline-Buch eine Ausleihe an ihn.
+	// Bis dahin entschied nur aktiverLeser, und
 	// das Buch ging mit geladener Lehrkraft als Rückgabe in die Warteschlange.
 	//
 	// Seit Migration 125 steht ein Kollege in demselben Platz wie ein Schüler — der Eintrag

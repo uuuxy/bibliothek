@@ -4,7 +4,7 @@
 -- ISBN ist am Titel eindeutig, also entsteht zwangsläufig eine zweite Titelzeile — richtig
 -- so, es sind zwei verschiedene Bücher. Ohne dieses Feld stehen sie in jeder Liste als
 -- zwei gleich aussehende Zeilen „Lambacher Schweizer 7", und wer eine davon an eine Klasse
--- ausgibt, weiß nicht, welche (docs/OFFEN.md 4.18, Stufe 1).
+-- ausgibt, weiß nicht, welche.
 --
 -- Die Angabe konnte bisher nur als Freitext-Schlüssel in erweiterte_eigenschaften stehen:
 -- Der Listenimport legt unbekannte Spalten dort ab, geschrieben hat sie kein Code. Der

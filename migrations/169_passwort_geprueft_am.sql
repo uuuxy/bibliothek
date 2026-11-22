@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 169: Eine Anmeldung gilt höchstens zehn Stunden nach der Passworteingabe (OFFEN 5.96)
+-- Migration 169: Eine Anmeldung gilt höchstens zehn Stunden nach der Passworteingabe
 -- =============================================================================
 -- Bisher hielt jedes offene Fenster seine Anmeldung ohne Grenze offen: Die Erneuerung schob
 -- laeuft_ab immer weiter hinaus. Wer ein Token in die Hand bekam, blieb damit angemeldet, ohne das

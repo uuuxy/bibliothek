@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 // Kam die Akte nicht, stand „Die Daten dieses Lesers konnten nicht abgerufen werden", gleich ob
-// der Server ablehnte oder keine Verbindung bestand; sein Grund fehlte (OFFEN.md 5.106).
+// der Server ablehnte oder keine Verbindung bestand; sein Grund fehlte.
 describe('Leserakte: Akte nicht geladen', () => {
 	it('nennt den Grund des Servers und lädt mit „Erneut versuchen" nach', async () => {
 		apiFetchMock.mockResolvedValue(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));

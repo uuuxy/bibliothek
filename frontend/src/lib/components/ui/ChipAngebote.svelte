@@ -7,7 +7,7 @@
      versetzt darunter.
 
      Aus ChipFeld herausgelöst, als dort eine zweite Zeile dazukam — die Normdatei-Wörter der
-     DNB, die die eigene Liste noch nicht kennt (docs/OFFEN.md 4.25): Zweimal dasselbe Markup
+     DNB, die die eigene Liste noch nicht kennt: Zweimal dasselbe Markup
      hätte ChipFeld über die 200-Zeilen-Marke gehoben. Nur ChipFeld setzt es ein. -->
 <script>
 	import Icon from './Icon.svelte';

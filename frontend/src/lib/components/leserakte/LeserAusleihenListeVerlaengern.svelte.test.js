@@ -14,7 +14,7 @@ import { authStore } from '../../stores/authStore.svelte.js';
 import LeserAusleihenListe from './LeserAusleihenListe.svelte';
 
 // Ging die Antwort auf „Verlängern" verloren, verlängerte der zweite Klick noch einmal: Aus 21
-// Tagen wurden 42 (Probe in Chromium, Firefox und WebKit, OFFEN.md 5.106). Die Liste schickt die
+// Tagen wurden 42 (Probe in Chromium, Firefox und WebKit). Die Liste schickt die
 // Frist mit, die sie zeigt; steht am Server schon eine andere, kommt die jetzige in die Zeile.
 describe('Ausleihliste: Verlängern', () => {
 	const buch = () => ({

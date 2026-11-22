@@ -308,7 +308,7 @@ describe('bestellStore.submitOrder', () => {
 });
 
 // Ging die Antwort auf das Anlegen verloren, stand der Lieferant schon am Server, die Liste zeigte
-// ihn nicht, und ein zweiter Versuch legte ihn noch einmal an (OFFEN.md 5.106).
+// ihn nicht, und ein zweiter Versuch legte ihn noch einmal an.
 describe('bestellStore.addSupplier', () => {
 	beforeEach(() => {
 		resetStore();
@@ -605,7 +605,7 @@ describe('bestellStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 
 	// Der Schlüssel gehört zum INHALT, nicht zum Topf.
 	//
-	// Fund vom 16.09.2026 (OFFEN.md 5.1): Ging die Antwort verloren und änderte jemand
+	// Fund vom 16.09.2026: Ging die Antwort verloren und änderte jemand
 	// danach den Warenkorb, ging derselbe Schlüssel mit anderem Inhalt raus. Der Server
 	// erkennt die Wiederholung und antwortet mit der ALTEN Bestellung — die Änderung war
 	// still verschwunden, und die Oberfläche meldete Erfolg. Genau das ist der Grund,

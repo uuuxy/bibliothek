@@ -12,8 +12,8 @@ import { apiFetch } from '../../../../lib/apiFetch.js';
 import { melde } from '$lib/store.svelte.js';
 import BuchAuflagen from './BuchAuflagen.svelte';
 
-// „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske (docs/OFFEN.md 4.18,
-// Stufe 2): Beschriftung, Liste, Knopf und Hinweis wie ein Feld, keine eigene Überschrift. GET
+// „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske:
+// Beschriftung, Liste, Knopf und Hinweis wie ein Feld, keine eigene Überschrift. GET
 // /api/buecher/titel/{id}/auflagen antwortet mit { id, auflagen } — die Auflagen des Buchs,
 // die neueste zuerst, ohne Gruppe nur der Titel selbst (internal/api/katalog/titel_auflagen.go).
 

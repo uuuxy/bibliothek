@@ -102,7 +102,7 @@ describe('Offline-Band', () => {
 
 	// Warten hilft nicht — und das Band muss es sagen.
 	//
-	// Fund vom 16.09.2026 (OFFEN.md 5.19): Der Sync endete bei jeder Antwort ab 400 mit
+	// Fund vom 16.09.2026: Der Sync endete bei jeder Antwort ab 400 mit
 	// einem schlichten Abbruch. Gedacht war das für 502/503; bei einer Antwort, die sich
 	// von selbst nicht ändert (403, weil der gerade angemeldete Mensch nicht buchen darf),
 	// lief der Versuch jede Minute ins Leere. Sichtbar war nur der Zähler, und der sagt

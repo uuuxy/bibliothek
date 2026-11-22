@@ -1,7 +1,7 @@
 import { anzahlText } from './format.js';
 
 /**
- * Wie eine Auflage in Listen heißt (docs/OFFEN.md 4.18). Eine Stelle für den Abschnitt der
+ * Wie eine Auflage in Listen heißt. Eine Stelle für den Abschnitt der
  * Titelmaske, den Zuordnen-Dialog und den Bestellbedarf: Alle zeigen Titel derselben Reihe,
  * die sich oft nur in Auflage und Jahr unterscheiden — „Lambacher Schweizer 7" zweimal hilft
  * niemandem.

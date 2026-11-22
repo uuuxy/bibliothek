@@ -5,7 +5,7 @@
 -- OPAC- und Inventur-Zählungen ausgeblendet (LIKE-Muster an vier Stellen).
 -- Eine harmlose Personal-Notiz wie "Bestellt am 3.9. neu, alter Band verloren"
 -- ließ ein Exemplar damit still aus dem Katalog verschwinden — Befund F1 der
--- unabhängigen Prüfung (bewertung/datenbank-pruefbericht.md).
+-- unabhängigen Prüfung.
 --
 -- Neu: bestellstatus trägt den Zustand der Bestell-Pipeline, NULL = kein
 -- laufender Bestellvorgang. Die Notiz bleibt reiner Menschentext (der

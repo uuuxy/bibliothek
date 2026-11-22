@@ -47,7 +47,7 @@ describe('inventurApi: Listen der Seite', () => {
 
 // Ohne Antwort des Servers (kein Netz, Frist abgelaufen) warfen die Anfragen, und keiner der
 // Aufrufer fing das: Start, Abschluss, Verwerfen, „Gefunden" und „endgültig löschen" taten
-// sichtbar nichts. Gleich in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+// sichtbar nichts. Gleich in Chromium, Firefox und WebKit.
 describe('inventurApi: ohne Antwort des Servers', () => {
 	it.each([
 		['Start', () => starteLauf({ type: 'global' })],

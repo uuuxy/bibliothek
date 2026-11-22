@@ -122,7 +122,7 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 });
 
 // Das Etikett eines einzelnen Exemplars kommt aus dem Druck-Center, auf dem Bogen nach der
-// Vorlage (OFFEN.md 5.5, entschieden am 24.09.2026). Bis dahin druckte der Knopf der
+// Vorlage (entschieden am 24.09.2026). Bis dahin druckte der Knopf der
 // Exemplarkarte ein eigenes A6-Blatt ohne Schulname, Anschaffungsjahr, Signatur und
 // Eigentumsvermerk — und vermerkte das Exemplar trotzdem als etikettiert. Der Test geht den
 // Weg von Hand: Karte → Druck-Center → Bogen.

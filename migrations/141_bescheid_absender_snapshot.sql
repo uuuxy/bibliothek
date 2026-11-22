@@ -4,7 +4,7 @@
 -- Der Nachdruck eines Bescheids soll derselbe Brief sein. Den Empfänger hält
 -- empfaenger_snapshot seit Migration 110 fest; Schulanschrift, Geschäftszeichen,
 -- Bearbeiter, Durchwahl, Zahlstelle, Bankverbindung, Aufsicht und Schulleitung las der
--- Nachdruck bis zum 23.09.2026 live aus den Einstellungen (docs/OFFEN.md 5.2). Nach einem
+-- Nachdruck bis zum 23.09.2026 live aus den Einstellungen. Nach einem
 -- Wechsel der Schulleitung trug der Nachdruck eines alten Bescheids die neue Unterschrift,
 -- nach einem Kontowechsel das neue Konto.
 --

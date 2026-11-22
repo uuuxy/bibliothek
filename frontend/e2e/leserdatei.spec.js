@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
 
-// Der Nachweis für den Schritt „Theke und Leserdatei" (docs/OFFEN.md 5.16), im Browser
+// Der Nachweis für den Schritt „Theke und Leserdatei", im Browser
 // und gegen den frisch gebauten Stack.
 //
 // Die Frage, um die es geht: Ein Kollege lässt sich an der Theke über seinen

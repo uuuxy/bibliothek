@@ -2,7 +2,7 @@
 --
 -- Der UNIQUE-Index auf buecher_titel.isbn fing nur die zeichengleiche Dublette:
 -- „978-3-16-148410-0" und „9783161484100" waren zwei Titel, also zwei Bestände, zwei
--- Meldebestände und zwei Zeilen in der Nachbestellung (OFFEN.md 5.12, 4.18). Die Maske
+-- Meldebestände und zwei Zeilen in der Nachbestellung. Die Maske
 -- prüfte seit dem 17.09.2026 beide Schreibweisen (inventur/dublettenkontrolle.go), die
 -- Importe nicht — und jeder weitere Schreiber (Littera-Übernahme, Sammelimport,
 -- Schnellanlage per ISBN, Skripte) müsste die Regel kennen. Fünf Go-Helfer bereinigten
@@ -17,7 +17,7 @@
 --
 -- Bewusst KEIN Rückschreiben des Bestands: Zwei Altzeilen, die sich nur in der
 -- Schreibweise unterscheiden, kollidierten dabei am Index, und ob es solche gibt, weiß
--- nur die Messung am Server (OFFEN.md 5.5). Bis dahin deckt die Dublettenkontrolle der
+-- nur die Messung am Server. Bis dahin deckt die Dublettenkontrolle der
 -- Maske die Zwischenzeit; das Rückschreiben ist eine eigene Migration nach der Zahl.
 
 CREATE OR REPLACE FUNCTION isbn_normalform(roh text)

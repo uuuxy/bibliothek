@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Klassensätze zählen am Buch (docs/OFFEN.md 4.18, Stufe 5): In der 09Y1 haben vier Kinder die
+// Klassensätze zählen am Buch: In der 09Y1 haben vier Kinder die
 // 4. und zwei die 3. Auflage desselben Buchs. Je Auflage gezählt wäre das kein Klassensatz
 // (vier sind unter der Mindestzahl von fünf), am Buch sind es sechs Leser. Die Kachel zeigt die
 // Auflage, die die meisten haben, und darunter, welche Auflagen die Klasse hat.

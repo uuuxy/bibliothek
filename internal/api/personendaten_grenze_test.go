@@ -15,7 +15,7 @@ import (
 )
 
 // Die Grenze der Personendaten an den Rechten des Katalogs: view_books hat die Helfer-Rolle mit
-// der Zusage „öffnet keine Personendaten" (bewertung/sicherheitsbefund-*.md). Diese Tests halten
+// der Zusage „öffnet keine Personendaten". Diese Tests halten
 // die Zusage an beiden Sorten von Türen fest: Routen, deren Zweck Personendaten sind, hängen an
 // view_students; die Geräteliste blendet den Namen des Ausleihers aus.
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-// Auflagen eines Schulbuchs zusammenfassen (docs/OFFEN.md 4.18, Stufe 2): Der Weg, den eine
+// Auflagen eines Schulbuchs zusammenfassen: Der Weg, den eine
 // Bibliothekskraft nimmt — Medienkatalog, Stift an der alten Auflage, Abschnitt „Auflagen",
 // „Andere Auflage zuordnen", suchen, wählen, zuordnen — und wieder lösen. Geprüft wird am
 // Bildschirm UND in der Datenbank: Beide Titel hängen danach am selben Werk, nach dem Lösen

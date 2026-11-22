@@ -7,7 +7,7 @@ import { verwerfenBestaetigen } from './bestaetigung.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { schuetzeUngespeichertes, darfVerwerfen } from './verlassenSchutz.svelte.js';
 
-// Der Verlassen-Schutz einer Maske (docs/OFFEN.md 5.79): Ein Wechsel der Seite hält an und
+// Der Verlassen-Schutz einer Maske: Ein Wechsel der Seite hält an und
 // fragt, das Fenster fragt der Browser, und nach dem Abbau der Maske ist der Wächter weg.
 
 /** Die nächste Frage bleibt offen, bis der Test sie beantwortet. */

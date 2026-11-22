@@ -4,7 +4,7 @@ import { uiLogin, gehZu, menuepunkt, seedSQL, querySQL, uniqueSuffix } from './h
 // „Zurück" in „Stammdaten bearbeiten" verwirft, was nicht gespeichert ist. Vorher fragt die
 // Maske, wie die Buchmaske (e2e/buchmaske-verwerfen.spec.js) und wie Material 3 es für den
 // Full-screen dialog verlangt („Dismissing"); ohne Eingabe fragt sie nicht. Ebenso fragen der
-// Wechsel der Seite und das Schließen des Fensters (docs/OFFEN.md 5.80).
+// Wechsel der Seite und das Schließen des Fensters.
 const s = uniqueSuffix().slice(0, 6);
 const VORNAME = `Verwerf${s}`;
 const AUSWEIS = `S-VW-${s}`;

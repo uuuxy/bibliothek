@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, fireEvent } from '@testing-library/svelte';
 import SchuelerdateiLeiste from './SchuelerdateiLeiste.svelte';
 
-// Gate für den Jahrgangsfilter der Leserdatei (OFFEN.md 9.5, Protokoll 5 und 6).
+// Gate für den Jahrgangsfilter der Leserdatei (Protokoll 5 und 6).
 //
 // Das Sichtungsprotokoll des Medienzentrums vom 16.09.2026: „Die Schülerdatei verfügt über
 // keine Sortier- oder Filteroption nach Klassen bzw. Jahrgängen" — und unter
@@ -79,7 +79,7 @@ describe('Jahrgangsfilter in der Leserdatei', () => {
 		const feld = screen.getByLabelText('Nach Jahrgang filtern');
 
 		expect(screen.container.textContent ?? '').toContain('Jahrgänge nicht geladen');
-		// Mit dem Grund des Servers (OFFEN.md 5.106).
+		// Mit dem Grund des Servers.
 		expect((screen.container.textContent ?? '').replace(/\s+/g, ' ')).toContain(
 			'Die Jahrgänge ließen sich nicht laden: Datenbank nicht erreichbar. Bitte neu öffnen.'
 		);

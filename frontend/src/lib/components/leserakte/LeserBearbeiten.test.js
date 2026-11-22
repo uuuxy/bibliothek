@@ -13,8 +13,7 @@ import { bestaetigungStore } from '../../stores/bestaetigung.svelte.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
 // „Änderungen gespeichert." erschien nie: Die Maske zeigte ihre Meldungen in einer eigenen
-// Snackbar und schließt mit dem Speichern (Leserakte, `nachBearbeiten`), die Meldung mit ihr
-// (docs/OFFEN.md 5.76).
+// Snackbar und schließt mit dem Speichern (Leserakte, `nachBearbeiten`), die Meldung mit ihr.
 const MIA = {
 	id: 'leser-1',
 	art: 'schueler',

@@ -126,7 +126,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 	});
 });
 
-// OFFEN.md 5.5 (22.09.2026): Auf dem Papier war die Barcode-Höhe fest (8 mm, QR 11 mm),
+// Auf dem Papier war die Barcode-Höhe fest (8 mm, QR 11 mm),
 // während die Leinwand das Bild ins Element skalierte. Wer das Element im Designer höher
 // zog, sah es auf dem Bildschirm größer und auf dem Ausweis unverändert. Jetzt füllt das
 // Bild das Element, und seine Pixelgröße kommt aus den Millimetern des Elements — für

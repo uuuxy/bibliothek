@@ -232,8 +232,7 @@ describe('Leserdatei-Suche', () => {
 		}
 	});
 
-	// Kamen die Jahrgänge nicht, stand nur „Jahrgänge nicht geladen", ohne den Grund des Servers
-	// (OFFEN.md 5.106).
+	// Kamen die Jahrgänge nicht, stand nur „Jahrgänge nicht geladen", ohne den Grund des Servers.
 	it('nennt den Grund, wenn die Jahrgänge nicht kamen', async () => {
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		/** @type {[() => any, string][]} */
