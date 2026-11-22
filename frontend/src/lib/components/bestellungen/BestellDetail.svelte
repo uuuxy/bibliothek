@@ -105,12 +105,9 @@
 					     nie ein geratener. -->
 					<StatusChip ton="neutral" text={mittelBeschriftung(bestellung.mittel)} />
 					{#if darfKorrigieren}
-						<button
-							onclick={() => (mittelDialogOffen = true)}
-							class="text-label-small text-primary hover:underline cursor-pointer"
-						>
+						<Button variant="ghost" size="sm" onclick={() => (mittelDialogOffen = true)}>
 							Topf ändern
-						</button>
+						</Button>
 					{/if}
 				</div>
 				<p class="mt-0.5 text-sm text-on-surface-variant">

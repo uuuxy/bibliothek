@@ -113,12 +113,13 @@
 	     falsch gekennzeichnetes Schulbuch wandert hier in die Lernmittel-Bestellung, ohne
 	     dass jemand erst den Titel bearbeiten muss. Der Knopf nennt das Ziel. -->
 	<div class="pl-10">
-		<button
+		<Button
+			variant="ghost"
+			size="sm"
 			onclick={() => bestellStore.verschiebe(position)}
-			class="text-label-small text-primary hover:underline cursor-pointer"
 			aria-label="{position.titel} in die Bestellung „{ziel.label}“ verschieben"
 		>
 			→ {ziel.label} · {ziel.traeger}
-		</button>
+		</Button>
 	</div>
 </div>

@@ -129,13 +129,9 @@
 				{leerlaufSperre.entsperrFehler}
 			</p>
 		{/if}
-		<button
-			type="button"
-			onclick={abmelden}
-			class="text-body-small-emphasized text-on-surface-variant underline-offset-2 hover:underline cursor-pointer"
-		>
+		<Button variant="ghost" type="button" onclick={abmelden}>
 			Abmelden und als andere Person anmelden
-		</button>
+		</Button>
 	</form>
 	<BestaetigungsDialog
 		frage={verwerfenOffen ? verwerfenFrage('Verwerfen und abmelden') : null}
