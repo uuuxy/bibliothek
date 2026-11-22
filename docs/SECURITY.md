@@ -346,6 +346,7 @@ ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
   `SMTP_ALLOW_PLAINTEXT=true` erlaubt den Versand ganz ohne TLS. Beide protokollieren eine
   Warnung. Nur für ein Legacy-Relay, das anders nicht erreichbar ist.
 - **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
+- **Ein gespeichertes Passwort bleibt bei seinem Server:** Wer den Mailserver (`PUT /api/admin/settings/mail`) oder die Adresse des Webmails (`PUT /api/admin/settings/adressabgleich`) ändert, trägt die gespeicherten Passwörter neu ein, auch das des zweiten Absenders. Sonst gingen sie beim nächsten Versand oder Abgleich an den neuen Server (Gate `internal/api/system/passwort_bei_neuem_server_pg_test.go`).
 
 ### IMAP
 

@@ -182,6 +182,9 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 			return
 		}
 
+		if !pruefePasswortZumNeuenServer(r.Context(), w, mailAbfragen, req) {
+			return
+		}
 		if err := schreibeMailEinstellungen(r.Context(), mailAbfragen, req); err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -194,6 +197,35 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 
 // schreibeMailEinstellungen schreibt den Postausgang und, wenn die Anfrage ihn nennt, den
 // zweiten Absender.
+// Meldungen, wenn der Mailserver wechselt und ein gespeichertes Passwort mitginge.
+const (
+	meldungPasswortZumNeuenServer       = "Der Mailserver hat sich geändert. Bitte das Passwort neu eintragen."
+	meldungPortalPasswortZumNeuenServer = "Der Mailserver hat sich geändert. Bitte auch das Passwort des zweiten Absenders neu eintragen."
+)
+
+// pruefePasswortZumNeuenServer verlangt bei einem anderen Mailserver die gespeicherten Passwörter
+// neu: Sie gingen sonst beim nächsten Versand an den neuen Server, und wer Einstellungen ändern
+// darf, läse sie dort mit. Bei einem Fehler hat sie geantwortet und liefert false.
+func pruefePasswortZumNeuenServer(ctx context.Context, w http.ResponseWriter, mailAbfragen *repository.MailEinstellungsAbfragen, req mailEinstellungenAnfrage) bool {
+	konfig, err := mailAbfragen.Lade(ctx)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if strings.EqualFold(strings.TrimSpace(konfig.SMTPHost), req.SMTPHost) {
+		return true
+	}
+	if len(konfig.SMTPPasswortVerschluesselt) > 0 && req.SMTPPasswort == "" {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPasswortZumNeuenServer, nil)
+		return false
+	}
+	if len(konfig.PortalSMTPPasswortVerschluesselt) > 0 && (req.Portal == nil || req.Portal.SMTPPasswort == "") {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPortalPasswortZumNeuenServer, nil)
+		return false
+	}
+	return true
+}
+
 func schreibeMailEinstellungen(ctx context.Context, mailAbfragen *repository.MailEinstellungsAbfragen, req mailEinstellungenAnfrage) error {
 	if err := mailAbfragen.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPBenutzer, req.SMTPPasswort, req.AbsenderEmail); err != nil {
 		return err

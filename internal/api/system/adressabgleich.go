@@ -28,15 +28,18 @@ const adressabgleichStandSchluessel = "adressabgleich_stand"
 
 // Sätze der Oberfläche zum Abgleich; der Stand eines gescheiterten Laufs trägt denselben Satz.
 const (
-	meldungWebmailNichtEingerichtet  = "Der Zugang zum Webmail ist nicht eingerichtet"
-	meldungWebmailAbgelehnt          = "Das Webmail hat die Anmeldung abgelehnt. Bitte Benutzername und Passwort prüfen."
-	meldungKeinGlobalesAdressbuch    = "Das Konto sieht im Webmail kein globales Adressbuch"
-	meldungWebmailUnerreichbar       = "Das Webmail ist nicht erreichbar oder antwortet nicht wie Roundcube"
-	meldungWebmailPasswortUnlesbar   = "Das gespeicherte Passwort des Webmails ist nicht lesbar. Bitte neu eintragen."
-	meldungSchulDomainFehlt          = "Die Domain der Schule ist nicht eingestellt: SELBSTANMELDUNG_DOMAIN ist leer"
-	meldungWebmailBenutzerFehlt      = "Bitte den Benutzernamen des Webmails eintragen"
-	meldungWebmailPasswortFehlt      = "Bitte das Passwort des Webmails eintragen"
-	meldungAdressabgleichGescheitert = "Der Abgleich ließ sich nicht ausführen"
+	meldungWebmailNichtEingerichtet = "Der Zugang zum Webmail ist nicht eingerichtet"
+	meldungWebmailAbgelehnt         = "Das Webmail hat die Anmeldung abgelehnt. Bitte Benutzername und Passwort prüfen."
+	meldungKeinGlobalesAdressbuch   = "Das Konto sieht im Webmail kein globales Adressbuch"
+	meldungWebmailUnerreichbar      = "Das Webmail ist nicht erreichbar oder antwortet nicht wie Roundcube"
+	meldungWebmailPasswortUnlesbar  = "Das gespeicherte Passwort des Webmails ist nicht lesbar. Bitte neu eintragen."
+	meldungSchulDomainFehlt         = "Die Domain der Schule ist nicht eingestellt: SELBSTANMELDUNG_DOMAIN ist leer"
+	meldungWebmailBenutzerFehlt     = "Bitte den Benutzernamen des Webmails eintragen"
+	meldungWebmailPasswortFehlt     = "Bitte das Passwort des Webmails eintragen"
+	// meldungWebmailPasswortZurNeuenAdresse geht hinaus, wenn die Adresse wechselt und das
+	// gespeicherte Passwort mitginge.
+	meldungWebmailPasswortZurNeuenAdresse = "Die Adresse des Webmails hat sich geändert. Bitte das Passwort neu eintragen."
+	meldungAdressabgleichGescheitert      = "Der Abgleich ließ sich nicht ausführen"
 )
 
 // adressabgleichStand ist das Ergebnis des letzten Laufs, der etwas eintragen durfte.
@@ -127,6 +130,11 @@ func pruefeWebmailZugang(ctx context.Context, w http.ResponseWriter, mailAbfrage
 	}
 	if req.Passwort == "" && len(konfig.WebmailPasswortVerschluesselt) == 0 {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungWebmailPasswortFehlt, nil)
+		return false
+	}
+	// Unter einer anderen Adresse ginge das gespeicherte Passwort beim nächsten Abgleich dorthin.
+	if req.Passwort == "" && !strings.EqualFold(konfig.WebmailAdresse, req.Adresse) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungWebmailPasswortZurNeuenAdresse, nil)
 		return false
 	}
 	return true
