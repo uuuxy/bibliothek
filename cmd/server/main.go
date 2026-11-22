@@ -213,6 +213,11 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 		slog.Error("encryption key must be exactly 32 bytes (or 64 hex characters) long", "variable", crypto.SchluesselVariable)
 		os.Exit(1)
 	}
+	// 64 Zeichen gelten als Hex. Der Fehler nennt ein Zeichen des Schlüssels und bleibt aus dem Log.
+	if _, err := crypto.SchluesselAusUmgebung(); err != nil {
+		slog.Error("encryption key with 64 characters must be hexadecimal", "variable", crypto.SchluesselVariable)
+		os.Exit(1)
+	}
 
 	// Die Beispiel-Geheimnisse aus dem Repository dürfen im echten Betrieb nicht verwendet werden.
 	// Sonst könnte jeder mit Zugang zum Repository Tokens eines Admins fälschen (JWT_SECRET) oder die

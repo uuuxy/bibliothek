@@ -2,6 +2,7 @@ package bereitschaft
 
 import (
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -79,5 +80,29 @@ func TestIstBeispielGeheimnis_KenntEnvExample(t *testing.T) {
 	}
 	if gesehen < 2 {
 		t.Fatalf("nur %d Beispielwerte in .env.example gefunden — die Probe läuft ins Leere", gesehen)
+	}
+}
+
+// Dasselbe für die Werte, die in den Compose-Dateien des Repositorys stehen (lokaler Stack und
+// Generalprobe): Wer eine davon auf einem Server startet, liefe mit einem öffentlich bekannten
+// Schlüssel. Gelesen aus den Dateien, als Vorgabe (${NAME:-wert}) oder als fester Wert.
+func TestIstBeispielGeheimnis_KenntDieWerteDerComposeDateien(t *testing.T) {
+	muster := regexp.MustCompile(`(?m)^\s*- (?:JWT_SECRET|APP_ENCRYPTION_KEY)=(?:\$\{[A-Z_]+:-([^}]+)\}|([^$\s][^\s]*))\s*$`)
+	gesehen := 0
+	for _, datei := range []string{"../../docker-compose.local.yml", "../../scripts/generalprobe/docker-compose.yml"} {
+		inhalt, err := os.ReadFile(datei)
+		if err != nil {
+			t.Fatalf("%s lesen: %v", datei, err)
+		}
+		for _, treffer := range muster.FindAllStringSubmatch(string(inhalt), -1) {
+			wert := treffer[1] + treffer[2]
+			gesehen++
+			if !IstBeispielGeheimnis(wert) {
+				t.Errorf("%s: %q wird vom Wächter nicht als Beispiel erkannt", datei, wert)
+			}
+		}
+	}
+	if gesehen < 4 {
+		t.Fatalf("nur %d Werte in den Compose-Dateien gefunden — die Probe läuft ins Leere", gesehen)
 	}
 }

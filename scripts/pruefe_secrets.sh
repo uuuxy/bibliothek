@@ -48,6 +48,7 @@ ist_bekannter_default() {
 	"super-secret-default-key-at-least-32-bytes" | "super-secure-aes-key-32-chars-ok" | \
 		"supergeheim_lokal" | "local-dev-jwt-secret-min-32-characters" | "admin" | "postgrespassword" | \
 		"super-secret-key-that-is-at-least-32-bytes-long" | "your-32-character-encryption-key" | \
+		"probe-jwt-secret-nur-lokal-mindestens-32-zeichen" | "probe-aes-key-32-zeichen-lokal!!" | \
 		"change-me-local-dev")
 		return 0
 		;;

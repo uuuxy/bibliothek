@@ -10,6 +10,11 @@ func IstBeispielGeheimnis(wert string) bool {
 	case "super-secret-default-key-at-least-32-bytes", // Default aus docker-compose.yml (JWT)
 		"super-secure-aes-key-32-chars-ok", // Default aus docker-compose.yml (AES)
 		"supergeheim_lokal",
+		// Die Werte des lokalen Stacks und der Generalprobe (docker-compose.local.yml,
+		// scripts/generalprobe/docker-compose.yml): Sie stehen im Repository wie die anderen.
+		"local-dev-jwt-secret-min-32-characters",
+		"probe-jwt-secret-nur-lokal-mindestens-32-zeichen",
+		"probe-aes-key-32-zeichen-lokal!!",
 		// Die Platzhalter aus .env.example: Wer die Datei nach .env kopiert und nur die
 		// Werte setzt, die docker-compose mit `:?` verlangt, behält diese beiden. Sie
 		// erfüllen die Längenprüfung und fallen durch keine andere Schranke.

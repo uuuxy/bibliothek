@@ -127,6 +127,15 @@ func TestLeseKonfig_UngueltigerSchluessel(t *testing.T) {
 	})
 }
 
+// 64 Zeichen gelten als Schlüssel in Hex. Ein Zeichen daneben fiele sonst erst auf, wenn das erste
+// Passwort oder Foto verschlüsselt wird.
+func TestLeseKonfig_SchluesselMit64ZeichenOhneHex(t *testing.T) {
+	pruefeAbbruch(t, "TestLeseKonfig_SchluesselMit64ZeichenOhneHex", func() {
+		setzeGueltigeUmgebung()
+		setzeVariable("APP_ENCRYPTION_KEY", strings.Repeat("g", 64))
+	})
+}
+
 func TestLeseKonfig_OhnePort(t *testing.T) {
 	pruefeAbbruch(t, "TestLeseKonfig_OhnePort", func() {
 		setzeGueltigeUmgebung()
