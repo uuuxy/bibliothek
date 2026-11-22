@@ -72,8 +72,8 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 - **Ausleihlimit:** Es gibt ein konfigurierbares Maximum an gleichzeitigen Ausleihen pro Schüler (LMF-Bücher ausgenommen).
 - **Sperren: ein Prüfweg für Buch, Gerät und Nachbuchen** (entschieden am 24.09.2026, `pruefeAusleihSperren` in `internal/service/ausleih_sperren.go`). Die Regel richtet sich danach, wer gesperrt hat:
-  - **Sperre am Leser** — von Hand (Akte → „Schüler sperren", Begründung Pflicht) oder vom Programm für Ehemalige (Versetzung, LUSD-Import). An der Theke geht dann nur die Rückgabe. Aufgehoben wird sie in der Akte oder im Sperr-Dialog der Theke („Sperre aufheben"), beides mit dem Recht `edit_students` über dieselbe Tür (`PATCH /api/admin/students/{id}/lock`); Aufheben nimmt beide Sperren weg. Wie Littera: „Für eine Ausleihe muss jedoch die Sperre zunächst in den Leserstammdaten aufgehoben werden!"
-  - **Hinweise** — eine unbezahlte Forderung, gleich aus welchem Topf (ein Konto je Leser), und die Überfällig-Automatik: ab `UeberfaelligSperreAbMedien` Medien, die länger als `UeberfaelligKarenzTage` überfällig sind. Wer das Recht „Leser bearbeiten“ hat, übergeht sie einmalig („Einmalig ignorieren", `override_block`); Littera hält es mit dem Gebührenlimit ebenso.
+  - **Sperre am Leser** — von Hand (Akte → „Schüler sperren", Begründung Pflicht) oder vom Programm für Ehemalige (Versetzung, LUSD-Import). An der Theke geht dann nur die Rückgabe. Aufgehoben wird sie in der Akte oder im Sperr-Dialog der Theke („Sperre aufheben"), beides mit dem Recht `edit_students` über dieselbe Tür (`PATCH /api/admin/students/{id}/lock`); Aufheben nimmt beide Sperren weg.
+  - **Hinweise** — eine unbezahlte Forderung, gleich aus welchem Topf (ein Konto je Leser), und die Überfällig-Automatik: ab `UeberfaelligSperreAbMedien` Medien, die länger als `UeberfaelligKarenzTage` überfällig sind. Wer das Recht „Leser bearbeiten“ hat, übergeht sie einmalig („Einmalig ignorieren", `override_block`).
   - **Lernmittel** (Entscheidung der Schule vom 22.09.2026, Grundlage: Lernmittelfreiheit in Hessen): Beim Schulbuch hält nur die Sperre von Hand auf. Keine automatische Sperre, auch keine übergehbare — auch nicht die der Ehemaligen, und auch nicht bei der Verlängerung (entschieden am 28.09.2026). Dieselbe Regel fragen Einzelverlängerung und Frist von Hand (`PruefeSperreAmLeser`), Klassenverlängerung und LMF-Plan (`repository.sqlSchulbuchFristGehtMit`).
   - **Kollegen** werden nie gesperrt (entschieden am 16.09.2026, bestätigt am 24.09.2026): keine Frist, keine Forderung, und der Knopf in ihrer Akte ist verschlossen. Eine ältere Sperre an ihrem Konto zählt nicht.
   - **Anonymisierte Datensätze** bekommen nichts, auch kein Schulbuch; ihre Sperre lässt sich nicht aufheben.
@@ -95,58 +95,39 @@ Portal und PDF zeigen den Vermerk.
 **Bücherausgabe nach den Sommerferien** (`art = ausgabe`): nur die neu gebildeten Klassen
 der **Eingangsjahrgänge** (Einstellung `lmf_eingangsjahrgaenge`, Vorgabe „5, 7",
 `EingangsjahrgaengeAus`); der Vorschlag enthält nur sie. **Entwurf und Veröffentlichung**
-(Migration 100, `lmf_plaene.veroeffentlicht_am`): Speichern legt einen Entwurf an — zentral,
+(`lmf_plaene.veroeffentlicht_am`): Speichern legt einen Entwurf an — zentral,
 aber unsichtbar für `GET /api/lmf-termine`, das Portal-PDF und `LMFAbfragen.LadeRueckgabeTerminLage`
 (ein Entwurf setzt auch beim Ausleihen keine Frist);
 `POST /api/lmf-plan/{art}/veroeffentlichen` stempelt ihn und koppelt die Fristen; danach
 gilt jede Speicherung sofort. Das Entwurfs-PDF für die Schulleitung liefert
 `GET /api/lmf-termine/entwurf/pdf` (edit_books). Klassen werden weder angelegt noch
-gelöscht: Der Name im Plan registriert sich im Vokabular (Trigger, Migration 079), und
+gelöscht: Der Name im Plan registriert sich per Trigger im Vokabular, und
 eine Klasse ohne aktive Schüler verschwindet von selbst aus jeder Liste — der Planer
 markiert sie „ohne Schüler" (`klassen` = Klassen mit Schülern in der GET-Antwort). **Wer
 noch keine Zeile hat, steht nur im Planer** über der Tabelle („Noch nicht im Plan",
 `LmfPlanVorrat.svelte`); das Portal zeigt den Plan, nicht die Lücken darin.
 
-Die Schule führte den Plan als Excel-Tabelle (Wochentag, Datum, Stunde, Klasse(n),
-Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Der echte
-Plan 2026 zeigte die Form: Abschlussklassen zuerst, dann JEDER
-Schultag Stunde 1–6, eine Klasse je Stunde, die Reihenfolge läuft über die Tage weiter;
-manche teilen sich eine Stunde („10R1/10R2"), am Ende Zeilen ohne Klasse („Nachzügler",
-„Aufräumen"); zwei Datumsfehler von Hand. **Der Plan ist deshalb eine REIHENFOLGE, die
-der Server auf Schultage × Stunden gießt** — nicht eine Liste einzeln angelegter Zeilen.
+**Der Plan ist eine Reihenfolge, die der Server auf Schultage × Stunden verteilt,** keine Liste
+einzeln angelegter Zeilen. Beim Büchertausch steht das Ende fest (Donnerstag vor den Sommerferien,
+4. Stunde: „es endet immer am gleichen Tag“), und die Reihenfolge fließt rückwärts davor; bei der
+Bücherausgabe steht der Beginn fest. Eine Zeile hat null bis viele Klassen; „Bücher setzen“ oder
+„Nachzügler“ sind Zeilen ohne Klasse. Die Verteilung rechnet eine Stelle (`lmfplan.VerteileMit`,
+`VerteileRueckwaerts`: Mo–Fr, Feiertage Hessen, freie Tage des Plans ausgespart, feste Plätze
+umflossen); die Vorschau im Planer ist derselbe Aufruf, kein Zwilling in JavaScript. Die
+Sommerferien kommen aus der Tabelle in `internal/pkg/lmfplan/sommerferien.go` (KMK bis 2030, ein
+Test erinnert vor dem Ende).
 
-Modell (Migration 096 + 097 + 101): `lmf_plaene` je Art und Schuljahr mit dem Rahmen —
-beim Büchertausch das ENDE (`letzter_tag`, `letzte_stunde`: Donnerstag vor den
-Sommerferien, 4. Stunde: „es endet immer am gleichen Tag"), die
-Reihenfolge fließt rückwärts davor und `erster_tag`/`startstunde` sind gerechnet; bei
-der Bücherausgabe der Beginn (`erster_tag`, `startstunde`) — plus Stunden je Tag;
-die Vorbelegung kommt aus der Ferientabelle Hessen (`internal/pkg/lmfplan/sommerferien.go`, KMK bis
-2030, Horizont-Test als Erinnerung), `lmf_termine` als Zeilen mit `plan_id`, `position`
-und den GERECHNETEN Feldern Datum/Stunde (Portal, PDF und Frist-Kopplung lesen
-sie), `lmf_termin_klassen` (0..n Klassen aus dem Vokabular; „Bücher setzen" = Zeile
-ohne Klasse mit Vermerk), `lmf_plan_ausgelassen` (Klassen, die der Plan bewusst auslässt —
-die Oberstufe organisiert sich an dieser Schule selbst; der nächste Plan übernimmt die
-Auslassung). Die Verteilung rechnet
-`internal/pkg/lmfplan.VerteileMit` bzw. `VerteileRueckwaerts` (Mo–Fr, Feiertage Hessen,
-freie Tage des Plans ausgespart, feste Plätze umflossen) —
-die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
-`"vorschau": true`, kein JavaScript-Zwilling.
-
-Routen (`internal/api/lernmittel/lmf_plan.go`, alle `edit_books`): `GET /api/lmf-plan/{art}` liefert den
-neuesten Plan der Art, ob er vorbei ist, und dann den **Vorschlag** für den nächsten —
-die Reihenfolge des Vorjahres plus neue Klassen (Klassennamen bleiben Jahr für Jahr gleich,
-die Versetzung verschiebt Schüler, nicht Namen), ohne Vorjahr die Regel
-`LMFAbfragen.LadeKlassenMitSchuelern` (Abschluss zuerst via `AbschlussklasseSQL`, Jahrgang absteigend,
-Jahrgang ≥ 11 oder ohne Ziffer = Oberstufe → ausgelassen). `PUT` rechnet und speichert
-(gleiches Schuljahr = ersetzen, anderes = neuer Plan), `DELETE` verwirft den neuesten.
-Lesen für Portal und PDF: `GET /api/lmf-termine[/pdf]` mit Sitzung, beide nur der
-nächste veröffentlichte Plan (`LMFAbfragen.LadeNaechstenPlan`: der Plan des frühesten Termins
-ab heute; ein laufender Plan steht bis einschließlich zu seinem letzten Tag). Einzel-
-Termin-Routen gibt es nicht — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
-Seite: Menü _System → Schuljahreswechsel_ (`LmfPlan.svelte`; der Plan
-wird ein- bis zweimal im Jahr gebraucht — Abgänger bleiben unter Verwaltung, LUSD und
-Versetzung in den Einstellungen). Tests: `internal/pkg/lmfplan/verteilung_test.go`, `internal/repository/lmf_termine_pg_test.go`,
-`internal/api/lernmittel/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
+Der **Vorschlag** für den nächsten Plan ist die Reihenfolge des Vorjahres plus neue Klassen
+(Klassennamen bleiben, die Versetzung verschiebt Schüler); ohne Vorjahr Abschlussklassen zuerst,
+dann Jahrgang absteigend. Jahrgang ab 11 oder ohne Ziffer gilt als Oberstufe und bleibt draußen;
+was ein Plan bewusst auslässt, lässt auch der nächste aus. Speichern im selben Schuljahr ersetzt
+den Plan, in einem anderen legt es einen neuen an. Portal und PDF zeigen nur den nächsten
+veröffentlichten Plan, einen laufenden bis einschließlich zu seinem letzten Tag
+(`LMFAbfragen.LadeNaechstenPlan`). Einzelne Termine haben keine eigene Route: Eine zweite Tür je
+Zeile gäbe zwei Wahrheiten. Fundstelle: `internal/api/lernmittel/lmf_plan.go` (alle `edit_books`),
+Seite _System → Schuljahreswechsel_; Tests `internal/pkg/lmfplan/verteilung_test.go`,
+`internal/repository/lmf_termine_pg_test.go`, `internal/api/lernmittel/lmf_termine_frist_pg_test.go`,
+`frontend/e2e/lmf-plan.spec.js`.
 
 **Kopplung an die Fristen** (`internal/service/lmf_frist_kopplung.go`): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
 liest `bestimmeFrist` die Lage (`LMFAbfragen.LadeRueckgabeTerminLage`): Hat der Büchertausch
@@ -227,7 +208,7 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
   läuft über die normalen Wege (Kiosk je Schüler oder Lehrer-Handapparat).
 - **Die Abschluss-Notiz hat zwei Rückwege neben der Bereit-Mail** (scheitert die Mail oder
   fehlt die Adresse, bliebe die Zusage sonst unsichtbar): Die Theke zeigt „Zuletzt bereitgestellt“ (die jüngsten zehn,
-  mit Notiz und Abschlussdatum, Migration 089), und das Portal zeigt der Lehrkraft unter
+  mit Notiz und Abschlussdatum), und das Portal zeigt der Lehrkraft unter
   „Bereitgestellt“ die EIGENEN abgeschlossenen Reservierungen samt „Bibliothek: …“
   (`GET /api/reservierungen/klassensatz/eigene`, dasselbe Muster wie beim Anliegen).
   „Deine Reservierungen“ im Portal meint die eigenen — die Warteschlange
@@ -241,7 +222,7 @@ mitten im Jahr dazukommen. Sie speist sich aus zwei Quellen, die verschieden alt
 
 - **Handliste (`class_books`, Quelle `hand`)** hängt am **Klassennamen**. „Die 7R2 liest
   Mathe 7“ gilt für jede künftige 7R2, deshalb lässt die Versetzung sie bewusst stehen
-  (`internal/api/leser/schuljahreswechsel.go`, Befund F3). Sie veraltet nicht von selbst und muss von Hand
+  (`internal/api/leser/schuljahreswechsel.go`). Sie veraltet nicht von selbst und muss von Hand
   gepflegt werden — dafür sieht sie auch Gruppen unter fünf Kindern.
 - **Aus Ausleihen (Quelle `ausleihe`)** hängt an den **Kindern**: bei jedem Aufruf neu
   gerechnet über `klassen_normkey(schueler.klasse)`, nie gespeichert. Halten mehr als die
@@ -250,32 +231,21 @@ mitten im Jahr dazukommen. Sie speist sich aus zwei Quellen, die verschieden alt
   bis 13 (`repository.JahrgangSQL`), auch die Einführungsphase, deren Name nicht mit einer Zahl
   beginnt: ET1 ist Jahrgang 11 und steht vor 12T1.
 
-Aus dem Unterschied folgt das Verhalten am Büchertausch: Die 7R2 gibt im Juni ihre Bücher ab und bekommt die der 8,
-steht in der LUSD aber bis nach den Ferien weiter als 07R2. Die abgeleitete Liste zeigt die
-neuen Bücher deshalb sofort unter _07R2_ — was für den Nachzügler genau richtig ist, denn
-er bekommt dasselbe wie seine Klasse. Schiebt die LUSD (oder die Versetzung) die Kohorte
-auf 08R2, steht dieselbe Liste ohne Zutun unter _08R2_, und die nachrückende Klasse
-erscheint mit ihren eigenen Büchern unter _07R2_. **Die Ableitung wandert mit den Menschen,
-die Handliste bleibt am Namen** — im Fenster zwischen Tausch und Versetzung stehen beide
-untereinander. Belegt am echten Postgres:
-`internal/repository/klassensatz_ableitung_pg_test.go` (Schwelle, Normschlüssel, keine Dubletten).
+**Die Ableitung wandert mit den Menschen, die Handliste bleibt am Namen:** Nach dem Büchertausch
+zeigt die abgeleitete Liste die neuen Bücher der 7R2 sofort unter _07R2_ (richtig für den
+Nachzügler), nach der Versetzung ohne Zutun unter _08R2_; dazwischen stehen beide untereinander
+(`internal/repository/klassensatz_ableitung_pg_test.go`).
 
 Ein Titel erscheint je Klasse **einmal**, unabhängig von der Zahl der Exemplare; die
 Leserzahl steht als Abzeichen an der Kachel. Ist ein Titel von Hand zugeordnet UND
 abgeleitet, gewinnt `hand`.
 
-**Auflagen (§13).** Die Ableitung zählt am
-Buch, nicht an der Auflage — `COALESCE(werk_id, id)` wie der Bestellbedarf. Je Auflage gezählt
-verschwände ein Klassensatz, sobald er auf zwei Auflagen verteilt ist (14 Kinder mit der 4., 14
-mit der 3.: keine hat mehr als die Hälfte), und bei 20 zu 8 bliebe die Mischung unsichtbar. Für
-ein abgeleitetes Buch steht die Auflage, die die meisten Kinder der Klasse haben, bei
-Gleichstand die neueste: Die Kachel zeigt, was die Klasse hat, nicht, was zuletzt erschien —
-anders als der Bestellbedarf, der die neueste Auflage zeigt, weil sie bestellt wird
-(`internal/repository/bestellbedarf.go`). Eine Zuordnung von Hand deckt das ganze Buch ab; ein Satz aus
-den Ausleihen erscheint daneben nicht noch einmal. Haben Kinder der Klasse eine andere Auflage
-als die der Kachel, trägt sie die Aufschlüsselung (`auflagen`: jede Auflage mit der Zahl der
-Kinder, die meisten zuerst; die der Kachel mit „diese Auflage"). Belegt:
-`internal/repository/klassensatz_auflagen_pg_test.go`.
+**Auflagen (§13).** Die Ableitung zählt am Buch, nicht an der Auflage (`COALESCE(werk_id, id)` wie
+der Bestellbedarf); sonst verschwände ein Klassensatz, der auf zwei Auflagen verteilt ist. Die
+Kachel zeigt die Auflage, die die meisten Kinder haben, bei Gleichstand die neueste; der
+Bestellbedarf zeigt dagegen die neueste, weil sie bestellt wird. Eine Zuordnung von Hand deckt das
+ganze Buch ab. Haben Kinder eine andere Auflage als die der Kachel, trägt sie die Aufschlüsselung
+(`auflagen`, die meisten zuerst; `internal/repository/klassensatz_auflagen_pg_test.go`).
 
 ### 4.4. Meldungen der Lehrkräfte
 
@@ -338,7 +308,7 @@ Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingen
 
 - **Session-basiert:** Jede Inventur erhält einen Bereich — die ganze Bibliothek, eine Signatur oder Fach und Klasse (im Code `scope`) — und läuft in einer eigenen Session (`inventur_sessions`). Mehrere Mitarbeiter können mit Handscannern parallel inventarisieren, ohne sich gegenseitig zu überschreiben.
 - **Fehlmengen-Ausbuchung:** Wird die Session beendet (`Finish`), vergleicht das System alle gescannten Exemplare mit dem theoretischen Bestand in diesem Bereich.
-- **Erwartet ist, was seit dem Beginn im Regal stehen musste:** vorhanden und ausleihbar, beim Beginn nicht verliehen und seitdem weder verliehen noch zurückgegeben, entsperrt, wieder aufgenommen oder neu angelegt (`repository.InventurBereich`, eine Bedingung für Zählung und Abschluss). Ein Buch beim Schüler kann niemand scannen; ein Buch, das erst während der Inventur ins Regal kam, beweist nicht gescannt keinen Verlust. Nicht erfasst ist ein Titel, dessen Signatur, Fach oder Jahrgang während der Inventur in den Bereich wechselt: Seine ungescannten Bücher bucht der Abschluss als Verlust, und sie stehen im Fehlbestandsbericht wie jedes übersehene Buch; ein Kreuz unter „Gefunden" oder ein Scan an der Theke holt sie zurück. Eine Liste der erwarteten Bücher beim Beginn, die den Fall schlösse, ist bewusst nicht gebaut: Er braucht eine solche Änderung genau während der Inventur, und der Bericht fängt ihn auf. Littera rechnet die Fehlbestandsliste ebenso erst beim Anzeigen, nach der Systematikgruppe, die der Titel dann trägt.
+- **Erwartet ist, was seit dem Beginn im Regal stehen musste:** vorhanden und ausleihbar, beim Beginn nicht verliehen und seitdem weder verliehen noch zurückgegeben, entsperrt, wieder aufgenommen oder neu angelegt (`repository.InventurBereich`, eine Bedingung für Zählung und Abschluss). Ein Buch beim Schüler kann niemand scannen; ein Buch, das erst während der Inventur ins Regal kam, beweist nicht gescannt keinen Verlust. Nicht erfasst ist ein Titel, dessen Signatur, Fach oder Jahrgang während der Inventur in den Bereich wechselt: Seine ungescannten Bücher bucht der Abschluss als Verlust, und sie stehen im Fehlbestandsbericht wie jedes übersehene Buch; ein Kreuz unter „Gefunden" oder ein Scan an der Theke holt sie zurück. Eine Liste der erwarteten Bücher beim Beginn, die den Fall schlösse, ist bewusst nicht gebaut: Er braucht eine solche Änderung genau während der Inventur, und der Bericht fängt ihn auf.
 - Fehlende erwartete Exemplare erhalten automatisch den Status `VERLUST`. Fortschritt („gefunden / erwartet") und Rückfrage vor dem Abschluss zählt der Server nach derselben Bedingung (`ZaehleStand`); die Rückfrage nennt die Zahl, die der Abschluss bucht. Ein gescanntes Buch, das der Abschluss nicht erwartet (gesperrt, verliehen), zählt nicht als gefunden.
 - **Verliehenes Buch im Regal:** Der Scan bucht es zurück wie die Theke, über denselben Dienst (`AusleihDienst.NimmZurueck`: Ausleihe beenden, Vormerkung bedienen, Protokoll, Meldung an die Arbeitsplätze). Ist der Titel vorgemerkt, sagt die Karte „ins Abholfach legen"; einen Alarm, der das Scanfeld sperrt wie an der Theke, gibt es hier nicht, weil der nächste Scan schon eintrifft. Wer an der Theke nicht zurücknehmen darf (`perform_actions`), bekommt nur den Hinweis.
 
@@ -348,13 +318,55 @@ Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingen
 
 Die Software verwaltet Bedarfe und Lieferungen:
 
-- **Bestellbedarf:** Ein Schulbuch steht auf der Liste, wenn sein Bestand nicht für die Kinder reicht, die es im nächsten Schuljahr brauchen. Die Zeile nennt Bestand und Bedarf; die Menge der Bestellung ist der Unterschied (`fehlen`), und das Plus der Zeile legt genau sie in den Warenkorb. Eine feste Schwelle oder eine Reserve gibt es nicht: Bestellt wird nach der Zahl der Schüler. **Bedarf:** Welcher Jahrgang ein Buch braucht, zeigen die Ausleihen dieses Schuljahres, offen oder schon zurückgegeben; das Schuljahr einer Ausleihe ist das ihrer Frist, so zählt der Büchertausch im Juni die alten Bücher weiter und die neuen erst im nächsten Schuljahr. Ein Band über mehrere Jahrgänge zählt auch vor seiner Frist, solange das Kind in seiner Spanne ist. Die Bücher bleiben beim Jahrgang, die Kinder rücken weiter: Je Jahrgang gilt im nächsten Schuljahr derselbe Anteil wie heute, gerechnet auf die Kinder, die aus dem Jahrgang darunter nachrücken (ohne Abschlussklassen, `AbschlussklasseSQL`); hat der Jahrgang darunter kein Kind, wie Jahrgang 5, gilt die Zahl von heute. So zählt ein Buch für einen Zweig oder ein Wahlfach mit seinem Anteil. Ein neues Lehrwerk kommt erst nach seiner ersten Ausgabe in die Rechnung; es wird ohnehin in genügender Zahl bestellt. **Bestand:** alle nicht ausgesonderten Exemplare, auch verliehene und bestellte; ein Buch fällt aus der Liste, sobald genug bestellt ist. Gezählt werden nur Lernmittel (`ist_lernmittel`). **Grundlage:** Die Antwort von `GET /api/bestellungen` trägt neben den Zeilen (`zeilen`) die Zahl der aktiven Kinder (`kinder`), die der Kinder mit einem Schulbuch in diesem Schuljahr (`kinder_mit_schulbuch`) und `ausgeschaltet` (`bestellbedarf_warnung_aktiv`). Daran unterscheidet die Seite „Kein Schulbuch fehlt" von „Noch keine Grundlage" und „Bestellbedarf ausgeschaltet", und der Kopf der Liste nennt, mit den Schulbüchern von wie vielen Kindern gerechnet wurde: Wurden Schulbücher nicht über das Programm ausgegeben, ist der Bedarf zu niedrig. **Gezählt wird am Buch:** Auflagen mit derselben `werk_id` (§13) bilden eine Zeile, Kinder und Bestand beider zählen zusammen, und gezeigt wird die neueste Auflage, denn die wird bestellt; die Aufschlüsselung je Auflage reist mit (`auflagen`, mit ISBN, damit der Filter der Liste auch die alte Auflage findet). Ein Titel ohne Werk ist sein eigenes Buch. Die Bestellliste als PDF liest dieselbe Quelle (`bestellbedarfMitEinstellungen`) und druckt Bedarf, Bestand und Menge. Belegt: `internal/repository/bestellbedarf_schuelerzahl_pg_test.go`, `internal/api/bestellung/bestellbedarf_test.go`, `internal/api/bestellung/bestellbedarf_pdf_pg_test.go`, `BedarfZeile.test.js`, `frontend/e2e/auflagen-bestellbedarf.spec.js`.
+- **Bestellbedarf:** Ein Schulbuch steht auf der Liste, wenn sein Bestand nicht für die Kinder reicht,
+  die es im nächsten Schuljahr brauchen; die Menge ist der Unterschied (`fehlen`), und das Plus der
+  Zeile legt genau sie in den Warenkorb. Eine feste Schwelle oder Reserve gibt es nicht. **Bedarf:**
+  Welcher Jahrgang ein Buch braucht, zeigen die Ausleihen dieses Schuljahres, offen oder zurückgegeben;
+  das Schuljahr einer Ausleihe ist das ihrer Frist, so zählt der Büchertausch im Juni die alten Bücher
+  weiter und die neuen erst im nächsten Schuljahr. Ein Mehrjahresband zählt, solange das Kind in seiner
+  Spanne ist. Je Jahrgang gilt im nächsten Schuljahr derselbe Anteil wie heute, gerechnet auf die
+  Kinder, die aus dem Jahrgang darunter nachrücken (ohne Abschlussklassen, `AbschlussklasseSQL`); hat
+  der Jahrgang darunter kein Kind (Jahrgang 5), gilt die Zahl von heute. So zählt ein Buch für einen
+  Zweig oder ein Wahlfach mit seinem Anteil; ein neues Lehrwerk kommt erst nach seiner ersten Ausgabe
+  in die Rechnung, es wird ohnehin in genügender Zahl bestellt. **Bestand:** alle nicht ausgesonderten
+  Exemplare, auch verliehene und bestellte; gezählt werden nur Lernmittel. Die Antwort von
+  `GET /api/bestellungen` trägt neben den Zeilen die Zahl der aktiven Kinder (`kinder`), der Kinder mit
+  einem Schulbuch in diesem Schuljahr (`kinder_mit_schulbuch`) und `ausgeschaltet`; daran unterscheidet
+  die Seite „Kein Schulbuch fehlt“ von „Noch keine Grundlage“ und „Bestellbedarf ausgeschaltet“, und
+  der Kopf nennt, mit wie vielen Kindern gerechnet wurde, denn ohne Ausgabe über das Programm ist der
+  Bedarf zu niedrig. Auflagen desselben Werks bilden eine Zeile, gezeigt wird die neueste, weil sie
+  bestellt wird (§13). Die Bestellliste als PDF liest dieselbe Quelle (`bestellbedarfMitEinstellungen`).
+  Belegt: `internal/repository/bestellbedarf_schuelerzahl_pg_test.go`,
+  `internal/api/bestellung/bestellbedarf_test.go`, `internal/api/bestellung/bestellbedarf_pdf_pg_test.go`,
+  `BedarfZeile.test.js`, `frontend/e2e/auflagen-bestellbedarf.spec.js`.
 - **Fokus auf Lernmittelfreiheit (LMF):** Die Bedarfsvorschläge sind standardmäßig auf LMF-Medien (Schulbücher) gefiltert. Freihand-Exemplare (Lese-Einzelstücke) werden in der Regel nicht nachbestellt.
-- **Eine Bestellung = ein Topf (Migration 109):** Jede Bestellung trägt, aus welchen Mitteln sie bezahlt wird — Lernmittelfreiheit (Land) oder Schülerbücherei (Schulträger). Der Händler gewährt darauf verschiedene Nachlässe, und die Rechnungen gehen getrennte Wege; beide gehen an die Schule (Auskunft der EDV-Servicestelle für Schulbibliotheken, 10.09.2026). Der Warenkorb gruppiert seine Positionen nach dem Vorschlag aus `ist_lernmittel`, eine Position lässt sich in den anderen Topf schieben (falsch gekennzeichneter Titel), und „Bestellung auslösen" erzeugt je Gruppe eine Bestellung an denselben Händler — zwei Mails, zwei Anschreiben. Der Vermerk steht in der Betreffzeile und im Text des Anschreibens (`internal/pkg/mitteltopf`) und in der Händler-Mail (Platzhalter `{{.Mittel}}`; fehlt er in der Vorlage, hängt der Versand den Vermerk an). Ein Lieferant kann eine zweite Kundennummer für die Schülerbücherei führen. Alt-Bestellungen sind zugeordnet, wo es aus den Positionen eindeutig war; gemischte stehen als „ohne Zuordnung". Ein über die DNB neu angelegter Titel wird im Staging-Fenster gefragt, ob er Lernmittel ist. Der Topf einer bestehenden Bestellung lässt sich im Bestelldetail mit Pflicht-Grund korrigieren (`PUT /api/bestellungen/{id}/mittel`, protokolliert im Verwaltungsprotokoll); das Anschreiben beim Händler ändert sich dadurch nicht — die Korrektur gilt der eigenen Zuordnung, aus der die Berichte rechnen. Belegt: `internal/api/bestellung/bestellung_mittel_pg_test.go`, `internal/api/bestellung/bestellanschreiben_test.go` (Inhaltsstrom des Anschreibens), `internal/db/bestellung_mittel_nachtrag_pg_test.go`, `internal/api/bestellung/bestellung_mittel_korrektur_pg_test.go`.
+- **Eine Bestellung = ein Topf:** Jede Bestellung trägt, aus welchen Mitteln sie bezahlt wird — Lernmittelfreiheit (Land) oder Schülerbücherei (Schulträger). Der Händler gewährt darauf verschiedene Nachlässe, und die Rechnungen gehen getrennte Wege; beide gehen an die Schule (Auskunft der EDV-Servicestelle für Schulbibliotheken, 10.09.2026). Der Warenkorb gruppiert seine Positionen nach dem Vorschlag aus `ist_lernmittel`, eine Position lässt sich in den anderen Topf schieben (falsch gekennzeichneter Titel), und „Bestellung auslösen" erzeugt je Gruppe eine Bestellung an denselben Händler — zwei Mails, zwei Anschreiben. Der Vermerk steht in der Betreffzeile und im Text des Anschreibens (`internal/pkg/mitteltopf`) und in der Händler-Mail (Platzhalter `{{.Mittel}}`; fehlt er in der Vorlage, hängt der Versand den Vermerk an). Ein Lieferant kann eine zweite Kundennummer für die Schülerbücherei führen. Alt-Bestellungen sind zugeordnet, wo es aus den Positionen eindeutig war; gemischte stehen als „ohne Zuordnung". Ein über die DNB neu angelegter Titel wird im Staging-Fenster gefragt, ob er Lernmittel ist. Der Topf einer bestehenden Bestellung lässt sich im Bestelldetail mit Pflicht-Grund korrigieren (`PUT /api/bestellungen/{id}/mittel`, protokolliert im Verwaltungsprotokoll); das Anschreiben beim Händler ändert sich dadurch nicht — die Korrektur gilt der eigenen Zuordnung, aus der die Berichte rechnen. Belegt: `internal/api/bestellung/bestellung_mittel_pg_test.go`, `internal/api/bestellung/bestellanschreiben_test.go` (Inhaltsstrom des Anschreibens), `internal/db/bestellung_mittel_nachtrag_pg_test.go`, `internal/api/bestellung/bestellung_mittel_korrektur_pg_test.go`.
 - **Exemplare entstehen beim BESTELLEN, nicht beim Eintreffen:** Mit dem Absenden legt das System die Exemplare samt Barcode-Nummern an und markiert sie als „Im Zulauf". Nur so kann der Barcodebogen mit der Bestellung mitgehen. Der Wareneingang bucht diese Exemplare später frei — er erzeugt sie nicht.
 - **Hauptlieferant** (Lieferantenverwaltung, ein Schalter; höchstens ein Händler, die Datenbank erzwingt es): Er ist im Bestellformular vorausgewählt, beklebt die Bücher selbst und bekommt statt der reinen Bestellmail einen Link (nächster Punkt). Seine Exemplare entstehen als etikettiert und stehen nicht auf der Nachdruck-Liste. Ein Merkmal statt drei Schaltern, weil alle drei Folgen denselben Händler beschreiben (`IstHauptlieferant` in `internal/repository/lieferant.go`). Wird ein anderer Händler Hauptlieferant, ist der bisherige ein gewöhnlicher; alle anderen Lieferanten bekommen nur die Bestellmail.
-- **Bestätigungs-Link an den Hauptlieferanten:** Er bekommt mit der Bestellmail einen von Bibliosys erzeugten Link. Dahinter liegt eine Seite ohne Login, auf der der Lieferant die Etiketten dieser Bestellung in klein oder groß druckt (identisch zum Mailanhang) und die Bestellung **einmalig** bestätigt. Seine Bestätigung kommt ohne Mail an: Die Bestellhistorie nennt sie in der Spalte „Stand", die geöffnete Bestellung im Bestätigungsblock und der Wareneingang im Kopf der Bestellung, mit demselben Chip wie die Historie (`BestellStandChip`): „Mail nicht versendet", „Bestätigt" mit Tag oder „Wartet auf Händler". Der Altbestand ohne Bestellung trägt keinen. Bestätigt der Händler oder trägt die Bibliothek die Zusage nach, wechselt der Stand in allen offenen Fenstern von selbst, ohne Meldung und ohne Neuladen; ein Bildschirmleser liest den Wechsel vor (WCAG 4.1.3). Was bei unterbrochener Leitung geschah, holt das Fenster beim Wiederaufbau nach; scheitert das Holen des Stands, versucht es das Fenster nach höchstens 15 Sekunden wieder. Andere Wechsel des Chips, etwa nach „Erneut senden", stehen an einem zweiten Arbeitsplatz beim nächsten Öffnen da: Historie und Wareneingang holen ihre Listen bei jedem Öffnen des Reiters neu.
-- **Bestellmail nicht versendet:** Scheitert die Mail an den Lieferanten oder ist kein Mailserver eingerichtet, ist die Bestellung trotzdem gespeichert. Die Bestellhistorie nennt dann in der Spalte „Stand" „Mail nicht versendet", die Bestellung selbst zeigt den Zeitpunkt des letzten Versuchs und den Knopf „Erneut senden" (Recht `create_orders`). Der erneute Versand schickt dieselbe Mail aus der gespeicherten Bestellung an die heutige Adresse des Lieferanten; hat die Bestellung einen Bestätigungsschritt, bekommt sie dabei einen neuen Link, der alte ist damit ungültig. Eine Bestellung ohne diesen Vermerk lässt sich nicht erneut senden, damit keine Bestellung doppelt beim Händler ankommt. Der Vermerk gilt, solange die Bestellung weder bestätigt noch geliefert ist: Hat der Händler über den Link bestätigt, die Bibliothek seine Zusage nachgetragen oder ein Exemplar aus der Bestellung den Wareneingang durchlaufen, hat er die Bestellung, und der Hinweis entfällt. Dass der Bestätigungs-Link in der gescheiterten Mail stand, nennt die Bestellung auch nach der Lieferung. Hat der Händler die Bestellung auf anderem Weg erhalten (Telefon, eigene Mail), entfernt „Auf anderem Weg bestellt" den Hinweis nach einer Rückfrage, ohne zu senden (entschieden am 07.10.2026; Recht `create_orders`, Eintrag im Protokoll). Danach lässt sich die Bestellung nicht mehr aus dem Programm senden; die Rückfrage sagt das, und ihr Fokus steht auf „Abbrechen". Den Knopf gibt es an Bestellungen ohne Bestätigungs-Link; mit Link wird die Zusage des Händlers nachgetragen. Bestellungen aus der Zeit davor tragen keinen Vermerk. „Gesamtanzahl Exemplare" in der Mail ist die bestellte Menge, auch für Positionen ohne Vorab-Barcode.
+- **Bestätigungs-Link an den Hauptlieferanten:** Mit der Bestellmail kommt ein Link auf eine Seite
+  ohne Anmeldung, auf der der Lieferant die Etiketten dieser Bestellung klein oder groß druckt (wie im
+  Mailanhang) und die Bestellung **einmalig** bestätigt. Die Bestätigung kommt ohne Mail an:
+  Bestellhistorie, geöffnete Bestellung und Wareneingang zeigen denselben Chip (`BestellStandChip`):
+  „Mail nicht versendet“, „Bestätigt“ mit Tag oder „Wartet auf Händler“; der Altbestand ohne Bestellung
+  trägt keinen. Bestätigt der Händler oder trägt die Bibliothek die Zusage nach, wechselt der Stand in
+  allen offenen Fenstern von selbst, ohne Meldung, und ein Bildschirmleser liest den Wechsel vor (WCAG
+  4.1.3); was bei unterbrochener Leitung geschah, holt das Fenster beim Wiederaufbau nach, ein
+  gescheitertes Holen nach höchstens 15 Sekunden. Andere Wechsel des Chips, etwa nach „Erneut senden“,
+  stehen an einem zweiten Arbeitsplatz beim nächsten Öffnen des Reiters da.
+- **Bestellmail nicht versendet:** Scheitert die Mail an den Lieferanten oder fehlt der Mailserver, ist
+  die Bestellung trotzdem gespeichert; die Bestellhistorie nennt „Mail nicht versendet“, die Bestellung
+  den letzten Versuch und den Knopf „Erneut senden“ (`create_orders`). Der erneute Versand schickt
+  dieselbe Mail aus der gespeicherten Bestellung an die heutige Adresse des Lieferanten; mit
+  Bestätigungsschritt bekommt sie einen neuen Link, der alte wird ungültig. Ohne den Vermerk lässt sich
+  nichts erneut senden, damit keine Bestellung doppelt beim Händler ankommt. Der Vermerk gilt, bis der
+  Händler bestätigt, die Bibliothek seine Zusage nachträgt oder ein Exemplar aus der Bestellung den
+  Wareneingang durchläuft; dass der Link in der gescheiterten Mail stand, nennt die Bestellung auch nach
+  der Lieferung. Hat der Händler auf anderem Weg bestellt, entfernt „Auf anderem Weg bestellt“ den
+  Hinweis nach einer Rückfrage, ohne zu senden (entschieden am 07.10.2026; Protokoll), nur an
+  Bestellungen ohne Bestätigungs-Link, mit Link wird die Zusage nachgetragen. Danach lässt sich die
+  Bestellung nicht mehr aus dem Programm senden; die Rückfrage sagt das, ihr Fokus steht auf
+  „Abbrechen“. „Gesamtanzahl Exemplare“ in der Mail ist die bestellte Menge, auch für Positionen ohne
+  Vorab-Barcode.
   - _Klein:_ Bogen für vorgestanztes Etikettenmaterial. Der Lieferant **wählt das Bogenraster selbst** (Zweckform L4760 3×7, Avery 3475 3×8, Kleine Barcodes 4×13) — er druckt auf sein eigenes Material, und davon gibt es verschiedene. Das gewählte Raster steht anschließend in der Bestellhistorie der Schule.
   - _Groß:_ Lernmittel-Etikett mit Ausleihtabelle, **vier Stück auf einem A4-Blatt** (2×2, mit Schnittlinien) — wird ausgeschnitten, nicht auf vorgestanztes Material gedruckt. Die Bestätigung erscheint automatisch in der Bestellhistorie und ist dort von einem manuellen Nachtrag aus der Bibliothek unterscheidbar. Voraussetzung ist die **Öffentliche Adresse** in den Einstellungen — fehlt sie, geht die Bestellung ohne Link raus. Sicherheitszuschnitt: 256-Bit-Token, in der Datenbank nur als Hash, 21 Tage gültig (Vorgabe; einstellbar unter Bestellwesen, `bestelllink_gueltigkeit_tage`, ein laufender Link behält sein Ablaufdatum), jederzeit durch einen neuen ersetzbar (der alte stirbt dabei). Details in [SECURITY.md](SECURITY.md).
 - **Historie zeigt die neuesten 200 Bestellungen** (Grenze serverseitig, max. 500). Die Kennzahlen im Kopf — Gesamtausgaben, Exemplare, wartende Bestätigungen — zählen dagegen **alle** Bestellungen (`/api/bestellhistorie/uebersicht`), damit aus einer Teilsumme keine vermeintliche Gesamtsumme wird. Ohne die Grenze lieferte die Historie auf einer gewachsenen Datenbank 2,45 MB in 3,9 Sekunden, mit ihr 0,10 MB in 0,17 Sekunden.
@@ -368,24 +380,60 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ### 8.1. Der LUSD-Import
 
-- Die Landesschuldatenbank (LUSD) ist das führende System für Schülerdaten.
-- Der Import überschreibt Namen, Klassen und LUSD-IDs im Bibliothekssystem.
-- **Match-Logik (drei Stufen, die Datei entscheidet):** (1) **LUSD-ID**, wenn der Export eine ID-Spalte mit Werten hat; (2) **Vorname + Nachname + Geburtsdatum**, wenn keine ID, aber ein Geburtsdatum da ist — dann ist das Datum in jeder Zeile Pflicht (harter Abbruch statt stillem Überspringen); (3) **nur Vorname + Nachname**, wenn die Datei beides nicht hat (LANIS-Klassenliste `Nachname;Vorname;Klasse;…`) — dort werden Namensgleiche (in Datei oder Bestand) NIE zugeordnet, sondern als „mehrdeutig" gemeldet. Der Export der Schule enthält keine Schüler-ID; Stufe 2 ist der empfohlene Weg, Stufe 3 der Notweg. Die Vorschau nennt die Stufe. **Format:** CSV (Komma/Semikolon, BOM) oder Excel (.xlsx, Titelzeilen über der Kopfzeile, Datumszellen); altes .xls wird mit Anleitung abgewiesen. **Kopfzeilen** werden in drei LUSD-Stilen erkannt: ohne Präfix („Vorname, Nachname, Klasse“ — LANIS-Klassenliste), mit Tabellenname („Schueler_Vorname, Klassen_Klassenbezeichnung“ — Individueller Bericht) und mit Tabellenkürzel („SLR_Vorname, SLR_Nachname, KLA_Klassennamen, SLR_Strasse, SLR_PLZ, SLR_ORT“ — Kürzelstil, wie er in Klassenlisten mit LUSD-Feldnamen vorkommt). **Mehrere Blätter:** Eine Arbeitsmappe mit einem Blatt je Klasse (6F1, 6F2, …) wird als eine Tabelle gelesen; Blätter ohne Kopfzeile (Deckblatt) werden übersprungen, abweichende Spaltenreihenfolge je Blatt ist erlaubt. Was die LUSD liefert: Standardberichte (EXTRAS → BERICHTE) als PDF/CSV/Excel, Individuelle Berichte immer als XLSX; eine Schüler-ID enthält keiner dieser Exporte (offizielle Feldliste des HMKB, geprüft 26.08.2026), Stufe 1 bleibt in der Praxis leer. **Littera-Weg (aus dem Littera-Handbuch, Kapitel „LUSD Leserdaten Import“):** LUSD → Unterricht → Export/Import → Stundenplan/Littera → Export → Programmauswahl „Littera“ → `Littera_Export.txt`. Diese Datei ist **verschlüsselt** (hessischer Datenschutz) und nur von Littera lesbar — für unser System unbrauchbar. Littera gleicht darüber mit Vorname + Zuname + Geburtsdatum ab und meldet Abgänger als druckbare Liste zum Bestätigen; genau dieses Modell haben wir mit Stufe 2 (Name + Geburtsdatum) und der Abgänger-Vorschau nachgebaut. Für uns bleibt der Weg über EXTRAS → BERICHTE (XLSX/CSV, unverschlüsselt) — mit Geburtsdatum im Bericht.
-- **Gedächtnis `lusd_bestaetigt_am` (Migration 084):** Jeder Import stempelt jede Zeile, die er im Export wiedergefunden oder angelegt hat. In den Namensmodi gilt als Abgänger nur, wer schon einmal bestätigt wurde und jetzt fehlt — nie bestätigte Handanlagen bleiben unangetastet und werden als „nicht im Export" gemeldet, Schüler ohne Geburtsdatum als „nicht abgleichbar" (Stufe 2). Im ID-Modus werden ID-lose Bestandsschüler (Handanlage **und** Littera-Übernahme `lusd_id='littera:…'`) per Name + Geburtsdatum adoptiert statt dupliziert.
-- **Klassen-Vokabular (Migrationen 079, 087):** Jede Klasse existiert genau einmal in `klassen`; Schüler, Bücherlisten, Klassenlehrer-Zuordnungen und LMF-Termine tragen FKs darauf, Schreibvarianten („5 a“, „05A“) laufen per Trigger auf denselben Eintrag. Die Klasse einer Klassensatz-Reservierung ist Freitext (Migration 152): Das Programm zeigt sie nur an, ein Tippfehler im Portal legt keine Klasse an, und eine Lehrkraft kann auch einen Kurs eintragen. **Anzeigeform fest:** Jahrgang zweistellig, Rest groß — „05F1“, „09G4“, „10G1“ (wie die LUSD liefert). Sonderwerte (`lehrer` als Handapparat-Entleiher, `ABG`) und Kursnamen bleiben, wie sie sind.
-- **Handanlage:** Das Geburtsdatum ist beim manuellen Anlegen Pflicht (UI + API) — es ist die einzige Brücke zum späteren Import; ohne Datum entstünde zwangsläufig ein Duplikat.
-- **Neue Kontaktdaten:** Es werden Anschriften und Eltern-E-Mails importiert, jedoch _ausschließlich_ zum Zweck der Rechnungs- und Mahnungsstellung. **LUSD bleibt führend** (Entscheidung 02.09.2026): Ein gefüllter Exportwert überschreibt den Bestand, ein leerer lässt ihn stehen; Handkorrekturen überleben den nächsten Import nicht.
-- **Umbenennung ohne Schüler-ID (`internal/lusd/paarung.go`, Migration 094):** Eine Namensänderung oder Datumskorrektur in der LUSD findet der Schlüssel Name + Geburtsdatum nicht; ohne Paarung würde daraus ein Abgang und eine Neuanlage. Die Vorschau bildet aus Abgängern und Neuzugängen **Paare** („Vermutlich dieselbe Person"): sicher bei gleichem **Schuleintritt** (`Schueler_Eintritt_AktuelleSchule` → `schueler.schul_eintritt_am`, zweiter Schlüssel, der jede Umbenennung übersteht) plus Name oder plus Geburtsdatum + Vorname; vermutlich bei Geburtsdatum + Name/Klasse/Anschrift oder Name + Klasse/Anschrift bei abweichendem Datum. Ein abweichender Vorname bei gleichem Geburtsdatum (Zwillinge) ist Gegen-Signal, bei Gleichstand zweier Kandidaten wird kein Paar gebildet. Der Admin kreuzt an; bestätigt behält der Datensatz UUID, Barcode, Ausleihen und Historie und bekommt Name bzw. Datum aus dem Export. Der Server nimmt nur selbst vorgeschlagene Paare an. Alles Weitere: [LUSD.md](LUSD.md) §3.
-- **Zusammenführen von Hand (`POST /api/schueler/{id}/zusammenfuehren`, eigenes Recht `merge_students`):** Das Sicherheitsnetz, wenn eine Dublette erst später auffällt. Ziel behält UUID und Barcode, die Quelle geht auf (Ausleihen, Schäden, Vormerkungen, Foto, Protokollspuren wandern; Zeile wird endgültig gelöscht), Stammdaten vom zuletzt LUSD-bestätigten Datensatz (ein aktiver schlägt einen Abgänger), Abgänger-Status und automatische Sperre werden bereinigt, eine manuelle Sperre der Quelle geht auf das Ziel über. Rückweg: ein `audit_log`-Eintrag in der Transaktion trägt Stammdaten der Quelle und die Kennungen der gewanderten Zeilen. Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?". [LUSD.md](LUSD.md) §5.
+Die LUSD ist das führende System für Schülerdaten; der Import überschreibt Namen, Klassen und
+LUSD-IDs. Wie er Schüler ohne Schüler-ID wiedererkennt (drei Stufen, die die Datei bestimmt),
+welche Dateien und Kopfzeilen er liest, wie er Umbenennungen paart und wie zwei Datensätze von
+Hand zusammengeführt werden (`merge_students`), steht in [LUSD.md](LUSD.md) §1 bis §5. Hier steht,
+was dort fehlt:
+
+- In der Stufe Name + Geburtsdatum ist das Datum in jeder Zeile Pflicht; fehlt es, bricht der
+  Import ab, statt still zu überspringen. Bestandsschüler ohne Geburtsdatum meldet die Vorschau als
+  „nicht abgleichbar“. Im ID-Modus übernimmt der Import Bestandsschüler ohne ID (Handanlage und
+  Littera-Übernahme, `lusd_id='littera:…'`) über Name und Geburtsdatum, statt sie zu verdoppeln.
+  Blätter ohne Kopfzeile (Deckblatt) überspringt er, die Spaltenfolge darf je Blatt abweichen.
+- **Klassen-Vokabular:** Jede Klasse steht genau einmal in `klassen`; Schüler, Bücherlisten,
+  Klassenleitungen und LMF-Termine verweisen darauf, Schreibvarianten („5 a“, „05A“) laufen per
+  Trigger auf denselben Eintrag. Die Anzeigeform ist fest: Jahrgang zweistellig, Rest groß
+  („05F1“); Sonderwerte (`lehrer` als Handapparat-Entleiher, `ABG`) und Kursnamen bleiben, wie sie
+  sind. Die Klasse einer Klassensatz-Reservierung ist Freitext: Ein Tippfehler im Portal legt keine
+  Klasse an, und eine Lehrkraft kann einen Kurs eintragen.
+- **Handanlage:** Das Geburtsdatum ist Pflicht (Oberfläche und Tür), denn es ist die einzige
+  Brücke zum späteren Import; ohne Datum entstünde ein Duplikat.
+- **Kontaktdaten:** Anschriften und Eltern-Mails, soweit die Datei sie trägt, dienen ausschließlich
+  Rechnung und Mahnung. Ein gefüllter Exportwert überschreibt den Bestand, ein leerer lässt ihn
+  stehen; Handkorrekturen überleben den nächsten Import nicht (Entscheidung 02.09.2026).
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
-- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige".
-- **Karenzzeit:** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Ehemaligen-Sperre", derselbe wie mit offenen Vorgängen und nach der Versetzung, `repository.AbgaengerSperrgrund`); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort). Uhr ist der spätere von zwei Zeitpunkten (`repository.sqlKarenzUhr`): `abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr) und `letzter_vorgang_am` am Leser (Migration 137) — die letzte Rückgabe einer Ausleihe oder der letzte Abschluss eines Schadensfalls, bezahlt oder storniert. Trigger stempeln den Zeitpunkt am Leser, bei jeder Rückgabe und bei jedem Abschluss eines Schadensfalls; die Uhr geht nie zurück. Aus den Ausleihen lässt er sich nicht rechnen: Der Lesehistorie-Lauf trennt die Ausleihe nach seiner Frist vom Leser. Grenze: Was der Lesehistorie-Lauf vor Migration 137 schon getrennt hatte, ist nicht auffindbar — diese Leser rechnen ab dem Abgang. Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PraedikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann. Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur anonymisierte Datensätze — sie wartet die Karenz ab, statt sie abzuschneiden; im Cron läuft die Anonymisierung deshalb vor der Löschung (`fuehreNaechtlicheDSGVOAus`).
-- Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail, Foto; die Ausweisnummer wird durch `ANON-…` ersetzt, eine `A-`-Nummer bleibt als bloße Zahl ohne Person gesperrt, §12), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Verwaltungsprotokoll und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
-- **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund „Automatisierte Ehemaligen-Sperre"; ein Grund, der die offenen Vorgänge nennt, stünde nach der letzten Rückgabe falsch in der Akte). Taucht der Abgänger in der LUSD wieder als aktiver Schüler auf, hebt das System die Sperre automatisch auf, sobald nichts mehr offen ist; bis dahin bleibt sie mit dem Grund „Automatisierte Ehemaligen-Sperre wegen offener Vorgänge", und jeder Abgleich prüft neu. Sie lässt sich außerdem in der Akte aufheben (§2.2). Ein späterer LUSD-Import sperrt einen so entsperrten Ehemaligen nicht wieder: Er behandelt nur aktive Schüler als neue Abgänger (`sammleAbgaenger`); die Frist bis zur Anonymisierung läuft unabhängig von der Sperre weiter (`PraedikatAnonymisierung`).
-- **Papierkorb:** Manuelles Löschen in der Akte (Recht „Leser löschen“, bei einem Kollegen mit Zugang zu „Mein Portal“ zusätzlich „Benutzer & Rechte verwalten“, für ein Admin-Konto ein Admin) verschiebt den Leser in einen Papierkorb (Soft-Delete). Ausleihhistorie und Name bleiben vorerst für einen etwaigen Restore erhalten. Erst der `Purge`-Prozess löscht sie endgültig und anonymisiert historische Ausleihen (`schueler_id = NULL`). Nach 180 Tagen im Papierkorb wird jeder Leser über denselben `Purge` endgültig gelöscht (`repository.praedikatPapierkorbLoeschung`), ein Schüler in derselben Nacht vorher anonymisiert; offene Ausleihen und unbezahlte Forderungen halten beide. Für einen Ehemaligen im Papierkorb läuft daneben die Karenzzeit weiter: Endet sie früher, wird er schon dann anonymisiert (`PraedikatAnonymisierung` kennt beide Uhren). Der Löschdialog der Akte sagt deshalb „bis zu 180 Tage“.
-- **Lesehistorie ist befristet:** Eine zurückgegebene Ausleihe bleibt nicht bis zur Schüler-Löschung dem Schüler zugeordnet. Ein nächtlicher Job trennt sie nach Frist (`schueler_id = NULL`) — **Schülerbücherei 1 Tag**, **Lernmittel 730 Tage** nach Rückgabe. Entschieden am 29.09.2026 nach den hessischen Mustern (HBDI „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig"; LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), und so hielt es auch Littera an dieser Schule. Nach dem Tag der Rückgabe sieht niemand mehr, wer ein Buch der Bücherei hatte; ein später bemerkter Schaden lässt sich keinem Ausleiher mehr zuordnen. Lernmittel heißt dabei wie im Leitfaden Lernmittelfreiheit „aus Landesmitteln beschafft": jedes Buch im Eigentum des Landes nach der Regel des Etiketts (Eigentum am Exemplar, sonst Topf der Bestellung, sonst das Merkmal am Titel). Beide Fristen stehen in den Einstellungen unter „Datenschutz & Sitzung", 0 = aus. Der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Ausleihen mit offenem Schadensfall bleiben zugeordnet. Die Frist gilt jedem Leser, auch dem Kollegium — was ein Erwachsener gelesen hat, muss die Bücherei nach der Rückgabe so wenig wissen wie bei einem Kind. Eine laufende Dauerleihe ist nicht betroffen: Die Frist beginnt mit der Rückgabe. Die Karenz-Uhr hängt nicht daran (siehe oben). Folge für die Oberfläche: Schülerprofil und Titel-Historie zeigen nur noch Ausleihen innerhalb der Frist mit Namen, ältere als „anonym". Dieselbe Frist der Schülerbücherei nimmt der Protokollzeile einer Vormerkung, die mit ihrem Titel gelöscht wurde, Kennung und Name des Lesers (`repository.praedikatLesehistorieVormerkspur`); die Zeile einer gelöschten Forderung behält ihn, sie belegt, wessen Forderung mit dem Titel gelöscht wurde.
+- Fehlt ein bestätigter Schüler im LUSD-Export, wird er **Abgänger** im Sinne des Imports
+  (`ist_abgaenger = true`): Er ist weg. Die Abgänger-Ansicht (§8.x) meint etwas anderes, die
+  Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb
+  „Ehemalige“.
+- **Karenzzeit und Sperre:** Ein Abgänger wird gesperrt, nicht sofort anonymisiert; der nächtliche
+  Job anonymisiert ihn nach der Karenzzeit (`abgaenger_karenz_tage`, Vorgabe 90 Tage, 0 = sofort),
+  sofern nichts offen ist. Uhr (`repository.sqlKarenzUhr`), Gründe der Sperre und warum 90 Tage:
+  [LUSD.md](LUSD.md) §4. Die
+  Sperre lässt sich in der Akte aufheben (§2.2); ein späterer Import sperrt den Ehemaligen nicht
+  wieder, denn er behandelt nur aktive Schüler als neue Abgänger (`sammleAbgaenger`), und die
+  Karenz läuft unabhängig von der Sperre weiter. Die endgültige Löschung ab dem 30. Januar des
+  Folgejahres trifft nur anonymisierte Datensätze; im Cron läuft die Anonymisierung deshalb vor der
+  Löschung (`fuehreNaechtlicheDSGVOAus`).
+- **Was die Anonymisierung leert** (Stammdaten, Foto, Ausweisnummer → `ANON-…`, die Spuren in den
+  Neben-Tabellen) und die übrigen Lösch-Läufe stehen in [SECURITY.md](SECURITY.md), „Automatisierte
+  Löschroutinen“; eine `A-`-Nummer bleibt als bloße Zahl ohne Person gesperrt (§12).
+- **Papierkorb:** Löschen in der Akte (Recht „Leser löschen“; bei einem Kollegen mit Zugang zu „Mein
+  Portal“ zusätzlich „Benutzer & Rechte verwalten“, für ein Admin-Konto ein Admin) legt den Leser in
+  den Papierkorb; Ausleihhistorie und Name bleiben für ein Zurückholen. Nach 180 Tagen löscht ihn der
+  nächtliche Lauf endgültig, einen Schüler in derselben Nacht vorher anonymisiert; offene Ausleihen
+  und unbezahlte Forderungen halten beides. Für einen Ehemaligen im Papierkorb läuft die Karenz weiter
+  und kann früher enden; der Löschdialog sagt deshalb „bis zu 180 Tage“.
+- **Lesehistorie ist befristet** (entschieden am 29.09.2026): Eine zurückgegebene Ausleihe verliert
+  ihren Leser nach der Frist, Schülerbücherei 1 Tag, Lernmittel 730 Tage, 0 = aus; Gründe, Quellen
+  und Ausnahmen in [SECURITY.md](SECURITY.md), „Automatisierte Löschroutinen“. Schülerprofil und Titel-Historie zeigen ältere
+  Ausleihen als „anonym“; ein später bemerkter Schaden an einem Buch der Bücherei lässt sich keinem
+  Ausleiher mehr zuordnen. Dieselbe Frist der Schülerbücherei nimmt der Protokollzeile einer
+  Vormerkung, die mit ihrem Titel gelöscht wurde, den Leser
+  (`repository.praedikatLesehistorieVormerkspur`); die Zeile einer gelöschten Forderung behält ihn.
 
 ---
 
@@ -427,8 +475,7 @@ Etiketten_, _Ausweis-Design_ und _Ausweise je Klasse_.
   (`etikett_gedruckt = false`, §13); ihre Zahl steht am Menüpunkt und am Reiter.
 - **Das große Lernmittel-Etikett** mit Ausleihtabelle entsteht mit der Bestellung, als
   Mailanhang und auf der Seite des Händlers (§7), und nur für Bestellungen aus Landesmitteln
-  (`mitteltopf.HatGrossesLernmittelEtikett`). Aufbau von oben nach unten (`internal/pdf/etikett_lernmittel.go`,
-  nach dem Etikett, das die Schule bisher klebt): Schulname, Titel, Anschaffungsjahr mit
+  (`mitteltopf.HatGrossesLernmittelEtikett`). Aufbau von oben nach unten (`internal/pdf/etikett_lernmittel.go`): Schulname, Titel, Anschaffungsjahr mit
   Signatur, Strichcode, Exemplarnummer, Eigentumsvermerk, darunter die Tabelle Schuljahr ·
   Name des Schülers · Klasse · Zustand mit sechs Zeilen zum Ausfüllen von Hand.
 - **Nachdruck für ein Buch aus Littera** (entschieden am 30.09.2026): das Etikett dieses
@@ -442,9 +489,8 @@ Etiketten_, _Ausweis-Design_ und _Ausweise je Klasse_.
   als CSV nennt sie in der Spalte „LMF-Nummer": Bis zum Überkleben fände ein anderes Programm
   das Buch nur über sie. Das Druck-Center
   zeigt und druckt die kurze Nummer aus `barcode_seq` ohne Rückfrage; ist ein Etikett kaputt, wird
-  es neu gedruckt und überklebt. Den Bestand stellt Migration 167 um, der Bestands-Import legt
-  solche Exemplare gleich so an (§13). Als Nummer eines Exemplars nimmt die Datenbank keine
-  LMF-Nummer an (Migration 168); der Barcode-Editor nennt die Ablehnung.
+  es neu gedruckt und überklebt. Der Bestands-Import legt solche Exemplare gleich so an (§13). Als
+  Nummer eines Exemplars nimmt die Datenbank keine LMF-Nummer an; der Barcode-Editor nennt die Ablehnung.
 - **Ausweis-Design:** Der Reiter ist der Designer — Vorlagen, Vorder- und
   Rückseite, Elemente wie Name, Gültigkeit, Logo, Passbild, Strichcode und Farbfläche. Das
   Design gilt für alle Arbeitsplätze: Es liegt am Server (`/api/ausweis-layout`), speichern
@@ -486,7 +532,7 @@ zusammengehalten werden, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.9.
 Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein Audit-Log:
 
 - Jede administrative Aktion (Benutzer gelöscht, Schadensfall storniert, Leser gesperrt oder entsperrt) wird in der Tabelle `audit_logs` mit `Akteur`, `Zeitstempel`, `IP` und Vorher-/Nachher-Details protokolliert. Sperren und Entsperren heißen dort `LESER_GESPERRT` und `LESER_ENTSPERRT`.
-- Das Audit-Log ist **append-only als Konvention**: Kein Bedien- oder Codepfad verändert oder löscht Einträge — mit einer bewussten Ausnahme, der DSGVO-Tilgung (siehe unten). Einen Datenbank-Trigger, der jede Änderung hart sperrt, gibt es nicht (Migration 083): Er stünde im direkten Widerspruch zur Löschpflicht (Art. 17), die das Audit-Log gerade ändern muss, um Personenbezug zu entfernen. Wer echte Manipulationssicherheit braucht, setzt sie über eine eng begrenzte Löschausnahme um, nicht über ein pauschales Änderungsverbot.
+- Das Audit-Log ist **append-only als Konvention**: Kein Bedien- oder Codepfad ändert oder löscht Einträge außer der DSGVO-Tilgung (siehe unten). Einen Trigger, der jede Änderung sperrt, gibt es nicht, weil die Löschpflicht (Art. 17) das Protokoll ändern muss, um den Personenbezug zu entfernen.
 - Die Daten dienen der Fehlerbehebung und DSGVO-Rechenschaftspflicht.
 - **Theken-Auskunft** (`internal/api/system/theken_auskunft.go`): der EINE
   zweckgebundene Leseweg in die Detail-Spalte des fachlichen Audit-Logs. Ein
@@ -536,13 +582,13 @@ Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Acc
 
 ### 12.1. Login & Sicherheit
 
-- **Verfahren:** E-Mail und Passwort **gegen den Schul-Mailserver (IMAP)** oder, je Konto eingestellt, LDAP-Kennung oder E-Mail und Passwort **gegen den Verzeichnisdienst (LDAP)** — nie gegen die eigene Datenbank (Migration 172, [ARCHITEKTUR.md](ARCHITEKTUR.md) A30). Gesucht wird zuerst das Konto, dann fragt der Server, den es nennt; eine Eingabe ohne Konto erreicht keinen Server, außer über die Selbstanmeldung. Eine lokale Passwortspalte gibt es seit Migration 012 nicht — wer ein Konto anlegt, legt kein Passwort fest, sondern setzt eine E-Mail-Adresse, die auf dem Schulserver existiert (`internal/auth/anmelden.go`, `pruefeIMAPZugang`). Ist `SELBSTANMELDUNG_DOMAIN` gesetzt, genügt beim Anmelden der Name vor dem @; der Server ergänzt die Domain, bevor er etwas anderes tut (`internal/auth/schuldomain.go`, dieselbe Funktion wie im Sammelversand an die Klassenleitungen), und die Anmeldeseite nennt sie unter dem Feld („Der Name vor dem @ genügt – @… ergänzt das Programm."). Eine Eingabe mit @ bleibt, wie sie ist. Gespeichert wird kein Passwort; nur für die Dauer einer Anmeldung hält der Server einen Prüfwert davon, mit dem die Sperre nach Inaktivität auch bei einem Ausfall des Mailservers aufgeht (Migration 155, [SECURITY.md](SECURITY.md)).
+- **Verfahren:** E-Mail und Passwort **gegen den Mailserver der Schule (IMAP)** oder, je Konto eingestellt, LDAP-Kennung oder E-Mail und Passwort **gegen den Verzeichnisdienst (LDAP)**, nie gegen die eigene Datenbank: Eine Passwortspalte gibt es nicht; wer ein Konto anlegt, setzt eine Adresse, die auf dem Schulserver existiert. Gesucht wird zuerst das Konto, dann fragt der Server, den es nennt ([ARCHITEKTUR.md](ARCHITEKTUR.md) 6.1, A2, A30). Ist `SELBSTANMELDUNG_DOMAIN` gesetzt, genügt der Name vor dem @; der Server ergänzt die Domain, und die Anmeldeseite nennt sie unter dem Feld. Für die Dauer einer Anmeldung hält der Server einen Prüfwert des Passworts, damit die Sperre auch bei einem Ausfall des Mailservers aufgeht ([SECURITY.md](SECURITY.md)).
 - **Folge für die Kontoverwaltung:** Die E-Mail **ist** die Identität, bei einem LDAP-Konto auch die LDAP-Kennung. Wer die Spalte `benutzer.email` oder `benutzer.ldap_kennung` schreiben darf, übernimmt damit ein Konto; ein Rechte-Audit, das nur auf `rolle` schaut, sieht diesen Weg nicht.
-- **Anmeldeverfahren je Konto:** Unter Benutzer & Rechte steht an jedem Konto „Anmeldung über" — Mailserver der Schule (IMAP, Vorgabe) oder Verzeichnisdienst (LDAP). Ein LDAP-Konto braucht seine LDAP-Kennung, den Namen, den die Person beim Anmelden tippt (etwa ihr Kürzel); welches Feld im Verzeichnis sie trifft, legt `LDAP_FILTER` fest, auch mit festen Teilen wie einer UPN-Endung. Die Rolle kommt weiter aus dieser Verwaltung, nicht aus Gruppen des Verzeichnisses.
-- **Session-Management:** Ein JWT (JSON Web Token) im HttpOnly-Cookie. Seit Migration 155 gehört zu jeder Anmeldung eine Zeile in `sitzungen`; das Token trägt ihre Kennung, und der Server liest bei jeder Anfrage, ob die Anmeldung gesperrt ist (`internal/auth/sitzungen.go`). Gesperrt ist sie auch 10 Stunden nach der letzten Passworteingabe (Migration 169), egal wie oft das Token dazwischen erneuert wurde; das Passwort am Sperrbildschirm beginnt die 10 Stunden neu.
-- **Inaktivität:** Nach 5 Minuten ohne Bedienung leert sich die Theke (kein geladener Schüler mehr), nach 15 Minuten kommt der Sperrbildschirm — Entsperren mit dem eigenen Passwort oder Abmelden. Beide Fristen stehen in den Einstellungen („Datenschutz & Sitzung", 0 = aus). Die Sitzung läuft dabei weiter, der Server sperrt sie aber: Bis das Passwort eingegeben ist, beantwortet er keine Anfrage, auch nicht nach dem Neuladen oder in einem neuen Tab (entschieden am 01.10.2026, Migration 155). Ist der Mailserver nicht erreichbar, schließt das Passwort der Anmeldung trotzdem auf.
-- **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
-- **Selbstanmeldung des Kollegiums (`SELBSTANMELDUNG_DOMAIN`, `internal/auth/selbstanmeldung.go`):** Rund 160 Lehrkräfte legt niemand vorab von Hand an. Meldet sich ein Postfach der eingetragenen Schuldomain an, das noch kein Konto hat, entsteht ein **inaktiver** Eintrag mit Rolle `kollegium` (Name aus `vorname.nachname@…` geraten, `zugang_beantragt_am` gesetzt, Audit-Zeile `SELBSTANMELDUNG`); die Lehrkraft liest „Zugang beantragt. Die Bibliothek muss ihn noch freischalten.“, kein Fehlversuch wird gezählt. Unter Benutzer & Rechte steht der Eintrag als „Zugang beantragt“ mit Zähler oben; „Aktiv“ setzen schaltet frei, danach sieht die Person nur „Mein Portal“ (Migration 070). Ein Antrag verfällt nicht von selbst (entschieden am 22.09.2026): Er bleibt sichtbar, bis jemand freischaltet oder löscht; ein stiller Verfall nähme eine echte Anfrage weg, ohne dass sie je jemand gesehen hätte. Wird das aus Datenschutzgründen anders gewollt, gehört die Frist zu den Löschfristen, nicht als Sonderregel hierher. IMAP beantwortet „wer bist du“, nicht „darfst du rein“ — die Freischaltung bleibt bewusst bei der Schule (ein Schülerpostfach derselben Domain würde sonst ebenfalls hereinkommen). Ist die Variable leer, ist der Weg zu: richtige Zugangsdaten enden dann in „Anmeldung fehlgeschlagen“, die Selbstprüfung meldet das als Warnung. Wer in Bibliothek oder LMF mitarbeitet (Mitarbeiter, Helfer), wird weiterhin von Hand angelegt.
+- **Anmeldeverfahren je Konto:** Unter Benutzer & Rechte steht an jedem Konto „Anmeldung über“: Mailserver der Schule (Vorgabe) oder Verzeichnisdienst mit der LDAP-Kennung, dem Namen, den die Person beim Anmelden tippt (etwa ihr Kürzel). Die Rolle kommt aus dieser Verwaltung, nicht aus Gruppen des Verzeichnisses.
+- **Sitzung:** ein JWT im HttpOnly-Cookie; zu jeder Anmeldung gehört eine Zeile in `sitzungen`, und der Server liest bei jeder Anfrage, ob sie gesperrt ist (`internal/auth/sitzungen.go`). Gesperrt ist sie auch 10 Stunden nach der letzten Passworteingabe, gleich wie oft das Token dazwischen erneuert wurde; das Passwort am Sperrbildschirm beginnt die 10 Stunden neu.
+- **Inaktivität:** Nach 5 Minuten ohne Bedienung leert sich die Theke (kein geladener Schüler mehr), nach 15 Minuten kommt der Sperrbildschirm — Entsperren mit dem eigenen Passwort oder Abmelden. Beide Fristen stehen in den Einstellungen („Datenschutz & Sitzung", 0 = aus). Die Sitzung läuft dabei weiter, der Server sperrt sie aber: Bis das Passwort eingegeben ist, beantwortet er keine Anfrage, auch nicht nach dem Neuladen oder in einem neuen Tab (entschieden am 01.10.2026). Ist der Mailserver nicht erreichbar, schließt das Passwort der Anmeldung trotzdem auf.
+- **Brute-Force-Schutz:** Fehlversuche werden je Eingabe und Adresse gezählt und sperren die Anmeldung für eine Weile ([SECURITY.md](SECURITY.md)).
+- **Selbstanmeldung des Kollegiums (`SELBSTANMELDUNG_DOMAIN`, `internal/auth/selbstanmeldung.go`):** damit niemand rund 160 Lehrkräfte vorab von Hand anlegt. Meldet sich ein Postfach der eingetragenen Schuldomain an, das noch kein Konto hat, entsteht ein **inaktiver** Eintrag mit Rolle `kollegium` (Name aus `vorname.nachname@…` geraten, `zugang_beantragt_am` gesetzt, Audit-Zeile `SELBSTANMELDUNG`); die Lehrkraft liest „Zugang beantragt. Die Bibliothek muss ihn noch freischalten.“, kein Fehlversuch wird gezählt. Unter Benutzer & Rechte steht der Eintrag als „Zugang beantragt“ mit Zähler oben; „Aktiv“ setzen schaltet frei, danach sieht die Person nur „Mein Portal“. Ein Antrag verfällt nicht von selbst (entschieden am 22.09.2026): Er bleibt sichtbar, bis jemand freischaltet oder löscht; ein stiller Verfall nähme eine echte Anfrage weg, ohne dass sie je jemand gesehen hätte. Wird das aus Datenschutzgründen anders gewollt, gehört die Frist zu den Löschfristen, nicht als Sonderregel hierher. IMAP beantwortet „wer bist du“, nicht „darfst du rein“ — die Freischaltung bleibt bewusst bei der Schule (ein Schülerpostfach derselben Domain würde sonst ebenfalls hereinkommen). Ist die Variable leer, ist der Weg zu: richtige Zugangsdaten enden dann in „Anmeldung fehlgeschlagen“, die Selbstprüfung meldet das als Warnung. Wer in Bibliothek oder LMF mitarbeitet (Mitarbeiter, Helfer), wird weiterhin von Hand angelegt.
 
 ### 12.2. Vier Rollen und ein Grundzustand
 
@@ -561,20 +607,20 @@ Schule — das ist eine Produktentscheidung.
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Leitung (`leitung`, Migration 121/122):** Die Rechte des Admins **minus** `manage_users` (Benutzer & Rechte) und `manage_settings` (Einstellungen) — die Rolle für die Person, die die Bibliothek führt, ohne die Systempflege zu übernehmen.
 
-   **Das Soll wird abgeleitet, nicht abgeschrieben:** Migration 122 erzeugt die Zeilen aus den ADMIN-Zeilen und setzt genau die zwei Ausnahmen auf `false`. Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `internal/db/rechte_vorgabe.go` und liefe beim nächsten neuen Recht auseinander — die Leitung bekäme es nicht, und niemand merkte es. Gate: `internal/db/rolle_leitung_test.go` leitet dasselbe aus der Vorgabe ab.
+   **Das Soll wird abgeleitet, nicht abgeschrieben:** Migration 122 erzeugt die Zeilen aus den Admin-Zeilen und setzt genau die zwei Ausnahmen auf `false`; eine abgeschriebene Liste liefe beim nächsten neuen Recht auseinander, und niemand merkte es (Gate `internal/db/rolle_leitung_test.go`, [ARCHITEKTUR.md](ARCHITEKTUR.md) A12).
 
    **Warum ausgerechnet `manage_users` fehlt:** Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail. Die Rechtevergabe wäre damit der Weg in jedes Konto der Anlage. Der Admin kann das Recht erteilen; ein Admin-KONTO bleibt der Leitung auch dann verschlossen (`internal/api/benutzer/admin_schutz.go`).
 3. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Leserdatei, darf aber keine Systemeinstellungen ändern.
 4. **Helfer (`helfer`):** siehe unten.
-5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit vier Reitern (Stand 06.10.2026): _Reservieren & Melden_ (suchen, Klassensatz reservieren, ein Problem melden; darunter die eigenen Reservierungen und Meldungen, §4.2 und §4.4), _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet: mehr als die Hälfte der Klasse und mindestens `klassensatzMindestLeser` Kinder halten den Titel; `ladeKlassensatzGruppen`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3) und _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`). Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Suche (Katalog des Kollegiums, §4.2), Reservierung und Anliegen laufen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
+5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit vier Reitern: _Reservieren & Melden_ (suchen, Klassensatz reservieren, ein Problem melden; darunter die eigenen Reservierungen und Meldungen, §4.2 und §4.4), _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet: mehr als die Hälfte der Klasse und mindestens `klassensatzMindestLeser` Kinder halten den Titel; `ladeKlassensatzGruppen`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3) und _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`). Erteilt ist ein einziges Recht, `create_reservations`: Suche (Katalog des Kollegiums, §4.2), Reservierung und Anliegen laufen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
    **„Mein Portal“ hängt am Recht `create_reservations`, nicht an der Rolle** (entschieden): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse.
 
-   **Die Tabelle der Rechte entscheidet auch an der Route:** `role_permissions` steuert das Menü und `verlangeRecht`; ein Recht zu viel ist keine Frage der Anzeige. Das Kollegium hält nur `create_reservations` (Migration 070). Wer einer Lehrkraft gezielt mehr geben will, tut das unter Benutzer & Rechte — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
+   **Die Tabelle der Rechte entscheidet auch an der Route:** `role_permissions` steuert das Menü und `verlangeRecht`; ein Recht zu viel ist keine Frage der Anzeige. Das Kollegium hält nur `create_reservations`. Wer einer Lehrkraft gezielt mehr geben will, tut das unter Benutzer & Rechte — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
 
-**Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zur Akte zieht weiterhin `view_students`.
+**Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (entschieden am 30.07.2026): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zur Akte zieht weiterhin `view_students`.
 
-   **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`internal/auth/anmelden.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter System → Benutzer & Rechte (Reiter „Benutzer“) die Person mit der Rolle „Helfer" ein. Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
+   **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver oder ein LDAP-Konto** (§12.1); einen Code- oder Barcode-Anmeldeweg gibt es nicht. Wer eine Hilfskraft aufnimmt, lässt zuerst das Postfach anlegen und trägt die Person dann unter System → Benutzer & Rechte mit der Rolle „Helfer“ ein.
 
    Erteilt sind genau zwei Rechte (`internal/db/rechte_vorgabe.go`): `perform_actions` (Scannen, Ausleihe, Rückgabe) und `view_books` (Katalog). Erreichbar sind damit Ausleihe, Medienkatalog, Signaturen und Schulklassen. Die Pflege-Aktionen auf diesen Seiten hängen an `edit_books` und bleiben dem Helfer verborgen. Nach dem Scan eines Ausweises zeigt die Theke, was die Antwort des Servers trägt: Name, Klasse, Ausweisnummer und Sperre. Die Akte mit Ausleihen und Gebühren bleibt zu, und die Akte eines Titels zeigt nur die Exemplare (`view_students` öffnet beides, `manage_vormerkungen` die Warteliste). Gebucht wird trotzdem, jede Buchung nennt eine kurze Meldung.
 
@@ -582,15 +628,14 @@ Schule — das ist eine Produktentscheidung.
 
    **Welche Aktion jemand sieht, entscheidet das Recht der Route, nicht die Rolle.** Am Server hängt jede Route an einem Recht, keine an einer Rolle; die Oberfläche fragt deshalb `hatRecht(Benutzer, Recht)` aus `menue.js` mit demselben Recht, das die Route verlangt. Ein Rollenvergleich an dieser Stelle machte den Schalter in der Rechte-Matrix wirkungslos: Der Server erlaubte, der Knopf fehlte — oder umgekehrt. Ratsche: `frontend/src/lib/frontend-hygiene-rechte.test.js`, mit den begründeten Ausnahmen. Der Menüpunkt „Einstellungen" ist ein Sammelpunkt über Kategorien mit verschiedenen Rechten (§17): Er öffnet sich mit jedem Recht, das eine Kategorie verlangt (`ALLE_KATEGORIE_RECHTE`, Gate `menue.test.js`). Dass eine Rolle etwas nicht darf, zeigt deshalb die Antwort 403 des Servers und nicht ein fehlender Menüpunkt.
 
-### 12.3. Leserdatei: eine Tabelle, drei Arten (Migration 123–125)
+### 12.3. Leserdatei: eine Tabelle, sieben Arten (Migration 123–125)
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die Rolle (§12.2) sagt, was jemand im
 Programm DARF. Die Art sagt, WER an der Theke Bücher bekommt. Ein Mensch kann beides haben,
 eines von beidem oder keines: Eine Lehrkraft ohne Konto steht in der Leserdatei und darf
 nichts im Programm; ein Admin muss nicht in der Leserdatei stehen.
 
-Schüler und Kollegium stehen seit Migration 123 in EINER Tabelle `leser` mit der Spalte
-`art`:
+Schüler und Kollegium stehen in einer Tabelle `leser` mit der Spalte `art`:
 
 | Art           | Wort in der Oberfläche | Woher                                                              |
 | ------------- | ---------------------- | ------------------------------------------------------------------ |
@@ -606,7 +651,7 @@ Die Art entscheidet **keine Rechte**; ausleihen darf jeder aktive Leser. Ändern
 sich nur innerhalb des Kollegiums: Ein Schüler kommt aus der LUSD und bleibt Schüler, in
 beide Richtungen (`chk_leser_nur_schueler_werden_abgaenger`).
 
-**Die Sonderkonten** (Migration 153, entschieden am 30.09.2026): Praktikum, Sekretariat, U-plus
+**Die Sonderkonten** (entschieden am 30.09.2026): Praktikum, Sekretariat, U-plus
 und Fachbereich sind die Lesergruppen, die Littera neben Klassen und Lehrern führt. Sie stehen
 als Art da und nicht als zweites Feld daneben — eine Gruppe neben der Art hätte Paare wie „LiV
 und Sekretariat" erlaubt und eine Pflegeseite gebraucht. Das Programm unterscheidet an jeder
@@ -617,7 +662,7 @@ Sammelkonto, das die Kollegen des Fachs benutzen; ein Praktikant leiht aus, brau
 „Mein Portal" nicht.
 
 **`schueler` ist eine Sicht**, keine Tabelle: `WHERE art = 'schueler'`
-mit `WITH CHECK OPTION` (Migration 124). Das trägt die alte Bedeutung weiter — Klassenlisten,
+mit `WITH CHECK OPTION`. Das trägt die alte Bedeutung weiter — Klassenlisten,
 LUSD-Abgleich, Mahnlauf und die DSGVO-Löschfristen lesen sie und bekommen das Kollegium
 nicht zu sehen. Die Kehrseite ist eine eigene Bugklasse; sie steht in
 [sweeps.md](sweeps.md) („Schreibpfad gegen gefilterte Sicht").
@@ -628,7 +673,7 @@ Klasse und Abgangsjahr (eine Klasse hat nur ein Schüler, und das Abgangsjahr le
 Server aus ihr ab) sowie die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler).
 Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen
 bleiben Geburtsdatum, Anschrift und Eltern-E-Mail leer; eine Ausweisnummer hat jeder mit
-freigeschaltetem Zugang, das Programm vergibt sie (Migrationen 136 und 145).
+freigeschaltetem Zugang, das Programm vergibt sie.
 
 **Die Schul-E-Mail ist beim Anlegen von Lehrkraft, LiV, Sekretariat und U-plus Pflicht.**
 Bei Praktikum und Fachbereich muss sie leer bleiben — dort entsteht kein Konto, weder beim
@@ -643,15 +688,15 @@ EINER Stelle, am Konto (`benutzer.email`, `UNIQUE lower(email)`) — eine zweite
 Leserzeile gibt es bewusst nicht. Die Akte liest sie vom Konto; fehlt sie, lässt sie sich dort
 nachtragen, ändern lässt sie sich nur in „Benutzer & Rechte" (`internal/api/leser/leser_schul_email.go`).
 
-**Ausweise:** Alle Leser ziehen ihre Nummer aus EINEM Nummernkreis (Migration 125), und
+**Ausweise:** Alle Leser ziehen ihre Nummer aus einem Nummernkreis, und
 alle neuen Nummern tragen die Vorsilbe `A-` (§1). Eine `A-`-Nummer vergibt das Programm nur
 einmal, auch nachdem sie verschwunden ist — endgültig gelöscht, anonymisiert, zusammengeführt,
-geleert oder umgeschrieben (Migration 146): Die Tabelle `ausweisnummern_ausgeschieden` hält sie
+geleert oder umgeschrieben: Die Tabelle `ausweisnummern_ausgeschieden` hält sie
 als bloße Zahl fest, ohne Person, und der Generator zählt über sie hinweg. Eine alte Karte
 findet danach an der Theke niemanden. Von Hand bleibt eine frühere Nummer eintragbar, etwa die
 alte Karte eines Schülers, der zurückkommt. Die Aufschrift der gedruckten Karte
 richtet sich nach der Art — „Schülerausweis", „Lehrerausweis" (Lehrkraft und LiV) oder
-„Leserausweis" (die Sonderkonten; so nennt Littera jeden Ausweis); eine Gültigkeit trägt nur
+„Leserausweis" (die Sonderkonten); eine Gültigkeit trägt nur
 der Schülerausweis, weil ein Ausweis im Kollegium mit keinem Schuljahr abläuft. Ihr Jahr rechnet
 das Programm bei jedem Druck aus der Klasse (`internal/ausweis`), der Tag ist der 31.07., das
 Ende des Schuljahres: im Hauptschulzweig bis zum Ende von Jahrgang 9, in der übrigen Mittelstufe
@@ -666,32 +711,212 @@ das Jahr für einen Druck änderbar.
 
 Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
 
-- **Titel ohne Exemplar stehen in keinem Katalog (Antwort der Schule auf Punkt 4 der Sichtung vom 16.09.2026):** Die drei Türen der Verwaltung, über die Titel gesucht werden — die Katalogliste `GET /api/books` (Medienkatalog „Suche & Filter", Titel-Verwaltung und die Zuordnung von Klassensätzen), die Theken-Suche (`KatalogAbfragen.FindeTitelUnscharf`) und die Aktionssuche der Omnibox (`KatalogAbfragen.FindeTitel`) — zeigen nur Titel mit mindestens einem nicht ausgesonderten Exemplar; der Zulauf zählt als vorhanden. EIN Prädikat, `repository.sqlTitelHatExemplar` (`bestand_sql.go`). Der Titel bleibt in der Tabelle, sonst legt ihn jemand ein zweites Mal an: Die Titel-Verwaltung erreicht ihn über die Aufräumsicht `GET /api/books?bestand=ohne` (dasselbe Prädikat mit NOT, Umschalter „Mit Exemplaren | Ohne Exemplare"), die Bestellliste führt ihn unter der Schwelle. Der öffentliche Katalog (§16.1) und der Monitor haben eine engere eigene Regel (`OeffentlichSichtbar`: kein Lernmittel, kein Zulauf); _Mein Portal_ sucht über eine eigene Tür, die auch Lernmittel und bestellte Titel zeigt (§4.2). **Anlegen:** Trägt die ISBN eines neuen Buchs schon ein Titel, antwortet die Dublettenkontrolle mit 409 und nennt ihn unter `vorhanden` (Kennung, Titel, `ohneExemplar`; `katalog.schreibeDubletteISBN`, beim Anlegen und beim Ändern). Die Maske _Titel anlegen_ fragt schon bei der Eingabe der ISBN — beim Verlassen des Feldes, nach dem Kamera-Scan und am Knopf „Daten aus dem Internet aktualisieren“ —, ob ein Titel sie trägt: `GET /api/books/vorhanden?isbn=` (`view_books`) fragt mit derselben Abfrage wie das Speichern (`repository.titelMitISBN`) und nennt denselben Titel mit derselben Meldung. Die Maske fragt „Vorhandenen Titel öffnen?“ und öffnet ihn; dort wird der Bestand eingetragen. Für eine vergebene ISBN werden die Katalogdienste nicht gefragt. Lässt sich der Katalog nicht fragen, sagt die Maske es und arbeitet weiter; das Speichern prüft noch einmal und stellt dann dieselbe Frage. Littera prüft ebenfalls bei der Eingabe der ISBN und bietet an, statt des Titels ein weiteres Exemplar aufzunehmen. **Ohne ISBN:** Pflicht ist beim Anlegen und Ändern der Titel, die ISBN darf fehlen — Zeitschriften, Spiele und alte Bücher tragen keine, und die Littera-Übernahme lässt eine Nummer mit falscher Prüfziffer oder eine doppelte weg. Beim Ändern prüft die Tür Form und Dublette der ISBN nur, wenn sie eine andere ist als die gespeicherte (`repository.pruefeAenderung`). Beim Anlegen ohne ISBN nennt sie den Titel, der ohne Nummer in Titel, Autor und Auflage gleich ist (409 mit `vorhanden` und `gleicherTitel`); die Maske fragt „Ist es dasselbe Medium?“, öffnet ihn oder legt nach „Anderes Medium“ an (`anderesMedium` im Rumpf). Hefte und Bände heißen gleich, deshalb ist es eine Frage und keine Ablehnung; Littera vergleicht ohne Nummer Verfasser und Haupttitel und bietet ebenfalls nur an. Belegt: `internal/api/katalog/titel_ohne_isbn_pg_test.go`, `frontend/e2e/buch-ohne-isbn.spec.js`. Der Knopf „Scanner“ der Titel-Verwaltung öffnet dieselbe Maske mit eingeschalteter Kamera; ein zweites Fenster mit eigenem Speichern gibt es nicht. Ein neues Buch beginnt in der Maske mit einem Exemplar (Littera: „Mit der Aufnahme eines Titels erfolgt gleichzeitig auch die Aufnahme des ersten Exemplars“); steht dort 0, sagt der Hinweis unter dem Feld, dass der Titel nur unter „Ohne Exemplare“ steht, und die Meldung nach dem Speichern sagt es noch einmal. Belegt: `internal/repository/titel_bestand_pg_test.go`, `internal/repository/titel_ohne_exemplar_pg_test.go`, `internal/api/katalog/dublette_nennt_den_titel_pg_test.go`, `internal/api/katalog/buch_vorhanden_pg_test.go`, `frontend/src/inventur/lib/buch_speichern.test.js`, `frontend/src/inventur/lib/components/admin/AdminBuchAktionen.test.js`, `frontend/src/inventur/lib/components/admin/IsbnFeld.test.js`, `frontend/src/inventur/lib/components/admin/BuchFormular.svelte.test.js`, `frontend/src/inventur/lib/components/admin/buchFormularRegeln.test.js`, `frontend/e2e/buch-anlegen-auffindbar.spec.js`.
-- **Mehrjahresband (Antwort der Schule auf Protokoll 5 der Sichtung vom 16.09.2026; Migration 134):** Am Titel steht das Kästchen „Mehrjahresband" (`mehrjahresband`; Titel-Verwaltung, nur bei Lernmitteln). Die Jahreszahl, bis zu der das Buch beim Kind bleibt, ist `jahrgang_bis` aus der Spanne „Im Unterricht von Jahrgang … bis" — eine zweite Zahl gibt es nicht. Die Frist ist der Stichtag des Schuljahres, in dem das Kind `jahrgang_bis` beendet: `AdditionalYears = jahrgang_bis − Jahrgang der Klasse`, dann `AddDate` am Stichtag (`internal/service/frist.go`). Der Rückgabetermin der Klasse geht das Buch nichts an; hat der Büchertausch begonnen, rechnet die Frist vom folgenden Schuljahr aus, und eines der Jahre steckt in diesem Sprung. Der Schalter gilt nur an einem Lernmittel und nur mit einer Spanne über mehr als einen Jahrgang — an beiden Türen der Titel-Verwaltung (`internal/repository/titel_spanne.go`, 400) und in der Datenbank (`chk_mehrjahresband_spanne`) dieselbe Regel. Das Schuljahr, das Littera getrennt führt, steckt hier im Datum der Frist. Belegt: `internal/service/lmf_frist_termintag_pg_test.go`, `internal/repository/mehrjahresband_am_titel_pg_test.go`.
-- **Jahrgang am Titel: „unbekannt" ist eine eigene Angabe (entschieden am 24.09.2026, Migration 162):** „Im Unterricht von Jahrgang … bis" ist ganz eingetragen oder gar nicht; ohne Eintrag ist der Jahrgang unbekannt (`jahrgang_von` und `jahrgang_bis` NULL, im Programm 0 und 0). Eine Vorgabe gibt es nicht: Mit „5 bis 10" als Vorgabe wäre ein Titel ohne Angabe von einem Titel für diese Jahrgänge nicht zu unterscheiden. Die Inventur nach Klasse und der Filter „Jahrgang" der Schulbücher im Portal treffen nur Titel mit eingetragener Spanne. Die Littera-Übernahme trägt die Spanne aus Signatur („LMF Bio 7") und Interessenkreis („Sekundarstufe 1" → 5 bis 10) ein und lässt sie sonst leer. Regel an beiden Türen: `repository.PruefeJahrgangsSpanne`, in der Datenbank `chk_jahrgang_spanne`. Die Oberfläche führt nur die Spanne: Maske, Titel-Verwaltung, Klassenzuweisung, Buchakte und Katalogsuche lesen `jahrgang_von` und `jahrgang_bis`. Eine „Klasse" am Titel gibt es nicht (Migration 163; entschieden am 08.10.2026: Was die Zahl meinte, war nicht belegt, und mehrjährige Bände trugen ein einziges Jahr). In der Maske geht „bis" mit „von" mit, solange es leer ist oder dieselbe Zahl zeigt (`bisNachVon`). Jeder Weg, auf dem ein Jahrgang ins Programm kommt, schreibt die Spanne: Die ISBN-Abfrage schlägt eine Stufe nur vor, wenn der Titel sie als Schulstufe nennt (`stufenAusText`): einen Jahrgang als N bis N („Klasse 7", „7. Schuljahr"), zwei verbundene als Spanne („Klassen 7–10", „5./6. Schuljahr", „Klasse 7 bis 9"); nicht „Band 2", „Level 9" oder eine bloße Zahl. Zwei Zahlen verbindet ein Zeichen ohne Leerzeichen oder ein Wort („bis", „und"); ein Strich mit Leerzeichen trennt Titelteile („Band 1 - 11. Schuljahr" nennt Band und Jahrgang) und verbindet nur nach der Mehrzahl („Klassen 5 - 7"). Keinen Vorschlag gibt es, wo offen bleibt, welche Jahrgänge gemeint sind: bei einer Grenze („ab Klasse 5"), einer Aufzählung („Klassenstufen 8, 9 und 10"), zwei Angaben („Klassen 10-12 oder 11-13"), einer weiteren Zahl neben der Angabe („Band 5 - 9. Schuljahr", „7. - 10. Schuljahr") und einer Zahl außerhalb von 5 bis 13 („Klassen 4-6"). Die Antwort der Abfrage trägt die Spanne in `jahrgangVon` und `jahrgangBis` (0 und 0: kein Vorschlag), und die Maske trägt nur beide zusammen ein. Gemessen am 08.10.2026 an 1.216 Titeln, die die DNB zu den Stufenwörtern liefert: 259 bekommen eine Spanne, 337 einen einzelnen Jahrgang. Der Listenimport trägt die Spalte „klasse" als Spanne N bis N ein. Belegt: `internal/api/katalog/jahrgang_vorgabe_pg_test.go`, `internal/repository/jahrgang_unbekannt_pg_test.go`, `internal/repository/inventurlauf_pg_test.go`, `internal/api/portal/schulbuecher_pg_test.go`, `frontend/e2e/feld-roundtrip.spec.js`, `frontend/e2e/portal-schulbuecher.spec.js`, `internal/katalogdienste/fach_und_jahrgang_test.go`, `internal/api/katalog/isbn_suche_test.go`, `frontend/src/inventur/lib/components/admin/isbnAbfrage.test.js`, `frontend/src/inventur/lib/components/admin/BuchEingabefelderKategorisierung.jahrgang.svelte.test.js`.
-- **Auflagen eines Schulbuchs (Migration 148):** Eine neue Auflage ist ein eigener Titel mit eigener ISBN — sie hat andere Seitenzahlen, und jedes Exemplar bleibt an seiner Auflage. Auflagen desselben Buchs lassen sich zusammenfassen: Sie tragen dieselbe `werk_id` (Tabelle `werke`, ohne Namen — jede Ansicht zeigt die neueste Auflage mit ihrem Titel). Gelesen wird über `COALESCE(werk_id, id)`; ein Titel ohne Werk ist sein eigenes. Geschrieben wird nur in `internal/repository/auflagen.go`, nicht beim Speichern der Titelmaske (`AendereTitel`), und dort stehen die Regeln: nur Lernmittel (400 mit Text, der den Titel nennt); gehören beide Titel schon zu verschiedenen Büchern, werden alle zu einem; ein Werk mit weniger als zwei Titeln fällt samt dem letzten Verweis — auch, wenn ein Titel gelöscht wird: `repository.TitelAbfragen.LoescheTitel` (`DELETE /api/books`) nimmt als Erstes die Sperre der Auflagen (`repository.nimmAuflagenSperre`), liest die Werke vor dem Löschen (`ladeWerkeDerTitel`) und räumt danach auf (`raeumeWerkeAuf`). „Die neueste Auflage" ist das jüngste Erscheinungsjahr, bei gleichem oder fehlendem Jahr die zuletzt angelegte (`repository.sqlNeuesteAuflageZuerst`). Türen: `GET /api/buecher/titel/{id}/auflagen` (`view_books`, die Auflagen mit Bestand in den Zahlen des Katalogs), `POST` und `DELETE` desselben Pfads (`edit_books`, Zusammenfassen und Lösen). **In der Titelmaske** steht der Abschnitt _Auflagen_ (`BuchAuflagen.svelte`) bei jedem Lernmittel und bei jedem Titel, der schon zu einem Buch gehört — auch wenn er inzwischen kein Lernmittel mehr ist, sonst ließe er sich nicht lösen. Er zeigt die Auflagen, die neueste zuerst, mit Bestand und der Summe; Lösen fragt nicht nach, weil es sich jederzeit zurücknehmen lässt und nichts löscht. Der Dialog _Andere Auflage zuordnen_ sucht über die Tür der Titel-Verwaltung zweimal — `GET /api/books?q=` mit und mit `bestand=ohne` —, weil eine alte Auflage oft kein Exemplar mehr hat, und bietet nur Lernmittel an, die noch nicht zu diesem Buch gehören (`auflagenSuche.svelte.js`: nur die jüngste Antwort zählt, ein Fehler heißt Fehler). Gehört der gewählte Titel schon zu weiteren Auflagen, sagt der Dialog vor dem Klick, dass sie mitkommen; scheitert diese Nachfrage, sagt er das statt „keine". Im Bestellbedarf zählt das Buch (§7). **Neue Auflage bestellen** (Menü der Zeile im Bestellbedarf, `NeueAuflageDialog.svelte`): Die ISBN der neuen Auflage holt den Titel über die Tür der Titelsuche (`POST /api/buecher/aus-isbn`, aus dem Katalog oder neu aus der DNB), der Dialog zeigt ihn als Vorschlag, und erst die Bestätigung führt ihn als Lernmittel (`PUT …/lernmittel`), fasst ihn mit der Zeile zusammen (`POST /api/buecher/titel/{id}/neue-auflage`, `create_orders` — derselbe Handler wie die Titelmaske; „Der Besteller legt das Werk an", entschieden am 23.09.2026) und legt ihn in den Warenkorb. Ist der gefundene Titel schon Teil des Buchs, bietet der Dialog nichts zum Zuordnen an. **An der Theke:** Bekommt ein Kind ein Lernmittel in einer anderen Auflage, als Kinder derselben Klasse sie gerade haben, trägt die Antwort des Scans `auflagen_hinweis` (Klasse, diese Auflage, die anderen mit der Zahl der Kinder, keine Namen; `repository.LadeAuflagenMischungInKlasse`, „dieselbe Klasse" über `klassen_normkey` wie in der Klassensatz-Übersicht, nur offene Ausleihen aktiver Kinder). Gefragt wird nach dem Commit der Ausleihe; ein Fehler dabei landet im Log und hält die Buchung nicht auf. Die Theke blitzt orange und zeigt die Zeile über dem Konto (entschieden am 25.09.2026: wie die Fremdrückgabe, kein Dialog), neben den anderen Hinweisen zum ausgegebenen Schulbuch, bis ein anderer Leser kommt (§18.6). **In der Klassensatz-Übersicht** (§4.3) zählt das Buch: Ein Satz aus den Ausleihen entsteht aus den Kindern mit irgendeiner Auflage, und die Kachel trägt die Auflagen der Klasse mit der Zahl der Kinder, sobald Kinder eine andere Auflage als die der Kachel haben. **Im Medienkatalog** (_Suche & Filter_) ist ein Buch eine Kachel: Die Katalogliste `GET /api/books` trägt je Titel `werkId` und `werkRang` (1 = die neueste Auflage nach `sqlNeuesteAuflageZuerst`, gezählt über alle Auflagen des Buchs), und erst die Anzeige fasst nach der Suche zusammen (`buecherJeBuch` in `startseiten_api.js`) — die Titel-Verwaltung und der Zuordnen-Dialog lesen dieselbe Liste und brauchen jede Auflage einzeln. Oben steht die getroffene Auflage (nach einer gescannten ISBN genau diese, sonst die neueste), der Bestand ist die Summe aller Auflagen aus der ganzen Liste, und die Einblendung auf dem Cover nennt beim Zeigen die Aufschlüsselung wie im Bestellbedarf. **Im Portal** (Reiter „Schulbücher") rechnet der Server so: Die Filter (Jahrgang, Zweig, Suchtext) wählen die Bücher — trifft eine Auflage, gehört das Buch dazu —, gezählt wird über alle Schulbuch-Auflagen des Buchs, oben steht die neueste getroffene, und die Zeile trägt `auflagenBestand` (`lernmittelJeBuchSQL` in `internal/repository/lernmittel_bestand.go`). Liste, Fach-Zahlen und PDF lesen dieselben Zeilen; die Fach-Zahlen zählen Bücher statt Auflagen, und das PDF setzt die Aufschlüsselung unter den Titel (`auflagenBeschriftung` in `internal/pdf/schulbuecher.go` ist der Zwilling der Browser-Regel, beide lesen dieselben Prüffälle aus `auflagenText.faelle.json`). **Dieselbe ISBN in der anderen Länge:** Die zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer. Die Länge gehört zur Normalform der Datenbank (`isbn_normalform`, Migration 133 und 157; in Go `isbnutil.Normalform`): Eine zehnstellige ISBN mit richtigem Prüfzeichen wird beim Schreiben dreizehnstellig, an jeder Tür. Die Tür der Titelsuche (`POST /api/buecher/aus-isbn`) und die Maske (`GET /api/books/vorhanden`) vergleichen Normalformen (`repository.sqlTitelTraegtISBN`) und finden den Titel in beiden Längen; die Antwort der Titelsuche nennt die ISBN, wie der Katalog sie trägt. Eine zehnstellige Nummer mit falschem Prüfzeichen bleibt zehnstellig und wird mit keiner anderen gepaart: Die Rechnung führt von ihr auf die ISBN-13 eines anderen Buchs (am Testserver `3499500252`). Die Suchfelder am Server finden eine getippte ISBN in beiden Längen über `repository.sqlSuchtextIstISBN`, die Katalogsuche im Browser über `isbnFormen.js`. **Keine Vorschlagsliste zum Zusammenfassen:** Gemessen am Testserver am 25.09.2026 (lesend) standen nur zwei Lernmittel mit gleichem Titel und Verlag im Katalog, und höchstens eines der beiden hatte Exemplare; zusammengefasst wird deshalb beim Nachbestellen und von Hand in der Titelmaske. Die Zählung sieht nur gleiche Titel — eine Neuauflage unter geändertem Titel („… Neubearbeitung") nicht. Belegt: `internal/repository/auflagen_pg_test.go`, `internal/api/katalog/titel_auflagen_pg_test.go`, `BuchAuflagen.test.js`, `AuflageZuordnenDialog.test.js`, `auflagenSuche.svelte.test.js`, `frontend/e2e/auflagen-zusammenfassen.spec.js`, `NeueAuflageDialog.test.js`, `frontend/e2e/auflagen-neue-auflage.spec.js`, `internal/repository/auflagen_klasse_pg_test.go`, `internal/api/theke/auflagen_theke_pg_test.go`, `omniboxAuflagenHinweis.test.js`, `frontend/e2e/auflagen-theke.spec.js`, `internal/repository/klassensatz_auflagen_pg_test.go`, `KlassenBuchKachel.test.js`, `frontend/e2e/auflagen-klassensatz.spec.js`, `internal/repository/katalog_auflagen_pg_test.go`, `startseiten_api.test.js`, `BuchKarte.test.js`, `frontend/e2e/auflagen-katalog.spec.js`, `internal/api/portal/schulbuecher_pg_test.go`, `internal/pdf/schulbuecher_test.go`, `frontend/e2e/auflagen-portal.spec.js`, `internal/repository/auflagen_loeschen_pg_test.go`, `internal/repository/titel_loeschen_samt_ausleihen_auflagen_pg_test.go`, `internal/pkg/isbnutil/normalform_test.go`, `internal/repository/isbn_normalform_pg_test.go`, `internal/api/katalog/isbn_eine_laenge_pg_test.go`, `BestellSuche.test.js`, `frontend/e2e/auflagen-isbn-andere-form.spec.js`.
-- **Titel zusammenführen** (entschieden am 22.10.2026): Steht dasselbe Buch zweimal im Katalog, etwa einmal aus einer Liste ohne ISBN und einmal aus dem Bestands-Import mit ISBN, macht die Titelmaske einen Titel daraus (_Mit anderem Titel zusammenführen_, `TitelZusammenfuehrenDialog.svelte`; Recht `delete_books` wie das Löschen, weil danach einer der beiden fehlt). Es bleibt der Titel mit ISBN, hat der andere keine, der offene; der Dialog fragt nicht danach (entschieden am 23.10.2026: suchen, antippen, zusammenführen). Die Regeln stehen in `internal/repository/titel_zusammenfuehren.go`: Der bleibende Titel behält Kennung und Angaben; was ihm fehlt, füllt der andere auf, auch die ISBN (`titel_zusammenfuehren_felder.go`; leer heißt unbekannt, außer beim Schulzweig, wo leer „für alle Zweige" heißt; ist einer der beiden ein Lernmittel, ist es der bleibende danach auch, wie beim Listenimport; der Mehrjahresband kommt mit dem Jahrgang, und die Vorschau nennt ihn, wo beide verschieden sind). Exemplare mit Nummer, Etikett und Ausleihen, Vormerkungen (von zweien desselben Lesers bleibt die fortgeschrittenere, sonst die ältere; lag auch für die andere ein Buch im Abholfach, bekommt es der Nächste in der Warteschlange), Klassensatz-Reservierungen, Bestellpositionen, Meldungen, Schlagworte und die Zuordnung zu Klassen wandern; war der andere Titel Auflage eines Buchs, tritt der bleibende an seine Stelle. Danach fällt der andere, und am bleibenden steht ein Eintrag im Protokoll mit beiden Ständen und allen gewanderten Zeilen (`titel_zusammengefuehrt`), im Protokoll der Verwaltung `TITEL_ZUSAMMENGEFUEHRT`. Tragen beide eine ISBN, sind es zwei Ausgaben; die Tür lehnt ab (409) und nennt _Andere Auflage zuordnen_. Die Vorschau (`GET /api/buecher/titel/{id}/zusammenfuehren?quelle_id=`) läuft durch denselben Weg und nimmt ihn am Ende zurück; sie nennt in einer Zeile den Titel danach mit ISBN und Zahl der Exemplare (`isbn`, `exemplare_danach`, gezählt wie der Bestand im Katalog), und eine verdoppelte Zahl zeigt, dass beide Titel dieselben Bücher trugen. `POST` desselben Pfads führt zusammen. Belegt: `internal/repository/titel_zusammenfuehren_pg_test.go`, `internal/repository/titel_zusammenfuehren_felder_test.go`, `internal/api/katalog/titel_zusammenfuehren_pg_test.go`, `TitelZusammenfuehrenDialog.test.js`, `zusammenfuehrenVorschau.test.js`, `BuchFormular.zusammenfuehren.svelte.test.js`, `frontend/e2e/titel-zusammenfuehren.spec.js`.
+- **Titel ohne Exemplar stehen in keinem Katalog** (Antwort der Schule auf die Sichtung vom
+  16.09.2026): Katalogliste (`GET /api/books`), Theken-Suche und Aktionssuche der Omnibox zeigen nur
+  Titel mit mindestens einem nicht ausgesonderten Exemplar, der Zulauf zählt als vorhanden; ein
+  Prädikat, `repository.sqlTitelHatExemplar`. Der Titel bleibt in der Tabelle, sonst legte ihn jemand
+  ein zweites Mal an: Die Titel-Verwaltung erreicht ihn über „Ohne Exemplare“ (`?bestand=ohne`,
+  dasselbe Prädikat verneint). Öffentlicher Katalog und Monitor haben eine engere Regel
+  (`OeffentlichSichtbar`: kein Lernmittel, kein Zulauf); _Mein Portal_ zeigt auch Lernmittel und
+  bestellte Titel (§4.2).
+  - **Anlegen:** Trägt die ISBN schon ein Titel, antwortet die Dublettenkontrolle mit 409 und nennt ihn
+    (`vorhanden`), beim Anlegen und beim Ändern. Die Maske fragt schon bei der Eingabe der ISBN, mit
+    derselben Abfrage wie das Speichern (`GET /api/books/vorhanden`), und bietet „Vorhandenen Titel
+    öffnen?“ an; dort wird der Bestand eingetragen. Für eine vergebene ISBN werden die Katalogdienste
+    nicht gefragt. Lässt sich der Katalog nicht fragen, arbeitet die Maske weiter, und das Speichern
+    prüft noch einmal.
+  - **Ohne ISBN:** Pflicht ist der Titel, die ISBN darf fehlen (Zeitschriften, Spiele, alte Bücher; die
+    Littera-Übernahme lässt falsche und doppelte Nummern weg). Beim Ändern prüft die Tür die ISBN nur,
+    wenn sie sich ändert. Beim Anlegen ohne ISBN nennt sie einen Titel mit gleichem Titel, Autor und
+    Auflage (409 mit `gleicherTitel`); die Maske fragt „Ist es dasselbe Medium?“, weil Hefte und Bände
+    gleich heißen, und legt nach „Anderes Medium“ an.
+  - Ein neues Buch beginnt mit einem Exemplar; steht dort 0, sagen Hinweis und Meldung, dass der Titel
+    nur unter „Ohne Exemplare“ steht. Der Knopf „Scanner“ öffnet dieselbe Maske mit Kamera, ein zweites
+    Fenster gibt es nicht.
+  - Belegt: `internal/repository/titel_bestand_pg_test.go`, `titel_ohne_exemplar_pg_test.go`,
+    `internal/api/katalog/dublette_nennt_den_titel_pg_test.go`, `buch_vorhanden_pg_test.go`,
+    `titel_ohne_isbn_pg_test.go`, `frontend/e2e/buch-anlegen-auffindbar.spec.js`, `buch-ohne-isbn.spec.js`
+    und die Tests der Maske in `frontend/src/inventur/lib/` (`buch_speichern`, `AdminBuchAktionen`,
+    `IsbnFeld`, `BuchFormular`, `buchFormularRegeln`).
+- **Mehrjahresband** (Antwort der Schule auf die Sichtung vom 16.09.2026): Das Kästchen am Titel (nur
+  bei Lernmitteln) lässt das Buch beim Kind bis zum Ende von `jahrgang_bis` der Spanne „Im Unterricht
+  von … bis“; eine zweite Zahl gibt es nicht. Die Frist ist der Stichtag des Schuljahres, in dem das
+  Kind `jahrgang_bis` beendet (`internal/service/frist.go`); der Rückgabetermin der Klasse geht das Buch
+  nichts an. Hat der Büchertausch begonnen, rechnet die Frist vom folgenden Schuljahr aus, und eines
+  der Jahre steckt in diesem Sprung. Der Schalter gilt nur an einem Lernmittel mit einer Spanne über
+  mehr als einen Jahrgang, an beiden Türen (`internal/repository/titel_spanne.go`) und in der Datenbank
+  (`chk_mehrjahresband_spanne`). Belegt: `internal/service/lmf_frist_termintag_pg_test.go`,
+  `internal/repository/mehrjahresband_am_titel_pg_test.go`.
+- **Jahrgang am Titel: „unbekannt“ ist eine eigene Angabe** (entschieden am 24.09.2026): „Im Unterricht von Jahrgang … bis“ ist ganz eingetragen oder gar nicht; ohne Eintrag ist der Jahrgang unbekannt (`jahrgang_von` und `jahrgang_bis` NULL). Eine Vorgabe gibt es nicht, sonst wäre ein Titel ohne Angabe von einem für diese Jahrgänge nicht zu unterscheiden. Die Inventur nach Klasse und der Filter „Jahrgang“ im Portal treffen nur Titel mit Spanne. Regel an beiden Türen: `repository.PruefeJahrgangsSpanne`, in der Datenbank `chk_jahrgang_spanne`. Eine „Klasse“ am Titel gibt es nicht (entschieden am 08.10.2026: Was die Zahl meinte, war nicht belegt, und mehrjährige Bände trugen ein einziges Jahr). In der Maske geht „bis“ mit „von“ mit, solange es leer ist oder dieselbe Zahl zeigt. Jeder Weg, auf dem ein Jahrgang ins Programm kommt, schreibt die Spanne: Die Littera-Übernahme liest sie aus Signatur („LMF Bio 7“) und Interessenkreis („Sekundarstufe 1“ → 5 bis 10), der Listenimport die Spalte „klasse“ als N bis N, und die ISBN-Abfrage schlägt eine Spanne nur vor, wenn der Titel sie eindeutig als Schulstufe nennt („Klasse 7“, „Klassen 7–10“, „5./6. Schuljahr“), nicht bei „Band 2“, „Level 9“, einer Grenze („ab Klasse 5“), einer Aufzählung oder einer Zahl außerhalb von 5 bis 13 (`stufenAusText`, die Fälle in `internal/katalogdienste/fach_und_jahrgang_test.go`); die Maske trägt nur beide Zahlen zusammen ein. Gemessen am 08.10.2026 an 1.216 Titeln, die die DNB zu den Stufenwörtern liefert: 259 bekommen eine Spanne, 337 einen einzelnen Jahrgang. Belegt außerdem: `internal/api/katalog/jahrgang_vorgabe_pg_test.go`, `internal/repository/jahrgang_unbekannt_pg_test.go`, `internal/repository/inventurlauf_pg_test.go`, `internal/api/katalog/isbn_suche_test.go`, `internal/api/portal/schulbuecher_pg_test.go`, `frontend/e2e/feld-roundtrip.spec.js`, `frontend/e2e/portal-schulbuecher.spec.js`, `isbnAbfrage.test.js`, `BuchEingabefelderKategorisierung.jahrgang.svelte.test.js`.
+- **Auflagen eines Schulbuchs:** Eine neue Auflage ist ein eigener Titel mit eigener ISBN (andere
+  Seitenzahlen), und jedes Exemplar bleibt an seiner Auflage. Auflagen desselben Buchs lassen sich
+  zusammenfassen, nur Lernmittel: Sie tragen dieselbe `werk_id` (Tabelle `werke`, ohne Namen; jede
+  Ansicht zeigt die neueste Auflage), gelesen über `COALESCE(werk_id, id)`. Geschrieben wird nur in
+  `internal/repository/auflagen.go`, nicht beim Speichern der Titelmaske: Gehören zwei Titel schon zu
+  verschiedenen Büchern, werden alle zu einem; ein Werk mit weniger als zwei Titeln fällt weg, auch
+  wenn ein Titel gelöscht wird. „Die neueste Auflage“ ist das jüngste Erscheinungsjahr, bei gleichem
+  oder fehlendem Jahr die zuletzt angelegte (`repository.sqlNeuesteAuflageZuerst`). Zusammenfassen und
+  Lösen verlangen `edit_books`.
+  - **Titelmaske:** Der Abschnitt _Auflagen_ steht bei jedem Lernmittel und bei jedem Titel, der
+    schon zu einem Buch gehört, sonst ließe er sich nicht lösen. Lösen fragt nicht nach, weil es sich
+    zurücknehmen lässt und nichts löscht. _Andere Auflage zuordnen_ findet auch Titel ohne Exemplar,
+    denn eine alte Auflage hat oft keins mehr, und sagt vor dem Klick, wenn weitere Auflagen mitkommen.
+  - **Neue Auflage bestellen** (Zeilenmenü im Bestellbedarf): Die ISBN holt den Titel aus dem Katalog
+    oder der DNB; erst die Bestätigung führt ihn als Lernmittel, fasst ihn mit der Zeile zusammen und
+    legt ihn in den Warenkorb („Der Besteller legt das Werk an“, entschieden am 23.09.2026; Recht
+    `create_orders`).
+  - **Gezählt wird am Buch:** im Bestellbedarf (§7), in der Klassensatz-Übersicht (§4.3), im
+    Medienkatalog (eine Kachel je Buch, oben die getroffene oder die neueste Auflage, Bestand als
+    Summe, Aufschlüsselung beim Zeigen; erst die Anzeige fasst zusammen, weil Titel-Verwaltung und
+    Zuordnen-Dialog jede Auflage einzeln brauchen, `buecherJeBuch`) und im Portal-Reiter
+    „Schulbücher“ (die Fach-Zahlen zählen Bücher; das PDF setzt die Aufschlüsselung unter den Titel,
+    `auflagenBeschriftung` in `internal/pdf/schulbuecher.go` ist der Zwilling der Browser-Regel, beide
+    lesen die Prüffälle aus `auflagenText.faelle.json`).
+  - **An der Theke:** Bekommt ein Kind eine andere Auflage, als Kinder seiner Klasse sie gerade haben
+    (nur offene Ausleihen aktiver Kinder), trägt die Antwort `auflagen_hinweis`: Klasse und Auflagen
+    mit der Zahl der Kinder, keine Namen. Die Theke blitzt orange und zeigt die Zeile über dem Konto
+    (entschieden am 25.09.2026: wie die Fremdrückgabe, kein Dialog; §18.6). Gefragt wird nach dem
+    Commit; ein Fehler dabei hält die Buchung nicht auf.
+  - **Dieselbe ISBN in der anderen Länge:** Eine zehnstellige ISBN mit richtigem Prüfzeichen wird an
+    jeder Tür dreizehnstellig gespeichert (`isbn_normalform`, in Go `isbnutil.Normalform`); Titelsuche,
+    Maske und Suchfelder finden beide Längen. Mit falschem Prüfzeichen bleibt sie zehnstellig und wird
+    mit keiner anderen gepaart: Die Rechnung führte auf die ISBN-13 eines anderen Buchs.
+  - **Keine Vorschlagsliste zum Zusammenfassen:** Am Testserver standen am 25.09.2026 nur zwei
+    Lernmittel mit gleichem Titel und Verlag, und höchstens eines der beiden hatte Exemplare;
+    zusammengefasst wird deshalb beim Nachbestellen und von Hand. Die Zählung sah nur gleiche Titel,
+    eine Neuauflage unter geändertem Titel nicht.
+  - Belegt: die Tests mit „auflage“ im Namen (Go, Vitest, `frontend/e2e/auflagen-*.spec.js`), dazu
+    `KlassenBuchKachel.test.js`, `BuchKarte.test.js`, `startseiten_api.test.js`, `BestellSuche.test.js`,
+    `internal/api/portal/schulbuecher_pg_test.go`, `internal/pdf/schulbuecher_test.go` und für die
+    ISBN-Längen `internal/pkg/isbnutil/normalform_test.go`, `internal/repository/isbn_normalform_pg_test.go`,
+    `internal/api/katalog/isbn_eine_laenge_pg_test.go`.
+- **Titel zusammenführen** (entschieden am 22.10.2026): Steht dasselbe Buch zweimal im Katalog, etwa aus einer Liste ohne ISBN und aus dem Bestands-Import mit ISBN, macht die Titelmaske einen Titel daraus (_Mit anderem Titel zusammenführen_; Recht `delete_books`, weil danach einer der beiden fehlt). Es bleibt der Titel mit ISBN, hat der andere keine, der offene; der Dialog fragt nicht danach (entschieden am 23.10.2026). Regeln in `internal/repository/titel_zusammenfuehren.go`: Der bleibende behält Kennung und Angaben, was ihm fehlt, füllt der andere auf, auch die ISBN (leer heißt unbekannt, außer beim Schulzweig, wo leer „für alle Zweige“ heißt; ist einer ein Lernmittel, ist es der bleibende auch; der Mehrjahresband kommt mit dem Jahrgang). Exemplare samt Ausleihen, Vormerkungen (von zweien desselben Lesers bleibt die fortgeschrittenere, sonst die ältere), Reservierungen, Bestellpositionen, Meldungen, Schlagworte und Klassenzuordnungen wandern; war der andere Titel Auflage eines Buchs, tritt der bleibende an seine Stelle. Das Protokoll hält beide Stände und alle gewanderten Zeilen (`TITEL_ZUSAMMENGEFUEHRT`). Tragen beide eine ISBN, sind es zwei Ausgaben: 409 mit dem Hinweis auf _Andere Auflage zuordnen_. Die Vorschau läuft durch denselben Weg und nimmt ihn zurück; sie nennt den Titel danach mit ISBN und Zahl der Exemplare, und eine verdoppelte Zahl zeigt, dass beide dieselben Bücher trugen. Belegt: `internal/repository/titel_zusammenfuehren_pg_test.go`, `titel_zusammenfuehren_felder_test.go`, `internal/api/katalog/titel_zusammenfuehren_pg_test.go`, `TitelZusammenfuehrenDialog.test.js`, `zusammenfuehrenVorschau.test.js`, `BuchFormular.zusammenfuehren.svelte.test.js`, `frontend/e2e/titel-zusammenfuehren.spec.js`.
 - **Systematiken & Signaturen:** Bücher können hierarchisch nach Systematiken (Kategorien/Themen) und spezifischen Signaturen (Regal-/Standort-Kennung) klassifiziert werden. Die DNB liefert weder Signatur noch Systematik; das Fach schlägt das Programm aus dem Text des Titels vor (`automatischeKategorisierung` in `internal/katalogdienste/fach_und_jahrgang.go`), die Übernahme aus Littera leitet es aus Signatur und Schlagworten ab (siehe unten).
-- **Standort am Exemplar (Migration 158):** Der Standort sagt, wo ein Exemplar steht, wenn nicht an seinem Platz nach der Signatur (etwa „Bibliothek, Regal 3B"); er gehört zum Exemplar, nicht zum Titel. Ein neues Exemplar erbt ihn, wenn alle Exemplare des Titels im Bestand denselben tragen; trägt eines keinen oder einen anderen, kommt es ohne Standort an (`repository.sqlGeerbterStandort`, eine Regel für jeden Weg, der ein Exemplar anlegt). Die Übernahme aus Littera bringt ihn je Exemplar mit. Geändert wird er in der Buchakte für die markierten Exemplare, ohne Pflicht-Grund: Er wirkt auf keine Rechnung und kein Papier, alter und neuer Wert stehen im Protokoll (`internal/repository/exemplar_standort.go`). Die Bestandsliste nennt ihn je Exemplar. Bedienung: [HANDBUCH.md](HANDBUCH.md).
+- **Standort am Exemplar:** Der Standort sagt, wo ein Exemplar steht, wenn nicht an seinem Platz nach
+  der Signatur („Bibliothek, Regal 3B“); er gehört zum Exemplar. Ein neues Exemplar erbt ihn, wenn alle
+  Exemplare des Titels im Bestand denselben tragen (`repository.sqlGeerbterStandort`, eine Regel für
+  jeden Weg, der ein Exemplar anlegt). Die Littera-Übernahme bringt ihn je Exemplar mit. Geändert wird
+  er in der Buchakte für die markierten Exemplare, ohne Pflicht-Grund, weil er auf keine Rechnung und
+  kein Papier wirkt; alter und neuer Wert stehen im Protokoll (`internal/repository/exemplar_standort.go`).
+  Die Bestandsliste nennt ihn je Exemplar. Bedienung: [HANDBUCH.md](HANDBUCH.md).
 - **Titel ändern: nur die genannten Felder:** `PUT /api/books/{id}` schreibt am Titel nur die Felder, die die Anfrage nennt; ein Feld, das fehlt, bleibt, wie es ist (`titelFelder` und `sqlTitelAendern` in `internal/repository/titel_aendern.go`, `leseAenderung`). Die Maske schickt nur, was geändert wurde. Haben zwei Plätze denselben Titel offen, überschreibt keiner, was er nicht angefasst hat; ändern beide dasselbe Feld, gilt der spätere Eintrag (§20). Ein neues Feld am Titel braucht einen Eintrag in `titelFelder`. Belegt: `internal/repository/titel_aendern_test.go`, `frontend/e2e/buchmaske-zwei-plaetze.spec.js`.
-- **Schlagworte (Migrationen 138, 143, 144; docs/OFFEN.md 4.20):** Frei eintragbar wie in Littera („Schlagworte (Wertehilfe)"), mehrere je Titel, mit Vorschlägen aus dem Bestand (beim Öffnen die 500 häufigsten, beim Tippen die Treffer über alle Wörter, `GET /api/schlagworte?suche=`). Eingetragen wird im Buchformular und im Bestellkorb; beide schreiben über EINEN Pfad, `repository.SetzeSchlagworte`: Leerraum wird zusammengezogen, Doppelte fallen, höchstens 300 Wörter je Titel (Littera führt bis zu 282) und 80 Zeichen je Wort — das Eingabefeld sperrt an denselben Grenzen (`ui/ChipFeld`, gehalten von `internal/repository/schlagworte_grenzen_zwilling_test.go`) —, und eine vorhandene Schreibweise gewinnt — die Identität eines Wortes ist seine Kleinschreibung (eindeutiger Index auf `lower(wort)`). Zusammengehalten wird die Liste durch die Pflege unter _Einstellungen → Schlagworte_ (Recht `edit_books`, wie die Systematik). Gesucht wird dort am Server über alle Wörter und Verweise (`GET /api/schlagworte/pflege?suche=`, höchstens 200 Zeilen je Antwort, dazu die Zahl der Treffer); Littera bringt 13.207 mit. Den Zusammenführen-Dialog bedient dieselbe Suche. Umbenennen und Zusammenführen ändern alle Titel auf einmal und lassen die alte Schreibweise wahlweise als **Verweis** stehen (Pflichtfeld `alte_als_verweis`, das Kästchen steht auf „behalten"). Ein Verweis leitet eine Schreibweise auf ein Wort („Tierfantasy" → „Fantasy"); wer ihn am Titel einträgt, bekommt das Ziel. Löschen nimmt ein Wort aus allen Titeln, Verweise darauf fallen mit — einzeln oder mehrere auf einmal, alle oder keins (`POST /api/schlagworte/loeschen`; Littera: Dienstprogramme → Datenbearbeitung). Die Regeln der Verweise hält auch die Datenbank (Trigger aus Migration 143 und 144, mit Sperre gegen gleichzeitige Schreiber): kein Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein Verweis als Filter. **Suche:** Der Medienkatalog (beide Reiter), der öffentliche Katalog und _Mein Portal_ finden einen Titel auch über seine Schlagworte und über die Verweise darauf — wer „Tierfantasy" sucht, findet, was „Fantasy" trägt. Verglichen wird wie bei Titel und Autor: Teilstring, ohne Rücksicht auf Groß- und Kleinschreibung. Die Regel steht einmal in `internal/repository/schlagworte_suche.go` und löst ein Wort auf wie der Schreibpfad (`coalesce(verweis_auf, id)`) — als Bedingung am Server (Titel-Verwaltung `GET /api/books?q=`, `GET /api/public/opac/suche`) und als Wörter je Titel in der Katalogliste (`suchwoerter`), weil „Suche & Filter" die ganze Liste lädt und im Browser sucht. **Filter im Portal:** Die markierten Wörter stehen in _Mein Portal → Reservieren & Melden_ als Filter-Chips unter der Suche (`ui/FilterChips.svelte`, einfach wählbar, ein zweiter Klick nimmt den Filter zurück). Die Liste kommt aus `GET /api/reservierungen/klassensatz/katalog/filter` und nennt nur Wörter, zu denen der Katalog des Kollegiums einen Titel zeigt; ein Filter, der nichts fände, erscheint nicht. Gefiltert wird über `schlagwort_id` an der Suche des Kollegiums (§4.2): ohne Suchtext alle Titel des Worts, mit Suchtext die, die beides treffen. Die öffentliche Katalogsuche nimmt nur einen Suchtext. **DNB-Vorschlag beim Bestellen per ISBN:** Entsteht ein Titel beim Bestellen neu aus der DNB (`POST /api/buecher/aus-isbn`), gleicht der Server die Gattungsbegriffe (655 $a) und die freien Verlagswörter (653 $a ohne Vorsatz — „(Zielgruppe)", „(VLB-WN)" und Ähnliches sind Angaben anderer Art) gegen die eigene Liste ab (`repository.ladeSchlagworteAusStichwoertern`). Vorgeschlagen wird ein Wort, das mindestens ein Titel trägt, direkt oder über einen Verweis — das ganze Wort, nicht ein Teil davon, sonst schlüge „Kriegsende" „Krieg" vor. Das Bestellfenster bietet die Wörter zum Anklicken an (`ui/ChipFeld`, `angebote`); eingetragen wird nur, was jemand übernimmt, denn ein Satz nennt etwa „Deutsch" für die Sprache. **Normdatei:** Dazu kommen die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit `$2 gnd`; `katalogdienste.verarbeiteNormdaten`), in der Schreibweise der Liste — Personen „Kafka <Franz>" statt „Kafka, Franz", Zeiten „Geschichte <1918-1933>" — und unter beiden Formen gesucht (`repository.ladeSchlagworteAusNormdaten`). Was die Liste kennt, steht unter den übrigen Vorschlägen; was sie nicht kennt, bietet das Fenster in eigener Zeile als _Neue Schlagworte aus der DNB_ an (`schlagwort_vorschlaege_neu`, `ui/ChipAngebote`), nie vorbelegt: Die Normdatei ist ein festes Vokabular ohne Werbewörter, die Verlagswörter kommen weiter nur über die Liste. **Für Titel, die es schon gibt, und im Buchformular:** Dieselbe Regel (`repository.LadeSchlagwortVorschlagAusDNB`, auch für das Anlegen beim Bestellen) über `GET /api/schlagworte/dnb-vorschlag?isbn=`. Die Tür fragt nur die DNB — kein Google Books, keine OpenLibrary, kein Cover (`katalogdienste.SucheDNBNachISBN`) — und schreibt nichts. Das Buchformular holt den Vorschlag nach jeder ISBN-Abfrage mit Treffer von selbst, bei einem vorhandenen Titel auf den Knopf _Vorschläge aus der DNB_; das Bestellfenster zeigt den Knopf bei einem Titel, der schon im Katalog stand (`lib/components/katalog/SchlagwortDnbVorschlag.svelte`). Angeboten wird nur, was der Titel noch nicht trägt — Littera kennt dasselbe als „Online-Abgleich" mit „Einträge hinzufügen" oder „ersetzen"; hier gibt es nur das Hinzufügen, Wort für Wort. Gemessen am 30.09.2026 an Stichproben des Katalogisats vom Juni 2026: Von 50 Bücherei-Titeln ohne Schlagwort bekämen 26 einen Vorschlag; von 60 Titeln mit Littera-Schlagworten hätte die DNB für 26 weitere Wörter, im Median zwei bis drei je Titel. Kein Abgleich über den ganzen Katalog (entschieden am 30.09.2026). **Aus Littera:** Die Übernahme aus der Sicherung bringt alle Schlagworte der Titel mit (Tabellen `Schlagworte` und `Schlag_zuord`, über `repository.SetzeSchlagworte`; `docs/SCRIPTS.md` Abschnitt 1) und leitet das Fach aus ihnen ab, wo die Signatur keins nennt und die Schlagworte genau eins — dieselbe Regel wie der Katalogisat-Import (`lmf.FachAusSchlagworten`). Die Verweise zählt sie nur. Litteras Interessenkreise (Tabellen `Interessenskreis` und `IntZuMed`, im Katalogisat MAB 070b) kommen als Schlagworte mit, hinter den Schlagworten des Titels (entschieden am 30.09.2026): An dieser Schule sind es Zielgruppen wie „Lehrer", „Referendare" und „Sekundarstufe 2", die die Bücherei als Filter in _Mein Portal_ markieren kann; ihre Stufe ergibt die Jahrgangsspanne, wo die Signatur keine nennt, das Fach kommt nie aus ihnen. Der Katalogisat-Import (MAB 710) schreibt die Schlagworte ebenfalls, aber nur an Titel, die noch keine tragen — ein erneuter Import überschreibt keine Pflege (`docs/SCRIPTS.md` Abschnitt 1a). Belegt: `internal/repository/schlagworte_pg_test.go`, `internal/repository/schlagworte_pflege_pg_test.go`, `internal/repository/schlagworte_loeschen_pg_test.go`, `internal/repository/schlagworte_suche_pg_test.go` (Server und Browser finden dieselben Titel), `internal/api/katalog/schlagwort_suche_pg_test.go`, `internal/api/portal/opac_schlagwort_pg_test.go`, `internal/api/portal/katalog_kollegium_pg_test.go` (Filterliste und gefilterte Suche), `frontend/src/lib/components/portal/portalSuche.svelte.test.js`, `frontend/e2e/portal-schlagwort-filter.spec.js`, `internal/katalogdienste/dnb_stichwoerter_test.go`, `internal/repository/schlagworte_vorschlag_pg_test.go`, `internal/api/katalog/isbn_schlagwort_vorschlag_pg_test.go`, `internal/api/katalog/schlagworte_dnb_pg_test.go`, `internal/katalogdienste/dnb_nur_dnb_test.go`, `frontend/src/lib/components/katalog/SchlagwortDnbVorschlag.test.js`, `frontend/src/inventur/lib/components/admin/BuchEingabefelder.test.js`, `frontend/src/lib/components/bestellungen/BestellSuche.test.js`, `frontend/e2e/schlagworte-roundtrip.spec.js`, `frontend/e2e/schlagworte-pflege.spec.js`, `frontend/e2e/schlagworte-mehrere-loeschen.spec.js`.
+- **Schlagworte:** frei eintragbar, mehrere je Titel, mit Vorschlägen aus dem Bestand (beim Öffnen
+  die 500 häufigsten, beim Tippen die Treffer über alle Wörter). Buchformular und Bestellkorb schreiben
+  über einen Pfad, `repository.SetzeSchlagworte`: Leerraum wird zusammengezogen, Doppelte fallen,
+  höchstens 300 Wörter je Titel (Littera führt bis zu 282) und 80 Zeichen je Wort, das Eingabefeld
+  sperrt an denselben Grenzen (`ui/ChipFeld`, `internal/repository/schlagworte_grenzen_zwilling_test.go`);
+  eine vorhandene Schreibweise gewinnt, denn die Identität eines Worts ist seine Kleinschreibung
+  (eindeutiger Index auf `lower(wort)`).
+  - **Pflege** unter _Einstellungen → Schlagworte_ (`edit_books`): Gesucht wird am Server über Wörter
+    und Verweise, höchstens 200 Zeilen je Antwort mit der Zahl der Treffer (Littera bringt 13.207 mit).
+    Umbenennen und Zusammenführen ändern alle Titel auf einmal und lassen die alte Schreibweise
+    wahlweise als **Verweis** stehen (Pflichtfeld `alte_als_verweis`, das Kästchen steht auf
+    „behalten“). Ein Verweis leitet eine Schreibweise auf ein Wort („Tierfantasy“ → „Fantasy“); wer ihn
+    am Titel einträgt, bekommt das Ziel. Löschen nimmt ein Wort aus allen Titeln, Verweise darauf
+    fallen mit, einzeln oder mehrere, alle oder keins. Die Datenbank hält die Regeln der Verweise per
+    Trigger mit Sperre: kein Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein
+    Verweis als Filter.
+  - **Suche:** Medienkatalog, öffentlicher Katalog und _Mein Portal_ finden einen Titel auch über seine
+    Schlagworte und die Verweise darauf, als Teilstring ohne Rücksicht auf Groß- und Kleinschreibung.
+    Die Regel steht einmal in `internal/repository/schlagworte_suche.go` und löst ein Wort auf wie der
+    Schreibpfad (`coalesce(verweis_auf, id)`): als Bedingung am Server und als Wörter je Titel in der
+    Katalogliste (`suchwoerter`), weil „Suche & Filter“ im Browser sucht.
+  - **Filter im Portal:** Die markierten Wörter stehen in _Mein Portal → Reservieren & Melden_ als
+    Filter-Chips unter der Suche (eins wählbar, ein zweiter Klick nimmt es zurück), nur solche, zu
+    denen der Katalog des Kollegiums einen Titel zeigt. Gefiltert wird über `schlagwort_id` (§4.2):
+    ohne Suchtext alle Titel des Worts, mit Suchtext die, die beides treffen. Der öffentliche Katalog
+    nimmt nur einen Suchtext.
+  - **Vorschläge aus der DNB:** Entsteht ein Titel beim Bestellen neu aus der DNB, gleicht der Server die Gattungsbegriffe (655 $a) und die freien Verlagswörter (653 $a ohne Vorsatz wie „(Zielgruppe)“) gegen die eigene Liste ab (`repository.ladeSchlagworteAusStichwoertern`). Vorgeschlagen wird nur ein ganzes Wort, das schon ein Titel trägt, direkt oder über einen Verweis, sonst schlüge „Kriegsende“ „Krieg“ vor. Dazu kommen die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit `$2 gnd`) in der Schreibweise der Liste („Kafka <Franz>“, „Geschichte <1918-1933>“), gesucht unter beiden Formen; was die Liste nicht kennt, steht in eigener Zeile als _Neue Schlagworte aus der DNB_, nie vorbelegt: Die Normdatei ist ein festes Vokabular ohne Werbewörter, Verlagswörter kommen nur über die Liste. Eingetragen wird nur, was jemand anklickt, denn ein Satz nennt etwa „Deutsch“ für die Sprache. Für vorhandene Titel und im Buchformular gilt dieselbe Regel (`repository.LadeSchlagwortVorschlagAusDNB`, `GET /api/schlagworte/dnb-vorschlag?isbn=`): Die Tür fragt nur die DNB und schreibt nichts; angeboten wird nur, was der Titel noch nicht trägt, und nur zum Hinzufügen, Wort für Wort. Gemessen am 30.09.2026 an Stichproben des Katalogisats: Von 50 Bücherei-Titeln ohne Schlagwort bekämen 26 einen Vorschlag; von 60 Titeln mit Littera-Schlagworten hätte die DNB für 26 weitere Wörter, im Median zwei bis drei je Titel. Kein Abgleich über den ganzen Katalog (entschieden am 30.09.2026).
+  - **Aus Littera:** Die Übernahme bringt alle Schlagworte der Titel mit (über
+    `repository.SetzeSchlagworte`, [SCRIPTS.md](SCRIPTS.md) Abschnitt 1) und leitet das Fach aus ihnen
+    ab, wo die Signatur keins nennt und die Schlagworte genau eins (`lmf.FachAusSchlagworten`, dieselbe
+    Regel wie der Katalogisat-Import); Verweise zählt sie nur. Litteras Interessenkreise kommen als
+    Schlagworte hinter denen des Titels (entschieden am 30.09.2026): Zielgruppen wie „Lehrer“ oder
+    „Sekundarstufe 2“, die die Bücherei als Filter in _Mein Portal_ markieren kann; ihre Stufe ergibt
+    die Jahrgangsspanne, wo die Signatur keine nennt, das Fach nie. Der Katalogisat-Import schreibt
+    Schlagworte nur an Titel, die noch keine tragen, damit ein erneuter Import keine Pflege
+    überschreibt ([SCRIPTS.md](SCRIPTS.md) Abschnitt 1a).
+  - Belegt: die Tests mit „schlagwort“ im Namen (Go, Vitest, Playwright), dazu
+    `internal/api/portal/katalog_kollegium_pg_test.go`, `portalSuche.svelte.test.js`,
+    `internal/katalogdienste/dnb_stichwoerter_test.go`, `internal/katalogdienste/dnb_nur_dnb_test.go`,
+    `BuchEingabefelder.test.js` und `BestellSuche.test.js`.
 - **Automatische Cover-Synchronisation:** Ein Hintergrund-Worker (`Cover-Sync`) sucht über ISBNs automatisch in externen Buch-APIs (z.B. Google Books) nach Buchcovern, lädt diese herunter und speichert sie datensparsam im WebP-Format.
 - **Legacy-Import-Engine:** Für die initiale Einrichtung oder Datenübernahme bietet das System eine Import-Schnittstelle (`POST /api/import/littera`, Recht `manage_inventory`) für Altbestände aus _Littera_. Sie nimmt drei Dateiarten: das Katalogisat als MAB2-XML (aktualisiert die Angaben bestehender Titel) und eine Tabelle als CSV oder XLSX mit den Spalten Titel und Exemplarnummer (legt Titel und Exemplare an).
-- **Drei Importwege in der Datenverwaltung (Stand 07.09.2026), unterschieden danach, ob sie Exemplare übernehmen oder erzeugen:** Der _Katalog-Import_ (Littera-XML) aktualisiert Metadaten bestehender Titel. Der _Bestands-Import_ (Kombi-CSV, `/api/admin/import-bestand`, Recht `manage_inventory`) ÜBERNIMMT vorhandene Exemplare samt ihrer Nummer aus der Datei — sie tragen schon ein Etikett, `etikett_gedruckt = true`. Eine LMF-Nummer wird zum alten Etikett (`lmf_barcode`), das Exemplar bekommt eine kurze Nummer aus `barcode_seq` (§9), gezogen erst, wenn die übrigen Exemplare der Datei angelegt sind: So trifft keine kurze Nummer die Nummer eines Buchs derselben Datei. Ein zweiter Lauf derselben Datei legt nichts doppelt an und zieht keine Nummer. Ist eine Nummer der Datei der Ausweis eines Lesers, importiert er nichts und nennt die Zeilen (eine Nummer ist entweder ein Buch oder ein Ausweis, Migration 131). Der _Listenimport_ (`POST /api/books/import`, Recht `edit_books`) verlangt nur ISBN und Stückzahl und ERZEUGT neue Exemplare mit frischen Nummern aus `barcode_seq` — ohne Etikett, `etikett_gedruckt = false`, also auf der Nachdruck-Liste. Sein Knopf steht in der Datenverwaltung (`ListenImport.svelte`, E2E `datenverwaltung-importe.spec.js`). Weil er additiv ist, benennt das Widget jeden Lauf mit einem Idempotenz-Schlüssel je Dateiauswahl (`X-Idempotency-Key`, `internal/api/katalog/listenimport_schluessel.go`, Tabelle `idempotency_keys` wie bei den Theken-Aktionen): Nach einer verlorenen Antwort holt der zweite Klick das Ergebnis des ersten Laufs ab, statt die Exemplare doppelt anzulegen; solange der Lauf noch offen ist, antwortet der Server 409. Der Pfad steht in der 5-Minuten-Liste der Langläufer (`internal/api/middleware.go`).
-- **Exemplarnummern — eine Quelle (Migration 068 und 105):** Jede Nummer, die das System selbst vergibt, kommt aus `barcode_seq` (Präfix `B-`, `internal/repository/barcode_vergabe.go`, mit Bestandsabgleich gegen von Hand eingetippte Nummern), in einer Form: `B-` und mindestens fünf Ziffern, eine längere Zahl steht ganz da (`B-100000`): Bestellwesen, Handvergabe in der Exemplarkarte, Littera-Import, Bestandskorrektur in der Buchmaske („Aktueller Bestand") und Listenimport der Titel-Verwaltung. Eine Nummer wird nie umgeschrieben oder recycelt — sie klebt physisch am Buch. Vorhandene `SYS-`/`AUTO-`-Exemplare (Platzhalter älterer Nummernkreise) bleiben deshalb, wie sie sind, und zeigen in der Exemplarkarte „Barcode scannen". Das Feld „Aktueller Bestand" nimmt höchstens 5.000 an, ebenso eine Zeile des Listenimports, wo eine größere Zahl als leer gilt (`repository.HoechsterBestandJeTitel`); eine Liste legt zusammen höchstens 200.000 Exemplare an, und keine Vergabe zieht mehr Nummern (`repository.HoechstensNummernJeVergabe`): Eine ISBN im Feld „Bestand" zöge sonst Millionen Nummern, die der Server nicht im Speicher hält und die verbraucht blieben. Belegt: `internal/api/katalog/barcode_vergabe_pg_test.go`, `internal/repository/bestandskorrektur_nummernkreis_pg_test.go`, `internal/repository/barcode_vergabe_grenze_test.go`, `internal/api/katalog/titel_aendern_test.go`, `internal/api/katalog/listenimport_zeilen_test.go`.
+- **Drei Importwege in der Datenverwaltung, unterschieden danach, ob sie Exemplare übernehmen oder erzeugen:** Der _Katalog-Import_ (Littera-XML) aktualisiert Metadaten bestehender Titel. Der _Bestands-Import_ (Kombi-CSV, `/api/admin/import-bestand`, Recht `manage_inventory`) ÜBERNIMMT vorhandene Exemplare samt ihrer Nummer aus der Datei — sie tragen schon ein Etikett, `etikett_gedruckt = true`. Eine LMF-Nummer wird zum alten Etikett (`lmf_barcode`), das Exemplar bekommt eine kurze Nummer aus `barcode_seq` (§9), gezogen erst, wenn die übrigen Exemplare der Datei angelegt sind: So trifft keine kurze Nummer die Nummer eines Buchs derselben Datei. Ein zweiter Lauf derselben Datei legt nichts doppelt an und zieht keine Nummer. Ist eine Nummer der Datei der Ausweis eines Lesers, importiert er nichts und nennt die Zeilen (eine Nummer ist entweder ein Buch oder ein Ausweis). Der _Listenimport_ (`POST /api/books/import`, Recht `edit_books`) verlangt nur ISBN und Stückzahl und ERZEUGT neue Exemplare mit frischen Nummern aus `barcode_seq` — ohne Etikett, `etikett_gedruckt = false`, also auf der Nachdruck-Liste. Sein Knopf steht in der Datenverwaltung (`ListenImport.svelte`, E2E `datenverwaltung-importe.spec.js`). Weil er additiv ist, benennt das Widget jeden Lauf mit einem Idempotenz-Schlüssel je Dateiauswahl (`X-Idempotency-Key`, `internal/api/katalog/listenimport_schluessel.go`, Tabelle `idempotency_keys` wie bei den Theken-Aktionen): Nach einer verlorenen Antwort holt der zweite Klick das Ergebnis des ersten Laufs ab, statt die Exemplare doppelt anzulegen; solange der Lauf noch offen ist, antwortet der Server 409. Der Pfad steht in der 5-Minuten-Liste der Langläufer (`internal/api/middleware.go`).
+- **Exemplarnummern — eine Quelle:** Jede Nummer, die das System selbst vergibt, kommt aus `barcode_seq` (Präfix `B-`, `internal/repository/barcode_vergabe.go`, mit Bestandsabgleich gegen von Hand eingetippte Nummern), in einer Form: `B-` und mindestens fünf Ziffern, eine längere Zahl steht ganz da (`B-100000`): Bestellwesen, Handvergabe in der Exemplarkarte, Littera-Import, Bestandskorrektur in der Buchmaske („Aktueller Bestand") und Listenimport der Titel-Verwaltung. Eine Nummer wird nie umgeschrieben oder recycelt — sie klebt physisch am Buch. Vorhandene `SYS-`/`AUTO-`-Exemplare (Platzhalter älterer Nummernkreise) bleiben deshalb, wie sie sind, und zeigen in der Exemplarkarte „Barcode scannen". Das Feld „Aktueller Bestand" nimmt höchstens 5.000 an, ebenso eine Zeile des Listenimports, wo eine größere Zahl als leer gilt (`repository.HoechsterBestandJeTitel`); eine Liste legt zusammen höchstens 200.000 Exemplare an, und keine Vergabe zieht mehr Nummern (`repository.HoechstensNummernJeVergabe`): Eine ISBN im Feld „Bestand" zöge sonst Millionen Nummern, die der Server nicht im Speicher hält und die verbraucht blieben. Belegt: `internal/api/katalog/barcode_vergabe_pg_test.go`, `internal/repository/bestandskorrektur_nummernkreis_pg_test.go`, `internal/repository/barcode_vergabe_grenze_test.go`, `internal/api/katalog/titel_aendern_test.go`, `internal/api/katalog/listenimport_zeilen_test.go`.
 
-- **Titel löschen:** Ein Weg für einen und für mehrere Titel, `DELETE /api/books` mit Titeln, Grund und den bestätigten verliehenen Exemplaren (`repository.TitelAbfragen.LoescheTitel`); Buchakte, Buchmaske und die Mehrfachauswahl der Bestandstabelle öffnen denselben Dialog (`components/buchakte/titelLoeschen.js`). Er fragt nach dem Grund für die Exemplare im Haus, vorgewählt „Alter Bestand", dazu „Beschädigt", „Verlust", „Falsch angelegt": die Wörter, die in Littera am häufigsten standen (in littera_sav.mdb 10.275 von 14.158 Abgängen mit Grund unter „Alter Bestand", „veraltet" und „al"), und M3 verlangt eine Vorauswahl („Radio buttons should always have one option pre-selected", Radio button, Guidelines). Freitext gibt es nicht: In Littera standen 22 Schreibweisen für vier Bedeutungen, ein Viertel ohne Grund, und das Abgangsbuch filtert nach dem Grund. Die vier Gründe stehen in `frontend/src/lib/utils/aussonderungsgruende.js`, ihr Text im Abgangsbuch in `internal/repository/aussonderungsgrund.go`; beide prüfen gegen `aussonderungsgruende.faelle.json`, der Go-Test zusätzlich gegen die CHECK-Bedingungen. Verliehene Exemplare nennt der Dialog mit Leser und Klasse (`GET /api/buecher/titel/loeschfolgen`, dieselben Bedingungen wie beim Löschen): Ohne Kästchen bleiben sie beim Leser, und ihr Titel bleibt, bis sie zurück sind; seine Exemplare im Haus werden mit dem Grund ausgesondert. Erst ein eigenes Kästchen löscht sie mit, und der Knopf nennt dann die Zahl aller Exemplare. Ein zweiter Dialog wäre unsicherer: Sein Bestätigungsknopf stünde, wo eben geklickt wurde („The confirmation button is always closest to the edge.", Dialogs, Guidelines). Der Server löscht nur verliehene Exemplare, deren Kennung der Dialog bestätigt; wurde eines nach der Rückfrage ausgeliehen, bleibt sein Titel oder das Löschen endet mit 409. „Exemplar löschen" in der Buchakte fragt nach demselben Grund (`KatalogAbfragen.SondereExemplarAus`), lässt die Zustandsnotiz stehen und verweist bei einem verliehenen Exemplar auf „Verlust oder Schaden melden" in der Leserakte. Belegt: `internal/api/katalog/titel_loeschen_pg_test.go`, `internal/repository/titel_loeschen_samt_ausleihen_pg_test.go`, `internal/repository/aussonderungsgrund_zwilling_pg_test.go`.
-- **Zugangsbuch (Berichte → „Bestandsbücher", Reiter „Zugangsbuch"):** Welche Exemplare in einem Zeitraum in den Bestand gekommen sind — Eingangsdatum, Titel, Anzahl, Barcodes und Lieferant, die Angaben der Arbeitshilfe (mittel_konzept 7.1: „jede Lieferung mit Eingangsdatum, Titel, Anzahl, Lieferant, Inventarnummer“; die Inventarnummer ist der Barcode auf dem Etikett). Eine Zeile fasst zusammen, was in allen Spalten gleich ist: die Exemplare eines Titels, die am selben Tag vom selben Lieferanten kamen, im Abgangsbuch am selben Tag aus demselben Grund gingen. Jeder Barcode steht darin, fortlaufende ab drei als „von – bis“; auf dem Blatt laufen sie in ihrer Spalte um, statt gekürzt zu werden. Überschriften, Felder und Summen zählen Exemplare (`internal/bestandsbuch`). Aufbau, Zeitraum und Ausdruck wie beim Abgangsbuch, mit zwei Unterschieden: Ohne gewähltes Datum steht das vorige Schulhalbjahr da, denn ausgedruckt wird „zu Beginn jedes Schulhalbjahres ein Ausdruck der Neuanschaffungen des vorhergehenden Halbjahres" (Leitfaden Lernmittelfreiheit, 11.5; `schulzeit.VorigesHalbjahr`), und jede Seite des Ausdrucks trägt „Seite x von y", gezählt je Ausdruck. Beide teilen sich ein Bauteil (`components/bestand/Bestandsbuch.svelte`) und die Abschnitts-Bildung des Servers (`internal/api/katalog/bestandsbuch.go`). Am Bildschirm zeichnet jeder Abschnitt zuerst 50 Zeilen, „Mehr laden" die nächsten 50 (`components/bestand/BestandsbuchAbschnitt.svelte`): Ein Zeitraum kann Zehntausende Zugänge haben, etwa am Tag eines Listenimports, der seine Bücher mit diesem Tag anlegt, und sie alle zu zeichnen hielte die Seite Sekunden an. Stückzahl und Ausdruck umfassen immer alle. Der Topf kommt aus einem **Beleg**, nicht aus dem Titel: aus dem Eigentum am Exemplar (Migration 150, etwa aus dem Littera-Vermerk), sonst aus der **Bestellung** (`repository.exemplarTopfBelegtSQL`). Beim Zugang zählt, aus welchem Geld das Buch bezahlt wurde (Migration 109, „eine Bestellung = ein Topf"), und ein Titel darf im Warenkorb in den anderen Topf geschoben werden. **Das Zugangsdatum ist die Lieferung, nicht die Bestellung** (`zugang_am`, Migration 129): Im Bestellweg entsteht die Exemplarzeile beim Bestellen. Gesetzt wird das Datum von einem Trigger, sobald ein Exemplar in den Bestand kommt (Wareneingang, Freigeben im Status-Editor, Zurückholen); ein Exemplar im Zulauf trägt NULL und steht in keinem Zugangsbuch. Exemplare ohne Eigentum am Exemplar und ohne hinterlegte Bestellung stehen unter „ohne Zuordnung" — Altbestand ohne Littera-Vermerk, Handanlage, Bestandskorrektur —, und ihr Zugangsdatum ist der Tag der Anlage; bei der Littera-Übernahme das echte Datum aus der Altanwendung. Ein später ausgesondertes Exemplar bleibt im Zugangsbuch stehen: Es ist trotzdem zugegangen, sein Abgang steht im Abgangsbuch. Dasselbe gilt für ein gelöschtes: Titel löschen und „Verluste endgültig löschen“ legen in derselben Anweisung, die das Exemplar löscht, seine Zeile für beide Bücher an (`geloeschte_exemplare`, Migration 171, `repository.loescheExemplareMitBuchzeile`). Belegt: `internal/api/katalog/zugangsbuch_pg_test.go`, `internal/repository/zugangsdatum_pg_test.go` (die Türen aus dem Zulauf), `frontend/e2e/zugangsbuch.spec.js`.
-- **Abgangsbuch (Berichte → „Bestandsbücher", Reiter „Abgangsbuch"):** Welche Exemplare in einem Zeitraum aus dem Bestand gegangen sind — Datum, Titel, Signatur, Grund, Anzahl und Barcodes (Grund: Alter Bestand, Beschädigt, Verlust, Falsch angelegt; `internal/repository/aussonderungsgrund.go`). Ein Abgang ist nur, was im Bestand war: Ein bestelltes Exemplar, das nie eintraf und in der Buchakte gelöscht oder im Status-Editor ausgesondert wurde, trägt kein Zugangsdatum und steht in keinem der beiden Bücher, auch nicht in der Zahl der Abgänge ohne Zeitpunkt (`sqlIstAbgang` in `internal/repository/abgangsbuch.go`). Ein gelöschtes Exemplar aus dem Bestand steht mit seiner Zeile darin, am Tag des Löschens; war es schon ausgesondert, mit Tag und Grund von damals, und das Halbjahr, in dem es abging, behält seine Zeile. Unter der Liste steht nur noch die Zahl der Exemplare, die ohne diese Zeile gelöscht wurden, also vor Migration 171; für sie gilt dieselbe Grenze an ihrer Spur im Protokoll (`war_im_bestand`), eine Spur ohne den Vermerk zählt mit. Die Statistik zählt nur, was im Bestand ist oder war (`repository.sqlWarImBestand`): Ein bestelltes Exemplar steht ab dem Eintreffen im Gesamtbestand und unter den aktiven Exemplaren, und Verluste, Verlustquote und Wiederbeschaffungswert folgen der Grenze des Abgangsbuchs (`LadeBestandKennzahlen` in `internal/repository/statistik.go`); gelöschte Exemplare zählt sie nicht, sie stehen nur in den beiden Büchern. Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen der Bestandskartei (15.3. und 15.9., `internal/pkg/schulzeit.Halbjahr`); beide Datumsfelder lassen sich überschreiben. Der Zeitraum wird am SERVER bestimmt, damit Bildschirm und Ausdruck denselben meinen, und umfasst höchstens ein Jahr (entschieden am 16.10.2026): Jede Zeile steht in der Antwort, weil jemand den Nachweis unterschreibt; mehrere Jahre gehen als mehrere Ausdrucke, ein längerer Zeitraum wird mit „Der Zeitraum darf höchstens ein Jahr umfassen" abgelehnt (`bestandsbuchZeitraum`, belegt in `internal/api/katalog/bestandsbuch_tuer_pg_test.go`). Zwei Abschnitte mit eigener Stückzahl, Lernmittel (Land) und Schülerbücherei (Schulträger), weil die Finanzen der beiden Töpfe getrennt geführt werden. Der Topf ist das Eigentum nach derselben Regel wie am Etikett (`repository.ExemplarTopfSQL`): Eigentum am Exemplar, sonst Bestellung, sonst Titel. Das Blatt zum Abheften kommt über `GET /api/bestand/abgangsbuch/pdf`. **Was nicht darauf steht, steht ausdrücklich darunter:** Exemplare, die vor Migration 128 ausgesondert wurden, tragen kein Abgangsdatum und lassen sich keinem Zeitraum zuordnen — ihre Zahl nennt der Ausdruck, statt Vollständigkeit zu behaupten. Das Datum selbst setzt ein Trigger am Zustandswechsel, nicht die sechs Aussonder-Wege (Migration 128). Wer ein Exemplar ausgesondert hat, nennt das Abgangsbuch nicht; es steht im Protokoll, auch beim Aussondern über den Status in der Buchakte, über einen kleineren Bestand in „Titel bearbeiten", beim Abschluss einer Inventur und beim Buchen eines Verlusts oder Schadens in der Leserakte oder im Schadensersatz-Bescheid: Bearbeiter, Weg und Grund, ohne die Zustandsnotiz (`repository.protokolliereAussonderung`, `internal/api/aussondern_protokoll_pg_test.go`). Belegt: `internal/api/katalog/abgangsbuch_pg_test.go` (Ränder des Zeitraums, Töpfe, Blatt, nie eingetroffene und gelöschte Exemplare), `internal/repository/titel_loeschen_bestand_pg_test.go` (Vermerk der Massenaktion), `internal/api/system/statistik_verlust_pg_test.go` (Statistik: Verluste und Bestand), `internal/repository/eigentum_bestandsbuch_pg_test.go` (Topf nach dem Eigentum, auch im Zugangsbuch), `internal/api/katalog/abgangsdatum_pg_test.go`, `frontend/e2e/abgangsbuch.spec.js`.
+- **Titel löschen:** ein Weg für einen und für mehrere Titel, `DELETE /api/books` mit Titeln, Grund
+  und den bestätigten verliehenen Exemplaren (`repository.TitelAbfragen.LoescheTitel`); Buchakte,
+  Buchmaske und Mehrfachauswahl öffnen denselben Dialog (`components/buchakte/titelLoeschen.js`). Er
+  fragt nach dem Grund für die Exemplare im Haus: „Alter Bestand“ (vorgewählt: In Littera standen 10.275
+  von 14.158 Abgängen mit Grund unter „Alter Bestand“, „veraltet“ und „al“, und M3 verlangt bei
+  Radio-Buttons eine Vorauswahl),
+  „Beschädigt“, „Verlust“, „Falsch angelegt“. Freitext gibt es nicht: Littera hatte 22 Schreibweisen
+  für vier Bedeutungen, ein Viertel ohne Grund, und das Abgangsbuch filtert nach dem Grund. Die Gründe
+  stehen in `frontend/src/lib/utils/aussonderungsgruende.js`, ihr Text in
+  `internal/repository/aussonderungsgrund.go`; beide prüfen gegen `aussonderungsgruende.faelle.json`,
+  der Go-Test auch gegen die CHECK-Bedingungen. Verliehene Exemplare nennt der Dialog mit Leser und
+  Klasse: Ohne Kästchen bleiben sie beim Leser und ihr Titel, bis sie zurück sind; erst ein eigenes
+  Kästchen löscht sie mit, und der Knopf nennt dann die Zahl aller Exemplare. Ein zweiter Dialog wäre
+  unsicherer, sein Bestätigungsknopf stünde, wo eben geklickt wurde (M3, Dialogs). Der Server löscht
+  nur verliehene Exemplare, die der Dialog bestätigt hat; wurde eines danach ausgeliehen, bleibt sein
+  Titel oder das Löschen endet mit 409. „Exemplar löschen“ in der Buchakte fragt nach demselben Grund
+  und verweist bei einem verliehenen Exemplar auf „Verlust oder Schaden melden“. Belegt:
+  `internal/api/katalog/titel_loeschen_pg_test.go`, `internal/repository/titel_loeschen_samt_ausleihen_pg_test.go`,
+  `internal/repository/aussonderungsgrund_zwilling_pg_test.go`.
+- **Zugangsbuch** (Berichte → „Bestandsbücher“): Welche Exemplare in einem Zeitraum in den Bestand
+  kamen, mit Eingangsdatum, Titel, Anzahl, Barcodes und Lieferant, wie die Arbeitshilfe es verlangt
+  ([mittel_konzept.md](mittel_konzept.md) 7.1; die Inventarnummer ist der Barcode). Eine Zeile fasst
+  zusammen, was in allen Spalten gleich ist (im Abgangsbuch: derselbe Tag, derselbe Grund); fortlaufende
+  Barcodes ab drei stehen als „von – bis“, auf dem Blatt laufen sie um, statt gekürzt zu werden
+  (`internal/bestandsbuch`). Ohne gewähltes Datum steht das vorige Schulhalbjahr da, weil „zu Beginn
+  jedes Schulhalbjahres ein Ausdruck der Neuanschaffungen des vorhergehenden Halbjahres“ gedruckt wird
+  (Leitfaden Lernmittelfreiheit, 11.5); jede Seite trägt „Seite x von y“. Zugangs- und Abgangsbuch
+  teilen Bauteil und Abschnitts-Bildung (`components/bestand/Bestandsbuch.svelte`,
+  `internal/api/katalog/bestandsbuch.go`). Am Bildschirm zeichnet ein Abschnitt je 50 Zeilen nach „Mehr
+  laden“, weil ein Listenimport Zehntausende Zugänge an einem Tag anlegen kann; Stückzahl und Ausdruck
+  umfassen immer alle. Der Topf kommt aus einem Beleg, nicht aus dem Titel: Eigentum am Exemplar,
+  sonst die Bestellung (`repository.exemplarTopfBelegtSQL`); ohne beides steht ein Exemplar unter „ohne
+  Zuordnung“ (Altbestand ohne Littera-Vermerk, Handanlage, Bestandskorrektur). **Das Zugangsdatum ist
+  die Lieferung, nicht die Bestellung** (`zugang_am`): Ein Trigger setzt es, sobald ein Exemplar in den
+  Bestand kommt (Wareneingang, Freigeben, Zurückholen); im Zulauf steht es in keinem Zugangsbuch. Ohne
+  Bestellung ist es der Tag der Anlage, bei der Littera-Übernahme das Datum aus Littera. Ein später
+  ausgesondertes oder gelöschtes Exemplar bleibt im Zugangsbuch; Titel löschen und „Verluste endgültig
+  löschen“ legen beim Löschen seine Zeile für beide Bücher an (`geloeschte_exemplare`,
+  `repository.loescheExemplareMitBuchzeile`). Belegt: `internal/api/katalog/zugangsbuch_pg_test.go`,
+  `internal/repository/zugangsdatum_pg_test.go`, `frontend/e2e/zugangsbuch.spec.js`.
+- **Abgangsbuch** (Berichte → „Bestandsbücher“): Welche Exemplare in einem Zeitraum aus dem Bestand
+  gingen, mit Datum, Titel, Signatur, Grund (Alter Bestand, Beschädigt, Verlust, Falsch angelegt;
+  `internal/repository/aussonderungsgrund.go`), Anzahl und Barcodes. Ein Abgang ist nur, was im Bestand
+  war: Ein bestelltes Exemplar, das nie eintraf und gelöscht oder ausgesondert wurde, steht in keinem
+  der beiden Bücher (`sqlIstAbgang`). Ein gelöschtes Exemplar steht am Tag des Löschens darin, ein schon
+  ausgesondertes mit Tag und Grund von damals. Die Statistik zählt nur, was im Bestand ist oder war
+  (`repository.sqlWarImBestand`); Verluste, Verlustquote und Wiederbeschaffungswert folgen der Grenze
+  des Abgangsbuchs, gelöschte Exemplare zählt sie nicht. Vorbelegt ist das laufende Schulhalbjahr mit
+  den Stichtagen der Bestandskartei (15.3. und 15.9.). Der Zeitraum wird am Server bestimmt, damit
+  Bildschirm und Ausdruck denselben meinen, und umfasst höchstens ein Jahr (entschieden am 16.10.2026):
+  Jede Zeile steht in der Antwort, weil jemand den Nachweis unterschreibt; mehrere Jahre gehen als
+  mehrere Ausdrucke (`bestandsbuchZeitraum`). Zwei Abschnitte mit eigener Stückzahl, Land und
+  Schulträger, weil die Finanzen der Töpfe getrennt geführt werden; der Topf folgt dem Eigentum wie am
+  Etikett (`repository.ExemplarTopfSQL`). Das Blatt kommt über `GET /api/bestand/abgangsbuch/pdf`. **Was
+  nicht darauf steht, steht darunter:** Was sich keinem Zeitraum zuordnen lässt (Abgänge ohne Datum,
+  Löschungen ohne Buchzeile), nennt das Abgangsbuch als Zahl, statt Vollständigkeit zu behaupten. Das
+  Datum setzt ein Trigger am Zustandswechsel, nicht jeder Aussonder-Weg. Wer ausgesondert hat, nennt das
+  Abgangsbuch nicht; das steht mit Weg und Grund im Protokoll, auf jedem Weg (Status in der Buchakte,
+  kleinerer Bestand, Abschluss der Inventur, Verlust oder Schaden; `repository.protokolliereAussonderung`).
+  Belegt: `internal/api/katalog/abgangsbuch_pg_test.go`, `internal/api/katalog/bestandsbuch_tuer_pg_test.go`,
+  `internal/api/katalog/abgangsdatum_pg_test.go`, `internal/repository/titel_loeschen_bestand_pg_test.go`,
+  `internal/repository/eigentum_bestandsbuch_pg_test.go`, `internal/api/system/statistik_verlust_pg_test.go`,
+  `internal/api/aussondern_protokoll_pg_test.go`, `frontend/e2e/abgangsbuch.spec.js`.
 
 ---
 
 ## 14. Schadensmanagement
 
-Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schadensmanagement:
-
-- Wenn ein Buch als "Verlust" oder "Beschädigt" ausgebucht wird (z.B. bei der Inventur oder manuell am Kiosk), kann das System automatisch eine Kostenforderung (Schadensfall) gegen den verursachenden Schüler anlegen.
-- Offene Schäden blockieren die DSGVO-Löschung eines Schülers und können per PDF-Rechnung ausgedruckt werden.
+- **Eine Forderung entsteht, wenn jemand in der Leserakte ein verliehenes Buch als verloren oder
+  beschädigt meldet** („Verlust oder Schaden melden“, `POST /api/damage/report`, Recht `edit_students`).
+  Die Inventur legt keine an, sie bucht nur Bücher aus dem Regal aus (§6). Offene Forderungen halten
+  die DSGVO-Löschung eines Schülers auf und lassen sich als PDF-Rechnung drucken.
 - **Gegen einen Kollegen entsteht KEINE Forderung.** „Verlust oder Schaden melden" steht in seiner
   Akte und bucht, was den Bestand angeht — das Exemplar wird ausgesondert, die Ausleihe endet, eine Vormerkung
   darauf wird gelöst —, aber ohne Schadensfall. Grund: Der Weg einer Forderung endet im Schadensersatz-Bescheid,
@@ -705,25 +930,19 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   (`repository.bescheidHatOffenePosition`). Eine offene Forderung hinterlässt ihre Spur im
   Protokoll (`internal/repository/titel_loeschen_spur.go`). Ein verliehenes Exemplar geht nur mit, wenn der
   Mensch es im Löschdialog bestätigt (Abschnitt 13, „Titel löschen").
-- **Was ein Buch heute noch wert ist, steht am Exemplar** (`internal/pkg/ersatzwert`,
-  Migration 127): Die Buchakte zeigt an jedem Exemplar den Ersatzwert samt Herleitung
-  („3. Verleihjahr → 60 % von 24,90 €"). Zwei Regeln, nicht eine — für ein **Buch des
-  Landes** die Staffel der Arbeitshilfe (1. Verleihjahr voller Preis, dann 80/60/40/20 %, ab
-  dem 6. Jahr 10 %), für ein Buch der **Schülerbücherei** der Neuwert ohne Altersabschlag
-  („zuerst Ersatzbeschaffung, sonst Geld in Höhe des Neuwerts", Benutzungsordnung). Wem ein Buch
-  gehört, sagt dieselbe Regel wie am Etikett (`repository.ExemplarTopfSQL`:
-  Eigentum am Exemplar, sonst Bestellung, sonst Titel), nicht `ist_lernmittel`: Eine
-  Lektüre aus LMF-Mitteln gehört dem Land, und das Land beschreibt in der Arbeitshilfe selbst,
-  was ein angemessener Betrag ist (Leitfaden Lernmittelfreiheit 12.5 und 12.7). Ein
-  beschädigtes Exemplar trägt zusätzlich einen Prozentwert für seinen Zustand
-  (`zustand_abwertung_prozent`, erfasst im Zustands-Dialog der Buchakte, nicht an der Theke):
-  Er wirkt NACH der Staffel und mindert jeden künftigen Ersatzbetrag in beiden Töpfen, zieht
-  das Buch aber nicht aus dem Verkehr — er ist ein Zustand, keine Forderung. Welcher Preis die
-  Grundlage ist, entscheidet die Einstellung „Immer mit dem Einkaufspreis rechnen" (Kategorie
-  Schadensersatz): aus = der heutige Listenpreis, an = der damals bezahlte Einkaufspreis; die
-  Herleitung nennt, welcher gegolten hat, und unterscheidet „kein Listenpreis hinterlegt" von
-  „so eingestellt". In jedem Fall ein Vorschlag, kein Automat: Der Mensch bestätigt oder
-  überschreibt, und ohne hinterlegten Preis bleibt das Feld bei 0 mit einem Satz, der es sagt.
+- **Was ein Buch heute noch wert ist, steht am Exemplar** (`internal/pkg/ersatzwert`): Die Buchakte
+  zeigt den Ersatzwert samt Herleitung („3. Verleihjahr → 60 % von 24,90 €“). Für ein Buch des Landes
+  gilt die Staffel der Arbeitshilfe (1. Verleihjahr voller Preis, dann 80/60/40/20 %, ab dem 6. Jahr
+  10 %), für eines der Schülerbücherei der Neuwert ohne Altersabschlag; Herkunft und Rechnung in
+  [mittel_konzept.md](mittel_konzept.md) 1 und 4.2. Wem ein Buch gehört, sagt die Regel des Etiketts
+  (`repository.ExemplarTopfSQL`), nicht `ist_lernmittel`: Eine Lektüre aus LMF-Mitteln gehört dem Land.
+  Ein beschädigtes Exemplar trägt einen Prozentwert für seinen Zustand (`zustand_abwertung_prozent`, im
+  Zustands-Dialog der Buchakte, nicht an der Theke): Er wirkt nach der Staffel und mindert jeden
+  künftigen Ersatzbetrag in beiden Töpfen, zieht das Buch aber nicht aus dem Verkehr. Grundlage ist der
+  heutige Listenpreis oder, mit der Einstellung „Immer mit dem Einkaufspreis rechnen“ (Kategorie
+  Schadensersatz), der damals bezahlte; die Herleitung nennt, welcher galt, und unterscheidet „kein
+  Listenpreis hinterlegt“ von „so eingestellt“. In jedem Fall ein Vorschlag, den der Mensch bestätigt
+  oder überschreibt; ohne Preis bleibt das Feld bei 0 mit einem Satz, der es sagt.
 - **Wohin gezahlt wird, steht in der Rechnung** (`internal/pdf/zahlungsweg.go`): Für ein
   Buch des Landes (Eigentum nach `repository.ExemplarTopfSQL`) nennt sie die Zahlstelle und
   die Bankverbindung aus den Einstellungen — dieselbe Angabe wie im Schadensersatz-Bescheid. Für ein Buch der
@@ -750,89 +969,57 @@ Erreichbar unter **System → Einstellungen → Kategorie „Betriebsbereitschaf
 `GET /api/admin/system/betriebsbereitschaft`). Die Seite beantwortet **eine** Frage:
 _Was ist eingerichtet, aber nicht in Betrieb?_
 
-Der Anlass ist eine wiederkehrende Fehlerart, und sie ist immer dieselbe: Eine Funktion
-ist fertig programmiert, getestet und verdrahtet — und tut nichts, weil eine Einstellung
-fehlt. Kein Fehler, kein Statuscode, kein Logeintrag, der jemandem auffiele. Dreimal
-gefunden, jedes Mal von Hand: die Auslagerung der Backups (vier leere Variablen), der
-nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Container an)
-und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
-raus, nur ohne den Link, um dessentwillen es sie gibt).
+Der Anlass ist eine Fehlerart: Eine Funktion ist fertig und verdrahtet und tut nichts, weil eine
+Einstellung fehlt, ohne Fehler, Statuscode oder Logeintrag.
 
-**Geprüft werden zweiundzwanzig Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Schlüssel und
-Bestand (lässt sich je verschlüsselter Spalte ein Wert mit dem laufenden
-`APP_ENCRYPTION_KEY` entschlüsseln — der Fall dahinter ist die Wiederherstellung mit neuer `.env`), Anmeldung
-(IMAP), vertraute Proxys (Einträge in `TRUSTED_PROXIES`, die der Server übergeht), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten (Schüler UND
-Exemplare aus `seed_demo.sql`), Lieferanten (kritisch: Reste der drei Beispiel-Lieferanten, die
-frühe Fassungen des Programms als Startdaten bei leerer Tabelle anlegten; auf einer echten
-Anlage sind sie von echten Händlern nicht zu unterscheiden, eine Bestellung an so einen
-Eintrag ginge an die Beispiel-Adresse und meldete „gesendet"), Admin-Konten
-(wer hat Vollzugriff und erhält die Kritisch-Alarme; Anlage und Änderung eines Kontos
-stehen im Protokoll), Rechte-Vorgabe
-(Abgleich der Live-Tabelle `role_permissions` gegen die Code-Vorgabe — der Seed fasst
-bestehende Zeilen nie an, eine geänderte Vorgabe erreicht Alt-Anlagen sonst nie; eine
-Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein)
-und die Klassen-Zuordnung (Klassennamen verbinden Schüler,
-Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text — die Prüfung
-benennt Klassen bis Jahrgang 10 ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne
-Klasse; die Oberstufe (ET, 12T, 13T) hat keine Klassenleitung); sowie **Ehemalige mit offenen Vorgängen** (Weggegangene, die seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung
-haben — der Vorgang schützt sie vor Anonymisierung und Löschung, also bleiben Name und
-Anschrift sonst auf Dauer; Warnung mit Abhilfe „Verlust melden, Forderung bezahlen oder
-stornieren", kein Automatismus; `ZaehleEhemaligeMitOffenenVorgaengen`); und der **Schadensersatz-Bescheid**
-(welche Pflichtangaben fehlen — Nummer des Schulamtsbereichs, Schulnummer,
-Aufsichtsbehörde, Schulleitung, Anschrift der Schule; dieselbe Prüfung, mit der das Erstellen
-abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt); und die **Littera-Übernahme**
-(das Ergebnis, das `littera-altbestand` nach dem schreibenden Lauf in `system_einstellungen`
-ablegt, `littera_uebernahme_ergebnis`: eine Woche lang kritisch, wenn der Lauf abbrach oder
-unvollständig war, eine Warnung bei Warnungen im Protokoll; danach steht es als erledigt da,
-damit eine hingenommene Lücke nicht für immer täglich meldet; `pruefeLitteraUebernahme`).
+**Geprüft werden zweiundzwanzig Bereiche** (`internal/bereitschaft`), darunter Auslagerung der
+Backups, Geheimnisse, Schlüssel und Bestand (lässt sich je verschlüsselter Spalte ein Wert mit dem
+laufenden `APP_ENCRYPTION_KEY` entschlüsseln, für die Wiederherstellung mit neuer `.env`), Anmeldung,
+vertraute Proxys, Bestell-Bestätigungslink, Mailversand, Demo-Daten aus `seed_demo.sql` und
+Admin-Konten. Einige mit eigener Regel:
+- **Lieferanten:** Reste der drei Beispiel-Lieferanten früher Fassungen sind kritisch, denn eine
+  Bestellung an so einen Eintrag ginge an die Beispiel-Adresse und meldete „gesendet“.
+- **Rechte-Vorgabe:** Abgleich von `role_permissions` gegen die Vorgabe im Code; der Seed fasst
+  bestehende Zeilen nie an. Eine Abweichung ist nur eine Warnung, weil sie eine Entscheidung des
+  Admins sein kann.
+- **Klassen-Zuordnung:** Klassen bis Jahrgang 10 ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten
+  ohne Klasse; die Oberstufe hat keine Klassenleitung.
+- **Ehemalige mit offenen Vorgängen** seit mehr als einem Jahr: Der Vorgang schützt sie vor
+  Anonymisierung und Löschung, Name und Anschrift blieben sonst auf Dauer. Warnung mit Abhilfe
+  („Verlust melden, Forderung bezahlen oder stornieren“), kein Automatismus.
+- **Schadensersatz-Bescheid:** welche Pflichtangaben fehlen, mit derselben Prüfung, mit der das
+  Erstellen abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt.
+- **Littera-Übernahme:** das Ergebnis des schreibenden Laufs (`littera_uebernahme_ergebnis`), eine Woche
+  lang kritisch bei Abbruch oder Lücke, danach erledigt, damit eine hingenommene Lücke nicht täglich
+  meldet.
 
-Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
-**Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
-die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in Betrieb),
-`warnung` (läuft, aber nicht wie gedacht), `kritisch` (zu klären; löst die tägliche
-Alarm-Mail aus). Bewusst nur drei — eine feinere Skala liest niemand.
+Jeder Befund nennt **Befund**, **Folge** und **Abhilfe**, ohne die letzte landete die Meldung auf einem
+Zettel statt in der `.env`, dazu eine **Stufe**: `ok`, `warnung` (läuft, aber nicht wie gedacht) oder
+`kritisch` (löst die Alarm-Mail aus). Bewusst nur drei, eine feinere Skala liest niemand. Die Seite
+ändert nichts; die Urteile sind eine reine Funktion über eine eingesammelte Lage
+(`internal/bereitschaft/bereitschaft.go`).
 
-**Der Wächter meldet sich selbst:** Kritische Befunde gehen täglich
-per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der Wächter läuft drei
-Minuten nach jedem Start und danach täglich; dieselbe Mail geht trotzdem höchstens einmal am Tag
-hinaus, ein neuer Punkt (ein weiterer kritischer Bereich, eine neue Fehlermeldung) mit dem
-nächsten Lauf. Ein gescheiterter Versand zählt nicht als gemeldet. Der
-Empfängerkreis ist einstellbar (Einstellungen → Erreichbarkeit & Alarme,
-`alarm_empfaenger`, mehrere Adressen mit Komma); ist er leer, gehen die Mails als
-sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden erreicht,
-ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen
-ohne den Schalter „Auch Warnungen mailen“ (`alarm_warnungen`, Vorgabe aus) keine Mail aus
-(Dauerrauschen stumpft ab); ihre Zahl steht dann als Fußnote. Mit dem Schalter nennt die Mail
-auch die Warnungen der Betriebsbereitschaft und die Warnungen im Log, je mit „⚠“ hinter dem
-Kritischen, und schon sie allein lösen sie aus; darunter fällt der abgewiesene LUSD-Abgleich
-(„LUSD-Abgleich abgewiesen“, Grund wie in der Antwort, ohne Namen). Auf Spielwiesen (`APP_ENV=local/development/test`)
-schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
+**Der Wächter meldet sich selbst:** Kritische Befunde gehen per Mail, solange sie bestehen, 3 Minuten
+nach jedem Start und danach täglich; ohne neuen Punkt geht die Mail erst 23 Stunden nach der letzten
+wieder hinaus ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.10). Empfänger sind die Adressen aus Einstellungen →
+Erreichbarkeit & Alarme (`alarm_empfaenger`); ist das leer, alle aktiven Admin-Konten, denn ein
+Alarm, der niemanden erreicht, ist keiner. Der Fußtext nennt, an wen die Mail ging. Warnungen mailt
+er nur mit dem Schalter „Auch Warnungen mailen“ (`alarm_warnungen`, Vorgabe aus), sonst stünde
+Dauerrauschen in der Mail; dazu zählt der abgewiesene LUSD-Abgleich (ohne Namen). Auf Spielwiesen
+(`APP_ENV=local/development/test`) schweigt er, denn die lokale `.env` zeigt auf den echten
+Schul-SMTP.
 
-**Fehler im Log** stehen auf einer eigenen Seite gleich darunter (Kategorie „Fehler im Log“,
-Recht `manage_settings`, `GET /api/admin/system/fehler-im-log`): Die Betriebsbereitschaft nennt
-Zustände, das Log Ereignisse. Der Server zählt die Zeilen der Stufe ERROR selbst, vor der Ausgabe
-des Logs (`logger.Fehlerstand`), damit sie auffallen, ohne dass jemand das Log liest: je Meldung
-mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene Anfrage je Route, über die letzten
-24 Stunden, die jüngste zuerst. Einen Absturz des Servers meldet der nächste Start mit der Stelle im
-Code, ebenso einen harten Abbruch und einen Ausfall des Rechners; Update und Neustart melden nichts. Schon
-eine Zeile ist ein Grund für die tägliche Mail; sie nennt die Fehler in einem eigenen Teil nach den
-kritischen Befunden, bis zu dreißig Meldungen einzeln, und der Betreff nennt ihre Zahl. Je Meldung
-stehen in der Mail zusätzlich die erste Zeile (auf zehn Minuten genau) und die letzte (auf die
-Sekunde) und die ganze letzte Zeile, wie das Log sie schreibt, mit allen Feldern, bei einem
-Panic samt Stack (höchstens 4000 Zeichen): Damit lässt sich ein Fehler beheben, ohne das Log am
-Server zu lesen. Das Log nennt eine Person mit ihrer Kennung, nicht mit ihrem Namen
-([STIL.md](STIL.md), Abschnitt 11); Mailadressen in Ursache und Zeile, etwa im Feld `empfaenger`
-eines gescheiterten Versands, stehen in der Mail nur mit ihrer Domain („…@schule.de“). Gezählt werden auch die Zeilen der Stufe WARN, getrennt von
-den Fehlern; die Seite zeigt nur die Fehler, die Mail die Warnungen mit dem Schalter. Jede
-einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im
-Log finden“). Der Zählerstand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`)
-und übersteht so ein Update: Die nächste Mail des Wächters nennt auch die Fehler davor.
-
-Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
-Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut
-(`internal/bereitschaft/bereitschaft.go`) und damit vollständig testbar, ohne
-Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen; das Zusammentragen der
-Lage steht daneben im Handler.
+**Fehler im Log** stehen auf einer eigenen Seite darunter (`GET /api/admin/system/fehler-im-log`,
+`manage_settings`): Die Betriebsbereitschaft nennt Zustände, das Log Ereignisse. Gezählt werden die
+Zeilen der Stufe ERROR je Meldung über 24 Stunden, eine fehlgeschlagene Anfrage je Route; Warnungen
+zählt der Server getrennt, die Seite zeigt sie nicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.11). Einen
+Absturz, einen harten Abbruch und einen Ausfall des Rechners meldet der nächste Start; Update und
+Neustart melden nichts. Schon eine Fehlerzeile ist ein Grund für die Mail: bis zu dreißig Meldungen
+einzeln, je mit erster und letzter Zeit und der ganzen letzten Zeile samt Feldern (bei einem Panic mit
+Stack, höchstens 4000 Zeichen), damit sich ein Fehler beheben lässt, ohne das Log am Server zu lesen.
+Das Log nennt Personen mit ihrer Kennung, nicht mit Namen ([STIL.md](STIL.md), Abschnitt 11);
+Mailadressen stehen in der Mail nur mit ihrer Domain. Jede einzelne Zeile zeigt der Befehl in
+[DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im Log finden“.
 
 ---
 
@@ -855,7 +1042,7 @@ zählen Katalog, Suche, Klassensätze und Lernmittel (`repository.SQLBestandVerf
 `sqlFilterVerfuegbar`), mit derselben Bedingung, mit der die Theke das Exemplar einem anderen
 verweigert. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
 öffentlichen Seiten** (`repository.OeffentlichSichtbar`, für Katalog und Monitor
-dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`, ein Feld am Titel, Migration 093) und
+dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`) und
 mindestens ein Exemplar im Haus (nicht
 ausgesondert, nicht nur bestellt). Maximal 50 Treffer; der Kopf `X-Treffer-Gesamt` nennt, wie
 viele es insgesamt sind, und die Seite sagt dann „50 von N Treffern. Ein Suchwort grenzt
@@ -930,24 +1117,18 @@ mit Leerwerten überschrieben.
 | 3   | **Mahnwesen**               | automatische Ausleihsperre: ab wie vielen überfälligen Medien und nach wie vielen Toleranztagen (`max_overdue_items`, `max_overdue_days`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `manage_settings`                                               |
 | 4   | **Klassenleitungen**        | Klasse → E-Mail der Klassenleitung (`klassen_lehrer_mapping`); Empfänger für Sammel-Mahnlauf und Abgänger-Kontoauszüge; wird beim Schuljahreswechsel mit versetzt                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `manage_settings`                                               |
 | 5   | **Bestellwesen**            | Bedarfswarnung an/aus (Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht, §7), Preise erfassen, Gültigkeit des Bestätigungs-Links für den Händler in Tagen (`bestelllink_gueltigkeit_tage`, Vorgabe 21)                                                                                                                                                                                                                                                                                                                                                                                              | `manage_settings`                                               |
-| 6   | **Lieferanten**             | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant (Migration 066) und wird im Bestellformular vorausgewählt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `create_orders`                                                 |
+| 6   | **Lieferanten**             | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant und wird im Bestellformular vorausgewählt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `create_orders`                                                 |
 | 7   | **Schlagworte**             | Pflege der Schlagworte am Titel (§13): umbenennen und zusammenführen (alle Titel ändern sich mit, die alte Schreibweise wahlweise als Verweis), Verweise anlegen, löschen — auch mehrere auf einmal —, Filter-Markierung fürs Portal                                                                                                                                                                                                                                                                                                                                                                                                | `edit_books`                                                    |
 | 8   | **Schadensersatz**          | Angaben für den Schadensersatz-Bescheid: Nummer des Schulamtsbereichs und Schulnummer (Teil der Referenznummer), Aufsichtsbehörde (Name und Anschrift), Name der Schulleitung, Geschäftszeichen, Bearbeiter, Durchwahl (freiwillig), Zahlstelle und Bankverbindung (vorbelegt aus dem Musterschreiben), Zahlungsfrist in Tagen ab Briefdatum (Vorgabe 28); Schalter **„Immer mit dem Einkaufspreis rechnen"** (`ersatzwert_immer_kaufpreis`): aus gilt ab dem zweiten Verleihjahr der Listenpreis (Arbeitshilfe des Landes), ohne erfassten Listenpreis ersatzweise der Einkaufspreis; an gilt immer der Einkaufspreis              | `manage_settings`                                               |
 | 9   | **Datenschutz & Sitzung**   | Löschfristen (Lesehistorie 1 Tag, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Abgänger-Karenzzeit (Vorgabe 90 Tage, §8.2), Theke leeren nach _n_ Minuten (Vorgabe 5), Sperrbildschirm nach _n_ Minuten (Vorgabe 15)                                                                                                                                                                                                                                                                                                                                                                                          | `manage_settings`                                               |
 | 10  | **Erreichbarkeit & Alarme** | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog- und Monitor-Adresse; leer = keine Links), Alarm-Empfänger (leer = alle aktiven Admins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `manage_settings`                                               |
-| 11  | **Mail**                    | SMTP-Postausgang mit Verbindungstest, Test-Mail; zweiter Absender mit Häkchen, welche Mails über ihn gehen: Mails aus Mein Portal (ab Werk), Mahnlisten und Abgänger-Auszüge an die Klassenleitungen, Bestellmails; alle anderen, und ohne Adresse alle, gehen über den Postausgang (Migrationen 175, 177); **Adressen aus dem Webmail**: Zugang zum Roundcube der Schule, monatlicher Abgleich mit dem globalen Adressbuch, der Konten mit Platzhalter-Adresse ihre Adresse der Schule einträgt (Probelauf und Knopf „Jetzt abgleichen“, Migration 176); **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}}`) — Platzhalter je Typ, Gate `mail_vorlagen_platzhalter_test.go` (Migrationen 023, 052; die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist mit 092 ausgetragen, Abholbereit läuft über den Abholfach-Hinweis am Terminal). Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings`                                               |
+| 11  | **Mail**                    | SMTP-Postausgang mit Verbindungstest, Test-Mail; zweiter Absender mit Häkchen, welche Mails über ihn gehen: Mails aus Mein Portal (ab Werk), Mahnlisten und Abgänger-Auszüge an die Klassenleitungen, Bestellmails; alle anderen, und ohne Adresse alle, gehen über den Postausgang; **Adressen aus dem Webmail**: Zugang zum Roundcube der Schule, monatlicher Abgleich mit dem globalen Adressbuch, der Konten mit Platzhalter-Adresse ihre Adresse der Schule einträgt (Probelauf und Knopf „Jetzt abgleichen“); **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}}`) — Platzhalter je Typ, Gate `mail_vorlagen_platzhalter_test.go`. Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings`                                               |
 | 12  | **LMF-Aktionen**            | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `edit_books`                                                    |
 | 13  | **Datenverwaltung**         | Katalog-Import (Littera: Katalogisat-XML, CSV oder XLSX), „Bestand mit vorhandenen Nummern“ (CSV mit Kopfzeile), Listenimport (ISBN + Stückzahl, §13), „Fehlende Cover laden“, Daten exportieren (Katalog als CSV), **Offline-Sicherungen einspielen** (siehe §18.4)                                                                                                                                                                                                                                                                                                                                                                | `manage_inventory` / `edit_books`                               |
 | 14  | **LUSD & Versetzung**       | LUSD-Abgleich (§8), Klassen-Versetzung zum Schuljahresende und die Sommerferien für den LMF-Plan (§2.3) (Rechte: import_students, manage_students_admin bzw. für die Sommerferien manage_settings)                                                                                                                                                                                                                                                                                                                     | `import_students` / `manage_students_admin` / `manage_settings` |
 | 15  | **Sicherung**               | Schalter „Jede Nacht selbst sichern“ (`sicherung_an`), Vorgabe aus: Der Server der Schule wird selbst gesichert. An: Nachtsicherung, Kopie außer Haus, Restore-Probe (§15). Aus: keine eigene Sicherung, keine Probe, ältere Stände werden nach der Aufbewahrung gelöscht (`internal/jobs/sicherung_aus.go`), die Selbstprüfung nennt das ohne Befund                                                                                                                                                                                                                                                                                        | `manage_settings`                                               |
 | 16  | **Betriebsbereitschaft**    | Selbstprüfung (§15)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `manage_settings`                                               |
 | 17  | **Fehler im Log**           | Fehlermeldungen des Servers aus den letzten 24 Stunden (§15)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `manage_settings`                                               |
-
-**Ferien-Leseclub (Kategorie Ausleihe & Fristen):** Ist er aktiv und ein Zieldatum gesetzt, bekommen alle
-Ausleihen von Schülern bis dahin dieses feste Rückgabedatum (`FerienLeseclubZieldatum`, `frist.go`)
-statt der rollierenden Frist — der Schalter für „Bücher über die Sommerferien mitnehmen".
-Lernmittel behalten ihren Stichtag. Ist das Zieldatum vorbei, gilt wieder die Frist in Tagen,
-auch wenn der Schalter an bleibt (`leseclubFrist`).
 
 ---
 
@@ -1025,7 +1206,7 @@ Person selbst, nimmt er es zurück wie am Netz (der Rechner schickt mit, wie lan
 der Theke stand); eine Rückgabe hinter einer neueren Buchung weist er ab. Gebucht wird mit dem Scan-Zeitpunkt (höchstens der Serverzeit), und jeder
 Schlüssel genau einmal.
 
-**Meldungen.** Jede Abweichung vom Scan hält der Server fest (Migration 117). An der Theke steht
+**Meldungen.** Jede Abweichung vom Scan hält der Server fest. An der Theke steht
 dafür am Band ein Knopf mit der Zahl der offenen Meldungen; dahinter die Liste mit Zeitpunkt,
 Buch, Person, Ergebnis und Grund, quittierbar mit „Erledigt". Die Zahl gehört jeder Theken-Rolle
 (`perform_actions`), die Liste verlangt `view_students` — sie nennt Namen und Klassen. Offene
@@ -1041,12 +1222,8 @@ Nicht im Umfang: Anmelden ohne Server, Schülerdaten auf dem Rechner, Geräteaus
 Umbuchen im Online-Weg und die scannende Person im Protokoll (nachgebucht wird unter dem Konto,
 das beim Übertragen angemeldet ist).
 
-Was hier steht, halten Browser-Tests am Stack mit abgeschaltetem Netz und gestellter Uhr:
-`frontend/e2e/theke-ohne-netz-scan.spec.js` (Schnappschuss beim Scan, Rückgabe aus der Akte,
-Lehrkraft, nicht ablegbare Scans), `theke-ohne-netz-band.spec.js` (alle Buchformen und Ausweise,
-das Band, keine Sperre, Nachbuchen vor der Sperre, Meldung am zweiten Platz),
-`theke-ohne-netz-sicherung.spec.js` (Sicherungen beider Formate, zweimal eingespielt) und
-`theke-gleicher-schluessel.spec.js` (gleichzeitige Anfragen mit einem Schlüssel).
+Gehalten von den Browser-Tests `frontend/e2e/theke-ohne-netz-*.spec.js` und
+`theke-gleicher-schluessel.spec.js`, am Stack mit abgeschaltetem Netz und gestellter Uhr.
 
 ### 18.5 Selbstanmeldung fürs Kollegium
 
@@ -1092,43 +1269,29 @@ verschwindet von selbst. Belegt: `internal/repository/buch_in_klasse_pg_test.go`
 
 Die Anwendung ist auf WCAG 2.1 AA gebaut; geprüft wird das mit zwei Browser-Gates.
 
-**Was geprüft wird.** Zwei Browser-Gates, beide am Rückbau rot gesehen:
+**Was geprüft wird.**
 
 - **`e2e/barrierefreiheit-axe.spec.js`:** axe-core mit den Regeln WCAG 2.0/2.1 A und AA über
-  Anmeldung, Katalog, jede Monitor-Folie und alle 15 internen Hauptansichten — jeweils im
-  **Anfangszustand** der Ansicht; Reiter, Dialoge und Unteransichten (etwa die Reiter des
-  Bestellwesens) werden nicht mitgescannt. Dazu `<html lang="de">`, genau EIN `<main>`, eine
-  Überschrift je Seite, Skip-Link als erstes Fokusziel. Gescannt wird mit „Bewegung
-  reduzieren", weil axe mitten in einer Einblendung gemischte Farben liest; der Monitor
-  wird auf jeder Folie gescannt (Takt 15 s).
-- **`e2e/barrierefreiheit-dialog.spec.js`:** ein Dialog (Schüler anlegen) nimmt den Fokus,
-  hält ihn über 25 Tab und 5 Shift+Tab und gibt ihn bei Escape an den Auslöser zurück;
-  Tabellen auf drei Seiten tragen Beschriftung und `scope`; `prefers-reduced-motion`
-  setzt Animationen auf 0 s.
+  Anmeldung, Katalog, jede Monitor-Folie und alle 15 internen Hauptansichten, je im
+  **Anfangszustand**; Reiter, Dialoge und Unteransichten werden nicht mitgescannt. Dazu
+  `<html lang="de">`, genau ein `<main>`, eine Überschrift je Seite, Skip-Link als erstes Fokusziel.
+  Gescannt wird mit „Bewegung reduzieren“, weil axe mitten in einer Einblendung gemischte Farben liest.
+- **`e2e/barrierefreiheit-dialog.spec.js`:** Ein Dialog nimmt den Fokus, hält ihn über 25 Tab und 5
+  Shift+Tab und gibt ihn bei Escape an den Auslöser zurück; Tabellen tragen Beschriftung und `scope`;
+  `prefers-reduced-motion` setzt Animationen auf 0 s.
 
-Keine dieser Prüfungen ersetzt einen Durchgang mit einem Screenreader (NVDA, VoiceOver);
-der hat nicht stattgefunden.
+Keine dieser Prüfungen ersetzt einen Durchgang mit einem Screenreader (NVDA, VoiceOver); der hat
+nicht stattgefunden.
 
-**Was gebaut ist.** Die Fixes sitzen in Bauteilen, nicht in Seiten:
-
-- `ui/fokusFalle.js` in `Dialog.svelte` (24 Verwender), im Sperrbildschirm und in den zwei
-  Theken-Alarmen (`OmniboxSperrHinweis`, `OmniboxVormerkungHinweis`, als `alertdialog`); die
-  Vorlagen-Galerie des Designers ist ein Popover ohne Falle.
-- `ui/Tabelle.svelte`: `beschriftung` ist Pflicht (Ratsche `frontend-hygiene-tabellen`, 26
-  Tabellen), `scope` setzt das Bauteil; die sr-only-Tabelle des Trend-Diagramms trägt eine
-  `caption`.
-- `layout/SkipLink.svelte`, `layout/Hauptbereich.svelte` (das eine `<main>` mit unsichtbarer
-  `h1` aus dem Menü — sichtbare Seitenköpfe bleiben abgeschafft), `basis.css` (Bewegung).
-- Rahmen von Feld, Select und Suchfeld in der M3-Rolle `outline` (#72777f auf Weiß 4,5:1)
-  statt `outline-variant` (#c2c7cf, 1,7:1; WCAG 1.4.11 verlangt 3:1). Seitenleiste-Gruppentitel
-  ohne 70 %-Deckung; Monitor-Folien und der inaktive Schritt im Druck-Center ohne die
-  Theme-Töne `slate-400/500`, die dort Dunkelgrau sind.
-- Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts und Ladefehler sind
-  `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
-  Trefferliste.
-- Zeile und Kachel sind keine Knöpfe mehr: In Leserdatei und Signaturen-Regal öffnet der
-  **Name bzw. Titel** die Akte, im Medienkatalog das Cover, das den Titel als Namen trägt
-  (die Kachelfläche bleibt ein Mausziel ohne Rolle).
+**Was gebaut ist,** in Bauteilen statt in Seiten: die Fokusfalle (`ui/fokusFalle.js`) in jedem Dialog,
+im Sperrbildschirm und in den zwei Theken-Alarmen (`OmniboxSperrHinweis`, `OmniboxVormerkungHinweis`,
+als `alertdialog`); `ui/Tabelle.svelte` mit Pflicht
+zur `beschriftung` (Ratsche `frontend-hygiene-tabellen`) und `scope`; Skip-Link und das eine `<main>`
+mit unsichtbarer `h1` aus dem Menü (`layout/SkipLink.svelte`, `layout/Hauptbereich.svelte`), denn sichtbare Seitenköpfe bleiben abgeschafft. Rahmen von Feld,
+Select und Suchfeld stehen in der Rolle `outline` (4,5:1 auf Weiß) statt `outline-variant` (1,7:1),
+weil WCAG 1.4.11 für Bedienelemente 3:1 verlangt. Meldungen pausieren unter Maus und Fokus (2.2.1),
+Fehler sind `role="alert"`, die Omnibox führt per `aria-activedescendant` durch die Treffer. Zeile und
+Kachel sind keine Knöpfe: Der Name bzw. Titel öffnet die Akte, im Medienkatalog das Cover.
 
 **Bekannte Lücken (offen, keine davon im Gate versteckt):**
 
