@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.."
 # selbst, ein fehlendes Werkzeug überspringt die Prüfung deshalb nicht.
 GOSEC_FASSUNG="v2.29.1-0.20261005092323-d2b649ec0182"
 
-# Ausgenommen sind nur Regeln, die Stellen melden; die Zahl je Regel steht in
-# docs/ARCHITEKTUR.md 11.5. Eine global ausgenommene Regel meldet auch eine neue Stelle nicht.
+# Ausgenommen sind nur Regeln, die Stellen melden; die Abhilfe steht in docs/ARCHITEKTUR.md
+# 11.5. Eine global ausgenommene Regel meldet auch eine neue Stelle nicht.
 #   G706  Log-Einschleusung: log.Printf läuft über slog.SetDefault durch den JSON-Handler, ein
 #         Umbruch bleibt im String (docs/SECURITY.md, „Log-Injection").
 #   G704  SSRF: Abrufe bei DNB, Open Library, Google Books und Cover-Quellen; Cover-Adressen

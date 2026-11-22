@@ -444,7 +444,7 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
 - **Frage 10, der Übergang:** Was lebt über ein Update oder einen Rückbau hinweg — offene
   Fenster mit dem alten Programm, laufende Anmeldungen, eingereihte Vorgänge,
   zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? (Die neuere
-  Startseite nach einem Rückbau: ARCHITEKTUR.md 11.5.)
+  Startseite nach einem Rückbau: ARCHITEKTUR.md 8.6.)
 - **Frage 11, die Ablage unter einem Schlüssel:** Liegt ein Ergebnis unter einem Schlüssel, den
   auch eine andere Anmeldung vorlegen kann, in der Fassung, die der erste Absender lesen
   durfte? Die Warteschlange der Theke gehört dem Rechner, nicht der Person

@@ -140,7 +140,7 @@ Anmeldequelle und für die Nachsicht mit alten Barcodes.
 | T3  | PostgreSQL 18 über `pgx/v5`, kein ORM          | SQL steht sichtbar im Repository-Paket; Constraints sind Entwurfsmittel ([invarianten.md](invarianten.md)) |
 | T4  | `CGO_ENABLED=1` für das Hauptprogramm          | `chai2010/webp` braucht CGO; die Kommandozeilen-Werkzeuge bauen ohne                                   |
 | T5  | Svelte 5, Tailwind 4, Vite, kein TypeScript    | Typprüfung über JSDoc und `svelte-check --fail-on-warnings` (A22)                                      |
-| T6  | Ein Host, ein Prozess                          | SSE-Abonnenten, Rechte-Cache, Rate-Limit und Idempotenz liegen im Speicher; eine zweite Instanz wäre ein Umbau |
+| T6  | Ein Host, ein Prozess                          | SSE-Abonnenten, Rechte-Cache und Rate-Limit liegen im Speicher, die Idempotenz-Schlüssel in der Datenbank; eine zweite Instanz wäre ein Umbau |
 | T7  | Anmeldung über IMAP oder LDAP, je Konto        | Keine Passwortspalte; für die Dauer einer Anmeldung ein Prüfwert (A2, A30). Die E-Mail, bei LDAP auch die Kennung, ist die Identität: wer sie schreiben darf, kann ein Konto übernehmen |
 | T8  | Barcodes des Altbestands bleiben               | Littera-Nummern ohne Vorsilbe: die Omnibox löst der Reihe nach auf, alte Prüfzeichen werden nachsichtig gelesen (A14) |
 | T9  | Docker Compose hinter Caddy, TLS per ACME      | Die maßgebliche Caddy-Konfiguration liegt auf dem Server ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3) |
@@ -463,7 +463,7 @@ project“); oben daneben nur `pruefung/`, `docs/` und `scripts/`.
 | `internal/auth/`         | Anmeldung über IMAP und LDAP, Token, Sperrliste, Sperre nach Inaktivität, Selbstanmeldung         |
 | `internal/jobs/`         | Zeitplan (UTC) und Nachtläufe (5.4.5)                                                             |
 | `internal/lusd/`         | Abgleich mit dem LUSD-Export ([LUSD.md](LUSD.md))                                                 |
-| `internal/bereitschaft/` | Selbstprüfung: je Bereich Befund, Folge und Abhilfe; die Lage sammelt `internal/api/system`       |
+| `internal/bereitschaft/` | Selbstprüfung: eine reine Funktion über eine Lage, je Bereich Befund, Folge und Abhilfe; die Lage sammelt `internal/api/system`       |
 | `internal/auskunft/`, `internal/bestandsbuch/`, `internal/buchetikett/` | Auskunft nach Art. 15; Zeilen der Bestandsbücher; Eingabe der Buchetiketten (8.9) |
 | `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.3)                                      |
 | `internal/crypto/`, `internal/backupkrypto/`, `internal/ausweis/`, `internal/middleware/` | AES-256-GCM; Format der Backups; Gültigkeit eines Ausweises; Security-Header |
@@ -482,8 +482,10 @@ project“); oben daneben nur `pruefung/`, `docs/` und `scripts/`.
 - Adresse und Recht stehen in `internal/api/routen_*.go`; ein Thema erreicht man über einen
   Zugang des Servers (`s.lernmittel().LMFPlanSchreiben()`, `internal/api/zugaenge_basis_test.go`).
 - Eine Tür ist eine Fabrik (`func (t *Tueren) X() http.HandlerFunc`); ein langer Rumpf steht als
-  klein geschriebene Methode daneben. Kein Thema bindet ein anderes ein; Gemeinsames steht in
-  `internal/api/tuer` oder darunter (`internal/api/themen_ratsche_test.go`).
+  klein geschriebene Methode daneben, weil eine Closure für `komplexitaet_ratsche_test.go` als eigene
+  Ebene zählt; eine exportierte Methode, die selbst Antwort und Anfrage nimmt, weist
+  `internal/api/themen_ratsche_test.go` ab. Kein Thema bindet ein anderes oder `internal/api/` ein;
+  Gemeinsames steht in `internal/api/tuer` oder darunter (derselbe Test).
 - Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst; ein Test über den Router
   steht als eigenes Testpaket daneben (`routertest.MitSitzung`).
 
@@ -493,7 +495,7 @@ project“); oben daneben nur `pruefung/`, `docs/` und `scripts/`.
   erreicht; eine Migration in `internal/db/`. Braucht er eine Prüfhilfe, die sein Paket einbindet,
   als Testpaket daneben ([Googles Regelwerk](https://google.github.io/styleguide/go/decisions#test-package)).
 - Daten an der Datenbank legt `internal/testdaten` an; eigenes SQL nur, wo kein Helfer dieselbe
-  Zeile anlegt.
+  Zeile anlegt. `testdaten` bindet kein Paket des Programms ein.
 - In `internal/api/` stehen Tests an Router, Middleware und CSRF, Prüfungen über alle Routen und
   Tests über zwei Themen; was den ganzen Baum liest und keinem Paket gehört, in `pruefung/`
   (Pfade ab der Wurzel über `wechsleInDieWurzel(t)`, Blindheit in der Landkarte von [sweeps.md](sweeps.md)).
@@ -516,7 +518,8 @@ project“); oben daneben nur `pruefung/`, `docs/` und `scripts/`.
 - **`internal/auth/` formuliert kein SQL.**
 
 `schichtung_ratsche_test.go` hält, dass nur die Datenbankschicht Anweisungen formuliert und
-schickt; `internal/api/schichtung_test.go` führt die Dateien ohne Tür als Bestand, der nur sinkt.
+schickt; dazu zählen neben `internal/repository` auch `internal/db`, `internal/littera`, die
+Prüfhilfen `pgtest`, `testdaten` und `testweg`, `scripts` und `cmd/`; `internal/api/schichtung_test.go` führt die Dateien ohne Tür als Bestand, der nur sinkt.
 Die Datenbankschicht bleibt ein Paket (A25).
 
 ##### Die `internal/pkg/`-Pakete
@@ -607,8 +610,9 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
   Wiederholtes Markup als `{#snippet}`, Datenlisten in `.js`-Dateien.
 - Geteilter Zustand nur in `stores/*.svelte.js`. Ein Store in Teilen hat eine Fassade: Bauteile
   und Tests laden nur `stores/omnibox.svelte.js` (`frontend-hygiene-omnibox-teile.test.js`), ein
-  Zustand lebt in genau einem Teil, an `/api/action` schickt nur `omniboxBuchung`
-  (`frontend-hygiene-action-endpunkt.test.js`).
+  Zustand lebt in genau einem Teil, die anderen bekommen Funktionen, kein geteiltes Objekt; den
+  Ausweis-Merker ohne Netz setzt ein eigener Setter, weil sein Setzen die wartenden Scans verwirft.
+  An `/api/action` schickt nur `omniboxBuchung` (`frontend-hygiene-action-endpunkt.test.js`).
 - Ein Objektliteral mit Gettern trägt `/** @satisfies {object} */`, sonst meldet svelte-check
   keinen Zugriff auf einen fehlenden Namen (`frontend-hygiene-geschlossene-typen.test.js`).
 - Ein Stil im `<style>` eines Bauteils schlägt jede Tailwind-Klasse des Aufrufers (Tailwind liegt
@@ -627,8 +631,9 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
   `RASTER_ABSTAND` in `BuchKarte.svelte`); in Mein Portal öffnet die Kachel ein Seitenblatt
   (`ui/Seitenblatt`) statt eines Dialogs.
 - Ein Cover kommt aus `ui/BuchCover`, immer im Format 2:3 (`frontend-hygiene-cover.test.js`).
-- Farben nur aus den Rollen in `styles/rollen.css`, hell und dunkel; gedruckt wird hell, ein
-  Papier-Bereich trägt `.schema-hell` (`rollen-schema.test.js`, `frontend/e2e/barrierefreiheit-axe.spec.js`).
+- Farben nur aus den Rollen in `styles/rollen.css`, hell und dunkel; `.schema-dunkel` steht an
+  `<html>` und an Bereichen, die immer dunkel sind (Flur-Monitor, Kamera-Sucher), und gilt nur in
+  `@media screen`, gedruckt wird hell; ein Papier-Bereich trägt `.schema-hell` (`rollen-schema.test.js`, `frontend/e2e/barrierefreiheit-axe.spec.js`).
   „Dunkles Design“ schaltet jeder Rechner für sich wie bei Gemini, als Schalter unten in der
   Seitenleiste; die Wahl steht im Browser (`bibliothek.darstellung`), `public/darstellung.js`
   setzt sie vor dem ersten Bild (`darstellung.test.js`).
@@ -638,32 +643,38 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
 - Ein Knopf ohne Fläche steht in der Hauptfarbe (`ghost`), ein Symbolknopf in on-surface-variant
   (`symbol`, `frontend-hygiene-knoepfe.test.js`); die Beschriftung nennt die Handlung.
 - Ein Knopf steht bei dem Inhalt, den er betrifft („<Sache> anlegen“ vorn bei der Liste). Die
-  Aktionen einer Zeile sind Symbolknöpfe mit Sprechblase, 16 px Abstand.
-- Ein Menü (`ui/Menue`) ist 112 bis 280 px breit, ein langer Eintrag bricht um; die Liste von
+  Aktionen einer Zeile sind Symbolknöpfe mit Sprechblase, 16 px Abstand; Text bleibt, wo ein Symbol
+  den Zustand nicht sagt („Defekt melden“).
+- Ein Menü (`ui/Menue`) ist 112 bis 280 px breit, ein langer Eintrag bricht um (die Fläche setzt
+  `whitespace-normal`, sonst erbte sie das `whitespace-nowrap` einer Tabellenzelle); die Liste von
   `ui/Select` bleibt einzeilig (48 px je Zeile, `selectGeometrie.js`). Beide bleiben im Fenster
-  und folgen ihrem Auslöser (`ui/lageFolgen.js`, `menueGeometrie.test.js`).
+  (`menueGeometrie.test.js`); `ui/Select`, `ui/VorschlagFeld`, `ui/MenueVorschau` und `ui/Datumsfeld`
+  folgen ihrem Auslöser über `ui/lageFolgen.js`.
 - Ein Dialog-Titel trägt `dialog-titel` (Headline small), im Vollbild `dialog-titel-vollbild`;
   keine getönte Kopfzeile, keine Linie, Knöpfe rechts mit 8 px (`frontend-hygiene-dialogtitel.test.js`).
   Ausgenommen sind die zwei Alarme der Theke.
-- „Abbrechen“ ist nie gesperrt; ein abgeschickter Auftrag läuft zu Ende und meldet sich über die
-  Snackbar; eine späte Antwort trifft nur das, wofür sie abgeschickt wurde (`ui/dialogAnfrage.svelte.js`,
+- „Abbrechen“ ist nie gesperrt; ein abgeschickter Auftrag läuft zu Ende, und ein Dialog, der Fehler
+  bei sich zeigt, meldet nach dem Schließen Erfolg und Fehler über die Snackbar; eine späte Antwort trifft nur das, wofür sie abgeschickt wurde (`ui/dialogAnfrage.svelte.js`,
   `frontend-hygiene-abbrechen.test.js`).
-- Meldungen gehen über `snackbars.addToast` und stehen unten mittig, eine zur Zeit, 5 s, mit
-  Folgehandlung 10 s; eine Leiste am Rand trägt sich mit `use:meldungenWeichenAus` ein
+- Meldungen gehen über `snackbars.addToast` und stehen unten mittig, eine zur Zeit (eine neue ersetzt die
+  stehende, auch eine mit Folgehandlung), 5 s, mit Folgehandlung 10 s, Maus oder Fokus halten die Zeit an; eine Leiste am Rand trägt sich mit `use:meldungenWeichenAus` ein
   (`frontend/e2e/meldungen-unten.spec.js`).
 
 *Felder und Eingabe*
 
 - Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt am Feld, was fehlt (`verlangt` in
-  `BuchFormular.svelte`). Pflicht trägt `required` oder `aria-required` an `ui/Feld`, das Sternchen
+  `BuchFormular.svelte`). Pflicht trägt `required` oder `aria-required` an `ui/Feld` (`aria-required` nimmt, wer die Pflicht
+  selbst prüft; es sperrt im Browser nichts), das Sternchen
   hängt ohne Leerzeichen an der Beschriftung, `ui/Pflichthinweis` steht am Anfang der Maske.
-- Den Fehlerzustand setzt `ungueltig` an `ui/Feld`, immer true oder false; dann erscheint das
-  Fehlersymbol im Feld (`frontend/e2e/feld-fehlersymbol.spec.js`).
+- Den Fehlerzustand setzt `ungueltig` an `ui/Feld`, immer true oder false, nie undefined: Davon hängt
+  die Hülle der Symbole ab, und käme sie erst mit dem Fehler, baute Svelte das Feld neu und nähme ihm
+  den Fokus. Dann erscheint das Fehlersymbol im Feld (`frontend/e2e/feld-fehlersymbol.spec.js`).
 - Enter speichert eine Maske ohne `<form>` über `use:enterSpeichert` (`scanErkennung.js`); ein Feld,
   das Enter selbst braucht, ruft `preventDefault`, und das Enter eines Scans speichert nie.
   Container-Lauscher hängen mit `on` aus `svelte/events`.
 - Vorschläge zeigt `ui/VorschlagFeld`, nicht `<datalist>`: die Liste von `ui/Select` unter dem Feld,
-  höchstens 320 px, zu bis zur ersten Taste, Escape schließt zuerst die Liste. Am Menü der Signatur
+  höchstens 320 px; bei leerem Feld bleibt sie zu, bis jemand tippt, Pfeil abwärts drückt oder den Pfeil
+  im Feld anklickt; Escape schließt zuerst die Liste. Am Menü der Signatur
   zeigt `ui/MenueVorschau` bis zu zwei Cover wie ein Untermenü nach 400 ms
   (`VorschlagFeld.test.js`, `ChipFeld.test.js`, `frontend/e2e/signatur-cover-vorschau.spec.js`).
 - Jede Liste mit Kästchen trägt `use:mehrfachauswahl` (Umschalt+Klick, Strg/Cmd+A;
@@ -910,14 +921,15 @@ partielle Unique-Index ist hier der einzige Schutz.
 | -------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | Scan eines Exemplars                   | die aktive Ausleihe                                                      | `AusleihAbfragen.SperreOffene` (`internal/repository/ausleihe.go`)  |
 | Ausleihe an einen Schüler, Sperren am Leser | die Leser-Zeile                                                     | `SperreLeserzeile` (`internal/repository/ausleihe_zeilensperren.go`), `LeserSperren` |
-| Rückgabe mit Vormerkung, Nachrücken    | die Vormerkung, `FOR UPDATE OF v SKIP LOCKED`; ein Verbund nennt seine Tabelle (`zeilensperre_verbund_ratsche_test.go`) | `SperreNaechsteWartendeVormerkung`, `bedieneNaechstenWartenden` |
+| Rückgabe mit Vormerkung, Nachrücken    | die Vormerkung, `FOR UPDATE OF v SKIP LOCKED`: `OF v`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt (sie könnte sich mit der Ausleihe verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe); ein Verbund nennt seine Tabelle (`zeilensperre_verbund_ratsche_test.go`) | `SperreNaechsteWartendeVormerkung`, `bedieneNaechstenWartenden` |
 | Geräte-Ausleihe                        | die aktive Geräte-Ausleihe                                               | `SperreOffeneGeraeteAusleihe`                                       |
 | Nachbuchen                             | erst `leser`, dann `buecher_exemplare`                                   | `internal/service/nachbuchen.go`                                    |
 | Verlust oder Schaden melden            | die Ausleihe-Zeile; sonst legten zwei Klicks zwei Schadensfälle an       | `internal/repository/schaden_melden.go`                             |
 | Rückgabe (Trigger)                     | die Leser-Zeile nach der Ausleihe, gegen die Folge (R2)                  | `trg_leser_stempel_rueckgabe` (`schema.sql`)                        |
 | Verlängerung                           | die Ausleihe-Zeile                                                       | `verlaengereAusleihe` (`internal/api/theke/ausleihe.go`)            |
 | Endgültig löschen                      | die Leser-Zeile schon bei der Prüfung                                    | `LoescheLeserEndgueltig`, `LoescheAusDemPapierkorb`                 |
-| Auflagen, LMF-Plan                     | erst eine Advisory-Sperre, dann die Zeilen nach `id`                     | `sperreAuflagen`, `SperreNeuestenPlan`                              |
+| Auflagen zusammenfassen und lösen      | erst die Advisory-Sperre der Auflagen, dann die Titel nach `id`          | `sperreAuflagen`                                                    |
+| LMF-Plan speichern                     | erst die Advisory-Sperre der Pläne, dann die Zeile des neuesten Plans der Art; die Zeile allein hielte ein zweites Speichern nicht auf, solange es keinen Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt | `SperreNeuestenPlan`                                           |
 | Schlagworte                            | Titel- oder Schlagwort-Zeilen nach `id`                                  | `SetzeSchlagworte`, `sperreSchlagwort`, `LoescheSchlagworte`        |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel | jeweils die betroffene Zeile                        | `internal/repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `leser_zusammenfuehren.go`, `bestellung_mittel.go` |
 
@@ -944,14 +956,19 @@ sequenceDiagram
 ```
 
 - Die Uhr eines Theken-Rechners springt oft genau, wenn das Netz zurückkommt; deshalb rechnet die
-  Theke den Scan-Zeitpunkt aus `performance.now()` und der Wanduhr von jetzt.
-- Ein Scan mit geladener Person bucht wie am Netz; was erst im Besuch ausgeliehen wurde, kehrt ein
-  zweiter Scan nicht um (`bereits_ausgeliehen`).
-- 502, 503 und 504 (Neustart hinter dem Proxy) und 423 (Sperre) legen den Scan ab wie ein
+  Theke den Scan-Zeitpunkt aus `performance.now()` und der Wanduhr von jetzt, solange der Eintrag
+  aus demselben Seitenaufruf stammt: `gescannt_am` und `gesendet_am` müssen von derselben Uhr kommen.
+- Ein Scan mit geladener oder gemerkter Person bucht wie am Netz und trägt die Dauer des Besuchs
+  (`besuch_seit_ms`); lag das Buch schon vor dem Besuch auf dem Konto, nimmt der Server es zurück
+  (`ausleiheVorDemBesuch`). Was erst im Besuch ausgeliehen wurde, kehrt ein zweiter Scan nicht um
+  (`bereits_ausgeliehen`).
+- 502, 503 und 504 (Neustart hinter dem Proxy) und 423 (Sperre der Anmeldung: Die Tür lehnte vor der
+  Buchung ab, nach dem Aufschließen bucht die Warteschlange nach) legen den Scan ab wie ein
   Netzausfall (`nichtErreicht` in `omniboxBuchung.svelte.js`); ein 500 wird gezeigt.
 - Endgültig sind `ausgeliehen`, `umgebucht`, `bereits_ausgeliehen`, `zurueckgegeben`,
   `nur_reaktiviert`, `nicht_gebucht`, `veraltet`, `bereits_gebucht`; bei `wiederholen` oder ohne
-  Antwort bleibt der Eintrag liegen. Schweigen ist kein Erfolg.
+  Antwort bleibt der Eintrag liegen, und die Runde endet, statt gegen dieselbe Wand zu laufen.
+  Schweigen ist kein Erfolg.
 
 ---
 
@@ -1010,8 +1027,10 @@ Die Bestellmail trägt Positionsliste, Barcodebogen und den Link `/bestellung/<t
 Händler ohne Konto. Gespeichert wird nur der Hash des Tokens, das Log maskiert ihn
 (`maskiereToken`), und die Bestätigung ist atomar (`UPDATE … WHERE bestaetigt_am IS NULL`). Es ist
 der einzige schreibende Pfad ohne Anmeldung (Allowlist in `geschuetzte_routen_test.go`). Token,
-Hash und Frist entstehen in `internal/pkg/bestelllink`; ob eine öffentliche Adresse hinterlegt
-ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`.
+Hash und Frist entstehen in `internal/pkg/bestelllink`, die eingestellte Frist liest
+`service.LadeBestelllinkTage` beim Bestellen wie bei „Neuen Link erzeugen“. Ob eine öffentliche
+Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`; ein Feld aus
+lauter Leerzeichen ist keine Adresse.
 
 ---
 
@@ -1095,7 +1114,7 @@ Fristen, die zueinander passen müssen:
 | `erweitereLesefristFuerLangeUploads` | länger für Importe                 | Steht vor dem Body-Limit, also vor jedem Lesen                     |
 | `IdleTimeout`                        | 120 s                              | Getrennt von `ReadTimeout`                                         |
 | `WriteTimeout`                       | nicht gesetzt                      | `/events` endet nie                                                |
-| `fristMiddleware`                    | `bearbeitungsfristVorgabe` je Route | Bearbeitungsdauer; `/login` und `/api/auth/entsperren` bekommen `anmeldungsFrist` |
+| `fristMiddleware`                    | `bearbeitungsfristVorgabe` je Route | Bearbeitungsdauer; `/login` und `/api/auth/entsperren` bekommen `anmeldungsFrist`, mehr als `auth.AnmeldeFrist`, ohne längere Lesefrist |
 | Caddy                                | 300 s Header, 600 s Lesen/Schreiben | Mindestens so lang wie die längste Frist der Anwendung            |
 
 ---
@@ -1162,14 +1181,14 @@ und was in die Datenbank, in 8.12.
 | -------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
 | `ci.yml`             | Push, Pull Request                | `actionlint`; Go: gofmt, golangci-lint, Deadcode-Gate, `go test -race -shuffle=on`, Skip-Bilanz; Oberfläche: ESLint, Prettier, `svelte-check`, Vitest gemischt; e2e am gebauten Stack |
 | `security-scan.yml`  | Push, Pull Request, Zeitplan      | `govulncheck`, `gosec`, `npm audit` über Gates mit benannten Ausnahmen; Trivy am Image mit Smoke-Test |
-| `docker-publish.yml` | Push auf `main`, Tags             | Image nach `ghcr.io/uuuxy/bibliothek`                                                    |
+| `docker-publish.yml` | Push auf `main`, `v*.*.*`, manuell | Image (`linux/amd64`) nach `ghcr.io/uuuxy/bibliothek`                                  |
 | `release.yml`        | Tag `v*.*.*`                      | Release nur bei grüner CI auf `main`                                                     |
 | `fuzz.yml`           | nachts, manuell                   | Je Fuzz-Test 15 Minuten; ein Fund macht den Lauf rot                                     |
 
 `scripts/install-hooks.sh` installiert pre-commit (Formatierung, ESLint, golangci-lint) und
 pre-push (Tests, Linter, `svelte-check`, Vitest, Scanner, Deadcode, Skip-Bilanz). Der Linter
 läuft in der CI vor den Tests; bricht er ab, laufen auch die Tests nicht, deshalb kennt ihn der
-Hook vor dem Push.
+Hook vor dem Push: `go vet` meldet ungenutzte Typen nicht.
 
 ---
 
@@ -1232,17 +1251,17 @@ Stellen zugleich.
 | ------------------ | ----------------------------------------------------------------------------------------------- |
 | Security-Header    | CSP `default-src 'self'`, `frame-ancestors 'none'`, HSTS ein Jahr, `X-Frame-Options: DENY`, Kamera nur `self`; `Cache-Control: no-store` unter `/api/` (OWASP ASVS 5.0, 14.3.2); Einzelheiten in [SECURITY.md](SECURITY.md) |
 | CORS               | Nur `ALLOWED_ORIGIN`                                                                            |
-| Body-Limit         | 100 MB über `MaxBytesReader` für Importe; JSON an der Tür 5 MB (`maxRumpfJSON`, `rumpfgrenze_ratsche_test.go`), `/login` 16 KB |
+| Body-Limit         | 100 MB über `MaxBytesReader` für Importe; JSON an der Tür 5 MB, darüber 413 (`maxRumpfJSON`, `rumpfgrenze_tueren_test.go`), weil der Decoder ihn im Speicher hält; jede Tür liest JSON über `tuer.LeseAnfrage`, `LeseAnfrageStreng` oder `DekodiereRumpf` (`rumpfgrenze_ratsche_test.go`); `/login` 16 KB |
 | Fristen            | Siehe 7.1                                                                                       |
-| Rate-Limit         | 50 Anfragen je Sekunde und IP, ohne Bilder und Barcodes; je Konto höchstens 20 SSE-Ströme, zusammen 1000 (429); der teure Zweig des Cover-Proxys hat eine eigene Bremse |
+| Rate-Limit         | 50 Anfragen je Sekunde und IP, ohne Bilder und Barcodes (`/api/images/cover`, `/uploads/`, `/api/barcode`); der Aufbau der Live-Leitung (`/events`) zählt mit; je Konto höchstens 20 SSE-Ströme, zusammen 1000 (429); der teure Zweig des Cover-Proxys hat eine eigene Bremse |
 | CSRF               | Double-Submit-Cookie; `GET /api/csrf-token` vor der ersten Änderung                             |
 | Anmeldung          | IMAP über TLS oder LDAP; kein gespeichertes Passwort (A2, A30)                                  |
-| Brute-Force        | Schlüssel `lower(email)|ip`, 5 Fehlversuche je 15 Minuten, je Adresse allein 50; nur nach IP sperrte eine Schul-NAT die ganze Schule aus (`internal/api/anmelde_bremse.go`) |
+| Brute-Force        | Schlüssel `lower(email)\|ip`, 5 Fehlversuche je 15 Minuten, je Adresse allein 50; nur nach IP sperrte eine Schul-NAT die ganze Schule aus (`internal/api/anmelde_bremse.go`) |
 | Sitzung            | JWT nur HMAC, 12 h, erneuert ab der Hälfte; 10 h nach der Passworteingabe 423; Cookie `HttpOnly`, `SameSite=Strict`, `Secure`; Sperrliste |
 | Fail-closed        | Ist Sperrliste oder Kontostatus nicht lesbar: 503, nicht durchlassen und nicht 401              |
 | Rechte             | `verlangeRecht` je Route: Recht, Kontostatus, UUID                                              |
 | Eskalationsschutz  | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`internal/api/benutzer/admin_schutz.go`), ebenso beim Löschen in der Leserdatei (`kontoregel`) |
-| Secret-Guard       | Außer lokal und im Test kein Start mit Beispiel-Geheimnissen; eine Liste (`bereitschaft.IstBeispielGeheimnis`) für Start und Selbstprüfung (A15) |
+| Secret-Guard       | Außerhalb von `APP_ENV=local/development/test` kein Start mit Beispiel-Geheimnissen; eine Liste (`bereitschaft.IstBeispielGeheimnis`) für Start und Selbstprüfung (A15) |
 
 #### Injection und Datenausgänge
 
@@ -1369,7 +1388,7 @@ Scan-Zeitpunkt aus dem Nachbuchen; `erfasst_am` trägt den Scan-Zeitpunkt, höch
 | Schweigen ist kein Erfolg                                    | Ein Nachbuch-Schlüssel ohne Antwort bleibt liegen                           |
 | Eine gekappte Liste sagt es                                  | Kopf `X-Grenze` (`tuer.AntworteListe`), die Oberfläche hat keine eigene Zahl (`utils/listenGrenze.js`) |
 | Fehlt eine Quelle, sagt die Liste es                         | Kopf `X-DNB-Ausfall`; ist ein fremder Dienst die einzige Quelle: 502        |
-| Ein Lesefehler ist keine Vorgabe                             | Wer aus Einstellungen ein Blatt füllt, verweigert bei einem Fehler (`einstellungen_lesefehler_ratsche_test.go`) |
+| Ein Lesefehler ist keine Vorgabe                             | Wer aus Einstellungen ein Blatt oder eine Mail füllt, verweigert bei einem Fehler (`einstellungen_lesefehler_ratsche_test.go`) |
 | Ein Fehler wird am Namen erkannt                             | `errors.Is`, `errors.As`, SQLSTATE; nie am Text (`fehler_am_wortlaut_test.go`) |
 | Fehlertext und Meldung sind getrennt                         | Fehlertext klein, ohne Satzzeichen; den Satz nennt die Tür ([STIL.md](STIL.md), Abschnitt 11; `sperre_ratsche_test.go`) |
 | Keine Antwort verrät den Server                              | `apierrors.AntworteFehler` schickt nur die Meldung eines `apierrors.Fehler`; ein 500 bleibt neutral, eine Diagnose braucht 400, 409 oder 502 |
@@ -1398,7 +1417,8 @@ bleibt und verschiedene Fehler nicht in eine Meldung zusammenfallen.
 
 Eine Frist nach Tagen endet an einem Schultag; fällt sie auf Wochenende, Feiertag oder Ferien, gilt
 der nächste (`lmfplan.Ferientabelle.Tagesfrist`, A19). Stichtage rücken nicht. Für Bücher über die
-Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum).
+Sommerferien gibt es den Ferien-Leseclub: eine feste Rückgabefrist bis zum Zieldatum für alles außer
+Lernmitteln, solange das Datum nicht vorbei ist (`leseclubFrist`); das Mahnwesen wird nur von Hand bedient.
 
 ---
 
@@ -1409,7 +1429,8 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
 - Nach dem Commit schickt eine Tür ein Ereignis, wenn andere Arbeitsplätze etwas anderes zeigen
   müssten: `action`, `lmf-plan`, `sitzungsfristen`, `nachbuch-meldungen`, `bestellstand`.
   `action` nennt weder Namen noch Buch; die Kennung des Lesers sieht nur, wer `perform_actions`
-  oder `view_students` hat (`sse.VerteileNachVertrauen`).
+  oder `view_students` hat (`sse.VerteileNachVertrauen`, `tuer.SiehtLeserKennung`; gefragt beim
+  Aufbau und nach jedem Stück des Stroms).
 - Nach jedem Abriss fragt der Client `/api/auth/me` (`stores/leitungsAbriss.js`): gesperrt kommt
   der Sperrbildschirm, abgemeldet die Anmeldung, sonst baut `liveEvents.js` neu auf.
 - Was während einer Unterbrechung geschah, kommt nicht nach: Eine Ansicht, die auf ein Signal nur
@@ -1424,7 +1445,9 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
 
 - PWA mit `vite-plugin-pwa`: Nach einem Update lädt nur ein Fenster neu, in dem noch niemand etwas
   bedient hat; die anderen zeigen „Neu laden“, sobald der Server einen anderen Stand nennt
-  (`stores/programmstand.svelte.js`).
+  (`stores/programmstand.svelte.js`). Der Knopf lässt erst den Browser den neuen Service Worker
+  holen (`registration.update()`) und lädt neu, wenn dieser aktiv ist, höchstens nach 30 s: Sofort
+  neu geladen, bekäme das Fenster die alte App-Shell aus dem Cache.
 - Die IndexedDB-Warteschlange gibt einen Eintrag nur bei einem endgültigen Urteil frei (6.5),
   in Portionen von höchstens 50.
 - Ohne Netz unterscheidet nur die Vorsilbe einen Buch- von einem Ausweisscan (A13).
@@ -1439,7 +1462,7 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
 | Mahnbrief                        | `internal/pdf/mahnbrief.go`                           | Der Druck erhöht die Mahnstufe (A18); DIN 5008, Text aus der Vorlage der Schule |
 | Bestellanschreiben               | `internal/pdf/bestellanschreiben.go`                  | Betreff und Vermerk nennen den Topf                                    |
 | Kontoauszug                      | `internal/pdf/kontoauszug.go`                         | „überfällig“ fett statt farbig, die Schule druckt schwarz-weiß        |
-| Rechnung, Schadensfall, LMF-Plan | `internal/pdf/`                                       | Zahlungsweg je Topf (`internal/pdf/zahlungsweg.go`)                    |
+| Rechnung, Schadensfall, LMF-Plan | `internal/pdf/`                                       | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`internal/pdf/zahlungsweg.go`) |
 | Bescheid                         | `internal/pdf/bescheid.go`                            | Nennt das Konto, eigene Nummernfolge                                   |
 | Etiketten, Ausweise              | `internal/pdf/etikett_*.go`, `internal/pkg/strichcode` | Aufschrift nach Art des Lesers; Gültigkeit nur beim Schülerausweis    |
 | Zugangs- und Abgangsbuch         | `internal/pdf/abgangsbuch.go`, `zugangsbuch.go`       | Nach Topf getrennt; nennt, was es nicht weiß („ohne Zuordnung“)        |
@@ -1450,17 +1473,26 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
   (A14). Cover gehen als WebP-Umwandlung in die PDFs (`coverdatei.BindeEin`).
 - Eine Tabellenzeile prüft vor dem Zeichnen ihren Platz und beginnt sonst selbst eine Seite mit
   Spaltenköpfen; Folgeseiten von Mahnliste und Mahnbrief nennen, wem sie gehören. Text wird auf
-  die gedruckte Breite seiner Zelle gekürzt (`pdfzeichen.KuerzeAufZelle`), nie auf eine Zeichenzahl.
+  die gedruckte Breite seiner Zelle gekürzt (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von
+  Zeichen, denn gofpdf druckt Überlanges über die Nachbarzelle; Buch- und Lernmittel-Etikett kürzen
+  zusätzlich auf ihre Obergrenze in Zeichen (`kuerzeAufEtikett`).
 - Der LMF-Plan wählt den größten Schriftgrad, mit dem alles auf ein Blatt geht (`internal/pdf/lmfplan_satz.go`).
 - **Ausweise:** Der Designer zeichnet am Bildschirm `designer/CanvasElement.svelte` und fürs Papier
   `designer/Kartenseite.svelte`, die eine Quelle aller Druckwege. Eine neue Elementart entsteht an
-  drei Stellen (`Kartenseite`, `CanvasElement`, `Eigenschaften`); Platzhalter zeichnet nur der
+  drei Stellen (`Kartenseite`, `CanvasElement`, `Eigenschaften`), der Server speichert das Layout als
+  Ganzes und prüft die Arten nicht; Platzhalter zeichnet nur der
   Designer; die Größe des Strichcodes rechnet eine Funktion für beide; Farbflächen sind Elemente `box`.
 - **Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`) mit Name und Anschrift der Schule.
+  Steht nur `schule` in der Antwort, ist noch keines gespeichert; ein gescheitertes Lesen beantwortet
+  der Server deshalb mit einem Fehler. Ohne `manage_settings` ist das Speichern gesperrt, Ansehen und
+  Testdruck bleiben offen.
   Gespeichert wird nur eine Änderung und nur auf dem geladenen Stand (`?stand=`; sonst 409 und
-  „Neu laden und verwerfen“, `repository.SchreibeAusweisLayout`), nacheinander. Gedruckt wird nur
-  mit frisch geladenem Design (`designFuerDruck`); ohne Design wird nichts gedruckt. Bilder liegen
-  als Data-URL im Design, verkleinert auf höchstens 1200 Pixel (`designer/kartenBild.js`); das
+  „Neu laden und verwerfen“, `repository.SchreibeAusweisLayout`), nacheinander. Vor jedem Druck
+  holt `designFuerDruck` das Design neu; bleibt die Antwort aus, gilt der Stand im Speicher, gibt es
+  keinen, wird nichts gedruckt. Bilder liegen als Data-URL im Design (`designer/kartenBild.js`): bis
+  300 kB und als SVG unverändert, größere auf höchstens 1200 Pixel verkleinert, was danach über 1 MB
+  liegt, mit dem Namen der Datei abgewiesen; der Server nimmt für das ganze Design 5 MiB an
+  (`MaxAusweisLayoutBytes`). Das
   Design steht nicht in `repository.LadeEinstellungen`, weil jede Ausleihe die Einstellungen liest.
 - **Etiketten:** zwei Wege zum selben Blatt, Druck-Center und Händler; beide füllen
   `buchetikett.PDFEtiketten` (`TestEtikettenDatenSindAufBeidenWegenGleich`). Eine LMF-Nummer kommt
@@ -1470,7 +1502,10 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
   der Browser kennt die Maße der Etiketten nicht.
 - **Ein PDF geht im Tab auf, nicht in den Download-Ordner,** damit nichts auf dem Arbeitsplatz
   liegen bleibt: `zeigePdf` öffnet den Tab beim Klick, vor der Anfrage; blockiert der Browser ihn,
-  geht keine Anfrage hinaus. Als Datei kommen nur Dokumente ohne Personendaten. Köpfe über
+  geht keine Anfrage hinaus. Die Adresse im Speicher gibt `zeigePdf` erst frei, wenn der Tab zu ist,
+  sonst bricht „Speichern“ im Tab ab; Bescheide öffnet die Oberfläche über ihre Adresse, damit sie
+  den Dateinamen des Servers behalten. Als Datei kommen nur Dokumente ohne Personendaten und die
+  Sicherung der Offline-Scans. Köpfe über
   `tuer.AntworteDatei` mit `tuer.Zeigen` oder `tuer.Speichern` (`frontend-hygiene-downloads.test.js`,
   `internal/api/anhang_ratsche_test.go`).
 
@@ -1480,30 +1515,43 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
 
 - **Konfiguration aus der Datenbank:** Der Postausgang liest sie vor jedem Versand
   (`mailservice.KonfigAusDatenbank`); `UebernimmMailKonfig` übernimmt beim Start die Umgebung nur,
-  solange die Vorgabe des Schemas steht. Ein leerer Server heißt „Umgebung“, ein leerer Port 587.
+  solange die Vorgabe des Schemas steht. Ein leerer Server in der Zeile heißt im Versand „Umgebung“
+  (`ladeSMTPKonfig`), deshalb lehnt das Speichern einen leeren Server ab; ein leerer Port heißt 587.
 - **Eine Tür ruft `t.Post().Sende`**; ohne Postausgang lehnt `Post()` ab. Tests fangen Mails mit
   `tuertest.FangeMailAb`.
 - **Zwei Absender, ein Postausgang:** Jede Mail nennt ihre Art (`portal`, `mahnliste`,
   `abgaenger`, `bestellung`); `portal_absender_fuer` sagt, welche über den zweiten Absender gehen
-  (ab Werk `portal`). Eine unbekannte Art lehnen Tür und Datenbank ab.
+  (ab Werk `portal`). Eine unbekannte Art lehnen Tür und Datenbank ab. Ein unlesbares Passwort des
+  zweiten Absenders hält nur dessen Mails auf; ein Speichern ohne `portal` lässt ihn stehen, eines
+  ohne `fuer` seine Arten.
 - **Adressen aus dem Webmail:** `internal/adressabgleich` liest das globale Adressbuch des Roundcube
-  der Schule (nur lesend, nur über https) und trägt aktiven Konten mit Platzhalter die Adresse ein;
-  eine echte Adresse ändert er nie. Ein Treffer muss in beide Richtungen eindeutig sein; jede
-  Übernahme steht als `ADRESSE_AUS_WEBMAIL` im Protokoll. Monatlich und auf Knopfdruck, ohne
-  Bestätigung je Konto.
+  der Schule (nur lesend, nur über https, auf dem eigenen Rechner auch http) und trägt aktiven Konten
+  mit Platzhalter die Adresse ein; eine echte Adresse ändert er nie. Gesucht wird der Reihe nach das
+  Kürzel gegen die LDAP-Kennung, dann der Name genau, tolerant und als Teil eines Doppelnamens; ein
+  Treffer muss in beide Richtungen eindeutig sein. Geschrieben wird über `KontoAbfragen.Aendere` mit
+  `EmailBisher`: Eine inzwischen von Hand gesetzte Adresse bleibt. Jede Übernahme steht als
+  `ADRESSE_AUS_WEBMAIL` im Protokoll. Am Ersten jedes Monats (`zeitAdressabgleich`, 04:30 UTC) und
+  auf Knopfdruck, ohne Bestätigung je Konto; der Probelauf rechnet nur.
 - **STARTTLS erzwungen** mit Zertifikatsprüfung (`errSMTPKlartext`, Ausnahme nur mit
   `SMTP_ALLOW_PLAINTEXT=true`); Kopfzeilen an der Schreibstelle gehärtet.
 - **Jede Verbindung hat eine Frist:** 10 s Aufbau, 60 s Sitzung (`internal/mailservice/versand.go`).
-- **Eine Mail nach dem Speichern meldet ihr Ergebnis** im Feld `mail` der Antwort.
+- **Eine Mail nach dem Speichern meldet ihr Ergebnis:** „Klassensatz liegt bereit“ und „Meldung
+  erledigt“ gehen nach dem Commit hinaus; das Feld `mail` der Antwort nennt `versendet`,
+  `fehlgeschlagen` oder `keine_adresse`, und die Oberfläche warnt.
 - **Die Bestellmail hält ihr Scheitern fest** (`mail_gescheitert_am`); `POST /api/bestellungen/{id}/mail`
-  sendet erneut über dieselbe Funktion, ein zweiter Klick bekommt 409
-  (`repository.BeanspruchBestellmail`); `DELETE` nimmt den Vermerk ohne Versand.
+  sendet erneut über dieselbe Funktion (`sendeBestellmail`) mit einem neuen Bestätigungs-Link; ein
+  zweiter Klick bekommt 409 (`repository.BeanspruchBestellmail`). `DELETE` nimmt den Vermerk ohne
+  Versand, nur bei Bestellungen ohne Bestätigungs-Link.
 - **Die Domain der Schule hat eine Quelle:** `SELBSTANMELDUNG_DOMAIN` (`auth.SelbstanmeldeDomain`,
-  `auth.ErgaenzeSchulDomain`); die Oberfläche holt sie über `GET /api/auth/domain`.
+  `auth.ErgaenzeSchulDomain`); die Oberfläche holt sie über `GET /api/auth/domain`. Die Anmeldung
+  ergänzt vor allem anderen: Bremse, Mailserver, Kontosuche und Selbstanmeldung sehen dieselbe
+  volle Adresse.
 - Post bekommen Klassenleitung, Händler, Admins und Lehrkräfte, nie Schüler.
-- **Ein Alarm wiederholt sich höchstens einmal am Tag** ohne neuen Punkt
-  (`bereitschafts_alarm_gemeldet`, `internal/bereitschaft/alarm.go`), wie `repeat_interval` im
-  Alertmanager.
+- **Ein Alarm ohne neuen Punkt geht erst 23 Stunden nach dem letzten wieder hinaus,** auch wenn der
+  Wächter nach einem Neustart früher läuft (`erinnerungsAbstand` in `internal/bereitschaft/alarm.go`),
+  wie `repeat_interval` im Alertmanager. Was gemeldet ist, steht in `bereitschafts_alarm_gemeldet`:
+  je Befund der Bereich, je Fehlermeldung Text und Route, ohne Zahlen und Uhrzeiten. Ein
+  gescheiterter Versand zählt nicht als gemeldet.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen`.
 
 ---
@@ -1517,9 +1565,9 @@ Sommerferien gibt es den Ferien-Leseclub (feste Rückgabefrist bis zum Zieldatum
 | 500er                       | Den Stack schreibt `panikMiddleware`                                                       |
 | Docker-Logs                 | 3 × 10 MB je Container; `update.sh` legt das Log des alten Backends unter `logs/` ab, 14 Tage |
 | `GET /health`               | Prozess und Datenbank                                                                      |
-| Selbstprüfung, Bereitschafts-Wächter | Was eingerichtet, aber nicht in Betrieb ist; der Wächter mailt kritische Befunde 3 Minuten nach dem Start und dann täglich |
-| Fehler im Log               | `logger.Fehlerstand` zählt ERROR-Zeilen je Meldung über 24 Stunden, sichtbar auf der Seite „Fehler im Log“ und in der Mail; `internal/pkg/laufvermerk` meldet beim Start, wie der vorige Lauf endete (Absturz, hart beendet, Ausfall des Rechners) |
-| `GIT_COMMIT`, `X-Oberflaechenstand` | Welcher Commit läuft; welcher Stand der Oberfläche, für „Neu laden“                 |
+| Selbstprüfung, Bereitschafts-Wächter | Was eingerichtet, aber nicht in Betrieb ist; der Wächter mailt kritische Befunde 3 Minuten nach dem Start und dann täglich; auf Spielwiesen schweigt er von selbst |
+| Fehler im Log               | `logger.Fehlerstand` zählt die Zeilen der Stufen ERROR und WARN je Meldung und Route über 24 Stunden, sichtbar auf der Seite „Fehler im Log“; der Wächter mailt die Fehler, die Warnungen nur mit dem Schalter `alarm_warnungen`. Über 500 Gruppen zählt eine Sammelgruppe weiter; der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`). Eine Zeile, deren Ursache ein Abbruch ist (`context.Canceled`), geht als WARN hinaus und zählt nicht. `internal/pkg/laufvermerk` meldet beim Start, wie der vorige Lauf endete (Absturz, hart beendet, Ausfall des Rechners); der Vermerk ist eine Datei im Container, keine Zeile in der Datenbank, denn hält Docker an, endet die Datenbank im selben Augenblick wie der Server |
+| `GIT_COMMIT`, `X-Oberflaechenstand` | Welcher Commit läuft; welcher Stand der Oberfläche, für „Neu laden“: der Name der Programmdatei aus `index.html`, nicht der Commit, der verriete, welcher Stand des öffentlichen Repositorys läuft |
 
 ---
 
@@ -1578,10 +1626,12 @@ Der Hook vor dem Push sagt, was er übersprungen hat (Skip-Bilanz). Die Landkart
   Overlay nicht. Je weitergereichtem Wert gleichen Typs eine Probe mit dem Nachbarwert.
 - **Fuzz-Tests prüfen eine Eigenschaft** („zweimal ist einmal“, „Go wie SQL“;
   `internal/pkg/isbnutil/normalform_test.go`, `internal/lusd/klassen_schluessel_test.go`). Ohne
-  `-fuzz` laufen nur die Startwerte. Gesucht wird mit
+  `-fuzz` laufen die Startwerte und die Funde unter `testdata/fuzz` des Pakets. Gesucht wird mit
   `go test -run '^$' -fuzz '^FuzzName$' -fuzztime 10m ./<paket>/`, nachts in `.github/workflows/fuzz.yml`;
   ein Fund kommt als Startwert unter `testdata/fuzz` mit der Korrektur ins Repository. Ziele an der
-  Datenbank brauchen `-parallel 1 -fuzzminimizetime 5s` und am Arbeitsplatz eine eigene Datenbank.
+  Datenbank brauchen `-parallel 1`, weil `internal/pgtest` seine Sperre je Prozess bis zum Ende hält
+  und ein zweiter Arbeitsprozess für immer wartete, und `-fuzzminimizetime 5s`, weil Go die
+  Minimierung (bis 60 s) nicht als Fortschritt zählt; am Arbeitsplatz eine eigene Datenbank.
 - **Eine Migration, die Daten ändert,** wird mit ihrer echten Datei zweimal ausgeführt
   (`internal/db/lmf_kurze_nummer_migration_pg_test.go`).
 - **Abdeckung:** die ganze Suite mit `-coverpkg`; eine Datei unter 50 % bekommt einen Test über ihre Tür.
@@ -1628,13 +1678,23 @@ Der Hook vor dem Push sagt, was er übersprungen hat (Skip-Bilanz). Die Landkart
   Fehlerweg beim Lesen des Grundes, und der Test besteht, ohne dass der Weg lief. Antworten über
   `serverAntwort(status, rumpf)`; wer Einmal-Antworten vorbereitet, setzt mit `mockReset()` zurück.
 - Eine neue Datei heißt auch ohne Groß- und Kleinschreibung anders als jede vorhandene.
+- Eine Prüfung über `go/types` lädt mit `NeedDeps` und bricht bei einem Ladefehler ab
+  (`sichtbarkeit_ratsche_test.go`): Sonst sind die Typen einer neueren Go-Fassung ungültig, und
+  `types.Implements` sagt für einen ungültigen Typ ja. Eine Prüfung, die ab einem relativen Ordner
+  liest, trägt eine Untergrenze, sonst bleibt sie nach einem Umzug grün.
 - Ein Schuljahreswechsel sperrt den nächsten über den Eintrag `SCHULJAHRESWECHSEL` in `audit_logs`;
   Tests löschen ihn vorher.
-- Browser-Tests verschicken keine Mail (`frontend/e2e/mailserver.js`).
+- Browser-Tests verschicken keine Mail (`frontend/e2e/mailserver.js`); eine Probe mit eigener
+  Konfiguration läuft ohne das Setup der Suite und erreicht den eingetragenen Mailserver, Türen, die
+  Mail verschicken, beantwortet sie deshalb selbst (`route.fulfill`). Die Rollen stehen in
+  `role_permissions` in Großbuchstaben; eine Probe stellt geänderte Rechte mit `UPDATE` in einer
+  Transaktion zurück, nie mit `DELETE` und neuem `INSERT`.
 - Ein Umbau ohne sichtbare Änderung wird am Bau belegt (Prüfsummen zweier `vite build`); Namen der
   Oberfläche werden am Syntaxbaum umbenannt, die Commits stehen in `.git-blame-ignore-revs`.
 - Ansehen ohne Neubau: `npm run dev` und `E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/<Datei>`.
-- Hinter dem Proxy: ein Wegwerf-Caddy mit dem Block aus `update_caddy.sh` vor dem lokalen Stack.
+- Hinter dem Proxy: ein Wegwerf-Caddy mit dem Block aus `update_caddy.sh` vor dem lokalen Stack; in
+  Playwright dazu `ignoreHTTPSErrors` und `--ignore-certificate-errors`, sonst scheitert der Service
+  Worker am Zertifikat.
 
 *Unter Last*
 
@@ -1716,7 +1776,7 @@ Für die Dauer einer Anmeldung hält der Server einen Prüfwert (`sitzungen.pass
 Argon2id hinter HMAC, Migration 155), damit ein Ausfall des Mailservers die gesperrte Theke nicht
 zusperrt; eine neue Anmeldung prüft weiter nur der Server. Folge: Die E-Mail ist die Identität;
 wer `benutzer.email` schreiben darf, übernimmt ein Konto (daher A12 und der Eskalationsschutz).
-Das Passwort geht bei jeder Anmeldung über den Server; er braucht denselben Schutz wie der
+Das Passwort geht bei jeder Anmeldung und jedem Aufschließen über den Server; er braucht denselben Schutz wie der
 Mailserver. Fundstelle: `internal/auth/anmelden.go` (`pruefeZugang`), `internal/auth/pruefwert.go`,
 `internal/auth/sperre.go`.
 
@@ -1753,7 +1813,7 @@ Jeder Schreibpfad, der Zeilen sperrt, sperrt in dieser Folge, sonst verklemmen s
 und Nachbuchen. Das ist Konvention ohne Gate (🟡). Der Rückgabe-Trigger
 `trg_leser_stempel_rueckgabe` hält sie nicht; das bleibt so (R2, 11.5). Fundstelle:
 `internal/service/ausleihe_am_leser.go`, `nachbuchen.go`, `internal/repository/ausleihe_zeilensperren.go`,
-[invarianten.md](invarianten.md) Abschnitt 1.
+der Stempel in `internal/repository/bewegungsstempel.go`; [invarianten.md](invarianten.md) Abschnitt 1.
 
 ### A8 — Idempotenz-Keys als Vertrag der Schreibtüren
 
@@ -1792,7 +1852,8 @@ verschlossen (`internal/api/benutzer/admin_schutz.go`).
 ### A13 — Eine Vorsilbe `A-` für alle Ausweise; die Vorsilbe bleibt
 
 Neue Ausweise tragen `A-`, `S-` und `L-` werden weiter gelesen; Bücher `B-` und `LMF-`, Geräte `G-`.
-Nummern werden nie wieder vergeben (`ausweisnummern_ausgeschieden`). Die Vorsilbe bleibt, weil sie
+Ausgeschiedene Nummern vergibt der Generator nicht neu (`ausweisnummern_ausgeschieden`); von Hand
+lassen sie sich wieder eintragen (11.5). Die Vorsilbe bleibt, weil sie
 ohne Netz die einzige Unterscheidung von Buch und Ausweis ist. Fundstelle:
 `internal/service/omnibox.go`, `internal/service/vorsilben_zwilling_test.go`.
 
@@ -1806,7 +1867,7 @@ Fundstelle: `internal/pkg/code39`, `frontend/e2e/barcode-lesbar.spec.js`.
 
 ### A15 — Secret-Guard von selbst scharf
 
-Außer lokal und im Test startet der Server nicht mit Beispiel-Geheimnissen; nur
+Außerhalb von `APP_ENV=local/development/test` startet der Server nicht mit Beispiel-Geheimnissen; nur
 `ENFORCE_PROD_SECRETS=false` schaltet das mit Warnung ab. Eine vergessene Zeile hätte sonst Admin-
 Token fälschbar und Fotos lesbar gemacht. Eine Liste für Start und Selbstprüfung
 (`bereitschaft.IstBeispielGeheimnis`). Fundstelle: `leseKonfig` in `cmd/server/main.go`,
@@ -1844,7 +1905,7 @@ Selbstprüfung. Fundstelle: `lmfplan.Ferientabelle.Tagesfrist`, `repository.Best
 
 Passbilder liegen verschlüsselt in `schueler_fotos`; `/uploads/` ist ohne Anmeldung lesbar und
 liefert keine Unterordner, `uploads/fotos` wird nicht angelegt. Fotos dort trügen die Ausweisnummern
-als Namen. Fundstelle: `internal/api/katalog/uploads.go`, `internal/api/katalog/uploads_test.go`,
+als Namen. Fundstelle: `internal/api/katalog/uploads.go` (`neuteredFileSystem`), `internal/api/katalog/uploads_test.go`,
 `internal/api/uploads_auslieferung_pg_test.go`.
 
 ### A21 — Offline-Sync über die Nachbuch-Tür
@@ -1888,7 +1949,8 @@ Die Oberfläche liest Antworten so, wie die Tür sie schreibt; die Browser-Tests
 Server prüfen das. Ein Erzeuger wüsste nicht, welche Adresse welche Struktur schickt, und 77 von
 rund 195 Antwortstellen schicken eine Map. Die wiederkehrenden Formen sind an der Quelle
 geschlossen: Antwort ohne Hülle (`antwort_huelle_ratsche_test.go`, `frontend-hygiene-antwortform.test.js`),
-Fehlertext über `leseApiFehler`, leere Listen über `httpresp.alsListe`.
+Fehlertext über `leseApiFehler`, leere Listen über `httpresp.alsListe` (oberste Ebene und Werte einer Map; eine Liste in einem Feld
+einer Struktur, die `nil` bleibt, kommt weiter als `null` an).
 
 ### A29 — Von außen nur die Bestellseite; die Grenze zieht Caddy
 
@@ -1896,7 +1958,8 @@ Von außerhalb des Schulnetzes sind nur die Bestätigungsseite des Hauptlieferan
 erreichbar, auch nicht die Anmeldung. Caddy sieht Absenderadresse und Pfad, eine Firewall bei HTTPS
 nur den Port (`update_caddy.sh`, `SCHULNETZ`; ohne Wert ist alles offen). Neue Türen für den
 Lieferanten gehören unter `/api/public/bestellung/`, Seiten unter `/bestellung/`. Einrichtung:
-DEPLOYMENT.md 3. Fundstelle: `update_caddy.sh`, `internal/api/routen_oeffentlich.go`.
+DEPLOYMENT.md 3. Ob die Firewall der Schule die Absenderadresse stehen lässt, zeigt nur die Probe an der
+echten Anlage. Fundstelle: `update_caddy.sh`, `internal/api/routen_oeffentlich.go`.
 
 ### A30 — LDAP neben IMAP, je Konto; erst das Konto, dann der Server
 
@@ -1904,13 +1967,18 @@ Jedes Konto nennt sein Verfahren (`benutzer.anmeldeverfahren`: `imap` oder `ldap
 ein LDAP-Konto trägt seine Kennung (`ldap_kennung`). Geprüft wird mit Suchen-dann-Binden
 (`LDAP_BIND_DN`, `LDAP_FILTER`, `LDAP_BASIS_DN`). Erst wird das Konto gelesen, dann sein Server
 gefragt; eine Eingabe ohne Konto erreicht keinen Server, damit ein Verzeichnis, das nach
-Fehlversuchen sperrt, keine Konten sperrt.
+Fehlversuchen sperrt, keine Konten sperrt. Die Ausnahme ist die Selbstanmeldung, die den
+Mailserver fragt, ob es das Postfach gibt.
 
 - Die Kennung öffnet ein Konto wie die E-Mail und geht durch dieselbe Tür (`manage_users`,
-  Admin-Schutz, Protokoll); das eigene Verfahren ändert niemand selbst (`pruefeSelbstschutz`).
-- Eindeutig über beide Spalten (`uniq_benutzer_ldap_kennung_lower`); trifft eine Eingabe zwei
+  Admin-Schutz, Protokoll); das eigene Verfahren und die eigene Kennung ändert niemand selbst (`pruefeSelbstschutz`).
+- `uniq_benutzer_ldap_kennung_lower` hält die Kennung eindeutig, die Tür lehnt eine Kennung ab, die
+  die E-Mail eines anderen Kontos ist (`IstLDAPKennungVergeben`); trifft eine Eingabe zwei
   Konten, wird keines angemeldet (`repository.ErrAnmeldungMehrdeutig`).
-- Die Absage kommt frühestens nach drei Sekunden (`mindestdauerAbsage`).
+- Die Absage kommt frühestens nach drei Sekunden (`mindestdauerAbsage`), sonst verriete die
+  Antwortzeit, welche Eingaben ein Konto haben; antwortet ein Server langsamer, ist der Unterschied
+  wieder messbar. Die Bremse zählt je Eingabe und Adresse: Wer abwechselnd E-Mail und Kennung tippt,
+  hat zehn statt fünf Versuche. Ein offener Antrag der Selbstanmeldung zählt keinen Fehlversuch.
 - Nur über TLS (`ldaps://` oder StartTLS), Zertifikatsprüfung nicht abschaltbar (`LDAP_CA_DATEI`);
   ein leeres Passwort erreicht den Server nicht (RFC 4513, 5.1.2).
 - Rollen kommen nicht aus LDAP-Gruppen. Die Selbstanmeldung prüft nur am Mailserver.
@@ -2003,7 +2071,7 @@ Der Nachweis nennt das Gate, das rot wird, wenn die Zusage nicht mehr gilt.
 | Scan                 | Die Theke soll nicht warten; die Fristen der Middleware begrenzen die Dauer   |
 | Rate-Limit           | 50 Anfragen je Sekunde und IP                                                 |
 | Nachbuchen           | 1–50 Einträge je Aufruf                                                       |
-| Lasttest             | Mit k6 am Stand b8080659 (Aufbau in 8.14): zehn Theken über sechs Stunden ohne verlorene oder doppelte Buchung, Scan p95 16 ms, Speicher ohne Wachstum; 25 Theken eine Stunde mit 103.076 Anfragen ohne Fehler, Scan p95 4 ms |
+| Lasttest             | Mit k6 am Stand b8080659 (Aufbau in 8.14): zehn Theken über sechs Stunden mit 1.398 Besuchen, Fehlerantworten nur während eines Neustarts mit 20 s Pause, danach keine verlorene oder doppelte Buchung, Scan p95 16 ms, Speicher ohne Wachstum (22–42 MiB); 25 Theken eine Stunde mit 103.076 Anfragen ohne Fehler, Scan p95 4 ms, daneben 56 Katalogsuchen je Sekunde und die Nachtsicherung. Gleichzeitige Scans prüfen `internal/repository/ausleihe_zeilensperren_pg_test.go` und `internal/service/nachbuchen_pg_test.go` |
 
 Nicht zugesagt: horizontale Skalierung, Mandanten, Hochverfügbarkeit ohne Wartungsfenster; ein
 Deploy ist ein geordneter Abriss von höchstens 10 s.
@@ -2034,8 +2102,8 @@ das niemand merkt, wiegt schwerer.
 
 #### R1 — Ein Prozess hält Zustand im Speicher (keine zweite Instanz möglich)
 
-Auswirkung hoch, wenn skaliert werden soll · Sichtbarkeit gering. SSE, Rechte-Cache, Rate-Limit
-und Idempotenz liegen im Speicher; zwei Instanzen verteilten Ereignisse nur an die Hälfte. Eine
+Auswirkung hoch, wenn skaliert werden soll · Sichtbarkeit gering. SSE, Rechte-Cache und
+Rate-Limit liegen im Speicher; zwei Instanzen verteilten Ereignisse nur an die Hälfte. Eine
 zweite Instanz ist ein Umbau, keine Einstellung; für acht Arbeitsplätze richtig.
 
 #### R2 — Die Sperrreihenfolge ist Konvention ohne Gate
@@ -2136,7 +2204,8 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 #### Daten und Abläufe
 
 - **Forderung für ein Gerät:** Die Datenbank sieht sie vor (`check_damage_item`), `meldeSchaden`
-  nimmt nur Buch-Exemplare.
+  nimmt nur Buch-Exemplare. Beim Bau mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne
+  Exemplar als Buch der Schülerbücherei (`BescheidPositionen.svelte`).
 - **Klassensätze** zählen nur Ausleihen auf die Ausweise der Kinder, nicht einen Stapel auf dem
   Ausweis der Lehrkraft; die Theke warnt nicht bei einem anderen Jahrgang oder zweiten Exemplar.
 - **Kurze Nummer alter Littera-Etiketten:** Die Theke findet nur die EAN-13; die kurze Nummer
@@ -2150,8 +2219,9 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
   ```
 - **Das Feld „Auflage“** trägt aus Littera auch Heftnummern; keine Suche vergleicht es.
-- **Der Katalogisat-Import** legt Einträge über den Titeltext zusammen; die Übernahme aus der
-  Sicherung tut es nicht. Anlass: Das Katalogisat wird wieder ein Weg in den Betrieb.
+- **Der Katalogisat-Import** legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
+  die Angaben des zuletzt passenden Eintrags darüber (`SchreibeTitel`); der Import aus CSV und Excel
+  gleicht ebenso ab, die Übernahme aus der Sicherung nicht. Anlass: Das Katalogisat wird wieder ein Weg in den Betrieb.
 - **Stand-Merker der Barcode-Liste** rechnet mit dem Beginn der Transaktion (nachgestellt hinter
   dem Build-Tag `raster`); heute schreibt nur ein kurzer Einzelbefehl.
 - **Eine ausgeschiedene `A-`-Nummer** lässt sich von Hand wieder eintragen, ohne Hinweis.
@@ -2180,7 +2250,9 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   „Cover herunterladen“).
 - **Der Medienkatalog lädt die ganze Titelliste** (gekappt bei 50.000). Anlass: Er öffnet spürbar
   langsam; dann 304 wie bei den Buchnummern der Theke.
-- **Cover:** verwaiste Dateien in `uploads/`; für Schulbücher liefern die Dienste wenig.
+- **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in `uploads/`
+  zurück; für Schulbücher liefern die Dienste wenig. Die DNB fragt nur der Cover-Abgleich, und der
+  fragt eine ISBN, die kein Dienst kennt, bei jedem Lauf neu (`verarbeiteCover` setzt `FAILED`).
 - **Das Anfrage-Log** nennt weder Dauer noch Kennung.
 
 #### Oberfläche
@@ -2199,7 +2271,8 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   Überlaufmenü.
 - **Die Ausleih-Quittung der Leserakte** erscheint nur beim Druck über den Browser.
 - **Browser-Gates** öffnen die Planer-Dialoge nicht, messen nur wenige gefüllte Zustände, kein
-  Screenreader-Durchgang; ob eine Erklärung zur Barrierefreiheit nötig ist, ist offen
+  Screenreader-Durchgang, und der Ausweis-Designer geht nur per Maus; ob eine Erklärung zur
+  Barrierefreiheit und barrierefreie PDFs nötig sind, ist offen
   ([FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19).
 - **Gesperrter Knopf und Tastatur:** Ein während seiner Anfrage gesperrter Knopf verliert den
   Fokus; scheitert sie, kann Tab einen Dialog verlassen. Anlass: Bedienung nur mit Tastatur; dann
@@ -2207,17 +2280,24 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 
 #### Code und Werkzeuge
 
-- **gosec nimmt sechs Regeln global aus** (Gründe in `scripts/gosec-gate.sh`).
+- **gosec nimmt sechs Regeln global aus** (G706, G704, G703, G120, G115, G101; Gründe in
+  `scripts/gosec-gate.sh`); eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe mit Anlass:
+  je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
-- Die Textsuche der DNB für Titel ohne ISBN nur mit Bestätigung durch einen Menschen.
+- Die Textsuche der DNB für Titel ohne ISBN (`SucheTextDNB`, heute nur in der Bestellsuche) nur mit
+  Bestätigung durch einen Menschen. Titel aus der DNB tragen deren Platzhalter für eine fehlende
+  Zählung und den Zusatz zum Sachtitel im Titel statt im Untertitel; die Altersangabe der DNB wird
+  gelesen und nicht gespeichert.
 - Inline-Felder in Tabellen: eine Variante `size="sm"` von `Feld` erst bei Bedienbefund.
 - **Dieselbe Regel von Hand an mehreren Stellen:** rund zehn Suchfelder entprellen je selbst
   (`frontend-hygiene-spaete-pruefung.test.js`), rund fünfzehn Türen setzen PDF-Köpfe je selbst,
   drei Importe bauen die Dateiwahl je selbst. Anlass: ein Fehler in einer Kopie.
 - **Zwei Ordner heißen nicht nach ihrem Thema:** `frontend/src/inventur/` (Medienkatalog, `$lib`
   zeigt dort hinein) und `frontend/src/lib/components/admin/` (Einstellungen).
-- **Abweichungen von Googles Regelwerk für Go:** `cmd/server/main.go` beendet an 14 Stellen selbst
-  (`os.Exit`); 47 Funktionen haben sechs oder sieben Parameter; keine `Example…`.
+- **Abweichungen von Googles Regelwerk für Go:** Hilfsfunktionen in `cmd/server/main.go`
+  beenden das Programm an 13 Stellen selbst (`os.Exit`), statt den Fehler an `main` zu geben
+  (Best Practices, „Program initialization errors“); 47 Funktionen des Programms (ohne `cmd/` und
+  Prüfhilfen) haben sechs oder sieben Parameter; keine `Example…`.
 
 #### Bewusst nicht entschieden
 
@@ -2243,11 +2323,11 @@ Wo ein Begriff im Code anders heißt als in der Oberfläche, steht beides.
 | Abgänger               | War bestätigt in der LUSD, fehlt im neuen Export; Sperre, Karenz, Löschung  | `abgaenger_seit`, `internal/jobs/cron_dsgvo_abgaenger.go` |
 | Abgangsbuch            | Ausgegangene Bücher je Halbjahr mit Grund, nach Topf                        | `internal/api/katalog/abgangsbuch.go`, `internal/pdf/abgangsbuch.go` |
 | Abholfach              | Wo ein vorgemerktes Exemplar wartet                                         | `vormerkungen`                                          |
-| Abwertung              | Minderung des Ersatzwerts nach Alter und Zustand                            | `internal/pkg/ersatzwert`                               |
+| Abwertung              | Minderung des Ersatzwerts nach Alter und Zustand                            | `internal/pkg/ersatzwert`, `internal/repository/ersatzwert_groessen.go`                               |
 | Art (des Lesers)       | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus`, `fachbereich`; entscheidet keine Rechte | `leser.art`                   |
 | Auflage, Werk          | Ausgabe mit eigener ISBN, im Katalog ein eigener Titel; Auflagen desselben Buchs bilden ein Werk | `buecher_titel.auflage`, `buecher_titel.werk_id` |
 | Aussonderung           | Ausbuchen mit Grund                                                         | `internal/repository/aussonderung_paritaet_test.go`     |
-| Ausweis                | Karte des Lesers, neue Nummern mit `A-`, Aufschrift nach Art; „Ausweisnummer“ ist `leser.barcode_id` | `internal/ausweis`                    |
+| Ausweis                | Karte des Lesers, neue Nummern mit `A-`, Aufschrift nach Art; „Ausweisnummer“ ist `leser.barcode_id` | `internal/ausweis`, `internal/api/druck/ausweis_layout.go`                    |
 | Bescheid               | Schadensersatz für Landes-Lernmittel, nennt das Konto                       | `schadensersatz_bescheide`, `internal/pdf/bescheid.go`  |
 | Bestand, Katalog       | Die Stücke; die Titel, einer je Auflage (in der Oberfläche „Titel“)         | `buecher_exemplare`, `buecher_titel`                    |
 | Betriebsbereitschaft   | Die Selbstprüfung                                                           | `internal/api/system/betriebsbereitschaft*.go`          |
@@ -2278,8 +2358,8 @@ Wo ein Begriff im Code anders heißt als in der Oberfläche, steht beides.
 | Schlagwort, Verweis    | Freies Wort am Titel; eine Schreibweise, die auf ein Schlagwort umleitet    | `schlagworte`, `schlagworte.verweis_auf`                |
 | Schnellrückgabe        | Theke nimmt nur zurück, bis ein Ausweis kommt                               | `OmniboxSchnellrueckgabe.svelte`                        |
 | Standort               | Wo ein Exemplar abweichend steht                                            | `buecher_exemplare.standort`                            |
-| Theke                  | Der Arbeitsplatz mit Scanner („Kiosk“)                                      | `components/omnibox/Omnibox.svelte`                     |
-| Vormerkung             | Reservierung durch einen Leser, rückt nach                                  | `vormerkungen`                                          |
+| Theke                  | Der Arbeitsplatz mit Scanner („Kiosk“)                                      | `components/omnibox/Omnibox.svelte`, `stores/thekeLeeren.js`                     |
+| Vormerkung             | Reservierung durch einen Leser, rückt nach                                  | `vormerkungen`, `internal/repository/vormerkung_nachruecken.go`                                          |
 | Zugangsbuch            | Eingegangene Bücher je Halbjahr mit Lieferant                               | `internal/api/katalog/bestandsbuch.go`                  |
 
 ---
