@@ -82,8 +82,10 @@
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Eltern E-Mail</p>
 				{#if leser.eltern_email}
+					<!-- Kodiert bis auf das @: Sonst deutete das Mailprogramm ? und & in der Adresse als
+					     Felder der Mail (weitere Empfänger, Betreff, Text). -->
 					<a
-						href="mailto:{leser.eltern_email}"
+						href="mailto:{encodeURIComponent(leser.eltern_email).replaceAll('%40', '@')}"
 						class="text-primary hover:underline text-body-large-emphasized">{leser.eltern_email}</a
 					>
 				{:else}
