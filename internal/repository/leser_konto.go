@@ -65,31 +65,37 @@ func LadeLeserArtUndKontoEmail(ctx context.Context, pool db.Pool, leserID string
 	return art, email, err
 }
 
-// LadeKontoEmail liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto).
-func LadeKontoEmail(ctx context.Context, pool db.Pool, leserID string) (string, error) {
-	var email string
-	err := pool.QueryRow(ctx, `
-		SELECT COALESCE(email, '') FROM benutzer
+// LadeKontoZugang liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto) und ob
+// sich mit dem Konto jemand anmeldet (IstZugangskonto).
+func LadeKontoZugang(ctx context.Context, pool db.Pool, leserID string) (email string, zugang bool, err error) {
+	var ldapKennung string
+	err = pool.QueryRow(ctx, `
+		SELECT COALESCE(email, ''), COALESCE(ldap_kennung, '') FROM benutzer
 		WHERE leser_id = $1
-		ORDER BY erstellt_am, id LIMIT 1`, leserID).Scan(&email)
+		ORDER BY erstellt_am, id LIMIT 1`, leserID).Scan(&email, &ldapKennung)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil // kein Konto ist kein Fehler
+		return "", false, nil // kein Konto ist kein Fehler
 	}
-	return email, err
+	return email, IstZugangskonto(email, ldapKennung), err
 }
 
-// IstZugangsadresse sagt, ob sich mit einem Konto unter dieser Adresse jemand anmeldet. Die
-// Anmeldung läuft über den Mailserver der Schule; eine leere Adresse und die Ersatzadresse der
-// Littera-Übernahme (PlatzhalterDomain) gibt es dort nicht.
-func IstZugangsadresse(email string) bool {
+// IstZugangskonto sagt, ob sich mit einem Konto jemand anmeldet. Am Verzeichnisdienst zählt die
+// LDAP-Kennung, gleich welche Adresse das Konto trägt. Am Mailserver der Schule zählt die
+// Adresse; eine leere und die Ersatzadresse der Littera-Übernahme (PlatzhalterDomain) gibt es
+// dort nicht.
+func IstZugangskonto(email, ldapKennung string) bool {
+	if strings.TrimSpace(ldapKennung) != "" {
+		return true
+	}
 	adresse := strings.ToLower(strings.TrimSpace(email))
 	return adresse != "" && !strings.HasSuffix(adresse, PlatzhalterDomain)
 }
 
 // KontoDerLeserzeile ist ein Konto, das mit seiner Leserzeile in den Papierkorb fiele.
 type KontoDerLeserzeile struct {
-	Rolle string
-	Email string
+	Rolle       string
+	Email       string
+	LDAPKennung string
 }
 
 // LadeLeserName liefert Vor- und Nachnamen einer Leserzeile.

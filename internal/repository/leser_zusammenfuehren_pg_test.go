@@ -697,6 +697,44 @@ func TestZusammenfuehren_PlatzhalterWeichtNurDemKontoDesPaares(t *testing.T) {
 		}
 	})
 
+	// Mit einer LDAP-Kennung meldet sich jemand an, auch unter der Ersatzadresse: Das Konto ist
+	// ein Zugang. Es weicht keinem zweiten, und ein Platzhalter weicht ihm.
+	aufLDAP := func(t *testing.T, leser, kennung string) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `UPDATE benutzer SET anmeldeverfahren = 'ldap', ldap_kennung = $2 WHERE leser_id = $1`, leser, kennung); err != nil {
+			t.Fatalf("Konto auf LDAP stellen: %v", err)
+		}
+	}
+	t.Run("ein LDAP-Konto mit Ersatzadresse weicht nicht", func(t *testing.T) {
+		ziel, quelle := paar(t, "PHC")
+		platzhalter(t, quelle, "phc")
+		aufLDAP(t, quelle, "phc.ldap")
+		if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+			VALUES ('Echt', 'Konto', 'phc-echt@test.invalid', 'kollegium', true, $1)`, ziel); err != nil {
+			t.Fatalf("Konto am Ziel: %v", err)
+		}
+		_, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle})
+		if !errors.Is(err, repository.ErrZusammenfuehrenZweiKonten) {
+			t.Errorf("Zusammenführen = %v, erwartet ErrZusammenfuehrenZweiKonten", err)
+		}
+		if n := zfZaehle(t, pool, `SELECT count(*) FROM benutzer WHERE leser_id = $1`, quelle); n != 1 {
+			t.Errorf("LDAP-Konto an der Quelle = %d, erwartet 1", n)
+		}
+	})
+
+	t.Run("ein Platzhalter weicht dem LDAP-Konto mit Ersatzadresse", func(t *testing.T) {
+		ziel, quelle := paar(t, "PHD")
+		platzhalter(t, ziel, "phd-z")
+		aufLDAP(t, ziel, "phd.ldap")
+		platzhalter(t, quelle, "phd-q")
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+			t.Fatalf("Zusammenführen: %v", err)
+		}
+		if n := zfZaehle(t, pool, `SELECT count(*) FROM benutzer WHERE leser_id = $1 AND ldap_kennung = 'phd.ldap'`, ziel); n != 1 {
+			t.Errorf("LDAP-Konto am Ziel = %d, erwartet 1", n)
+		}
+	})
+
 	t.Run("zwei Platzhalter brechen ab", func(t *testing.T) {
 		ziel, quelle := paar(t, "PHB")
 		platzhalter(t, ziel, "phb-z")

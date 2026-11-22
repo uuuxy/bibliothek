@@ -11,6 +11,7 @@ import (
 // über die es fällt.
 type kontoLoeschung struct {
 	kontoID, vorname, nachname, email, rolle string
+	ldapKennung                              string
 	leserID                                  *string
 	bearbeiterID                             string // "" = der Lauf selbst (Akteur SYSTEM)
 	kontext                                  *string
@@ -71,7 +72,8 @@ func protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschun
 // hängt.
 func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string, pruefeKonto func(KontoDerLeserzeile) error) (int64, error) {
 	rows, err := tx.Query(ctx, `
-		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, '')
+		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, ''),
+		       coalesce(ldap_kennung, '')
 		FROM benutzer WHERE leser_id = $1 FOR UPDATE`, leserID)
 	if err != nil {
 		return 0, fmt.Errorf("konten der leserzeile lesen: %w", err)
@@ -79,7 +81,7 @@ func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbei
 	var konten []kontoLoeschung
 	for rows.Next() {
 		var k kontoLoeschung
-		if err := rows.Scan(&k.kontoID, &k.vorname, &k.nachname, &k.email, &k.rolle); err != nil {
+		if err := rows.Scan(&k.kontoID, &k.vorname, &k.nachname, &k.email, &k.rolle, &k.ldapKennung); err != nil {
 			rows.Close()
 			return 0, fmt.Errorf("konto der leserzeile lesen: %w", err)
 		}
@@ -122,7 +124,7 @@ func pruefeKonten(konten []kontoLoeschung, pruefeKonto func(KontoDerLeserzeile) 
 		return nil
 	}
 	for _, k := range konten {
-		if err := pruefeKonto(KontoDerLeserzeile{Rolle: k.rolle, Email: k.email}); err != nil {
+		if err := pruefeKonto(KontoDerLeserzeile{Rolle: k.rolle, Email: k.email, LDAPKennung: k.ldapKennung}); err != nil {
 			return err
 		}
 	}

@@ -73,7 +73,7 @@ var (
 func kontoregel(darfKonten, istAdmin bool) func(repository.KontoDerLeserzeile) error {
 	return func(konto repository.KontoDerLeserzeile) error {
 		switch {
-		case !repository.IstZugangsadresse(konto.Email):
+		case !repository.IstZugangskonto(konto.Email, konto.LDAPKennung):
 			return nil
 		case !darfKonten:
 			return errZugangOhneKontenrecht

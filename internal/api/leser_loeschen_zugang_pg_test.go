@@ -205,6 +205,22 @@ func TestLeserLoeschen_ZugangVerlangtKontenrecht(t *testing.T) {
 		}
 	})
 
+	// Über den Verzeichnisdienst meldet sich ein Konto mit seiner Kennung an, gleich welche
+	// Adresse es trägt: Ein übernommenes Konto mit Ersatzadresse ist dann ein Zugang.
+	t.Run("ein LDAP-Konto mit Ersatzadresse ist ein Zugang", func(t *testing.T) {
+		lea := leserMitKonto(t, "littera-4712@littera.invalid", "admin", true)
+		if _, err := pool.Exec(ctx, `UPDATE benutzer SET anmeldeverfahren = 'ldap', ldap_kennung = 'lea.ldap'
+			WHERE email = 'littera-4712@littera.invalid'`); err != nil {
+			t.Fatalf("Konto auf LDAP stellen: %v", err)
+		}
+		if !hatZugang(t, lea) {
+			t.Errorf("hat_zugang eines LDAP-Kontos mit Ersatzadresse = false, erwartet true")
+		}
+		abgewiesen(t, alsMitarbeiter, lea, ohneKontenrecht)
+		abgewiesen(t, alsLeitung, lea, nurAdministrator)
+		geloescht(t, alsAdmin, lea)
+	})
+
 	t.Run("ohne Zugang genügt das Recht der Route", func(t *testing.T) {
 		for name, leserID := range map[string]string{
 			"Praktikum": testdaten.LegeLeserAn(t, pool, "", "Pia", "Praktikum", "praktikum"),

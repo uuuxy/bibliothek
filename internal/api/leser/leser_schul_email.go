@@ -174,11 +174,12 @@ func (t *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 	return true
 }
 
-// kontoEmail liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto).
+// kontoZugang liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto) und ob sich
+// mit dem Konto jemand anmeldet.
 //
 // Die Akte fragt sie nur für Kollegium ab: Ein Schüler hat kein Konto, und an der Theke
 // ist das Schülerprofil der häufige Fall — eine Abfrage, die immer leer zurückkommt,
 // gehört nicht in jeden Aufruf.
-func (t *Tueren) kontoEmail(ctx context.Context, leserID string) (string, error) {
-	return repository.LadeKontoEmail(ctx, t.DB.Pool, leserID)
+func (t *Tueren) kontoZugang(ctx context.Context, leserID string) (email string, zugang bool, err error) {
+	return repository.LadeKontoZugang(ctx, t.DB.Pool, leserID)
 }

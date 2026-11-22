@@ -120,7 +120,7 @@ trägt ihr deutsches Verb (`Kuerze`, `Zerlege`, `Schliesse`, `Entschaerfe`), in 
 auf e (`Verwerfe`, `Uebergebe`).
 
 Wer aus der Datenbank liest, beginnt mit `Lade`, `Finde` oder `Zaehle`, auch wenn er nur einen
-Wert liefert (`LadeKontoEmail`); den Namen ohne Verb trägt, wer rechnet, ohne zu lesen
+Wert liefert (`LadeKontoZugang`); den Namen ohne Verb trägt, wer rechnet, ohne zu lesen
 (`FristEnde`, `AbgaengerJahr`). Dass eine Funktion in der Transaktion des Rufers läuft, sagt
 ihr Parameter; der Name trägt dafür keine Endung (`LegeAn`, nicht `LegeAnTx`).
 

@@ -133,9 +133,9 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 	}
 
 	// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
-	schulEmail := ""
+	schulEmail, hatZugang := "", false
 	if !leserart.IstSchueler(leser.Art) {
-		schulEmail, err = t.kontoEmail(ctx, leser.ID)
+		schulEmail, hatZugang, err = t.kontoZugang(ctx, leser.ID)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden des Zugangs", err)
 		}
@@ -166,7 +166,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		Ort:                leser.Ort,
 		ElternEmail:        leser.ElternEmail,
 		Email:              schulEmail,
-		HatZugang:          repository.IstZugangsadresse(schulEmail),
+		HatZugang:          hatZugang,
 		EntlieheneBuecher:  entliehen,
 	}
 

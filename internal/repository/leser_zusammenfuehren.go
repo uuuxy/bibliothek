@@ -375,8 +375,9 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 // Zugang, sondern Füllmaterial — die Übernahme aus Littera braucht für jedes Konto
 // eine Adresse, die Leserdatei dort führt aber keine (internal/littera:
 // schreiber_personen.go). Die Domäne ist nach RFC 2606 dauerhaft reserviert, kein
-// Mailserver löst sie auf, und die Anmeldung läuft ausschließlich über IMAP gegen den
-// Schul-Mailserver — mit dieser Adresse kommt niemand hinein.
+// Mailserver löst sie auf — mit dieser Adresse kommt am Schul-Mailserver niemand hinein.
+// Trägt das Konto eine LDAP-Kennung, meldet sich damit jemand am Verzeichnisdienst an: Dann
+// ist es ein Zugang wie jeder andere (IstZugangskonto) und weicht nicht.
 //
 // Ohne die Räumung stünde der Abbruch genau dort, wo „das ist dieselbe Person"
 // gebraucht wird: Eine übernommene Lehrkraft, die sich selbst anmeldet, hat dann ein
@@ -391,10 +392,10 @@ func verschiebeZugangskonto(ctx context.Context, tx pgx.Tx, ziel, quelle string,
 	if g.PlatzhalterKonten, err = ladeIDs(ctx, tx, `
 		DELETE FROM benutzer b
 		 WHERE b.leser_id IN ($1, $2)
-		   AND lower(b.email) LIKE '%'||$3
+		   AND lower(b.email) LIKE '%'||$3 AND b.ldap_kennung IS NULL
 		   AND EXISTS (SELECT 1 FROM benutzer a
 		                WHERE a.leser_id IN ($1, $2) AND a.leser_id <> b.leser_id
-		                  AND lower(a.email) NOT LIKE '%'||$3)
+		                  AND (lower(a.email) NOT LIKE '%'||$3 OR a.ldap_kennung IS NOT NULL))
 		RETURNING b.id`, ziel, quelle, PlatzhalterDomain); err != nil {
 		return fmt.Errorf("platzhalter-konto räumen: %w", err)
 	}
