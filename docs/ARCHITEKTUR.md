@@ -2189,7 +2189,8 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   („All navigation items require a one word label text“), weil der Platz für den Inhalt gebraucht
   wird. Wie bei Gmail klappt sie nach 200 ms unter der Maus über dem Inhalt auf, „System“ ist ein
   Eintrag mit Pfeil, der Bildlauf ein Daumen von 8 px nur unter der Maus
-  (`e2e/navigation-aufklappen.spec.js`, `e2e/navigation-bildlauf.spec.js`).
+  (`e2e/navigation-aufklappen.spec.js`, `e2e/navigation-bildlauf.spec.js`). Ohne Maus, am Tablet,
+  bleibt es bei den Symbolen und ihrem `title`.
 - **Ein Balken für jeden Bildlauf,** überall dieselbe Pille (`e2e/bildlauf-einheitlich.spec.js`).
 - **Lange Listen und schmale Fenster:** In „Titel bearbeiten“ gibt es keine Suche in den
   Exemplaren; unter 1066 px wird der Titel in der Leserakte schmal; Autor und Nummer stehen dort nur
