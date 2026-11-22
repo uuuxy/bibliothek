@@ -43,6 +43,9 @@ func leseImportZeilen(w http.ResponseWriter, r *http.Request) ([][]string, error
 	return leseExcelZeilen(datei)
 }
 
+// maxImportZeilen ist die größte Zahl von Datenzeilen eines Listenimports.
+const maxImportZeilen = 100000
+
 // leseCSVZeilen liest eine CSV-Datei mit heuristischer Trennzeichenerkennung (, oder ;).
 func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	inhalt, err := io.ReadAll(datei)
@@ -53,9 +56,21 @@ func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, apierrors.BadRequest(csvutil.MeldungKodierung, err)
 	}
-	zeilen, err := leser.ReadAll()
-	if err != nil {
-		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
+	var zeilen [][]string
+	for {
+		zeile, err := leser.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
+		}
+		// Gezählt wird beim Lesen: 100 MB aus kurzen Zeilen stünden sonst als Millionen Zeilen
+		// im Speicher. Eine Zeile über der Grenze darf es sein, die Kopfzeile.
+		if len(zeilen) > maxImportZeilen {
+			return nil, apierrors.BadRequest(fmt.Sprintf("Die Datei hat mehr als %d Zeilen, höchstens %d sind möglich", maxImportZeilen, maxImportZeilen), nil)
+		}
+		zeilen = append(zeilen, zeile)
 	}
 	if len(zeilen) == 0 {
 		return nil, apierrors.BadRequest("Die Datei ist leer", nil)
@@ -194,7 +209,6 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 		datenZeilen = zeilen[1:]
 	}
 
-	const maxImportZeilen = 100000
 	if len(datenZeilen) > maxImportZeilen {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Die Datei hat %d Zeilen, höchstens %d sind möglich", len(datenZeilen), maxImportZeilen), nil)
 		return nil, nil, false
