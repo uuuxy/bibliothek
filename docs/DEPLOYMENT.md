@@ -378,14 +378,6 @@ Die lokale Compose-Datei enthält bereits gültige Entwicklungs-Secrets (≥32 Z
 
 Migrationen laufen **automatisch beim Serverstart** (`db.Verbindung.FuehreMigrationenAus`). Manuelles Eingreifen ist nur bei Problemen nötig.
 
-### Migrations-Verzeichnis: `migrations/`
-
-| Datei                             | Inhalt                                                                                            |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `030_ziel_jahrgang.sql`           | LMF-Mehrstufenfristen; idempotent (beide Fälle: Spalte existiert / existiert nicht)               |
-| `032_reconcile_titel_columns.sql` | Idempotente Angleichung aller `buecher_titel`-Spalten (behebt Schema-Drift aus alten Deployments) |
-| `033_unique_active_loan.sql`      | Dedup bestehender Duplikate + Unique-Partial-Indizes für aktive Ausleihen                         |
-
 ### Neue Migration hinzufügen
 
 1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
@@ -635,25 +627,14 @@ Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
 
 **Welche Zahl steigt** (entschieden am 17.09.2026):
 
-Die mittlere Zahl ist ein ZÄHLER, kein Nachkommawert: Auf v2.13.0 folgt v2.14.0, nicht
-v2.5.0. Das klingt selbstverständlich, sieht im Verzeichnis aber falsch sortiert aus, wenn
-Werkzeuge alphabetisch listen — daher der Satz hier.
+Die mittlere Zahl ist ein Zähler, kein Nachkommawert: Auf v2.13.0 folgt v2.14.0.
 
-Die erste Zahl steigt, wenn sich **die Form ändert, nicht nur der Umfang**: das Datenmodell,
-das Vokabular der Fachlichkeit oder eine Schnittstelle, die es vorher gab und danach nicht
-mehr. Nicht für „viel Neues" — 175 Commits allein sind kein Grund.
-
-**v3.0.0 ist das Beispiel dafür.** Aus der Schülerdatei wurde die Leserdatei: `schueler` ist
-seit Migration 124 keine Tabelle mehr, sondern eine Sicht auf `leser`; Kollegium und
-Schülerschaft stehen in einem Verzeichnis mit einem Nummernkreis; zwei Routen
-(`GET /api/readergroups`, `POST /api/buecher/exemplare/{id}/defekt`) sind ersatzlos
-entfallen. Dass beide Routen niemand mehr aufrief und das Aufspielen ein Selbstläufer bleibt,
-ändert daran nichts: Wer in einem halben Jahr sucht, wann aus Schülern Leser wurden, soll die
-Stelle an der Nummer finden und nicht in 175 Commit-Nachrichten.
-
-Woran man es NICHT festmacht: an der Menge der Commits, an der Zahl der Migrationen und
-daran, ob beim Aufspielen Handarbeit nötig ist. Das Letzte gehört in die Release-Notiz — und
-zwar immer, auch bei einer Minor-Version.
+Die erste Zahl steigt, wenn sich **die Form ändert, nicht nur der Umfang**: das Datenmodell, das
+Vokabular der Fachlichkeit oder eine Schnittstelle, die danach fehlt. Beispiel v3.0.0: Aus der
+Schülerdatei wurde die Leserdatei (`schueler` ist eine Sicht auf `leser`), zwei Routen entfielen;
+wer sucht, wann aus Schülern Leser wurden, findet es an der Nummer. Nicht maßgeblich sind die Zahl
+der Commits oder Migrationen und ob beim Aufspielen Handarbeit nötig ist; die gehört in die
+Release-Notiz, immer, auch bei einer Minor-Version.
 
 **Release machen** (auf grünem `main`, vom Repo-Root):
 
