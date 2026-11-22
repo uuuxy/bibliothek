@@ -663,7 +663,7 @@ einen Aufruf über die Shell gereicht: Bei `docker compose` geht eine Variable d
 
 ```bash
 read -rsp "BACKUP_ENCRYPTION_KEY aus der Zeit der Sicherung: " ALT; echo
-BACKUP_ENCRYPTION_KEY="$ALT" docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < "$ENC" > wiederherstellung.sql
+( umask 077; BACKUP_ENCRYPTION_KEY="$ALT" docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < "$ENC" > wiederherstellung.sql )
 ```
 
 **Wann der alte Schlüssel wegkann:** wenn keine Datei von vor dem Wechsel mehr liegt. Die

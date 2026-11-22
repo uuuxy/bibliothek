@@ -180,7 +180,7 @@ print_rollback_instructions() {
     # Backend anhält.
     echo -e "${YELLOW}Verschlüsselte Sicherungen (.enc) zuerst öffnen:${NC}"
     echo "     read -rp \"Datei: \" ENC"
-    echo "     docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"\$ENC\" > wiederherstellung.sql"
+    echo "     ( umask 077; docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"\$ENC\" > wiederherstellung.sql )"
     echo ""
 }
 
@@ -478,7 +478,7 @@ elif krypto_moeglich; then
     log_info "Verschlüssele ${BACKUP_FILE} …"
     if verschluessele_datei "${BACKUP_FILE}"; then
         log_ok "Verschlüsselt: ${KRYPTO_ZIEL} (Klartext gelöscht)."
-        log_info "Öffnen mit: docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"${KRYPTO_ZIEL}\" > wiederherstellung.sql"
+        log_info "Öffnen mit: ( umask 077; docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"${KRYPTO_ZIEL}\" > wiederherstellung.sql )"
     else
         log_warn "Verschlüsselung fehlgeschlagen — die Sicherung bleibt im KLARTEXT liegen:"
         log_warn "  ${BACKUP_FILE}"
@@ -502,7 +502,7 @@ log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION
 # unter dem früheren Namen); scripts/backup.sh legt im selben Ordner mit eigener Frist ab.
 # Klartext: jeder im Ordner, gleich von wem (Gate: docs/backup_ablage_test.go).
 DELETED=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz.enc" -o -name "backup_*.sql.gz.enc" \) -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
-DELETED_KLAR=$(find "${BACKUP_DIR}" -name "*.sql.gz" -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+DELETED_KLAR=$(find "${BACKUP_DIR}" -name "*.sql.gz" -mmin "+$((KLARTEXT_RETENTION_DAYS * 1440))" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "${DELETED}" -gt 0 ] || [ "${DELETED_KLAR}" -gt 0 ]; then
     log_ok "${DELETED} verschlüsselte/s und ${DELETED_KLAR} unverschlüsselte/s Backup/s gelöscht."

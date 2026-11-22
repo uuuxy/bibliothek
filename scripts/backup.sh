@@ -53,7 +53,7 @@ LOG_DIR="$(dirname "$0")/../logs"
 raeume_auf() {
   echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage, Logs: ${RETENTION_LOG_TAGE} Tage)..."
   find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
-  find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
+  find "$BACKUP_DIR" -type f -name "*.sql.gz" -mmin "+$((RETENTION_KLARTEXT_TAGE * 1440))" -exec rm -f {} \;
   # Zwischendateien eines hart abgebrochenen Laufs; eine im Klartext trägt alle Namen.
   find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.teil.*" -mmin +1440 -exec rm -f {} \;
   if [ -d "$LOG_DIR" ]; then
@@ -113,7 +113,7 @@ if krypto_moeglich; then
     # Die Datei liegt auf dem Host, das Werkzeug im Image: Sie geht über die Standardeingabe
     # hinein. Ein Wegwerf-Container statt docker exec, weil das Backend beim Wiederherstellen
     # angehalten sein kann.
-    echo "  Entschlüsseln, im Programmverzeichnis: docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"$BACKUP_FILE\" > wiederherstellung.sql"
+    echo "  Entschlüsseln, im Programmverzeichnis: ( umask 077; docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"$BACKUP_FILE\" > wiederherstellung.sql )"
     echo "  Einspielen: docs/resilience_and_recovery.md, Abschnitt 2b"
   else
     echo "FEHLER: Backup fehlgeschlagen (Dump, Verschlüsselung oder Rückweg-Prüfung)!"

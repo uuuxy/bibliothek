@@ -79,3 +79,38 @@ func TestBackupSkript_ZweiterLaufAmSelbenTag(t *testing.T) {
 		t.Errorf("in backups liegt %v, erwartet nur die Sicherung von heute", eintraege)
 	}
 }
+
+// Ein liegengebliebener Abzug im Klartext geht beim ersten Lauf nach zwei Tagen, wie es
+// docs/resilience_and_recovery.md zusagt. `-mtime +2` zählt in ganzen Tagen und nahm ihn erst
+// nach drei.
+func TestBackupSkript_KlartextRestGehtNachZweiTagen(t *testing.T) {
+	verzeichnis := t.TempDir()
+	sicherungen := filepath.Join(verzeichnis, "backups")
+	if err := os.MkdirAll(sicherungen, 0o700); err != nil {
+		t.Fatalf("os.MkdirAll: %v", err)
+	}
+	lege := func(name string, alter time.Duration) string {
+		t.Helper()
+		pfad := filepath.Join(sicherungen, name)
+		if err := os.WriteFile(pfad, []byte("Abzug"), 0o600); err != nil {
+			t.Fatalf("os.WriteFile: %v", err)
+		}
+		zeit := time.Now().Add(-alter)
+		if err := os.Chtimes(pfad, zeit, zeit); err != nil {
+			t.Fatalf("os.Chtimes: %v", err)
+		}
+		return pfad
+	}
+	alt := lege("vordeploy_alt.sql.gz", 50*time.Hour)
+	jung := lege("vordeploy_jung.sql.gz", 40*time.Hour)
+
+	if aus, err := backupSkriptAusfuehren(t, verzeichnis, "-- pg_dump"); err != nil {
+		t.Fatalf("backup.sh: %s: %v", aus, err)
+	}
+	if _, err := os.Stat(alt); !os.IsNotExist(err) {
+		t.Errorf("der Abzug von vor 50 Stunden liegt noch da (%v), erwartet gelöscht", err)
+	}
+	if _, err := os.Stat(jung); err != nil {
+		t.Errorf("der Abzug von vor 40 Stunden: %v, erwartet noch da", err)
+	}
+}

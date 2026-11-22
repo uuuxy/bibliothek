@@ -25,7 +25,7 @@ import (
 //
 // Blindheit: Gelesen werden nur die -name-Muster der find-Zeilen über $BACKUP_DIR in den
 // zwei Skripten. Ein drittes Skript, das denselben Ordner aufräumt, ein rm mit Glob und die
-// -mtime-Werte sieht der Test nicht. Das Versprechen eines Löschens nach Zeit erkennt er nur in
+// Werte von -mtime und -mmin sieht der Test nicht. Das Versprechen eines Löschens nach Zeit erkennt er nur in
 // drei Wortformen („automatisch gelöscht", „verschwindet nach", „wird in/nach ${…} Tagen").
 
 var backupSkripte = map[string]struct {
