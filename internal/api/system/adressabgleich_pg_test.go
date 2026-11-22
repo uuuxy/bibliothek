@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/api/tuer"
+	"bibliothek/internal/auth"
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
@@ -192,11 +193,76 @@ func TestAdressabgleich_StandUeberlebtDasEndeDerAnfrage(t *testing.T) {
 	beendet, abbrechen := context.WithCancel(context.Background())
 	abbrechen()
 
-	if _, err := srv.fuehreAdressabgleichAus(beendet, false, ""); err == nil {
+	if _, err := srv.fuehreAdressabgleichAus(beendet, false, "", false); err == nil {
 		t.Fatal("fuehreAdressabgleichAus mit beendetem Kontext: kein Fehler, erwartet der Abbruch")
 	}
 	stand := srv.ladeAdressabgleichStand(context.Background())
 	if stand == nil || stand.Fehler == "" {
 		t.Errorf("Stand nach dem Abbruch = %+v, erwartet einen gespeicherten Fehler", stand)
+	}
+}
+
+// Das Konto eines Administrators füllt der Abgleich nur, wenn ein Administrator ihn auslöst. Wer
+// die Adresse eines Kontos schreibt, übernimmt es, und die Quelle des Abgleichs stellt ein, wer
+// Einstellungen ändern darf: Über ein eigenes Adressbuch käme er sonst an ein solches Konto.
+func TestAdressabgleich_KontoEinesAdministrators(t *testing.T) {
+	t.Setenv(crypto.SchluesselVariable, "abgleich-test-schluessel-32-zeic")
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "schule.example")
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	mailAbfragen := repository.NewMailEinstellungsAbfragen(pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	adria := testdaten.LegeKontoAn(t, pool, "Adria", "Abgleich", "littera-9011@littera.invalid", "admin", true)
+	chef := testdaten.LegeKontoAn(t, pool, "Chef", "Auslöser", "chef-abgleich@schule.example", "admin", true)
+	konten := []string{adria, chef}
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE details->>'ziel_id' = ANY($1::text[])`, konten)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = ANY($1::uuid[])`, konten)
+		pgtest.RaeumeAuf(t, pool, `UPDATE mail_settings_config SET webmail_adresse = '', webmail_benutzer = '',
+			webmail_passwort_verschluesselt = NULL WHERE id = 1`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, adressabgleichStandSchluessel)
+	})
+	if err := mailAbfragen.SchreibeWebmailZugang(ctx, abgleichWebmail(t), "bibliothek@schule.example", "richtig"); err != nil {
+		t.Fatalf("Zugang schreiben: %v", err)
+	}
+	email := func() string {
+		t.Helper()
+		var e string
+		if err := pool.QueryRow(ctx, `SELECT email FROM benutzer WHERE id = $1`, adria).Scan(&e); err != nil {
+			t.Fatalf("Adresse lesen: %v", err)
+		}
+		return e
+	}
+	lauf := func(rolle auth.Rolle) adressabgleichErgebnis {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/api/admin/settings/adressabgleich/lauf", strings.NewReader(`{"probelauf":false}`))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: chef, Rolle: rolle}))
+		rec := httptest.NewRecorder()
+		srv.AdressabgleichLauf()(rec, req)
+		var ergebnis adressabgleichErgebnis
+		if err := json.Unmarshal(rec.Body.Bytes(), &ergebnis); err != nil || rec.Code != http.StatusOK {
+			t.Fatalf("Lauf: Status %d, %v, %s", rec.Code, err, rec.Body.String())
+		}
+		return ergebnis
+	}
+
+	ergebnis := lauf(auth.RolleMitarbeiter)
+	if got := email(); got != "littera-9011@littera.invalid" {
+		t.Errorf("nach dem Lauf eines Mitarbeiters trägt das Konto %q, erwartet weiter die Ersatzadresse", got)
+	}
+	if len(ergebnis.Uebernahmen) != 0 || len(ergebnis.Uebergangen) != 1 || !strings.Contains(ergebnis.Uebergangen[0].Grund, "Administrator") {
+		t.Errorf("Lauf eines Mitarbeiters: Übernahmen %+v, übergangen %+v, erwartet das Konto mit Grund übergangen",
+			ergebnis.Uebernahmen, ergebnis.Uebergangen)
+	}
+
+	srv.AdressabgleichNachZeitplan(ctx)
+	if got := email(); got != "littera-9011@littera.invalid" {
+		t.Errorf("nach dem Lauf des Zeitplans trägt das Konto %q, erwartet weiter die Ersatzadresse", got)
+	}
+
+	lauf(auth.RolleAdmin)
+	if got := email(); got != "adria@schule.example" {
+		t.Errorf("nach dem Lauf eines Administrators trägt das Konto %q, erwartet adria@schule.example", got)
 	}
 }

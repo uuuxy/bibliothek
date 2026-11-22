@@ -22,11 +22,12 @@ import (
 	"bibliothek/internal/repository"
 )
 
-// Gründe, die erst beim Eintragen entstehen.
+// Gründe, die der Lauf setzt: vor dem Eintragen und dabei.
 const (
 	grundInzwischenGeaendert = "Adresse des Kontos inzwischen von Hand geändert"
 	grundInzwischenVergeben  = "Adresse inzwischen an einem anderen Konto"
 	grundNichtGespeichert    = "Adresse ließ sich nicht speichern"
+	grundKontoEinesAdmins    = "Konto eines Administrators: Den Abgleich dafür löst ein Administrator aus"
 )
 
 // adressabgleichErgebnis ist die Antwort eines Laufs: die Zahlen und die Listen mit Namen, die
@@ -45,11 +46,11 @@ func (t *Tueren) AdressabgleichLauf() http.HandlerFunc {
 		if !tuer.LeseAnfrageStreng(w, r, &req) {
 			return
 		}
-		adminID := ""
+		adminID, alsAdmin := "", false
 		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
-			adminID = claims.KontoID
+			adminID, alsAdmin = claims.KontoID, claims.Rolle.IstAdmin()
 		}
-		ergebnis, err := t.fuehreAdressabgleichAus(r.Context(), req.Probelauf, adminID)
+		ergebnis, err := t.fuehreAdressabgleichAus(r.Context(), req.Probelauf, adminID, alsAdmin)
 		if err != nil {
 			status, meldung := adressabgleichFehlerantwort(err)
 			apierrors.AntworteFehlerMitMeldung(w, status, meldung, err)
@@ -92,11 +93,12 @@ func (a *adressabgleichAbbruch) Error() string {
 func (a *adressabgleichAbbruch) Unwrap() error { return a.ursache }
 
 // fuehreAdressabgleichAus holt das globale Adressbuch und trägt den Konten mit Platzhalter ihre
-// Adresse ein; der Probelauf rechnet nur. adminID ist beim Lauf des Zeitplans leer. Der Stand
-// eines Laufs, der eintragen durfte, wird gespeichert, auch wenn er scheiterte.
-func (t *Tueren) fuehreAdressabgleichAus(ctx context.Context, probelauf bool, adminID string) (adressabgleichErgebnis, error) {
+// Adresse ein; der Probelauf rechnet nur. adminID ist beim Lauf des Zeitplans leer. Die Konten von
+// Administratoren füllt nur ein Lauf, den ein Administrator auslöst (alsAdmin). Der Stand eines
+// Laufs, der eintragen durfte, wird gespeichert, auch wenn er scheiterte.
+func (t *Tueren) fuehreAdressabgleichAus(ctx context.Context, probelauf bool, adminID string, alsAdmin bool) (adressabgleichErgebnis, error) {
 	ergebnis := adressabgleichErgebnis{Probelauf: probelauf, Stand: adressabgleichStand{Zeitpunkt: time.Now()}}
-	zuordnung, eintraege, err := t.berechneAdressabgleich(ctx)
+	zuordnung, eintraege, err := t.berechneAdressabgleich(ctx, alsAdmin)
 	ergebnis.Stand.Eintraege = eintraege
 	if err != nil {
 		ergebnis.Stand.Fehler = meldungAdressabgleichGescheitert
@@ -128,7 +130,7 @@ func (t *Tueren) fuehreAdressabgleichAus(ctx context.Context, probelauf bool, ad
 
 // berechneAdressabgleich lädt Zugang, Adressbuch und Konten und berechnet die Zuordnung. Es
 // liefert die Zahl der Einträge im Adressbuch mit, auch wenn danach etwas scheitert.
-func (t *Tueren) berechneAdressabgleich(ctx context.Context) (adressabgleich.Zuordnung, int, error) {
+func (t *Tueren) berechneAdressabgleich(ctx context.Context, alsAdmin bool) (adressabgleich.Zuordnung, int, error) {
 	konfig, err := repository.NewMailEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return adressabgleich.Zuordnung{}, 0, err
@@ -168,7 +170,34 @@ func (t *Tueren) berechneAdressabgleich(ctx context.Context) (adressabgleich.Zuo
 			ID: k.ID, Vorname: k.Vorname, Nachname: k.Nachname, Email: k.Email, Aktiv: k.Aktiv, LDAPKennung: k.LDAPKennung,
 		})
 	}
-	return adressabgleich.BerechneZuordnung(eintraege, abgleichKonten, schulDomain, repository.PlatzhalterDomain), len(eintraege), nil
+	zuordnung := adressabgleich.BerechneZuordnung(eintraege, abgleichKonten, schulDomain, repository.PlatzhalterDomain)
+	if !alsAdmin {
+		zuordnung = ohneAdminKonten(zuordnung, konten)
+	}
+	return zuordnung, len(eintraege), nil
+}
+
+// ohneAdminKonten nimmt die Konten von Administratoren aus den Übernahmen und führt sie mit Grund
+// bei den übergangenen. Wer die Adresse eines Kontos schreibt, übernimmt es; ein solches Konto
+// bearbeitet nur ein Administrator (internal/api/benutzer/admin_schutz.go), und die Quelle des
+// Abgleichs stellt schon ein, wer Einstellungen ändern darf.
+func ohneAdminKonten(z adressabgleich.Zuordnung, konten []repository.Konto) adressabgleich.Zuordnung {
+	admins := make(map[string]bool)
+	for _, k := range konten {
+		if auth.Rolle(k.Rolle).IstAdmin() {
+			admins[k.ID] = true
+		}
+	}
+	uebernahmen := make([]adressabgleich.Uebernahme, 0, len(z.Uebernahmen))
+	for _, u := range z.Uebernahmen {
+		if admins[u.KontoID] {
+			z.Uebergangen = append(z.Uebergangen, adressabgleich.Uebergangen{KontoID: u.KontoID, Name: u.Name, Grund: grundKontoEinesAdmins})
+			continue
+		}
+		uebernahmen = append(uebernahmen, u)
+	}
+	z.Uebernahmen = uebernahmen
+	return z
 }
 
 // trageAdressenEin schreibt jede Übernahme über die Tür der Kontoänderung, nur solange das Konto
@@ -220,7 +249,7 @@ func (t *Tueren) schreibeAdressabgleichStand(ctx context.Context, stand adressab
 // Hat er etwas eingetragen oder ist er gescheitert, geht eine Mail an die Empfänger der Alarme,
 // nur mit Zahlen: Namen und Adressen verlassen den Server nicht.
 func (t *Tueren) AdressabgleichNachZeitplan(ctx context.Context) {
-	ergebnis, err := t.fuehreAdressabgleichAus(ctx, false, "")
+	ergebnis, err := t.fuehreAdressabgleichAus(ctx, false, "", false)
 	var abbruch *adressabgleichAbbruch
 	if errors.As(err, &abbruch) && abbruch.meldung == meldungWebmailNichtEingerichtet {
 		slog.Info("Adressabgleich: kein Zugang zum Webmail eingerichtet, nichts zu tun")

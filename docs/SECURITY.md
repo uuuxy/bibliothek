@@ -17,7 +17,14 @@ eigenen Datenbank. Es gibt keine Passwortspalte: Die Anwendung speichert
 Verbindung aus einer Zeile in `benutzer` und einem Postfach oder Verzeichniseintrag; wer
 `benutzer.email` oder `benutzer.ldap_kennung` schreiben darf, übernimmt das Konto. Beide Spalten
 gehen deshalb nur durch die Tür der Benutzerverwaltung, mit dem Schutz der Admin-Konten und
-einem Eintrag im Protokoll (Gate `internal/api/benutzer/anmeldeverfahren_test.go`).
+einem Eintrag im Protokoll (Gate `internal/api/benutzer/anmeldeverfahren_test.go`). Eine zweite
+Tür schreibt nur die Adresse: Der Adressabgleich (`manage_settings`,
+`internal/api/system/adressabgleich_lauf.go`) trägt Konten mit Ersatzadresse die Schul-Adresse aus
+dem globalen Adressbuch ein und protokolliert jede Übernahme. Das Konto eines Administrators
+füllt er nur, wenn ein Administrator ihn auslöst, nie über den Zeitplan (Gate
+`TestAdressabgleich_KontoEinesAdministrators`). Für die Konten darunter bestimmt, wer
+Einstellungen ändern darf, über die Quelle des Abgleichs mit, welche Adresse ein Konto mit
+Ersatzadresse bekommt.
 
 Die Anmeldung liest **zuerst das Konto** und fragt erst dann den Server
 (`internal/auth/anmelden.go`, `pruefeZugang`). Eine Eingabe ohne Konto erreicht weder Mailserver noch
