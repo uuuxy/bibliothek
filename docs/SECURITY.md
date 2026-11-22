@@ -68,6 +68,7 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
 ### Brute-Force-Schutz (Login)
 
 - **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).
+- **Gleichzeitige Versuche:** Ein Fehlversuch steht erst nach der Antwort des Mailservers fest. Laufende Versuche zählen deshalb bis zu ihrer Antwort mit, je Konto und je Adresse (`belege` in `internal/auth/anmelden.go`, `reserviere` in `internal/api/anmelde_bremse.go`); sonst gingen beliebig viele zugleich durch, bevor der erste zählt.
 - **Warum nicht nur IP?** An einer Schulnetzwerk-NAT sind alle Geräte hinter einer IP. Würde nur die IP gesperrt, würde ein einziger Fehlversuch die gesamte Schule aussperren. Der Composite-Key (`email|ip`) isoliert das betroffene Konto auf dieser IP und schützt trotzdem gegen gezielte Account-Angriffe.
 - **Globaler Rate-Limiter:** Zusätzlich 50 Requests/s/IP über alle Endpunkte (Map+Mutex, kein externer Cache nötig).
   Ausgenommen sind `/api/images/cover`, `/uploads/` und `/api/barcode` — ein Seitenaufruf

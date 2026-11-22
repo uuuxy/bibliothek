@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"bibliothek/internal/pkg/clientip"
 )
@@ -249,4 +252,42 @@ func meldungDerAntwort(t *testing.T, rec *httptest.ResponseRecorder) string {
 		t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
 	}
 	return antwort.Fehler
+}
+
+// Laufende Anmeldungen teilen sich die Grenze mit den gezählten Fehlversuchen: Gezählt wird erst
+// nach der Antwort, und ohne das gingen aus einer Quelle beliebig viele gleichzeitige Versuche
+// durch, bevor der erste zählt.
+func TestAnmeldeBremse_GleichzeitigeVersucheTeilenDieGrenze(t *testing.T) {
+	var b anmeldeBremse
+	var drinnen, abgewiesen atomic.Int32
+	weiter := make(chan struct{})
+	handler := b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		drinnen.Add(1)
+		<-weiter
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+
+	const versuche = maxAnmeldeFehlversucheJeAdresse + 20
+	var wg sync.WaitGroup
+	for range versuche {
+		wg.Go(func() {
+			req := httptest.NewRequest("POST", "/login", nil)
+			req.RemoteAddr = "203.0.113.9:5000"
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code == http.StatusTooManyRequests {
+				abgewiesen.Add(1)
+			}
+		})
+	}
+	frist := time.Now().Add(5 * time.Second)
+	for drinnen.Load()+abgewiesen.Load() < versuche && time.Now().Before(frist) {
+		time.Sleep(time.Millisecond)
+	}
+	close(weiter)
+	wg.Wait()
+
+	if got := drinnen.Load(); got != maxAnmeldeFehlversucheJeAdresse {
+		t.Errorf("%d von %d gleichzeitigen Versuchen erreichten die Anmeldung, erwartet %d", got, versuche, maxAnmeldeFehlversucheJeAdresse)
+	}
 }

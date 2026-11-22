@@ -68,6 +68,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		defer anmeldung.bremse.gibFrei(schluessel)
 
 		ctx, cancel := context.WithTimeout(r.Context(), AnmeldeFrist)
 		defer cancel()

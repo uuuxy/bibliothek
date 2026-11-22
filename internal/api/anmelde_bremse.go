@@ -15,6 +15,8 @@ import (
 type fehlversuche struct {
 	anzahl int
 	erster time.Time
+	// laufend zählt die Anmeldungen der Adresse, deren Antwort noch aussteht.
+	laufend int
 }
 
 // maxAnmeldeFehlversucheJeAdresse ist die Obergrenze dieser Middleware für die Menge, bewusst
@@ -43,14 +45,17 @@ type anmeldeBremse struct {
 // Goroutine begrenzt, die in Tests liegen bliebe.
 func (b *anmeldeBremse) raeumeAbgelaufeneAuf(jetzt time.Time) {
 	for adresse, versuche := range b.jeAdresse {
-		if jetzt.Sub(versuche.erster) > 15*time.Minute {
+		if versuche.laufend == 0 && jetzt.Sub(versuche.erster) > 15*time.Minute {
 			delete(b.jeAdresse, adresse)
 		}
 	}
 }
 
-// reserviere prüft und erneuert den Zähler einer Adresse, unter der Sperre. gesperrt heißt: Die
-// Adresse ist im Fenster von 15 Minuten gesperrt (maxAnmeldeFehlversucheJeAdresse).
+// reserviere prüft und erneuert den Zähler einer Adresse, unter der Sperre, und meldet die
+// Anmeldung als laufend an. gesperrt heißt: Gezählte Fehlversuche im Fenster von 15 Minuten und
+// laufende Anmeldungen erreichen zusammen maxAnmeldeFehlversucheJeAdresse. Die laufenden zählen
+// mit, weil ein Fehlversuch erst nach der Antwort feststeht; sonst gingen beliebig viele
+// gleichzeitige Versuche durch.
 func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *fehlversuche, gesperrt bool) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -61,9 +66,11 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 		if jetzt.Sub(versuche.erster) > 15*time.Minute {
 			versuche.anzahl = 0
 			versuche.erster = jetzt
-		} else if versuche.anzahl >= maxAnmeldeFehlversucheJeAdresse {
+		}
+		if versuche.anzahl+versuche.laufend >= maxAnmeldeFehlversucheJeAdresse {
 			return versuche, true
 		}
+		versuche.laufend++
 		return versuche, false
 	}
 
@@ -76,15 +83,16 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 		b.jeAdresse = make(map[string]*fehlversuche)
 	}
 	versuche = &fehlversuche{
-		anzahl: 0,
-		erster: jetzt,
+		anzahl:  0,
+		erster:  jetzt,
+		laufend: 1,
 	}
 	b.jeAdresse[adresse] = versuche
 	return versuche, false
 }
 
-// verzeichne zählt nach dem Status der Antwort, unter der Sperre: Nur 401 zählt als
-// Fehlversuch. Eine gelungene Anmeldung leert den Zähler nicht, er läuft mit seinem Fenster ab:
+// verzeichne meldet die Anmeldung ab und zählt nach dem Status der Antwort, unter der Sperre: Nur
+// 401 zählt als Fehlversuch. Eine gelungene Anmeldung leert den Zähler nicht, er läuft mit seinem Fenster ab:
 // Sonst riete, wer selbst ein Konto hat, knapp unter der Grenze die Passwörter anderer, meldete
 // sich an und riete weiter.
 //
@@ -95,12 +103,12 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 // die Bibliothekskraft, die die Freischaltungen vornimmt. Für Credential-Stuffing, den Zweck
 // dieser Bremse, ist 401 das Signal, nicht 403.
 func (b *anmeldeBremse) verzeichne(versuche *fehlversuche, status int) {
-	if status != http.StatusUnauthorized {
-		return
-	}
 	b.mu.Lock()
-	versuche.anzahl++
-	b.mu.Unlock()
+	defer b.mu.Unlock()
+	versuche.laufend--
+	if status == http.StatusUnauthorized {
+		versuche.anzahl++
+	}
 }
 
 // schuetze lässt je Adresse höchstens maxAnmeldeFehlversucheJeAdresse gescheiterte Anmeldungen
@@ -130,8 +138,8 @@ func (b *anmeldeBremse) schuetze(next http.Handler) http.Handler {
 			status:         http.StatusOK, // ohne WriteHeader gilt 200
 		}
 
+		// Abgemeldet wird auch nach einer Panik in der Anmeldung, sonst bliebe ihr Platz belegt.
+		defer func() { b.verzeichne(versuche, merker.status) }()
 		next.ServeHTTP(merker, r)
-
-		b.verzeichne(versuche, merker.status)
 	})
 }

@@ -29,8 +29,10 @@ type fehlversuche struct {
 // Zeitfenster zu. Sie schützt Mailserver und Verzeichnisdienst vor dem Durchprobieren von
 // Passwörtern.
 type fehlversuchsBremse struct {
-	mu              sync.Mutex
-	eintraege       map[string]*fehlversuche
+	mu        sync.Mutex
+	eintraege map[string]*fehlversuche
+	// laufend zählt je Schlüssel die Versuche, deren Prüfung am Server noch aussteht.
+	laufend         map[string]int
 	maxFehlversuche int
 	fenster         time.Duration
 }
@@ -38,24 +40,43 @@ type fehlversuchsBremse struct {
 func newFehlversuchsBremse(maxFehlversuche int, fenster time.Duration) *fehlversuchsBremse {
 	return &fehlversuchsBremse{
 		eintraege:       make(map[string]*fehlversuche),
+		laufend:         make(map[string]int),
 		maxFehlversuche: maxFehlversuche,
 		fenster:         fenster,
 	}
 }
 
-// istGesperrt meldet, ob der Schlüssel im laufenden Fenster zu viele Fehlversuche hat.
-func (b *fehlversuchsBremse) istGesperrt(schluessel string) bool {
+// belege meldet einen Versuch an und sagt, ob er laufen darf. Die Fehlversuche des laufenden
+// Fensters und die laufenden Versuche teilen sich die Grenze: Ein Fehlversuch steht erst nach der
+// Antwort des Servers fest, und sonst gingen beliebig viele gleichzeitige Versuche durch. Wer
+// true bekommt, ruft am Ende gibFrei.
+func (b *fehlversuchsBremse) belege(schluessel string) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	e, ok := b.eintraege[schluessel]
-	if !ok {
+	gezaehlt := 0
+	if e, ok := b.eintraege[schluessel]; ok {
+		if time.Now().After(e.fensterEnde) {
+			delete(b.eintraege, schluessel)
+		} else {
+			gezaehlt = e.anzahl
+		}
+	}
+	if gezaehlt+b.laufend[schluessel] >= b.maxFehlversuche {
 		return false
 	}
-	if time.Now().After(e.fensterEnde) {
-		delete(b.eintraege, schluessel)
-		return false
+	b.laufend[schluessel]++
+	return true
+}
+
+// gibFrei meldet einen Versuch ab, gleich wie er ausging.
+func (b *fehlversuchsBremse) gibFrei(schluessel string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.laufend[schluessel] <= 1 {
+		delete(b.laufend, schluessel)
+		return
 	}
-	return e.anzahl >= b.maxFehlversuche
+	b.laufend[schluessel]--
 }
 
 // raeumenAbEintraegen ist die Größe, ab der ein neuer Eintrag die abgelaufenen wegräumt.
@@ -166,6 +187,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		if !ok {
 			return
 		}
+		defer anmeldung.bremse.gibFrei(schluessel)
 
 		konto, ok := anmeldung.meldeAn(ctx, w, pool, eingabe, schluessel)
 		if !ok {
@@ -249,15 +271,16 @@ func pruefeAnmeldedaten(w http.ResponseWriter, anfrage anmeldeAnfrage) (passwort
 	return anfrage.Passwort, true
 }
 
-// pruefeFehlversuche bildet den Schlüssel der Bremse und weist ab, solange er gesperrt ist. Bei
-// false ist die Fehlerantwort schon geschrieben.
+// pruefeFehlversuche bildet den Schlüssel der Bremse, meldet den Versuch an und weist ab, solange
+// der Schlüssel gesperrt ist. Bei false ist die Fehlerantwort schon geschrieben; bei true gibt der
+// Aufrufer den Platz am Ende mit gibFrei zurück.
 //
 // Gebremst wird je E-Mail und Adresse, nicht je Adresse allein: In einer Schule, deren Geräte
 // alle hinter einer Adresse (NAT) hängen, sperrte sonst ein einziger Mensch mit fünf
 // Fehlversuchen die ganze Schule für 15 Minuten aus.
 func (a *Anmeldung) pruefeFehlversuche(w http.ResponseWriter, email, adresse string) (schluessel string, ok bool) {
 	schluessel = strings.ToLower(strings.TrimSpace(email)) + "|" + adresse
-	if a.bremse.istGesperrt(schluessel) {
+	if !a.bremse.belege(schluessel) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusTooManyRequests, MeldungZuVieleFehlversuche, nil)
 		return "", false
 	}
