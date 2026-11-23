@@ -115,6 +115,8 @@ test('Jeder Schatten ist eine Stufe von Google, geöffnete Bauteile tragen ihre 
 
 	// Snackbar: eine unbekannte Nummer an der Theke.
 	await gehZu(page, '/kiosk');
+	// Erst wenn die Theke steht, nimmt jemand den Scan an.
+	await expect(page.locator('#omnibox-input')).toBeFocused();
 	await page.keyboard.type('ZZZ0000000999');
 	await page.keyboard.press('Enter');
 	const meldung = page.locator('[role=alert], [role=status]').filter({ hasText: /./ }).last();

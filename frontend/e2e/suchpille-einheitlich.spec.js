@@ -495,6 +495,8 @@ test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ p
 	for (const { name, pfad, id, reiter } of STARTLINIE) {
 		await gehZu(page, pfad);
 		await page.locator(`#${id}`).waitFor();
+		// Die Reiter des Mahnwesens kommen erst mit den Daten; vorher stünde die Pille zu hoch.
+		if (reiter) await page.locator('main [role=tablist]').first().waitFor();
 		// Reiterzahlen und Listen laden nach und aendern die Hoehe des Bandes nicht,
 		// aber Ladeplatzhalter darueber koennten es. Auf Ruhe warten.
 		let vorher = null;

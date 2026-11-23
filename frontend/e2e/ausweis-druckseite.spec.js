@@ -59,7 +59,10 @@ async function druckseite(page) {
  */
 async function markiereLeser(page, vorname) {
 	await gehZu(page, '/schuelerdatei');
+	// Markiert wird erst in der gefilterten Liste: In der ungefilterten steht der Leser auch.
+	const gesucht = page.waitForResponse((antwort) => antwort.url().includes(`q=${vorname}`));
 	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
+	await gesucht;
 	await expect(page.locator('tbody tr').filter({ hasText: vorname })).toHaveCount(1);
 	await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 	return page.getByRole('region', { name: /Aktionen für die ausgewählten/ });
