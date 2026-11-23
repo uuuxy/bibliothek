@@ -22,12 +22,21 @@ describe('Markierung der Bestandstabelle', () => {
 	});
 
 	it('gleicht 20.000 markierte und sichtbare Titel ohne spürbare Wartezeit ab', () => {
-		const alle = zeilen(20000);
-		const auswahl = erzeugeAuswahl();
-		auswahl.alleUmschalten(alle);
-		const start = performance.now();
-		auswahl.angleichen(alle);
-		expect(auswahl.anzahl).toBe(20000);
-		expect(performance.now() - start).toBeLessThan(500);
+		/** Der schnellste von drei Abgleichen: Ein Stocken des Rechners trifft nicht alle. @param {number} n */
+		const dauer = (n) => {
+			const laeufe = [0, 0, 0].map(() => {
+				const alle = zeilen(n);
+				const auswahl = erzeugeAuswahl();
+				auswahl.alleUmschalten(alle);
+				const start = performance.now();
+				auswahl.angleichen(alle);
+				expect(auswahl.anzahl).toBe(n);
+				return performance.now() - start;
+			});
+			return Math.min(...laeufe);
+		};
+		// Gemessen wird das Wachstum, nicht die Uhr: Viermal so viele Titel kosten mit der
+		// Nachschlagetabelle rund das Vierfache, mit includes das Sechzehnfache.
+		expect(dauer(20000) / dauer(5000)).toBeLessThan(9);
 	});
 });

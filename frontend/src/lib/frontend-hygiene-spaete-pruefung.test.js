@@ -162,5 +162,6 @@ describe('Gate: Laufnummer nach dem letzten Warten prüfen', () => {
 			'Nach der Prüfung der Laufnummer wird noch gewartet (etwa auf res.json()). Erst lesen, ' +
 				'dann prüfen, dann zuweisen: In diesem Warten kann ein neuer Lauf beginnen.'
 		).toEqual([]);
-	});
+		// Der Lauf über alle Quelldateien braucht auf einem langsamen CI-Rechner über fünf Sekunden.
+	}, 30_000);
 });
