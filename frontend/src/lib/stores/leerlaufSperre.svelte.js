@@ -280,11 +280,8 @@ export class LeerlaufSperre {
 		this.entsperreLaeuft = true;
 		this.entsperrFehler = null;
 		try {
-			const res = await entsperreAmServer(passwort);
-			if (res.ok) {
-				this.#schliesseAuf(await res.json());
-				return true;
-			}
+			const res = await entsperreAmServer(passwort, (konto) => this.#schliesseAuf(konto));
+			if (res.ok) return true;
 			// 401 heißt „Passwort falsch" oder „diese Anmeldung gibt es nicht mehr".
 			if (res.status === 401 && (await leseSperrzustand()).zustand === 'beendet') {
 				authStore.sitzungAbgelaufen();

@@ -147,6 +147,27 @@ describe('leerlaufSperre: Sperre am Server', () => {
 		);
 	});
 
+	// Käme die Sperre am Server nach dem Aufschließen an, sperrte er erneut, und die nächste
+	// Anfrage brächte den Sperrbildschirm zurück.
+	it('das Aufschließen geht erst hinaus, wenn die Sperre beantwortet ist', async () => {
+		/** @type {(antwort: any) => void} */
+		let sperreKommtAn = () => {};
+		vi.mocked(apiFetch).mockImplementation((url) =>
+			String(url) === '/api/auth/sperren'
+				? new Promise((fertig) => (sperreKommtAn = fertig))
+				: Promise.resolve(/** @type {any} */ ({ ok: true, status: 200, json: async () => KONTO }))
+		);
+		await fristLaeuftAb();
+		const aufgeschlossen = lock.entsperren('richtig');
+		await vi.advanceTimersByTimeAsync(10);
+		expect(aufrufe()).toEqual(['/api/auth/sperren']);
+
+		sperreKommtAn({ ok: true, status: 200, json: async () => ({ gesperrt: true }) });
+		expect(await aufgeschlossen).toBe(true);
+		expect(aufrufe().slice(0, 2)).toEqual(['/api/auth/sperren', '/api/auth/entsperren']);
+		expect(lock.gesperrt).toBe(false);
+	});
+
 	it('aufschließen übernimmt das Konto vom Server und sagt es den anderen Fenstern', async () => {
 		serverAntwortet({ ...SPERRBAR, '/api/auth/entsperren': { status: 200, body: KONTO } });
 		await fristLaeuftAb();
@@ -283,6 +304,45 @@ describe('leerlaufSperre: Sperre am Server', () => {
 			netzIstZurueck();
 			await vi.advanceTimersByTimeAsync(10);
 			expect(aufrufe()).toEqual([]);
+		});
+
+		/**
+		 * Verdeckt, aber am Server offen; das Passwort ist unterwegs, da kommt das Netz zurück.
+		 * @param {number} status Antwort des Servers auf das Passwort
+		 */
+		async function netzKommtWaehrendDesAufschliessens(status) {
+			serverAntwortet({ '/api/auth/sperren': { status: 503 } });
+			await fristLaeuftAb();
+			/** @type {(antwort: any) => void} */
+			let passwortGeprueft = () => {};
+			vi.mocked(apiFetch).mockReset();
+			vi.mocked(apiFetch).mockImplementation((url) =>
+				String(url) === '/api/auth/entsperren'
+					? new Promise((fertig) => (passwortGeprueft = fertig))
+					: Promise.resolve(
+							/** @type {any} */ ({ ok: true, status: 200, json: async () => ({ gesperrt: true }) })
+						)
+			);
+			const aufgeschlossen = lock.entsperren('geheim');
+			netzIstZurueck();
+			await vi.advanceTimersByTimeAsync(10);
+			expect(aufrufe(), 'die Sperre wartet das Aufschließen ab').toEqual(['/api/auth/entsperren']);
+			passwortGeprueft({ ok: status === 200, status, json: async () => KONTO });
+			const offen = await aufgeschlossen;
+			await vi.advanceTimersByTimeAsync(10);
+			return offen;
+		}
+
+		it('schickt keine Sperre hinter einem Aufschließen her, das geöffnet hat', async () => {
+			expect(await netzKommtWaehrendDesAufschliessens(200)).toBe(true);
+			expect(aufrufe()).not.toContain('/api/auth/sperren');
+			expect(lock.gesperrt).toBe(false);
+		});
+
+		it('sperrt am Server, wenn das Passwort falsch war', async () => {
+			expect(await netzKommtWaehrendDesAufschliessens(401)).toBe(false);
+			expect(aufrufe()).toContain('/api/auth/sperren');
+			expect(signal()).toBe('gesperrt');
 		});
 	});
 

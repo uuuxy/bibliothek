@@ -112,7 +112,8 @@ describe('leerlaufSperre', () => {
 		const konto = { email: 'theke@schule.example', rolle: 'mitarbeiter', permissions: [] };
 		const uebernimm = vi.spyOn(authStore, 'uebernimmKonto').mockImplementation(() => {});
 		lock.start();
-		vi.advanceTimersByTime(3 * 60_000 + 10);
+		// Die Sperre geht in der Reihe hinaus (sperreAmServer.js), also erst nach diesem Takt.
+		await vi.advanceTimersByTimeAsync(3 * 60_000 + 10);
 		expect(lock.gesperrt).toBe(true);
 		vi.mocked(apiFetch).mockReset();
 
