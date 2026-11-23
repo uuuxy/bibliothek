@@ -631,7 +631,15 @@ geschrieben.
     vor der Antwort Eingaben annimmt, fällt auf. Rot werden auch Prüfungen, die die Seite messen, bevor
     sie steht (Gerüst, Feldbreite, Rundgang, Schrift, Höhen, Rücken des Inhalts): Sie melden es laut,
     falsch grün werden sie nicht. `neue-fassung` schaltet den Stand schlagartig um; die verzögerten
-    alten Antworten kommen danach, und die Seite folgt der letzten.
+    alten Antworten kommen danach, und die Seite folgt der letzten. Rot ohne Fehler am Programm, weil
+    der Test schneller ist als die Antwort: `erhebung` tippt den Scan, bevor die Theke nach dem Laden
+    steht; `suchpille-einheitlich` misst das Mahnwesen, bevor die Reiter mit den Daten kommen;
+    `ausweis-druckseite` (ohne Netz) markiert in der noch ungefilterten Liste und trennt das Netz,
+    während die eigene Suche läuft, danach ist die Liste leer; `inventur` (verworfen) sieht die
+    Inventur einen Abruf lang in beiden Listen, weil die früheren schon neu da sind, die laufenden noch
+    nicht. `theke-ohne-netz-band` schließt auf, während die Sperre zum Server unterwegs ist: Kommt das
+    Aufschließen dort zuerst an, sperrt der Server danach, und die Sperre steht mit der nächsten
+    Anfrage wieder da; das Passwort schließt erneut auf.
 13. **Dateien aus dem echten Programm:** CSV aus Excel in jedem Format durch alle Türen bis in die
     Datenbank, am Stand davor rot. Excel für Mac schreibt anders als das, was eine Tabelle über Excel sagt:
     In jeder Form Macintosh, nur eine mit CR als Zeilentrenner.
