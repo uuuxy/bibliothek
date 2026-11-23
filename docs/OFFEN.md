@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 20.11.2026
+Stand: 23.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -43,6 +43,8 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
+- [ ] Bestellen ohne Topf (Spende, etwa des Fördervereins) als dritte Wahl im Warenkorb, mit
+  eigener Liste im Zugangs- und im Abgangsbuch. (5.197)
 - [x] Kleine Funde aus einer Durchsicht des Codes: 23 Stellen in fünf Gruppen, je Fund ein
   Commit mit einem Test, der am alten Code rot wird. (5.196)
 - [x] Die übrigen Google-Seiten: acht Punkte entscheiden, vom Kopf der Buchakte als App bar bis
@@ -107,6 +109,27 @@ Bibliothek gesperrt, für Schulbücher nicht.
 
 Nächster Schritt: den Ablauf zum Schuljahresbeginn an der Theke durchgehen, dann entscheiden, ob
 die Frist der Oberstufe oder die Zählung der Automatik sich ändert.
+
+### 5.197 Bestellen ohne Topf
+
+Auftrag der Bibliothek: Bücher müssen sich ohne Topf bestellen lassen (Spende des Fördervereins),
+als wählbare Möglichkeit, und im Zugangs- und im Abgangsbuch erscheinen.
+
+Stand im Programm: Der Topf einer Bestellung ist Land oder Schulträger, sonst nimmt der Server sie
+nicht an (`mitteltopf.IstGueltig`; Checks in den Migrationen 109, 110 und 150). Am Topf hängen
+Betreff und Vermerk in Anschreiben und Mail an den Händler, die Kundennummer
+(`Lieferant.KundennummerFuer`), die Listen im Zugangs- und im Abgangsbuch, der Eigentumsvermerk
+auf dem Etikett und die Ersatzforderung. Ein gespendetes Buch kommt heute nur über „Buch anlegen"
+oder den Listenimport in den Bestand; das Zugangsbuch führt es unter „ohne Zuordnung", das
+Abgangsbuch nach der Faustregel unter Schulträger oder Land. Aus Littera kommen 86 Exemplare mit
+dem Vermerk „Förderverein"; übernommen wird nur der Wortlaut (`internal/littera/eigentum.go`).
+
+Offen ist die Frage, ob eine Bestellung ohne Topf in allem wie die Schülerbücherei läuft
+(Kundennummer, Rechnung an die Schule, Ersatz bei Verlust), mit eigenem Satz auf Anschreiben und
+Mail und eigener Liste in Zugangs- und Abgangsbuch.
+
+Nächster Schritt nach der Antwort: in zwei Stufen bauen, erst Warenkorb, Händler und die beiden
+Bücher, dann Etikett, Ersatzforderung und die Littera-Exemplare.
 
 ### 5.182 Adressabgleich mit dem Webmail einrichten
 
