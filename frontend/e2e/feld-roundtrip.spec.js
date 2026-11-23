@@ -201,7 +201,10 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 			.toBe('2031');
 		await page.getByRole('tab', { name: /Ausleihen & Vormerkungen/ }).click();
 		await page.getByRole('button', { name: 'Rückgabedatum bearbeiten' }).first().click();
-		await page.getByLabel('Rückgabedatum', { exact: true }).fill('2026-12-24');
+		// Ein Tag nach heute: Ein festes Datum läge irgendwann vor dem Tag der Ausleihe, und der
+		// Server lehnte es ab.
+		const frist = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+		await page.getByLabel('Rückgabedatum', { exact: true }).fill(frist);
 		await page.getByRole('button', { name: 'Rückgabedatum speichern' }).click();
 		await expect
 			.poll(() =>
@@ -209,7 +212,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 					`SELECT rueckgabe_frist::date::text FROM ausleihen a JOIN buecher_exemplare e ON e.id = a.exemplar_id WHERE e.barcode_id = 'RT-EX-${s}'`
 				)
 			)
-			.toBe('2026-12-24');
+			.toBe(frist);
 	});
 
 	test('Exemplar-Barcode in der Buch-Akte', async ({ page }) => {

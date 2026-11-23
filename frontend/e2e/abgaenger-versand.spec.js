@@ -52,7 +52,8 @@ test('Abgänger: Klassenauswahl und Override landen im Versand-Request', async (
 	await expect(dialog.getByRole('heading', { name: 'Kontoauszüge versenden' })).toBeVisible();
 
 	const senden = dialog.getByRole('button', { name: /senden$/ });
-	const checkboxen = dialog.getByRole('checkbox');
+	// Nur die Kästchen der Klassen; „Alle auswählen“ darüber zählt der Knopf nicht mit.
+	const checkboxen = dialog.locator('input[type="checkbox"]:not([data-auswahl-alle])');
 	const anzahl = await checkboxen.count();
 	expect(anzahl).toBeGreaterThan(0);
 	await expect(senden).toContainText(`${anzahl}`);
