@@ -15,8 +15,10 @@
 		{ value: 'qr', label: 'QR-Code' }
 	];
 	// Das große Lernmittel-Etikett hat ein festes Raster und immer den Strichcode: Startfeld und
-	// Barcode-Art entfallen, statt wirkungslos stehen zu bleiben.
+	// Barcode-Art entfallen, statt wirkungslos stehen zu bleiben. Das Signaturetikett trägt keinen
+	// Code, die Barcode-Art entfällt dort ebenso.
 	const grossesEtikett = $derived(etikettFormat(etikettenStore.formatId).ohneStartfeld === true);
+	const signaturEtikett = $derived(etikettFormat(etikettenStore.formatId).ohneBarcode === true);
 </script>
 
 <div class="py-5 space-y-4 border-b border-outline-variant">
@@ -33,6 +35,10 @@
 			{#if grossesEtikett}
 				<p class="text-xs text-on-surface-variant mt-1">
 					Zum Ausschneiden, nicht für Bücher der Schülerbücherei
+				</p>
+			{:else if signaturEtikett}
+				<p class="text-xs text-on-surface-variant mt-1">
+					Regaladresse und Kürzel für den Buchrücken, auf dem Bogen der kleinen Barcodes
 				</p>
 			{/if}
 		</div>
@@ -60,14 +66,16 @@
 				</p>
 			</div>
 
-			<div class="space-y-1.5">
-				<span class="text-xs font-medium text-on-surface-variant block">Barcode-Ausgabe</span>
-				<Select
-					bind:value={etikettenStore.barcodeArt}
-					options={BARCODE_AUSGABE}
-					aria-label="Barcode-Ausgabe"
-				/>
-			</div>
+			{#if !signaturEtikett}
+				<div class="space-y-1.5">
+					<span class="text-xs font-medium text-on-surface-variant block">Barcode-Ausgabe</span>
+					<Select
+						bind:value={etikettenStore.barcodeArt}
+						options={BARCODE_AUSGABE}
+						aria-label="Barcode-Ausgabe"
+					/>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>

@@ -15,7 +15,7 @@
  * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin. Die Maße in
  * Millimetern kennt nur der Server: Die Vorschau zeigt sein Druck-PDF.
  *
- * @typedef {{ value: string, label: string, zusatz: string, kurz: string, spalten: number, zeilen: number, ohneStartfeld?: boolean }} EtikettFormat
+ * @typedef {{ value: string, label: string, zusatz: string, kurz: string, spalten: number, zeilen: number, ohneStartfeld?: boolean, ohneBarcode?: boolean }} EtikettFormat
  * @type {EtikettFormat[]}
  */
 export const ETIKETT_FORMATE = [
@@ -63,8 +63,25 @@ export const LERNMITTEL_ETIKETT = {
 	ohneStartfeld: true
 };
 
-/** Die Auswahl der Buch-Etiketten im Druck-Center: die Bögen und das große Etikett. */
-export const BUCH_ETIKETT_FORMATE = [...ETIKETT_FORMATE, LERNMITTEL_ETIKETT];
+/**
+ * Das Signaturetikett für den Buchrücken: Regaladresse und Kürzel groß, kein Strichcode. Es steht
+ * auf dem Bogen der kleinen Barcodes; Raster und Erzeuger liegen beim Server
+ * (pdf.SignaturEtikettFormat).
+ *
+ * @type {EtikettFormat}
+ */
+export const SIGNATUR_ETIKETT = {
+	value: 'signatur_52',
+	label: 'Signatur-Etiketten',
+	zusatz: '52 Etiketten, 4 × 13',
+	kurz: 'Signatur-Etiketten',
+	spalten: 4,
+	zeilen: 13,
+	ohneBarcode: true
+};
+
+/** Die Auswahl der Buch-Etiketten im Druck-Center: die Bögen und die beiden besonderen Etiketten. */
+export const BUCH_ETIKETT_FORMATE = [...ETIKETT_FORMATE, LERNMITTEL_ETIKETT, SIGNATUR_ETIKETT];
 
 /**
  * Das Format zu einer Kennung. Unbekanntes liefert den ersten Eintrag, damit Überschrift und

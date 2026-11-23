@@ -1,6 +1,9 @@
 package repository
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // signaturPraefixBedingung liefert das SQL-Prädikat „diese Signatur liegt im Regalbereich
 // des Platzhalters $n" — die einzige Auslegung dessen, was eine Signatur als Bereich meint.
@@ -39,4 +42,15 @@ const SignaturTrenner = " / "
 // deshalb am ersten.
 func sqlSignaturRegaladresse(spalte string) string {
 	return fmt.Sprintf("btrim(split_part(btrim(%s), '%s', 1))", spalte, SignaturTrenner)
+}
+
+// SignaturZeilen teilt die Aufschrift für das Signaturetikett in Regaladresse und Kürzel, am
+// ersten Trenner wie sqlSignaturRegaladresse. Ohne Trenner oder ohne Kürzel ist sie eine Zeile.
+func SignaturZeilen(signatur string) []string {
+	regal, kuerzel, geteilt := strings.Cut(signatur, SignaturTrenner)
+	regal, kuerzel = strings.TrimSpace(regal), strings.TrimSpace(kuerzel)
+	if !geteilt || kuerzel == "" {
+		return []string{regal}
+	}
+	return []string{regal, kuerzel}
 }

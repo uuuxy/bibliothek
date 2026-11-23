@@ -11,6 +11,7 @@ import (
 	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pdf"
 	"bibliothek/internal/pkg/mitteltopf"
+	"bibliothek/internal/repository"
 )
 
 // etikettenbogenAnfrage ist ein Druckauftrag aus dem Druck-Center: Format, Startposition und
@@ -49,6 +50,10 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 
 		ctx := r.Context()
 		buchetikett.ErgaenzeServerfelder(ctx, t.DB.Pool, req.Etiketten)
+		if req.FormatID == pdf.SignaturEtikettFormat {
+			antworteSignaturEtiketten(w, req.Startposition, req.Etiketten)
+			return
+		}
 		kopf := buchetikett.LadeKopf(ctx, t.DB.Pool)
 
 		if req.FormatID == pdf.LernmittelEtikettFormat {
@@ -93,6 +98,31 @@ func antworteLernmittelEtiketten(w http.ResponseWriter, etiketten []buchetikett.
 		return
 	}
 	tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, "etiketten_gross.pdf", daten)
+}
+
+// antworteSignaturEtiketten liefert die Signaturetiketten für den Buchrücken. Die Signatur kommt
+// vom Titel (buchetikett.ErgaenzeServerfelder); ohne sie bliebe das Etikett leer. Die Tür lehnt
+// dann den ganzen Auftrag ab und nennt die Barcodes wie beim großen Lernmittel-Etikett.
+func antworteSignaturEtiketten(w http.ResponseWriter, startposition int, etiketten []buchetikett.Etikett) {
+	var ohne []string
+	aufschriften := make([][]string, 0, len(etiketten))
+	for _, e := range etiketten {
+		if strings.TrimSpace(e.Signatur) == "" {
+			ohne = append(ohne, e.BarcodeID)
+		}
+		aufschriften = append(aufschriften, repository.SignaturZeilen(e.Signatur))
+	}
+	if len(ohne) > 0 {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			"Ohne Signatur am Titel gibt es kein Signatur-Etikett: "+barcodeAufzaehlung(ohne), nil)
+		return
+	}
+
+	bogen := pdf.ErzeugeSignaturEtiketten(startposition, aufschriften)
+	tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Zeigen, "etiketten_signatur.pdf")
+	if err := bogen.Output(w); err != nil {
+		slog.Error("Fehler beim Senden des PDFs", "fehler", err)
+	}
 }
 
 // barcodeAufzaehlung nennt höchstens drei Barcodes und den Rest als Zahl, damit die Meldung in

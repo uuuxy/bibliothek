@@ -4,7 +4,7 @@ import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
-import { startfeldAufBogen } from './etikettformate.js';
+import { etikettFormat, startfeldAufBogen } from './etikettformate.js';
 
 /** @typedef {{ barcode_id?: string, titel?: string, autor?: string }} DruckEtikett */
 /** @typedef {{ formatId: string, startFeld: number, alsQR: boolean }} DruckBogen */
@@ -75,7 +75,9 @@ export async function druckeBogen(bogen, etiketten) {
 			// Ohne offenes PDF ist nichts gedruckt; die Etiketten bleiben auf der Liste.
 			snackbars.addToast(PDF_BLOCKIERT, 'warning');
 		} else if (res.ok) {
-			await vermerkeGedruckt(etiketten);
+			// Das Signaturetikett ersetzt das Etikett mit dem Strichcode nicht; das Exemplar bleibt
+			// unter „Fehlende Etiketten", bis sein Strichcode gedruckt ist.
+			if (!etikettFormat(bogen.formatId).ohneBarcode) await vermerkeGedruckt(etiketten);
 		} else {
 			console.error('Fehler beim Erstellen des PDFs');
 			snackbars.addToast(await leseApiFehler(res, 'Fehler beim Erstellen des PDFs'), 'error');

@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-22. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-23. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -198,14 +198,18 @@ Präfixsuche durchsehen („Jug" findet „Jug Her", „Jug Pre" …). Trägt ei
 Aufschrift wie „LMF Deu 7 / Bie" — so kommen die Signaturen aus Littera —, fasst die Liste
 nach dem Teil vor „ / " zusammen; am Titel und im Regal steht die ganze Aufschrift. Dasselbe
 gilt für die Vorschläge im Feld _Signatur_ und für die Auswahl der Inventur. Wer dort auf einen
-Vorschlag zeigt, sieht daneben bis zu zwei Cover von Titeln unter dieser Signatur. (§13)
+Vorschlag zeigt, sieht daneben bis zu zwei Cover von Titeln unter dieser Signatur. Wer einen
+Vorschlag wählt, bekommt die ersten drei Buchstaben des Nachnamens dazu („Sk / Bie“), im
+Bestellfenster wie beim Anlegen; das Feld bleibt änderbar. (§13)
 
 ## Druck-Center
 
 Vier Reiter (§9):
 - **Buch-Etiketten**: Format, Startposition auf einem angebrochenen Bogen, Titel aus dem Katalog oder
   aus einer Klasse; auch das große Lernmittel-Etikett mit Ausleihtabelle (vier je A4-Blatt, nicht für
-  Bücher der Schülerbücherei). Die Vorschau ist das Druck-PDF selbst („Bogen 1 von 3 · 68 Etiketten“).
+  Bücher der Schülerbücherei) und das Signatur-Etikett für den Buchrücken (Regaladresse und Kürzel
+  groß, auf dem Bogen der kleinen Barcodes; es nimmt kein Exemplar von „Fehlende Etiketten“). Die
+  Vorschau ist das Druck-PDF selbst („Bogen 1 von 3 · 68 Etiketten“).
 - **Fehlende Etiketten**: alle Exemplare ohne Etikett; die Zahl steht an der Navigation.
 - **Ausweis-Design**: Vorder- und Rückseite. Bis zur gestrichelten Linie druckt der Kartendrucker
   sicher: Text, Bilder und Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand. Steht

@@ -63,6 +63,18 @@ describe('druckeBogen', () => {
 		expect(fenster?.location.replace).toHaveBeenCalledWith('blob:probe');
 	});
 
+	// Das Signaturetikett trägt keinen Strichcode: Das Exemplar bleibt unter „Fehlende Etiketten",
+	// bis sein Etikett mit dem Strichcode gedruckt ist.
+	it('vermerkt nach dem Signaturetikett nichts als gedruckt', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(200));
+
+		await druckeBogen({ ...BOGEN, formatId: 'signatur_52' }, ETIKETTEN);
+
+		expect(rumpfe('/api/print/labels').map((r) => r.formatId)).toEqual(['signatur_52']);
+		expect(rumpfe('/api/exemplare/etiketten-gedruckt')).toHaveLength(0);
+		expect(fenster?.location.replace).toHaveBeenCalledWith('blob:probe');
+	});
+
 	it('meldet einen gescheiterten Druck, schließt den Tab und vermerkt nichts', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
 

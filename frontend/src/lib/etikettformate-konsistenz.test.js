@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import {
 	ETIKETT_FORMATE,
 	LERNMITTEL_ETIKETT,
+	SIGNATUR_ETIKETT,
 	felderProBogen,
 	startfeldAufBogen
 } from './components/etiketten/etikettformate.js';
@@ -116,6 +117,20 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 		// Ein Startfeld aus einem Bogen davor schöbe sonst leere Felder vor das erste Etikett.
 		expect(startfeldAufBogen(3, LERNMITTEL_ETIKETT.value)).toBe(1);
 		expect(felderProBogen(LERNMITTEL_ETIKETT.value)).toBe(4);
+	});
+
+	it('das Signaturetikett heißt wie beim Server und liegt im Raster der kleinen Barcodes', () => {
+		// Die Tür erkennt es an pdf.SignaturEtikettFormat und druckt es auf pdf.signaturBogen; Vorschau
+		// und Startposition zählen mit dem Raster aus dieser Datei.
+		const goSignatur = readFileSync(
+			join(repoRoot, 'internal', 'pdf', 'etikett_signatur.go'),
+			'utf8'
+		);
+		expect(goSignatur).toContain(`SignaturEtikettFormat = "${SIGNATUR_ETIKETT.value}"`);
+		expect(goSignatur).toContain('signaturBogen = "standard_52"');
+		const klein = goFormate.find((f) => f.id === 'standard_52');
+		expect([SIGNATUR_ETIKETT.spalten, SIGNATUR_ETIKETT.zeilen]).toEqual([klein?.cols, klein?.rows]);
+		expect(startfeldAufBogen(30, SIGNATUR_ETIKETT.value)).toBe(30);
 	});
 
 	it('keine zweite Formatliste im Frontend', () => {
