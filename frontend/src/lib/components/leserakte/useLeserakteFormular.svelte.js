@@ -27,16 +27,9 @@ function schulfelder(daten, leser, hatKonto) {
 	const klasseGeaendert = daten.klasse !== (leser?.klasse || '');
 
 	/** @type {Record<string, unknown>} */
-	const felder = {
-		...ausweis,
-		lusd_id: daten.lusd_id,
-		klasse: daten.klasse,
-		strasse: daten.strasse,
-		hausnummer: daten.hausnummer,
-		plz: daten.plz,
-		ort: daten.ort,
-		eltern_email: daten.eltern_email
-	};
+	const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
+	for (const feld of ['strasse', 'hausnummer', 'plz', 'ort', 'eltern_email'])
+		felder[feld] = daten[feld];
 	if (!(klasseGeaendert && !jahrAngefasst)) {
 		felder.abgaenger_jahr = daten.abgaenger_jahr ? Number.parseInt(daten.abgaenger_jahr, 10) : null;
 	}
