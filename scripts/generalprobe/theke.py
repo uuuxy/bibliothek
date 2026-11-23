@@ -116,7 +116,8 @@ print("\n4) Etikett nachdrucken")
 for s in (stich["frei"][0], stich["frei"][-1]):
     code, pdf, ms = req("POST", "/api/print/labels", {"formatId": "zweckform_l4760", "startPosition": 1,
                         "isQR": False, "items": [{"BarcodeID": s["scan"], "Titel": "Probe", "Autor": ""}]}, roh=True)
-    steht = s["scan"].encode() in pdf_text(pdf)
+    # Die Schriften sind eingebettet: Text steht im PDF als UTF-16BE.
+    steht = s["scan"].encode("utf-16-be") in pdf_text(pdf)
     pruefe(code == 200 and (pdf or b"")[:5] == b"%PDF-" and steht,
            f"Nr {s['nummer']}: HTTP {code}, PDF mit der Nummer {s['scan']}: {steht}")
 
