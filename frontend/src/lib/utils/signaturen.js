@@ -25,6 +25,27 @@ export async function ladeSignaturen() {
 	}
 }
 
+/** Trennt Regaladresse und Kürzel in der Aufschrift, wie am Server (repository.SignaturTrenner). */
+const SIGNATUR_TRENNER = ' / ';
+
+/**
+ * Die Aufschrift zu einer gewählten Regaladresse, wie Littera sie in der Vorgabe bildet: dazu
+ * die ersten drei Buchstaben des Nachnamens („LMF Deu 7 / Bie", „Sk / McC"). Den Nachnamen
+ * liest sie nur aus der Form „Nachname, Vorname", die DNB und Littera schreiben; ohne Komma
+ * bleibt es bei der Regaladresse, das Kürzel tippt dann jemand dazu.
+ * @param {string} regaladresse
+ * @param {string | null | undefined} autor
+ * @returns {string}
+ */
+export function signaturMitKuerzel(regaladresse, autor) {
+	const komma = (autor ?? '').indexOf(',');
+	const buchstaben = komma > 0 ? (autor?.slice(0, komma).match(/\p{L}/gu) ?? []) : [];
+	if (buchstaben.length === 0) {
+		return regaladresse;
+	}
+	return regaladresse + SIGNATUR_TRENNER + buchstaben.slice(0, 3).join('');
+}
+
 /** Je Signatur eine Anfrage in LEBENSDAUER_MS: Wer im Menü auf und ab fährt, zeigt mehrmals auf
  *  dieselbe. Danach fragt das nächste Zeigen neu, sonst fehlte ein neues Cover oder zeigte ein
  *  umgezogener Titel bis zum Neuladen der Seite. */

@@ -130,6 +130,28 @@ describe('TrefferPruefung: die Signatur kommt aus dem Bestand', () => {
 		).toEqual(['JF 351 Titel', 'MANGA 155 Titel']);
 		expect(apiFetch).toHaveBeenCalledWith('/api/signaturen');
 	});
+
+	// Wie in Littera: Zur gewählten Regaladresse kommt das Kürzel aus dem Nachnamen, und das
+	// Feld bleibt schon beim Bestellen änderbar.
+	it('hängt an die gewählte Regaladresse das Kürzel des Verfassers und lässt es ändern', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [{ signatur: 'JF', titel: 351, exemplare: 400 }]
+			})
+		);
+		const screen = fenster({ ...titel, autor: 'Funke, Cornelia', signatur: '' });
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Signatur/));
+
+		await fireEvent.click(await screen.findByRole('button', { name: 'Vorschläge zeigen' }));
+		await fireEvent.click(screen.getByRole('option', { name: /JF/ }));
+		expect(feld.value).toBe('JF / Fun');
+
+		await fireEvent.input(feld, { target: { value: 'JF / Fu' } });
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/signatur', { signatur: 'JF / Fu' });
+	});
 });
 
 // Schlagworte (Migration 138). Das Fenster ersetzt die Menge als Ganzes — es muss also

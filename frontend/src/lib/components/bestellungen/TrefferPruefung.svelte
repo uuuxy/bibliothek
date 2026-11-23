@@ -9,7 +9,7 @@
      Eigene Datei, seit BestellSuche mit dem Fenster über der 200-Zeilen-Marke lag. -->
 <script>
 	import { apiPut } from '../../apiFetch.js';
-	import { ladeSignaturen } from '../../utils/signaturen.js';
+	import { ladeSignaturen, signaturMitKuerzel } from '../../utils/signaturen.js';
 	import TrefferPruefungSchlagworte from './TrefferPruefungSchlagworte.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -132,6 +132,7 @@
 			id="stagedSignaturInput"
 			bind:value={signatur}
 			vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
+			onwaehlen={(wert) => (signatur = signaturMitKuerzel(wert, treffer.autor))}
 			placeholder="Regaladresse wählen"
 			feld="font-medium"
 		>

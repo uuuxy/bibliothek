@@ -6,7 +6,7 @@
 <script>
 	import VorschlagFeld from '../../../../lib/components/ui/VorschlagFeld.svelte';
 	import SignaturCoverVorschau from '../../../../lib/components/signaturen/SignaturCoverVorschau.svelte';
-	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
+	import { ladeSignaturen, signaturMitKuerzel } from '../../../../lib/utils/signaturen.js';
 	import { signaturFehlt, signaturPflicht } from './buchFormularRegeln.js';
 
 	/** @type {{ formular: any, verlangt?: boolean }} */
@@ -41,6 +41,7 @@
 	aria-required={pflicht || undefined}
 	bind:value={formular.signatur}
 	vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
+	onwaehlen={(wert) => (formular.signatur = signaturMitKuerzel(wert, formular.author))}
 	placeholder={beispiele ? `z. B. ${beispiele}` : 'Signatur des Regals'}
 	required={pflicht}
 	ungueltig={fehlt}

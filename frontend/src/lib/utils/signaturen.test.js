@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ladeCoverZurSignatur } from './signaturen.js';
+import { ladeCoverZurSignatur, signaturMitKuerzel } from './signaturen.js';
 import { apiFetch } from '../apiFetch.js';
 
 vi.mock('../apiFetch.js', async (importOriginal) => ({
@@ -9,6 +9,31 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 
 beforeEach(() => {
 	vi.mocked(apiFetch).mockReset();
+});
+
+// Littera bildet die zweite Zeile der Signatur in der Vorgabe aus den ersten drei Buchstaben
+// des Nachnamens; Namenszusätze wie Mc, De, Le stehen ohne Leerzeichen am Namen (Handbuch,
+// „Generierung der Signatur").
+describe('signaturMitKuerzel', () => {
+	it.each([
+		['LMF Deu 7', 'Bieber, Hans', 'LMF Deu 7 / Bie'],
+		['Sk', 'Bär, Anna', 'Sk / Bär'],
+		['Sk', 'McCourt, Frank', 'Sk / McC'],
+		['Sk', 'Le Corbusier, Charles', 'Sk / LeC'],
+		['Sk', 'Knigge-Tesche, Renate', 'Sk / Kni'],
+		['Sk', 'Fahlbusch, Erwin (Hg.)', 'Sk / Fah'],
+		['Sk', 'Li, Wei', 'Sk / Li']
+	])('%s mit %s ergibt %s', (regal, autor, erwartet) => {
+		expect(signaturMitKuerzel(regal, autor)).toBe(erwartet);
+	});
+
+	// Ohne „Nachname, Vorname" ist nicht zu erkennen, welches Wort der Nachname ist.
+	it.each([['Hans Bieber'], ['hrsg. von Peter Wicke'], [', Hans'], [''], [null], [undefined]])(
+		'lässt die Regaladresse bei %s allein',
+		(autor) => {
+			expect(signaturMitKuerzel('Sk', autor)).toBe('Sk');
+		}
+	);
 });
 
 const titel = { titel_id: 't1', titel: 'Emil', isbn: '978', cover_url: '/uploads/emil.webp' };

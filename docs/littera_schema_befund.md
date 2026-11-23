@@ -213,10 +213,14 @@ enthält den Trenner nie, `Sig2` bei 235 Exemplaren („PoWi / Ich"): Geteilt wi
 ersten. Einen Schrägstrich ohne Leerzeichen tragen 1.411 Exemplare in `Sig1` („Pa/KL",
 „DvD/Sp"); er trennt nicht (gezählt am 07.10.2026).
 
-**Das Programm erfindet keine Signatur** (entschieden am 22.09.2026): Sie klebt am Buch, und
-nach ihr steht es im Regal. Für einen neuen Titel bietet das Feld die Regaladressen an, die an
-den Titeln des Bestands stehen (`GET /api/signaturen`, im Buchformular und im Bestellkorb über
-`frontend/src/lib/utils/signaturen.js`); aus der Gattung der DNB wird keine gebildet. Ein Fach
+**Die Regaladresse kommt aus dem Bestand, das Kürzel aus dem Verfasser** (entschieden am
+23.11.2026): Die Signatur klebt am Buch, und nach ihr steht es im Regal. Für einen neuen Titel
+bietet das Feld die Regaladressen an, die an den Titeln des Bestands stehen (`GET
+/api/signaturen`, im Buchformular und im Bestellkorb über `frontend/src/lib/utils/signaturen.js`);
+aus der Gattung der DNB wird keine gebildet. Wer eine Regaladresse wählt, bekommt wie in Littera
+die ersten drei Buchstaben des Nachnamens dazu („Sk / Bie", `signaturMitKuerzel`), schon beim
+Bestellen, und kann die Aufschrift danach ändern. Den Nachnamen liest das Feld nur aus der Form
+„Nachname, Vorname"; sonst bleibt es bei der Regaladresse. Ein Fach
 liest die Übernahme nur aus einer Lernmittel-Signatur (`lmf.Zerlege`), sonst aus den
 Schlagworten.
 
