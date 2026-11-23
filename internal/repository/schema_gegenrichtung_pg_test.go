@@ -356,6 +356,10 @@ var checkBedingungenBestand = []string{
 	// er bricht laut ab, statt still Namen zu leeren.
 	"chk_leser_art", "chk_leser_nur_schueler_werden_abgaenger",
 	"chk_leser_schueler_pflichtfelder",
+	// Migration 181, chk_leser_anschrift_nur_schueler: Anschrift und Eltern-E-Mail stehen nur am
+	// Schüler. Die Tür weist sie am Kollegen mit 400 ab (api.pruefeSchuelerfelder), die Anlage
+	// nimmt keine an; der Check ist die Schranke dahinter.
+	"chk_leser_anschrift_nur_schueler",
 	// Migration 110: Vokabular und Wertebereiche des Bescheids.
 	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie mitteltopf.IstGueltig
 	// (internal/pkg/mitteltopf); chk_schaden_art sind genau die zwei Kästchen des Formulars.

@@ -15,7 +15,8 @@ import (
 // Klasse, Abgangsjahr und LUSD-ID gehören nur zu einem Schüler. Über die Akte an einem Kollegen
 // gesetzt, stand eine Klasse still in der Zeile, und eine LUSD-ID lief in
 // chk_leser_nur_schueler_werden_abgaenger und kam als 500 zurück. Die Anlage weist die Klasse
-// schon mit demselben Satz ab.
+// schon mit demselben Satz ab. Anschrift und Eltern-E-Mail führt das Programm für das Kollegium
+// nicht (chk_leser_anschrift_nur_schueler).
 func TestLeserAendern_SchuelerfelderNurBeimSchueler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -29,6 +30,10 @@ func TestLeserAendern_SchuelerfelderNurBeimSchueler(t *testing.T) {
 		{"LUSD-ID", `{"lusd_id":"12345"}`, "Nur ein Schüler hat ein Abgangsjahr und eine LUSD-ID."},
 		{"Abgangsjahr", `{"abgaenger_jahr":2030}`, "Nur ein Schüler hat ein Abgangsjahr und eine LUSD-ID."},
 		{"Klasse mit Namen", `{"klasse":"05F1","nachname":"Neu"}`, meldungNurSchuelerHatKlasse},
+		// Anschrift und Eltern-E-Mail führt das Programm für das Kollegium nicht, auch nicht leer.
+		{"Anschrift", `{"strasse":"Schulweg","hausnummer":"1","plz":"61348","ort":"Bad Homburg"}`, meldungNurSchuelerHatAnschrift},
+		{"Anschrift leer", `{"ort":""}`, meldungNurSchuelerHatAnschrift},
+		{"Eltern-E-Mail", `{"eltern_email":"eltern@example.org"}`, meldungNurSchuelerHatAnschrift},
 	} {
 		t.Run(fall.name, func(t *testing.T) {
 			rec := aendereLeserUeberTuer(t, srv, kollege, fall.rumpf)
@@ -52,8 +57,8 @@ func TestLeserAendern_SchuelerfelderNurBeimSchueler(t *testing.T) {
 	if rec := aendereLeserUeberTuer(t, srv, kollege, `{"nachname":"Geaendert"}`); rec.Code != http.StatusOK {
 		t.Errorf("Nachname einer Lehrkraft = %d %s, erwartet 200", rec.Code, rec.Body.String())
 	}
-	if rec := aendereLeserUeberTuer(t, srv, schueler, `{"klasse":"08G1","lusd_id":"12345","abgaenger_jahr":2032}`); rec.Code != http.StatusOK {
-		t.Errorf("Klasse, LUSD-ID und Abgangsjahr eines Schülers = %d %s, erwartet 200", rec.Code, rec.Body.String())
+	if rec := aendereLeserUeberTuer(t, srv, schueler, `{"klasse":"08G1","lusd_id":"12345","abgaenger_jahr":2032,"strasse":"Schulweg","eltern_email":"eltern@example.org"}`); rec.Code != http.StatusOK {
+		t.Errorf("Klasse, LUSD-ID, Abgangsjahr und Anschrift eines Schülers = %d %s, erwartet 200", rec.Code, rec.Body.String())
 	}
 	if rec := aendereLeserUeberTuer(t, srv, "00000000-0000-0000-0000-000000000000", `{"klasse":"08G1"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("Klasse an einem unbekannten Leser = %d %s, erwartet 404", rec.Code, rec.Body.String())

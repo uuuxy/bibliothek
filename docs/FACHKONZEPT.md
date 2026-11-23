@@ -668,12 +668,13 @@ nicht zu sehen. Die Kehrseite ist eine eigene Bugklasse; sie steht in
 [sweeps.md](sweeps.md) („Schreibpfad gegen gefilterte Sicht").
 
 **Eine Maske für jeden.** Akte und Formular zeigen für jede Art dieselben Felder an
-derselben Stelle. Einem Kollegen sind drei verschlossen, und zwar nicht aus Geschmack:
+derselben Stelle. Einem Kollegen sind verschlossen, und zwar nicht aus Geschmack:
 Klasse und Abgangsjahr (eine Klasse hat nur ein Schüler, und das Abgangsjahr leitet der
-Server aus ihr ab) sowie die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler).
-Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen
-bleiben Geburtsdatum, Anschrift und Eltern-E-Mail leer; eine Ausweisnummer hat jeder mit
-freigeschaltetem Zugang, das Programm vergibt sie.
+Server aus ihr ab), die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler) sowie
+Anschrift und Eltern-E-Mail: Für das Kollegium führt das Programm keine Anschrift
+(`chk_leser_anschrift_nur_schueler`). Geburtsdatum und
+Ausweisnummer stehen jedem offen. Beim Kollegen bleibt das Geburtsdatum leer; eine
+Ausweisnummer hat jeder mit freigeschaltetem Zugang, das Programm vergibt sie.
 
 **Die Schul-E-Mail ist beim Anlegen von Lehrkraft, LiV, Sekretariat und U-plus Pflicht.**
 Bei Praktikum und Fachbereich muss sie leer bleiben — dort entsteht kein Konto, weder beim

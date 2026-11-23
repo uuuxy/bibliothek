@@ -158,25 +158,23 @@ func TestLeserArtAendern(t *testing.T) {
 
 	// Der eigentliche Fall: Wer eine Rolle hat, steht seit Migration 125 mit einer Leserzeile
 	// in der Liste, und an ihr muss sich etwas nachtragen lassen. Der Rumpf hier ist genau
-	// der, den das Formular für einen Kollegen baut: ohne klasse, ohne
-	// abgaenger_jahr, ohne lusd_id, ohne eltern_email. Mit ihnen (leer) antwortete der
-	// Server „Bitte das Feld „Klasse“ ausfüllen".
-	t.Run("Adresse eines Kollegen nachtragen", func(t *testing.T) {
-		id := legeKollegen(t, "Adresse", "lehrkraft")
-		rec := patch(t, id, `{"vorname":"Art","nachname":"Adresse","art":"lehrkraft",
-			"geburtsdatum":null,"strasse":"Kleegartenstr.","hausnummer":"8",
-			"plz":"61381","ort":"Friedrichsdorf"}`)
+	// der, den das Formular für einen Kollegen baut: ohne klasse, ohne abgaenger_jahr, ohne
+	// lusd_id, ohne Anschrift und ohne eltern_email. Mit ihnen (leer) antwortete der Server
+	// „Bitte das Feld „Klasse“ ausfüllen".
+	t.Run("Geburtsdatum eines Kollegen nachtragen", func(t *testing.T) {
+		id := legeKollegen(t, "Nachtrag", "lehrkraft")
+		rec := patch(t, id, `{"vorname":"Art","nachname":"Nachtrag","art":"lehrkraft",
+			"geburtsdatum":"1980-04-12"}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("PATCH gab %d: %s", rec.Code, rec.Body.String())
 		}
-		var strasse, plz, ort string
+		var geburtsdatum string
 		if err := pool.QueryRow(ctx,
-			`SELECT COALESCE(strasse,''), COALESCE(plz,''), COALESCE(ort,'')
-			   FROM leser WHERE id = $1`, id).Scan(&strasse, &plz, &ort); err != nil {
-			t.Fatalf("Adresse lesen: %v", err)
+			`SELECT COALESCE(TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), '') FROM leser WHERE id = $1`, id).Scan(&geburtsdatum); err != nil {
+			t.Fatalf("Geburtsdatum lesen: %v", err)
 		}
-		if strasse != "Kleegartenstr." || plz != "61381" || ort != "Friedrichsdorf" {
-			t.Fatalf("Adresse steht als %q %q %q in der Datenbank", strasse, plz, ort)
+		if geburtsdatum != "1980-04-12" {
+			t.Fatalf("Geburtsdatum steht als %q in der Datenbank", geburtsdatum)
 		}
 	})
 }

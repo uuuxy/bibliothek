@@ -7,7 +7,8 @@
 
        - Eltern E-Mail: die Adresse der Erziehungsberechtigten an der Leserzeile
          (leser.eltern_email). Ein Kollege hat keine Eltern — bei ihm ist das Feld
-         verschlossen, wie Klasse und Abgangsjahr.
+         verschlossen, wie Klasse und Abgangsjahr. Die Anschrift ebenso: Für das Kollegium
+         führt das Programm keine (chk_leser_anschrift_nur_schueler).
        - Schul-E-Mail: die dienstliche Adresse am Konto (benutzer.email). Sie ist keine
          Kontaktangabe, sondern der Schlüssel: An ihr erkennt die Anmeldung (IMAP) die
          Person, und an ihr hängt der Schutz vor dem Doppeleintrag.
@@ -44,24 +45,34 @@
 			etikett="Straße"
 			class="col-span-3"
 			bind:value={eingaben.strasse}
-			placeholder="Musterstraße"
+			placeholder={kollege ? '' : 'Musterstraße'}
+			disabled={kollege}
+			hint={kollege ? 'Gehört zum Schüler' : undefined}
 		/>
-		<Feld id="hausnummer" etikett="Nr." bind:value={eingaben.hausnummer} placeholder="12a" />
+		<Feld
+			id="hausnummer"
+			etikett="Nr."
+			bind:value={eingaben.hausnummer}
+			placeholder={kollege ? '' : '12a'}
+			disabled={kollege}
+		/>
 		<Feld
 			id="plz"
 			etikett="PLZ"
 			class="col-span-2"
 			bind:value={eingaben.plz}
-			placeholder="12345"
+			placeholder={kollege ? '' : '12345'}
 			maxlength={5}
 			feld="font-mono"
+			disabled={kollege}
 		/>
 		<Feld
 			id="ort"
 			etikett="Ort"
 			class="col-span-2"
 			bind:value={eingaben.ort}
-			placeholder="Musterstadt"
+			placeholder={kollege ? '' : 'Musterstadt'}
+			disabled={kollege}
 		/>
 
 		<Feld

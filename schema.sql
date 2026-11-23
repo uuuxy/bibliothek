@@ -230,6 +230,13 @@ CREATE TABLE leser (
     CONSTRAINT chk_leser_nur_schueler_werden_abgaenger CHECK (
         art = 'schueler'
         OR (ist_abgaenger = false AND anonymized_at IS NULL AND lusd_id IS NULL)
+    ),
+    -- Migration 181: Anschrift und Eltern-E-Mail gehören dem Schüler; für das Kollegium führt
+    -- das Programm keine.
+    CONSTRAINT chk_leser_anschrift_nur_schueler CHECK (
+        art = 'schueler'
+        OR (strasse IS NULL AND hausnummer IS NULL AND plz IS NULL
+            AND ort IS NULL AND eltern_email IS NULL)
     )
 );
 
@@ -1992,7 +1999,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('177_zweiter_absender_je_mailart.sql'),
 ('178_haendlermail_ohne_klammern.sql'),
 ('179_sperrgrund_und_notiz_ohne_klammern.sql'),
-('180_sperrgrund_der_ehemaligen.sql')
+('180_sperrgrund_der_ehemaligen.sql'),
+('181_anschrift_nur_schueler.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

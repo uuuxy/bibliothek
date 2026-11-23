@@ -182,10 +182,7 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
 
-			hook.eingaben.strasse = 'Kleegartenstr.';
-			hook.eingaben.hausnummer = '8';
-			hook.eingaben.plz = '61381';
-			hook.eingaben.ort = 'Friedrichsdorf';
+			hook.eingaben.nachname = 'Wendlandt-Neu';
 			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
@@ -196,24 +193,25 @@ describe('useLeserakteFormular.save', () => {
 				).toBe(false);
 			}
 			// Hinaus geht, was eingetragen wurde, und sonst nichts.
-			expect(payload).toEqual({
-				strasse: 'Kleegartenstr.',
-				hausnummer: '8',
-				plz: '61381',
-				ort: 'Friedrichsdorf'
-			});
+			expect(payload).toEqual({ nachname: 'Wendlandt-Neu' });
 		});
 
-		// Die Eltern-Adresse ist beim Kollegen nicht verschlossen: Die Maske hat für jeden
-		// dieselbe Form, und ein Feld, das offen steht, muss auch ankommen.
-		it('schickt eine beim Kollegen eingetragene Eltern-Adresse mit', async () => {
+		// Anschrift und Eltern-Adresse führt das Programm für das Kollegium nicht
+		// (chk_leser_anschrift_nur_schueler); die Felder sind verschlossen. Was dort dennoch
+		// steht, geht nicht hinaus, sonst käme die Akte mit 400 zurück.
+		it('schickt Anschrift und Eltern-Adresse beim Kollegen nicht mit', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
+			hook.eingaben.strasse = 'Kleegartenstr.';
+			hook.eingaben.hausnummer = '8';
+			hook.eingaben.plz = '61381';
+			hook.eingaben.ort = 'Friedrichsdorf';
 			hook.eingaben.eltern_email = 'privat@example.org';
+			hook.eingaben.vorname = 'Katja';
 			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
-			expect(payload).toEqual({ eltern_email: 'privat@example.org' });
+			expect(payload).toEqual({ vorname: 'Katja' });
 		});
 
 		// UMGEKEHRT am 16.09.2026 (abends), nach der Blick auf die fertige Maske: Bis

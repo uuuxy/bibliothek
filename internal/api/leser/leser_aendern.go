@@ -368,14 +368,18 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 	return neu, true
 }
 
-// pruefeSchuelerfelder weist Klasse, Abgangsjahr und LUSD-ID an einem Leser ab, der kein
-// Schüler ist; die Anlage tut es für die Klasse ebenso. Mit einer Klasse stünde ein Kollege in
-// Klassenlisten, und eine LUSD-ID verletzte chk_leser_nur_schueler_werden_abgaenger und käme als
-// 500 zurück. Die Akte schickt die Felder bei einem Kollegen nicht mit (schulfelder in
-// useLeserakteFormular.svelte.js). Gelesen wird die Art aus der Datenbank: Über die Grenze zum
-// Schüler wechselt sie nicht (pruefeUndSetzeArt).
+// meldungNurSchuelerHatAnschrift weist Anschrift und Eltern-E-Mail an einem Kollegen ab.
+const meldungNurSchuelerHatAnschrift = "Nur ein Schüler hat eine Anschrift und eine Eltern-E-Mail. Für das Kollegium führt das Programm keine."
+
+// pruefeSchuelerfelder weist Klasse, Abgangsjahr, LUSD-ID, Anschrift und Eltern-E-Mail an einem
+// Leser ab, der kein Schüler ist; die Anlage tut es für die Klasse ebenso. Mit einer Klasse stünde
+// ein Kollege in Klassenlisten; eine LUSD-ID verletzte chk_leser_nur_schueler_werden_abgaenger und
+// eine Anschrift chk_leser_anschrift_nur_schueler, beide kämen als 500 zurück. Die Akte schickt die
+// Felder bei einem Kollegen nicht mit (schulfelder in useLeserakteFormular.svelte.js). Gelesen
+// wird die Art aus der Datenbank: Über die Grenze zum Schüler wechselt sie nicht (pruefeUndSetzeArt).
 func (t *Tueren) pruefeSchuelerfelder(ctx context.Context, w http.ResponseWriter, id string, req *leserAendernAnfrage) bool {
-	if req.Klasse == nil && req.AbgaengerJahr == nil && req.LUSDID == nil {
+	anschrift := req.Strasse != nil || req.Hausnummer != nil || req.Plz != nil || req.Ort != nil || req.ElternEmail != nil
+	if req.Klasse == nil && req.AbgaengerJahr == nil && req.LUSDID == nil && !anschrift {
 		return true
 	}
 	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
@@ -391,8 +395,12 @@ func (t *Tueren) pruefeSchuelerfelder(ctx context.Context, w http.ResponseWriter
 		return true
 	}
 	meldung := meldungNurSchuelerHatKlasse
-	if req.Klasse == nil {
+	switch {
+	case req.Klasse != nil:
+	case req.AbgaengerJahr != nil || req.LUSDID != nil:
 		meldung = "Nur ein Schüler hat ein Abgangsjahr und eine LUSD-ID."
+	default:
+		meldung = meldungNurSchuelerHatAnschrift
 	}
 	apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, nil)
 	return false

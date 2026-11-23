@@ -5,9 +5,9 @@ import { nurGeaendertes } from '../../utils/geaendert.js';
 import { mitVereinheitlichterNummer } from '../../utils/scanEinordnen.js';
 
 /**
- * Klasse, Abgangsjahr und LUSD-ID gehören dem Schüler, die Schul-Adresse dem Kollegium:
- * Die Felder der anderen Seite gehen nicht mit, auch nicht leer. Ein leerer String hieße
- * am Server „räum das weg" und käme als 400 zurück.
+ * Klasse, Abgangsjahr, LUSD-ID, Anschrift und Eltern-E-Mail gehören dem Schüler, die
+ * Schul-Adresse dem Kollegium: Die Felder der anderen Seite gehen nicht mit, auch nicht leer.
+ * Ein leerer String hieße am Server „räum das weg" und käme als 400 zurück.
  * @param {any} daten Werte der Maske
  * @param {any} leser der geladene Leser
  * @param {boolean} hatKonto
@@ -27,7 +27,16 @@ function schulfelder(daten, leser, hatKonto) {
 	const klasseGeaendert = daten.klasse !== (leser?.klasse || '');
 
 	/** @type {Record<string, unknown>} */
-	const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
+	const felder = {
+		...ausweis,
+		lusd_id: daten.lusd_id,
+		klasse: daten.klasse,
+		strasse: daten.strasse,
+		hausnummer: daten.hausnummer,
+		plz: daten.plz,
+		ort: daten.ort,
+		eltern_email: daten.eltern_email
+	};
 	if (!(klasseGeaendert && !jahrAngefasst)) {
 		felder.abgaenger_jahr = daten.abgaenger_jahr ? Number.parseInt(daten.abgaenger_jahr, 10) : null;
 	}
@@ -49,11 +58,6 @@ function nutzlast(daten, leser, hatKonto) {
 		nachname: daten.nachname,
 		art: daten.art,
 		geburtsdatum: daten.geburtsdatum || null,
-		strasse: daten.strasse,
-		hausnummer: daten.hausnummer,
-		plz: daten.plz,
-		ort: daten.ort,
-		eltern_email: daten.eltern_email,
 		...schulfelder(daten, leser, hatKonto)
 	};
 }

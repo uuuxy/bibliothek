@@ -74,9 +74,21 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	//                        Falle, in die seine SCHUL-Adresse wandert: Bis zum 16.09.2026
 	//                        war es das einzige E-Mail-Feld der Maske, mit dem Platzhalter
 	//                        „eltern@schule.de", auch in der Akte einer Lehrkraft.
+	//   strasse/hausnummer/plz/ort — für das Kollegium führt das Programm keine Anschrift
+	//                        (chk_leser_anschrift_nur_schueler).
 	// Verschlossen heisst hier disabled: sichtbar an derselben Stelle, aber nicht zu füllen.
-	it('verschliesst dem Kollegen Klasse, Abgangsjahr, LUSD-ID und die Eltern-Adresse — mehr nicht', () => {
-		expect(verschlossen('lehrkraft')).toEqual(['abgangsjahr', 'eltern_email', 'klasse', 'lusd_id']);
+	const VERSCHLOSSEN_IM_KOLLEGIUM = [
+		'abgangsjahr',
+		'eltern_email',
+		'hausnummer',
+		'klasse',
+		'lusd_id',
+		'ort',
+		'plz',
+		'strasse'
+	];
+	it('verschliesst dem Kollegen Klasse, Abgangsjahr, LUSD-ID, Anschrift und Eltern-Adresse — mehr nicht', () => {
+		expect(verschlossen('lehrkraft')).toEqual(VERSCHLOSSEN_IM_KOLLEGIUM);
 	});
 
 	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" (30.09.2026): Ihnen ist
@@ -84,13 +96,9 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	// Lehrkraft.
 	it('verschliesst Praktikum und Fachbereich auch die Schul-Adresse', () => {
 		for (const art of ['praktikum', 'fachbereich']) {
-			expect(verschlossen(art), `art=${art}`).toEqual([
-				'abgangsjahr',
-				'eltern_email',
-				'klasse',
-				'lusd_id',
-				'schul_email'
-			]);
+			expect(verschlossen(art), `art=${art}`).toEqual(
+				[...VERSCHLOSSEN_IM_KOLLEGIUM, 'schul_email'].sort()
+			);
 		}
 		for (const art of ['sekretariat', 'uplus']) {
 			expect(verschlossen(art), `art=${art}`).toEqual(verschlossen('lehrkraft'));
