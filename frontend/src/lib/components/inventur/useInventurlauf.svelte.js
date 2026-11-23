@@ -114,6 +114,8 @@ export function useInventurlauf(opts = {}) {
 		const r = await brichAb(session.session_id);
 		// Der Grund steht über der Liste; ohne ihn blieb die Inventur stehen, und nichts sagte, warum.
 		if (!r.ok) fehler = r.error || 'Fehler beim Verwerfen der Inventur';
+		// Verworfen ist sie sofort: Bis die Liste neu da ist, stünde sie sonst noch als laufend da.
+		else offeneLaeufe = offeneLaeufe.filter((l) => l.session_id !== session.session_id);
 		await ladeOffeneLaeufe();
 	}
 

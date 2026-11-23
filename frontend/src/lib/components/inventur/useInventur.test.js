@@ -303,6 +303,19 @@ describe('Inventur verwerfen', () => {
 		expect(ablauf.fehler).toBe('');
 		expect(ladeOffeneSessions).toHaveBeenCalledTimes(1);
 	});
+
+	// Die früheren Inventuren können schon neu da sein, bevor die laufenden es sind: Die
+	// verworfene stünde so lange in beiden Listen.
+	it('nimmt die verworfene sofort aus den laufenden, nicht erst mit der neuen Liste', async () => {
+		vi.mocked(ladeOffeneSessions).mockResolvedValue([{ session_id: 's1' }, { session_id: 's2' }]);
+		vi.mocked(brichAb).mockResolvedValue(/** @type {any} */ ({ ok: true, status: 200 }));
+		const ablauf = useInventur();
+		await ablauf.ladeOffeneLaeufe();
+		// Die neue Liste bleibt aus.
+		vi.mocked(ladeOffeneSessions).mockReturnValue(new Promise(() => {}));
+		void ablauf.verwerfeLauf({ session_id: 's1' });
+		await vi.waitFor(() => expect(ablauf.offeneLaeufe).toEqual([{ session_id: 's2' }]));
+	});
 });
 
 // Kam auf den Abschluss keine Antwort, hatte der Server oft schon abgeschlossen. Die Seite blieb
