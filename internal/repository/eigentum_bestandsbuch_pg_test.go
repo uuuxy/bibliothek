@@ -31,6 +31,7 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 	}
 	lektuere := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les")
 	traeger := testdaten.LegeBestellungAn(t, mitteltopf.Schultraeger)
+	spende := testdaten.LegeBestellungAn(t, mitteltopf.Spende)
 
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -47,10 +48,12 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 			t.Fatalf("datieren %s: %v", barcode, err)
 		}
 	}
-	abgang(lernmittel, "EIG-LMF-TRAEGER", &traeger, "")         // bis 29.09.: Land
-	abgang(lektuere, "EIG-LEKTUERE-LAND", nil, mitteltopf.Land) // bis 29.09.: Schulträger
-	abgang(lernmittel, "EIG-LMF-ALT", nil, "")                  // Faustregel: Land
-	abgang(lektuere, "EIG-ROMAN-ALT", nil, "")                  // Faustregel: Schulträger
+	abgang(lernmittel, "EIG-LMF-TRAEGER", &traeger, "")           // bis 29.09.: Land
+	abgang(lektuere, "EIG-LEKTUERE-LAND", nil, mitteltopf.Land)   // bis 29.09.: Schulträger
+	abgang(lernmittel, "EIG-LMF-ALT", nil, "")                    // Faustregel: Land
+	abgang(lektuere, "EIG-ROMAN-ALT", nil, "")                    // Faustregel: Schulträger
+	abgang(lektuere, "EIG-SPENDE", &spende, "")                   // Topf der Bestellung: Spende
+	abgang(lektuere, "EIG-FOERDERVEREIN", nil, mitteltopf.Spende) // Littera: Förderverein
 
 	buch, err := repository.LadeAbgangsbuch(ctx, pool,
 		time.Date(2026, time.March, 16, 0, 0, 0, 0, loc), time.Date(2026, time.September, 15, 0, 0, 0, 0, loc))
@@ -62,6 +65,8 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 		"EIG-LEKTUERE-LAND": mitteltopf.Land,
 		"EIG-LMF-ALT":       mitteltopf.Land,
 		"EIG-ROMAN-ALT":     mitteltopf.Schultraeger,
+		"EIG-SPENDE":        mitteltopf.Spende,
+		"EIG-FOERDERVEREIN": mitteltopf.Spende,
 	}
 	if len(buch.Zeilen) != len(erwartet) {
 		t.Fatalf("Zeilen: %+v — erwartet %d", buch.Zeilen, len(erwartet))
@@ -70,9 +75,12 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 		if z.Topf != erwartet[z.Barcode] {
 			t.Errorf("%s: Topf %q, erwartet %q", z.Barcode, z.Topf, erwartet[z.Barcode])
 		}
-		// Land zuerst — die Reihenfolge des Ausdrucks.
+		// Land zuerst, die Spende zuletzt — die Reihenfolge des Ausdrucks.
 		if i > 0 && buch.Zeilen[i-1].Topf == mitteltopf.Schultraeger && z.Topf == mitteltopf.Land {
 			t.Errorf("Reihenfolge: %s (Land) steht hinter einer Zeile des Schulträgers", z.Barcode)
+		}
+		if i > 0 && buch.Zeilen[i-1].Topf == mitteltopf.Spende && z.Topf != mitteltopf.Spende {
+			t.Errorf("Reihenfolge: %s (%s) steht hinter einer Spende", z.Barcode, z.Topf)
 		}
 	}
 }
@@ -85,6 +93,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nathan der Weise", "Ga Les")
 	land := testdaten.LegeBestellungAn(t, mitteltopf.Land)
+	spende := testdaten.LegeBestellungAn(t, mitteltopf.Spende)
 
 	zugang := func(barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -99,6 +108,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	zugang("ZEIG-UMGESETZT", &land, mitteltopf.Schultraeger) // bis 29.09.: Land
 	zugang("ZEIG-BESTELLT", &land, "")                       // Topf der Bestellung
 	zugang("ZEIG-OHNE", nil, "")                             // nicht geraten
+	zugang("ZEIG-SPENDE", &spende, "")                       // Topf der Bestellung: Spende
 
 	buch, err := repository.LadeZugangsbuch(ctx, pool,
 		time.Date(2026, time.March, 16, 0, 0, 0, 0, loc), time.Date(2026, time.September, 15, 0, 0, 0, 0, loc))
@@ -110,6 +120,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 		"ZEIG-UMGESETZT": mitteltopf.Schultraeger,
 		"ZEIG-BESTELLT":  mitteltopf.Land,
 		"ZEIG-OHNE":      "",
+		"ZEIG-SPENDE":    mitteltopf.Spende,
 	}
 	if len(buch.Zeilen) != len(erwartet) {
 		t.Fatalf("Zeilen: %+v — erwartet %d", buch.Zeilen, len(erwartet))
@@ -121,7 +132,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	}
 	// Der Lieferant hängt weiter an der Bestellung, nicht am Eigentum.
 	for _, z := range buch.Zeilen {
-		mitBestellung := z.Barcode == "ZEIG-BESTELLT" || z.Barcode == "ZEIG-UMGESETZT"
+		mitBestellung := z.Barcode == "ZEIG-BESTELLT" || z.Barcode == "ZEIG-UMGESETZT" || z.Barcode == "ZEIG-SPENDE"
 		if mitBestellung != (z.Lieferant == "Buchhandlung") {
 			t.Errorf("%s: Lieferant %q", z.Barcode, z.Lieferant)
 		}

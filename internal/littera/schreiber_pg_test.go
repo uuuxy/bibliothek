@@ -506,7 +506,7 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 	ab := bestand(titel("1", "Nathan der Weise", ""), titel("2", "Schulbuch", ""),
 		titel("3", "Spende", ""), titel("4", "Privat", ""), titel("5", "Ohne", ""))
 	ab.Signaturen["2"] = "LMF Deu 7 / Bie"
-	for i, v := range []string{"land hessen", "Hochtaunuskreis", "Förderverein", "Erika Mustermann", ""} {
+	for i, v := range []string{"land hessen", "Hochtaunuskreis", "Förderverein", "Erika Mustermann", "Bibliothek"} {
 		ab.Exemplare[i].Eigentumsvermerk = v
 		ab.Exemplare[i].Signatur = ab.Signaturen[ab.Exemplare[i].TitelID]
 	}
@@ -534,10 +534,12 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 		{"E1", mitteltopf.Land, "Land Hessen", mitteltopf.Land},
 		// Ein Schulbuch, das Littera dem Schulträger zuschreibt.
 		{"E2", mitteltopf.Schultraeger, "Hochtaunuskreis", mitteltopf.Schultraeger},
-		// Bekannt, ohne Zuordnung: Wortlaut ja, Eigentum aus der Faustregel.
-		{"E3", "", "Förderverein", mitteltopf.Schultraeger},
+		// Der Förderverein ist eine Spende, die eigene Liste der Bücher.
+		{"E3", mitteltopf.Spende, "Förderverein", mitteltopf.Spende},
+		// Nicht in der Liste: kein Wortlaut, Eigentum aus der Faustregel.
 		{"E4", "", "", mitteltopf.Schultraeger},
-		{"E5", "", "", mitteltopf.Schultraeger},
+		// Bekannt, ohne Zuordnung: Wortlaut ja, Eigentum aus der Faustregel.
+		{"E5", "", "Bibliothek", mitteltopf.Schultraeger},
 	}
 	for _, f := range faelle {
 		eigentum, vermerk, gilt := topf(f.id)
@@ -547,10 +549,10 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 		}
 	}
 
-	if bericht.EigentumLand != 1 || bericht.EigentumSchultraeger != 1 ||
+	if bericht.EigentumLand != 1 || bericht.EigentumSchultraeger != 1 || bericht.EigentumSpende != 1 ||
 		bericht.VermerkOhneZuordnung != 1 || bericht.VermerkUnbekannt != 1 {
-		t.Errorf("Bericht: Land %d, Schulträger %d, ohne Zuordnung %d, unbekannt %d — erwartet je 1",
-			bericht.EigentumLand, bericht.EigentumSchultraeger, bericht.VermerkOhneZuordnung, bericht.VermerkUnbekannt)
+		t.Errorf("Bericht: Land %d, Schulträger %d, Spende %d, ohne Zuordnung %d, unbekannt %d — erwartet je 1",
+			bericht.EigentumLand, bericht.EigentumSchultraeger, bericht.EigentumSpende, bericht.VermerkOhneZuordnung, bericht.VermerkUnbekannt)
 	}
 	log := protokoll()
 	if !strings.Contains(log, "104") || !strings.Contains(log, "Eigentumsvermerk") {

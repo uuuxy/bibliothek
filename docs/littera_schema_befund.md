@@ -89,10 +89,11 @@ Titel, 73 Untertitel, 23 Verfasser und 2 Verlage zwei bis vier Leerzeichen in Fo
 Medienliste vom 12.06.2026 tragen 16.878 von 67.109 Exemplaren einen von acht Werten, die
 übrigen keinen. Übernommen wird nur die feste Liste in `internal/littera/eigentum.go`
 (entschieden am 29.09.2026): „Land Hessen" setzt `eigentum = 'land'`, der Schulträger
-`'schultraeger'`; fünf weitere Werte (Schule, Bibliothek, Förderverein, Info Schulprojekt,
-Dauerleihgabe) kommen nur als Wortlaut mit, und für sie gilt die Faustregel. Einen dritten
-Eigentümer kennt das Programm nicht: Bücher Dritter behalten den Wortlaut, den die Buchakte
-zeigt, und einzelne Titel lassen sich dort zuordnen (_Eigentum ändern_). Der Wortlaut steht in
+`'schultraeger'`, der Förderverein `'spende'` (Topf Spende, Migration 182); vier weitere Werte
+(Schule, Bibliothek, Info Schulprojekt, Dauerleihgabe) kommen nur als Wortlaut mit, und für sie gilt
+die Faustregel. Einen Eigentümer außerhalb der drei Töpfe kennt das Programm nicht: Bücher Dritter
+behalten den Wortlaut, den die Buchakte zeigt, und einzelne Titel lassen sich dort zuordnen
+(_Eigentum ändern_). Der Wortlaut steht in
 `erweiterte_eigenschaften` unter `littera_eigentumsvermerk`. Ein Wert außerhalb der Liste kommt
 nicht mit und steht im Protokoll mit Exemplarnummer, ohne Wortlaut — in der Sicherung von 2010
 ist einer davon ein Personenname. Am meisten bewirkt der erste Wert: 11.160 Exemplare mit

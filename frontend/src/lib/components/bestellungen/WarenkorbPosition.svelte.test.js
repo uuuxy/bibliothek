@@ -72,3 +72,30 @@ describe('WarenkorbPosition: die Menge', () => {
 		expect(bestellStore.cart[0].menge).toBe(2);
 	});
 });
+
+// Eine Position lässt sich in jeden anderen Topf schieben: ein falsch gekennzeichnetes Schulbuch
+// in die Schülerbücherei, eine Spende in die Bestellung ohne Topf. Jeder Knopf nennt sein Ziel.
+describe('WarenkorbPosition: der Topf', () => {
+	beforeEach(() => {
+		bestellStore.cart = [];
+	});
+
+	it('bietet beide anderen Töpfe an und schiebt die Position in die Spende', async () => {
+		position(1);
+		// position() hat die Zeile schon gezeichnet; gezählt wird an ihr.
+		const ziele = [...document.querySelectorAll('button[aria-label*="in die Bestellung"]')].map(
+			(k) => k.getAttribute('aria-label')
+		);
+		expect(ziele).toEqual([
+			'Mathematik 7 in die Bestellung „Schülerbücherei“ verschieben',
+			'Mathematik 7 in die Bestellung „Spende“ verschieben'
+		]);
+
+		await fireEvent.click(
+			/** @type {HTMLButtonElement} */ (
+				document.querySelector('button[aria-label$="„Spende“ verschieben"]')
+			)
+		);
+		expect(bestellStore.cart[0].mittel).toBe('spende');
+	});
+});

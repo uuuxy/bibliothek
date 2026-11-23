@@ -36,10 +36,10 @@ type Lieferant struct {
 }
 
 // KundennummerFuer liefert die Kundennummer, die auf einer Bestellung aus dem genannten Topf
-// steht: für den Schulträger die zweite Nummer, wenn eine hinterlegt ist, sonst und für Mittel
-// des Landes immer die erste.
+// steht: für den Schulträger und für eine Spende die zweite Nummer, wenn eine hinterlegt ist,
+// sonst und für Mittel des Landes immer die erste.
 func (l *Lieferant) KundennummerFuer(mittel string) string {
-	if mittel == mitteltopf.Schultraeger && l.KundennummerSchultraeger != "" {
+	if mitteltopf.WieSchuelerbuecherei(mittel) && l.KundennummerSchultraeger != "" {
 		return l.KundennummerSchultraeger
 	}
 	return l.Kundennummer

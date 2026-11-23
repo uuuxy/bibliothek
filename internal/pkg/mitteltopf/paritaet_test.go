@@ -41,11 +41,11 @@ func leseMittelJs(t *testing.T) map[string]mittelAusJs {
 
 func TestVokabularIstInGoUndOberflaecheDasselbe(t *testing.T) {
 	ui := leseMittelJs(t)
-	if len(ui) != 2 {
-		t.Fatalf("%d Töpfe in der Oberfläche erkannt, erwartet 2 — Parser oder mittel.js prüfen: %v", len(ui), ui)
+	if len(ui) != 3 {
+		t.Fatalf("%d Töpfe in der Oberfläche erkannt, erwartet 3 — Parser oder mittel.js prüfen: %v", len(ui), ui)
 	}
 
-	for _, wert := range []string{Land, Schultraeger} {
+	for _, wert := range []string{Land, Schultraeger, Spende} {
 		eintrag, ok := ui[wert]
 		if !ok {
 			t.Errorf("Der Topf %q fehlt in mittel.js — die Oberfläche kann ihn nicht anbieten.", wert)

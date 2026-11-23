@@ -50,10 +50,10 @@ type Kopf struct {
 }
 
 // vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars, weil das Eigentum dem
-// Geld folgt. Eine Stelle für beide Erzeuger (Etikett ab 30 mm Höhe, großes
-// Lernmittel-Etikett); niedrigere Etiketten drucken keinen Vermerk.
+// Geld folgt; eine Spende trägt den der Schülerbücherei. Eine Stelle für beide Erzeuger (Etikett
+// ab 30 mm Höhe, großes Lernmittel-Etikett); niedrigere Etiketten drucken keinen Vermerk.
 func (k Kopf) vermerkFuer(topf string) string {
-	if topf == mitteltopf.Schultraeger {
+	if mitteltopf.WieSchuelerbuecherei(topf) {
 		return k.EigentumsvermerkSchuelerbuecherei
 	}
 	return k.Eigentumsvermerk

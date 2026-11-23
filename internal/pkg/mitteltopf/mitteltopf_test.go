@@ -9,7 +9,7 @@ import (
 )
 
 func TestGueltig(t *testing.T) {
-	for _, m := range []string{Land, Schultraeger} {
+	for _, m := range []string{Land, Schultraeger, Spende} {
 		if !IstGueltig(m) {
 			t.Errorf("%q gehört zum Vokabular", m)
 		}
@@ -25,25 +25,29 @@ func TestGueltig(t *testing.T) {
 // ergäbe ein Anschreiben ohne Vermerk, zwei gleiche Wörter zwei Töpfe, die niemand
 // unterscheidet. Über die Felder des Typs, damit ein später ergänztes mitgeprüft wird.
 func TestTexteFuer_JederTopfHatEigeneTexte(t *testing.T) {
-	land, err := TexteFuer(Land)
-	if err != nil {
-		t.Fatalf("%s: %v", Land, err)
-	}
-	traeger, err := TexteFuer(Schultraeger)
-	if err != nil {
-		t.Fatalf("%s: %v", Schultraeger, err)
-	}
-	l, s := reflect.ValueOf(land), reflect.ValueOf(traeger)
-	if l.NumField() < 4 {
-		t.Fatalf("nur %d Felder am Typ Texte gefunden, der Test misst offenbar nichts mehr", l.NumField())
-	}
-	for i := range l.NumField() {
-		feld := l.Type().Field(i).Name
-		if l.Field(i).String() == "" || s.Field(i).String() == "" {
-			t.Errorf("%s ist für einen Topf leer: %q und %q", feld, l.Field(i).String(), s.Field(i).String())
+	toepfe := []string{Land, Schultraeger, Spende}
+	werte := make([]reflect.Value, len(toepfe))
+	for i, m := range toepfe {
+		texte, err := TexteFuer(m)
+		if err != nil {
+			t.Fatalf("%s: %v", m, err)
 		}
-		if l.Field(i).String() == s.Field(i).String() {
-			t.Errorf("%s ist für beide Töpfe gleich: %q", feld, l.Field(i).String())
+		werte[i] = reflect.ValueOf(texte)
+	}
+	if werte[0].NumField() < 4 {
+		t.Fatalf("nur %d Felder am Typ Texte gefunden, der Test misst offenbar nichts mehr", werte[0].NumField())
+	}
+	for i := range werte[0].NumField() {
+		feld := werte[0].Type().Field(i).Name
+		for a := range toepfe {
+			if werte[a].Field(i).String() == "" {
+				t.Errorf("%s ist für %s leer", feld, toepfe[a])
+			}
+			for b := a + 1; b < len(toepfe); b++ {
+				if werte[a].Field(i).String() == werte[b].Field(i).String() {
+					t.Errorf("%s ist für %s und %s gleich: %q", feld, toepfe[a], toepfe[b], werte[a].Field(i).String())
+				}
+			}
 		}
 	}
 }
@@ -66,7 +70,7 @@ func TestTexteFuer_UnbekannterTopfIstEinFehler(t *testing.T) {
 }
 
 func TestTraeger(t *testing.T) {
-	faelle := map[string]string{Land: "Land", Schultraeger: "Schulträger", "": "", "kreis": ""}
+	faelle := map[string]string{Land: "Land", Schultraeger: "Schulträger", Spende: "ohne Topf", "": "", "kreis": ""}
 	for mittel, will := range faelle {
 		if ist := Traeger(mittel); ist != will {
 			t.Errorf("Traeger(%q) = %q, erwartet %q", mittel, ist, will)
@@ -78,6 +82,7 @@ func TestBeschriftung(t *testing.T) {
 	faelle := map[string]string{
 		Land:         "Lernmittelfreiheit · Land",
 		Schultraeger: "Schülerbücherei · Schulträger",
+		Spende:       "Spende · ohne Topf",
 		"":           "ohne Zuordnung",
 		"kreis":      "",
 	}
@@ -95,7 +100,7 @@ func TestBeschriftung(t *testing.T) {
 // Aufruf bekommt eine eigene Liste: Sonst verstellte ein Aufrufer die Reihenfolge aller Berichte.
 func TestReihenfolge(t *testing.T) {
 	r := Reihenfolge()
-	if will := []string{Land, Schultraeger, ""}; !slices.Equal(r, will) {
+	if will := []string{Land, Schultraeger, Spende, ""}; !slices.Equal(r, will) {
 		t.Fatalf("Reihenfolge %q, erwartet %q", r, will)
 	}
 	r[0] = "verstellt"
@@ -105,7 +110,7 @@ func TestReihenfolge(t *testing.T) {
 }
 
 func TestHatGrossesLernmittelEtikett(t *testing.T) {
-	faelle := map[string]bool{Land: true, Schultraeger: false, "": true}
+	faelle := map[string]bool{Land: true, Schultraeger: false, Spende: false, "": true}
 	for mittel, will := range faelle {
 		if ist := HatGrossesLernmittelEtikett(mittel); ist != will {
 			t.Errorf("HatGrossesLernmittelEtikett(%q) = %v, erwartet %v", mittel, ist, will)
@@ -113,10 +118,21 @@ func TestHatGrossesLernmittelEtikett(t *testing.T) {
 	}
 }
 
+// Die Spende gilt beim Händler, auf dem Etikett und beim Ersatz wie die Schülerbücherei; das Land
+// und eine Bestellung ohne Zuordnung nicht.
+func TestWieSchuelerbuecherei(t *testing.T) {
+	faelle := map[string]bool{Land: false, Schultraeger: true, Spende: true, "": false, "kreis": false}
+	for mittel, will := range faelle {
+		if ist := WieSchuelerbuecherei(mittel); ist != will {
+			t.Errorf("WieSchuelerbuecherei(%q) = %v, erwartet %v", mittel, ist, will)
+		}
+	}
+}
+
 // Die Ablehnung nennt jeden Wert des Vokabulars mit seinem Wort, im Fehlertext wie in der
 // Meldung der Türen: Wer sie liest, sieht, was erlaubt ist.
 func TestErrUngueltig_NenntJedenWertMitSeinemWort(t *testing.T) {
-	for _, mittel := range []string{Land, Schultraeger} {
+	for _, mittel := range []string{Land, Schultraeger, Spende} {
 		texte, err := TexteFuer(mittel)
 		if err != nil {
 			t.Fatalf("%s: %v", mittel, err)

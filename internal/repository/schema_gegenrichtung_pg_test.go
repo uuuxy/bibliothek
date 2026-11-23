@@ -361,8 +361,10 @@ var checkBedingungenBestand = []string{
 	// nimmt keine an; der Check ist die Schranke dahinter.
 	"chk_leser_anschrift_nur_schueler",
 	// Migration 110: Vokabular und Wertebereiche des Bescheids.
-	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie mitteltopf.IstGueltig
-	// (internal/pkg/mitteltopf); chk_schaden_art sind genau die zwei Kästchen des Formulars.
+	// chk_bescheid_mittel und chk_nummern_mittel sind Land und Schulträger, mitteltopf.IstGueltig
+	// ohne die Spende: Einen Bescheid gibt es nur für Lernmittel des Landes, die Tür weist jeden
+	// anderen Topf mit 409 ab (pruefeBescheidAnfrage); chk_schaden_art sind genau die zwei
+	// Kästchen des Formulars.
 	// chk_bescheid_laufende_nr >= 1 hält den Generator davon ab, eine 0 auszugeben — die
 	// Referenznummer „… 0000" gibt es nicht. Alle vier prüft der Code an der Tür (400),
 	// die Datenbank ist die zweite.

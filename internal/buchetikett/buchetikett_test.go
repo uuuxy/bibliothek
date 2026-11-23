@@ -55,13 +55,15 @@ func TestPDFEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 		{BarcodeID: "B-1", Topf: mitteltopf.Land},
 		{BarcodeID: "B-2", Topf: mitteltopf.Schultraeger},
 		{BarcodeID: "B-3"},
+		// Eine Spende trägt den Vermerk der Schülerbücherei.
+		{BarcodeID: "B-4", Topf: mitteltopf.Spende},
 	}
 
 	etiketten := PDFEtiketten(items, kopf)
 	if len(etiketten) != len(items) {
 		t.Fatalf("%d Etiketten aus %d Aufträgen", len(etiketten), len(items))
 	}
-	for i, want := range []string{"Vermerk Land", "Vermerk Bücherei", "Vermerk Land"} {
+	for i, want := range []string{"Vermerk Land", "Vermerk Bücherei", "Vermerk Land", "Vermerk Bücherei"} {
 		if etiketten[i].BarcodeID != items[i].BarcodeID {
 			t.Errorf("Etikett %d trägt die Nummer %q, erwartet %q: die Reihenfolge des Auftrags bleibt",
 				i, etiketten[i].BarcodeID, items[i].BarcodeID)

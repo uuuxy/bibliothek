@@ -89,6 +89,9 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 		{"Land nimmt die erste Nummer", mitZweiter, mitteltopf.Land, "K-ZweiKonten"},
 		{"Schulträger nimmt die zweite Nummer", mitZweiter, mitteltopf.Schultraeger, "BIB-77"},
 		{"Schulträger ohne zweite Nummer nimmt die erste", ohneZweite, mitteltopf.Schultraeger, "K-EinKonto"},
+		// Eine Spende läuft beim Händler wie die Schülerbücherei.
+		{"Spende nimmt die Nummer der Schülerbücherei", mitZweiter, mitteltopf.Spende, "BIB-77"},
+		{"Spende ohne zweite Nummer nimmt die erste", ohneZweite, mitteltopf.Spende, "K-EinKonto"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -114,7 +117,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 }
 
 // Der CHECK in der Datenbank ist die zweite Tür: Auch wer an Tür und Dienst vorbei
-// schreibt, bekommt keinen dritten Topf hinein.
+// schreibt, bekommt keinen Topf außerhalb des Vokabulars hinein.
 func TestBestellungMittelPruefungInDerDatenbank(t *testing.T) {
 	pool := pgtest.Pool(t)
 	_, err := pool.Exec(context.Background(), `

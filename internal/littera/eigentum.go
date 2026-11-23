@@ -22,8 +22,8 @@ type vermerkZuordnung struct {
 	// Wortlaut ist die Schreibweise, die am Exemplar aufgehoben wird. „land hessen" (33 Mal)
 	// wird dabei zu „Land Hessen".
 	Wortlaut string
-	// Eigentum ist mitteltopf.Land oder mitteltopf.Schultraeger, leer heißt:
-	// keine Zuordnung, es gilt die Faustregel.
+	// Eigentum ist mitteltopf.Land, mitteltopf.Schultraeger oder mitteltopf.Spende, leer
+	// heißt: keine Zuordnung, es gilt die Faustregel.
 	Eigentum string
 }
 
@@ -34,7 +34,7 @@ var vermerkeLittera = map[string]vermerkZuordnung{
 	"hochtaunuskreis":     {"Hochtaunuskreis", mitteltopf.Schultraeger}, // 2.942
 	"philipp-reis-schule": {"Philipp-Reis-Schule", ""},                  // 355
 	"bibliothek":          {"Bibliothek", ""},                           // 157
-	"förderverein":        {"Förderverein", ""},                         // 86
+	"förderverein":        {"Förderverein", mitteltopf.Spende},          // 86
 	"info schulprojekt":   {"Info Schulprojekt", ""},                    // 31
 	"dauerleihgabe":       {"Dauerleihgabe", ""},                        // 4
 }

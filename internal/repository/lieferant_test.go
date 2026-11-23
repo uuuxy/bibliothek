@@ -21,4 +21,11 @@ func TestLieferant_KundennummerFuer(t *testing.T) {
 	if got := mit.KundennummerFuer(mitteltopf.Land); got != "K-1" {
 		t.Errorf("Land nimmt immer die erste Nummer: %q, erwartet K-1", got)
 	}
+	// Eine Spende läuft beim Händler wie die Schülerbücherei.
+	if got := mit.KundennummerFuer(mitteltopf.Spende); got != "B-2" {
+		t.Errorf("Spende mit zweiter Nummer: %q, erwartet B-2 wie die Schülerbücherei", got)
+	}
+	if got := ohne.KundennummerFuer(mitteltopf.Spende); got != "K-1" {
+		t.Errorf("Spende ohne zweite Nummer: %q, erwartet K-1", got)
+	}
 }

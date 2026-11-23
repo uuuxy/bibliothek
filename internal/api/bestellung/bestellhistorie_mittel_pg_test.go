@@ -125,14 +125,15 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			t.Fatalf("Antwort lesen: %v", err)
 		}
 
-		if len(u.NachMittel) != 3 {
-			t.Fatalf("%d Töpfe in den Kennzahlen, erwartet 3 (Land, Schulträger, ohne Zuordnung): %+v",
+		if len(u.NachMittel) != 4 {
+			t.Fatalf("%d Töpfe in den Kennzahlen, erwartet 4 (Land, Schulträger, Spende, ohne Zuordnung): %+v",
 				len(u.NachMittel), u.NachMittel)
 		}
 		// Die Reihenfolge ist dieselbe wie im Warenkorb und im Bericht.
 		if u.NachMittel[0].Mittel != mitteltopf.Land ||
 			u.NachMittel[1].Mittel != mitteltopf.Schultraeger ||
-			u.NachMittel[2].Mittel != "" {
+			u.NachMittel[2].Mittel != mitteltopf.Spende ||
+			u.NachMittel[3].Mittel != "" {
 			t.Errorf("Reihenfolge der Töpfe: %+v", u.NachMittel)
 		}
 
@@ -174,7 +175,7 @@ func TestBestellhistorieUebersicht_TopfOhneBestellungStehtMitNull(t *testing.T) 
 	if err := json.Unmarshal(rec.Body.Bytes(), &u); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
-	erwartet := []bestellhistorieTopf{{Mittel: mitteltopf.Land, Gesamt: 1}, {Mittel: mitteltopf.Schultraeger}, {Mittel: ""}}
+	erwartet := []bestellhistorieTopf{{Mittel: mitteltopf.Land, Gesamt: 1}, {Mittel: mitteltopf.Schultraeger}, {Mittel: mitteltopf.Spende}, {Mittel: ""}}
 	if diff := cmp.Diff(erwartet, u.NachMittel); diff != "" {
 		t.Errorf("Töpfe der Kennzahlen (-erwartet +bekommen):\n%s", diff)
 	}

@@ -35,10 +35,10 @@ type topfAbschnitt[T any] struct {
 }
 
 // abschnitteAus gruppiert Zeilen nach Topf, in der Reihenfolge, die im ganzen Programm gilt
-// (mitteltopf.Reihenfolge: Lernmittel zuerst, dann die Schülerbücherei, zuletzt ohne
-// Zuordnung).
+// (mitteltopf.Reihenfolge: Lernmittel zuerst, dann die Schülerbücherei und die Spende, zuletzt
+// ohne Zuordnung).
 //
-// Die beiden echten Töpfe stehen immer da, auch leer: Der Bildschirm zeigt jeden Abschnitt als
+// Die drei echten Töpfe stehen immer da, auch leer: Der Bildschirm zeigt jeden Abschnitt als
 // Feld mit seiner Zahl, und die Null sagt, dass nichts kam oder ging; ein fehlendes Feld sähe
 // nach einem Filterfehler aus. Der Ausdruck überspringt die leeren, weil ein Blatt zum
 // Abheften keine Überschrift ohne Inhalt tragen soll.

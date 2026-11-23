@@ -51,10 +51,10 @@ func toepfe(abschnitte []abschnittAmDraht) []string {
 	return aus
 }
 
-func TestBestandsbuch_BeideToepfeStehenAuchLeerInDerAntwort(t *testing.T) {
+func TestBestandsbuch_DieToepfeStehenAuchLeerInDerAntwort(t *testing.T) {
 	abschnitte := zugangsbuchAmDraht(t, nil)
 
-	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger}
+	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger, mitteltopf.Spende}
 	if !slices.Equal(toepfe(abschnitte), erwartet) {
 		t.Fatalf("Abschnitte eines leeren Buchs: %q, erwartet %q", toepfe(abschnitte), erwartet)
 	}
@@ -74,15 +74,15 @@ func TestBestandsbuch_OhneZuordnungNurMitZeilenUndZuletzt(t *testing.T) {
 		{Barcode: "LAND-1", Topf: mitteltopf.Land},
 	})
 
-	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger, ""}
+	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger, mitteltopf.Spende, ""}
 	if !slices.Equal(toepfe(abschnitte), erwartet) {
 		t.Fatalf("Abschnitte: %q, erwartet %q", toepfe(abschnitte), erwartet)
 	}
-	if ohne := abschnitte[2]; ohne.Titel != mitteltopf.OhneZuordnung {
-		t.Errorf("Überschrift des dritten Abschnitts: %q, erwartet %q", ohne.Titel, mitteltopf.OhneZuordnung)
+	if ohne := abschnitte[3]; ohne.Titel != mitteltopf.OhneZuordnung {
+		t.Errorf("Überschrift des letzten Abschnitts: %q, erwartet %q", ohne.Titel, mitteltopf.OhneZuordnung)
 	}
 	var zeilen []bestandsbuch.Zugang
-	if err := json.Unmarshal(abschnitte[2].Zeilen, &zeilen); err != nil {
+	if err := json.Unmarshal(abschnitte[3].Zeilen, &zeilen); err != nil {
 		t.Fatalf("Zeilen lesen: %v", err)
 	}
 	if len(zeilen) != 1 || zeilen[0].Barcodes != "OHNE-1" {
@@ -102,6 +102,7 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		Zeilen: []repository.AbgangsZeile{
 			{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", Grund: "VERLUST", GrundText: "Verlust", Topf: mitteltopf.Schultraeger},
 			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: mitteltopf.Land},
+			{Datum: tag.AddDate(0, 0, 2), Barcode: "B-4", Titel: "Titel 4", Signatur: "Sig 4", Grund: "VERLUST", GrundText: "Verlust", Topf: mitteltopf.Spende},
 		},
 		OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
@@ -114,8 +115,10 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 				{Datum: tag.AddDate(0, 0, 1), Titel: "Titel 2", Signatur: "Sig 2", GrundText: "Aussortiert", Anzahl: 1, Barcodes: "B-2"}}},
 			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Exemplare: 1, Zeilen: []pdf.AbgangsZeile{
 				{Datum: tag, Titel: "Titel 1", Signatur: "Sig 1", GrundText: "Verlust", Anzahl: 1, Barcodes: "B-1"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Spende), Exemplare: 1, Zeilen: []pdf.AbgangsZeile{
+				{Datum: tag.AddDate(0, 0, 2), Titel: "Titel 4", Signatur: "Sig 4", GrundText: "Verlust", Anzahl: 1, Barcodes: "B-4"}}},
 		},
-		Gesamt: 2, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
+		Gesamt: 3, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
 	if !cmp.Equal(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)
@@ -135,6 +138,7 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 			{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", Lieferant: "Lieferant 1"},
 			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Lieferant: "Lieferant 2", Topf: mitteltopf.Schultraeger},
 			{Datum: tag.AddDate(0, 0, 2), Barcode: "B-3", Titel: "Titel 3", Signatur: "Sig 3", Lieferant: "Lieferant 3", Topf: mitteltopf.Land},
+			{Datum: tag.AddDate(0, 0, 3), Barcode: "B-4", Titel: "Titel 4", Signatur: "Sig 4", Lieferant: "Lieferant 4", Topf: mitteltopf.Spende},
 		},
 	}
 
@@ -146,10 +150,12 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 				{Datum: tag.AddDate(0, 0, 2), Titel: "Titel 3", Anzahl: 1, Barcodes: "B-3", Lieferant: "Lieferant 3"}}},
 			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
 				{Datum: tag.AddDate(0, 0, 1), Titel: "Titel 2", Anzahl: 1, Barcodes: "B-2", Lieferant: "Lieferant 2"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Spende), Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
+				{Datum: tag.AddDate(0, 0, 3), Titel: "Titel 4", Anzahl: 1, Barcodes: "B-4", Lieferant: "Lieferant 4"}}},
 			{Titel: mitteltopf.OhneZuordnung, Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
 				{Datum: tag, Titel: "Titel 1", Anzahl: 1, Barcodes: "B-1", Lieferant: "Lieferant 1"}}},
 		},
-		Gesamt: 3, OhneZuordnung: true,
+		Gesamt: 4, OhneZuordnung: true,
 	}
 	if !cmp.Equal(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)

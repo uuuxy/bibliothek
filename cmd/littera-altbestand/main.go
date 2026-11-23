@@ -369,9 +369,9 @@ func drucke(b littera.Bericht, s schalter) {
 			b.Bestand.IstTitel, b.Bestand.IstExemplare))
 		log.Printf("           Standort: %d Exemplare aus dem eigenen Sonderstandort, %d aus dem Vermerk am Titel",
 			b.Bestand.StandortEigen, b.Bestand.StandortVomTitel)
-		log.Printf("           Eigentum aus dem Vermerk: Land %d, Schulträger %d; "+
+		log.Printf("           Eigentum aus dem Vermerk: Land %d, Schulträger %d, Spende %d; "+
 			"Vermerk ohne Zuordnung %d, nicht in der Liste %d",
-			b.Bestand.EigentumLand, b.Bestand.EigentumSchultraeger,
+			b.Bestand.EigentumLand, b.Bestand.EigentumSchultraeger, b.Bestand.EigentumSpende,
 			b.Bestand.VermerkOhneZuordnung, b.Bestand.VermerkUnbekannt)
 		log.Printf("           Fach aus der Signatur %d, aus den Schlagworten %d",
 			b.Bestand.FachAusSignatur, b.Bestand.FachAusSchlagworten)

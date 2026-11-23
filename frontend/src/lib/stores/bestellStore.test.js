@@ -537,9 +537,9 @@ describe('bestellStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 		]);
 	});
 
-	it('verschiebt eine Position in den anderen Topf und behält das beim zweiten „+"', () => {
+	it('verschiebt eine Position in einen anderen Topf und behält das beim zweiten „+"', () => {
 		bestellStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
-		bestellStore.verschiebe(bestellStore.cart[0]);
+		bestellStore.verschiebe(bestellStore.cart[0], 'land');
 		expect(bestellStore.cart[0].mittel).toBe('land');
 		// Ein zweites „+" auf denselben Titel schiebt ihn NICHT zurück.
 		bestellStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
@@ -571,6 +571,27 @@ describe('bestellStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 		// zweite für den Doppelklick der ersten.
 		expect(payloads[0].idempotency_key).not.toBe(payloads[1].idempotency_key);
 		expect(bestellStore.cart).toEqual([]);
+	});
+
+	// Eine Spende ist eine eigene Bestellung ohne Topf, auch wenn der Titel ein Buch der
+	// Schülerbücherei ist: eigene Gruppe, eigener Vermerk beim Händler.
+	it('schickt eine in die Spende verschobene Position als eigene Bestellung', async () => {
+		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 1 });
+		bestellStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' }, 2);
+		bestellStore.addToCart({ id: 'geschenk', titel: 'Tintenherz', autor: '', isbn: '3' });
+		bestellStore.verschiebe(bestellStore.cart[1], 'spende');
+		expect(bestellStore.gruppen.map((g) => [g.mittel, g.label, g.menge])).toEqual([
+			['schultraeger', 'Schülerbücherei', 2],
+			['spende', 'Spende', 1]
+		]);
+
+		await bestellStore.submitOrder();
+
+		const payloads = bestellPayloads();
+		expect(payloads.map((p) => p.mittel)).toEqual(['schultraeger', 'spende']);
+		expect(payloads[1].items).toEqual([
+			{ titel_id: 'geschenk', menge: 1, preis: 0, generate_barcodes: true }
+		]);
 	});
 
 	it('behält bei einem Fehler nur die gescheiterte Gruppe im Warenkorb', async () => {

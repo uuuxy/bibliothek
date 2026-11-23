@@ -30,10 +30,10 @@ type BestandBericht struct {
 	AbgleichOK   bool
 
 	// Eigentumsvermerke der geschriebenen Exemplare (eigentum.go): wie viele das Eigentum
-	// Land bzw. Schulträger ausdrücklich setzen, wie viele einen bekannten Vermerk ohne
+	// Land, Schulträger oder Spende ausdrücklich setzen, wie viele einen bekannten Vermerk ohne
 	// Zuordnung tragen und wie viele einen, der nicht in der festen Liste steht. Die
 	// letzten stehen einzeln im Protokoll, mit Exemplarnummer und ohne den Wortlaut.
-	EigentumLand, EigentumSchultraeger, VermerkOhneZuordnung, VermerkUnbekannt int
+	EigentumLand, EigentumSchultraeger, EigentumSpende, VermerkOhneZuordnung, VermerkUnbekannt int
 
 	// Woher das Fach der geschriebenen Titel kam: aus der Lernmittel-Signatur oder, wo sie
 	// keins nennt, aus den Schlagworten (lernmittelUndFach).
@@ -257,6 +257,8 @@ func (l *bestandslauf) bucheVermerke(exemplare []Exemplar) {
 			l.bericht.EigentumLand++
 		case vermerk.Eigentum == mitteltopf.Schultraeger:
 			l.bericht.EigentumSchultraeger++
+		case vermerk.Eigentum == mitteltopf.Spende:
+			l.bericht.EigentumSpende++
 		case vermerk.Wortlaut != "":
 			l.bericht.VermerkOhneZuordnung++
 		}

@@ -89,6 +89,10 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 			http.StatusBadRequest, mitteltopf.MeldungUngueltig},
 		{"Topf des Schulträgers", sid, `{"mittel":"schultraeger","frist_bis":"bald","positionen":[]}`,
 			http.StatusConflict, "nur für Lernmittel des Landes"},
+		// Die Spende gilt beim Ersatz wie die Schülerbücherei; chk_bescheid_mittel kennt sie nicht,
+		// die Tür muss vorher ablehnen.
+		{"Topf Spende", sid, `{"mittel":"spende","frist_bis":"bald","positionen":[]}`,
+			http.StatusConflict, "nur für Lernmittel des Landes"},
 		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,
 			http.StatusBadRequest, "mindestens ein Buch"},
 		{"Frist ist kein Datum", sid, `{"mittel":"land","frist_bis":"bald","positionen":` + position + `}`,

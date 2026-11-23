@@ -769,7 +769,7 @@ CREATE TABLE buecher_exemplare (
     -- von Hand. NULL = nicht gesetzt: Dann gilt der Topf der Bestellung, sonst der Titel
     -- (repository.ExemplarTopfSQL). Dasselbe Vokabular wie bestellungen_verlauf.mittel.
     eigentum TEXT
-        CONSTRAINT chk_exemplar_eigentum CHECK (eigentum IS NULL OR eigentum IN ('land', 'schultraeger')),
+        CONSTRAINT chk_exemplar_eigentum CHECK (eigentum IS NULL OR eigentum IN ('land', 'schultraeger', 'spende')),
     -- Woher eigentum kommt (Migration 151): littera (Übernahme) oder hand (Buchakte). NULL genau
     -- dann, wenn eigentum NULL ist — wer eigentum schreibt, nennt die Quelle.
     eigentum_quelle TEXT
@@ -1458,13 +1458,13 @@ CREATE TABLE bestellungen_verlauf (
         CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek')),
     idempotenz_schluessel UUID,                           -- Doppelklick-Schutz (Migration 077)
     -- Aus welchem Topf bestellt wurde (Migration 109): 'land' = Lernmittelfreiheit
-    -- (Eigentum des Landes), 'schultraeger' = Schülerbücherei (Mittel des Schulträgers).
-    -- Eine Bestellung = ein Topf; der Vermerk steht auf Anschreiben und Mail, weil der
+    -- (Eigentum des Landes), 'schultraeger' = Schülerbücherei (Mittel des Schulträgers),
+    -- 'spende' = ohne Topf, etwa mit Geld des Fördervereins (Migration 182). Eine Bestellung = ein Topf; der Vermerk steht auf Anschreiben und Mail, weil der
     -- Händler danach Nachlass und Rechnungsweg richtet. Pflicht für neue Bestellungen
     -- (Go-Guard, 400 an der Tür); NULL nur bei Alt-Bestellungen ohne eindeutige Zuordnung.
     mittel             TEXT
         CONSTRAINT bestellungen_verlauf_mittel_check
-        CHECK (mittel IS NULL OR mittel IN ('land', 'schultraeger')),
+        CHECK (mittel IS NULL OR mittel IN ('land', 'schultraeger', 'spende')),
     -- Zeitpunkt des letzten gescheiterten Versands der Bestellmail (Migration 161). NULL =
     -- kein gescheiterter Versand vermerkt: die Mail ging raus, oder die Bestellung ist älter
     -- als die Spalte. Ein gelungener erneuter Versand setzt sie wieder auf NULL.
@@ -2000,7 +2000,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('178_haendlermail_ohne_klammern.sql'),
 ('179_sperrgrund_und_notiz_ohne_klammern.sql'),
 ('180_sperrgrund_der_ehemaligen.sql'),
-('181_anschrift_nur_schueler.sql')
+('181_anschrift_nur_schueler.sql'),
+('182_topf_spende.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2305,9 +2306,9 @@ CREATE TABLE IF NOT EXISTS geloeschte_exemplare (
     -- Die beiden Topf-Regeln der Bücher: belegt (Zugangsbuch, exemplarTopfBelegtSQL) und mit
     -- der Vorgabe des Titels (Abgangsbuch, ExemplarTopfSQL).
     topf_belegt TEXT
-        CONSTRAINT chk_geloeschte_exemplare_topf_belegt CHECK (topf_belegt IN ('land', 'schultraeger')),
+        CONSTRAINT chk_geloeschte_exemplare_topf_belegt CHECK (topf_belegt IN ('land', 'schultraeger', 'spende')),
     topf        TEXT NOT NULL
-        CONSTRAINT chk_geloeschte_exemplare_topf CHECK (topf IN ('land', 'schultraeger')),
+        CONSTRAINT chk_geloeschte_exemplare_topf CHECK (topf IN ('land', 'schultraeger', 'spende')),
     -- War das Exemplar schon ausgesondert, Tag und Grund von damals; sonst der Zeitpunkt des
     -- Löschens und der Grund, den der Mensch gewählt hat. NULL nur bei Altbestand, der ohne
     -- Datum ausgesondert ist (Abgangsbuch: „ohne Zeitpunkt").

@@ -21,7 +21,8 @@ func TestZuordnungAusVermerk(t *testing.T) {
 		// Bekannt, aber ohne Zuordnung, bis die Schule sie bestätigt.
 		{"Philipp-Reis-Schule", true, "Philipp-Reis-Schule", ""},
 		{"Bibliothek", true, "Bibliothek", ""},
-		{"Förderverein", true, "Förderverein", ""},
+		// Der Förderverein ist der Topf Spende, die eigene Liste in Zugangs- und Abgangsbuch.
+		{"Förderverein", true, "Förderverein", mitteltopf.Spende},
 		{"Info Schulprojekt", true, "Info Schulprojekt", ""},
 		{"Dauerleihgabe", true, "Dauerleihgabe", ""},
 		{"", true, "", ""},

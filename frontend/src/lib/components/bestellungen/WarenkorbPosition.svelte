@@ -8,15 +8,15 @@
 	import Feld from '../ui/Feld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
-	import { MITTEL, anderesMittel } from './mittel.js';
+	import { MITTEL, andereMittel } from './mittel.js';
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { position } = $props();
 
-	/** Wohin die Position wechseln würde — der Knopf nennt das ZIEL, nicht den Zustand. */
-	const ziel = $derived(MITTEL[anderesMittel(position.mittel)]);
+	/** Wohin die Position wechseln kann — jeder Knopf nennt sein ZIEL, nicht den Zustand. */
+	const ziele = $derived(andereMittel(position.mittel));
 </script>
 
 <div class="space-y-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
@@ -110,16 +110,19 @@
 	</div>
 
 	<!-- Der Topf ist eine Entscheidung je Bestellung; der Titel schlägt ihn nur vor. Ein
-	     falsch gekennzeichnetes Schulbuch wandert hier in die Lernmittel-Bestellung, ohne
-	     dass jemand erst den Titel bearbeiten muss. Der Knopf nennt das Ziel. -->
-	<div class="pl-10">
-		<Button
-			variant="ghost"
-			size="sm"
-			onclick={() => bestellStore.verschiebe(position)}
-			aria-label="{position.titel} in die Bestellung „{ziel.label}“ verschieben"
-		>
-			→ {ziel.label} · {ziel.traeger}
-		</Button>
+	     falsch gekennzeichnetes Schulbuch wandert hier in die Lernmittel-Bestellung, eine
+	     Spende in die Bestellung ohne Topf, ohne dass jemand erst den Titel bearbeiten muss.
+	     Jeder Knopf nennt sein Ziel. -->
+	<div class="flex flex-wrap gap-x-1 pl-10">
+		{#each ziele as ziel (ziel)}
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={() => bestellStore.verschiebe(position, ziel)}
+				aria-label="{position.titel} in die Bestellung „{MITTEL[ziel].label}“ verschieben"
+			>
+				→ {MITTEL[ziel].label} · {MITTEL[ziel].traeger}
+			</Button>
+		{/each}
 	</div>
 </div>

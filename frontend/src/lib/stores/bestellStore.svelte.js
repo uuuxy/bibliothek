@@ -14,12 +14,7 @@ import {
 } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
-import {
-	MITTEL,
-	MITTEL_REIHENFOLGE,
-	anderesMittel,
-	mittelVorschlag
-} from '../components/bestellungen/mittel.js';
+import { MITTEL, MITTEL_REIHENFOLGE, mittelVorschlag } from '../components/bestellungen/mittel.js';
 import { anzahlText, verbindeSaetze } from '../utils/format.js';
 
 /** @typedef {import('../components/bestellungen/mittel.js').Mittel} Mittel */
@@ -440,12 +435,13 @@ class BestellStore {
 	}
 
 	/**
-	 * Schiebt eine Position in den anderen Topf — für falsch gekennzeichnete Titel. Der
-	 * Titel selbst bleibt unverändert; korrigiert wird nur diese Bestellung.
+	 * Schiebt eine Position in einen anderen Topf — für falsch gekennzeichnete Titel und für
+	 * Spenden. Der Titel selbst bleibt unverändert; korrigiert wird nur diese Bestellung.
 	 * @param {CartItem} item
+	 * @param {Mittel} ziel
 	 */
-	verschiebe(item) {
-		item.mittel = anderesMittel(item.mittel);
+	verschiebe(item, ziel) {
+		item.mittel = ziel;
 	}
 
 	/**
