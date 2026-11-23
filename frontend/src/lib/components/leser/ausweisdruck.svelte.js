@@ -92,6 +92,11 @@ export function erzeugeAusweisdruck() {
 				});
 				return;
 			}
+			// Während das Design kam, kann die Liste neu geladen sein: Ohne Karte bliebe das Blatt leer.
+			if (!document.querySelector('.print-card-box')) {
+				snackbars.addToast('Nicht gedruckt, die Liste hat sich inzwischen geändert', 'warning');
+				return;
+			}
 			const style = document.createElement('style');
 			style.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
 			document.head.appendChild(style);

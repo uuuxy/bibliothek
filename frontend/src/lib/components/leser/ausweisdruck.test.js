@@ -25,6 +25,8 @@ beforeEach(() => {
 	vergissDesignLadezustand();
 	idStore.printMode = 'card';
 	idStore.etikettFormat = 'zweckform_l4760';
+	// Die Druckfläche der Seite (AusweisStapeldruck) mit einer Karte.
+	document.body.innerHTML = '<div class="print-card-box"></div>';
 });
 
 describe('erzeugeAusweisdruck: lädt das zentrale Design selbst', () => {
@@ -130,6 +132,27 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server',
 			'error'
+		);
+	});
+
+	// Lädt die Liste neu, während das Design kommt (Suche, Ausfall des Netzes), stehen die
+	// markierten Leser nicht mehr darin: Der Druckdialog zeigte ein leeres Blatt.
+	it('öffnet den Druckdialog nicht, wenn keine Karte mehr in der Druckfläche steht', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'card' }) })
+		);
+		const drucken = vi.fn();
+		vi.stubGlobal('print', drucken);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+		document.body.innerHTML = '';
+
+		await druck.drucke([{ id: 's1', barcode_id: 'A-00001' }]);
+
+		expect(drucken).not.toHaveBeenCalled();
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			'Nicht gedruckt, die Liste hat sich inzwischen geändert',
+			'warning'
 		);
 	});
 
