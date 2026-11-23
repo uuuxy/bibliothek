@@ -39,9 +39,8 @@ func IstGueltig(mittel string) bool {
 }
 
 // WieSchuelerbuecherei sagt, ob ein Topf beim Händler, auf dem Etikett und beim Ersatz wie die
-// Schülerbücherei behandelt wird: dieselbe Kundennummer, die Rechnung an die Schule, derselbe
-// Eigentumsvermerk und kein großes Lernmittel-Etikett. Das gilt für die Schülerbücherei selbst
-// und für die Spende.
+// Schülerbücherei behandelt wird: dieselbe Kundennummer, die Rechnung an die Schule und derselbe
+// Eigentumsvermerk. Das gilt für die Schülerbücherei selbst und für die Spende.
 func WieSchuelerbuecherei(mittel string) bool {
 	return mittel == Schultraeger || mittel == Spende
 }
@@ -136,13 +135,4 @@ func Beschriftung(mittel string) string {
 		return ""
 	}
 	return t.Kurz + " · " + t.Traeger
-}
-
-// HatGrossesLernmittelEtikett sagt, ob zu einer Bestellung dieses Topfs das große
-// Lernmittel-Etikett („Eigentum des Landes") gehört. Die Bestätigungsseite des Lieferanten,
-// die Tür dahinter und der Mailanhang fragen dieselbe Regel: Ein ausgeblendeter Knopf allein
-// ließe die Adresse offen. Ein Buch der Schülerbücherei oder eine Spende ist kein Lernmittel;
-// eine Bestellung ohne Zuordnung behält beide Größen, weil ihr Topf nicht geraten wird.
-func HatGrossesLernmittelEtikett(mittel string) bool {
-	return !WieSchuelerbuecherei(mittel)
 }

@@ -53,9 +53,6 @@ type oeffentlicheBestellung struct {
 	// EtikettenVorhanden: Standen Positionen mit Vorab-Barcode in dieser Bestellung?
 	// Ohne sie zeigt die Seite keine Druckknöpfe, statt leere PDFs anzubieten.
 	EtikettenVorhanden bool `json:"etiketten_vorhanden"`
-	// GrossesEtikett: Gehört zu dieser Bestellung das große Lernmittel-Etikett? Bei einer
-	// Bestellung für die Schülerbücherei nicht — die Tür liefert es dann auch nicht.
-	GrossesEtikett bool `json:"grosses_etikett"`
 	// EtikettenFormate sind die Bogenraster, unter denen der Lieferant für die kleinen
 	// Etiketten wählen kann — er druckt auf sein eigenes Material, und davon gibt es
 	// verschiedene. Die Liste kommt aus dem Backend, damit ein neues Format nicht an
@@ -129,7 +126,6 @@ func (t *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	if texte, err := mitteltopf.TexteFuer(kopf.Mittel); err == nil {
 		a.Mittel = texte.Kurz
 	}
-	a.GrossesEtikett = mitteltopf.HatGrossesLernmittelEtikett(kopf.Mittel)
 
 	positionen, err := repository.LadeOeffentlichePositionen(ctx, t.DB.Pool, bestellungID)
 	if err != nil {

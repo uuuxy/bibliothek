@@ -93,49 +93,30 @@ test('Lieferant öffnet den Link ohne Anmeldung, druckt Etiketten und bestätigt
 	await expect(page.getByRole('button', { name: 'Bestellung jetzt bestätigen' })).toHaveCount(0);
 });
 
-// Der Händler bekommt am selben Tag zwei gleich aussehende Links (entschieden
-// am 21.09.2026): Die Seite nennt den Topf, und zur Bestellung für die Schülerbücherei gibt es
-// das große Lernmittel-Etikett „Eigentum des Landes" nicht — weder als Knopf noch an der Tür.
+// Der Händler bekommt am selben Tag mehrere gleich aussehende Links: Die Seite nennt den Topf.
+// Beide Größen gibt es in jedem Topf, als Knopf und an der Tür; der Händler wählt, was er druckt.
 const GROSSER_KNOPF = /Große Lernmittel-Etiketten/;
 
-test('Schülerbücherei: die Seite nennt den Topf, das große Lernmittel-Etikett gibt es nicht', async ({
-	page
-}) => {
-	const token = `E2E-SB-${uniqueSuffix()}`;
-	seedBestellungMitLink(token, { mittel: 'schultraeger' });
+for (const [mittel, wort, kuerzel] of [
+	['land', 'Lernmittelfreiheit', 'LMF'],
+	['schultraeger', 'Schülerbücherei', 'SB'],
+	['spende', 'Spende', 'SP']
+]) {
+	test(`${wort}: die Seite nennt den Topf und bietet beide Größen an`, async ({ page }) => {
+		const token = `E2E-${kuerzel}-${uniqueSuffix()}`;
+		seedBestellungMitLink(token, { mittel });
 
-	await page.goto(`/bestellung/${token}`);
-	await expect(page.getByRole('heading', { name: /Bestellung vom/ })).toBeVisible();
-	await expect(page.getByText(/^Schülerbücherei · E2E-Naacher/)).toBeVisible();
-	// Eine Größe, also kein „klein": Das Wort braucht ein Gegenstück.
-	await expect(
-		page.getByRole('button', { name: 'Etiketten auf A4-Bogen', exact: true })
-	).toBeVisible();
-	await expect(page.getByLabel('Bogenraster der Etiketten', { exact: true })).toBeVisible();
-	await expect(page.getByText(/klein/i)).toHaveCount(0);
-	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toHaveCount(0);
-
-	// Die Tür, nicht nur der Knopf: Wer die Adresse kennt, bekommt das Etikett auch nicht.
-	const gross = await page.request.get(`/api/public/bestellung/${token}/etiketten/gross`);
-	expect(gross.status()).toBe(404);
-	const klein = await page.request.get(`/api/public/bestellung/${token}/etiketten/klein`);
-	expect(klein.status()).toBe(200);
-});
-
-// Gegenprobe: Bei der Lernmittel-Bestellung steht der Topf ebenso da, und beide Größen gehen.
-test('Lernmittelfreiheit: die Seite nennt den Topf und bietet beide Größen an', async ({
-	page
-}) => {
-	const token = `E2E-LMF-${uniqueSuffix()}`;
-	seedBestellungMitLink(token, { mittel: 'land' });
-
-	await page.goto(`/bestellung/${token}`);
-	await expect(page.getByText(/^Lernmittelfreiheit · E2E-Naacher/)).toBeVisible();
-	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toBeVisible();
-	await expect(page.getByRole('button', { name: /Kleine Etiketten/ })).toBeVisible();
-	const gross = await page.request.get(`/api/public/bestellung/${token}/etiketten/gross`);
-	expect(gross.status()).toBe(200);
-});
+		await page.goto(`/bestellung/${token}`);
+		await expect(page.getByRole('heading', { name: /Bestellung vom/ })).toBeVisible();
+		await expect(page.getByText(new RegExp(`^${wort} · E2E-Naacher`))).toBeVisible();
+		await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toBeVisible();
+		await expect(page.getByRole('button', { name: /Kleine Etiketten/ })).toBeVisible();
+		for (const groesse of ['gross', 'klein']) {
+			const bogen = await page.request.get(`/api/public/bestellung/${token}/etiketten/${groesse}`);
+			expect(bogen.status(), `Bogen ${groesse}`).toBe(200);
+		}
+	});
+}
 
 test('Ein ungültiger Link zeigt keine Daten und keinen Anmeldebildschirm', async ({ page }) => {
 	await page.goto('/bestellung/DIESEN-TOKEN-GIBT-ES-NICHT');

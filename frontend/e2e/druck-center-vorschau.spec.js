@@ -104,10 +104,9 @@ test('Druck-Center: Das Vorschaublatt bleibt in seiner Spalte', async ({ page })
 	}
 });
 
-// Das große Lernmittel-Etikett ist ein weiteres Format der Buch-Etiketten, mit dem Erzeuger und
-// der Regel des Lieferanten-Wegs. Startfeld und Barcode-Art entfallen; für ein Buch der
-// Schülerbücherei nennt die Vorschau den Grund, bevor jemand druckt.
-test('Druck-Center: Das große Lernmittel-Etikett, nicht für die Schülerbücherei', async ({
+// Das große Lernmittel-Etikett ist ein weiteres Format der Buch-Etiketten, mit dem Erzeuger des
+// Lieferanten-Wegs und für Bücher aus jedem Topf. Startfeld und Barcode-Art entfallen.
+test('Druck-Center: Das große Lernmittel-Etikett, auch für die Schülerbücherei', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
@@ -139,22 +138,24 @@ test('Druck-Center: Das große Lernmittel-Etikett, nicht für die Schülerbüche
 		await page.getByRole('combobox', { name: 'Etikettenformat' }).click();
 		await page.getByRole('option', { name: /Große Lernmittel-Etiketten/ }).click();
 		expect((await grossesBlatt).status(), 'die Tür liefert das große Etikett').toBe(200);
-		await expect(
-			page.getByText('Zum Ausschneiden, nicht für Bücher der Schülerbücherei')
-		).toBeVisible();
+		await expect(page.getByText('Zum Ausschneiden', { exact: true })).toBeVisible();
 		await expect(
 			page.getByRole('spinbutton', { name: 'Startposition auf dem A4-Bogen' })
 		).toHaveCount(0);
 		await expect(page.getByRole('combobox', { name: 'Barcode-Ausgabe' })).toHaveCount(0);
 		await expect(page.getByTestId('etiketten-blatt')).toBeVisible();
 
+		const buecherei = page.waitForResponse((r) => {
+			const auftrag = r.url().endsWith('/api/print/labels') && r.request().postDataJSON();
+			return (
+				auftrag?.formatId === 'lernmittel_gross' &&
+				auftrag.items?.some((/** @type {any} */ e) => e.BarcodeID === `B-GB-${s}`)
+			);
+		});
 		await suche.fill(`Gross Buecherei ${s}`);
 		await page.getByRole('button', { name: new RegExp(`E2E Gross Buecherei ${s}`) }).click();
-		await expect(
-			page.getByText(
-				`Bücher der Schülerbücherei bekommen kein großes Lernmittel-Etikett: B-GB-${s}`
-			)
-		).toBeVisible();
+		expect((await buecherei).status(), 'auch das Buch der Schülerbücherei').toBe(200);
+		await expect(page.getByTestId('etiketten-blatt')).toBeVisible();
 	} finally {
 		seedSQL(`DELETE FROM buecher_titel WHERE isbn IN ('978g${s}', '978h${s}');`);
 	}

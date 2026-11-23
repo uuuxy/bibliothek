@@ -10,7 +10,6 @@ import (
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pdf"
-	"bibliothek/internal/pkg/mitteltopf"
 	"bibliothek/internal/repository"
 )
 
@@ -75,23 +74,10 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 	}
 }
 
-// antworteLernmittelEtiketten liefert das große Lernmittel-Etikett mit demselben Erzeuger und
-// derselben Regel wie die Seite des Lieferanten: Für ein Buch der Schülerbücherei gibt es keins
-// (mitteltopf.HatGrossesLernmittelEtikett). Die Tür lehnt dann den ganzen Auftrag ab und nennt die
-// Barcodes, statt sie still auszulassen; die Vorschau zeigt die Meldung vor dem Druck.
+// antworteLernmittelEtiketten liefert das große Lernmittel-Etikett mit demselben Erzeuger wie die
+// Seite des Lieferanten, für ein Buch aus jedem Topf: Wer druckt, wählt die Größe. Den
+// Eigentumsvermerk wählt der Kopf je Exemplar nach dem Topf.
 func antworteLernmittelEtiketten(w http.ResponseWriter, etiketten []buchetikett.Etikett, kopf buchetikett.Kopf) {
-	var ohne []string
-	for _, e := range etiketten {
-		if !mitteltopf.HatGrossesLernmittelEtikett(e.Topf) {
-			ohne = append(ohne, e.BarcodeID)
-		}
-	}
-	if len(ohne) > 0 {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
-			"Bücher der Schülerbücherei bekommen kein großes Lernmittel-Etikett: "+barcodeAufzaehlung(ohne), nil)
-		return
-	}
-
 	daten, err := pdf.ErzeugeLernmittelEtiketten(buchetikett.PDFEtiketten(etiketten, kopf))
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -102,7 +88,7 @@ func antworteLernmittelEtiketten(w http.ResponseWriter, etiketten []buchetikett.
 
 // antworteSignaturEtiketten liefert die Signaturetiketten für den Buchrücken. Die Signatur kommt
 // vom Titel (buchetikett.ErgaenzeServerfelder); ohne sie bliebe das Etikett leer. Die Tür lehnt
-// dann den ganzen Auftrag ab und nennt die Barcodes wie beim großen Lernmittel-Etikett.
+// dann den ganzen Auftrag ab und nennt die Barcodes, statt sie still auszulassen.
 func antworteSignaturEtiketten(w http.ResponseWriter, startposition int, etiketten []buchetikett.Etikett) {
 	var ohne []string
 	aufschriften := make([][]string, 0, len(etiketten))

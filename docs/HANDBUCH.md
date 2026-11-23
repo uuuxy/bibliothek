@@ -206,8 +206,7 @@ Bestellfenster wie beim Anlegen; das Feld bleibt änderbar. (§13)
 
 Vier Reiter (§9):
 - **Buch-Etiketten**: Format, Startposition auf einem angebrochenen Bogen, Titel aus dem Katalog oder
-  aus einer Klasse; auch das große Lernmittel-Etikett mit Ausleihtabelle (vier je A4-Blatt, nicht für
-  Bücher der Schülerbücherei) und das Signatur-Etikett für den Buchrücken (Regaladresse und Kürzel
+  aus einer Klasse; auch das große Lernmittel-Etikett mit Ausleihtabelle (vier je A4-Blatt) und das Signatur-Etikett für den Buchrücken (Regaladresse und Kürzel
   groß, auf dem Bogen der kleinen Barcodes; es nimmt kein Exemplar von „Fehlende Etiketten“). Die
   Vorschau ist das Druck-PDF selbst („Bogen 1 von 3 · 68 Etiketten“).
 - **Fehlende Etiketten**: alle Exemplare ohne Etikett; die Zahl steht an der Navigation.

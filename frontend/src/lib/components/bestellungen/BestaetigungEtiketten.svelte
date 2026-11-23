@@ -1,21 +1,16 @@
-<!-- @component BestaetigungEtiketten — der Etikettenblock der Lieferanten-Seite, mit zwei
-     Formen: Gilt die Bestellung der Schülerbücherei, gibt es das große Lernmittel-Etikett nicht
-     (`grosses_etikett`, entschieden in internal/pkg/mitteltopf). Der Knopf entfällt dann
-     ganz, statt deaktiviert stehen zu bleiben; die Tür liefert das Etikett auch nicht. -->
+<!-- @component BestaetigungEtiketten — der Etikettenblock der Lieferanten-Seite: kleine Etiketten
+     im Raster seiner Bögen oder das große Lernmittel-Etikett. Beide gibt es zu jeder Bestellung,
+     gleich aus welchem Topf; der Händler wählt, was er druckt. -->
 <script>
 	import Button from '../ui/Button.svelte';
-	import { anzahlText, verbindeSaetze } from '../../utils/format.js';
+	import { anzahlText } from '../../utils/format.js';
 	import Select from '../ui/Select.svelte';
 	import Icon from '../ui/Icon.svelte';
 
 	/** @type {{ bestellung: any, token: string, formatId?: string, geoeffneteGroesse?: string }} */
 	let { bestellung, token, formatId = $bindable(''), geoeffneteGroesse = $bindable('') } = $props();
 
-	// „Klein" sagt die Seite nur, wenn es ein „Groß" daneben gibt. Bei einer Bestellung für
-	// die Schülerbücherei gibt es EINE Größe — dort heißt sie schlicht „Etiketten".
-	let rasterBeschriftung = $derived(
-		bestellung.grosses_etikett ? 'Bogenraster der kleinen Etiketten' : 'Bogenraster der Etiketten'
-	);
+	const rasterBeschriftung = 'Bogenraster der kleinen Etiketten';
 
 	/** @param {'klein' | 'gross'} groesse */
 	function etikettenOeffnen(groesse) {
@@ -36,12 +31,8 @@
 <div class="bg-surface-container-lowest rounded-xl p-8 shadow-level1">
 	<h2 class="text-on-surface text-title-medium">Etiketten drucken</h2>
 	<p class="text-on-surface-variant mt-1 text-sm">
-		{#if bestellung.grosses_etikett}
-			Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail. Sie wählen nur das
-			Format.
-		{:else}
-			Der Bogen enthält dieselben Barcodes wie der Anhang der Bestellmail
-		{/if}
+		Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail. Sie wählen nur das
+		Format.
 	</p>
 
 	{#if bestellung.etiketten_formate?.length}
@@ -60,11 +51,8 @@
 				aria-label={rasterBeschriftung}
 			/>
 			<p class="text-on-surface-variant text-xs">
-				{verbindeSaetze(
-					'Passend zu den Etikettenbögen in Ihrem Drucker',
-					bestellung.grosses_etikett &&
-						'Gilt nicht für die großen Lernmittel-Etiketten, die zu viert auf einem A4-Blatt liegen und ausgeschnitten werden'
-				)}
+				Passend zu den Etikettenbögen in Ihrem Drucker. Gilt nicht für die großen
+				Lernmittel-Etiketten, die zu viert auf einem A4-Blatt liegen und ausgeschnitten werden.
 			</p>
 		</div>
 	{/if}
@@ -72,14 +60,12 @@
 	<div class="mt-4 flex flex-wrap gap-3">
 		<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
 			{#if geoeffneteGroesse === 'klein'}<Icon name="check" />{/if}
-			{bestellung.grosses_etikett ? 'Kleine Etiketten auf A4-Bogen' : 'Etiketten auf A4-Bogen'}
+			Kleine Etiketten auf A4-Bogen
 		</Button>
-		{#if bestellung.grosses_etikett}
-			<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
-				{#if geoeffneteGroesse === 'gross'}<Icon name="check" />{/if}
-				Große Lernmittel-Etiketten, 4 je A4-Blatt
-			</Button>
-		{/if}
+		<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
+			{#if geoeffneteGroesse === 'gross'}<Icon name="check" />{/if}
+			Große Lernmittel-Etiketten, 4 je A4-Blatt
+		</Button>
 	</div>
 	{#if geoeffneteGroesse}
 		<p class="text-on-surface-variant mt-3 text-xs">

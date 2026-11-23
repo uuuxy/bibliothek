@@ -40,12 +40,14 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatalf("Bestellung: %v", err)
 	}
 
-	// Weg 3: der Link. Das große Etikett gibt es zu dieser Bestellung nicht (4.11).
-	rec := etikettenBogenHolen(t, srv, res.BestaetigungsToken, "klein", testdaten.EtikettFormatMitVermerk)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Lieferanten-Link: Status %d — %s", rec.Code, rec.Body.String())
+	// Weg 3: der Link, in beiden Größen. Das große Etikett trägt denselben Vermerk wie das kleine.
+	for _, groesse := range []string{"klein", "gross"} {
+		rec := etikettenBogenHolen(t, srv, res.BestaetigungsToken, groesse, testdaten.EtikettFormatMitVermerk)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Lieferanten-Link %s: Status %d — %s", groesse, rec.Code, rec.Body.String())
+		}
+		pdftest.Aufdruck(t, "Lieferanten-Link "+groesse, pdftest.Suchtext(t, rec.Body.Bytes()), testdaten.VermerkStadt, testdaten.VermerkLand)
 	}
-	pdftest.Aufdruck(t, "Lieferanten-Link", pdftest.Suchtext(t, rec.Body.Bytes()), testdaten.VermerkStadt, testdaten.VermerkLand)
 
 	// Weg 4: der Mailanhang, mit dem Kopf, den die Tür der Bestellung baut.
 	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
@@ -53,12 +55,13 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
 	// Die Etiketten gehen durch dieselbe Füll-Funktion wie an der Tür der Bestellung.
-	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, buchetikett.KopfAus(einstellungen), true, res.Mittel)
+	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, buchetikett.KopfAus(einstellungen), true)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
-	if len(boegen) == 0 {
-		t.Fatal("kein Bogen im Anhang")
+	// Der Hauptlieferant bekommt beide Bögen, auch zu einer Bestellung für die Schülerbücherei.
+	if len(boegen) != 2 {
+		t.Fatalf("%d Bögen im Anhang, erwartet den kleinen und den großen", len(boegen))
 	}
 	for _, b := range boegen {
 		pdftest.Aufdruck(t, "Mailanhang "+b.Name, pdftest.Suchtext(t, b.Inhalt), testdaten.VermerkStadt, testdaten.VermerkLand)

@@ -33,9 +33,7 @@
 				aria-label="Etikettenformat"
 			/>
 			{#if grossesEtikett}
-				<p class="text-xs text-on-surface-variant mt-1">
-					Zum Ausschneiden, nicht für Bücher der Schülerbücherei
-				</p>
+				<p class="text-xs text-on-surface-variant mt-1">Zum Ausschneiden</p>
 			{:else if signaturEtikett}
 				<p class="text-xs text-on-surface-variant mt-1">
 					Regaladresse und Kürzel für den Buchrücken, auf dem Bogen der kleinen Barcodes

@@ -10,8 +10,6 @@ import (
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pdf"
-	"bibliothek/internal/pkg/mitteltopf"
-	"bibliothek/internal/repository"
 )
 
 // Die Etikettenseite des Lieferanten-Links. Sie druckt genau die Etiketten, die auch im
@@ -54,21 +52,6 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		sendeTokenFehler(w, err)
 		return
-	}
-
-	// Das große Lernmittel-Etikett gibt es zu einer Bestellung für die Schülerbücherei
-	// nicht — auch nicht für den, der die Adresse kennt. Die Seite blendet den Knopf
-	// aus; die Tür ist es, die das Etikett verweigert.
-	if groesse == "gross" {
-		mittel, err := repository.LadeMittelDerBestellung(ctx, t.DB.Pool, bestellungID)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return
-		}
-		if !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Zu dieser Bestellung gibt es kein großes Lernmittel-Etikett", nil)
-			return
-		}
 	}
 
 	etiketten, err := buchetikett.LadeDerBestellung(ctx, t.DB.Pool, bestellungID)

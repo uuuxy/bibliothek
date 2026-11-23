@@ -48,8 +48,8 @@ export const ETIKETT_FORMATE = [
 /**
  * Das große Lernmittel-Etikett, nur bei den Buch-Etiketten des Druck-Centers. Es ist kein
  * vorgestanzter Bogen: Vier Felder liegen auf einem A4-Blatt und werden ausgeschnitten, ein
- * Startfeld gibt es deshalb nicht. Erzeuger und Topf-Regel liegen beim Server
- * (pdf.LernmittelEtikettFormat).
+ * Startfeld gibt es deshalb nicht. Es gilt für Bücher aus jedem Topf; der Erzeuger liegt beim
+ * Server (pdf.LernmittelEtikettFormat).
  *
  * @type {EtikettFormat}
  */

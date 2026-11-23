@@ -109,15 +109,6 @@ func TestReihenfolge(t *testing.T) {
 	}
 }
 
-func TestHatGrossesLernmittelEtikett(t *testing.T) {
-	faelle := map[string]bool{Land: true, Schultraeger: false, Spende: false, "": true}
-	for mittel, will := range faelle {
-		if ist := HatGrossesLernmittelEtikett(mittel); ist != will {
-			t.Errorf("HatGrossesLernmittelEtikett(%q) = %v, erwartet %v", mittel, ist, will)
-		}
-	}
-}
-
 // Die Spende gilt beim Händler, auf dem Etikett und beim Ersatz wie die Schülerbücherei; das Land
 // und eine Bestellung ohne Zuordnung nicht.
 func TestWieSchuelerbuecherei(t *testing.T) {

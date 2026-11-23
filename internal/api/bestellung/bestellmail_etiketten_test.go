@@ -25,7 +25,7 @@ func einTestEtikett() []buchetikett.Etikett {
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{
 		SchuleName: "Testschule", EtikettEigentumsvermerk: "Eigentum des Kreises Wetterau"})
-	boegen, err := etikettenboegen(einTestEtikett(), kopf, false, mitteltopf.Land)
+	boegen, err := etikettenboegen(einTestEtikett(), kopf, false)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
 	kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
-	boegen, err := etikettenboegen(einTestEtikett(), kopf, false, mitteltopf.Land)
+	boegen, err := etikettenboegen(einTestEtikett(), kopf, false)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -56,43 +56,6 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 		if !strings.Contains(pdftest.Suchtext(t, b.Inhalt), repository.EigentumsvermerkVorgabe) {
 			t.Errorf("%s: ohne Konfiguration muss die Werksvorgabe drucken", b.Name)
 		}
-	}
-}
-
-// Das große Lernmittel-Etikett („Eigentum des Landes") geht nur mit, wenn die Bestellung
-// nicht der Schülerbücherei gilt. Die
-// Alt-Bestellung ohne Zuordnung behält beide Größen.
-func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
-	faelle := []struct {
-		name              string
-		istHauptlieferant bool
-		mittel            string
-		wantGross         bool
-	}{
-		{"Hauptlieferant, Lernmittelfreiheit", true, mitteltopf.Land, true},
-		{"Hauptlieferant, Schülerbücherei", true, mitteltopf.Schultraeger, false},
-		{"Hauptlieferant, ohne Zuordnung", true, "", true},
-		{"anderer Lieferant, Lernmittelfreiheit", false, mitteltopf.Land, false},
-	}
-	for _, f := range faelle {
-		t.Run(f.name, func(t *testing.T) {
-			kopf := buchetikett.KopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
-			boegen, err := etikettenboegen(einTestEtikett(), kopf, f.istHauptlieferant, f.mittel)
-			if err != nil {
-				t.Fatalf("etikettenboegen: %v", err)
-			}
-			hatGross, hatKlein := false, false
-			for _, b := range boegen {
-				hatGross = hatGross || strings.HasPrefix(b.Name, "etiketten_gross")
-				hatKlein = hatKlein || strings.HasPrefix(b.Name, "etiketten_klein")
-			}
-			if !hatKlein {
-				t.Error("der kleine Bogen fehlt — er geht in jedem Fall mit")
-			}
-			if hatGross != f.wantGross {
-				t.Errorf("großes Lernmittel-Etikett im Anhang = %v, erwartet %v", hatGross, f.wantGross)
-			}
-		})
 	}
 }
 
@@ -111,6 +74,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 		{"Lernmittel trägt den allgemeinen Vermerk", stadt, mitteltopf.Land, land, stadt},
 		{"Schülerbücherei trägt ihren eigenen", stadt, mitteltopf.Schultraeger, stadt, land},
 		{"Schülerbücherei ohne Einstellung: kein Vermerk", "", mitteltopf.Schultraeger, "", "Eigentum"},
+		{"Spende trägt den Vermerk der Schülerbücherei", stadt, mitteltopf.Spende, stadt, land},
 		{"unbekanntes Exemplar (Vorab-Druck): wie bisher", stadt, "", land, stadt},
 	}
 	for _, f := range faelle {
@@ -120,8 +84,8 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 			labels := einTestEtikett()
 			labels[0].Topf = f.topf
 
-			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein und groß.
-			boegen, err := etikettenboegen(labels, kopf, true, mitteltopf.Land)
+			// Hauptlieferant: beide Bögen entstehen, klein und groß.
+			boegen, err := etikettenboegen(labels, kopf, true)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)
 			}

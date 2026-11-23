@@ -13,10 +13,10 @@ import (
 	"bibliothek/internal/testdaten"
 )
 
-// Das Druck-Center bietet das große Lernmittel-Etikett als weiteres Format an. Die Tür nimmt
-// dafür den Erzeuger des Lieferanten-Wegs und dessen Regel: kein großes Etikett für ein Buch der
-// Schülerbücherei. Ein Titel ohne Kennung der Lernmittel entsteht in den Testdaten als Buch der
-// Schülerbücherei (repository.ExemplarTopfSQL).
+// Das Druck-Center bietet das große Lernmittel-Etikett als weiteres Format an, mit dem Erzeuger
+// des Lieferanten-Wegs und für ein Buch aus jedem Topf: Wer druckt, wählt die Größe. Ein Titel
+// ohne Kennung der Lernmittel entsteht in den Testdaten als Buch der Schülerbücherei
+// (repository.ExemplarTopfSQL).
 func TestEtikettenbogen_GrossesLernmittelEtikett(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -47,13 +47,16 @@ func TestEtikettenbogen_GrossesLernmittelEtikett(t *testing.T) {
 		}
 	})
 
-	t.Run("Buch der Schülerbücherei sperrt den Auftrag", func(t *testing.T) {
+	t.Run("Buch der Schülerbücherei bekommt es ebenso", func(t *testing.T) {
 		rec := drucke(lmfEtikett + "," + buechereiEtikett)
-		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("Status %d, erwartet 400", rec.Code)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200 — %s", rec.Code, rec.Body.String())
 		}
-		if body := rec.Body.String(); !strings.Contains(body, "B-SB-1") || strings.Contains(body, "B-LMF-1") {
-			t.Errorf("die Meldung nennt nicht genau das Buch der Schülerbücherei: %s", body)
+		texte := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		for _, titel := range []string{"Seydlitz Geographie", "Die Brüder Löwenherz"} {
+			if !strings.Contains(texte, titel) {
+				t.Errorf("das große Etikett für %q fehlt:\n  %s", titel, texte)
+			}
 		}
 	})
 }

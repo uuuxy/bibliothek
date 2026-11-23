@@ -52,7 +52,7 @@ type bestellMail struct {
 	// Mailweg den Kopf selbst, ergäben zwei Wege zum selben Buch zwei verschiedene Aufkleber.
 	EtikettKopf buchetikett.Kopf
 	Schule      pdf.SchuleInfo
-	// Mittel: der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger) —
+	// Mittel: der Topf der Bestellung (mitteltopf.Land, mitteltopf.Schultraeger, mitteltopf.Spende) —
 	// bestimmt Betreff und Vermerk des Anschreibens. Pflicht: Ohne gültigen Topf gibt es
 	// kein Anschreiben und damit keine Mail (mitteltopf.TexteFuer).
 	Mittel string
@@ -132,7 +132,7 @@ func bestellAnhaenge(m bestellMail) ([]mailservice.Anhang, error) {
 		return anhaenge, nil
 	}
 
-	boegen, err := etikettenboegen(m.Etiketten, m.EtikettKopf, m.IstHauptlieferant, m.Mittel)
+	boegen, err := etikettenboegen(m.Etiketten, m.EtikettKopf, m.IstHauptlieferant)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +177,13 @@ func erzeugeBarcodeCSV(etiketten []buchetikett.Etikett) ([]byte, error) {
 }
 
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
-// den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
-// wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
-// Schülerbücherei, entfällt das große Etikett (mitteltopf.HatGrossesLernmittelEtikett).
+// den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett, gleich aus
+// welchem Topf — er wählt die Größe, Bibliosys entscheidet sie nicht vorab. Auch ein Klassensatz
+// der Schülerbücherei oder einer Spende kann das große Etikett brauchen.
 //
 // Der Kopf kommt fertig herein (buchetikett.KopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
-func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Kopf, istHauptlieferant bool, mittel string) ([]mailservice.Anhang, error) {
+func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Kopf, istHauptlieferant bool) ([]mailservice.Anhang, error) {
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
@@ -200,7 +200,7 @@ func etikettenboegen(bestellEtiketten []buchetikett.Etikett, kopf buchetikett.Ko
 		{Name: datiertName("etiketten_klein", "pdf"), ContentType: tuer.ContentTypePDF, Inhalt: bogenPuffer.Bytes()},
 	}
 
-	if !istHauptlieferant || !mitteltopf.HatGrossesLernmittelEtikett(mittel) {
+	if !istHauptlieferant {
 		return boegen, nil
 	}
 

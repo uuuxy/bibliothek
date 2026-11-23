@@ -448,7 +448,7 @@ func behalteOeffentlicheAdresse(t *testing.T, pool *pgxpool.Pool) {
 
 // Ohne öffentliche Adresse geht auch die erneute Mail an den Hauptlieferanten ohne Link. Die
 // Antwort warnt wie beim ersten Versand, damit jemand den Link in der Historie nachträgt, und die
-// Bögen hängen an der Mail, beim Lernmittel auch das große Etikett.
+// Bögen hängen an der Mail, für den Hauptlieferanten auch das große Etikett.
 func TestBestellmail_ErneutOhneAdresseWarntUndHaengtDieBoegenAn(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "ohne-adresse")
 	behalteOeffentlicheAdresse(t, l.pool)
