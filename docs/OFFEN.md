@@ -128,18 +128,26 @@ kennt keine Kürzel, dort zählt nur der Name.
 ### 5.199 Flächen statt Linien zwischen zwei Bereichen
 
 Heute trennt eine senkrechte Linie zwei Bereiche an vier Stellen: Bestellseite
-(`Bestellwesen.svelte`), Leserakte (`LeserakteKopf.svelte`), Signaturen (`Signaturen.svelte`) und
-Klassensatz-Dialog der Titel-Verwaltung (`KlassensatzDialog.svelte`). Einstellungen und
-Buchformular trennen ihre Spalten nur über Abstand. Das Seitenblatt (`ui/Seitenblatt`) trägt die
-Linie als Teil des Bauteils (M3, Side sheets: „Divider (optional)“). Karten tragen einen Rahmen
-ohne Flächenton ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3, Gate `frontend-hygiene-karten`). Der
+(`Bestellwesen.svelte`), Leserakte in Leserdatei und Theke (`LeserakteKopf.svelte`), Signaturen
+(`Signaturen.svelte`) und Klassensatz-Dialog der Seite „Klassensätze“ (`KlassensatzDialog.svelte`).
+Einstellungen und Buchformular trennen ihre Spalten nur über Abstand. Das Seitenblatt
+(`ui/Seitenblatt`) trägt die Linie als Teil des Bauteils (M3, Side sheets: „Divider (optional)“).
+Karten tragen einen Rahmen ohne Flächenton ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3, Gate
+`frontend-hygiene-karten`). Der
 Warenkorb des Google Store setzt weiße Flächen auf grauen Grund, ohne Linie; M3 (Layout, Parts of
 layout) lässt beides zu: „Explicit grouping uses distinct colors or outlines to visually delineate
 content.“ Im Bild des Bestellwesens gefiel die Fläche besser; gebaut wurde die Linie, damit das
 Programm einheitlich bleibt.
 
-Nächster Schritt: je Seite ein Bild „Heute / Fläche“, dann die Regel in ARCHITEKTUR 5.3 und das
-Gate ändern und alle vier Stellen zugleich umstellen.
+Die Bilder „Heute / Fläche“ der vier Stellen liegen vor (dunkel, 1710 px). Sie nehmen die Rollen des
+Bildes der Bestellseite: Seite `surface-container-lowest`, Flächen `surface-container-low`, Ecke
+12 px, Abstand und Rand 24 px (M3, Applying layout, Expanded: „Expanded layouts have a leading and
+trailing margin of 24dp. The spacer between panes is 24dp.“). Im hellen Modus ergibt das
+hellgraue Flächen auf Weiß, umgekehrt wie im Google Store. An der Theke bricht mit dem Rand die
+Knopfzeile der Leserakte bei 1710 px um.
+
+Nächster Schritt: nach der Entscheidung die Regel in ARCHITEKTUR 5.3 und das Gate ändern und alle
+vier Stellen zugleich umstellen.
 
 ### 7.2 Frisches Littera-Backup
 
