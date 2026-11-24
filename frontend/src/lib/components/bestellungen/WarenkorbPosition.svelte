@@ -8,15 +8,20 @@
 	import Feld from '../ui/Feld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
-	import { MITTEL, andereMittel } from './mittel.js';
+	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
+	import Select from '../ui/Select.svelte';
 
 	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { position } = $props();
 
-	/** Wohin die Position wechseln kann — jeder Knopf nennt sein ZIEL, nicht den Zustand. */
-	const ziele = $derived(andereMittel(position.mittel));
+	const topfId = $props.id();
+	const toepfe = MITTEL_REIHENFOLGE.map((m) => ({
+		value: m,
+		label: MITTEL[m].label,
+		zusatz: MITTEL[m].traeger
+	}));
 </script>
 
 <div class="space-y-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
@@ -109,20 +114,18 @@
 		{/if}
 	</div>
 
-	<!-- Der Topf ist eine Entscheidung je Bestellung; der Titel schlägt ihn nur vor. Ein
-	     falsch gekennzeichnetes Schulbuch wandert hier in die Lernmittel-Bestellung, eine
-	     Spende in die Bestellung ohne Topf, ohne dass jemand erst den Titel bearbeiten muss.
-	     Jeder Knopf nennt sein Ziel. -->
-	<div class="flex flex-wrap gap-x-1 pl-10">
-		{#each ziele as ziel (ziel)}
-			<Button
-				variant="ghost"
-				size="sm"
-				onclick={() => bestellStore.verschiebe(position, ziel)}
-				aria-label="{position.titel} in die Bestellung „{MITTEL[ziel].label}“ verschieben"
-			>
-				→ {MITTEL[ziel].label} · {MITTEL[ziel].traeger}
-			</Button>
-		{/each}
+	<!-- Der Topf ist eine Entscheidung je Bestellung; der Titel schlägt ihn nur vor. Das Feld
+	     zeigt, in welchem Topf die Position liegt, und schiebt sie in einen anderen: ein falsch
+	     gekennzeichnetes Schulbuch in die Lernmittel-Bestellung, eine Spende in die Bestellung
+	     ohne Topf, ohne dass jemand erst den Titel bearbeiten muss. -->
+	<div class="space-y-1.5 pl-10">
+		<label for={topfId} class="block text-sm font-medium text-on-surface-variant">Topf</label>
+		<Select
+			id={topfId}
+			value={position.mittel}
+			options={toepfe}
+			aria-label="Topf von {position.titel}"
+			onchange={(wert) => bestellStore.verschiebe(position, wert)}
+		/>
 	</div>
 </div>

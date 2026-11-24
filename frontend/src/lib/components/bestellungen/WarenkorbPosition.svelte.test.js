@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, screen } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
@@ -73,29 +73,26 @@ describe('WarenkorbPosition: die Menge', () => {
 	});
 });
 
-// Eine Position lässt sich in jeden anderen Topf schieben: ein falsch gekennzeichnetes Schulbuch
-// in die Schülerbücherei, eine Spende in die Bestellung ohne Topf. Jeder Knopf nennt sein Ziel.
+// Das Feld „Topf" zeigt, in welchem Topf die Position liegt, und schiebt sie in einen anderen: ein
+// falsch gekennzeichnetes Schulbuch in die Schülerbücherei, eine Spende in die Bestellung ohne Topf.
 describe('WarenkorbPosition: der Topf', () => {
 	beforeEach(() => {
 		bestellStore.cart = [];
 	});
 
-	it('bietet beide anderen Töpfe an und schiebt die Position in die Spende', async () => {
+	it('zeigt den Topf der Position und schiebt sie über das Feld in die Spende', async () => {
 		position(1);
-		// position() hat die Zeile schon gezeichnet; gezählt wird an ihr.
-		const ziele = [...document.querySelectorAll('button[aria-label*="in die Bestellung"]')].map(
-			(k) => k.getAttribute('aria-label')
-		);
-		expect(ziele).toEqual([
-			'Mathematik 7 in die Bestellung „Schülerbücherei“ verschieben',
-			'Mathematik 7 in die Bestellung „Spende“ verschieben'
-		]);
+		const feld = screen.getByRole('combobox', { name: 'Topf von Mathematik 7' });
+		expect(feld.textContent).toContain('Lernmittelfreiheit');
 
-		await fireEvent.click(
-			/** @type {HTMLButtonElement} */ (
-				document.querySelector('button[aria-label$="„Spende“ verschieben"]')
-			)
+		await fireEvent.click(feld);
+		const toepfe = screen.getAllByRole('option').map((o) => o.textContent ?? '');
+		expect(toepfe).toHaveLength(3);
+		['Lernmittelfreiheit', 'Schülerbücherei', 'Spende'].forEach((wort, i) =>
+			expect(toepfe[i]).toContain(wort)
 		);
+
+		await fireEvent.click(screen.getByRole('option', { name: /^Spende/ }));
 		expect(bestellStore.cart[0].mittel).toBe('spende');
 	});
 });

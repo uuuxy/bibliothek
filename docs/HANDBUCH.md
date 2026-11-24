@@ -430,8 +430,8 @@ Fünf Reiter (§7):
 - **Bestellbedarf**: Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht; das
   Plus legt die fehlende Menge in den Warenkorb. Der Warenkorb hat bis zu drei Abschnitte,
   _Lernmittelfreiheit · Land_, _Schülerbücherei · Schulträger_ und _Spende · ohne Topf_ (etwa Geld des
-  Fördervereins); je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt sich in
-  jeden anderen schieben. Eine Spende läuft beim Händler wie die Schülerbücherei, mit deren Kundennummer
+  Fördervereins); je Abschnitt geht eine eigene Bestellung an den Händler, und das Feld _Topf_ an jeder
+  Position schiebt sie in einen anderen. Eine Spende läuft beim Händler wie die Schülerbücherei, mit deren Kundennummer
   und der Rechnung an die Schule; Anschreiben und Mail sagen „Spende". Den Topf einer Bestellung
   korrigiert man später im Bestelldetail, mit Grund.
 - **Wareneingang**: Positionen einbuchen → Etiketten. Der Kopf jeder Bestellung nennt ihren Stand

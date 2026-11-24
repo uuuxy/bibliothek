@@ -3,7 +3,7 @@
 //
 // Dasselbe Vokabular wie internal/pkg/mitteltopf und bestellungen_verlauf.mittel (Migrationen
 // 109 und 182). Eine Bestellung = ein Topf; der Titel schlägt ihn über ist_lernmittel nur vor,
-// und eine Position lässt sich im Warenkorb in einen anderen Topf schieben (falsch
+// und das Feld „Topf" einer Position im Warenkorb schiebt sie in einen anderen (falsch
 // gekennzeichneter Titel, Spende).
 
 /** @typedef {'land' | 'schultraeger' | 'spende'} Mittel */
@@ -25,14 +25,6 @@ export const MITTEL_REIHENFOLGE = /** @type {Mittel[]} */ (['land', 'schultraege
  */
 export function mittelVorschlag(istLernmittel) {
 	return istLernmittel ? 'land' : 'schultraeger';
-}
-
-/**
- * Die Töpfe, in die eine Position wechseln kann: alle außer ihrem eigenen, in der Reihenfolge.
- * @param {Mittel} mittel @returns {Mittel[]}
- */
-export function andereMittel(mittel) {
-	return MITTEL_REIHENFOLGE.filter((m) => m !== mittel);
 }
 
 /**
