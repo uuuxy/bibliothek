@@ -1,11 +1,12 @@
 import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
 import { appState } from './store.svelte.js';
 
+/**
+ * Lädt die ganze Titelliste der gewählten Sicht. Gesucht wird im Browser mit derselben Regel wie
+ * in „Suche & Filter" (startseiten_api.js, buecherSuchen), damit beide Reiter dasselbe finden.
+ */
 export async function holeBuecherListe() {
-	const parameter = new URLSearchParams();
-	if (appState.searchQuery) parameter.set('q', appState.searchQuery);
-	if (appState.bestandsAnsicht === 'ohne') parameter.set('bestand', 'ohne');
-	const anhang = parameter.size > 0 ? `?${parameter}` : '';
+	const anhang = appState.bestandsAnsicht === 'ohne' ? '?bestand=ohne' : '';
 	const res = await apiFetch(`/api/books${anhang}`, {
 		credentials: 'include'
 	});

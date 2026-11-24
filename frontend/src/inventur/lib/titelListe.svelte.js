@@ -6,8 +6,8 @@ import { fehlertext } from '../../lib/utils/fehlertext.js';
 /**
  * Die Titelliste der Titel-Verwaltung: laden und die Änderungen der Maske übernehmen.
  *
- * Nur die jüngste Abfrage gilt: Die ganze Liste lädt länger als ein Suchergebnis und stünde
- * sonst, wenn sie danach ankommt, unter dem Suchwort.
+ * Nur die jüngste Abfrage gilt: Wechselt die Sicht, während die vorige Liste noch lädt, stünde
+ * deren späte Antwort sonst unter der neuen Sicht.
  *
  * Was die Maske ändert, solange ein Abruf läuft (gespeichert, gelöscht, neues Cover), kennt
  * dessen Antwort nicht. Sie ersetzte die Liste samt der Änderung: Der eben angelegte Titel
@@ -74,25 +74,22 @@ export function erstelleTitelListe() {
 }
 
 /**
- * Lädt die Liste nach jedem Wechsel von Suche oder Sicht. Den Aufbau lädt die Seite selbst; der
- * erste Lauf des Effekts ist deshalb kein Wechsel, mit ihm lüde die ganze Liste zweimal. Beim
- * Tippen wartet der Abruf 300 ms auf den nächsten Buchstaben, ein Wechsel der Sicht fragt sofort.
+ * Lädt die Liste nach jedem Wechsel der Sicht sofort neu. Die Suche fragt den Server nicht, sie
+ * filtert die geladene Liste. Den Aufbau lädt die Seite selbst; der erste Lauf des Effekts ist
+ * deshalb kein Wechsel, mit ihm lüde die ganze Liste zweimal.
  * @param {() => unknown} lade
  */
 export function ladeNachWechsel(lade) {
 	let ersterLauf = true;
-	let sicht = appState.bestandsAnsicht;
 	$effect(() => {
-		const suchAnfrage = appState.searchQuery;
-		const wartezeit = appState.bestandsAnsicht === sicht ? 300 : 0;
-		sicht = appState.bestandsAnsicht;
+		const sicht = appState.bestandsAnsicht;
 		if (ersterLauf) {
 			ersterLauf = false;
 			return;
 		}
 		const warten = setTimeout(() => {
-			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') lade();
-		}, wartezeit);
+			if (appState.adminAuthenticated && sicht) lade();
+		}, 0);
 		return () => clearTimeout(warten);
 	});
 }

@@ -26,8 +26,7 @@ vi.mock('../../../lib/components/buchakte/titelLoeschen.js', async (importOrigin
 const TITEL = { id: 't1', title: 'Mathe 9', author: 'Autor', isbn: '', verfuegbar: 1, gesamt: 1 };
 
 // Scheitert das Laden der Liste, nennt die Seite den Grund. Eine leere Tabelle sagte sonst
-// „Keine Titel gefunden", und weil der Fehler die Anmeldung zurücknahm, lud danach auch die
-// Suche nicht mehr.
+// „Keine Titel gefunden".
 describe('TitelVerwaltung: die Liste lädt nicht', () => {
 	beforeEach(() => {
 		vi.mocked(holeBuecherListe).mockReset();
@@ -49,19 +48,6 @@ describe('TitelVerwaltung: die Liste lädt nicht', () => {
 
 		expect(await screen.findByText('Mathe 9')).toBeTruthy();
 		expect(screen.queryByText('Titel nicht geladen')).toBeNull();
-	});
-
-	it('lädt nach dem Fehler auf eine neue Suche hin', async () => {
-		vi.mocked(holeBuecherListe)
-			.mockRejectedValueOnce(new Error('Ein interner Serverfehler ist aufgetreten'))
-			.mockResolvedValueOnce([TITEL]);
-		const screen = render(TitelVerwaltung);
-		await screen.findByText('Titel nicht geladen');
-
-		appState.searchQuery = 'Mathe';
-
-		expect(await screen.findByText('Mathe 9')).toBeTruthy();
-		await waitFor(() => expect(holeBuecherListe).toHaveBeenCalledTimes(2));
 	});
 });
 
@@ -181,17 +167,27 @@ describe('TitelVerwaltung: Wechsel der Sicht', () => {
 		expect(screen.getByText('1 Titel').classList.contains('invisible')).toBe(false);
 	});
 
-	it('wartet beim Tippen auf den nächsten Buchstaben', async () => {
-		vi.mocked(holeBuecherListe).mockResolvedValue([TITEL]);
+	// Dieselbe Suche wie in „Suche & Filter" (buecherSuchen): Wörter einzeln, „bio" als Biologie,
+	// „7" als Jahrgang. Mit dem Wortlaut am Stück fand die Titel-Verwaltung zu „bio 7" nichts.
+	it('sucht wie „Suche & Filter" in der geladenen Liste und fragt den Server nicht', async () => {
+		const bio = {
+			...TITEL,
+			id: 't2',
+			title: 'Natur entdecken',
+			subject: 'Biologie',
+			jahrgangVon: 7,
+			jahrgangBis: 8
+		};
+		vi.mocked(holeBuecherListe).mockResolvedValue([TITEL, bio]);
 		const screen = render(TitelVerwaltung);
 		await screen.findByText('Mathe 9');
 
-		appState.searchQuery = 'Mathe';
+		appState.searchQuery = 'bio 7';
 		flushSync();
 		await nachSofortigem();
 
+		expect(screen.getByText('Natur entdecken')).toBeTruthy();
+		expect(screen.queryByText('Mathe 9')).toBeNull();
 		expect(holeBuecherListe).toHaveBeenCalledTimes(1);
-		await waitFor(() => expect(holeBuecherListe).toHaveBeenCalledTimes(2));
-		expect(screen.getByText('Mathe 9')).toBeTruthy();
 	});
 });

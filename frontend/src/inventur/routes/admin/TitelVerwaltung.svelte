@@ -19,10 +19,13 @@
 	} from '../../../lib/components/buchakte/titelLoeschen.js';
 	import { hatUngespeichertes, titelFuerMaske } from '$lib/buch_speichern.js';
 	import { erstelleTitelListe, ladeNachWechsel } from '$lib/titelListe.svelte.js';
+	import { buecherSuchen } from '$lib/startseiten_api.js';
 
 	// Laden und Ändern der Liste und wann sie lädt: titelListe.svelte.js.
 	const liste = erstelleTitelListe();
 	const aktualisiereBuecher = liste.lade;
+	// Dieselbe Suche wie in „Suche & Filter": Beide Reiter finden zu einer Eingabe dasselbe.
+	const treffer = $derived(buecherSuchen(liste.buecher, appState.searchQuery));
 	let istBearbeitenModus = $state(false);
 	let buchAktionen = $state();
 	/** @type {string[]|null} Bücher-IDs, die gerade einer Klasse zugewiesen werden (Picker offen). */
@@ -145,7 +148,7 @@
 		<LadeFehler titel="Titel nicht geladen" text={liste.ladefehler} onerneut={liste.lade} />
 	{:else}
 		<Bestandstabelle
-			titelListe={liste.buecher}
+			titelListe={treffer}
 			laedt={liste.wirdGeladen}
 			sichtLaedt={liste.sichtLaedt}
 			onOpenDetail={oeffneDetails}

@@ -3,7 +3,7 @@
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import { jahrgangSpanne, anzahlText } from '../../../../lib/utils/format.js';
-	import { isbnFormen, normalisiereIsbn } from '../../../../lib/utils/isbnFormen.js';
+	import { buecherSuchen } from '../../startseiten_api.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 	let {
@@ -14,20 +14,9 @@
 
 	let suche = $state('');
 
-	// Die ISBN trifft auch in der anderen Länge und mit Bindestrichen (isbnFormen.js): Getippt
-	// wird oft die zehnstellige vom Titelblatt.
-	const gefilterteTitel = $derived.by(() => {
-		const q = suche.toLowerCase();
-		const formen = isbnFormen(q);
-		return titelListe.filter(
-			(b) =>
-				b.title.toLowerCase().includes(q) ||
-				b.subject.toLowerCase().includes(q) ||
-				b.author.toLowerCase().includes(q) ||
-				(b.isbn || '').toLowerCase().includes(q) ||
-				(formen.length > 0 && formen.includes(normalisiereIsbn(b.isbn)))
-		);
-	});
+	// Dieselbe Suche wie in „Suche & Filter" und der Titel-Verwaltung: Wörter einzeln, Kürzel wie
+	// „mathe", ein- oder zweistellige Zahlen als Jahrgang, die ISBN in jeder Schreibweise.
+	const gefilterteTitel = $derived(buecherSuchen(titelListe, suche));
 
 	// Nicht den ganzen Bestand zeichnen: Mit 5.875 Titeln sind es 59.120 DOM-Knoten und 2,5
 	// Sekunden, bis der Dialog steht. Die Zahl im Suchfeld nennt alle Treffer, nicht die

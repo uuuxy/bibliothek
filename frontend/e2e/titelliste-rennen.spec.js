@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 // Die Titel-Verwaltung lädt beim Öffnen die ganze Titelliste; an einem großen Bestand dauert
-// das. Was in dieser Zeit geschieht, darf die späte Antwort nicht ersetzen: ein Suchergebnis
-// (die kleine Abfrage ist vor der ersten fertig) und einen Titel, der inzwischen gespeichert
-// wurde. Mit wenigen Titeln ist die erste Abfrage schneller als jede Eingabe, deshalb wird sie
-// hier verzögert oder festgehalten.
+// das. Was in dieser Zeit geschieht, darf die späte Antwort nicht ersetzen: ein Suchwort, das
+// schon getippt ist (es filtert die Liste, sobald sie da ist), und einen Titel, der inzwischen
+// gespeichert wurde. Mit wenigen Titeln ist die erste Abfrage schneller als jede Eingabe,
+// deshalb wird sie hier verzögert oder festgehalten.
 const s = uniqueSuffix().slice(0, 8);
 const TITEL = `E2E Suchrennen ${s}`;
 
@@ -42,7 +42,7 @@ test('ein Suchergebnis bleibt stehen, wenn die ganze Liste erst danach ankommt',
 	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL);
 	await expect(page.getByRole('heading', { name: '1 Titel', exact: true })).toBeVisible();
 
-	// Erst jetzt kommt die ganze Liste an. Sie gehört zu keinem Suchwort mehr.
+	// Auch wenn die Antwort der ganzen Liste erst jetzt verarbeitet ist, filtert das Suchwort sie.
 	await ganzeListe;
 	await page.waitForTimeout(1000);
 	await expect(page.getByRole('heading', { name: '1 Titel', exact: true })).toBeVisible();

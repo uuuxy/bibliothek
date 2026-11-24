@@ -123,7 +123,9 @@ falsches Passwort („Scan erkannt“).
 ## Medienkatalog
 
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur und Schlagwort,
-  Kartenansicht mit Cover und Signatur. Ein Barcode, gescannt oder getippt, zeigt den Titel des
+  Kartenansicht mit Cover und Signatur. Jedes Wort zählt für sich, ein Kürzel wie „mathe“ steht
+  für das Fach und eine ein- oder zweistellige Zahl für den Jahrgang („mathe 7“). Die Titel-Verwaltung und die
+  Titelauswahl beim Klassensatz suchen genauso. Ein Barcode, gescannt oder getippt, zeigt den Titel des
   Exemplars, auch über das alte Littera-Etikett und eine lange LMF-Nummer. Ein Verweis findet sein
   Schlagwort („Tierfantasy“ findet „Fantasy“, wenn es unter _Einstellungen → Schlagworte_ so
   eingetragen ist), auch in der Titel-Verwaltung, im öffentlichen Katalog und in _Mein Portal_.

@@ -30,11 +30,13 @@ describe('admin_api: holeBuecherListe', () => {
 		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/books');
 	});
 
-	it('die Aufräumsicht reicht bestand=ohne mit, neben der Suche', async () => {
+	// Das Suchwort bleibt im Browser: Gesucht wird in der ganzen Liste mit der Regel von
+	// „Suche & Filter".
+	it('die Aufräumsicht reicht bestand=ohne mit, das Suchwort nicht', async () => {
 		appState.bestandsAnsicht = 'ohne';
 		appState.searchQuery = 'Mathe 9';
 		await holeBuecherListe();
-		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/books?q=Mathe+9&bestand=ohne');
+		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/books?bestand=ohne');
 	});
 
 	// Die Seite zeigt den Grund an; ein Merkwort auf Englisch stünde dort sonst als Meldung.

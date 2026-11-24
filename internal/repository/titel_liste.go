@@ -140,9 +140,10 @@ func leseTitelZeilen(zeilen pgx.Rows) ([]KatalogTitel, error) {
 // Bedingung mit und ohne NOT; eine dritte Zahl über denselben Titel gibt es nicht.
 //
 // Der Suchtext trifft auch die Schlagworte und die Verweise darauf
-// (sqlTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: Der Reiter
-// „Suche & Filter" lädt die ganze Liste und sucht im Browser; ohne die Wörter fände er über ein
-// Schlagwort nichts, während die Titel-Verwaltung daneben am Server sucht und es fände.
+// (sqlTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: „Suche & Filter", die
+// Titel-Verwaltung und der Klassensatz-Dialog laden die ganze Liste und suchen im Browser; ohne
+// die Wörter fänden sie über ein Schlagwort nichts. Mit Suchtext fragen die Dialoge „Andere
+// Auflage zuordnen" und „Titel zusammenführen".
 //
 // Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet der
 // Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
