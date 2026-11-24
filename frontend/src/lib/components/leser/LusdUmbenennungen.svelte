@@ -111,8 +111,8 @@
 								{/if}
 							</span>
 							<span class="block text-on-surface-variant">
-								{p.grund}{#if p.alt_geburtsdatum && p.neu_geburtsdatum && p.alt_geburtsdatum !== p.neu_geburtsdatum}
-									· Geburtsdatum {datum(p.alt_geburtsdatum)} → {datum(p.neu_geburtsdatum)}{/if}
+								{p.grund}{#if p.alt_geburtsdatum && p.neu_geburtsdatum && p.alt_geburtsdatum !== p.neu_geburtsdatum}&nbsp;·
+									Geburtsdatum {datum(p.alt_geburtsdatum)} → {datum(p.neu_geburtsdatum)}{/if}
 							</span>
 						</span>
 					</label>
