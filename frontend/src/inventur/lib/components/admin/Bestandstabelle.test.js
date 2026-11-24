@@ -26,7 +26,6 @@ function zeige(books, onDelete = vi.fn()) {
 		laedt: false,
 		onOpenDetail: vi.fn(),
 		onCreateNew: vi.fn(),
-		onScan: vi.fn(),
 		onDelete,
 		onAssignClass: vi.fn(),
 		onRetryCovers: vi.fn()

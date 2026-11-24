@@ -23,11 +23,9 @@
 	/**
 	 * onDelete und onZusammengefuehrt kommen nur mit dem Recht delete_books (TitelVerwaltung) —
 	 * ohne Recht gibt es die Knöpfe nicht.
-	 * wirdGescannt: Die Kamera der Maske; der Knopf „Scanner" der Titelliste öffnet sie eingeschaltet.
 	 */
 	let {
 		formular = $bindable(),
-		wirdGescannt = $bindable(false),
 		onClose,
 		onSave,
 		onCoverUpload,
@@ -36,6 +34,9 @@
 		onDelete = undefined,
 		onZusammengefuehrt = undefined
 	} = $props();
+
+	/** Die Kamera der Maske; das Kamerasymbol im ISBN-Feld schaltet sie ein. */
+	let wirdGescannt = $state(false);
 
 	// Der Schlagwort-Vorschlag der DNB: Die ISBN-Abfrage holt ihn nach einem Treffer dazu; bei
 	// einem Titel ohne Schlagworte kommt er von selbst, sonst holt ihn der Knopf darunter.

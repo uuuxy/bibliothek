@@ -15,7 +15,6 @@
 	 *   sichtLaedt?: boolean,
 	 *   onOpenDetail: (book: any) => void,
 	 *   onCreateNew: () => void,
-	 *   onScan: () => void,
 	 *   onDelete: (ids: string[]) => Promise<void> | void,
 	 *   onAssignClass: (ids: string[]) => void,
 	 *   onRetryCovers: () => void
@@ -27,7 +26,6 @@
 		sichtLaedt = false,
 		onOpenDetail,
 		onCreateNew,
-		onScan,
 		onDelete,
 		onAssignClass,
 		onRetryCovers
@@ -71,7 +69,6 @@
 		{loescht}
 		onDelete={loesche}
 		onAssignClass={ordneKlasseZu}
-		{onScan}
 		{onCreateNew}
 		{onRetryCovers}
 	/>

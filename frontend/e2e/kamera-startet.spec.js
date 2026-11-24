@@ -64,14 +64,15 @@ test('Die Kamera der Theke startet und meldet sich aktiv', async () => {
 	});
 });
 
-// Der Knopf „Scanner" der Titel-Verwaltung hatte ein eigenes Fenster mit eigenem Speichern,
-// das ein gefundenes Buch nicht speichern konnte. Er öffnet jetzt die Maske „Titel anlegen" mit
-// eingeschalteter Kamera; wer das Kamera-Fenster schließt, tippt die ISBN in die Maske.
-test('Der Knopf „Scanner" öffnet die Maske „Titel anlegen" mit laufender Kamera', async () => {
+// Ein neues Buch scannt man in der Maske „Titel anlegen" über das Kamerasymbol im ISBN-Feld;
+// einen eigenen Knopf dafür hat die Liste nicht. Wer das Kamera-Fenster schließt, tippt die ISBN
+// in die Maske.
+test('Die Kamera im ISBN-Feld der Maske „Titel anlegen" läuft und lässt die Maske stehen', async () => {
 	await mitKuenstlicherKamera(async (page, seitenfehler) => {
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Scanner', exact: true }).click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
+		await page.getByRole('button', { name: 'ISBN scannen' }).click();
 
 		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'ISBN scannen' })).toBeVisible();

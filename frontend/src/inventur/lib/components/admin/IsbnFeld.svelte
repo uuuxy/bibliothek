@@ -106,8 +106,8 @@
 				onclick={() => (wirdGescannt = true)}
 				aria-pressed={wirdGescannt}
 				class="icon-btn text-on-surface-variant"
-				data-tip="Scan ISBN"
-				aria-label="Scan ISBN"
+				data-tip="ISBN scannen"
+				aria-label="ISBN scannen"
 			>
 				<Icon name="photo_camera" />
 			</button>

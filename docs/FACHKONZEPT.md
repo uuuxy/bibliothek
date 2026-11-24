@@ -732,8 +732,8 @@ Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
     Auflage (409 mit `gleicherTitel`); die Maske fragt „Ist es dasselbe Medium?“, weil Hefte und Bände
     gleich heißen, und legt nach „Anderes Medium“ an.
   - Ein neues Buch beginnt mit einem Exemplar; steht dort 0, sagen Hinweis und Meldung, dass der Titel
-    nur unter „Ohne Exemplare“ steht. Der Knopf „Scanner“ öffnet dieselbe Maske mit Kamera, ein zweites
-    Fenster gibt es nicht.
+    nur unter „Ohne Exemplare“ steht. Mit der Kamera scannt man die ISBN im Feld der Maske; einen
+    eigenen Knopf oder ein zweites Fenster dafür gibt es nicht.
   - Belegt: `internal/repository/titel_bestand_pg_test.go`, `titel_ohne_exemplar_pg_test.go`,
     `internal/api/katalog/dublette_nennt_den_titel_pg_test.go`, `buch_vorhanden_pg_test.go`,
     `titel_ohne_isbn_pg_test.go`, `frontend/e2e/buch-anlegen-auffindbar.spec.js`, `buch-ohne-isbn.spec.js`

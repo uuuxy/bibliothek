@@ -15,7 +15,6 @@
 	 *   loescht?: boolean,
 	 *   onDelete: () => void,
 	 *   onAssignClass: () => void,
-	 *   onScan: () => void,
 	 *   onCreateNew: () => void,
 	 *   onRetryCovers: () => void
 	 * }}
@@ -27,7 +26,6 @@
 		loescht = false,
 		onDelete,
 		onAssignClass,
-		onScan,
 		onCreateNew,
 		onRetryCovers
 	} = $props();
@@ -68,12 +66,8 @@
 			<Icon name="add" />
 			Titel anlegen
 		</Button>
-		<!-- Öffnet die Maske „Titel anlegen" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
-		     an der Kamera im ISBN-Feld und in der Suchpille. -->
-		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
-			<Icon name="photo_camera" />
-			Scanner
-		</Button>
+		<!-- Kein eigener Knopf für die Kamera: Die Suchpille sucht damit, die Maske „Titel anlegen"
+		     scannt die ISBN im Feld (M3, Buttons: „Don't clutter your UI with too many buttons"). -->
 		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
 			<Icon name="refresh" />
 			Cover herunterladen

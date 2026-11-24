@@ -57,16 +57,15 @@ function server(vergeben, dienste = 200) {
 const aufrufe = (anfang) =>
 	vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).startsWith(anfang));
 
-/** @param {any} formular @param {{ wirdGescannt?: boolean }} [zusatz] */
-function maske(formular, zusatz = {}) {
+/** @param {any} formular */
+function maske(formular) {
 	return render(BuchFormular, {
 		formular,
 		onClose: () => {},
 		onSave: () => {},
 		onCoverUpload: () => {},
 		onCoverNeuHolen: () => {},
-		onAssignClass: () => {},
-		...zusatz
+		onAssignClass: () => {}
 	});
 }
 
@@ -97,7 +96,7 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Scan ISBN' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'ISBN scannen' }));
 
 		await waitFor(() => expect(bestaetigen).toHaveBeenCalledTimes(1), { timeout: 4000 });
 		expect(formular.isbn).toBe(GESCANNT);
@@ -111,7 +110,7 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Scan ISBN' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'ISBN scannen' }));
 
 		await waitFor(() => expect(formular.title).toBe('Green Line 3'), { timeout: 4000 });
 		expect(aufrufe(KATALOG)).toHaveLength(1);
@@ -126,7 +125,7 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Scan ISBN' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'ISBN scannen' }));
 
 		const eingabe = screen.getByLabelText('ISBN');
 		await waitFor(() => expect(eingabe.getAttribute('aria-invalid')).toBe('true'), {
@@ -138,14 +137,15 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 	});
 });
 
-// Der Knopf „Scanner" der Titelliste öffnet dieselbe Maske wie „Titel anlegen", nur mit
-// eingeschalteter Kamera. Ein eigenes Fenster mit eigenem Speichern gibt es nicht mehr.
-describe('BuchFormular: geöffnet mit eingeschalteter Kamera', () => {
-	it('das Kamera-Fenster steht sofort, der Scan trägt die ISBN ein und schließt es', async () => {
+// Die Kamera der Maske geht über das Kamerasymbol im ISBN-Feld an; ein eigenes Fenster mit
+// eigenem Speichern gibt es nicht.
+describe('BuchFormular: die Kamera im ISBN-Feld', () => {
+	it('das Kamera-Fenster steht über der Maske, der Scan trägt die ISBN ein und schließt es', async () => {
 		server(false);
 		const formular = $state(leeresBuchFormular());
-		const screen = maske(formular, { wirdGescannt: true });
+		const screen = maske(formular);
 
+		await fireEvent.click(screen.getByRole('button', { name: 'ISBN scannen' }));
 		expect(screen.getByRole('heading', { name: 'ISBN scannen' })).toBeTruthy();
 		expect(screen.getByRole('heading', { name: 'Titel anlegen' })).toBeTruthy();
 
@@ -154,7 +154,7 @@ describe('BuchFormular: geöffnet mit eingeschalteter Kamera', () => {
 		await waitFor(() => expect(formular.title).toBe('Green Line 3'));
 	});
 
-	it('ohne diesen Wunsch bleibt die Kamera aus', () => {
+	it('eine neue Maske öffnet ohne Kamera', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
 		expect(screen.queryByRole('heading', { name: 'ISBN scannen' })).toBeNull();

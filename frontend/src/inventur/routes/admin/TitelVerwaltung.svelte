@@ -24,7 +24,6 @@
 	const liste = erstelleTitelListe();
 	const aktualisiereBuecher = liste.lade;
 	let istBearbeitenModus = $state(false);
-	let wirdGescannt = $state(false);
 	let buchAktionen = $state();
 	/** @type {string[]|null} Bücher-IDs, die gerade einer Klasse zugewiesen werden (Picker offen). */
 	let klassenZuweisenIds = $state(null);
@@ -67,12 +66,6 @@
 	async function schliesseMaske() {
 		if (ungespeichert() && !(await verwerfenBestaetigen())) return;
 		istBearbeitenModus = false;
-	}
-
-	/** Der Knopf „Scanner": dieselbe Maske wie „Titel anlegen", die Kamera ist schon an. */
-	function neuesBuchScannen() {
-		neuesBuchErstellen();
-		wirdGescannt = true;
 	}
 
 	/** @param {any} buch */
@@ -136,7 +129,6 @@
 	{#if istBearbeitenModus}
 		<BuchFormular
 			bind:formular
-			bind:wirdGescannt
 			onClose={schliesseMaske}
 			onSave={() => buchAktionen.speichereAenderungen()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.ladeCoverHoch(ereignis)}
@@ -158,7 +150,6 @@
 			sichtLaedt={liste.sichtLaedt}
 			onOpenDetail={oeffneDetails}
 			onCreateNew={neuesBuchErstellen}
-			onScan={neuesBuchScannen}
 			onDelete={aktionBuecherLoeschen}
 			onAssignClass={(ids) => (klassenZuweisenIds = ids)}
 			onRetryCovers={aktionExterneCoverRetry}

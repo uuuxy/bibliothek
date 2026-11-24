@@ -116,7 +116,7 @@ test('Buchmaske: Das Symbol steht vor den Knöpfen der ISBN, die Knöpfe bleiben
 	const isbn = page.locator('#buch-isbn');
 	const knoepfe = [
 		page.getByRole('button', { name: 'Daten aus dem Internet aktualisieren' }),
-		page.getByRole('button', { name: 'Scan ISBN' })
+		page.getByRole('button', { name: 'ISBN scannen' })
 	];
 	const vorher = await Promise.all(knoepfe.map((k) => k.boundingBox()));
 
