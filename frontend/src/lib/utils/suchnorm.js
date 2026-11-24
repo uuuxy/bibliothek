@@ -112,13 +112,18 @@ export function suchnorm(text) {
 		.replaceAll('ae', 'a');
 }
 
-// Bindestrich, Apostroph und Leerzeichen zählen beim Namen nicht, wie am Server (sqlNameKompakt in
-// leser_suche.go): „alkahil" findet „Al-Kahil", „annalena" findet „Anna-Lena". Die Datenbank macht
-// typografische Striche und Apostrophe vorher zu „-" und „'"; hier stehen sie deshalb mit drin.
-const NAMEN_TRENNER = /[\s\-‐‑–—'’ʼ`´]/gu;
+// Was beim Namen nicht zählt, genau wie am Server (sqlNamenTrenner in leser_suche.go): die Trenner
+// dort und die Striche und Apostrophe, die unaccent in der Datenbank zu ihnen macht. Die Fälle
+// „kompakt" in suchnorm.faelle.json halten beide Seiten gleich.
+const NAMEN_TRENNER =
+	/[ '\-`\u00A0\u00AD\u00B4\u02B9\u02BB-\u02BD\u02C8\u02CB\u02D7\u2010-\u2015\u2018\u2019\u201B\u2032\u2212\uFE31\uFE32\uFE58\uFE63\uFF07\uFF0D\uFF40]/gu;
 
-/** @param {unknown} text */
-function kompakt(text) {
+/**
+ * Die Form, in der Namen verglichen werden: suchnorm ohne die Trenner, Zwilling von sqlNameKompakt
+ * in leser_suche.go. „Al-Kahil", „Al Kahil" und „Alkahil" werden gleich.
+ * @param {unknown} text
+ */
+export function kompakt(text) {
 	return suchnorm(text).replace(NAMEN_TRENNER, '');
 }
 

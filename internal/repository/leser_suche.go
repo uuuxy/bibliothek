@@ -61,14 +61,15 @@ func suchTokens(suchtext string) []string {
 // Belegung der Platzhalter in beiden Abfragen gleich: $1 = Tokens (text[]), $2 = erstes Token.
 // Der Tabellen-Alias muss s sein.
 
-// sqlNamenTrenner sind die Zeichen, die beim Vergleich von Namen nicht zählen: Bindestrich,
-// Apostroph und Leerzeichen. „Al Kahil", „Al-Kahil" und „Alkahil" werden gleich, ebenso
-// „Anna-Lena" und „Annalena"; gehört wird ein Name ohne diese Zeichen. Typografische Striche und
-// Apostrophe macht suchnorm schon zu „-" und „'".
-const sqlNamenTrenner = `'-'' '`
+// sqlNamenTrenner zählen beim Vergleich von Namen nicht: Bindestrich, Apostroph, Leerzeichen und
+// geschütztes Leerzeichen, dazu ´ und `, die auf deutschen Tastaturen oft für den Apostroph stehen
+// (typografische Striche und Apostrophe macht suchnorm vorher zu „-" und „'"). Der Zwilling im
+// Browser ist NAMEN_TRENNER in utils/suchnorm.js; beide prüfen die Fälle „kompakt" in
+// suchnorm.faelle.json.
+const sqlNamenTrenner = "E'-'' ´`\\u00A0'"
 
 // sqlNameKompakt ist die Form, in der die Suche Namen vergleicht: suchnorm ohne die Trenner. Die
-// Trigramm-Indizes der Migration 183 tragen genau diesen Ausdruck, sonst griffen sie nicht.
+// Trigramm-Indizes der Migration 184 tragen genau diesen Ausdruck, sonst griffen sie nicht.
 func sqlNameKompakt(ausdruck string) string {
 	return "translate(suchnorm(" + ausdruck + "), " + sqlNamenTrenner + ", '')"
 }
@@ -160,7 +161,8 @@ const leserSuchRang = `
 //     Richtungen, denn mal steht der Umlaut in der Datenbank und wird ohne getippt,
 //     mal ist es umgekehrt.
 //  3. Bindestrich, Apostroph und Leerzeichen im Namen zählen nicht (sqlNameKompakt): „alkahil"
-//     findet Al-Kahil, „annalena" findet Anna-Lena, „al-kahil" findet Alkahil.
+//     findet Al-Kahil, „annalena" findet Anna-Lena, „al-kahil" findet Alkahil, „d´angelo"
+//     findet D'Angelo.
 //
 // Die SQL-Bausteine stehen oben als Konstanten; dieselbe Suche bedient die Leserdatei.
 //

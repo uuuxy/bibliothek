@@ -3,10 +3,74 @@ package repository
 import (
 	"bibliothek/internal/testdaten"
 	"context"
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// TestNameKompakt_GemeinsameFaelle: Die Datenbank lässt aus einem Namen dieselben Zeichen weg wie
+// kompakt im Browser (frontend/src/lib/utils/suchnorm.js); beide lesen die Fälle „kompakt" in
+// suchnorm.faelle.json. Sonst fände „dangelo" im Mahnwesen D´Angelo und an der Theke nicht.
+func TestNameKompakt_GemeinsameFaelle(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	roh, err := os.ReadFile("../../frontend/src/lib/utils/suchnorm.faelle.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pruefung struct {
+		Kompakt [][2]string `json:"kompakt"`
+	}
+	if err := json.Unmarshal(roh, &pruefung); err != nil {
+		t.Fatal(err)
+	}
+	if len(pruefung.Kompakt) < 40 {
+		t.Fatalf("%d Fälle „kompakt“, erwartet mindestens 40", len(pruefung.Kompakt))
+	}
+	trenner := map[string]bool{}
+	for _, fall := range pruefung.Kompakt {
+		var ist string
+		if err := pool.QueryRow(ctx, "SELECT "+sqlNameKompakt("$1::text"), fall[0]).Scan(&ist); err != nil {
+			t.Fatalf("%q: %v", fall[0], err)
+		}
+		if ist != fall[1] {
+			t.Errorf("sqlNameKompakt(%q) = %q, erwartet %q", fall[0], ist, fall[1])
+		}
+		if z := []rune(fall[0]); len(z) == 8 && string(z[:2]) == "Al" && string(z[3:]) == "Kahil" && fall[1] == "alkahil" {
+			trenner[string(z[2])] = true
+		}
+	}
+
+	// Vollprobe über den Grundbereich: Jedes Zeichen, das die Datenbank aus einem Namen weglässt,
+	// steht in den Fällen. Sonst wüchse die Liste am Server, ohne dass der Browser es merkte.
+	zeilen, err := pool.Query(ctx, `SELECT chr(cp) FROM generate_series(1, 65533) AS cp
+		WHERE (cp < 55296 OR cp > 57343)
+		  AND suchnorm('x' || chr(cp) || 'z') <> 'xz'
+		  AND `+sqlNameKompakt("'x' || chr(cp) || 'z'")+` = 'xz'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zeilen.Close()
+	anzahl := 0
+	for zeilen.Next() {
+		var z string
+		if err := zeilen.Scan(&z); err != nil {
+			t.Fatal(err)
+		}
+		anzahl++
+		if !trenner[z] {
+			t.Errorf("Die Datenbank lässt U+%04X aus Namen weg, die Fälle „kompakt“ kennen es nicht", []rune(z)[0])
+		}
+	}
+	if err := zeilen.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != len(trenner) {
+		t.Errorf("Die Datenbank lässt %d Zeichen weg, die Fälle führen %d als Trenner", anzahl, len(trenner))
+	}
+}
 
 // legeSuchSchuelerAn legt einen Schüler mit frei wählbarem Vor- und Nachnamen an.
 // Der vorhandene legeSchuelerAn nagelt den Nachnamen auf "Test" fest und taugt für
@@ -282,7 +346,8 @@ func TestFindeUnscharf_LeereEingabe(t *testing.T) {
 
 // TestFindeUnscharf_TrennerZaehlenNicht: Einen Namen hört man ohne Bindestrich und ohne
 // Leerzeichen. „Al Kahil", „Al-Kahil" und „Alkahil" finden sich in jeder Richtung, ebenso
-// „Anna-Lena" und „Annalena" und „O'Brien" und „OBrien", an der Theke wie in der Leserdatei.
+// „Anna-Lena" und „Annalena" und „O'Brien" und „OBrien", an der Theke wie in der Leserdatei;
+// ´ und ` stehen für den Apostroph, das geschützte Leerzeichen aus einem Import für das Leerzeichen.
 func TestFindeUnscharf_TrennerZaehlenNicht(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -294,11 +359,15 @@ func TestFindeUnscharf_TrennerZaehlenNicht(t *testing.T) {
 	legeSuchSchuelerAn(t, pool, "TRENN-4", "Anna-Lena", "Brandt")
 	legeSuchSchuelerAn(t, pool, "TRENN-5", "Annalena", "Kurz")
 	legeSuchSchuelerAn(t, pool, "TRENN-6", "Sean", "O'Brien")
+	legeSuchSchuelerAn(t, pool, "TRENN-7", "Luca", "D´Angelo")
+	legeSuchSchuelerAn(t, pool, "TRENN-8", "Maria\u00a0Sofia", "Weber")
 
 	repo := NewLeserAbfragen(pool)
 	kahil := []string{"Ahmad Al-Kahil", "Samir Al Kahil", "Yusuf Alkahil"}
 	annalena := []string{"Anna-Lena Brandt", "Annalena Kurz"}
 	brien := []string{"Sean O'Brien"}
+	angelo := []string{"Luca D´Angelo"}
+	sofia := []string{"Maria\u00a0Sofia Weber"}
 	faelle := []struct {
 		eingabe string
 		erwarte []string
@@ -314,6 +383,12 @@ func TestFindeUnscharf_TrennerZaehlenNicht(t *testing.T) {
 		{"obrien", brien},
 		{"o'brien", brien},
 		{"o’brien", brien},
+		{"o´brien", brien},
+		{"o`brien", brien},
+		{"dangelo", angelo},
+		{"d'angelo", angelo},
+		{"mariasofia", sofia},
+		{"maria-sofia", sofia},
 	}
 
 	for _, f := range faelle {
