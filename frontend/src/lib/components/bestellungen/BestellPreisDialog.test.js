@@ -25,7 +25,7 @@ describe('BestellPreisDialog', () => {
 			props: { bestellungId: 'best-1', position, onclose, onAktualisieren }
 		});
 
-		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis in €'));
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis'));
 		expect(Number(feld.value)).toBe(9.5);
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Preis ändern' })
@@ -52,7 +52,7 @@ describe('BestellPreisDialog', () => {
 		const screen = render(BestellPreisDialog, {
 			props: { bestellungId: 'best-1', position, onclose: vi.fn(), onAktualisieren: vi.fn() }
 		});
-		const feld = await screen.findByLabelText('Einzelpreis in €');
+		const feld = await screen.findByLabelText('Einzelpreis');
 		await fireEvent.input(feld, { target: { value: '-3' } });
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Preis ändern' })

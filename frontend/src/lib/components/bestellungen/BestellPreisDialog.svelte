@@ -70,7 +70,7 @@
 >
 	<Feld
 		id="bestellung-einzelpreis"
-		etikett="Einzelpreis in €"
+		etikett="Einzelpreis"
 		type="number"
 		step="0.01"
 		min="0"
@@ -80,5 +80,7 @@
 			'Exemplar',
 			'Exemplare'
 		)} von „{position?.titel_name ?? ''}“ aus dieser Bestellung"
-	/>
+	>
+		{#snippet nachlaufend()}€{/snippet}
+	</Feld>
 </EingabeDialog>

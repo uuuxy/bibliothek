@@ -1,8 +1,3 @@
-<script module>
-	// Läuft einmal je Modul, nicht je Instanz — die Nummern bleiben eindeutig.
-	let zaehler = 0;
-</script>
-
 <script>
 	/**
 	 * @component Feld
@@ -36,7 +31,8 @@
 	 *
 	 * Zwei-Wege-Bindung erfordert eine Komponente (Snippets können `bind:` nicht
 	 * zurückpropagieren). Alles hier nicht Benannte (placeholder, min, required, list,
-	 * aria-label, oninput, onkeydown …) landet unverändert auf dem <input>.
+	 * aria-label, oninput, onkeydown …) landet unverändert auf dem <input>. Ein `step` mit
+	 * Nachkommastellen legt fest, wie viele das Feld zeigt: ein Betrag (step="0.01") „7,90“.
 	 *
 	 * @prop {string|number} [value] - Gebundener Wert (bindable).
 	 * @prop {string} [etikett] - Beschriftung über dem Feld.
@@ -65,6 +61,7 @@
 	 * Symbol am Ende aus; hier bleiben die Knöpfe, denn sie führen oft aus dem Fehler heraus.
 	 */
 	import Icon from './Icon.svelte';
+	import { nachkommastellen } from './nachkommastellen.js';
 
 	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
@@ -84,9 +81,9 @@
 		...rest
 	} = $props();
 
-	// Eigene Nummer je Feld: Ziel für aria-describedby, und zwei Felder teilen sich keine ID.
-	const nummer = ++zaehler;
-	const feldId = $derived(id ?? `feld-${nummer}`);
+	// Eigene Kennung je Feld: Ziel für aria-describedby, und zwei Felder teilen sich keine ID.
+	const eigen = $props.id();
+	const feldId = $derived(id ?? `feld-${eigen}`);
 	const hinweisId = $derived(`${feldId}-hinweis`);
 
 	// Wer einen Fehler zeigen kann, steht immer in der Hülle der Symbole: Käme sie erst mit dem
@@ -146,6 +143,7 @@
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
+			{@attach (feld) => nachkommastellen(feld, value)}
 			class={feldKlasse}
 			style:padding-right={abstandRechts}
 			{...rest}

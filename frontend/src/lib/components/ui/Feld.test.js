@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
-import { createRawSnippet } from 'svelte';
+import { render, fireEvent } from '@testing-library/svelte';
+import { createRawSnippet, tick } from 'svelte';
 import Feld from './Feld.svelte';
 
 // Der Fehlerzustand nach Material 3, Text fields: „It's strongly recommended to show an error
@@ -56,5 +56,40 @@ describe('Feld: Fehlerzustand', () => {
 	it('legt um ein Feld ohne Fehlerzustand und ohne Symbole keine Hülle', () => {
 		const k = render(Feld, { 'aria-label': 'Suche' });
 		expect(k.getByLabelText('Suche').parentElement).toBe(k.container);
+	});
+});
+
+// Ein Betrag steht wie bei formatEuro mit zwei Nachkommastellen: „7,90“, nicht „7,9“.
+describe('Feld: Nachkommastellen nach dem step', () => {
+	const betrag = { 'aria-label': 'Preis', type: /** @type {'number'} */ ('number'), step: '0.01' };
+	const eingabe = (/** @type {any} */ k, /** @type {string} */ name) =>
+		/** @type {HTMLInputElement} */ (k.getByLabelText(name));
+
+	it('zeigt einen Betrag mit zwei Nachkommastellen, auch nach einer Änderung von außen', async () => {
+		const k = render(Feld, { ...betrag, value: 7.9 });
+		await tick();
+		expect(eingabe(k, 'Preis').value).toBe('7.90');
+
+		await k.rerender({ value: 12 });
+		expect(eingabe(k, 'Preis').value).toBe('12.00');
+	});
+
+	it('lässt die Eingabe stehen, solange getippt wird, und ergänzt beim Verlassen', async () => {
+		const k = render(Feld, { ...betrag, value: 7.9 });
+		const feld = eingabe(k, 'Preis');
+		feld.focus();
+		await fireEvent.input(feld, { target: { value: '8.5' } });
+		expect(feld.value).toBe('8.5');
+
+		feld.blur();
+		expect(feld.value).toBe('8.50');
+	});
+
+	it('lässt ganze Zahlen und ein leeres Feld, wie sie sind', async () => {
+		const ganz = render(Feld, { 'aria-label': 'Anzahl', type: 'number', value: 3 });
+		const leer = render(Feld, { ...betrag, 'aria-label': 'Betrag', value: '' });
+		await tick();
+		expect(eingabe(ganz, 'Anzahl').value).toBe('3');
+		expect(eingabe(leer, 'Betrag').value).toBe('');
 	});
 });

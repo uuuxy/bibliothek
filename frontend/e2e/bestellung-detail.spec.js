@@ -92,7 +92,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 		// Der Händler rechnet 9,80 € statt 12,50 € ab: Summe der Bestellung und Einkaufspreis
 		// der Exemplare ziehen mit.
 		await page.getByRole('button', { name: `Preis von ${titel.title} ändern` }).click();
-		await page.getByLabel('Einzelpreis in €').fill('9.80');
+		await page.getByLabel('Einzelpreis').fill('9.80');
 		await page.getByRole('dialog').getByRole('button', { name: 'Preis ändern' }).click();
 		await expect(page.getByText(/29,40\s*€/).first()).toBeVisible();
 		expect(

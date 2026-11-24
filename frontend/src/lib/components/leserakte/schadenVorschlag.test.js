@@ -57,7 +57,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		});
 
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
-		await waitFor(() => expect(feld.value).toBe('24.9'));
+		await waitFor(() => expect(feld.value).toBe('24.90'));
 		expect(feld.value, 'die feste 15 darf nicht zurückkommen').not.toBe('15');
 	});
 
@@ -139,6 +139,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		const screen = render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit });
 
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
+		feld.focus();
 		await fireEvent.input(feld, { target: { value: '12.5' } });
 		liefere();
 		await waitFor(() =>
