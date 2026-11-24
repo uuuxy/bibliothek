@@ -168,3 +168,47 @@ test('Monitor: Am Tag des LMF-Plans steht die Folie „Heute" vorn, in Fernsehgr
 		await page.clock.fastForward('00:15');
 	}
 });
+
+// Auch die Folien mit Büchern sind im Raster des Fernsehers gezeichnet: auf Full HD doppelt so
+// groß, und die zehn Neuzugänge stehen trotzdem in einer Reihe.
+test('Monitor: Die Folien mit Büchern stehen in Fernsehgröße, zehn Neuzugänge in einer Reihe', async ({
+	page
+}) => {
+	await page.clock.install({ time: new Date('2026-09-01T10:00:00') });
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	const stand = folien('Stand');
+	const zehn = Array.from({ length: 10 }, (_, i) => ({
+		...stand.neu_eingetroffen[0],
+		id: `neu-${i}`,
+		titel: `Stand Neuzugang ${i + 1}`
+	}));
+	await page.route('**/api/monitor/slides', (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ ...stand, neu_eingetroffen: zehn })
+		})
+	);
+	await page.goto('/monitor');
+	const titel = page.getByRole('heading', { name: 'Stand Monatsbuch' });
+	await expect(titel).toBeVisible();
+	// Eine Zeile der Rolle headline-large (40 px Zeilenhöhe), auf Full HD verdoppelt.
+	const hoehe = (await titel.boundingBox())?.height ?? 0;
+	expect(hoehe, 'Titel des Buchs des Monats in Fernsehgröße').toBeGreaterThan(76);
+	expect(hoehe).toBeLessThan(84);
+
+	await page.getByRole('button', { name: 'Neu eingetroffen anzeigen' }).click();
+	await expect(page.getByTestId('monitor-folie')).toHaveText('Neu eingetroffen');
+	// Unterkanten ohne die Vergrößerung des gezeigten Covers. In einer Reihe liegen sie bis auf
+	// das Runden gleich; ein Umbruch setzt die Unterkante um eine Coverhöhe tiefer.
+	const unterkanten = await page
+		.locator('main .flex-wrap')
+		.first()
+		.evaluate((reihe) =>
+			[...reihe.children].map((c) => (c instanceof HTMLElement ? c.offsetTop + c.offsetHeight : -1))
+		);
+	expect(unterkanten).toHaveLength(10);
+	const spanne = Math.max(...unterkanten) - Math.min(...unterkanten);
+	expect(spanne, `zehn Cover in einer Reihe: ${unterkanten.join(', ')}`).toBeLessThanOrEqual(2);
+});

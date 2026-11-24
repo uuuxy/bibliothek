@@ -11,9 +11,9 @@
 		><Icon name="local_fire_department" imText /> Beliebt diese Woche</span
 	>
 	{#if titel.length > 0}
-		<ol class="w-full flex flex-col gap-3">
+		<ol class="w-full flex flex-col gap-2">
 			{#each titel as book, i (i)}
-				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-3 shadow-level1">
+				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-2 shadow-level1">
 					<span class="text-2xl font-black w-8 text-center text-on-surface-variant">#{i + 1}</span>
 					<BuchCover
 						coverUrl={book.cover_url}

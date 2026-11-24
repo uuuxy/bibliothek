@@ -9,7 +9,7 @@
 <div class="flex flex-col items-center text-center gap-6 max-w-sm">
 	<span class="text-sm font-medium text-primary"><Icon name="star" imText /> Buch des Monats</span>
 	{#if titel}
-		<div class="w-48">
+		<div class="w-40">
 			<BuchCover
 				coverUrl={titel.cover_url}
 				isbn={titel.isbn}

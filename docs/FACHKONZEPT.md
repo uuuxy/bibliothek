@@ -1076,10 +1076,10 @@ Ausleihzeilen und null freiwillige Leser; er hätte sonst beide Folien beherrsch
 sich nicht zählen: Die Lesehistorie trennt eine Ausleihe der Schülerbücherei einen Tag nach der
 Rückgabe von ihrem Leser (§8), gezählt würde dann fast nur, was gerade noch ausgeliehen ist.
 
-Die Folie „Heute" ist im Raster eines Fernsehers gezeichnet, 864 × 450 dp innerhalb des Rands
-(Google TV, Layouts: „Always design at MDPI resolution at 960px * 540px"), und wächst mit dem
-Bildschirm, auf Full HD auf das Doppelte. Der Vermerk aus dem Plan steht dort für jeden im Flur
-lesbar.
+Alle Folien sind im Raster eines Fernsehers gezeichnet, 864 × 450 dp innerhalb des Rands
+(Google TV, Layouts: „Always design at MDPI resolution at 960px * 540px"), und wachsen mit dem
+Bildschirm, auf Full HD auf das Doppelte; „Neu eingetroffen" behält dabei alle zehn Cover in
+einer Reihe. Der Vermerk aus dem Plan steht auf der Folie „Heute" für jeden im Flur lesbar.
 
 Auf „Buch des Monats" und „Neu eingetroffen" kommen Titel ohne Cover bewusst nicht vor — eine
 Folie ohne Bild ist auf einem Flurbildschirm wertlos. „Beliebt" zeigt sie mit Platzhalter, sonst

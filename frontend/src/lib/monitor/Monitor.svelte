@@ -20,8 +20,8 @@
 		}
 	});
 
-	// Die Folie „Heute" ist im Raster des Fernsehers gezeichnet (864 × 450 innerhalb des Rands)
-	// und wächst mit dem Bildschirm, Google TV: „This ensures all elements can be resized
+	// Die Folien sind im Raster des Fernsehers gezeichnet (864 × 450 innerhalb des Rands) und
+	// wachsen mit dem Bildschirm, Google TV: „This ensures all elements can be resized
 	// proportionally for HD or 4K screens“.
 	let breite = $state(0);
 	let hoehe = $state(0);
@@ -63,18 +63,21 @@
 		>
 			{#if !takt.slides}
 				<Ladekreis size="lg" />
-			{:else if takt.folie === HEUTE}
-				{#if takt.slides.lmf_heute}
-					<div style:zoom={faktor} class="h-112.5 w-216 shrink-0">
-						<FolieLmfHeute heute={takt.slides.lmf_heute} />
-					</div>
-				{/if}
-			{:else if takt.folie === 1}
-				<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
-			{:else if takt.folie === 2}
-				<FolieNeuEingetroffen titel={takt.slides.neu_eingetroffen} coverIndex={takt.coverIndex} />
 			{:else}
-				<FolieBeliebt titel={takt.slides.beliebt} />
+				<div style:zoom={faktor} class="flex h-112.5 w-216 shrink-0 items-center justify-center">
+					{#if takt.folie === HEUTE}
+						{#if takt.slides.lmf_heute}<FolieLmfHeute heute={takt.slides.lmf_heute} />{/if}
+					{:else if takt.folie === 1}
+						<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
+					{:else if takt.folie === 2}
+						<FolieNeuEingetroffen
+							titel={takt.slides.neu_eingetroffen}
+							coverIndex={takt.coverIndex}
+						/>
+					{:else}
+						<FolieBeliebt titel={takt.slides.beliebt} />
+					{/if}
+				</div>
 			{/if}
 		</div>
 	</div>
