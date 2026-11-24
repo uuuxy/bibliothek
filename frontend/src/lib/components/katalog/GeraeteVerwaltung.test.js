@@ -120,3 +120,31 @@ describe('GeraeteVerwaltung ohne edit_books', () => {
 		expect(queryByRole('button', { name: /Defekt melden/ })).toBeNull();
 	});
 });
+
+// Ohne view_students verbirgt der Server den Namen und schickt ausgeliehen_an als leeren Text. Das
+// Gerät ist trotzdem verliehen; „im Schrank" wäre an der Theke die falsche Auskunft.
+describe('GeraeteVerwaltung ohne view_students', () => {
+	it('zeigt ein verliehenes Gerät als verliehen, ohne Namen', async () => {
+		authStore.currentUser = { permissions: ['view_books'] };
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{
+						id: 'g1',
+						modellname: 'Tablet 1',
+						barcode_id: 'G-1',
+						ist_ausleihbar: true,
+						ausgeliehen_an: ''
+					},
+					{ id: 'g2', modellname: 'Tablet 2', barcode_id: 'G-2', ist_ausleihbar: true }
+				]
+			})
+		);
+		const { findByText, getAllByText, getByText } = render(GeraeteVerwaltung);
+
+		await findByText('Tablet 1');
+		expect(getByText('verliehen')).toBeTruthy();
+		expect(getAllByText('im Schrank')).toHaveLength(1);
+	});
+});

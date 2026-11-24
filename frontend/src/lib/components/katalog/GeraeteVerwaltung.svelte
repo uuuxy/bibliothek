@@ -136,6 +136,8 @@
 	{:else}
 		<ul class="divide-y divide-outline-variant">
 			{#each geraete.liste as g (g.id)}
+				<!-- Ohne view_students schickt der Server den Namen als leeren Text: verliehen bleibt es. -->
+				{@const verliehen = g.ausgeliehen_an != null}
 				<li class="flex items-center justify-between gap-4 py-4">
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-body-medium-emphasized text-on-surface">{g.modellname}</p>
@@ -148,14 +150,16 @@
 						{/if}
 					</div>
 					<span
-						class="shrink-0 rounded-full px-2 py-0.5 text-label-small {g.ausgeliehen_an
+						class="shrink-0 rounded-full px-2 py-0.5 text-label-small {verliehen
 							? 'bg-secondary-container text-on-secondary-container'
 							: g.ist_ausleihbar
 								? 'bg-primary-container text-on-primary-container'
 								: 'bg-error-container text-on-error-container'}"
 					>
-						{g.ausgeliehen_an
-							? `verliehen an ${g.ausgeliehen_an}`
+						{verliehen
+							? g.ausgeliehen_an
+								? `verliehen an ${g.ausgeliehen_an}`
+								: 'verliehen'
 							: g.ist_ausleihbar
 								? 'im Schrank'
 								: 'defekt/gesperrt'}
