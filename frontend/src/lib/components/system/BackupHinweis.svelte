@@ -2,8 +2,8 @@
 
      1. Der Ort. Die Seitenleiste ist Navigation; ein dauerhafter Konfigurationsfehler würde
         dort zwischen Menüpunkten zur Tapete. Der Alert steht über dem Inhalt.
-     2. Die Form. Ein Streifen von 3 px in der Farbe des Schweregrads links auf ruhigem
-        Grund plus ein Icon — auffällig durch Kante und Position.
+     2. Die Form. Wie NeueFassung eine Fläche in „Primary container“ mit Text und Symbol in
+        „On primary container“; den Schweregrad nennt der Text, Rot bleibt Fehlern.
      3. Die Handlung. Der Text sagt, was zu tun ist, und der Knopf führt auf den richtigen
         Reiter. -->
 <script>
@@ -14,8 +14,6 @@
 	import Button from '../ui/Button.svelte';
 
 	onMount(() => backupStatus.load());
-
-	const critical = $derived(backupStatus.data?.status === 'critical');
 
 	// Für die Sitzung wegklickbar: Eine Warnung, die auf jedem Bildschirm steht und nie
 	// verschwindet, liest niemand mehr. Nicht gespeichert (weder localStorage noch Server):
@@ -34,20 +32,14 @@
 {#if backupStatus.needsAction && !weggeklickt}
 	<div
 		role="alert"
-		class="no-print mb-5 flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] bg-surface-container-lowest py-3 pr-4 pl-3.5
-			{critical ? 'border-l-error' : 'border-l-warning'}"
+		class="no-print mb-5 flex items-start gap-3 rounded-md bg-primary-container px-4 py-3"
 	>
-		<Icon name="warning" class="mt-0.5 {critical ? 'text-error' : 'text-warning'}" />
+		<Icon name="warning" class="mt-0.5 text-on-primary-container" />
 		<div class="min-w-0 flex-1">
-			<p class="text-body-medium-emphasized text-on-surface">{backupStatus.message}</p>
-			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">{backupStatus.hint}</p>
+			<p class="text-body-medium-emphasized text-on-primary-container">{backupStatus.message}</p>
+			<p class="mt-0.5 text-xs leading-relaxed text-on-primary-container">{backupStatus.hint}</p>
 		</div>
-		<Button
-			variant="secondary"
-			size="sm"
-			onclick={openBetriebsbereitschaft}
-			class="mt-0.5 shrink-0"
-		>
+		<Button onclick={openBetriebsbereitschaft} class="mt-0.5 shrink-0">
 			Betriebsbereitschaft öffnen
 			<Icon name="arrow_forward" groesse={18} />
 		</Button>
@@ -55,7 +47,7 @@
 			variant="symbol"
 			size="sm"
 			onclick={() => (weggeklickt = true)}
-			class="icon-btn mt-0.5 shrink-0 px-2"
+			class="icon-btn mt-0.5 shrink-0 px-2 text-on-primary-container"
 			aria-label="Hinweis für diese Sitzung ausblenden"
 			data-tip="Für diese Sitzung ausblenden, beim nächsten Laden wieder da"
 		>
