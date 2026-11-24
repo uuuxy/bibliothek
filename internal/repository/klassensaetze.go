@@ -114,26 +114,34 @@ func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string
 			WHERE l.leser * 2 > g.n AND l.leser >= $2
 			  AND NOT EXISTS (SELECT 1 FROM class_books h JOIN buecher_titel ht ON ht.id = h.book_id
 			                  WHERE klassen_normkey(h.class_name) = l.k AND COALESCE(ht.werk_id, ht.id) = l.buch)
+		),
+		-- Der Bestand je Titel einmal gezählt: Ein Titel steht in vielen Klassen, und je Zeile
+		-- gezählt liefe jede Klasse noch einmal über alle Exemplare des Titels.
+		bestand AS (
+			SELECT e.titel_id,
+			       ` + sqlFilterVerfuegbar + ` AS verfuegbar,
+			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
+			       ` + sqlFilterImZulauf + ` AS im_zulauf
+			FROM buecher_exemplare e
+			LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+			WHERE e.titel_id IN (SELECT book_id FROM zuordnung)
+			GROUP BY e.titel_id
 		)
 		SELECT
 			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject,
 			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url,
 			COALESCE(b.isbn, '') AS isbn,
-			` + sqlFilterVerfuegbar + ` AS verfuegbar,
-			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
-			` + sqlFilterImZulauf + ` AS im_zulauf,
+			COALESCE(x.verfuegbar, 0), COALESCE(x.gesamt, 0), COALESCE(x.im_zulauf, 0),
 			cb.quelle, cb.leser,
 			(SELECT m.auflagen FROM mischung m
 			 WHERE m.k = klassen_normkey(cb.class_name) AND m.buch = COALESCE(b.werk_id, b.id)
 			   AND NOT (m.titel_ids <@ ARRAY[b.id])) AS auflagen
 		FROM zuordnung cb
 		JOIN buecher_titel b ON cb.book_id = b.id
-		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id
-		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+		LEFT JOIN bestand x ON x.titel_id = b.id
 		WHERE CASE $1 WHEN '' THEN true
 		              WHEN '` + zweigOberstufe + `' THEN ` + JahrgangSQL("cb.class_name") + ` >= 11
 		              ELSE cb.class_name ILIKE '%' || $1 || '%' END
-		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
 		ORDER BY ` + klassenSortierung(zweig, reihenfolge)
 
 	zeilen, err := a.pool.Query(ctx, abfrage, zweig, KlassensatzMindestLeser)

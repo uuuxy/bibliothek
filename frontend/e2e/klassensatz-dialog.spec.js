@@ -26,14 +26,10 @@ const s = uniqueSuffix();
 const KLASSE = `zz${s}`.slice(0, 12);
 const angelegt = raeumtNachJedemFallAuf(test);
 
-test.afterAll(async ({ request }) => {
-	// Nur die eine angelegte Zuordnung zurücknehmen. Kein Rundumschlag: Ein Teardown hat
-	// in diesem Projekt schon einmal echte Konfiguration mitgenommen.
-	await request
-		.delete(`/api/admin/class-books?className=${KLASSE}`, {
-			failOnStatusCode: false
-		})
-		.catch(() => {});
+test.afterAll(() => {
+	// Nur die eine angelegte Zuordnung zurücknehmen, am genauen Klassennamen. Über die API ginge
+	// es nicht: Der request von afterAll trägt keine Anmeldung, das DELETE scheiterte still.
+	querySQL(`DELETE FROM class_books WHERE class_name = '${KLASSE}'`);
 	// Der Wegwerf-Schüler, der die Klasse wählbar machte — über seine Kennung, nicht über die
 	// Klasse.
 	querySQL(`DELETE FROM schueler WHERE barcode_id = 'S-ksd-${s}'`);
@@ -98,8 +94,12 @@ test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet 
 	// nichts darüber, ob etwas gespeichert wurde. Die Klasse steht so da, wie der Schüler sie
 	// trägt — seit dem 30.09.2026 wird gewählt, nicht getippt und in Grossbuchstaben umgesetzt.
 	await expect
-		.poll(() => querySQL(`SELECT count(*) FROM class_books WHERE class_name = '${KLASSE}';`), {
-			timeout: 10000
-		})
-		.toBe('1');
+		.poll(
+			() =>
+				querySQL(
+					`SELECT string_agg(t.titel, ', ') FROM class_books cb JOIN buecher_titel t ON t.id = cb.book_id WHERE cb.class_name = '${KLASSE}';`
+				),
+			{ timeout: 10000 }
+		)
+		.toBe(titel);
 });
