@@ -122,7 +122,9 @@ test.describe('Schadensersatz-Bescheid', () => {
 		// Ohne Markierung gibt es den Knopf nicht — der Bescheid ist ein Einzelfall.
 		await expect(page.getByRole('button', { name: /Schadensersatz-Bescheid/ })).toHaveCount(0);
 
-		// Genau EINEN Schüler markieren.
+		// Genau EINEN Schüler markieren. Erst suchen: Die Liste zeigt zuerst 50 Zeilen, die am
+		// längsten überfälligen oben.
+		await page.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' }).fill(NACHNAME);
 		await page.getByRole('checkbox', { name: new RegExp(`${NACHNAME}.*auswählen`) }).click();
 		const knopf = page.getByRole('button', { name: /Schadensersatz-Bescheid/ });
 		await expect(knopf).toBeVisible();
@@ -177,7 +179,8 @@ test.describe('Schadensersatz-Bescheid', () => {
 
 		// Stufe 2 (15.09.2026): Das Kind steht mit seinem überfälligen Buch in der
 		// Mahnliste und hat KEINE Forderung. Der Knopf öffnet den Dialog trotzdem mit
-		// Inhalt — vorher war er hier eine leere Tür.
+		// Inhalt — vorher war er hier eine leere Tür. Erst suchen, wie oben.
+		await page.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' }).fill(VERLUSTKIND);
 		await page.getByRole('checkbox', { name: new RegExp(`${VERLUSTKIND}.*auswählen`) }).click();
 		await page.getByRole('button', { name: /Schadensersatz-Bescheid/ }).click();
 
