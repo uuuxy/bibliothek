@@ -94,16 +94,15 @@ describe('BestellHistorieKopf', () => {
 		expect(screen.queryByText(/Lernmittelfreiheit:/)).toBeNull();
 	});
 
-	// Filter-Chips wie im Bestandsbuch: je Topf ein Chip, auch für die Alt-Bestellungen ohne
-	// Zuordnung. Alle aus heißt kein Filter, deshalb gibt es keinen Chip „Alle Mittel".
-	it('bietet je Topf einen Chip an, auch für die Alt-Bestellungen ohne Zuordnung', () => {
+	// Filter-Chips wie im Bestandsbuch: je Topf ein Chip, die Töpfe aus dem Filter, den die Seite
+	// übergibt. Alle aus heißt kein Filter, deshalb gibt es keinen Chip „Alle Mittel".
+	it('bietet je Topf einen Chip an', () => {
 		const screen = render(BestellHistorieKopf, { ...basis, aufteilung: [] });
 		const chips = within(screen.getByRole('group', { name: 'Nach Mittelherkunft filtern' }));
 
 		expect(chips.getAllByRole('button').map((b) => b.textContent?.trim())).toEqual([
 			'Lernmittelfreiheit · Land',
-			'Schülerbücherei · Schulträger',
-			'ohne Zuordnung'
+			'Schülerbücherei · Schulträger'
 		]);
 	});
 
