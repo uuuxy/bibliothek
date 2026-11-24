@@ -143,8 +143,12 @@ Die Bilder „Heute / Fläche“ der vier Stellen liegen vor (dunkel, 1710 px). 
 Bildes der Bestellseite: Seite `surface-container-lowest`, Flächen `surface-container-low`, Ecke
 12 px, Abstand und Rand 24 px (M3, Applying layout, Expanded: „Expanded layouts have a leading and
 trailing margin of 24dp. The spacer between panes is 24dp.“). Im hellen Modus ergibt das
-hellgraue Flächen auf Weiß, umgekehrt wie im Google Store. An der Theke bricht mit dem Rand die
-Knopfzeile der Leserakte bei 1710 px um.
+hellgraue Flächen auf Weiß, umgekehrt wie im Google Store. Platz bei 1710 px (Kanten an den Bildern
+gemessen, Innenabstände aus dem Code): Die Bestellung wird 56 px schmaler (978 → 922), die
+Zusammenfassung 15 px, die Liste der Signaturen 23 px und die gewählte Signatur 48 px, im
+Klassensatz-Dialog die Titel 40 px und die
+Auswahl 15 px; die Leserakte verliert nur den Abstand von 24 px, weil ihre Spalten schon
+gepolstert sind. Wo die Fläche oben einen Innenabstand braucht, beginnt der Inhalt 24 px tiefer.
 
 Nächster Schritt: nach der Entscheidung die Regel in ARCHITEKTUR 5.3 und das Gate ändern und alle
 vier Stellen zugleich umstellen.
