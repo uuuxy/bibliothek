@@ -28,7 +28,6 @@ func TestBerichtTitelAbleiten(t *testing.T) {
 		{"eigener Titel geht vor", "Abrechnung Herbst", lieferant, true, "", "Abrechnung Herbst"},
 		{"Topf Land", "", "", false, "land", "Bestellbericht — Lernmittelfreiheit · Land"},
 		{"Topf Schulträger am Lieferanten", "", lieferant, false, "schultraeger", "Lieferantenabrechnung — Schülerbücherei · Schulträger"},
-		{"ohne Zuordnung", "", "", true, "ohne", "Jahresbericht — ohne Zuordnung"},
 		{"Topf am eigenen Titel", "Abrechnung Herbst", "", false, "land", "Abrechnung Herbst — Lernmittelfreiheit · Land"},
 	} {
 		if ist := berichtTitelAbleiten(f.titel, f.lieferantID, f.jahresansicht, f.mittel); ist != f.want {

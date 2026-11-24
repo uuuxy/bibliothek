@@ -34,8 +34,8 @@ func leseBerichtZeitraum(vonText, bisText string) (time.Time, time.Time, error) 
 // meldungMittelFilter nennt zu einem unbekannten Filter nach Topf die erlaubten Werte, damit
 // niemand raten muss. Historie und Bericht nehmen denselben Satz.
 func meldungMittelFilter(filter string) string {
-	return fmt.Sprintf("Der Topf „%s“ ist unbekannt. Erlaubt sind „%s“, „%s“, „%s“ und „%s“.",
-		filter, mitteltopf.Land, mitteltopf.Schultraeger, mitteltopf.Spende, repository.MittelOhneFilter)
+	return fmt.Sprintf("Der Topf „%s“ ist unbekannt. Erlaubt sind „%s“, „%s“ und „%s“.",
+		filter, mitteltopf.Land, mitteltopf.Schultraeger, mitteltopf.Spende)
 }
 
 // berichtTitelAbleiten liefert die Überschrift des Berichts: Ein mitgegebener Titel geht vor,
@@ -53,7 +53,7 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	}
 	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
 	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
-	if beschriftung := mitteltopf.Beschriftung(repository.MittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
+	if beschriftung := mitteltopf.Beschriftung(mittel); mittel != "" && beschriftung != "" {
 		titel += " — " + beschriftung
 	}
 	return titel

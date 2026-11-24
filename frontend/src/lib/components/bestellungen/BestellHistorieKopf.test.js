@@ -26,8 +26,7 @@ const basis = {
 	mittelFilter: [
 		{ value: '', label: 'Alle Mittel' },
 		{ value: 'land', label: 'Lernmittelfreiheit · Land' },
-		{ value: 'schultraeger', label: 'Schülerbücherei · Schulträger' },
-		{ value: 'ohne', label: 'ohne Zuordnung' }
+		{ value: 'schultraeger', label: 'Schülerbücherei · Schulträger' }
 	],
 	euro,
 	topfName,

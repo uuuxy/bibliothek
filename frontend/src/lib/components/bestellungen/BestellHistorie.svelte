@@ -37,16 +37,14 @@
 
 	// Der Topf-Filter. Gefiltert wird SERVERSEITIG: Die Liste ist auf die neuesten 200
 	// Bestellungen gedeckelt, ein Filter im Browser zeigte also nur, was davon übrig
-	// bleibt. „ohne" sind die Alt-Bestellungen ohne eindeutige Zuordnung — genau sie
-	// sucht, wer den Topf im Detail nachträgt.
+	// bleibt.
 	let mittel = $state('');
 	const mittelFilter = [
 		{ value: '', label: 'Alle Mittel' },
 		...MITTEL_REIHENFOLGE.map((m) => ({
 			value: m,
 			label: mittelBeschriftung(m)
-		})),
-		{ value: 'ohne', label: 'ohne Zuordnung' }
+		}))
 	];
 
 	async function ladeBestellungen() {
@@ -103,9 +101,8 @@
 	let gesamtImBlick = $derived(
 		mittel === ''
 			? uebersicht.gesamt
-			: (uebersicht.nach_mittel?.find(
-					(/** @type {any} */ t) => t.mittel === (mittel === 'ohne' ? '' : mittel)
-				)?.gesamt ?? bestellungen.length)
+			: (uebersicht.nach_mittel?.find((/** @type {any} */ t) => t.mittel === mittel)?.gesamt ??
+					bestellungen.length)
 	);
 	let gekappt = $derived(gesamtImBlick > bestellungen.length);
 	// Die Aufteilung im Kopf: Was steckt in den Gesamtzahlen je Topf? Nur Zeilen mit

@@ -84,9 +84,6 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			{"", 4},
 			{mitteltopf.Land, 2},
 			{mitteltopf.Schultraeger, 1},
-			// „ohne": die Alt-Bestellungen, deren Topf beim Backfill nicht eindeutig war.
-			// Genau sie sucht, wer den Rückweg benutzt.
-			{"ohne", 1},
 		}
 		for _, f := range faelle {
 			liste, code := historie(t, f.filter)
@@ -97,10 +94,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 				t.Errorf("Filter %q: %d Bestellungen, erwartet %d", f.filter, len(liste), f.anzahl)
 			}
 			for _, b := range liste {
-				if f.filter == "ohne" && b.Mittel != "" {
-					t.Errorf("Filter „ohne\" liefert eine Bestellung aus dem Topf %q", b.Mittel)
-				}
-				if f.filter != "" && f.filter != "ohne" && b.Mittel != f.filter {
+				if f.filter != "" && b.Mittel != f.filter {
 					t.Errorf("Filter %q liefert eine Bestellung aus dem Topf %q", f.filter, b.Mittel)
 				}
 			}
@@ -108,8 +102,11 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 	})
 
 	t.Run("unbekannter Topf ist 400 und keine stille Gesamtliste", func(t *testing.T) {
-		if _, code := historie(t, "kreis"); code != http.StatusBadRequest {
-			t.Errorf("Status %d, erwartet 400", code)
+		// „ohne" war der Filter für Bestellungen ohne Topf; jede Bestellung hat einen.
+		for _, filter := range []string{"kreis", "ohne"} {
+			if _, code := historie(t, filter); code != http.StatusBadRequest {
+				t.Errorf("Filter %q: Status %d, erwartet 400", filter, code)
+			}
 		}
 	})
 
