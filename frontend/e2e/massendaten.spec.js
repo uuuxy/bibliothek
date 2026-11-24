@@ -78,6 +78,8 @@ test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', a
 
 		// Mahnwesen: lädt trotz 50k-Historie und zeigt die überfälligen Schüler
 		await menuepunkt(page, 'Mahnwesen').click();
+		// Gesucht, weil die Liste zuerst nur die 50 am längsten Überfälligen zeigt.
+		await page.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' }).fill('Mass Schueler');
 		await expect(page.getByRole('row', { name: /Mass Schueler/ }).first()).toBeVisible({
 			timeout: 15000
 		});

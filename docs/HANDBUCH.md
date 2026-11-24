@@ -368,7 +368,9 @@ Die Leserdatei führt **alle, die Bücher bekommen können**, Schüler und Kolle
 ## Mahnwesen
 
 Reiter **Alle · Akut fällig (bis 14 Tage) · Eskaliert · Schadensersatz**, Filter nach Klasse. Die
-ersten drei fragen, wer Bücher zu spät hat, der vierte, wer Geld schuldet.
+ersten drei fragen, wer Bücher zu spät hat, der vierte, wer Geld schuldet. Die Liste zeigt zuerst
+die 50 am längsten Überfälligen, _Mehr laden_ die nächsten; das Häkchen über der Liste und
+_Liste drucken_ umfassen alle Treffer.
 
 **Mahnbriefe:** Kinder anhaken, dann _Mahnbriefe drucken_: je Kind ein Brief an die Eltern für das
 Fensterkuvert mit dem Text der Vorlage (_Einstellungen → Mail_); fehlt die Anschrift, steht das im

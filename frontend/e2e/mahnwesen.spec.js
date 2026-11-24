@@ -24,15 +24,17 @@ test('Mahnwesen: überfälliger Schüler erscheint, „Liste drucken" druckt ihn
     `);
 
 	await menuepunkt(page, 'Mahnwesen').click();
+	// Erst suchen: Die Liste zeigt zuerst 50 Zeilen, die am längsten überfälligen oben, und das
+	// Kind ist erst 10 Tage überfällig.
+	await page
+		.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' })
+		.fill(`Saeumig-${suffix}`);
 	// Die Tabelle listet Schüler (Medien nur als Zähler, keine Titel)
 	const zeile = page.getByRole('row', { name: new RegExp(`Saeumig-${suffix}`) });
 	await expect(zeile).toBeVisible();
 	await expect(zeile).toContainText('8M');
 
 	// Das Blatt trägt, was die Liste zeigt: nach der Suche genau dieses Kind, je Buch eine Zeile.
-	await page
-		.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' })
-		.fill(`Saeumig-${suffix}`);
 	const fenster = page.waitForEvent('popup');
 	await page.getByRole('button', { name: 'Liste drucken' }).click();
 	const blatt = await fenster;
@@ -69,6 +71,9 @@ test('Mahnbrief: aus der Auswahl gedruckt, danach steht die Mahnung in der Liste
     `);
 
 	await menuepunkt(page, 'Mahnwesen').click();
+	await page
+		.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' })
+		.fill(`Briefkind-${suffix}`);
 	const zeile = page.getByRole('row', { name: new RegExp(`Briefkind-${suffix}`) });
 	await expect(zeile).toContainText('noch nicht gemahnt');
 	await expect(zeile).toContainText('10 Tage überfällig');

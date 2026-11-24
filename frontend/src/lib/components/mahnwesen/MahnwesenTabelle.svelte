@@ -6,8 +6,15 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Icon from '../ui/Icon.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import Button from '../ui/Button.svelte';
 	import { mehrfachauswahl } from '../../actions/mehrfachauswahl.js';
 	import { gemahntSatz } from './mahnungen.js';
+	import { anzahlText } from '../../utils/format.js';
+
+	// Zuerst 50 Zeilen, „Mehr laden" die nächsten, wie im Bestandsbuch: Hunderte Zeilen auf einmal
+	// halten einen langsamen Rechner spürbar an. Auswahl, Liste und Druck umfassen alle Treffer.
+	const SCHRITT = 50;
+	let grenze = $state(SCHRITT);
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function zeigeAkte(schuelerId) {
@@ -74,7 +81,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each mahnwesenStore.gefilterteSchueler as schueler, _i (_i)}
+					{#each mahnwesenStore.gefilterteSchueler.slice(0, grenze) as schueler, _i (_i)}
 						<tr aria-selected={mahnwesenStore.gewaehlteKennungen.has(schueler.schueler_id)}>
 							<td class="w-12 text-center">
 								<Kaestchen
@@ -162,6 +169,17 @@
 				</tbody>
 			</Tabelle>
 		</div>
+		{#if grenze < mahnwesenStore.gefilterteSchueler.length}
+			<div class="flex justify-center pt-2">
+				<Button variant="secondary" onclick={() => (grenze += SCHRITT)}>
+					Mehr laden, noch {anzahlText(
+						mahnwesenStore.gefilterteSchueler.length - grenze,
+						'Zeile',
+						'Zeilen'
+					)} übrig
+				</Button>
+			</div>
+		{/if}
 	</div>
 {/if}
 

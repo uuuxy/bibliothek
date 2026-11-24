@@ -72,8 +72,8 @@ function erzeugeMahnwesen() {
 		)
 	);
 
-	// Flache Liste für MD3 Table
-	let flatSchueler = $derived(() => {
+	// $derived.by merkt die Listen selbst: Tabelle, Kopfzeile und Druck lesen sie oft je Darstellung.
+	let flatSchueler = $derived.by(() => {
 		let liste = [];
 		for (const k of klassen) {
 			for (const s of k.schueler) {
@@ -91,8 +91,8 @@ function erzeugeMahnwesen() {
 		return liste;
 	});
 
-	let gefilterteSchueler = $derived(() => {
-		let liste = flatSchueler();
+	let gefilterteSchueler = $derived.by(() => {
+		let liste = flatSchueler;
 		if (stufenFilter !== 'Alle')
 			liste = liste.filter((/** @type {any} */ s) => s.mahnstufe === stufenFilter);
 		if (gewaehlteKlasse)
@@ -149,7 +149,7 @@ function erzeugeMahnwesen() {
 
 	function waehleAlle() {
 		gewaehlteKennungen.clear();
-		for (const s of gefilterteSchueler()) gewaehlteKennungen.add(s.schueler_id);
+		for (const s of gefilterteSchueler) gewaehlteKennungen.add(s.schueler_id);
 	}
 
 	function waehleKeine() {
@@ -158,7 +158,7 @@ function erzeugeMahnwesen() {
 
 	/** Wrapper for bulk printing that supplies needed state context. */
 	async function druckeGewaehlteMahnungen() {
-		await pdfStore.druckeGewaehlteMahnungen(gewaehlteKennungen, gefilterteSchueler, lade);
+		await pdfStore.druckeGewaehlteMahnungen(gewaehlteKennungen, () => gefilterteSchueler, lade);
 	}
 
 	return /** @satisfies {object} */ ({
@@ -209,7 +209,7 @@ function erzeugeMahnwesen() {
 			return gewaehlteKennungen;
 		},
 		get gefilterteSchueler() {
-			return gefilterteSchueler();
+			return gefilterteSchueler;
 		},
 
 		lade,
