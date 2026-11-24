@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 23.11.2026
+Stand: 24.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -43,6 +43,8 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
+- [ ] Den großen Ladekreis an den übrigen 29 Stellen erst nach 200 ms zeigen, wie in der
+  Titel-Verwaltung; vorher Bilder, gebaut wird auf Auftrag. (5.198)
 - [x] Bestellen ohne Topf (Spende, etwa des Fördervereins) als dritte Wahl im Warenkorb, mit
   eigener Liste im Zugangs- und im Abgangsbuch. (5.197)
 - [x] Kleine Funde aus einer Durchsicht des Codes: 23 Stellen in fünf Gruppen, je Fund ein
@@ -119,6 +121,15 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.198 Ladekreis erst nach 200 ms
+
+Material 3 zeigt unter 200 ms keine Ladeanzeige (Loading indicator, Guidelines: „Instant (under
+200ms): No indicator“). Der Ladekreis kann das mit `verzoegert`; so steht er in der
+Titel-Verwaltung beim Öffnen eines Titels und beim Wechsel der Sicht. 29 weitere Dateien zeigen
+den großen Ladekreis (`size="lg"`) sofort; bei einer schnellen Antwort blitzt er kurz auf.
+
+Nächster Schritt: die Stellen mit Bildern vorlegen; gebaut wird auf Auftrag.
 
 ### 7.2 Frisches Littera-Backup
 
