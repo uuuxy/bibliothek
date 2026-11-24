@@ -18,6 +18,13 @@ const ISBN_LM =
 	kernLm + ((10 - ([...kernLm].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 1), 0) % 10)) % 10);
 /** @type {string} */
 let FRIST_VORHER = '21';
+// Erst die Liste abwarten, wie ein Mensch: Kommt sie erst nach dem Speichern an, steht der neue
+// Titel an seinem Platz in der Liste statt oben in den ersten 50 Zeilen (lokal mit 11.900 Titeln).
+/** @param {import('@playwright/test').Page} page */
+async function titelVerwaltung(page) {
+	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+	await expect(page.getByRole('table', { name: 'Titel im Bestand' })).toBeVisible();
+}
 test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 	test.beforeAll(() => {
 		FRIST_VORHER =
@@ -46,7 +53,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 	test('Buch anlegen: Bestand und Zähldatum kommen in der DB an', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
-		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await titelVerwaltung(page);
 		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(`RT Neu ${s}`);
 		await page.locator('#buch-isbn').fill(ISBN);
@@ -68,7 +75,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 	}) => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
-		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await titelVerwaltung(page);
 		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(`RT Lernmittel ${s}`);
 		await page.locator('#buch-isbn').fill(ISBN_LM);
@@ -133,7 +140,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		};
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
-		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await titelVerwaltung(page);
 		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(titel);
 		await page.locator('#buch-signatur').fill('BIB Rt');
