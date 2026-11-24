@@ -308,6 +308,35 @@ describe('TrefferPruefung: Schlagworte', () => {
 		});
 	});
 
+	// Trägt der vorhandene Titel noch kein Schlagwort, kommt der Vorschlag ohne Klick.
+	it('holt beim vorhandenen Titel ohne Schlagworte den DNB-Vorschlag von selbst', async () => {
+		antworten([]);
+		const ohneDnb = vi.mocked(apiFetch).getMockImplementation();
+		vi.mocked(apiFetch).mockImplementation(async (url, ...rest) =>
+			String(url) === '/api/schlagworte/dnb-vorschlag?isbn=9783751200530'
+				? /** @type {any} */ ({
+						ok: true,
+						json: async () => ({
+							dnb_satz: true,
+							schlagwort_vorschlaege: ['Freundschaft'],
+							schlagwort_vorschlaege_neu: []
+						})
+					})
+				: /** @type {any} */ (ohneDnb?.(url, ...rest))
+		);
+		const screen = fenster({ ...titel, isbn: '978-3-7512-0053-0' });
+
+		const liste = await vi.waitFor(() =>
+			screen.getByRole('group', { name: 'Vorschläge aus der DNB' })
+		);
+		expect(liste.textContent).toContain('Freundschaft');
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
+		expect(apiPut, 'eingetragen wird nur, was jemand anklickt').not.toHaveBeenCalledWith(
+			'/api/buecher/titel/t-1/schlagworte',
+			expect.anything()
+		);
+	});
+
 	it('zeigt beim eben aus der DNB angelegten Titel keinen Knopf — der Vorschlag liegt bei', async () => {
 		antworten([]);
 		const screen = fenster({

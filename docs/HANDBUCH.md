@@ -157,8 +157,8 @@ falsches Passwort („Scan erkannt“).
     sondert zuerst nicht ausgeliehene aus, bestellte nie. Hat inzwischen ein anderer Platz den
     Bestand geändert, lehnt das Speichern ab und zeigt den neuen Stand.
   - **Schlagworte aus der DNB:** Holt die ISBN Titel und Autor, bietet _Schlagworte_ die Wörter der
-    DNB zum Anklicken an; bei einem vorhandenen Titel holt sie _Vorschläge aus der DNB holen_.
-    Eingetragen wird nur, was jemand anklickt, und erst mit dem Speichern (§13).
+    DNB zum Anklicken an. Bei einem vorhandenen Titel ohne Schlagworte kommen sie beim Öffnen von
+    selbst; trägt er schon welche, holt sie _Vorschläge aus der DNB holen_. Eingetragen wird nur, was jemand anklickt, und erst mit dem Speichern (§13).
   - **Schließen:** Das Kreuz oben links; mit ungespeicherten Eingaben fragt die Maske vorher
     (_Bleiben_ / _Verwerfen_), ebenso beim Wechsel des Menüpunkts (_Verwerfen und weiter_).
 - **Löschen:** _Titel löschen_ (Buchakte, Maske, in der Titelliste für mehrere) fragt nach dem
@@ -457,7 +457,9 @@ den Warenkorb.
 **Titel suchen & hinzufügen** fragt den eigenen Bestand und die DNB (antwortet sie nicht, sagt die
 Trefferliste das); vor dem Warenkorb fragt ein Fenster nach Signatur, Schlagworten, „Lernmittel?“
 und Menge. Bei einem neuen Titel aus der DNB stehen _Vorschläge aus der DNB_ (Wörter, die es in der
-Liste schon gibt) und _Neue Schlagworte aus der DNB_ (aus der Normdatei) zum Anklicken.
+Liste schon gibt) und _Neue Schlagworte aus der DNB_ (aus der Normdatei) zum Anklicken. Bei einem
+Titel aus dem eigenen Bestand ohne Schlagworte kommen sie von selbst; trägt er schon welche, holt
+sie _Vorschläge aus der DNB holen_.
 
 **Kommt die Bestellmail nicht an,** ist die Bestellung trotzdem gespeichert: In der Bestellhistorie
 steht „Mail nicht versendet“, in der Bestellung _Erneut senden_. Hat der Händler auf anderem Weg

@@ -5,6 +5,11 @@
      Titel noch nicht trägt. Littera kennt dasselbe als „Online-Abgleich" in der Titelmaske, dort
      wahlweise „hinzufügen" oder „ersetzen"; hier gibt es nur das Hinzufügen, Wort für Wort.
 
+     Trägt ein vorhandener Titel noch kein Schlagwort (vonSelbst), fragt der Teil die DNB von
+     selbst, sobald die Schlagworte geladen sind: Wer das Buch öffnet, sieht die Vorschläge, ohne
+     erst zu klicken. Trägt er schon welche, bleibt es beim Knopf. M3, Chips: „Suggestion chips
+     help narrow a user's intent by presenting dynamically generated suggestions".
+
      Ein Knopf der niedrigsten Stufe (M3 Buttons: „The text button style should be used for
      the lowest priority actions"), dieselbe Form wie „Cover neu holen" im selben Formular
      (ui/Button ghost), auch beim Laden: Beschriftung statt Kreis. Die Beschriftung nennt die
@@ -20,9 +25,10 @@
 	 * @prop vorschlag - aus erzeugeDnbSchlagwortVorschlag (utils/dnbSchlagwortVorschlag.svelte.js).
 	 * @prop isbn - die ISBN des Titels; ohne ISBN gibt es keinen Knopf (wie in Littera).
 	 * @prop werte - die Schlagworte im Feld: Sind alle Vorschläge schon da, sagt die Zeile das.
-	 * @type {{ vorschlag: ReturnType<typeof import('../../utils/dnbSchlagwortVorschlag.svelte.js').erzeugeDnbSchlagwortVorschlag>, isbn?: string | null, werte?: string[] | null, disabled?: boolean }}
+	 * @prop vonSelbst - der Titel steht schon im Katalog: Ohne Schlagworte kommt der Vorschlag ohne Klick.
+	 * @type {{ vorschlag: ReturnType<typeof import('../../utils/dnbSchlagwortVorschlag.svelte.js').erzeugeDnbSchlagwortVorschlag>, isbn?: string | null, werte?: string[] | null, disabled?: boolean, vonSelbst?: boolean }}
 	 */
-	let { vorschlag, isbn = '', werte = [], disabled = false } = $props();
+	let { vorschlag, isbn = '', werte = [], disabled = false, vonSelbst = false } = $props();
 
 	const hatIsbn = $derived(normalisiereIsbn(isbn).length >= 10);
 	const status = $derived(vorschlag.status(isbn));
@@ -31,6 +37,15 @@
 		return [...vorschlag.liste(isbn), ...vorschlag.neu(isbn)].filter(
 			(w) => !gewaehlt.has(w.toLowerCase())
 		).length;
+	});
+
+	// Einmal je Fenster: Wer danach die ISBN ändert oder alle Wörter entfernt, fragt mit dem Knopf.
+	let vonSelbstGefragt = false;
+	$effect(() => {
+		if (!vonSelbst || vonSelbstGefragt || disabled || !hatIsbn || status !== '') return;
+		if (!Array.isArray(werte) || werte.length > 0) return;
+		vonSelbstGefragt = true;
+		vorschlag.lade(isbn);
 	});
 </script>
 

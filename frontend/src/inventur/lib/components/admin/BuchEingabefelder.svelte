@@ -145,6 +145,7 @@
 			isbn={formular.isbn}
 			werte={formular.schlagworte}
 			disabled={!schlagworteGeladen}
+			vonSelbst={Boolean(formular.id)}
 		/>
 	</div>
 </div>

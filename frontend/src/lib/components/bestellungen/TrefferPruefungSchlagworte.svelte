@@ -23,8 +23,8 @@
 	 * stünde sonst still am Titel.
 	 * angeboteNeu: Normdatei-Wörter des Satzes, die die Liste noch nicht kennt, angeboten mit
 	 * dem Zusatz „neu", nie vorbelegt.
-	 * mitDnbKnopf: Der Titel stand schon im Katalog, die DNB wurde also nicht gefragt; dann holt
-	 * der Knopf unter dem Feld den Vorschlag zur isbn.
+	 * mitDnbKnopf: Der Titel stand schon im Katalog, die DNB wurde also nicht gefragt. Trägt er
+	 * kein Schlagwort, kommt der Vorschlag zur isbn von selbst, sonst holt ihn der Knopf.
 	 * @type {{ titelId: string, angebote?: string[], angeboteNeu?: string[], isbn?: string, mitDnbKnopf?: boolean }}
 	 */
 	let { titelId, angebote = [], angeboteNeu = [], isbn = '', mitDnbKnopf = false } = $props();
@@ -99,6 +99,7 @@
 			{isbn}
 			werte={schlagworte}
 			disabled={beiStart === null}
+			vonSelbst
 		/>
 	{/if}
 </div>

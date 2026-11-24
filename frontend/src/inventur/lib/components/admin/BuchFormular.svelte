@@ -38,7 +38,7 @@
 	} = $props();
 
 	// Der Schlagwort-Vorschlag der DNB: Die ISBN-Abfrage holt ihn nach einem Treffer dazu; bei
-	// einem Titel, den es schon gibt, der Knopf unter den Schlagworten.
+	// einem Titel ohne Schlagworte kommt er von selbst, sonst holt ihn der Knopf darunter.
 	const dnbVorschlag = erzeugeDnbSchlagwortVorschlag();
 	const abfrage = erzeugeIsbnAbfrage(
 		() => formular,

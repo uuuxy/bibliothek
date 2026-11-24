@@ -21,8 +21,9 @@ const DNB = '/api/schlagworte/dnb-vorschlag?isbn=9783751200530';
 
 // Der Schlagwort-Vorschlag der DNB im Buchformular (entschieden am 30.09.2026): Holt die ISBN
 // Titel und Autor, kommen die Schlagworte der DNB von selbst dazu — ein neuer Titel entsteht
-// so nicht mehr ohne Vorschlag. Bei einem Titel, den es schon gibt, fragt erst der Knopf, und
-// angeboten wird nur, was er noch nicht trägt.
+// so nicht mehr ohne Vorschlag. Ein Titel, den es schon gibt, bekommt den Vorschlag von selbst,
+// solange er kein Schlagwort trägt; trägt er welche, fragt erst der Knopf, und angeboten wird nur,
+// was er noch nicht trägt.
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
@@ -80,7 +81,23 @@ describe('BuchEingabefelder: Schlagworte aus der DNB', () => {
 		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
 	});
 
-	it('fragt bei einem vorhandenen Titel erst auf Knopfdruck und nur nach dem, was fehlt', async () => {
+	it('bringt sie bei einem vorhandenen Titel ohne Schlagworte von selbst, ohne Knopf', async () => {
+		const screen = maske({
+			id: 't-2',
+			isbn: '978-3-7512-0053-0',
+			title: 'Dunkelnacht',
+			schlagworte: []
+		});
+
+		const liste = await vi.waitFor(() =>
+			screen.getByRole('group', { name: 'Vorschläge aus der DNB' })
+		);
+		expect(liste.textContent).toContain('Freundschaft');
+		expect(vi.mocked(apiFetch).mock.calls.filter(([url]) => url === DNB)).toHaveLength(1);
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
+	});
+
+	it('fragt bei einem vorhandenen Titel mit Schlagworten erst auf Knopfdruck und nur nach dem, was fehlt', async () => {
 		const screen = maske({
 			id: 't-1',
 			isbn: '978-3-7512-0053-0',
