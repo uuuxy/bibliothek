@@ -74,25 +74,29 @@
 				{/if}
 			</div>
 			<Kaestchen bind:checked={bestellStore.attachBarcodes} etikett="Barcodes mitschicken" />
-			<Button
-				size="lg"
-				onclick={() => bestellStore.submitOrder()}
-				disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
-				class="w-full sm:w-auto"
-			>
-				{#if bestellStore.submitting}
-					<Ladekreis size="sm" farbe="aktuell" />
-					Wird gesendet …
-				{:else if anzahlBestellungen > 1}
-					{anzahlBestellungen} Bestellungen auslösen · {anzahlText(
-						bestellStore.totalQty,
-						'Exemplar',
-						'Exemplare'
-					)}
-				{:else}
-					Bestellung auslösen · {anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare')}
-				{/if}
-			</Button>
+			<!-- Eigener Block: Kästchen und Knopf sind beide inline; ab 600 px stand der Knopf
+			     sonst in der Zeile des Kästchens, sobald beide hineinpassten. -->
+			<div>
+				<Button
+					size="lg"
+					onclick={() => bestellStore.submitOrder()}
+					disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
+					class="w-full sm:w-auto"
+				>
+					{#if bestellStore.submitting}
+						<Ladekreis size="sm" farbe="aktuell" />
+						Wird gesendet …
+					{:else if anzahlBestellungen > 1}
+						{anzahlBestellungen} Bestellungen auslösen · {anzahlText(
+							bestellStore.totalQty,
+							'Exemplar',
+							'Exemplare'
+						)}
+					{:else}
+						Bestellung auslösen · {anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare')}
+					{/if}
+				</Button>
+			</div>
 			{#if anzahlBestellungen > 1}
 				<!-- Kein Hinweis, der erschrickt, sondern die Ansage, was gleich passiert: Der
 				     Händler bekommt zwei Mails und stellt zwei Rechnungen — so will es die
