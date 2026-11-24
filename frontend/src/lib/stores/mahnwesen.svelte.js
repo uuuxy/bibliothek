@@ -6,6 +6,7 @@ import { fehlertext } from '../utils/fehlertext.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 import { mahnungenJeKind } from '../components/mahnwesen/mahnungen.js';
+import { passtZurSuche } from '../utils/suchnorm.js';
 import { SvelteSet } from 'svelte/reactivity';
 
 /**
@@ -97,13 +98,9 @@ function erzeugeMahnwesen() {
 			liste = liste.filter((/** @type {any} */ s) => s.mahnstufe === stufenFilter);
 		if (gewaehlteKlasse)
 			liste = liste.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
-		const q = suche.trim().toLowerCase();
-		if (q) {
-			liste = liste.filter(
-				(/** @type {any} */ s) =>
-					(s.name || '').toLowerCase().includes(q) || (s.klasse || '').toLowerCase().includes(q)
-			);
-		}
+		// Dieselbe Regel wie an der Theke: „ozturk" findet Öztürk, „alkahil" Al-Kahil.
+		if (suche.trim())
+			liste = liste.filter((/** @type {any} */ s) => passtZurSuche(suche, s.name, s.klasse));
 		// Dringlichkeit zuerst: am längsten überfällig oben, dann alphabetisch. So arbeitet man
 		// die Liste von oben nach unten ab.
 		return [...liste].sort(

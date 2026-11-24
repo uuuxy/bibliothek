@@ -112,6 +112,24 @@ describe('KontenTabelle', () => {
 		expect(frageLoeschen).toHaveBeenCalledWith(eins);
 	});
 
+	// Dieselbe Regel wie an der Theke (utils/suchnorm.js): ohne Akzente, ohne Bindestrich.
+	it.each([
+		['ozturk', 'Öztürk'],
+		['alkahil', 'Al-Kahil'],
+		['kahil mehmet', 'Al-Kahil']
+	])('findet zu „%s“ %s', (suchtext, gesucht) => {
+		const screen = tabelle(
+			[
+				konto({ id: 'u1', vorname: 'Mehmet', nachname: 'Öztürk', email: 'm@test.local' }),
+				konto({ id: 'u2', vorname: 'Mehmet', nachname: 'Al-Kahil', email: 'a@test.local' })
+			],
+			{ suchtext }
+		);
+		const namen = screen.getAllByRole('row').map((z) => z.textContent ?? '');
+		expect(namen.filter((n) => n.includes('Mehmet'))).toHaveLength(1);
+		expect(namen.some((n) => n.includes(gesucht))).toBe(true);
+	});
+
 	it('sagt ohne Sinnbild, dass niemand gefunden wurde', () => {
 		const screen = tabelle([]);
 		expect(screen.container.textContent?.trim()).toBe('Keine Systembenutzer gefunden');

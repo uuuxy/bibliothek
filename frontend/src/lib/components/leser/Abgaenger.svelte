@@ -19,6 +19,7 @@
 	import AbgaengerKopfzeile from './AbgaengerKopfzeile.svelte';
 	import { abonniereNeuladen } from '../../liveEvents.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
+	import { passtZurSuche } from '../../utils/suchnorm.js';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function oeffneLeserakte(student) {
@@ -48,15 +49,10 @@
 			? alleAbgaenger.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse)
 			: alleAbgaenger
 		)
-			.filter((/** @type {any} */ s) => {
-				const q = suche.trim().toLowerCase();
-				if (!q) return true;
-				return [s.vorname, s.nachname, s.klasse, s.barcode_id].some((/** @type {any} */ w) =>
-					String(w ?? '')
-						.toLowerCase()
-						.includes(q)
-				);
-			})
+			// Dieselbe Regel wie an der Theke: Akzente, Bindestriche und die Reihenfolge zählen nicht.
+			.filter((/** @type {any} */ s) =>
+				passtZurSuche(suche, s.vorname, s.nachname, s.klasse, s.barcode_id)
+			)
 			.slice()
 			// Dringlichkeit zuerst: überfällige oben, dann nach Anzahl offener Bücher, dann Klasse/Name.
 			.sort(

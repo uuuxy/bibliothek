@@ -36,6 +36,12 @@ Leserdatei und Mahnwesen Menschen, die Inventur scannt. Eine seitenübergreifend
 Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Leserakte springt, gibt es
 nicht. Gebucht wird nur an der Theke.
 
+Namen findet jede Suche gleich, an der Theke, in der Leserdatei, im Mahnwesen, bei den
+Abgängern und unter _Benutzer & Rechte_: Ein Teil von Vor- oder Nachname genügt, die Reihenfolge
+zählt nicht, Akzente, Umlaute und ihre Ersatzschreibung („ozturk“ findet Öztürk, „mueller“
+Müller) ebenso wenig wie Bindestrich, Apostroph und Leerzeichen („alkahil“ findet Al-Kahil,
+„annalena“ Anna-Lena).
+
 ## Ausleihe (Theke)
 
 **Vor dem ersten Scan: Der Scanner muss auf deutsche Tastatur eingestellt sein** (Datalogic:

@@ -8,6 +8,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { rollenName } from './benutzerRollen.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
+	import { passtZurSuche } from '../../utils/suchnorm.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -30,18 +31,12 @@
 		frageLoeschen
 	} = $props();
 
-	let gefiltert = $derived.by(() => {
-		const suche = suchtext.trim().toLowerCase();
-		if (!suche) return konten;
-		return konten.filter(
-			(u) =>
-				u.vorname.toLowerCase().includes(suche) ||
-				u.nachname.toLowerCase().includes(suche) ||
-				u.email.toLowerCase().includes(suche) ||
-				(u.barcode_id && u.barcode_id.toLowerCase().includes(suche)) ||
-				u.rolle.toLowerCase().includes(suche)
-		);
-	});
+	// Dieselbe Regel wie an der Theke: Akzente, Bindestriche und die Reihenfolge zählen nicht.
+	let gefiltert = $derived(
+		konten.filter((u) =>
+			passtZurSuche(suchtext, u.vorname, u.nachname, u.email, u.barcode_id, u.rolle)
+		)
+	);
 </script>
 
 {#if laedt}

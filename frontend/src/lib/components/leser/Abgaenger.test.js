@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/svelte';
+import { render, waitFor, fireEvent } from '@testing-library/svelte';
 
 const leitung = vi.hoisted(() => ({
 	/** @type {Map<string, Set<(e: any) => void>>} */
@@ -197,5 +197,28 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 		expect(kasten.textContent).toContain('Abgängerliste nicht geladen');
 		expect(kasten.textContent).toContain('Datenbank kurz weg');
 		expect(snackbars.toasts).toHaveLength(0);
+	});
+});
+
+// Dieselbe Regel wie an der Theke (utils/suchnorm.js): ohne Akzente, ohne Bindestrich, Vor- und
+// Nachname in beliebiger Reihenfolge.
+describe('Abgaenger: die Suche', () => {
+	it.each([
+		['ozturk', 'Mia Öztürk'],
+		['alkahil', 'Mia Al-Kahil'],
+		['kahil mia', 'Mia Al-Kahil']
+	])('findet zu „%s“ %s', async (suche, gesucht) => {
+		vi.mocked(ladeAbgaenger).mockResolvedValueOnce(
+			liste(abgaenger('a1', 'Öztürk'), abgaenger('a2', 'Al-Kahil'))
+		);
+		const seite = render(Abgaenger);
+		await seite.findByText('Mia Öztürk');
+
+		await fireEvent.input(seite.getByRole('searchbox', { name: 'Abgänger suchen' }), {
+			target: { value: suche }
+		});
+
+		await waitFor(() => expect(seite.queryAllByText(/^Mia /)).toHaveLength(1));
+		expect(seite.getByText(gesucht)).toBeTruthy();
 	});
 });
