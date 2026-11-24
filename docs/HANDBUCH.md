@@ -37,7 +37,8 @@ Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Leserakte springt, 
 nicht. Gebucht wird nur an der Theke.
 
 Namen findet jede Suche gleich, an der Theke, in der Leserdatei, im Mahnwesen, bei den
-Abgängern und unter _Benutzer & Rechte_: Ein Teil von Vor- oder Nachname genügt, die Reihenfolge
+Abgängern, in der Buchakte bei den Ausleihern und unter _Benutzer & Rechte_: Ein Teil von Vor-
+oder Nachname genügt, die Reihenfolge
 zählt nicht, Akzente, Umlaute und ihre Ersatzschreibung („ozturk“ findet Öztürk, „mueller“
 Müller) ebenso wenig wie Bindestrich, Apostroph und Leerzeichen („alkahil“ findet Al-Kahil,
 „annalena“ Anna-Lena).

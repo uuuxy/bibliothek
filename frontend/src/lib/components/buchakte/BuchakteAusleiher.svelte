@@ -9,6 +9,7 @@
 	import Icon from '../ui/Icon.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { passtZurSuche } from '../../utils/suchnorm.js';
 
 	/** @type {{ ausleiher: any[], titel: any, onBack: () => void }} */
 	let { ausleiher, titel, onBack } = $props();
@@ -24,12 +25,8 @@
 	let gefilterteAusleiher = $derived(
 		ausleiher.filter((b) => {
 			const matchKlasse = filterKlasse === 'Alle' || (b.klasse || 'Unbekannt') === filterKlasse;
-			const matchName =
-				filterName === '' ||
-				`${b.schueler_name} ${b.schueler_nachname}`
-					.toLowerCase()
-					.includes(filterName.toLowerCase());
-			return matchKlasse && matchName;
+			// Dieselbe Regel wie an der Theke: „ozturk" findet Öztürk, „kahil mia" Mia Al-Kahil.
+			return matchKlasse && passtZurSuche(filterName, b.schueler_name, b.schueler_nachname);
 		})
 	);
 
