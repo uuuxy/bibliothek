@@ -279,3 +279,66 @@ func TestFindeUnscharf_LeereEingabe(t *testing.T) {
 		}
 	}
 }
+
+// TestFindeUnscharf_TrennerZaehlenNicht: Einen Namen hört man ohne Bindestrich und ohne
+// Leerzeichen. „Al Kahil", „Al-Kahil" und „Alkahil" finden sich in jeder Richtung, ebenso
+// „Anna-Lena" und „Annalena" und „O'Brien" und „OBrien", an der Theke wie in der Leserdatei.
+func TestFindeUnscharf_TrennerZaehlenNicht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	legeSuchSchuelerAn(t, pool, "TRENN-1", "Ahmad", "Al-Kahil")
+	legeSuchSchuelerAn(t, pool, "TRENN-2", "Samir", "Al Kahil")
+	legeSuchSchuelerAn(t, pool, "TRENN-3", "Yusuf", "Alkahil")
+	legeSuchSchuelerAn(t, pool, "TRENN-4", "Anna-Lena", "Brandt")
+	legeSuchSchuelerAn(t, pool, "TRENN-5", "Annalena", "Kurz")
+	legeSuchSchuelerAn(t, pool, "TRENN-6", "Sean", "O'Brien")
+
+	repo := NewLeserAbfragen(pool)
+	kahil := []string{"Ahmad Al-Kahil", "Samir Al Kahil", "Yusuf Alkahil"}
+	annalena := []string{"Anna-Lena Brandt", "Annalena Kurz"}
+	brien := []string{"Sean O'Brien"}
+	faelle := []struct {
+		eingabe string
+		erwarte []string
+	}{
+		{"al kahil", kahil},
+		{"al-kahil", kahil},
+		{"alkahil", kahil},
+		{"AL-KAHIL", kahil},
+		{"kahil ahmad", []string{"Ahmad Al-Kahil"}},
+		{"annalena", annalena},
+		{"anna-lena", annalena},
+		{"anna lena", annalena},
+		{"obrien", brien},
+		{"o'brien", brien},
+		{"o’brien", brien},
+	}
+
+	for _, f := range faelle {
+		t.Run(f.eingabe, func(t *testing.T) {
+			treffer, _, err := repo.FindeUnscharf(ctx, f.eingabe, 10)
+			if err != nil {
+				t.Fatalf("Theke %q: %v", f.eingabe, err)
+			}
+			liste, err := repo.LadeLeserListe(ctx, nil, f.eingabe, LeserSortierung{})
+			if err != nil {
+				t.Fatalf("Leserdatei %q: %v", f.eingabe, err)
+			}
+			theke := namenDerTreffer(treffer)
+			datei := make([]string, 0, len(liste))
+			for _, z := range liste {
+				datei = append(datei, z.Vorname+" "+z.Nachname)
+			}
+			for _, name := range f.erwarte {
+				if !enthaelt(theke, name) {
+					t.Errorf("Theke %q fand %q nicht, geliefert: %v", f.eingabe, name, theke)
+				}
+				if !enthaelt(datei, name) {
+					t.Errorf("Leserdatei %q fand %q nicht, geliefert: %v", f.eingabe, name, datei)
+				}
+			}
+		})
+	}
+}

@@ -243,10 +243,10 @@ CREATE TABLE leser (
 CREATE INDEX idx_schueler_barcode ON leser (barcode_id);
 CREATE INDEX idx_schueler_vorname_trgm ON leser USING gin (vorname gin_trgm_ops);
 CREATE INDEX idx_schueler_nachname_trgm ON leser USING gin (nachname gin_trgm_ops);
--- Die Namenssuche vergleicht suchnorm(spalte); die Indizes müssen exakt diesen
--- Ausdruck tragen, sonst greifen sie nicht (siehe Migration 054).
-CREATE INDEX idx_schueler_vorname_suchnorm_trgm ON leser USING gin (suchnorm(vorname) gin_trgm_ops);
-CREATE INDEX idx_schueler_nachname_suchnorm_trgm ON leser USING gin (suchnorm(nachname) gin_trgm_ops);
+-- Die Namenssuche vergleicht translate(suchnorm(spalte), '-'' ', ''); die Indizes müssen exakt
+-- diesen Ausdruck tragen, sonst greifen sie nicht (siehe Migration 183).
+CREATE INDEX idx_schueler_vorname_kompakt_trgm ON leser USING gin (translate(suchnorm(vorname), '-'' ', '') gin_trgm_ops);
+CREATE INDEX idx_schueler_nachname_kompakt_trgm ON leser USING gin (translate(suchnorm(nachname), '-'' ', '') gin_trgm_ops);
 CREATE INDEX idx_schueler_barcode_lower_trgm ON leser USING gin (lower(barcode_id) gin_trgm_ops);
 -- Duplikatsschutz nur bei BEKANNTEM Geburtsdatum: Zwei namensgleiche Schüler ohne
 -- (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht automatisch dieselbe
@@ -2001,7 +2001,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('179_sperrgrund_und_notiz_ohne_klammern.sql'),
 ('180_sperrgrund_der_ehemaligen.sql'),
 ('181_anschrift_nur_schueler.sql'),
-('182_topf_spende.sql')
+('182_topf_spende.sql'),
+('183_namenssuche_ohne_trenner.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

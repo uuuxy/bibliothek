@@ -61,14 +61,29 @@ func suchTokens(suchtext string) []string {
 // Belegung der Platzhalter in beiden Abfragen gleich: $1 = Tokens (text[]), $2 = erstes Token.
 // Der Tabellen-Alias muss s sein.
 
-// leserSuchCTE zerlegt die Tokens in Normalform (diakritikfrei) und Rohform.
+// sqlNamenTrenner sind die Zeichen, die beim Vergleich von Namen nicht zählen: Bindestrich,
+// Apostroph und Leerzeichen. „Al Kahil", „Al-Kahil" und „Alkahil" werden gleich, ebenso
+// „Anna-Lena" und „Annalena"; gehört wird ein Name ohne diese Zeichen. Typografische Striche und
+// Apostrophe macht suchnorm schon zu „-" und „'".
+const sqlNamenTrenner = `'-'' '`
+
+// sqlNameKompakt ist die Form, in der die Suche Namen vergleicht: suchnorm ohne die Trenner. Die
+// Trigramm-Indizes der Migration 183 tragen genau diesen Ausdruck, sonst griffen sie nicht.
+func sqlNameKompakt(ausdruck string) string {
+	return "translate(suchnorm(" + ausdruck + "), " + sqlNamenTrenner + ", '')"
+}
+
+// leserSuchCTE zerlegt die Tokens in Normalform (diakritikfrei), die kompakte Form für die Namen
+// (sqlNameKompakt) und die Rohform für die Ausweisnummer.
 const leserSuchCTE = `
 	WITH tokens AS (
-		SELECT suchnorm(t) AS norm, lower(t) AS roh FROM unnest($1::text[]) AS t
+		SELECT suchnorm(t) AS norm, translate(suchnorm(t), ` + sqlNamenTrenner + `, '') AS kompakt,
+		       lower(t) AS roh
+		FROM unnest($1::text[]) AS t
 	)`
 
 // leserSuchBedingung ist das eigentliche Prädikat: Jedes Token muss irgendeine Spalte
-// treffen (UND-Verknüpfung), verglichen über die Normalform.
+// treffen (UND-Verknüpfung), Namen verglichen in der kompakten Form (sqlNameKompakt).
 //
 // mitKlasse schaltet die Klasse als zusätzliches Suchfeld frei. Die Schülerdatei braucht
 // das (ihr Filter konnte es immer schon, "10a" listet die Klasse), die Omnibox an der
@@ -90,14 +105,14 @@ func leserSuchBedingung(mitKlasse bool) string {
 		klasse = "\n\t\t\tOR suchnorm(coalesce(s.klasse, ''))     LIKE '%' || tokens.norm || '%'"
 	}
 	return `(
-		   suchnorm(s.vorname)   LIKE '%' || suchnorm($2::text) || '%'
-		OR suchnorm(s.nachname)  LIKE '%' || suchnorm($2::text) || '%'
+		   ` + sqlNameKompakt("s.vorname") + `  LIKE '%' || ` + sqlNameKompakt("$2::text") + ` || '%'
+		OR ` + sqlNameKompakt("s.nachname") + ` LIKE '%' || ` + sqlNameKompakt("$2::text") + ` || '%'
 		OR lower(s.barcode_id)   LIKE '%' || lower($2::text) || '%'` + klasseImAnker(mitKlasse) + `
 	  )
 	  AND (
 		SELECT bool_and(
-			   suchnorm(coalesce(s.vorname, ''))    LIKE '%' || tokens.norm || '%'
-			OR suchnorm(coalesce(s.nachname, ''))   LIKE '%' || tokens.norm || '%'
+			   ` + sqlNameKompakt("coalesce(s.vorname, '')") + `  LIKE '%' || tokens.kompakt || '%'
+			OR ` + sqlNameKompakt("coalesce(s.nachname, '')") + ` LIKE '%' || tokens.kompakt || '%'
 			OR lower(coalesce(s.barcode_id, ''))    LIKE '%' || tokens.roh || '%'` + klasse + `)
 		FROM tokens
 	  )`
@@ -117,8 +132,10 @@ func klasseImAnker(mitKlasse bool) string {
 // wiegt schwerer als eines im Vornamen, beides zusammen schlägt alles. Sonst stünde bei
 // "max hoffmann" der gesuchte Schüler irgendwo alphabetisch in der Liste.
 const leserSuchRang = `
-		  (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.nachname, '')) LIKE tokens.norm || '%') * 2
-		+ (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.vorname, ''))  LIKE tokens.norm || '%') DESC`
+		  (SELECT count(*) FROM tokens
+		   WHERE translate(suchnorm(coalesce(s.nachname, '')), ` + sqlNamenTrenner + `, '') LIKE tokens.kompakt || '%') * 2
+		+ (SELECT count(*) FROM tokens
+		   WHERE translate(suchnorm(coalesce(s.vorname, '')), ` + sqlNamenTrenner + `, '') LIKE tokens.kompakt || '%') DESC`
 
 // FindeUnscharf durchsucht die Leserschaft nach Namen oder Ausweisnummern und liefert
 // zusätzlich die Gesamtzahl der Treffer, nicht nur die des Limits: Ohne sie kann die Oberfläche
@@ -130,7 +147,7 @@ const leserSuchRang = `
 // Klasse in der Trefferliste wie ein Schüler mit fehlender Angabe. Wer nur Schüler meint
 // (Klassenlisten, Mahnlauf, LUSD), fragt die Sicht.
 //
-// Zwei Eigenschaften der Suche:
+// Drei Eigenschaften der Suche:
 //
 //  1. Jedes Token muss irgendeine Spalte treffen (UND-Verknüpfung), nicht die
 //     komplette Eingabe eine einzelne. Damit ist die Reihenfolge von Vor- und
@@ -142,6 +159,8 @@ const leserSuchRang = `
 //     Müller, "Oeztuerk" findet Öztürk, "Strasse" findet Straße) — in beide
 //     Richtungen, denn mal steht der Umlaut in der Datenbank und wird ohne getippt,
 //     mal ist es umgekehrt.
+//  3. Bindestrich, Apostroph und Leerzeichen im Namen zählen nicht (sqlNameKompakt): „alkahil"
+//     findet Al-Kahil, „annalena" findet Anna-Lena, „al-kahil" findet Alkahil.
 //
 // Die SQL-Bausteine stehen oben als Konstanten; dieselbe Suche bedient die Leserdatei.
 //
