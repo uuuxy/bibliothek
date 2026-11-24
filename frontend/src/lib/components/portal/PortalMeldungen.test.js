@@ -3,7 +3,7 @@ import { render } from '@testing-library/svelte';
 import PortalMeldungen from './PortalMeldungen.svelte';
 
 // Die eigenen Meldungen der Lehrkraft mit ihrem Stand, unter der Suche des Portals. Der Knopf
-// „Problem melden" steht darüber in der Zeile unter dem Suchfeld (KollegiumPortal.test.js).
+// „Problem melden" steht am Treffer und im leeren Zustand der Suche (KollegiumPortal.test.js).
 
 /** @param {Record<string, any>} [props] */
 const aufbau = (props = {}) =>

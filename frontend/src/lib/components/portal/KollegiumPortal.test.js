@@ -188,6 +188,34 @@ function portalMitTreffer() {
 	return render(KollegiumPortal, { konto: { klasse: '' } });
 }
 
+/** Der Katalog findet nichts, die Annahme der Meldung antwortet. */
+function portalOhneTreffer() {
+	vi.mocked(apiFetch).mockReset();
+	vi.mocked(apiFetch).mockImplementation(
+		/** @type {any} */ (
+			async (/** @type {string} */ url) =>
+				url.startsWith('/api/reservierungen/klassensatz/katalog')
+					? { ok: true, headers: new Headers({ 'X-Treffer-Gesamt': '0' }), json: async () => [] }
+					: { ok: true, text: async () => '', json: async () => ({}) }
+		)
+	);
+	return render(KollegiumPortal, { konto: { klasse: '' } });
+}
+
+/**
+ * Tippt ins Suchfeld und wartet auf das leere Ergebnis: Beim Tippen weicht es dem Laden, die
+ * Suche läuft verzögert.
+ * @param {any} screen
+ * @param {string} text
+ */
+async function sucheOhneTreffer(screen, text) {
+	const feld = screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' });
+	await fireEvent.input(feld, { target: { value: text } });
+	expect(screen.queryByText('Keine Titel gefunden'), 'weicht dem Laden').toBeNull();
+	await screen.findByText('Keine Titel gefunden');
+	return /** @type {HTMLInputElement} */ (feld);
+}
+
 /** @param {any} screen */
 async function suche(screen) {
 	await fireEvent.input(
@@ -248,9 +276,10 @@ describe('Problem melden im Portal', () => {
 	});
 
 	// Ein Reiter für alles, was an die Bibliothek geht: „Meine Anliegen" gibt es nicht mehr,
-	// einen Buchwunsch auch nicht. Ohne Buch steht „Problem melden" unter der Suche.
-	it('meldet ohne Buch unter der Suche, ohne eigenen Reiter', async () => {
-		const screen = portalMitTreffer();
+	// einen Buchwunsch auch nicht. Ohne Buch meldet, wessen Suche nichts findet; das Gesuchte
+	// steht dann schon unter „Worum geht es?".
+	it('meldet ohne Buch, wenn die Suche nichts findet', async () => {
+		const screen = portalOhneTreffer();
 
 		expect(screen.getAllByRole('tab').map((r) => r.textContent?.trim())).toEqual([
 			'Reservieren & Melden',
@@ -259,15 +288,19 @@ describe('Problem melden im Portal', () => {
 			'LMF-Plan'
 		]);
 		expect(screen.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
+		// Vor der Suche steht kein Knopf unter dem Suchfeld; den Weg nennt der Platzhalter.
+		expect(
+			screen.getByPlaceholderText('Titel suchen für Reservierung oder Meldung …')
+		).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeNull();
 
+		await sucheOhneTreffer(screen, 'die Bücher der 8G3');
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
-		const worum = await screen.findByLabelText('Worum geht es?*');
+		const worum = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Worum geht es?*'));
+		expect(worum.value).toBe('die Bücher der 8G3');
 		// Der Knopf steht direkt über dem Formular: Eine Überschrift mit denselben Worten
 		// stünde dort doppelt.
 		expect(screen.getAllByText('Problem melden')).toHaveLength(1);
-		await fireEvent.input(worum, {
-			target: { value: 'die Bücher der 8G3' }
-		});
 		await fireEvent.input(screen.getByLabelText('Was stimmt nicht?*'), {
 			target: { value: 'drei fehlen' }
 		});
@@ -280,23 +313,45 @@ describe('Problem melden im Portal', () => {
 			klasse: '',
 			kommentar: 'drei fehlen'
 		});
+		// Danach ist das Formular zu, und der Fokus steht wieder auf dem Knopf.
 		await vi.waitFor(() =>
-			expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
+			expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Problem melden' }))
 		);
+		expect(screen.queryByLabelText('Worum geht es?*')).toBeNull();
 	});
 
-	// Der Knopf ohne Buch bleibt beim Tippen stehen, und der Platzhalter nennt beide Zwecke:
-	// Wer ein Problem ins Suchfeld schreibt, schickt es von dort ab.
-	it('lässt „Problem melden" beim Tippen stehen und übernimmt das Getippte', async () => {
+	// Mit Treffern steht „Problem melden" nur am Treffer: Ein Knopf ohne Buch unter dem
+	// Suchfeld wäre derselbe Weg ein zweites Mal.
+	it('zeigt bei Treffern „Problem melden" nur am Treffer', async () => {
 		const screen = portalMitTreffer();
-		expect(
-			screen.getByPlaceholderText('Titel suchen für Reservierung oder Meldung …')
-		).toBeTruthy();
 		await suche(screen);
 
+		expect(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeNull();
+	});
+
+	// Sucht die Lehrkraft weiter, schließt das Formular ohne Buch, die Eingabe bleibt. Offen
+	// zöge es beim nächsten leeren Ergebnis den Fokus aus dem Suchfeld.
+	it('schließt das Formular ohne Buch beim Weitersuchen, das Suchfeld behält den Fokus', async () => {
+		const screen = portalOhneTreffer();
+		const feld = await sucheOhneTreffer(screen, 'Natura 9');
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
-		const worum = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Worum geht es?*'));
-		expect(worum.value).toBe('Seydlitz');
+		await fireEvent.input(await screen.findByLabelText('Was stimmt nicht?*'), {
+			target: { value: 'fehlt im Katalog' }
+		});
+
+		feld.focus();
+		await sucheOhneTreffer(screen, 'Natura 8');
+		const knopf = screen.getByRole('button', { name: 'Problem melden' });
+		expect(knopf.getAttribute('aria-expanded')).toBe('false');
+		expect(screen.queryByLabelText('Worum geht es?*')).toBeNull();
+		expect(document.activeElement).toBe(feld);
+
+		await fireEvent.click(knopf);
+		const text = /** @type {HTMLTextAreaElement} */ (
+			await screen.findByLabelText('Was stimmt nicht?*')
+		);
+		expect(text.value).toBe('fehlt im Katalog');
 	});
 
 	// Solange nichts gesucht wird, steht unter der Suche, was die Lehrkraft geschickt hat:

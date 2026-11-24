@@ -253,10 +253,9 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
 
 - **Die Meldung, dass etwas nicht stimmt** („die 8G3 hat die falschen Bücher bekommen"). Im
   Kollegiums-Portal steht „Problem melden" am Treffer der Suche: Das Buch ist dann gewählt,
-  sein Titel steht in der Meldung; dazu Klasse/Kurs und was nicht stimmt. Einmal steht
-  „Problem melden" ohne Buch, fest in der Zeile unter dem Suchfeld und auch während gesucht
-  wird; dort nennt die Lehrkraft selbst, worum es geht, und was im Suchfeld steht, ist als
-  Vorgabe eingetragen. Die
+  sein Titel steht in der Meldung; dazu Klasse/Kurs und was nicht stimmt. Findet die
+  Suche nichts, steht „Problem melden" ohne Buch unter „Keine Titel gefunden"; dort nennt die
+  Lehrkraft selbst, worum es geht, und was im Suchfeld steht, ist als Vorgabe eingetragen. Die
   Beschreibung ist Pflicht, im Formular und am Server (`internal/api/portal/anliegen.go`). Gespeichert wird
   Text, kein Verweis auf einen Titel.
 - **Einen Buchwunsch gibt es nicht.** Gemeint wäre damit in aller

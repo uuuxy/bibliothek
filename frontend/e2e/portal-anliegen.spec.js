@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Portal, „Problem melden": Am Treffer der Suche ist das Buch gewählt, sein Titel steht in
-// der Meldung. Ohne Buch steht der Knopf unter der Suche, und das Formular fragt, worum es
-// geht. Einen Buchwunsch und einen Reiter „Meine Anliegen" gibt es nicht mehr; in der Liste
+// der Meldung. Ohne Buch steht der Knopf, wenn die Suche nichts findet, und das Formular fragt,
+// worum es geht. Einen Buchwunsch und einen Reiter „Meine Anliegen" gibt es nicht mehr; in der Liste
 // der Bibliothek steht die Meldung über einem älteren Wunsch.
 const LEHRER = 'e2e-anliegen-lehrer@test.local';
 const s = uniqueSuffix().slice(0, 6);
@@ -59,7 +59,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		await expect(melden).toBeFocused();
 	});
 
-	test('Ohne Buch: der Knopf steht unter der Suche, das Formular fragt, worum es geht', async ({
+	test('Ohne Treffer: der Knopf steht unter „Keine Titel gefunden", das Formular übernimmt das Gesuchte', async ({
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
@@ -73,22 +73,32 @@ test.describe.serial('Portal: Problem melden', () => {
 			'LMF-Plan'
 		]);
 		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
+		// Unter dem Suchfeld steht kein Knopf; den Weg nennt der Platzhalter.
+		const suchfeld = page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' });
+		await expect(suchfeld).toHaveAttribute(
+			'placeholder',
+			'Titel suchen für Reservierung oder Meldung …'
+		);
 		const knopf = page.getByRole('button', { name: 'Problem melden', exact: true });
+		await expect(knopf, 'vor der Suche').toHaveCount(0);
+
+		await suchfeld.fill(OHNE_BUCH);
+		await expect(page.getByText('Keine Titel gefunden')).toBeVisible();
 		await knopf.click();
 		const worum = page.getByLabel('Worum geht es?*');
 		await expect(worum).toBeFocused();
-		// Der Knopf steht links, sein Formular klappt darunter auf: dieselbe linke Kante.
+		await expect(worum).toHaveValue(OHNE_BUCH);
+		// Das Formular klappt unter dem Knopf auf, in derselben Mitte wie der leere Zustand.
 		const knopfLage = await knopf.boundingBox();
 		const feldLage = await worum.boundingBox();
 		if (!knopfLage || !feldLage) throw new Error('Knopf oder Feld ohne Lage');
-		expect(
-			Math.abs(knopfLage.x - feldLage.x),
-			'linke Kante von Knopf und Feld'
-		).toBeLessThanOrEqual(1);
 		expect(feldLage.y, 'das Feld steht unter dem Knopf').toBeGreaterThan(
 			knopfLage.y + knopfLage.height
 		);
-		await worum.fill(OHNE_BUCH);
+		expect(
+			Math.abs(knopfLage.x + knopfLage.width / 2 - (feldLage.x + feldLage.width / 2)),
+			'Mitte von Knopf und Feld'
+		).toBeLessThanOrEqual(1);
 		const absenden = page.getByRole('button', { name: 'Absenden' });
 		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();
 		await page.getByLabel('Was stimmt nicht?*').fill('drei fehlen');
@@ -101,25 +111,40 @@ test.describe.serial('Portal: Problem melden', () => {
 				)
 			)
 			.toBe('meldung|drei fehlen');
-		// Nach dem Absenden steht wieder der Knopf da, und die Meldung unter „Deine Meldungen".
-		await expect(page.getByRole('button', { name: 'Problem melden', exact: true })).toBeVisible();
+		// Nach dem Absenden ist das Formular zu, und der Knopf hat den Fokus. Ohne Suche steht
+		// die Meldung unter „Deine Meldungen".
+		await expect(knopf).toBeFocused();
+		await expect(worum).toHaveCount(0);
+		await suchfeld.fill('');
 		await expect(page.getByRole('heading', { name: 'Deine Meldungen' })).toBeVisible();
 		await expect(page.getByText(OHNE_BUCH)).toBeVisible();
 	});
 
-	// Der Knopf ohne Buch liegt nicht hinter der Suche: Er bleibt beim Tippen stehen, und was
-	// im Suchfeld steht, steht danach schon im Formular.
-	test('Beim Tippen bleibt „Problem melden" stehen, das Getippte steht im Formular', async ({
+	// Wer weitersucht, tippt im Suchfeld weiter: Das Formular ohne Buch schließt. Offen zöge es
+	// beim nächsten leeren Ergebnis den Fokus auf sich, und das nächste Zeichen landete dort.
+	test('Weitersuchen schließt das Formular ohne Buch, getippt wird im Suchfeld', async ({
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
+		const suchfeld = page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' });
 		const getippt = `Scanner kaputt ${s}`;
-		await page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }).fill(getippt);
-		await expect(page.getByText('Keine Titel gefunden')).toBeVisible();
+		await suchfeld.fill(getippt);
+		const knopf = page.getByRole('button', { name: 'Problem melden', exact: true });
+		await knopf.click();
+		await expect(page.getByLabel('Worum geht es?*')).toBeFocused();
 
-		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
-		await expect(page.getByLabel('Worum geht es?*')).toHaveValue(getippt);
+		await suchfeld.focus();
+		await page.keyboard.press('End');
+		await page.keyboard.type(' x');
+		await expect(knopf, 'das leere Ergebnis zur neuen Suche').toHaveAttribute(
+			'aria-expanded',
+			'false'
+		);
+		await expect(page.getByLabel('Worum geht es?*')).toHaveCount(0);
+		await page.keyboard.type('y');
+		await expect(suchfeld).toHaveValue(`${getippt} xy`);
+		await expect(suchfeld).toBeFocused();
 	});
 
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {

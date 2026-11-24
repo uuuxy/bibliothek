@@ -5,7 +5,7 @@
 	 * Der leere Zustand einer Liste: noch nichts gesucht, nichts gefunden oder nichts da.
 	 *
 	 * Eine Form für alle Listen und Suchseiten: Symbol, Überschrift, erklärender Satz darunter,
-	 * wo es einen gibt, der Knopf, der die Liste füllt.
+	 * wo es einen gibt, der Knopf für den nächsten Schritt (die Liste füllen, ein Problem melden).
 	 *
 	 * @type {{
 	 *   symbol: import('./iconNamen.js').IconName,

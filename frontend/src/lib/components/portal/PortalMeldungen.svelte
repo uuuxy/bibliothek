@@ -1,6 +1,6 @@
 <!-- @component PortalMeldungen — die eigenen Meldungen der Lehrkraft mit ihrem Stand. Steht
-     unter der Suche des Portals, solange nichts gesucht wird; „Problem melden" steht darüber
-     in der Zeile unter dem Suchfeld (PortalProblemZeile). -->
+     unter der Suche des Portals, solange nichts gesucht wird; „Problem melden" steht am
+     Treffer und, findet die Suche nichts, im leeren Zustand (PortalProblemOhneBuch). -->
 <script>
 	import LadeFehler from '../ui/LadeFehler.svelte';
 

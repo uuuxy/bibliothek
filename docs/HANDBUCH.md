@@ -584,9 +584,10 @@ Lehrkräfte sehen genau diesen Bereich, mit vier Reitern (§12, Rolle Kollegium)
 
 - **Reservieren & Melden**: Die Suche findet Bücher der Bücherei und Schulbücher, auch bestellte, noch
   nicht eingetroffene („N bestellt“). Am Treffer stehen „Klassensatz reservieren“ (Klasse oder Kurs als
-  Freitext, Anzahl, Datum) und „Problem melden“; unter dem Suchfeld steht „Problem melden“ auch ohne
-  Buch. Darunter die eigenen Reservierungen und Meldungen mit Stand und Antwort der Bibliothek. Die
-  Schlagworte, die die Bibliothek als Filter markiert hat, stehen als Chips unter dem Suchfeld.
+  Freitext, Anzahl, Datum) und „Problem melden“. Findet die Suche nichts, steht „Problem melden“ unter
+  „Keine Titel gefunden“, das Gesuchte ist im Formular schon eingetragen. Solange nichts gesucht wird,
+  stehen unter dem Suchfeld die eigenen Reservierungen und Meldungen mit Stand und Antwort der
+  Bibliothek. Die Schlagworte, die die Bibliothek als Filter markiert hat, stehen als Chips unter dem Suchfeld.
   Höchstens 50 Treffer, die Gesamtzahl steht darüber.
 - **Klassensätze** der eigenen Klassen.
 - **LMF-Plan**: Rückgabe- und Ausgabetermine je Klasse, für alle gleich, als PDF.

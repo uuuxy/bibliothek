@@ -4,7 +4,7 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import PortalMeldungen from './PortalMeldungen.svelte';
-	import PortalProblemZeile from './PortalProblemZeile.svelte';
+	import PortalProblemOhneBuch from './PortalProblemOhneBuch.svelte';
 	import { erzeugeEigeneAnliegen } from './eigeneAnliegen.svelte.js';
 	import PortalTrefferkarte from './PortalTrefferkarte.svelte';
 	import PortalUeberblick from './PortalUeberblick.svelte';
@@ -93,9 +93,8 @@
 	/>
 
 	{#if reiter === 'buecher'}
-		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Darunter erst
-		     die Filter nach Schlagwort, dann in einer eigenen Zeile „Problem melden" ohne Buch:
-		     Die Filter gehören zur Suche, die Meldung nicht. -->
+		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Darunter die
+		     Filter nach Schlagwort. -->
 		<div class="mt-4 flex flex-col gap-3">
 			<Suchpille
 				id="portal-suchfeld"
@@ -113,12 +112,6 @@
 					etikett="Nach Schlagwort filtern"
 				/>
 			{/if}
-			<PortalProblemZeile
-				formular={meldung.form(OHNE_BUCH)}
-				onumschalten={meldeOhneBuch}
-				onsenden={() => meldung.senden(OHNE_BUCH)}
-				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
-			/>
 		</div>
 
 		{#if suche.fehler}
@@ -159,6 +152,7 @@
 				hinweis={suche.schlagwort
 					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück'
 					: 'Versuche es mit einem anderen Titel oder Autor'}
+				aktion={problemOhneBuch}
 			/>
 		{:else if suche.leer}
 			<!-- Solange nichts gesucht wird: was die Lehrkraft geschickt hat und was daraus
@@ -189,4 +183,15 @@
 	{#if suche.laedt}
 		<Ladekreis size="sm" />
 	{/if}
+{/snippet}
+
+<!-- Ohne Buch nur, wenn die Suche nichts findet: Zu einem gefundenen Buch steht „Problem
+     melden" am Treffer. -->
+{#snippet problemOhneBuch()}
+	<PortalProblemOhneBuch
+		formular={meldung.form(OHNE_BUCH)}
+		onumschalten={meldeOhneBuch}
+		onsenden={() => meldung.senden(OHNE_BUCH)}
+		onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
+	/>
 {/snippet}

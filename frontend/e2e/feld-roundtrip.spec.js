@@ -235,7 +235,11 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		const lp = await l.newPage();
 		await uiLogin(lp, LEHRER);
 		await menuepunkt(lp, 'Mein Portal').click();
-		await lp.getByRole('button', { name: 'Problem melden' }).click();
+		// Ohne Buch meldet, wessen Suche nichts findet.
+		await lp
+			.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' })
+			.fill(`RT Meldung ${s}`);
+		await lp.getByRole('button', { name: 'Problem melden', exact: true }).click();
 		await lp.getByLabel('Worum geht es?*').fill(`RT Meldung ${s}`);
 		await lp.getByLabel('Klasse oder Kurs').fill('7A');
 		await lp.getByLabel('Was stimmt nicht?*').fill(`RT Beschreibung ${s}`);
