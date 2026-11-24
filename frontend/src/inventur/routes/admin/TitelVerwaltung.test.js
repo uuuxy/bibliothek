@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 import TitelVerwaltung from './TitelVerwaltung.svelte';
 import { holeBuecherListe, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
 import { appState } from '$lib/store.svelte.js';
@@ -135,5 +136,62 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 			)
 		);
 		expect(bestaetigen).not.toHaveBeenCalled();
+	});
+});
+
+// Ein Wechsel der Sicht ist ein Klick, kein Tippen: Er fragt sofort. Bis die Antwort da ist,
+// steht der Ladekreis statt der alten Liste; unter der neuen Sicht sähe sie aus wie deren
+// Ergebnis, und markierte Titel daraus träfe „Löschen", ohne dass sie zu sehen sind.
+describe('TitelVerwaltung: Wechsel der Sicht', () => {
+	/** Nach den Zeitgebern, die bis jetzt gestellt sind: Ein Abruf mit Wartezeit 0 ist dann los. */
+	const nachSofortigem = () => new Promise((weiter) => setTimeout(weiter, 0));
+
+	beforeEach(() => {
+		vi.mocked(holeBuecherListe).mockReset();
+		appState.adminAuthenticated = true;
+		appState.searchQuery = '';
+		appState.bestandsAnsicht = 'mit';
+	});
+	afterEach(() => {
+		appState.bestandsAnsicht = 'mit';
+	});
+
+	it('fragt sofort und zeigt bis zur Antwort den Ladekreis statt der alten Liste', async () => {
+		/** @type {(wert: any[]) => void} */
+		let gib = () => {};
+		vi.mocked(holeBuecherListe)
+			.mockResolvedValueOnce([TITEL])
+			.mockReturnValueOnce(/** @type {any} */ (new Promise((fertig) => (gib = fertig))));
+		const screen = render(TitelVerwaltung);
+		await screen.findByText('Mathe 9');
+		await fireEvent.click(screen.getByLabelText('Buch auswählen'));
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Ohne Exemplare' }));
+		await nachSofortigem();
+
+		expect(holeBuecherListe).toHaveBeenCalledTimes(2);
+		expect(screen.queryByText('Mathe 9')).toBeNull();
+		expect(screen.getByRole('progressbar')).toBeTruthy();
+		expect(screen.getByText('1 Titel').classList.contains('invisible')).toBe(true);
+		expect(screen.queryByRole('button', { name: /Titel löschen/ })).toBeNull();
+
+		gib([{ ...TITEL, id: 't2', title: 'Ohne Bestand' }]);
+		expect(await screen.findByText('Ohne Bestand')).toBeTruthy();
+		expect(screen.queryByRole('progressbar')).toBeNull();
+		expect(screen.getByText('1 Titel').classList.contains('invisible')).toBe(false);
+	});
+
+	it('wartet beim Tippen auf den nächsten Buchstaben', async () => {
+		vi.mocked(holeBuecherListe).mockResolvedValue([TITEL]);
+		const screen = render(TitelVerwaltung);
+		await screen.findByText('Mathe 9');
+
+		appState.searchQuery = 'Mathe';
+		flushSync();
+		await nachSofortigem();
+
+		expect(holeBuecherListe).toHaveBeenCalledTimes(1);
+		await waitFor(() => expect(holeBuecherListe).toHaveBeenCalledTimes(2));
+		expect(screen.getByText('Mathe 9')).toBeTruthy();
 	});
 });

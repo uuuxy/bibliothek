@@ -5,12 +5,14 @@
 	import BestandstabelleZeile from '$lib/components/admin/BestandstabelleZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
+	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { mehrfachauswahl } from '../../../../lib/actions/mehrfachauswahl.js';
 
 	/**
 	 * @type {{
 	 *   titelListe: any[],
 	 *   laedt: boolean,
+	 *   sichtLaedt?: boolean,
 	 *   onOpenDetail: (book: any) => void,
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
@@ -22,6 +24,7 @@
 	let {
 		titelListe,
 		laedt,
+		sichtLaedt = false,
 		onOpenDetail,
 		onCreateNew,
 		onScan,
@@ -31,9 +34,10 @@
 	} = $props();
 
 	// Auswahl für die Massenaktionen: bestandstabelleAuswahl.svelte.js. Der Effekt hält sie auf
-	// dem, was in der Liste steht — sonst trifft „Löschen" nach dem Filtern Unsichtbares.
+	// dem, was in der Liste steht — sonst trifft „Löschen" nach dem Filtern Unsichtbares. Solange
+	// die gewählte Sicht lädt, steht keine Liste da.
 	const auswahl = erzeugeAuswahl();
-	$effect(() => auswahl.angleichen(titelListe));
+	$effect(() => auswahl.angleichen(sichtLaedt ? [] : titelListe));
 
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
@@ -62,6 +66,7 @@
 <div class="w-full">
 	<BestandstabelleLeiste
 		titelAnzahl={titelListe.length}
+		{sichtLaedt}
 		anzahlGewaehlt={auswahl.anzahl}
 		{loescht}
 		onDelete={loesche}
@@ -71,56 +76,60 @@
 		{onRetryCovers}
 	/>
 
-	<div class="overflow-x-auto" use:mehrfachauswahl>
-		<Tabelle beschriftung="Titel im Bestand">
-			<thead class="font-medium">
-				<tr>
-					<th class="w-10">
-						<Kaestchen
-							data-auswahl-alle
-							aria-label="Alle Bücher auswählen"
-							checked={auswahl.alleGewaehlt(titelListe)}
-							indeterminate={auswahl.anzahl > 0 && !auswahl.alleGewaehlt(titelListe)}
-							onclick={() => auswahl.alleUmschalten(titelListe)}
-						/>
-					</th>
-					<th class="w-20">Cover</th>
-					<th>Titel</th>
-					<th>Fach</th>
-					<th>Jahrgang</th>
-					<th>Art</th>
-					<th>Standort</th>
-					<th class="text-right">Zuletzt geprüft</th>
-					<th class="text-right">Bestand</th>
-					<th class="w-10"></th>
-				</tr>
-			</thead>
-
-			<tbody>
-				<!-- Die Reihenfolge kommt vom Server: nach dem Titel (GET /api/books). -->
-				{#each titelListe.slice(0, maxVisible) as book (book.id)}
-					<BestandstabelleZeile
-						titel={book}
-						gewaehlt={auswahl.enthaelt(book.id)}
-						{onOpenDetail}
-						onToggleSelect={(id) => auswahl.umschalten(id)}
-					/>
-				{/each}
-
-				{#if titelListe.length === 0 && !laedt}
+	{#if sichtLaedt}
+		<div class="flex justify-center py-32"><Ladekreis size="lg" verzoegert /></div>
+	{:else}
+		<div class="overflow-x-auto" use:mehrfachauswahl>
+			<Tabelle beschriftung="Titel im Bestand">
+				<thead class="font-medium">
 					<tr>
-						<td colspan="10" class="text-center">Keine Titel gefunden</td>
+						<th class="w-10">
+							<Kaestchen
+								data-auswahl-alle
+								aria-label="Alle Bücher auswählen"
+								checked={auswahl.alleGewaehlt(titelListe)}
+								indeterminate={auswahl.anzahl > 0 && !auswahl.alleGewaehlt(titelListe)}
+								onclick={() => auswahl.alleUmschalten(titelListe)}
+							/>
+						</th>
+						<th class="w-20">Cover</th>
+						<th>Titel</th>
+						<th>Fach</th>
+						<th>Jahrgang</th>
+						<th>Art</th>
+						<th>Standort</th>
+						<th class="text-right">Zuletzt geprüft</th>
+						<th class="text-right">Bestand</th>
+						<th class="w-10"></th>
 					</tr>
-				{/if}
-			</tbody>
-		</Tabelle>
+				</thead>
 
-		{#if titelListe.length > maxVisible}
-			<div class="flex justify-center p-4">
-				<Button variant="secondary" onclick={() => (maxVisible += 50)}>
-					Weitere Bücher laden, noch {titelListe.length - maxVisible} übrig
-				</Button>
-			</div>
-		{/if}
-	</div>
+				<tbody>
+					<!-- Die Reihenfolge kommt vom Server: nach dem Titel (GET /api/books). -->
+					{#each titelListe.slice(0, maxVisible) as book (book.id)}
+						<BestandstabelleZeile
+							titel={book}
+							gewaehlt={auswahl.enthaelt(book.id)}
+							{onOpenDetail}
+							onToggleSelect={(id) => auswahl.umschalten(id)}
+						/>
+					{/each}
+
+					{#if titelListe.length === 0 && !laedt}
+						<tr>
+							<td colspan="10" class="text-center">Keine Titel gefunden</td>
+						</tr>
+					{/if}
+				</tbody>
+			</Tabelle>
+
+			{#if titelListe.length > maxVisible}
+				<div class="flex justify-center p-4">
+					<Button variant="secondary" onclick={() => (maxVisible += 50)}>
+						Weitere Bücher laden, noch {titelListe.length - maxVisible} übrig
+					</Button>
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>

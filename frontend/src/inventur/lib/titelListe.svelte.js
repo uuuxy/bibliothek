@@ -19,11 +19,14 @@ export function erstelleTitelListe() {
 	let buecher = $state.raw([]);
 	let wirdGeladen = $state(false);
 	let ladefehler = $state('');
+	/** Die Sicht, aus der die Liste stammt; leer, bis die erste Antwort da ist. */
+	let sichtDerListe = $state('');
 	let lauf = 0;
 	let unterwegs = keineAenderungen();
 
 	async function lade() {
 		const meiner = ++lauf;
+		const sicht = appState.bestandsAnsicht;
 		wirdGeladen = true;
 		ladefehler = '';
 		unterwegs = keineAenderungen();
@@ -31,6 +34,7 @@ export function erstelleTitelListe() {
 			const geladene = await holeBuecherListe();
 			if (meiner !== lauf) return;
 			buecher = mitAenderungen(geladene, unterwegs);
+			sichtDerListe = sicht;
 			appState.adminAuthenticated = true;
 		} catch (e) {
 			// Ein gescheitertes Laden ist keine Abmeldung (die meldet apiFetch bei 401): Die Suche
@@ -53,10 +57,42 @@ export function erstelleTitelListe() {
 		get wirdGeladen() {
 			return wirdGeladen;
 		},
+		/**
+		 * Die Liste stammt aus einer anderen Sicht als der gewählten oder ist noch gar nicht da.
+		 * Dann steht der Ladekreis statt ihrer: Unter der neuen Sicht sähe die alte Liste aus
+		 * wie deren Ergebnis.
+		 */
+		get sichtLaedt() {
+			return sichtDerListe !== appState.bestandsAnsicht;
+		},
 		/** Der Grund, aus dem der letzte Abruf scheiterte; leer, solange er gelingt. */
 		get ladefehler() {
 			return ladefehler;
 		},
 		lade
+	});
+}
+
+/**
+ * Lädt die Liste nach jedem Wechsel von Suche oder Sicht. Den Aufbau lädt die Seite selbst; der
+ * erste Lauf des Effekts ist deshalb kein Wechsel, mit ihm lüde die ganze Liste zweimal. Beim
+ * Tippen wartet der Abruf 300 ms auf den nächsten Buchstaben, ein Wechsel der Sicht fragt sofort.
+ * @param {() => unknown} lade
+ */
+export function ladeNachWechsel(lade) {
+	let ersterLauf = true;
+	let sicht = appState.bestandsAnsicht;
+	$effect(() => {
+		const suchAnfrage = appState.searchQuery;
+		const wartezeit = appState.bestandsAnsicht === sicht ? 300 : 0;
+		sicht = appState.bestandsAnsicht;
+		if (ersterLauf) {
+			ersterLauf = false;
+			return;
+		}
+		const warten = setTimeout(() => {
+			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') lade();
+		}, wartezeit);
+		return () => clearTimeout(warten);
 	});
 }

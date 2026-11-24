@@ -1664,6 +1664,8 @@ Der Hook vor dem Push sagt, was er übersprungen hat (Skip-Bilanz). Die Landkart
   `frontend/e2e/abmelden-ungespeichertes.spec.js`); eine Antwort hält `page.route` bis zur Freigabe zurück.
 - Nach dem Speichern auf den gespeicherten Stand warten, nicht auf die Meldung (`expect.poll`).
 - Druckseiten in der Druckansicht messen (`page.emulateMedia({ media: 'print' })`).
+- Eine Einblendung (`starting:`, `@starting-style`) ab dem nächsten Bild messen: Firefox meldet beim
+  ersten `getComputedStyle` eines eben eingefügten Elements den Endwert, zeichnet aber den Startwert.
 - Fehlerfälle herbeiführen: blockiertes Fenster `window.open = () => null`, Fehlerantwort über
   `route.fulfill`, Netzausfall `route.abort('failed')`, verlorene Antwort `route.fetch()` und dann
   `abort`. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`; ein Tab der Seite lädt an

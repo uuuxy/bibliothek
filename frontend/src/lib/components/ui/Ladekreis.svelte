@@ -11,10 +11,19 @@
 
      `farbe="aktuell"` nimmt currentColor — auf einem primary-Knopf wird der Kreis
      damit von selbst weiß, ohne dass der Aufrufer eine Farbe nennt. Zugänglich als
-     role="progressbar" ohne Wert (= unbestimmt) mit sprechendem Namen. -->
+     role="progressbar" ohne Wert (= unbestimmt) mit sprechendem Namen.
+
+     `verzoegert` blendet den Kreis erst nach 200 ms ein: Unter 200 ms zeigt Material 3
+     keine Ladeanzeige („Instant (under 200ms): No indicator“, Loading indicator). -->
 <script>
-	/** @type {{ size?: 'sm' | 'md' | 'lg', farbe?: 'primary' | 'aktuell', etikett?: string, class?: string }} */
-	let { size = 'md', farbe = 'primary', etikett = 'Lädt', class: klasse = '' } = $props();
+	/** @type {{ size?: 'sm' | 'md' | 'lg', farbe?: 'primary' | 'aktuell', etikett?: string, verzoegert?: boolean, class?: string }} */
+	let {
+		size = 'md',
+		farbe = 'primary',
+		etikett = 'Lädt',
+		verzoegert = false,
+		class: klasse = ''
+	} = $props();
 	const masse = { sm: 'h-4 w-4 border-2', md: 'h-6 w-6 border-[3px]', lg: 'h-10 w-10 border-4' };
 </script>
 
@@ -23,5 +32,7 @@
 	aria-label={etikett}
 	class="inline-block shrink-0 animate-spin rounded-full border-current/25 border-t-current {masse[
 		size
-	] ?? masse.md} {farbe === 'primary' ? 'text-primary' : ''} {klasse}"
+	] ?? masse.md} {farbe === 'primary' ? 'text-primary' : ''} {verzoegert
+		? 'transition-opacity delay-200 starting:opacity-0'
+		: ''} {klasse}"
 ></span>

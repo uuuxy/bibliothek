@@ -10,6 +10,7 @@
 	/**
 	 * @type {{
 	 *   titelAnzahl: number,
+	 *   sichtLaedt?: boolean,
 	 *   anzahlGewaehlt: number,
 	 *   loescht?: boolean,
 	 *   onDelete: () => void,
@@ -21,6 +22,7 @@
 	 */
 	let {
 		titelAnzahl,
+		sichtLaedt = false,
 		anzahlGewaehlt,
 		loescht = false,
 		onDelete,
@@ -42,7 +44,9 @@
 	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
-		<h2 class="shrink-0 text-lg text-on-surface">
+		<!-- Solange die gewählte Sicht lädt, zählt die Zahl noch die alte Liste. Sie bleibt
+		     unsichtbar stehen, damit die Segmente daneben nicht springen. -->
+		<h2 class="shrink-0 text-lg text-on-surface {sichtLaedt ? 'invisible' : ''}">
 			{anzahlText(titelAnzahl, 'Titel', 'Titel')}
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,

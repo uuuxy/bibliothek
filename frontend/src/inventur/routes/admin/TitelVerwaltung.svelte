@@ -18,9 +18,9 @@
 		meldungZumErgebnis
 	} from '../../../lib/components/buchakte/titelLoeschen.js';
 	import { hatUngespeichertes, titelFuerMaske } from '$lib/buch_speichern.js';
-	import { erstelleTitelListe } from '$lib/titelListe.svelte.js';
+	import { erstelleTitelListe, ladeNachWechsel } from '$lib/titelListe.svelte.js';
 
-	// Laden und Ändern der Liste: titelListe.svelte.js.
+	// Laden und Ändern der Liste und wann sie lädt: titelListe.svelte.js.
 	const liste = erstelleTitelListe();
 	const aktualisiereBuecher = liste.lade;
 	let istBearbeitenModus = $state(false);
@@ -31,22 +31,7 @@
 
 	let formular = $state(leeresBuchFormular());
 
-	// Die Liste lädt beim Aufbau und nach jedem Wechsel von Suche oder Sicht. Der erste Lauf
-	// des Effekts ist kein Wechsel; mit ihm lüde die ganze Liste zweimal.
-	let ersterLauf = true;
-	$effect(() => {
-		const suchAnfrage = appState.searchQuery;
-		void appState.bestandsAnsicht; // die Sicht lädt die Liste genauso neu wie die Suche
-		if (ersterLauf) {
-			ersterLauf = false;
-			return;
-		}
-		const warten = setTimeout(() => {
-			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') aktualisiereBuecher();
-		}, 300);
-		return () => clearTimeout(warten);
-	});
-
+	ladeNachWechsel(aktualisiereBuecher);
 	onMount(aktualisiereBuecher);
 
 	// Ein Titel, mit dem jemand zum Bearbeiten kommt, wird sofort geholt: Die Maske braucht
@@ -163,16 +148,14 @@
 				: undefined}
 		/>
 	{:else if titelKommt}
-		<!-- Unter 200 ms zeigt Material 3 keine Ladeanzeige; sie blendet erst danach ein. -->
-		<div class="flex justify-center py-32 transition-opacity delay-200 starting:opacity-0">
-			<Ladekreis size="lg" />
-		</div>
+		<div class="flex justify-center py-32"><Ladekreis size="lg" verzoegert /></div>
 	{:else if liste.ladefehler}
 		<LadeFehler titel="Titel nicht geladen" text={liste.ladefehler} onerneut={liste.lade} />
 	{:else}
 		<Bestandstabelle
 			titelListe={liste.buecher}
 			laedt={liste.wirdGeladen}
+			sichtLaedt={liste.sichtLaedt}
 			onOpenDetail={oeffneDetails}
 			onCreateNew={neuesBuchErstellen}
 			onScan={neuesBuchScannen}
