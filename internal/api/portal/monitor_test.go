@@ -13,8 +13,8 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// monitorAttrappe spielt die drei Abfragen der Folien in der Reihenfolge von
-// repository.LadeFolien nach: Buch des Monats, Neu eingetroffen, Beliebt.
+// monitorAttrappe spielt die Abfragen der Folien in der Reihenfolge von repository.LadeFolien
+// nach: Buch des Monats, Neu eingetroffen, Beliebt und der Plan der Lernmittel, hier ohne Zeile.
 func monitorAttrappe(t *testing.T, meist, neu, beliebt []string) *Tueren {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
@@ -33,6 +33,8 @@ func monitorAttrappe(t *testing.T, meist, neu, beliebt []string) *Tueren {
 	mock.ExpectQuery(`FROM ausleihen a`).WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(zeilen(meist))
 	mock.ExpectQuery(`FROM buecher_titel bt`).WithArgs(pgxmock.AnyArg()).WillReturnRows(zeilen(neu))
 	mock.ExpectQuery(`FROM ausleihen a`).WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(zeilen(beliebt))
+	mock.ExpectQuery(`FROM lmf_termine t`).WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "datum", "stunde", "art", "vermerk", "klassen"}))
 	return &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 }
 

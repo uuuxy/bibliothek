@@ -14,6 +14,7 @@
 //   * Scheitert ein Abruf, bleibt der alte Stand stehen.
 //   * Leere Folien werden übersprungen (Ferien: „Beliebt diese Woche" ohne eine einzige
 //     Ausleihe). Sind alle leer, bleibt die aktuelle stehen.
+//   * Die Folie „Heute" gibt es nur an einem Tag des veröffentlichten LMF-Plans.
 //   * Um NEUSTART_STUNDE Uhr lädt sich die Seite selbst neu. Der Bildschirm navigiert nie,
 //     und der Service Worker prüft nur beim Laden auf eine neue Version (main.js:
 //     registerSW) — ohne Neustart bekäme der Monitor ein Deploy erst mit, wenn jemand den
@@ -28,13 +29,29 @@ export const NACHLADEN_MS = 5 * 60_000;
 export const NEUVERSUCH_MS = 30_000;
 export { NEUSTART_STUNDE, msBisNeustart } from './neustart.js';
 
-/** Beschriftungen der drei Folien, in Laufreihenfolge. */
-export const FOLIEN = ['Buch des Monats', 'Neu eingetroffen', 'Beliebt diese Woche'];
+/** Beschriftungen der Folien, in Laufreihenfolge; die erste nennt beschriftung() genauer. */
+export const FOLIEN = ['Heute', 'Buch des Monats', 'Neu eingetroffen', 'Beliebt diese Woche'];
+
+/** Die Folie des Plantags und die Folie mit dem Cover-Lauf, als Stellen in FOLIEN. */
+export const HEUTE = 0;
+const NEU = 2;
 
 /**
  * @typedef {{ id: string, titel: string, autor: string, cover_url: string, isbn: string }} MonitorTitel
- * @typedef {{ buch_des_monats: MonitorTitel | null, neu_eingetroffen: MonitorTitel[], beliebt: MonitorTitel[] }} Folien
+ * @typedef {{ stunde: number, klassen: string[], vermerk: string }} LmfZeile
+ * @typedef {{ art: string, datum: string, termine: LmfZeile[] }} LmfHeute
+ * @typedef {{ buch_des_monats: MonitorTitel | null, neu_eingetroffen: MonitorTitel[], beliebt: MonitorTitel[], lmf_heute?: LmfHeute | null }} Folien
  */
+
+/** Was am Plantag geschieht, in den Wörtern des Plans (lmfplanDienst.js). @param {string | undefined} art */
+export function lmfTitel(art) {
+	return art === 'ausgabe' ? 'Bücherausgabe' : 'Büchertausch';
+}
+
+/** Beschriftung der Folie i; die erste sagt, was heute ist. @param {number} i @param {Folien | null} slides */
+export function beschriftung(i, slides) {
+	return i === HEUTE ? `Heute ${lmfTitel(slides?.lmf_heute?.art)}` : FOLIEN[i];
+}
 
 export class MonitorTakt {
 	/** @type {Folien | null} */
@@ -128,12 +145,14 @@ export class MonitorTakt {
 	istLeer(i) {
 		const s = this.slides;
 		if (!s) return false;
-		if (i === 0) return !s.buch_des_monats;
-		if (i === 1) return !s.neu_eingetroffen?.length;
+		if (i === HEUTE) return !s.lmf_heute;
+		if (i === 1) return !s.buch_des_monats;
+		if (i === NEU) return !s.neu_eingetroffen?.length;
 		return !s.beliebt?.length;
 	}
 
-	/** Nächste Folie mit Inhalt im Kreis; sind alle leer, bleibt die aktuelle stehen. */
+	/** Nächste Folie mit Inhalt im Kreis; sind alle leer, bleibt die aktuelle stehen, nur nicht
+	 *  die Folie „Heute", die es ohne Plantag nicht gibt. */
 	weiter() {
 		this.#uebernimmWartend();
 		for (let schritt = 1; schritt <= FOLIEN.length; schritt++) {
@@ -143,7 +162,7 @@ export class MonitorTakt {
 				return;
 			}
 		}
-		this.#zeige(this.folie);
+		this.#zeige(this.folie === HEUTE && this.istLeer(HEUTE) ? HEUTE + 1 : this.folie);
 	}
 
 	/**
@@ -172,6 +191,6 @@ export class MonitorTakt {
 	/** Hervorhebung auf „Neu eingetroffen" eins weiter. */
 	coverWeiter() {
 		const anzahl = this.slides?.neu_eingetroffen?.length ?? 0;
-		if (this.folie === 1 && anzahl > 0) this.coverIndex = (this.coverIndex + 1) % anzahl;
+		if (this.folie === NEU && anzahl > 0) this.coverIndex = (this.coverIndex + 1) % anzahl;
 	}
 }

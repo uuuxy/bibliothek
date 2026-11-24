@@ -62,6 +62,7 @@ var listenGrenze = map[string]string{
 	"GET /api/statistiken $.popular_titles":                               "LIMIT aus ?limit=, Vorgabe 5, höchstens 200 (leseListenGrenze, internal/api/system/statistik.go; repository.LadeRenner)",
 	"GET /api/statistiken $.shelf_warmers":                                "LIMIT aus ?limit=, Vorgabe 5, höchstens 200 (leseListenGrenze, internal/api/system/statistik.go; repository.LadeLadenhueter)",
 	"GET /api/monitor/slides $.beliebt":                                   "LIMIT 5 (monitorBeliebtAnzahl, internal/repository/oeffentlich.go)",
+	"GET /api/monitor/slides $.lmf_heute.termine":                         "keine Obergrenze in der Abfrage; die Zeilen eines Tages aus einem veröffentlichten Plan, der Planer vergibt eine Zeile je Stunde, höchstens 12 am Tag (chk_lmf_termine_stunde; MonitorAbfragen.ladeLMFHeute, lmfplan.VerteileMit)",
 	"GET /api/monitor/slides $.neu_eingetroffen":                          "LIMIT 10 (monitorNeuAnzahl, internal/repository/oeffentlich.go)",
 	"GET /api/search $.books":                                             "LIMIT 10 (grenze in internal/api/theke/suche.go, KatalogAbfragen.FindeTitelUnscharf); die Zahl vor der Grenze steht in books_total",
 	"GET /api/search $.students":                                          "LIMIT 10 (grenze in internal/api/theke/suche.go, LeserAbfragen.FindeUnscharf); die Zahl vor der Grenze steht in students_total",

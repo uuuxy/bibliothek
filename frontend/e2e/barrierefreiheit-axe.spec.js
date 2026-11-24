@@ -23,6 +23,7 @@ import {
 	uniqueSuffix,
 	einstellungsKategorie
 } from './helpers.js';
+import { zeigeMonitorMitPlantag } from './messhilfe.js';
 
 /** Öffentlich, ohne Anmeldung. */
 const OEFFENTLICH = [
@@ -129,23 +130,25 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 	}
 	// Der Monitor wechselt alle 15 s die Folie — und jede Folie hat eigene Farben. Ein
 	// einzelner Scan sieht nur eine (lokal grün, CI rot am 09.09.2026: die Rangzahlen der
-	// Folie „Beliebt" mit 1,84:1). Gescannt wird deshalb jede Folie, die sich zeigt;
-	// Folien ohne Inhalt überspringt der Monitor selbst, dann endet der Wechsel früher.
+	// Folie „Beliebt" mit 1,84:1). Gescannt wird deshalb jede Folie, die sich zeigt, auch die
+	// Folie „Heute" eines Plantags; Folien ohne Inhalt überspringt der Monitor selbst, dann
+	// endet der Wechsel früher.
 	test('öffentlich · Monitor, jede Folie', async ({ page }) => {
-		test.setTimeout(90_000); // zwei Folienwechsel à 15 s plus drei Scans
+		test.setTimeout(120_000); // drei Folienwechsel à 15 s plus vier Scans
+		await zeigeMonitorMitPlantag(page);
 		await page.goto('/monitor');
 		await zurRuhe(page);
 		const anzeige = page.getByTestId('monitor-folie');
 		const gesehen = new Set();
 		/** @type {string[]} */
 		const befunde = [];
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 4; i++) {
 			const folie = (await anzeige.textContent())?.trim() ?? '';
 			if (!gesehen.has(folie)) {
 				gesehen.add(folie);
 				for (const v of await verstoesse(page)) befunde.push(`${folie}: ${v}`);
 			}
-			if (gesehen.size === 3) break;
+			if (gesehen.size === 4) break;
 			try {
 				await expect(anzeige).not.toHaveText(folie, { timeout: 20_000 });
 			} catch {
@@ -153,6 +156,9 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 			}
 			await zurRuhe(page);
 		}
+		expect([...gesehen], 'die Folie „Heute" des Plantags wurde gescannt').toContain(
+			'Heute Büchertausch'
+		);
 		expect(befunde, `Monitor, Folien: ${[...gesehen].join(', ')}`).toEqual([]);
 	});
 	for (const [name, pfad] of INTERN) {

@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../components/ui/Ladekreis.svelte';
 	import { apiFetch } from '../apiFetch.js';
-	import { FOLIEN, FOLIE_MS, MonitorTakt } from './monitorTakt.svelte.js';
+	import { FOLIEN, FOLIE_MS, HEUTE, MonitorTakt, beschriftung } from './monitorTakt.svelte.js';
+	import FolieLmfHeute from './FolieLmfHeute.svelte';
 	import FolieBuchDesMonats from './FolieBuchDesMonats.svelte';
 	import FolieNeuEingetroffen from './FolieNeuEingetroffen.svelte';
 	import FolieBeliebt from './FolieBeliebt.svelte';
@@ -19,6 +20,13 @@
 		}
 	});
 
+	// Die Folie „Heute" ist im Raster des Fernsehers gezeichnet (864 × 450 innerhalb des Rands)
+	// und wächst mit dem Bildschirm, Google TV: „This ensures all elements can be resized
+	// proportionally for HD or 4K screens“.
+	let breite = $state(0);
+	let hoehe = $state(0);
+	const faktor = $derived(breite > 0 && hoehe > 0 ? Math.min(breite / 864, hoehe / 450) : 1);
+
 	onMount(() => {
 		takt.start();
 		return () => takt.stop();
@@ -33,34 +41,49 @@
 	<!-- Folienpunkte -->
 	<div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
 		{#each FOLIEN as name, i (name)}
-			<button
-				onclick={() => takt.springeZu(i)}
-				aria-label="{name} anzeigen"
-				class="rounded-full transition-all duration-300 cursor-pointer {takt.folie === i
-					? 'bg-on-surface w-6 h-2'
-					: 'bg-outline w-2 h-2'}"
-			></button>
+			<!-- Die Folie „Heute" hat nur an einem Tag des Plans einen Punkt. -->
+			{#if i !== HEUTE || takt.slides?.lmf_heute}
+				<button
+					onclick={() => takt.springeZu(i)}
+					aria-label="{beschriftung(i, takt.slides)} anzeigen"
+					class="rounded-full transition-all duration-300 cursor-pointer {takt.folie === i
+						? 'bg-on-surface w-6 h-2'
+						: 'bg-outline w-2 h-2'}"
+				></button>
+			{/if}
 		{/each}
 	</div>
 
 	<!-- Folie -->
-	<div class="flex-1 flex items-center justify-center px-8 py-16">
-		{#if !takt.slides}
-			<Ladekreis size="lg" />
-		{:else if takt.folie === 0}
-			<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
-		{:else if takt.folie === 1}
-			<FolieNeuEingetroffen titel={takt.slides.neu_eingetroffen} coverIndex={takt.coverIndex} />
-		{:else}
-			<FolieBeliebt titel={takt.slides.beliebt} />
-		{/if}
+	<div class="flex-1 flex px-8 py-16">
+		<div
+			class="flex-1 min-w-0 flex items-center justify-center"
+			bind:clientWidth={breite}
+			bind:clientHeight={hoehe}
+		>
+			{#if !takt.slides}
+				<Ladekreis size="lg" />
+			{:else if takt.folie === HEUTE}
+				{#if takt.slides.lmf_heute}
+					<div style:zoom={faktor} class="h-112.5 w-216 shrink-0">
+						<FolieLmfHeute heute={takt.slides.lmf_heute} />
+					</div>
+				{/if}
+			{:else if takt.folie === 1}
+				<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
+			{:else if takt.folie === 2}
+				<FolieNeuEingetroffen titel={takt.slides.neu_eingetroffen} coverIndex={takt.coverIndex} />
+			{:else}
+				<FolieBeliebt titel={takt.slides.beliebt} />
+			{/if}
+		</div>
 	</div>
 
 	<!-- Beschriftung -->
 	<div
 		class="bg-surface-container-high px-6 py-3 flex items-center justify-between text-body-small-emphasized text-on-surface-variant tracking-wide"
 	>
-		<span data-testid="monitor-folie">{FOLIEN[takt.folie]}</span>
+		<span data-testid="monitor-folie">{beschriftung(takt.folie, takt.slides)}</span>
 		<span>Schulbibliothek</span>
 	</div>
 

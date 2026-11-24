@@ -146,6 +146,12 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 	     VALUES ($1, 1, DATE '2099-06-28', 3, 'rueckgabe', 'Gate-Termin')`, planID); err != nil {
 		t.Fatalf("Gate-Termin: %v", err)
 	}
+	// Eine Zeile am Tag der Uhr beider Prüfungen (SaisonUhr): Erst damit trägt GET
+	// /api/monitor/slides die Folie des Tages, und die Prüfung der Listen sieht ihre Zeilen.
+	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
+	     VALUES ($1, 2, $2::date, 1, 'rueckgabe', 'Gate-Termin heute')`, planID, testdaten.SaisonUhr().Format("2006-01-02")); err != nil {
+		t.Fatalf("Gate-Termin heute: %v", err)
+	}
 
 	// Titel + Exemplar. Titeldaten sind Stufe 0 und absichtlich kanarienfrei.
 	if err := pool.QueryRow(ctx, `

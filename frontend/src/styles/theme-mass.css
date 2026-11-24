@@ -114,6 +114,21 @@
 	--text-body-small-emphasized--line-height: 1rem;
 	--text-body-small-emphasized--letter-spacing: 0.025rem;
 	--text-body-small-emphasized--font-weight: 500;
+	/* Die großen betonten Rollen für Überschriften und den Flur-Monitor, Werte aus
+	   „TextAppearance.M3.Sys.Typescale.DisplayMedium.Emphasized“ 45/52 sp, DisplaySmall 36/44,
+	   HeadlineSmall 24/32, alle Medium und ohne Laufweite (ebenda). */
+	--text-display-medium-emphasized: 2.8125rem; /* 45 px */
+	--text-display-medium-emphasized--line-height: 3.25rem;
+	--text-display-medium-emphasized--letter-spacing: 0rem;
+	--text-display-medium-emphasized--font-weight: 500;
+	--text-display-small-emphasized: 2.25rem; /* 36 px */
+	--text-display-small-emphasized--line-height: 2.75rem;
+	--text-display-small-emphasized--letter-spacing: 0rem;
+	--text-display-small-emphasized--font-weight: 500;
+	--text-headline-small-emphasized: 1.5rem; /* 24 px */
+	--text-headline-small-emphasized--line-height: 2rem;
+	--text-headline-small-emphasized--letter-spacing: 0rem;
+	--text-headline-small-emphasized--font-weight: 500;
 	--text-sm: 0.875rem; /* 14 px — body-medium */
 	--text-sm--line-height: 1.25rem;
 	--text-sm--letter-spacing: 0.015625rem;

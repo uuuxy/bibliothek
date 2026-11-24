@@ -105,6 +105,10 @@ const AUSNAHMEN = {
 		1,
 		'steht nur mit geladenem Stand; ein Fehlschlag behält den alten (monitorTakt)'
 	],
+	'src/lib/monitor/FolieLmfHeute.svelte': [
+		1,
+		'steht nur mit geladenem Stand; eine Zeile ohne Klasse ist ein Eintrag des Plans (Nachzügler)'
+	],
 	'src/lib/components/ui/SelectListe.svelte': [
 		1,
 		'allgemeines Bauteil; den Ladefehler zeigt der Aufrufer'

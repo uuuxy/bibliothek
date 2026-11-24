@@ -103,3 +103,68 @@ test('Monitor: Folien wechseln alle 15 Sekunden von selbst, leere werden übersp
 	await expect(folie).toHaveText('Beliebt diese Woche');
 	await expect(page.getByText('Keine Daten verfügbar')).toBeVisible();
 });
+
+// Am Tag der Bücherausgabe steht die Folie „Heute" vorn, mit eigenem Punkt, und wächst mit dem
+// Bildschirm: gezeichnet im Raster des Fernsehers, auf Full HD doppelt so groß. Mit dem ersten
+// Stand ohne Plantag verschwinden Folie und Punkt wieder.
+test('Monitor: Am Tag des LMF-Plans steht die Folie „Heute" vorn, in Fernsehgröße', async ({
+	page
+}) => {
+	await page.clock.install({ time: new Date('2026-09-01T10:00:00') });
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	let plantag = true;
+	await page.route('**/api/monitor/slides', (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({
+				...folien('Stand'),
+				lmf_heute: plantag
+					? {
+							art: 'ausgabe',
+							datum: '2026-09-01',
+							termine: [
+								{ stunde: 1, klassen: ['05F'], vermerk: '' },
+								{ stunde: 2, klassen: [], vermerk: 'Nachzügler' }
+							]
+						}
+					: null
+			})
+		})
+	);
+	await page.goto('/monitor');
+	const folie = page.getByTestId('monitor-folie');
+	await expect(folie).toHaveText('Heute Bücherausgabe');
+	const titel = page.getByRole('heading', { name: 'Heute Bücherausgabe' });
+	await expect(titel).toBeVisible();
+	await expect(page.getByRole('listitem')).toHaveText(['1 05F', '2 Nachzügler']);
+	// Zwei Zeilen der Rolle display-medium (52 px Zeilenhöhe), auf Full HD verdoppelt.
+	const hoehe = (await titel.boundingBox())?.height ?? 0;
+	expect(hoehe, 'Titel der Folie in Fernsehgröße').toBeGreaterThan(200);
+	expect(hoehe).toBeLessThan(216);
+	await expect(page.getByRole('button', { name: /anzeigen$/ })).toHaveCount(4);
+
+	// fastForward löst einen fälligen Takt nur einmal aus: ein Schritt je Folie.
+	for (const naechste of [
+		'Buch des Monats',
+		'Neu eingetroffen',
+		'Beliebt diese Woche',
+		'Heute Bücherausgabe'
+	]) {
+		await page.clock.fastForward('00:15');
+		await expect(folie).toHaveText(naechste);
+	}
+
+	// Der nächste Stand kennt den Plantag nicht mehr; er gilt ab dem Folienwechsel danach.
+	plantag = false;
+	const abruf = page.waitForResponse('**/api/monitor/slides');
+	await page.clock.fastForward('04:00');
+	await abruf;
+	await page.clock.fastForward('00:15');
+	await expect(page.getByRole('button', { name: /anzeigen$/ })).toHaveCount(3);
+	await expect(page.getByRole('button', { name: /^Heute/ })).toHaveCount(0);
+	for (let i = 0; i < 3; i++) {
+		await expect(folie).not.toHaveText(/^Heute/);
+		await page.clock.fastForward('00:15');
+	}
+});

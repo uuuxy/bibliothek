@@ -1056,9 +1056,10 @@ auch Lernmittel und bestellte Titel zeigt (§4.2).
 
 ### 16.2 Bibliotheks-Monitor — `/monitor`
 
-Für einen Bildschirm im Flur oder in der Bibliothek: eine Endlos-Slideshow aus drei Folien
-(`internal/repository/oeffentlich.go` baut die Folien, `internal/api/portal/monitor.go` liefert sie aus, `Monitor.svelte`
-zeigt sie). Auf jede Folie kommt nur, was die gemeinsame Sichtbarkeitsregel der öffentlichen
+Für einen Bildschirm im Flur oder in der Bibliothek: eine Endlos-Slideshow aus drei Folien, an
+einem Tag des LMF-Plans aus vier (`internal/repository/oeffentlich.go` baut die Folien,
+`internal/api/portal/monitor.go` liefert sie aus, `Monitor.svelte` zeigt sie). Auf die drei
+Folien mit Büchern kommt nur, was die gemeinsame Sichtbarkeitsregel der öffentlichen
 Seiten (§16.1) zulässt — **kein Lernmittel, mindestens ein Exemplar im Haus**. Ohne sie
 wäre auf einem Bestand, der zum größten Teil aus Schulbüchern besteht, das Mathebuch der 7
 „Buch des Monats".
@@ -1068,11 +1069,17 @@ wäre auf einem Bestand, der zum größten Teil aus Schulbüchern besteht, das M
 | **Buch des Monats**     | der Titel **mit Cover**, der in den letzten **30 Tagen** am häufigsten ausgeliehen wurde; gibt es keinen, der zuletzt angelegte Titel mit Cover |
 | **Neu eingetroffen**    | die zehn zuletzt angelegten Titel mit Cover                                                                                                                         |
 | **Beliebt diese Woche** | die fünf Titel mit den meisten Ausleihen der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel)                                                  |
+| **Heute Bücherausgabe** / **Heute Büchertausch** | nur an einem Tag mit Zeilen im veröffentlichten LMF-Plan (§2.3): je Zeile Stunde, Klassen und Vermerk; welcher Plan gilt, entscheidet dieselbe Regel wie im Portal (`LMFAbfragen.LadeNaechstenPlan`). Die Folie steht vorn im Kreis; an jedem anderen Tag gibt es weder Folie noch Punkt |
 
 Gezählt werden **Ausleihen, ohne Dauerleihen**. Ein Klassensatz an eine Lehrkraft sind 30
 Ausleihzeilen und null freiwillige Leser; er hätte sonst beide Folien beherrscht. Nach Lesern lässt
 sich nicht zählen: Die Lesehistorie trennt eine Ausleihe der Schülerbücherei einen Tag nach der
 Rückgabe von ihrem Leser (§8), gezählt würde dann fast nur, was gerade noch ausgeliehen ist.
+
+Die Folie „Heute" ist im Raster eines Fernsehers gezeichnet, 864 × 450 dp innerhalb des Rands
+(Google TV, Layouts: „Always design at MDPI resolution at 960px * 540px"), und wächst mit dem
+Bildschirm, auf Full HD auf das Doppelte. Der Vermerk aus dem Plan steht dort für jeden im Flur
+lesbar.
 
 Auf „Buch des Monats" und „Neu eingetroffen" kommen Titel ohne Cover bewusst nicht vor — eine
 Folie ohne Bild ist auf einem Flurbildschirm wertlos. „Beliebt" zeigt sie mit Platzhalter, sonst

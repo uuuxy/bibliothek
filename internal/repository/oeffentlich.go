@@ -11,8 +11,10 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // OeffentlichSichtbar liefert das SQL-Prädikat, unter dem ein Titel (Tabelle
@@ -52,11 +54,30 @@ type MonitorTitel struct {
 	ISBN string `json:"isbn"`
 }
 
-// MonitorFolien ist die ganze Antwort für den Flur-Monitor: drei Folien.
+// MonitorFolien ist die ganze Antwort für den Flur-Monitor: drei Folien mit Büchern und an
+// einem Tag der Bücherausgabe oder des Büchertauschs die Folie mit dem Plan des Tages.
 type MonitorFolien struct {
 	BuchDesMonats   *MonitorTitel  `json:"buch_des_monats"`
 	NeuEingetroffen []MonitorTitel `json:"neu_eingetroffen"`
 	Beliebt         []MonitorTitel `json:"beliebt"`
+	// LMFHeute ist nil an jedem Tag ohne Zeile im veröffentlichten Plan.
+	LMFHeute *MonitorLMFTag `json:"lmf_heute"`
+}
+
+// MonitorLMFTag sind die Zeilen des veröffentlichten LMF-Plans für heute, ohne Kennung: Der
+// Monitor zeigt sie nur an.
+type MonitorLMFTag struct {
+	Art     string             `json:"art"`
+	Datum   string             `json:"datum"` // YYYY-MM-DD
+	Termine []MonitorLMFTermin `json:"termine"`
+}
+
+// MonitorLMFTermin ist eine Zeile des Plans auf dem Monitor: Stunde, Klassen und der Vermerk,
+// den die Bibliothek im Planer geschrieben hat.
+type MonitorLMFTermin struct {
+	Stunde  int      `json:"stunde"`
+	Klassen []string `json:"klassen"`
+	Vermerk string   `json:"vermerk"`
 }
 
 // Fenster und Längen der Folien (docs/FACHKONZEPT.md §16.2).
@@ -85,10 +106,10 @@ func NewMonitorAbfragen(pool db.Pool) *MonitorAbfragen {
 	return &MonitorAbfragen{pool: pool}
 }
 
-// LadeFolien liefert die drei Folien. Fehlt ein „Buch des Monats", weil im Fenster niemand
-// gelesen hat, steht dort der zuletzt angelegte Titel mit Cover, derselbe, der „Neu
-// eingetroffen" anführt.
-func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error) {
+// LadeFolien liefert die Folien zum Zeitpunkt jetzt. Fehlt ein „Buch des Monats", weil im
+// Fenster niemand gelesen hat, steht dort der zuletzt angelegte Titel mit Cover, derselbe, der
+// „Neu eingetroffen" anführt.
+func (a *MonitorAbfragen) LadeFolien(ctx context.Context, jetzt time.Time) (MonitorFolien, error) {
 	folien := MonitorFolien{NeuEingetroffen: []MonitorTitel{}, Beliebt: []MonitorTitel{}}
 
 	meist, err := a.ladeMeistgelesene(ctx, monitorBuchDesMonatsTage, 1, true)
@@ -103,6 +124,10 @@ func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error)
 	if err != nil {
 		return folien, fmt.Errorf("folie beliebt: %w", err)
 	}
+	lmf, err := a.ladeLMFHeute(ctx, jetzt)
+	if err != nil {
+		return folien, fmt.Errorf("folie lmf_heute: %w", err)
+	}
 
 	switch {
 	case len(meist) > 0:
@@ -113,7 +138,30 @@ func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error)
 	}
 	folien.NeuEingetroffen = neu
 	folien.Beliebt = beliebt
+	folien.LMFHeute = lmf
 	return folien, nil
+}
+
+// ladeLMFHeute liefert die Zeilen des veröffentlichten Plans für den Schultag von jetzt, nil an
+// jedem anderen Tag. Welcher Plan gilt, entscheidet LadeNaechstenPlan wie im Portal: Hätte ein
+// Tag Zeilen aus zwei Plänen, zeigt der Monitor denselben wie das Kollegium.
+func (a *MonitorAbfragen) ladeLMFHeute(ctx context.Context, jetzt time.Time) (*MonitorLMFTag, error) {
+	termine, err := NewLMFAbfragen(a.pool).LadeNaechstenPlan(ctx, jetzt)
+	if err != nil {
+		return nil, err
+	}
+	heute := jetzt.In(schulzeit.Zone()).Format("2006-01-02")
+	var tag *MonitorLMFTag
+	for _, t := range termine {
+		if t.Datum != heute {
+			continue
+		}
+		if tag == nil {
+			tag = &MonitorLMFTag{Art: t.Art, Datum: heute, Termine: []MonitorLMFTermin{}}
+		}
+		tag.Termine = append(tag.Termine, MonitorLMFTermin{Stunde: t.Stunde, Klassen: t.Klassen, Vermerk: t.Vermerk})
+	}
+	return tag, nil
 }
 
 // ladeMeistgelesene liefert die Titel, die in den letzten tage Tagen am häufigsten ausgeliehen

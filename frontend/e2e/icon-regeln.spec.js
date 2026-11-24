@@ -13,7 +13,7 @@
 // und die Messung der Grade sähe nur die Angabe im Stil.
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu } from './helpers.js';
-import { beobachteDatenanfragen, warteAufInhalt } from './messhilfe.js';
+import { beobachteDatenanfragen, warteAufInhalt, zeigeMonitorMitPlantag } from './messhilfe.js';
 import { SEITEN } from './seiten.js';
 
 const OEFFENTLICH = [
@@ -191,14 +191,15 @@ for (const schema of /** @type {const} */ (['light', 'dark'])) {
 }
 
 test('Icons nach M3 auf dem Flur-Monitor, jede Folie', async ({ page }) => {
-	test.setTimeout(90_000);
+	test.setTimeout(120_000);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await zeigeMonitorMitPlantag(page);
 	await page.goto('/monitor');
 	const anzeige = page.getByTestId('monitor-folie');
 	await anzeige.waitFor();
 	const b = neueBefunde();
 	const gesehen = new Set();
-	for (let i = 0; i < 3; i++) {
+	for (let i = 0; i < 4; i++) {
 		const folie = (await anzeige.textContent())?.trim() ?? '';
 		if (gesehen.has(folie)) break;
 		gesehen.add(folie);
@@ -214,5 +215,8 @@ test('Icons nach M3 auf dem Flur-Monitor, jede Folie', async ({ page }) => {
 		);
 	}
 	expect(b.imText, 'kein Icon in einer Textzeile gesehen: Folien ohne Inhalt?').toBeGreaterThan(0);
+	expect([...gesehen], 'die Folie „Heute" des Plantags wurde gemessen').toContain(
+		'Heute Büchertausch'
+	);
 	bewerte(b, 'Monitor');
 });

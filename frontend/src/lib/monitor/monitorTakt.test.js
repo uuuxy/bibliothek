@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
 	MonitorTakt,
+	FOLIEN,
+	beschriftung,
 	FOLIE_MS,
 	COVER_MS,
 	NACHLADEN_MS,
@@ -131,13 +133,13 @@ describe('MonitorTakt', () => {
 	it('läuft im Kreis durch die drei Folien; der Cover-Lauf bewegt sich nur auf „Neu eingetroffen"', async () => {
 		takt = new MonitorTakt(vi.fn().mockResolvedValue(stand('A')));
 		await takt.start();
-		expect(takt.folie).toBe(0);
+		expect(takt.folie, 'ohne Plantag beginnt der Kreis bei „Buch des Monats"').toBe(1);
 
 		await vi.advanceTimersByTimeAsync(COVER_MS);
-		expect(takt.coverIndex, 'auf Folie 0 kein Cover-Lauf').toBe(0);
+		expect(takt.coverIndex, 'auf Folie 1 kein Cover-Lauf').toBe(0);
 
 		await vi.advanceTimersByTimeAsync(FOLIE_MS - COVER_MS);
-		expect(takt.folie).toBe(1);
+		expect(takt.folie).toBe(2);
 		// 15 000 ist ein Vielfaches von 2 500: Im Tick des Folienwechsels feuert auch der
 		// Cover-Takt — deshalb relativ messen, nicht absolut.
 		const vorher = takt.coverIndex;
@@ -145,11 +147,11 @@ describe('MonitorTakt', () => {
 		expect(takt.coverIndex).toBe(vorher + 1);
 
 		await vi.advanceTimersByTimeAsync(FOLIE_MS - COVER_MS);
-		expect(takt.folie).toBe(2);
+		expect(takt.folie).toBe(3);
 		expect(takt.coverIndex, 'Folienwechsel setzt den Cover-Lauf zurück').toBe(0);
 
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
-		expect(takt.folie).toBe(0);
+		expect(takt.folie, 'die Folie „Heute" gibt es ohne Plantag nicht').toBe(1);
 	});
 
 	// In sechs Wochen Sommerferien hat „Beliebt diese Woche" keine einzige Ausleihe. Ein
@@ -159,22 +161,22 @@ describe('MonitorTakt', () => {
 		const ohneRenner = { ...stand('A'), beliebt: [] };
 		takt = new MonitorTakt(vi.fn().mockResolvedValue(ohneRenner));
 		await takt.start();
-		expect(takt.folie).toBe(0);
+		expect(takt.folie).toBe(1);
 
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
-		expect(takt.folie).toBe(1);
+		expect(takt.folie).toBe(2);
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
-		expect(takt.folie, 'Folie 2 ist leer und wird übersprungen').toBe(0);
+		expect(takt.folie, 'Folie 3 ist leer und wird übersprungen').toBe(1);
 	});
 
 	it('startet auf der ersten Folie mit Inhalt, wenn „Buch des Monats" leer ist', async () => {
 		const nurRenner = { ...stand('A'), buch_des_monats: null, neu_eingetroffen: [] };
 		takt = new MonitorTakt(vi.fn().mockResolvedValue(nurRenner));
 		await takt.start();
-		expect(takt.folie).toBe(2);
+		expect(takt.folie).toBe(3);
 
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
-		expect(takt.folie, 'die einzige gefüllte Folie bleibt stehen').toBe(2);
+		expect(takt.folie, 'die einzige gefüllte Folie bleibt stehen').toBe(3);
 	});
 
 	it('springt beim Übernehmen eines neuen Stands nicht auf eine Folie, die darin leer ist', async () => {
@@ -185,23 +187,63 @@ describe('MonitorTakt', () => {
 		takt = new MonitorTakt(lader);
 		await takt.start();
 
-		// Nachladen bei 5:00 — nach 20 Wechseln steht der Takt auf Folie 2 (20 mod 3). Der
-		// Wechsel bei 5:15 übernimmt B, und darin ist die nächste Folie (0) leer.
+		// Nachladen bei 5:00 — nach 20 Wechseln durch die Folien 1 bis 3 steht der Takt auf Folie
+		// 3 (20 mod 3 = 2 Schritte nach Folie 1). Der Wechsel bei 5:15 übernimmt B, und darin
+		// sind die nächsten Folien (0 ohne Plantag, 1) leer.
 		await vi.advanceTimersByTimeAsync(NACHLADEN_MS);
-		expect(takt.folie).toBe(2);
+		expect(takt.folie).toBe(3);
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
 		expect(takt.slides?.beliebt?.[0]?.titel).toBe('B Renner');
-		expect(takt.folie, 'Folie 0 ist im neuen Stand leer').toBe(1);
+		expect(takt.folie, 'Folie 1 ist im neuen Stand leer').toBe(2);
 	});
 
 	it('bleibt stehen, wenn alle Folien leer sind — der Balken läuft trotzdem weiter', async () => {
 		const leer = { buch_des_monats: null, neu_eingetroffen: [], beliebt: [] };
 		takt = new MonitorTakt(vi.fn().mockResolvedValue(leer));
 		await takt.start();
+		expect(takt.folie, 'ohne Plantag steht „Buch des Monats", nicht die Folie „Heute"').toBe(1);
 		const lauf = takt.lauf;
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
-		expect(takt.folie).toBe(0);
+		expect(takt.folie).toBe(1);
 		expect(takt.lauf).toBe(lauf + 1);
+	});
+
+	it('zeigt an einem Tag des LMF-Plans die Folie „Heute" zuerst und nimmt sie mit dem Tag wieder heraus', async () => {
+		const plantag = {
+			...stand('A'),
+			lmf_heute: {
+				art: 'ausgabe',
+				datum: '2026-09-01',
+				termine: [{ stunde: 1, klassen: ['05A'], vermerk: '' }]
+			}
+		};
+		const lader = vi
+			.fn()
+			.mockResolvedValueOnce(plantag)
+			.mockResolvedValue({ ...stand('B'), lmf_heute: null });
+		takt = new MonitorTakt(lader);
+		await takt.start();
+		expect(takt.folie).toBe(0);
+		await vi.advanceTimersByTimeAsync(FOLIE_MS * 3);
+		expect(takt.folie).toBe(3);
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.folie, 'der Kreis läuft über die Folie „Heute"').toBe(0);
+
+		// Der nächste Stand kennt keinen Plantag mehr: Ab dem Wechsel danach fehlt die Folie.
+		await takt.nachladen();
+		takt.weiter();
+		await vi.advanceTimersByTimeAsync(FOLIE_MS * 3);
+		expect(takt.folie, 'nach „Beliebt" wieder „Buch des Monats"').toBe(1);
+	});
+
+	it('beschriftet die Folie „Heute" nach dem Plan des Tages', () => {
+		const tag = (/** @type {string} */ art) => ({
+			...stand('A'),
+			lmf_heute: { art, datum: '2026-09-01', termine: [] }
+		});
+		expect(beschriftung(0, tag('ausgabe'))).toBe('Heute Bücherausgabe');
+		expect(beschriftung(0, tag('rueckgabe'))).toBe('Heute Büchertausch');
+		expect(beschriftung(2, tag('ausgabe'))).toBe(FOLIEN[2]);
 	});
 
 	// Der Bildschirm hat keine Tastatur und navigiert nie. Der Service Worker prüft nur beim

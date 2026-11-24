@@ -110,3 +110,25 @@ export async function pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemesse
 			`(dort ${gemessen}) — die Seite wurde ohne ihren Inhalt gemessen.`
 	).toBe(gemessen);
 }
+
+/**
+ * Der Flur-Monitor zeigt die Folie „Heute" nur an einem Tag des LMF-Plans. Damit die messenden
+ * Specs auch sie sehen, bekommt die echte Antwort des Servers die Zeilen eines solchen Tages,
+ * eine mit Vermerk und eine ohne Klasse.
+ * @param {import('@playwright/test').Page} page
+ */
+export async function zeigeMonitorMitPlantag(page) {
+	await page.route('**/api/monitor/slides', async (route) => {
+		const antwort = await route.fetch();
+		const lmf_heute = {
+			art: 'rueckgabe',
+			datum: '2026-06-24',
+			termine: [
+				{ stunde: 1, klassen: ['07R3'], vermerk: '' },
+				{ stunde: 2, klassen: ['06F2'], vermerk: 'nur Rückgabe' },
+				{ stunde: 3, klassen: [], vermerk: 'Nachzügler' }
+			]
+		};
+		await route.fulfill({ response: antwort, json: { ...(await antwort.json()), lmf_heute } });
+	});
+}
