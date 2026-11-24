@@ -100,7 +100,7 @@
 		/>
 	{:else if laedt && !vorschlaege.length}
 		<div class="flex justify-center py-16">
-			<Ladekreis size="lg" etikett="Bestellbedarf lädt" />
+			<Ladekreis size="lg" verzoegert etikett="Bestellbedarf lädt" />
 		</div>
 	{:else if !vorschlaege.length}
 		<div

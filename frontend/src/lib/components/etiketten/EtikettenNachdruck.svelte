@@ -298,7 +298,7 @@
 		</div>
 	</div>
 	{#if laedt}
-		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 	{:else if ladefehler}
 		<!-- Nicht „Für alle Exemplare wurden Etiketten gedruckt": Die Liste kam nicht. -->
 		<LadeFehler titel="Exemplare nicht geladen" text={ladefehler} onerneut={laden} />

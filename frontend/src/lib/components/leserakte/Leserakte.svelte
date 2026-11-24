@@ -74,7 +74,7 @@
 
 {#if st.laedt}
 	<div class="w-full py-12 flex justify-center items-center">
-		<Ladekreis size="lg" />
+		<Ladekreis size="lg" verzoegert />
 	</div>
 {:else if st.akte}
 	{#if !st.bearbeitenOffen}

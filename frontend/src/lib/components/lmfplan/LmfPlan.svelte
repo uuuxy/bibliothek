@@ -102,7 +102,7 @@
 
 	{#if z.laedt}
 		<div class="flex items-center justify-center py-12">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if z.ladeFehler}
 		<LadeFehler

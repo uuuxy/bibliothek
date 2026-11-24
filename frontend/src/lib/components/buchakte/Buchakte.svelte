@@ -92,7 +92,7 @@
 
 	{#if akte.laedt}
 		<div class="flex justify-center items-center py-32">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if akte.buch}
 		<BuchakteKopf

@@ -77,7 +77,7 @@
 <div class="w-full">
 	{#if laedt}
 		<div class="py-16 flex justify-center items-center">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if ladefehler}
 		<LadeFehler onerneut={onErneut} titel="Verzeichnis nicht geladen" text={ladefehler} />

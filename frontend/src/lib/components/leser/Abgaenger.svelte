@@ -168,7 +168,7 @@
 
 	{#if laedt}
 		<div class="py-12 flex justify-center items-center">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else}
 		<div class="w-full">

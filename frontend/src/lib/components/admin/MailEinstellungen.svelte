@@ -104,7 +104,7 @@
 
 {#if laedt}
 	<div class="flex items-center justify-center py-20">
-		<Ladekreis size="lg" />
+		<Ladekreis size="lg" verzoegert />
 	</div>
 {:else if ladeFehler}
 	<LadeFehler onerneut={laden} />

@@ -51,7 +51,7 @@
 
 {#if laedt}
 	<div class="flex justify-center py-16">
-		<Ladekreis size="lg" />
+		<Ladekreis size="lg" verzoegert />
 	</div>
 {:else}
 	<!-- Ein Reiter = eine Liste. Der Reiter ist die Überschrift; Beitexte wären eine dritte

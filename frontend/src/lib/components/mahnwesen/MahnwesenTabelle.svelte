@@ -34,7 +34,7 @@
 
 {#if mahnwesenStore.laedt}
 	<div class="flex justify-center py-20">
-		<Ladekreis size="lg" />
+		<Ladekreis size="lg" verzoegert />
 	</div>
 {:else if mahnwesenStore.fehler}
 	<LadeFehler

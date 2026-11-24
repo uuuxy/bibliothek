@@ -60,7 +60,7 @@
 
 	{#if laedt}
 		<div class="flex justify-center py-20">
-			<Ladekreis size="lg" etikett="Verwaltungsprotokoll lädt" />
+			<Ladekreis size="lg" verzoegert etikett="Verwaltungsprotokoll lädt" />
 		</div>
 	{:else if fehler}
 		<LadeFehler onerneut={fetchLogs} titel="Verwaltungsprotokoll nicht geladen" text={fehler} />

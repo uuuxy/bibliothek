@@ -45,7 +45,7 @@
 </script>
 
 {#if laedt}
-	<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
+	<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 {:else if ladefehler}
 	<!-- Nicht „Keine Systembenutzer gefunden": Die Konten kamen nicht. -->
 	<LadeFehler titel="Benutzerkonten nicht geladen" text={ladefehler} onerneut={ladeKonten} />

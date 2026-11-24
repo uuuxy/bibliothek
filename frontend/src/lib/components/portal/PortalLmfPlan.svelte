@@ -90,7 +90,7 @@
 
 {#if laedt}
 	<div class="py-12 flex justify-center items-center">
-		<Ladekreis size="lg" />
+		<Ladekreis size="lg" verzoegert />
 	</div>
 {:else if fehler}
 	<LadeFehler titel="LMF-Plan nicht geladen" text={fehler} onerneut={erneutLaden} />

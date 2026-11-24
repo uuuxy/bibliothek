@@ -165,7 +165,7 @@
 	</div>
 
 	{#if reservierungen.laedt}
-		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 	{:else if reservierungen.ladefehler}
 		<LadeFehler
 			onerneut={reservierungen.laden}

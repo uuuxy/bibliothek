@@ -111,7 +111,7 @@
 	{#if pflege.ladeFehler}
 		<LadeFehler onerneut={pflege.lade} />
 	{:else if !liste}
-		<div class="flex justify-center py-8"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-8"><Ladekreis size="lg" verzoegert /></div>
 	{:else if liste.gesamt === 0}
 		<p class="text-sm text-on-surface-variant">
 			Noch keine Schlagworte. Sie entstehen am Titel, im Buchformular und beim Bestellen.

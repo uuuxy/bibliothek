@@ -121,7 +121,7 @@
 
 	{#if abruf.loading}
 		<div class="py-20 flex justify-center">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if nichtGeladen}
 		<LadeFehler

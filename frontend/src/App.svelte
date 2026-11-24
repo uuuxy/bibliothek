@@ -99,7 +99,7 @@
 		{#if !authStore.sessionChecked}
 			<!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
 			<div class="fixed inset-0 flex items-center justify-center">
-				<Ladekreis size="lg" />
+				<Ladekreis size="lg" verzoegert />
 			</div>
 		{:else if !authStore.isLoggedIn}
 			<Anmeldung />

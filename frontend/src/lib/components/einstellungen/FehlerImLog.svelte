@@ -65,7 +65,7 @@
 		<LadeFehler onerneut={laden} titel="Fehler im Log nicht geladen" text={fehler} />
 	{:else if laedt && !stand}
 		<div class="flex justify-center py-20">
-			<Ladekreis size="lg" etikett="Fehler im Log lädt" />
+			<Ladekreis size="lg" verzoegert etikett="Fehler im Log lädt" />
 		</div>
 	{:else if stand}
 		{#if stand.meldungen.length}

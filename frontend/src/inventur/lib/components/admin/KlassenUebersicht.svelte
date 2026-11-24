@@ -154,7 +154,7 @@
 	</div>
 
 	{#if laedt}
-		<div class="flex justify-center py-12"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-12"><Ladekreis size="lg" verzoegert /></div>
 	{:else if fehler}
 		<LadeFehler titel="Klassensätze nicht geladen" text={fehler} onerneut={ladeKlassen} />
 	{:else if sichtbareGruppen.length === 0}

@@ -62,7 +62,7 @@
 			bind:clientHeight={hoehe}
 		>
 			{#if !takt.slides}
-				<Ladekreis size="lg" />
+				<Ladekreis size="lg" verzoegert />
 			{:else}
 				<div style:zoom={faktor} class="flex h-112.5 w-216 shrink-0 items-center justify-center">
 					{#if takt.folie === HEUTE}

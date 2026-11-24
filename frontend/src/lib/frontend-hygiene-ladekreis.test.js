@@ -40,4 +40,21 @@ describe('Ladeindikator kommt aus ui/', () => {
 		}
 		expect(treffer, 'Pulsierender Ladetext — bitte ui/Ladekreis.svelte nehmen').toEqual([]);
 	});
+
+	// Der große Ladekreis steht für eine Seite oder einen Bereich und blendet erst nach 200 ms
+	// ein (M3, Loading indicator: „Instant (under 200ms): No indicator“).
+	const GROSS = /<Ladekreis\b[^>]*\bsize="lg"[^>]*>/g;
+	it('zeigt einen großen Ladekreis erst nach 200 ms', () => {
+		const treffer = [];
+		let gesehen = 0;
+		for (const datei of sammleQuelldateien(srcRoot)) {
+			if (!datei.endsWith('.svelte')) continue;
+			for (const tag of ohneKommentare(readFileSync(datei, 'utf8')).match(GROSS) || []) {
+				gesehen++;
+				if (!/\bverzoegert\b/.test(tag)) treffer.push(relPfad(datei));
+			}
+		}
+		expect(gesehen, 'Das Muster findet die großen Ladekreise nicht mehr').toBeGreaterThan(20);
+		expect(treffer, 'Großer Ladekreis ohne verzoegert').toEqual([]);
+	});
 });

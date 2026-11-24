@@ -52,7 +52,7 @@
 
 	{#if papierkorb.laedt}
 		<div class="py-16 flex justify-center items-center">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if papierkorb.ladefehler}
 		<!-- Ein gescheiterter Abruf ist KEIN leerer Papierkorb: „leer" wäre hier eine

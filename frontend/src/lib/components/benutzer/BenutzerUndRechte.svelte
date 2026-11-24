@@ -115,7 +115,9 @@
 				meldet die Betriebsbereitschaft.
 			</p>
 			{#if laedt}
-				<div class="flex justify-center p-12"><Ladekreis size="lg" etikett="Rechte laden" /></div>
+				<div class="flex justify-center p-12">
+					<Ladekreis size="lg" verzoegert etikett="Rechte laden" />
+				</div>
 			{:else if fehler}
 				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
 				<LadeFehler titel="Rechte nicht geladen" text={fehler} onerneut={ladeRechte} />

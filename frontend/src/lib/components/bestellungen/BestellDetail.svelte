@@ -89,7 +89,7 @@
 	</div>
 
 	{#if laedt}
-		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 	{:else if fehler}
 		<LadeFehler onerneut={laden} titel="Bestellung nicht geladen" text={fehler} />
 	{:else if bestellung}

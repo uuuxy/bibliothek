@@ -168,7 +168,7 @@
 	</div>
 
 	{#if laedt}
-		<div class="flex justify-center py-16"><Ladekreis size="lg" /></div>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 	{:else if ladefehler}
 		<LadeFehler onerneut={ladeAnliegen} titel="Meldungen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}

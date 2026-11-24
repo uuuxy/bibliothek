@@ -106,7 +106,7 @@
 
 	{#if zuordnungLaedt}
 		<div class="py-8 flex justify-center">
-			<Ladekreis size="lg" />
+			<Ladekreis size="lg" verzoegert />
 		</div>
 	{:else if ladeFehler}
 		<LadeFehler
