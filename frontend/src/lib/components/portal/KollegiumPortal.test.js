@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import KollegiumPortal from './KollegiumPortal.svelte';
 import { apiFetch } from '../../apiFetch.js';
 
@@ -352,6 +353,46 @@ describe('Problem melden im Portal', () => {
 			await screen.findByLabelText('Was stimmt nicht?*')
 		);
 		expect(text.value).toBe('fehlt im Katalog');
+	});
+
+	// Verschwindet ein Treffer beim Weitertippen und kommt wieder, ist seine Meldung zu, die
+	// Eingabe bleibt. Offen zöge sie den Fokus aus dem Suchfeld.
+	it('schließt die Meldung am Treffer, wenn er beim Weitersuchen verschwindet', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) =>
+					url.startsWith('/api/reservierungen/klassensatz/katalog')
+						? url.includes('Seydlitzz')
+							? {
+									ok: true,
+									headers: new Headers({ 'X-Treffer-Gesamt': '0' }),
+									json: async () => []
+								}
+							: suchtreffer()
+						: { ok: true, text: async () => '', json: async () => ({}) }
+			)
+		);
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
+		await suche(screen);
+		await fireEvent.click(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` }));
+		await fireEvent.input(await screen.findByLabelText('Was stimmt nicht?*'), {
+			target: { value: 'Seiten fehlen' }
+		});
+
+		const feld = screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' });
+		feld.focus();
+		await sucheOhneTreffer(screen, 'Seydlitzz');
+		await suche(screen);
+		await tick();
+		expect(document.activeElement).toBe(feld);
+		expect(screen.queryByLabelText('Was stimmt nicht?*')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` }));
+		const text = /** @type {HTMLTextAreaElement} */ (
+			await screen.findByLabelText('Was stimmt nicht?*')
+		);
+		expect(text.value).toBe('Seiten fehlen');
 	});
 
 	// Solange nichts gesucht wird, steht unter der Suche, was die Lehrkraft geschickt hat:

@@ -15,7 +15,7 @@
 	 * @prop {() => Promise<boolean>} onmeldungsenden - true, wenn die Meldung angenommen ist.
 	 * @prop {() => void} onmeldungabbrechen
 	 */
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import KlassensatzFormular from './KlassensatzFormular.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
@@ -49,6 +49,10 @@
 		await tick();
 		meldeKnopf?.focus();
 	}
+
+	// Verschwindet der Treffer beim Weitersuchen, schließt seine Meldung, die Eingabe bleibt:
+	// Offen zöge sie den Fokus aus dem Suchfeld, sobald der Treffer wiederkommt.
+	onDestroy(() => onmeldungabbrechen());
 
 	// Reservieren bucht nichts — das Abzeichen „60 von 60 verfügbar" sinkt erst, wenn die
 	// Bibliothek den Satz ausleiht. Die Vormerkungen werden hier abgezogen: eine Zahl, die
