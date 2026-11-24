@@ -2269,8 +2269,7 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 - **Lange Listen und schmale Fenster:** In „Titel bearbeiten“ gibt es keine Suche in den
   Exemplaren; unter 1066 px wird der Titel in der Leserakte schmal; Autor und Nummer stehen dort nur
   in der Sprechblase. Anlass: Tablet oder Fenster unter 1280 px.
-- **Schmale Breiten:** Bei 390 px ist die Bestellspalte 68 px breit; `ui/AuswahlLeiste` hat kein
-  Überlaufmenü.
+- **Schmale Breiten:** `ui/AuswahlLeiste` hat kein Überlaufmenü.
 - **Die Ausleih-Quittung der Leserakte** erscheint nur beim Druck über den Browser.
 - **Browser-Gates** öffnen die Planer-Dialoge nicht, messen nur wenige gefüllte Zustände, kein
   Screenreader-Durchgang, und der Ausweis-Designer geht nur per Maus; ob eine Erklärung zur

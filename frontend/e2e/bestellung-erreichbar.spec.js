@@ -1,36 +1,18 @@
-// Gate gegen die abgeschnittene Bestellung.
+// Gate gegen die abgeschnittene Bestellung: Summe und „Bestellung auslösen" stehen im Fenster, wie
+// lang die Bestellung und der Bestellbedarf darunter auch sind.
 //
-// Aus dem Betrieb gemeldet: „Bestellung abgeschnitten." Die rechte Spalte klebt beim
-// Scrollen fest. Füllt sich der Korb, wächst sie über den Fensterrand hinaus — bei
-// 1366×700 gemessen 1288 px hoch, 826 px davon unter dem sichtbaren Bereich.
-// (Seit 04.08.2026 trägt die Spalte nur noch den Warenkorb; der Hinweis auf offene
-// Etiketten steht oben bei den anderen offenen Aufgaben. Sie wird dadurch niedriger,
-// nicht höher — der geprüfte Fall bleibt derselbe.)
-//
-// Sie war nicht unerreichbar: Wer die Bestellbedarfs-Liste daneben (105 Titel) weit genug
-// nach unten scrollt, schiebt den klebenden Rahmen irgendwann hoch. Genau daran ist die
-// erste Fassung dieses Tests gescheitert — scrollIntoViewIfNeeded fand den Knopf und war
-// auch OHNE die Korrektur grün.
-//
-// Geprüft wird deshalb das, was im Alltag zählt: Der Absenden-Knopf muss erreichbar sein,
-// OHNE die Seite zu verlassen, an der man gerade arbeitet. Der Warenkorb bringt dafür
-// seinen eigenen Scrollbalken mit; die Seite darunter bleibt stehen.
-//
-// Dasselbe gilt für die Bedarfsliste daneben: Liste und Spalte enden am unteren Rand der
-// Seite und scrollen in sich. Mit einer festen Rechnung für die Höhe der Liste ragte sie
-// darunter hinaus, und die Seite bekam einen zweiten Scrollbalken für die letzten Pixel.
+// Die Liste wächst mit der Seite; die Zusammenfassung daneben klebt und reicht bis zum unteren
+// Rand (actions/resthoehe.js). Gemessen wird, ohne den Knopf ins Bild zu holen: scrollIntoView
+// fände ihn auch dann, wenn er unter dem Rand läge, indem es die Liste wegschiebt.
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedBestellbedarf, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
-import { MINDESTHOEHE } from '../src/lib/actions/resthoehe.js';
 
-// Der Test bringt seinen Bedarf selbst mit, statt ihn vorauszusetzen. Vorher war er rot,
-// sobald in den Einstellungen die Bestellbedarfs-Warnung ausgeschaltet war — dann liefert
-// /api/bestellungen IMMER eine leere Liste, unabhängig vom Bestand. Ein Gate, das an der
-// Datenlage hängt, wandert zwischen grün und rot, ohne dass jemand Code angefasst hat.
+// Der Test bringt seinen Bedarf selbst mit, statt ihn vorauszusetzen: Ist die Bestellbedarfs-Warnung
+// ausgeschaltet, liefert /api/bestellungen eine leere Liste, und das Gate hinge an der Datenlage.
 /** @type {(() => void) | undefined} */
 let aufraeumen;
 test.beforeEach(() => {
-	// Mehr Titel, als in das höchste Fenster passen: Erst dann stößt die Liste an ihre Grenze.
+	// Mehr Titel, als in das höchste Fenster passen: Erst dann scrollt die Seite.
 	aufraeumen = seedBestellbedarf(30);
 });
 test.afterEach(() => {
@@ -45,181 +27,118 @@ const FENSTER = [
 	[1920, 1080]
 ];
 
+/**
+ * Lage von Zusammenfassung, Kästchen und Knopf im Fenster; `seite` ist der Bereich, der die Seite
+ * scrollt (der nächste scrollende Vorfahr der Zusammenfassung, wie in resthoehe.js).
+ * @param {'oben' | 'unten'} [ziel] scrollt die Seite vorher an den Anfang oder ans Ende
+ */
+function lage(ziel) {
+	const spalte = document.getElementById('zusammenfassung');
+	if (!spalte) throw new Error('Die Zusammenfassung (#zusammenfassung) gibt es nicht mehr');
+	let seite = spalte.parentElement;
+	while (seite && !/(auto|scroll)/.test(getComputedStyle(seite).overflowY)) {
+		seite = seite.parentElement;
+	}
+	if (!seite) throw new Error('Kein Bereich scrollt die Seite');
+	if (ziel) seite.scrollTop = ziel === 'oben' ? 0 : seite.scrollHeight;
+	const knopf = [...spalte.querySelectorAll('button')].find((b) =>
+		/Bestellung(?:en)? auslösen/.test(b.textContent || '')
+	);
+	const kaestchen = [...spalte.querySelectorAll('label')].find((l) =>
+		/Barcodes mitschicken/.test(l.textContent || '')
+	);
+	if (!knopf || !kaestchen) throw new Error('Knopf oder Kästchen fehlt in der Zusammenfassung');
+	const k = knopf.getBoundingClientRect();
+	return {
+		spalteUnten: Math.round(spalte.getBoundingClientRect().bottom),
+		knopfOben: Math.round(k.top),
+		knopfUnten: Math.round(k.bottom),
+		kaestchenUnten: Math.round(kaestchen.getBoundingClientRect().bottom),
+		seiteScrollt: seite.scrollHeight > seite.clientHeight + 1,
+		fenster: window.innerHeight
+	};
+}
+
 for (const [breite, hoehe] of FENSTER) {
-	test(`Warenkorb bleibt bedienbar bei ${breite}×${hoehe}`, async ({ page }) => {
+	test(`Summe und Knopf bleiben bei ${breite}×${hoehe} im Fenster`, async ({ page }) => {
 		test.setTimeout(120_000);
 		await page.setViewportSize({ width: breite, height: hoehe });
 		await uiLogin(page);
 		await page.goto('/bestellungen');
 
-		// Genug Positionen, damit die Spalte über den Fensterrand wächst.
-		//
-		// Bewusst OHNE if-visible-Wächter: Die erste Fassung übersprang das Befüllen still,
-		// wenn die Trefferliste noch nicht stand — der Test lief dann mit LEEREM Warenkorb
-		// grün und maß nichts. Hier wird auf jeden Schritt gewartet und am Ende belegt,
-		// dass wirklich Positionen im Korb liegen.
-		// Das Plus in der Bedarfsliste legt DIREKT in den Korb (Bestellbedarf →
-		// addToCart). Der Zwischendialog „In den Warenkorb" gehört zur Titelsuche und
-		// erscheint hier nicht — die erste Fassung wartete darauf und lief in den Timeout.
-		const ZIEL_POSITIONEN = 6;
-		const knopf = page.getByRole('button', { name: /Bestellung auslösen/ });
-		for (let i = 0; i < ZIEL_POSITIONEN; i++) {
-			const plus = page.getByRole('button', { name: /zur Bestellung hinzufügen/ }).nth(i);
-			await plus.waitFor({ timeout: 15_000 });
-			await plus.click();
-			// Auf die Wirkung warten statt auf eine feste Zeit: Der Korb muss die Position
-			// übernommen haben, bevor die nächste dazukommt.
-			await expect(knopf).toHaveText(new RegExp(`${i + 1}\\s*Exemplar`), { timeout: 10_000 });
+		// Ein hinzugefügter Titel verlässt den Bestellbedarf; der nächste Knopf steht deshalb immer an
+		// erster Stelle. Auf jede Wirkung wird gewartet, und am Ende belegt der Knopf, dass wirklich
+		// Positionen im Korb liegen: Sonst mäße der Test den falschen Fall.
+		const knopf = page.getByRole('button', { name: /Bestellung(?:en)? auslösen/ });
+		const hinzufuegen = page
+			.getByRole('region', { name: 'Bestellbedarf' })
+			.getByRole('button', { name: /^\d+ hinzufügen/ });
+		let exemplare = 0;
+		for (let i = 0; i < 6; i++) {
+			const erster = hinzufuegen.first();
+			await erster.waitFor({ timeout: 15_000 });
+			exemplare += Number(/\d+/.exec((await erster.textContent()) || '')?.[0]);
+			await erster.click();
+			await expect(knopf).toHaveText(new RegExp(`${exemplare}\\s*Exemplar`), { timeout: 10_000 });
 		}
+		await expect(page.locator('#zusammenfassung').getByRole('listitem')).not.toHaveCount(0);
 
-		await expect(knopf).toBeVisible();
-		// Beweist, dass der Korb gefüllt ist — sonst wäre die Spalte gar nicht zu hoch,
-		// und der Test prüfte den Fall nicht, für den er geschrieben wurde.
-		await expect(
-			knopf,
-			'Der Warenkorb muss die erwarteten Positionen tragen — sonst misst der Test den falschen Fall'
-		).toHaveText(new RegExp(`${ZIEL_POSITIONEN}\\s*Exemplar`), { timeout: 10_000 });
-
-		// Alle Scroll-Container auf Anfang — die Arbeitsfläche steht oben, wie nach dem
-		// Öffnen der Ansicht.
-		await page.evaluate(() => {
-			window.scrollTo(0, 0);
-			for (const el of document.querySelectorAll('*')) {
-				if (el.scrollTop > 0) el.scrollTop = 0;
-			}
-		});
-		// Die Spalte rechnet ihre Höhe aus dem Abstand zum Fensterrand. Nach dem
-		// Zurücksetzen der Scrollposition braucht dieser Handler einen Tick — deshalb
-		// wartend prüfen statt einmalig messen.
-		await expect
-			.poll(
-				async () =>
-					page.evaluate(() => {
-						const r = document.querySelector('[class*="lg:sticky"]').getBoundingClientRect();
-						return Math.round(r.bottom);
-					}),
-				{
+		for (const ziel of /** @type {const} */ (['oben', 'unten'])) {
+			// Die Zusammenfassung misst ihre Höhe nach dem Scrollen neu; deshalb wartend prüfen.
+			await expect
+				.poll(async () => (await page.evaluate(lage, ziel)).spalteUnten, {
 					timeout: 5000,
 					intervals: [50, 100, 200, 400],
-					message:
-						`Die Bestellspalte reicht unter den ${hoehe}-px-Fensterrand und ist damit ` +
-						`„abgeschnitten". Sie braucht eine Höhengrenze mit eigenem Scrollbalken, die den ` +
-						`tatsächlichen Abstand zum oberen Rand berücksichtigt (actions/resthoehe.js).`
-				}
-			)
-			.toBeLessThanOrEqual(hoehe);
-
-		// Die Seite selbst läuft nicht über: Die Bedarfsliste endet am unteren Rand des Bereichs,
-		// der die Seite scrollt. Gesucht wird er von der Liste aus; eine Klasse am Rahmen der
-		// Anwendung trifft auch Elemente, die gar nicht scrollen.
-		const seitenLage = await page.evaluate(() => {
-			const plus = [...document.querySelectorAll('button')].find((b) =>
-				/zur Bestellung hinzufügen/.test(b.getAttribute('aria-label') || '')
+					message: `Die Zusammenfassung reicht ${ziel} unter den ${hoehe}-px-Fensterrand (actions/resthoehe.js).`
+				})
+				.toBeLessThanOrEqual(hoehe);
+			const m = await page.evaluate(lage);
+			expect(m.seiteScrollt, 'Die Seite scrollt nicht: Der Test misst den falschen Fall').toBe(
+				true
 			);
-			const bereiche = [];
-			for (let e = plus?.parentElement; e; e = e.parentElement) {
-				if (/(auto|scroll)/.test(getComputedStyle(e).overflowY)) bereiche.push(e);
-			}
-			if (bereiche.length < 2) return null;
-			const [liste, seite] = bereiche;
-			const l = liste.getBoundingClientRect();
-			return {
-				listeOben: Math.round(l.top),
-				listeUnten: Math.round(l.bottom),
-				listeHoehe: Math.round(l.height),
-				seiteUnten: Math.round(seite.getBoundingClientRect().bottom),
-				seiteUeberlauf: seite.scrollHeight - seite.clientHeight
-			};
-		});
-		if (!seitenLage) {
-			throw new Error(
-				'Bedarfsliste und Seitenbereich wurden nicht als zwei Scrollbereiche gefunden'
-			);
+			expect(
+				m.knopfOben >= 0 && m.knopfUnten <= hoehe,
+				`„Bestellung auslösen" liegt ${ziel} bei y=${m.knopfOben} bis ${m.knopfUnten}, außerhalb des ${hoehe}-px-Fensters`
+			).toBe(true);
+			// Kästchen und Knopf sind beide inline; in einem gemeinsamen Block rückte der Knopf
+			// neben das Kästchen (docs/sweeps.md, „Knopf in der Zeile des Nachbarn").
+			expect(
+				m.kaestchenUnten,
+				`„Bestellung auslösen" beginnt bei y=${m.knopfOben}, über dem Ende des Kästchens (${m.kaestchenUnten})`
+			).toBeLessThanOrEqual(m.knopfOben);
 		}
-		const platz = seitenLage.seiteUnten - seitenLage.listeOben;
-		if (platz >= MINDESTHOEHE) {
-			expect(
-				seitenLage.listeUnten,
-				`Die Bedarfsliste endet bei ${seitenLage.listeUnten} px, der Seitenbereich bei ` +
-					`${seitenLage.seiteUnten} px: Die Seite läuft über. Die Liste endet am unteren Rand ` +
-					`der Seite und scrollt in sich (actions/resthoehe.js).`
-			).toBeLessThanOrEqual(seitenLage.seiteUnten + 1);
-			expect(
-				seitenLage.seiteUeberlauf,
-				`Der Seitenbereich läuft ${seitenLage.seiteUeberlauf} px über.`
-			).toBeLessThanOrEqual(1);
-		} else {
-			// Wenig Platz: In einem kurzen Fenster mit Hinweisbändern über der Liste (der Stack der
-			// CI zeigt zwei) bleiben unter der Mindesthöhe. Die Liste behält sie, und die Seite
-			// scrollt nur um das, was dazu fehlt.
-			expect(
-				seitenLage.listeHoehe,
-				`Unter der Liste bleiben ${platz} px, sie ist ${seitenLage.listeHoehe} px hoch: mehr ` +
-					`als die Mindesthöhe von ${MINDESTHOEHE} px (actions/resthoehe.js).`
-			).toBeLessThanOrEqual(MINDESTHOEHE + 1);
-			expect(
-				seitenLage.seiteUeberlauf,
-				`Der Seitenbereich läuft ${seitenLage.seiteUeberlauf} px über; die Mindesthöhe der ` +
-					`Liste verlangt ${MINDESTHOEHE - platz} px.`
-			).toBeLessThanOrEqual(MINDESTHOEHE - platz + 1);
-		}
-
-		// Gemessen wird die Geometrie der RAIL-Spalte selbst, nicht ein Scroll-Weg.
-		//
-		// Die erste Fassung verglich Scroll-Positionen vor und nach scrollIntoViewIfNeeded.
-		// Das war doppelt untauglich: Der Messpunkt griff per '.overflow-y-auto' das
-		// falsche Element ab (es gibt mehrere), und scrollIntoViewIfNeeded findet den Knopf
-		// ohnehin — notfalls, indem es die ganze Bedarfsliste wegscrollt. Der Test war
-		// deshalb auch ohne die Korrektur grün, während der Knopf nachweislich bei y=1279
-		// in einem 700-px-Fenster lag.
-		const mass = await page.evaluate(() => {
-			const rail = document.querySelector('[class*="lg:sticky"]');
-			const r = rail.getBoundingClientRect();
-			const b = [...document.querySelectorAll('button')].find((x) =>
-				/Bestellung auslösen/.test(x.textContent || '')
-			);
-			return {
-				railOben: Math.round(r.top),
-				railUnten: Math.round(r.bottom),
-				railInhalt: Math.round(rail.scrollHeight),
-				railScrollbar: rail.scrollHeight > rail.clientHeight + 1,
-				knopfY: Math.round(b.getBoundingClientRect().y),
-				fenster: window.innerHeight
-			};
-		});
-
-		// Die Bestellspalte muss ins Fenster passen. Tut sie das nicht, ist sie „abgeschnitten"
-		// — genau die Meldung aus dem Betrieb.
-		expect(
-			mass.railUnten,
-			`Die Bestellspalte reicht bis y=${mass.railUnten} und damit ${mass.railUnten - hoehe} px ` +
-				`unter den ${hoehe}-px-Fensterrand (Inhalt ${mass.railInhalt} px). Sie braucht eine ` +
-				`Höhengrenze mit eigenem Scrollbalken (max-h + overflow-y-auto).`
-		).toBeLessThanOrEqual(hoehe);
-
-		// Und der Absenden-Knopf muss sich innerhalb der Spalte erreichen lassen, ohne die
-		// Arbeitsfläche daneben zu verlassen.
-		await knopf.scrollIntoViewIfNeeded({ timeout: 5000 });
-		const box = await knopf.boundingBox();
-		expect(box, 'Absenden-Knopf muss eine Position haben').not.toBeNull();
-		expect(
-			box.y >= 0 && box.y + box.height <= hoehe,
-			`Absenden-Knopf liegt bei y=${Math.round(box?.y ?? -1)} ausserhalb des ${hoehe}-px-Fensters`
-		).toBe(true);
 	});
 }
 
-// Mit leerem Warenkorb endete die Spalte mit ihrem Inhalt, und die Trefferliste der Titelsuche
-// lag zum Teil unter ihrem Rand: Bei 1710 × 952 waren von 288 px 202 zu sehen. Die Spalte reicht
-// deshalb immer bis zum unteren Rand der Seite.
-//
-// Die Antwort der Suche ist nachgestellt; der Stack fragte sonst die DNB. Geprüft wird im
-// hohen Fenster: In einem kurzen mit Hinweisbändern darüber passt die Liste nicht ganz, dort
-// scrollt die Spalte.
-test('Die Trefferliste der Titelsuche liegt bei leerem Warenkorb ganz in der Bestellspalte', async ({
+// Unter 1024 px steht die Zusammenfassung in voller Breite unter der Liste: Dort passen Kästchen und
+// Knopf nebeneinander, und dort rückte der Knopf ohne eigenen Block in die Zeile des Kästchens.
+test('„Bestellung auslösen" steht auch in voller Breite in einer eigenen Zeile', async ({
 	page
 }) => {
-	await page.setViewportSize({ width: 1920, height: 1080 });
+	await page.setViewportSize({ width: 900, height: 1000 });
+	await uiLogin(page);
+	await page.goto('/bestellungen');
+	const knopf = page.getByRole('button', { name: /Bestellung(?:en)? auslösen/ });
+	await page
+		.getByRole('region', { name: 'Bestellbedarf' })
+		.getByRole('button', { name: /^\d+ hinzufügen/ })
+		.first()
+		.click();
+	await knopf.scrollIntoViewIfNeeded();
+	const m = await page.evaluate(lage);
+	expect(
+		m.kaestchenUnten,
+		`„Bestellung auslösen" beginnt bei y=${m.knopfOben}, über dem Ende des Kästchens (${m.kaestchenUnten})`
+	).toBeLessThanOrEqual(m.knopfOben);
+});
+
+// Die Trefferliste der Titelsuche steht über allem, was darunter folgt, und kein scrollender Bereich
+// schneidet sie ab: In einer Spalte mit eigenem Scrollbalken lag sie zum Teil unter deren Rand.
+// Die Antwort der Suche ist nachgestellt; der Stack fragte sonst die DNB.
+test('Die Trefferliste der Titelsuche liegt bei leerem Warenkorb ganz im Fenster', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
 	const treffer = Array.from({ length: 6 }, (_, i) => ({
 		id: `00000000-0000-4000-8000-00000000000${i}`,
 		titel: `Trefferprobe ${i + 1}`,
@@ -239,31 +158,33 @@ test('Die Trefferliste der Titelsuche liegt bei leerem Warenkorb ganz in der Bes
 
 	const liste = page.getByText('Im lokalen Bestand').locator('..');
 	await expect(page.getByRole('button', { name: /Trefferprobe 1/ })).toBeVisible();
-	const lage = await liste.evaluate((el) => {
-		const spalte = document.getElementById('bestellspalte');
-		if (!spalte) throw new Error('Die Bestellspalte (#bestellspalte) gibt es nicht mehr');
+	const ort = await liste.evaluate((el) => {
+		const r = el.getBoundingClientRect();
+		const unten = document.elementFromPoint(r.left + r.width / 2, r.bottom - 4);
 		return {
-			listeUnten: Math.round(el.getBoundingClientRect().bottom),
-			listeHoehe: Math.round(el.getBoundingClientRect().height),
-			spalteUnten: Math.round(spalte.getBoundingClientRect().bottom),
-			spalteScrollt: spalte.scrollHeight > spalte.clientHeight
+			listeUnten: Math.round(r.bottom),
+			listeHoehe: Math.round(r.height),
+			fenster: window.innerHeight,
+			ganzZuSehen: el.contains(unten)
 		};
 	});
 	// Sechs Treffer sind höher als die Liste: Sie steht an ihrer Höchstgrenze und scrollt in sich.
-	expect(lage.listeHoehe, 'Die Trefferliste steht nicht an ihrer Höchstgrenze').toBe(288);
+	expect(ort.listeHoehe, 'Die Trefferliste steht nicht an ihrer Höchstgrenze').toBe(288);
 	expect(
-		lage.listeUnten,
-		`Die Trefferliste endet bei ${lage.listeUnten} px, die Bestellspalte bei ${lage.spalteUnten} px`
-	).toBeLessThanOrEqual(lage.spalteUnten);
-	expect(lage.spalteScrollt, 'Die Bestellspalte scrollt wegen der Trefferliste').toBe(false);
+		ort.listeUnten,
+		`Die Trefferliste endet bei ${ort.listeUnten} px, das Fenster bei ${ort.fenster} px`
+	).toBeLessThanOrEqual(ort.fenster);
+	expect(ort.ganzZuSehen, 'Der untere Rand der Trefferliste ist abgeschnitten oder verdeckt').toBe(
+		true
+	);
 });
 
-// Erschien ein Hinweis über dem Bestellwesen erst nach dem Aufbau der Spalte, rückte sie um seine
-// Höhe unter den Rand: Keine beobachtete Größe änderte sich, und gemessen wurde nicht neu. In der
+// Erschien ein Hinweis über dem Bestellwesen erst nach dem Aufbau der Zusammenfassung, rückte sie um
+// seine Höhe unter den Rand: Keine beobachtete Größe änderte sich, und gemessen wurde nicht neu. In der
 // ganzen Suite hing das an der Reihenfolge der Antworten (ein früherer Fall lässt einen
 // Hauptlieferanten zurück, die öffentliche Adresse fehlt). Hier steht das Rennen fest: Die Antwort,
 // die den Hinweis auslöst, kommt anderthalb Sekunden nach dem Aufbau.
-test('Ein Hinweis, der nach dem Aufbau erscheint, schiebt die Bestellspalte nicht unter den Rand', async ({
+test('Ein Hinweis, der nach dem Aufbau erscheint, schiebt die Zusammenfassung nicht unter den Rand', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
@@ -291,11 +212,12 @@ test('Ein Hinweis, der nach dem Aufbau erscheint, schiebt die Bestellspalte nich
 			.poll(
 				() =>
 					page.evaluate(() => {
-						const spalte = document.getElementById('bestellspalte');
-						if (!spalte) throw new Error('Die Bestellspalte (#bestellspalte) gibt es nicht mehr');
+						const spalte = document.getElementById('zusammenfassung');
+						if (!spalte)
+							throw new Error('Die Zusammenfassung (#zusammenfassung) gibt es nicht mehr');
 						return Math.round(spalte.getBoundingClientRect().bottom);
 					}),
-				{ timeout: 5000, message: 'Die Bestellspalte reicht nach dem Hinweis unter den Rand' }
+				{ timeout: 5000, message: 'Die Zusammenfassung reicht nach dem Hinweis unter den Rand' }
 			)
 			.toBeLessThanOrEqual(800);
 	} finally {

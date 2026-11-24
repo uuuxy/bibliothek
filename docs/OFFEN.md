@@ -43,6 +43,9 @@ Nur, was kein Test leisten kann.
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
   Treffer ansehen. (5.182)
+- [ ] Zwei Bereiche einer Seite über Flächen trennen statt über eine Linie, wie im Warenkorb des
+  Google Store; vorher Bilder je Seite. (5.199)
+- [ ] Das Preisfeld im Warenkorb zeigt „7,9“ statt „7,90“. (5.200)
 - [x] Den großen Ladekreis an den übrigen 29 Stellen erst nach 200 ms zeigen, wie in der
   Titel-Verwaltung. (5.198)
 - [x] Bestellen ohne Topf (Spende, etwa des Fördervereins) als dritte Wahl im Warenkorb, mit
@@ -121,6 +124,27 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.199 Flächen statt Linien zwischen zwei Bereichen
+
+Heute trennt eine senkrechte Linie zwei Bereiche einer Seite (Bestellwesen, Leserakte, Signaturen,
+Einstellungen, Buchformular, Klassensatz-Dialog), und Karten tragen einen Rahmen ohne Flächenton
+([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3, Gate `frontend-hygiene-karten`). Der Warenkorb des Google
+Store setzt weiße Flächen auf grauen Grund, ohne Linie; M3 (Layout, Parts of layout) lässt beides
+zu: „Explicit grouping uses distinct colors or outlines to visually delineate content.“ Im Bild
+des Bestellwesens gefiel die Fläche besser; gebaut wurde die Linie, damit das Programm einheitlich
+bleibt.
+
+Nächster Schritt: je Seite ein Bild „Heute / Fläche“, dann die Regel in ARCHITEKTUR 5.3 und das
+Gate ändern und alle sechs Seiten zugleich umstellen.
+
+### 5.200 Preisfeld im Warenkorb ohne zwei Nachkommastellen
+
+Das Preisfeld einer Position ist ein Zahlenfeld (`type="number"`) und zeigt den Wert, wie er
+gespeichert ist: „7,9“ neben der Summe „7,90 €“.
+
+Nächster Schritt: nachlesen, wie `ui/Feld` andere Beträge zeigt (Einzelpreis im Bestelldetail),
+und denselben Weg nehmen.
 
 ### 7.2 Frisches Littera-Backup
 

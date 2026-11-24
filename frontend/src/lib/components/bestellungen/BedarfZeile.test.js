@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import BedarfZeile from './BedarfZeile.svelte';
 import Bestellbedarf from './Bestellbedarf.svelte';
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
@@ -69,24 +70,70 @@ describe('BedarfZeile', () => {
 		).toBe('Bestand, gemessen am Bedarf im nächsten Schuljahr: 3 von 5');
 		await fireEvent.click(
 			screen.getByRole('button', {
-				name: '2 Exemplare von Lambacher Schweizer 7 zur Bestellung hinzufügen'
+				name: '2 hinzufügen: Lambacher Schweizer 7'
 			})
 		);
 		expect(onAddToCart).toHaveBeenCalledWith(buch, 2);
 	});
 });
 
-describe('Bestellbedarf: Filter', () => {
-	it('findet das Buch auch über die ISBN der alten Auflage', async () => {
+/** Eine Position im Warenkorb, wie bestellStore.addToCart sie anlegt. @param {string} id @param {string} isbn */
+const position = (id, isbn = '') => ({
+	id,
+	titel: id,
+	autor: '',
+	isbn,
+	verlag: '',
+	cover_url: '',
+	menge: 1,
+	preis: 0,
+	preis_vorschlag: 0,
+	generate_barcodes: false,
+	ist_lernmittel: true,
+	mittel: /** @type {const} */ ('land')
+});
+
+// Bestellbedarf und Bestellung stehen in einer Liste: Was in der Bestellung steht, fällt aus dem
+// Bestellbedarf heraus, auch in einer anderen Auflage desselben Buchs.
+describe('Bestellbedarf: was schon in der Bestellung steht', () => {
+	beforeEach(() => {
+		bestellStore.nichtGeladen = { bedarf: '' };
+		bestellStore.bedarfGrundlage = { kinder: 600, kinder_mit_schulbuch: 540, ausgeschaltet: false };
+	});
+	afterEach(() => {
+		bestellStore.cart = [];
+	});
+
+	it('lässt das Buch weg, wenn die alte Auflage in der Bestellung steht, und zählt nur den Rest', () => {
+		bestellStore.cart = [position('alt')];
+		const screen = render(Bestellbedarf, { vorschlaege: [buch, einzeln], onAddToCart: vi.fn() });
+		expect(screen.queryByText('Lambacher Schweizer 7')).toBeNull();
+		expect(screen.getByText('Physik 8')).toBeTruthy();
+		expect(
+			screen.getByText('· 1 weiterer Titel · 1 Exemplar fehlt noch für das nächste Schuljahr')
+		).toBeTruthy();
+	});
+
+	it('sagt, wenn der ganze Bestellbedarf in der Bestellung steht', () => {
+		bestellStore.cart = [position('neu'), position('anders', '9783120000033')];
+		const screen = render(Bestellbedarf, { vorschlaege: [buch, einzeln], onAddToCart: vi.fn() });
+		expect(screen.getByText('Der ganze Bestellbedarf steht in der Bestellung')).toBeTruthy();
+		expect(screen.queryByRole('listitem')).toBeNull();
+	});
+
+	// Der Knopf verschwindet mit seiner Zeile; der Fokus fiele sonst auf den Anfang der Seite.
+	it('rückt den Fokus nach „hinzufügen" auf den Knopf der nächsten Zeile', async () => {
 		const screen = render(Bestellbedarf, {
 			vorschlaege: [buch, einzeln],
-			onAddToCart: vi.fn()
+			onAddToCart: (/** @type {any} */ r) => bestellStore.cart.push(position(r.id, r.isbn))
 		});
-		await fireEvent.input(screen.getByLabelText('Bestellvorschläge filtern'), {
-			target: { value: '9783120000019' }
-		});
-		expect(screen.getByText('Lambacher Schweizer 7')).toBeTruthy();
-		expect(screen.queryByText('Physik 8')).toBeNull();
+		const erster = screen.getByRole('button', { name: '2 hinzufügen: Lambacher Schweizer 7' });
+		erster.focus();
+		await fireEvent.click(erster);
+		await tick();
+		expect(document.activeElement).toBe(
+			screen.getByRole('button', { name: '1 hinzufügen: Physik 8' })
+		);
 	});
 });
 
@@ -123,19 +170,14 @@ describe('Bestellbedarf: Kopf und Leerzustand', () => {
 	it('nennt die fehlenden Exemplare und die Grundlage', () => {
 		const screen = render(Bestellbedarf, { vorschlaege: [buch, einzeln], onAddToCart: vi.fn() });
 		expect(
-			screen.getByText(
-				'3 Exemplare fehlen für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder'
-			)
+			screen.getByText('· 2 Titel · 3 Exemplare fehlen für das nächste Schuljahr')
 		).toBeTruthy();
+		expect(screen.getByText('Gerechnet mit den Schulbüchern von 540 der 600 Kinder')).toBeTruthy();
 	});
 
 	it('sagt „1 Exemplar fehlt" in der Einzahl', () => {
 		const screen = render(Bestellbedarf, { vorschlaege: [einzeln], onAddToCart: vi.fn() });
-		expect(
-			screen.getByText(
-				'1 Exemplar fehlt für das nächste Schuljahr, gerechnet mit den Schulbüchern von 540 der 600 Kinder'
-			)
-		).toBeTruthy();
+		expect(screen.getByText('· 1 Titel · 1 Exemplar fehlt für das nächste Schuljahr')).toBeTruthy();
 	});
 
 	it('sagt bei leerer Liste, dass nichts fehlt', () => {

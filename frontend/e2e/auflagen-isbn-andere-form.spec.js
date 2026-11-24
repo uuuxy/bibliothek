@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix, seedFehlbestand } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	seedFehlbestand,
+	bedarfZeile
+} from './helpers.js';
 import { isbnFormen } from '../src/lib/utils/isbnFormen.js';
 
 // „Neue Auflage bestellen" über die andere Länge der ISBN (Migration 157): Die neue
@@ -37,8 +45,7 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel
 
 		await uiLogin(page);
 		await gehZu(page, '/bestellungen');
-		await page.getByRole('searchbox', { name: 'Bestellvorschläge filtern' }).fill(marke);
-		const zeilen = page.locator('div.group').filter({ hasText: marke });
+		const zeilen = await bedarfZeile(page, marke);
 		await expect(zeilen).toHaveCount(1);
 		await zeilen
 			.first()
@@ -60,7 +67,16 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel
 		await dialog.getByRole('button', { name: 'Zuordnen und bestellen' }).click();
 		await expect(dialog).toBeHidden();
 
-		// Zugeordnet ist der Titel aus dem Katalog; ein zweiter ist nicht entstanden.
+		// Zugeordnet ist der Titel aus dem Katalog; ein zweiter ist nicht entstanden. Er steht in
+		// der Bestellung und deshalb nicht mehr im Bestellbedarf; aus der Bestellung genommen,
+		// kehrt die Zeile als Buch mit beiden Auflagen zurück.
+		const position = page
+			.getByRole('listitem')
+			.filter({ hasText: `${marke} Neubearbeitung` })
+			.filter({ has: page.getByRole('button', { name: 'Entfernen' }) });
+		await expect(position).toContainText(/Bestellbedarf \d+/);
+		await expect(zeilen).toHaveCount(0);
+		await position.getByRole('button', { name: 'Entfernen' }).click();
 		await expect(zeilen.first()).toContainText('Bestand aus 2 Auflagen');
 		expect(
 			querySQL(

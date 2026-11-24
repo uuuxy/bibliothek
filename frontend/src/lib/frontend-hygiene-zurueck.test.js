@@ -22,10 +22,7 @@ import {
 /** Knöpfe, die so aussehen dürfen, je Datei, Tag, Symbol und Text, mit Grund. */
 const AUSNAHMEN = {
 	// Die Aktion des Leerzustands „Buch nicht gefunden“ steht unter der Meldung, nicht oben.
-	'src/lib/components/buchakte/Buchakte.svelte: button: Zurück zum Katalog': 'Leerzustand',
-	// Der Streifen der eingeklappten Bestellspalte klappt sie auf; er führt nicht zurück.
-	'src/lib/components/bestellungen/Bestellwesen.svelte: button mit Symbol: Deine Bestellung {bestellStore.totalQty}':
-		'klappt auf'
+	'src/lib/components/buchakte/Buchakte.svelte: button: Zurück zum Katalog': 'Leerzustand'
 };
 
 /** @param {string} inhalt */

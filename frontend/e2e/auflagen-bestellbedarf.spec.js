@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix, seedFehlbestand } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	seedFehlbestand,
+	bedarfZeile
+} from './helpers.js';
 
 // Die Nachbestell-Liste zählt am Buch: Zwei Auflagen desselben Buchs stehen als EINE Zeile, ihr
 // Bestand zählt zusammen, gezeigt wird die neueste Auflage (die wird bestellt), darunter die
@@ -50,18 +58,12 @@ test('Bestellbedarf: Auflagen eines Buchs stehen als eine Zeile mit ihrer Summe'
 
 		await uiLogin(page);
 		await gehZu(page, '/bestellungen');
-		const filter = page.getByRole('searchbox', { name: 'Bestellvorschläge filtern' });
-		await filter.fill(marke);
-		const zeilen = page.locator('div.group').filter({ hasText: marke });
+		const zeilen = await bedarfZeile(page, marke);
 		await expect(zeilen).toHaveCount(1);
 		await expect(zeilen.first()).toContainText(isbnNeu);
 		await expect(zeilen.first()).toContainText(
 			'Bestand aus 2 Auflagen: 1 Exemplar der 4. Aufl. · 2023, 2 Exemplare der 3. Aufl. · 2019'
 		);
-
-		// Wer die alte Auflage scannt, findet dieselbe Zeile.
-		await filter.fill(isbnAlt);
-		await expect(zeilen).toHaveCount(1);
 
 		// Die alte Auflage bekommt so viele Exemplare, wie Kinder nachrücken: Zusammen reicht der
 		// Bestand, obwohl die neueste Auflage allein weiter nur eines hat.
@@ -70,9 +72,7 @@ test('Bestellbedarf: Auflagen eines Buchs stehen als eine Zeile mit ihrer Summe'
 		seedSQL(`INSERT INTO buecher_exemplare (titel_id, barcode_id)
 		         SELECT '${alt}', '${marke}-mehr-' || g FROM generate_series(1, ${nachruecken}) g;`);
 		await page.reload();
-		await page.getByRole('searchbox', { name: 'Bestellvorschläge filtern' }).fill(marke);
-		await expect(page.getByText('Kein Treffer für')).toBeVisible();
-		await expect(zeilen).toHaveCount(0);
+		await expect(await bedarfZeile(page, marke)).toHaveCount(0);
 	} finally {
 		wegFehlbestand();
 		seedSQL(`

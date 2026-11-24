@@ -14,8 +14,8 @@
 
 	let suche = $state('');
 
-	// Die ISBN trifft wie im Bestellbedarf (bedarfFilter.js) auch in der anderen Länge und mit
-	// Bindestrichen: Getippt wird oft die zehnstellige vom Titelblatt.
+	// Die ISBN trifft auch in der anderen Länge und mit Bindestrichen (isbnFormen.js): Getippt
+	// wird oft die zehnstellige vom Titelblatt.
 	const gefilterteTitel = $derived.by(() => {
 		const q = suche.toLowerCase();
 		const formen = isbnFormen(q);

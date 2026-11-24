@@ -1,45 +1,25 @@
 <script>
-	import Icon from '../ui/Icon.svelte';
 	import BestellSuche from './BestellSuche.svelte';
 	import Warenkorb from './Warenkorb.svelte';
-	import StatusChip from '../ui/StatusChip.svelte';
-
-	/**
-	 * onCollapse — wenn gesetzt, trägt die Kopfzeile einen Knopf zum Einklappen der Spalte.
-	 * Als Prop statt fest verdrahtet, weil das Panel nichts über das Seitenlayout wissen soll:
-	 * Wer es ohne Spalten einbindet, übergibt nichts und bekommt keinen Knopf.
-	 * @type {{ onCollapse?: (() => void) | null }}
-	 */
-	let { onCollapse = null } = $props();
+	import Bestellbedarf from './Bestellbedarf.svelte';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 </script>
 
-<!-- Kein Kartenrahmen: Diese Spalte ist der unterstuetzende Bereich zum Bestellbedarf
-     daneben, kein Objekt auf der Flaeche. Abgegrenzt wird sie durch die senkrechte
-     Linie, die Bestellwesen setzt — die traegt die Trennung fuer die ganze Spalte
-     statt fuer diesen einen Block. -->
-<div>
-	<div class="pb-4 border-b border-outline-variant flex items-center justify-between gap-2">
-		<h2 class="text-lg text-on-surface tracking-tight">Deine Bestellung</h2>
-		<div class="flex items-center gap-2 shrink-0">
-			<StatusChip ton="neutral" text="Entwurf" />
-			{#if onCollapse}
-				<!-- Der Knopf sitzt IN der Kopfzeile, nicht darüber im Leerraum: Ein Bedienelement
-				     muss sichtbar zu dem gehören, was es bedient. -->
-				<button
-					onclick={onCollapse}
-					aria-label="Bestellspalte einklappen"
-					data-tip="Bestellspalte einklappen"
-					aria-controls="bestellpanel"
-					aria-expanded="true"
-					class="icon-btn hidden lg:inline-flex text-on-surface-variant"
-				>
-					<Icon name="chevron_right" />
-				</button>
-			{/if}
-		</div>
-	</div>
+<!-- Eine Liste: oben, was bestellt wird, darunter der Bestellbedarf, wie im Warenkorb des Google
+     Store „Für später gespeichert" unter den Artikeln steht. @container: Die Zeilen brechen nach
+     der Breite dieses Bereichs um, nicht nach der des Fensters. Kein Kartenrahmen; die Linie zur
+     Zusammenfassung setzt Bestellwesen. -->
+<div class="@container">
+	<h2 class="pb-4 border-b border-outline-variant text-lg text-on-surface tracking-tight">
+		Deine Bestellung
+	</h2>
 	<div class="pt-5 space-y-5">
 		<BestellSuche />
 		<Warenkorb />
+		<Bestellbedarf
+			vorschlaege={bestellStore.recommendations}
+			onAddToCart={(/** @type {any} */ book, /** @type {number} */ menge) =>
+				bestellStore.addToCart(book, menge)}
+		/>
 	</div>
 </div>

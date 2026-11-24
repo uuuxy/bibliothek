@@ -1,50 +1,55 @@
 import { describe, it, expect } from 'vitest';
-import { filtereBedarf } from './bedarfFilter.js';
+import { gehoertZu, offenerBedarf, bedarfZu } from './bedarfFilter.js';
 
-// Die Nummern sind die Beispielpaare der ISBN-Norm: 0-306-40615-2 ↔ 978-0-306-40615-7 und
-// 3-16-148410-X ↔ 978-3-16-148410-0.
-const zeilen = [
-	{
-		titel: 'Advanced Organic Chemistry',
-		isbn: '9780306406157',
-		verlag: 'Springer',
-		signatur: 'Ch'
-	},
-	{
-		titel: 'Elemente Chemie 1',
-		isbn: '9783120000019',
-		verlag: 'Klett',
-		auflagen: [{ isbn: '9783120000019' }, { isbn: '9783161484100' }]
-	},
-	{ titel: 'Ohne ISBN', verlag: 'Eigenverlag' }
-];
-const titel = (/** @type {string} */ filter) => filtereBedarf(zeilen, filter).map((r) => r.titel);
+// Ein Buch mit zwei Auflagen: Die Zeile zeigt die neueste, die Aufschlüsselung nennt beide.
+const buch = {
+	id: 'neu',
+	titel: 'Elemente Chemie 1',
+	isbn: '9783120000019',
+	fehlen: 4,
+	auflagen: [
+		{ id: 'neu', isbn: '9783120000019' },
+		{ id: 'alt', isbn: '978-3-16-148410-0' }
+	]
+};
+const einzeln = { id: 'physik', titel: 'Physik 8', isbn: '', fehlen: 2 };
 
-describe('filtereBedarf', () => {
-	it('ohne Filter: alle Zeilen', () => {
-		expect(filtereBedarf(zeilen, '  ')).toBe(zeilen);
+describe('gehoertZu', () => {
+	it('erkennt die Position an der Kennung der neuesten Auflage', () => {
+		expect(gehoertZu(buch, { id: 'neu' })).toBe(true);
 	});
 
-	it('trifft Titel, Verlag und Signatur als Teilstring', () => {
-		expect(titel('organic')).toEqual(['Advanced Organic Chemistry']);
-		expect(titel('klett')).toEqual(['Elemente Chemie 1']);
-		expect(titel('ch')).toEqual(['Advanced Organic Chemistry', 'Elemente Chemie 1']);
+	// Wer die alte Auflage über die Suche bestellt, bestellt dasselbe Buch.
+	it('erkennt die Position an der Kennung einer älteren Auflage', () => {
+		expect(gehoertZu(buch, { id: 'alt' })).toBe(true);
 	});
 
-	it('trifft die ISBN als Teilstring, auch die einer älteren Auflage', () => {
-		expect(titel('97803064')).toEqual(['Advanced Organic Chemistry']);
-		expect(titel('9783161484100')).toEqual(['Elemente Chemie 1']);
+	it('erkennt die Position an der ISBN, auch ohne Bindestriche', () => {
+		expect(gehoertZu(buch, { id: 'anderer-titel', isbn: '9783161484100' })).toBe(true);
 	});
 
-	// Der Katalog führt die ISBN dreizehnstellig; auf dem Titelblatt steht die zehnstellige.
-	it('trifft die ISBN in der anderen Länge und mit Bindestrichen', () => {
-		expect(titel('0306406152')).toEqual(['Advanced Organic Chemistry']);
-		expect(titel('0-306-40615-2')).toEqual(['Advanced Organic Chemistry']);
-		expect(titel('978-0-306-40615-7')).toEqual(['Advanced Organic Chemistry']);
-		expect(titel('3-16-148410-x')).toEqual(['Elemente Chemie 1']);
+	it('nimmt eine leere ISBN nicht als Treffer', () => {
+		expect(gehoertZu(einzeln, { id: 'anderer-titel', isbn: '' })).toBe(false);
+		expect(gehoertZu({ ...einzeln, auflagen: [] }, { id: 'x' })).toBe(false);
+	});
+});
+
+describe('offenerBedarf', () => {
+	it('lässt weg, was schon in der Bestellung steht', () => {
+		expect(offenerBedarf([buch, einzeln], [{ id: 'alt', isbn: '' }])).toEqual([einzeln]);
 	});
 
-	it('eine andere Nummer trifft nichts', () => {
-		expect(titel('0306406160')).toEqual([]);
+	it('gibt mit leerer Bestellung alle Zeilen zurück', () => {
+		expect(offenerBedarf([buch, einzeln], [])).toEqual([buch, einzeln]);
+	});
+});
+
+describe('bedarfZu', () => {
+	it('findet die Zeile zu einer Position', () => {
+		expect(bedarfZu([einzeln, buch], { id: 'alt' })).toBe(buch);
+	});
+
+	it('gibt ohne passende Zeile null zurück', () => {
+		expect(bedarfZu([einzeln, buch], { id: 'manga', isbn: '9783551716996' })).toBeNull();
 	});
 });

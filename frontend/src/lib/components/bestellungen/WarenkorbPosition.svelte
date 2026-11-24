@@ -1,14 +1,28 @@
-<!-- @component Eine Position im Warenkorb — Cover, Titel, Menge, Preis, Topf-Wechsel.
+<script module>
+	// Zeile und Spaltenkopf (Warenkorb.svelte) teilen ihre Maße. Schmal stehen Topf, Menge und Preis
+	// in einer zweiten Zeile unter dem Titel (basis-full, eingerückt um Cover und Abstand); ab
+	// 768 px Breite der Liste in einer Zeile als Spalten. Gemessen wird die Liste (@container in
+	// BestellEntwurf), nicht das Fenster: Navigation und Zusammenfassung nehmen ihr verschieden viel
+	// Platz. `order` stellt das Kreuz schmal neben den Titel; die Tab-Reihenfolge folgt der breiten
+	// Zeile.
+	export const STELLEN =
+		'order-2 flex basis-full flex-wrap items-center gap-3 pl-10 @3xl:order-1 @3xl:basis-auto @3xl:flex-nowrap @3xl:pl-0';
+	export const SPALTEN = { topf: 'w-48', menge: 'w-28', preis: 'w-36' };
+</script>
 
-     Eigene Datei, weil der Warenkorb nach Topf gruppiert: Warenkorb trägt die Gruppen und
-     den Absenden-Knopf, diese Datei die Zeile. Beides zusammen läge über der
-     200-Zeilen-Marke. -->
+<!-- @component Eine Position im Warenkorb: Cover, Titel, Topf, Menge, Preis, Entfernen.
+
+     Eigene Datei, weil der Warenkorb nach Topf gruppiert: Warenkorb trägt die Gruppen, diese
+     Datei die Zeile. M3 Lists: „List items can contain multiple actions at once, like selection,
+     icon buttons, overflow menus, and more." -->
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Feld from '../ui/Feld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
+	import { bedarfZu } from './bedarfFilter.js';
+	import { anzahlText } from '../../utils/format.js';
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
@@ -16,82 +30,94 @@
 	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
 	let { position } = $props();
 
-	const topfId = $props.id();
 	const toepfe = MITTEL_REIHENFOLGE.map((m) => ({
 		value: m,
 		label: MITTEL[m].label,
 		zusatz: MITTEL[m].traeger
 	}));
+
+	// Steht das Buch im Bestellbedarf, nennt die Marke, wie viele fehlen; die Menge daneben darf
+	// davon abweichen.
+	const bedarf = $derived(bedarfZu(bestellStore.recommendations, position));
 </script>
 
-<div class="space-y-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
-	<div class="flex items-start gap-2.5">
+<li class="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 @3xl:flex-nowrap">
+	<span class="w-7 shrink-0 self-start @3xl:self-center">
 		<BuchCover
 			coverUrl={position.cover_url}
 			isbn={position.isbn}
 			titel={position.titel}
-			klasse="shrink-0"
 			dekorativ
 		/>
-		<div class="min-w-0 flex-1">
-			<h4 class="truncate text-title-small leading-snug text-on-surface">
-				{position.titel}
-			</h4>
-			<p class="truncate font-mono text-xs text-on-surface-variant">{position.isbn || '–'}</p>
+	</span>
+	<div class="min-w-0 flex-1">
+		<h4 class="text-title-small leading-snug text-on-surface">{position.titel}</h4>
+		<p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-on-surface-variant">
+			<span class="font-mono">{position.isbn || '–'}</span>
 			{#if position.generate_barcodes}
-				<div class="mt-1">
-					<StatusChip
-						icon="label"
-						text={position.menge === 1 ? '1 Barcode' : `${position.menge} Barcodes`}
-					/>
-				</div>
+				<StatusChip
+					icon="label"
+					text={position.menge === 1 ? '1 Barcode' : `${position.menge} Barcodes`}
+				/>
 			{/if}
-		</div>
-		<Button
-			variant="symbol"
-			size="sm"
-			loeschen
-			onclick={() => bestellStore.removeFromCart(position)}
-			aria-label="Entfernen"
-			data-tip="Entfernen"
-			class="shrink-0"
-		>
-			<Icon name="close" />
-		</Button>
+			{#if bedarf}
+				<StatusChip
+					text="Bestellbedarf {bedarf.fehlen}"
+					tip="{anzahlText(
+						bedarf.fehlen,
+						'Exemplar fehlt',
+						'Exemplare fehlen'
+					)} für das nächste Schuljahr"
+				/>
+			{/if}
+		</p>
 	</div>
 
-	<div class="flex items-center justify-between gap-2 pl-10">
-		<div
-			class="flex items-center rounded-sm border border-outline-variant bg-surface-container-lowest"
-		>
-			<!-- Unter 1 geht die Menge nicht; entfernt wird die Position über das Kreuz. Der Knopf
-			     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->
-			<Button
-				variant="symbol"
-				size="sm"
-				aria-label="Menge verringern"
-				data-tip="Menge verringern"
-				disabled={position.menge <= 1}
-				onclick={() => (position.menge = Math.max(1, position.menge - 1))}
+	<div class={STELLEN}>
+		<!-- Der Topf ist eine Entscheidung je Bestellung; der Titel schlägt ihn nur vor. Das Feld
+		     schiebt die Position in einen anderen: ein falsch gekennzeichnetes Schulbuch in die
+		     Lernmittel-Bestellung, eine Spende in die Bestellung ohne Topf. -->
+		<div class={SPALTEN.topf}>
+			<Select
+				value={position.mittel}
+				options={toepfe}
+				aria-label="Topf von {position.titel}"
+				onchange={(wert) => bestellStore.verschiebe(position, wert)}
+			/>
+		</div>
+		<div class={SPALTEN.menge}>
+			<div
+				class="inline-flex items-center rounded-sm border border-outline-variant bg-surface-container-lowest"
 			>
-				<Icon name="remove" />
-			</Button>
-			<span
-				class="min-w-6 px-2 text-center text-body-medium-emphasized text-on-surface tabular-nums"
-				>{position.menge}</span
-			>
-			<Button
-				variant="symbol"
-				size="sm"
-				aria-label="Menge erhöhen"
-				data-tip="Menge erhöhen"
-				onclick={() => (position.menge += 1)}
-			>
-				<Icon name="add" />
-			</Button>
+				<!-- Unter 1 geht die Menge nicht; entfernt wird die Position über das Kreuz. Der Knopf
+				     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->
+				<Button
+					variant="symbol"
+					size="sm"
+					aria-label="Menge verringern"
+					data-tip="Menge verringern"
+					disabled={position.menge <= 1}
+					onclick={() => (position.menge = Math.max(1, position.menge - 1))}
+				>
+					<Icon name="remove" />
+				</Button>
+				<span
+					class="min-w-6 px-2 text-center text-body-medium-emphasized text-on-surface tabular-nums"
+					>{position.menge}</span
+				>
+				<Button
+					variant="symbol"
+					size="sm"
+					aria-label="Menge erhöhen"
+					data-tip="Menge erhöhen"
+					onclick={() => (position.menge += 1)}
+				>
+					<Icon name="add" />
+				</Button>
+			</div>
 		</div>
 		{#if bestellStore.preiseErfassen}
-			<div class="flex items-center gap-1.5">
+			<div class="{SPALTEN.preis} flex items-center justify-end gap-1.5">
 				<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unverändert ist: Er ist
 				     der DNB-Ladenpreis bei Erscheinen, nicht der Preis, den die Schule zahlt. Wer
 				     ihn überschreibt, verliert das Abzeichen. -->
@@ -114,18 +140,15 @@
 		{/if}
 	</div>
 
-	<!-- Der Topf ist eine Entscheidung je Bestellung; der Titel schlägt ihn nur vor. Das Feld
-	     zeigt, in welchem Topf die Position liegt, und schiebt sie in einen anderen: ein falsch
-	     gekennzeichnetes Schulbuch in die Lernmittel-Bestellung, eine Spende in die Bestellung
-	     ohne Topf, ohne dass jemand erst den Titel bearbeiten muss. -->
-	<div class="space-y-1.5 pl-10">
-		<label for={topfId} class="block text-sm font-medium text-on-surface-variant">Topf</label>
-		<Select
-			id={topfId}
-			value={position.mittel}
-			options={toepfe}
-			aria-label="Topf von {position.titel}"
-			onchange={(wert) => bestellStore.verschiebe(position, wert)}
-		/>
-	</div>
-</div>
+	<Button
+		variant="symbol"
+		size="sm"
+		loeschen
+		onclick={() => bestellStore.removeFromCart(position)}
+		aria-label="Entfernen"
+		data-tip="Entfernen"
+		class="order-1 shrink-0 @3xl:order-2"
+	>
+		<Icon name="close" />
+	</Button>
+</li>

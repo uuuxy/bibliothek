@@ -5,7 +5,6 @@
 	import { apiPost } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
-	import Select from '../ui/Select.svelte';
 	import TrefferPruefung from './TrefferPruefung.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { fensterAusAntwort } from './ausIsbn.js';
@@ -43,21 +42,8 @@
 	}
 </script>
 
-<div class="max-w-maske space-y-4">
-	<div class="space-y-1.5">
-		<label for="supplier" class="block text-sm font-medium text-on-surface-variant">Lieferant</label
-		>
-		<Select
-			id="supplier"
-			bind:value={bestellStore.selectedSupplierId}
-			options={bestellStore.suppliers.map((s) => ({
-				value: s.id,
-				label: s.name,
-				zusatz: s.customerNumber
-			}))}
-			placeholder="Kein Lieferant angelegt"
-		/>
-	</div>
+<!-- Der Lieferant steht in der Zusammenfassung, neben dem Knopf, der an ihn bestellt. -->
+<div class="max-w-maske">
 	<div class="space-y-1.5 relative">
 		<label for="book" class="block text-sm font-medium text-on-surface-variant"
 			>Titel suchen &amp; hinzufügen</label

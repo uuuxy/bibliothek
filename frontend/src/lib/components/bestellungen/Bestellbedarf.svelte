@@ -1,14 +1,17 @@
+<!-- @component Der Bestellbedarf als letzte Gruppe der Bestellung: die Schulbücher, deren Bestand
+     nicht für das nächste Schuljahr reicht und die noch nicht in der Bestellung stehen. Wie
+     „Für später gespeichert" unter den Artikeln im Warenkorb des Google Store; was hinzugefügt
+     ist, steht oben mit der Marke „Bestellbedarf N" (bedarfFilter.js). -->
 <script>
 	import Icon from '../ui/Icon.svelte';
-	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
-	import BedarfZeile from './BedarfZeile.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
+	import BedarfZeile, { STELLEN, SPALTEN } from './BedarfZeile.svelte';
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
-	import { filtereBedarf } from './bedarfFilter.js';
+	import { offenerBedarf } from './bedarfFilter.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
-	import { resthoehe } from '../../actions/resthoehe.js';
 	import { anzahlText } from '../../utils/format.js';
 	let { vorschlaege, onAddToCart } = $props();
 	// Kam der Bedarf nicht, steht der Grund statt der leeren Liste da: „Kein Schulbuch fehlt" hieße,
@@ -22,153 +25,141 @@
 	const grundlageText = $derived(
 		`gerechnet mit den Schulbüchern von ${grundlage.kinder_mit_schulbuch} der ${grundlage.kinder} Kinder`
 	);
+
+	const offene = $derived(offenerBedarf(vorschlaege, bestellStore.cart));
+	const schonDrin = $derived(vorschlaege.length - offene.length);
 	const fehlenSumme = $derived(
-		vorschlaege.reduce((/** @type {number} */ s, /** @type {any} */ r) => s + (r.fehlen || 0), 0)
+		offene.reduce((/** @type {number} */ s, /** @type {any} */ r) => s + (r.fehlen || 0), 0)
+	);
+	const kopfText = $derived(
+		(schonDrin
+			? anzahlText(offene.length, 'weiterer Titel', 'weitere Titel')
+			: anzahlText(offene.length, 'Titel', 'Titel')) +
+			` · ${anzahlText(fehlenSumme, 'Exemplar fehlt', 'Exemplare fehlen')}` +
+			`${schonDrin ? ' noch' : ''} für das nächste Schuljahr`
 	);
 
 	// „Neue Auflage bestellen": die Zeile, deren Dialog offen ist.
 	/** @type {any | null} */
 	let neueAuflageFuer = $state(null);
 
-	// Nur die ersten Einträge ins DOM (Muster wie Bestandstabelle/Inventur-Startseite). Das
-	// Scrollfenster wächst mit dem Viewport, damit man die dringenden Titel sieht statt drei
-	// Zeilen durch ein Guckloch.
+	// Nur die ersten Einträge ins DOM (Muster wie Bestandstabelle/Inventur-Startseite).
 	let maxVisible = $state(60);
+	let sichtbare = $derived(offene.slice(0, maxVisible));
 
-	// Schnellfilter: In einer langen Liste ist Suchen schneller als Scrollen.
-	let filter = $state('');
-
-	let gefiltert = $derived(filtereBedarf(vorschlaege, filter));
-
-	let sichtbare = $derived(gefiltert.slice(0, maxVisible));
-
-	// Nach einem Datenwechsel (z. B. Wareneingang) oder neuem Filter wieder von vorn.
+	// Nach einem Datenwechsel (z. B. Wareneingang) wieder von vorn. Nur gelesen, um die
+	// Abhängigkeit herzustellen; `void` statt des Komma-Operators, den die Typprüfung als
+	// wirkungslosen Ausdruck meldet.
 	$effect(() => {
-		// Nur gelesen, um die Abhaengigkeit herzustellen: Aendert sich die Liste oder der
-		// Filter, faengt die Anzeige wieder bei 60 Eintraegen an. `void` statt des
-		// Komma-Operators — den meldet die Typpruefung als wirkungslosen Ausdruck.
 		void vorschlaege;
-		void filter;
 		maxVisible = 60;
 	});
+
+	// Ein hinzugefügter Titel verlässt die Liste samt dem Knopf, auf dem der Fokus stand: Er rückt
+	// auf „hinzufügen" der nächsten Zeile, ohne Zeile auf den Anfang des Inhalts.
+	/** @type {HTMLElement | undefined} */
+	let wurzel = $state();
+	fokusAuffangen(
+		() => offene,
+		() => wurzel,
+		() => wurzel?.querySelector('[data-hinzufuegen]') ?? document.getElementById('hauptinhalt')
+	);
 </script>
 
-<!-- Kein Kartenrahmen: Der Bestellbedarf ist die Arbeitsflaeche der Seite, kein Objekt
-     darauf. Die Kopfzeile trennt sich ueber ihre Linie vom Listenkoerper, die Spalte
-     daneben ueber die senkrechte Linie in Bestellwesen. -->
-<section class="flex min-w-0 flex-col">
-	<!-- Header -->
-	<header class="border-b border-outline-variant pb-4">
-		<div class="flex items-start justify-between gap-4">
+{#snippet pdf()}
+	<Button href="/api/bestellungen/pdf" download variant="secondary" class="shrink-0">
+		<Icon name="print" />
+		<span class="hidden sm:inline">PDF-Bestellliste</span>
+	</Button>
+{/snippet}
+
+<!-- Eine Zeile statt einer Fläche, wenn nichts zu wählen ist: Der Platz gehört der Bestellung. -->
+{#snippet zeile(/** @type {string} */ titel, /** @type {string} */ text, icon = false)}
+	<div class="flex items-center justify-between gap-3 border-t border-outline-variant pt-5">
+		<div class="flex min-w-0 gap-2 text-on-surface-variant">
+			{#if icon}<Icon name="check_circle" />{/if}
 			<div class="min-w-0">
-				<h2 class="text-lg text-on-surface tracking-tight flex items-center gap-2">
-					<!-- Die Zahl steht im Text wie bei „4.440 Titel“: Ein Badge gehört in M3 an Navigation
-					     und Symbole, nicht an eine Überschrift. -->
-					Bestellbedarf{#if vorschlaege.length}
-						für {anzahlText(vorschlaege.length, 'Titel', 'Titel')}{/if}
-				</h2>
-				{#if vorschlaege.length}
-					<p class="text-sm text-on-surface-variant mt-1">
-						{fehlenSumme}
-						{fehlenSumme === 1 ? 'Exemplar fehlt' : 'Exemplare fehlen'} für das nächste Schuljahr, {grundlageText}
-					</p>
-				{/if}
+				<p class="text-body-medium-emphasized text-on-surface">{titel}</p>
+				<p class="text-xs">{text}</p>
 			</div>
-			<Button href="/api/bestellungen/pdf" download variant="secondary" class="shrink-0">
-				<Icon name="print" />
-				<span class="hidden sm:inline">PDF-Bestellliste</span>
-			</Button>
 		</div>
+		{@render pdf()}
+	</div>
+{/snippet}
 
-		{#if vorschlaege.length}
-			<Suchpille
-				kamera
-				id="bestellbedarf-suchfeld"
-				bind:wert={filter}
-				platzhalter="In {anzahlText(vorschlaege.length, 'Titel', 'Titeln')} filtern …"
-				etikett="Bestellvorschläge filtern"
-			/>
-		{/if}
-	</header>
-
-	<!-- List -->
+<section aria-label="Bestellbedarf" bind:this={wurzel}>
 	{#if ladefehler && !vorschlaege.length}
-		<LadeFehler
-			titel="Bestellbedarf nicht geladen"
-			text={ladefehler}
-			onerneut={() => bestellStore.loadRecommendations()}
-		/>
+		<div class="border-t border-outline-variant pt-5">
+			<LadeFehler
+				titel="Bestellbedarf nicht geladen"
+				text={ladefehler}
+				onerneut={() => bestellStore.loadRecommendations()}
+			/>
+		</div>
 	{:else if laedt && !vorschlaege.length}
-		<div class="flex justify-center py-16">
+		<div class="flex justify-center border-t border-outline-variant py-8">
 			<Ladekreis size="lg" verzoegert etikett="Bestellbedarf lädt" />
 		</div>
 	{:else if !vorschlaege.length}
-		<div
-			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
-		>
-			{#if grundlage.ausgeschaltet}
-				<p class="text-body-medium-emphasized">Bestellbedarf ausgeschaltet</p>
-				<p class="text-xs mt-1">Einschalten unter Einstellungen, Bestellwesen</p>
-			{:else if !grundlage.kinder_mit_schulbuch}
-				<p class="text-body-medium-emphasized">Noch keine Grundlage</p>
-				<p class="text-xs mt-1">
-					In diesem Schuljahr wurde noch kein Schulbuch ausgegeben; der Bedarf ergibt sich aus den
-					Ausleihen
-				</p>
-			{:else}
-				<Icon name="check_circle" />
-				<p class="text-body-medium-emphasized">Kein Schulbuch fehlt</p>
-				<p class="text-xs mt-1">Der Bestand reicht für das nächste Schuljahr, {grundlageText}</p>
-			{/if}
-		</div>
-	{:else if !gefiltert.length}
-		<div class="text-center py-14 px-6 text-on-surface-variant">
-			<p class="text-sm font-medium">Kein Treffer für <em>„{filter}"</em></p>
-		</div>
+		{#if grundlage.ausgeschaltet}
+			{@render zeile(
+				'Bestellbedarf ausgeschaltet',
+				'Einschalten unter Einstellungen, Bestellwesen'
+			)}
+		{:else if !grundlage.kinder_mit_schulbuch}
+			{@render zeile(
+				'Noch keine Grundlage',
+				'In diesem Schuljahr wurde noch kein Schulbuch ausgegeben; der Bedarf ergibt sich aus den Ausleihen'
+			)}
+		{:else}
+			{@render zeile(
+				'Kein Schulbuch fehlt',
+				`Der Bestand reicht für das nächste Schuljahr, ${grundlageText}`,
+				true
+			)}
+		{/if}
+	{:else if !offene.length}
+		{@render zeile(
+			'Der ganze Bestellbedarf steht in der Bestellung',
+			`${anzahlText(vorschlaege.length, 'Titel', 'Titel')}, ${grundlageText}`,
+			true
+		)}
 	{:else}
-		<!-- Spaltenkopf. Die Zahlenspalte war bisher NUR über ein title-Attribut erklärt — ein
-		     Hover-Tooltip, der beim ersten Hinsehen unsichtbar ist und auf Tablets gar nicht
-		     erreichbar. Auf 332 Zeilen standen damit unbeschriftete Zahlen.
-		     Der Kopf steht AUSSERHALB des Scroll-Containers: Die Liste scrollt in sich selbst,
-		     die Beschriftung bleibt deshalb stehen, ohne sticky und ohne z-index-Fragen.
-		     Die Beschriftung ist breiter als die Zahlen darunter — beide enden aber an
-		     derselben Kante, weil auf beide dieselbe Lücke und die 36-px-Knopfspalte folgen.
-		     Das ist die übliche Ausrichtung einer Zahlenspalte und kostet den Titeln keine
-		     Breite, was eine feste Spaltenbreite getan hätte. -->
-		<!-- Der Kopf UEBERNIMMT die Geometrie einer Zeile (-mx-3, transparenter Rahmen,
-		     px-3, gap-3), statt sie mit eigenen Werten nachzubauen. Vorher war der
-		     Platzhalter links w-4, der Cover-Knopf in der Zeile aber 32 px breit — „Titel"
-		     stand damit 17 px links neben den Titeln. Unter dem Kartenrahmen fiel das nicht
-		     auf, auf der flachen Flaeche sofort. -->
-		<div class="-mx-3 border-b border-outline-variant">
-			<div
-				class="flex items-center gap-3 border border-transparent px-3 py-2 text-xs font-medium text-on-surface-variant select-none"
-			>
-				<span class="w-8 shrink-0" aria-hidden="true"></span>
-				<span class="flex-1 min-w-0">Titel</span>
-				<span class="text-right">Bestand</span>
-				<span class="w-9 shrink-0" aria-hidden="true"></span>
-			</div>
+		<!-- Kopf wie bei den Töpfen darüber: Name, dann was zählt. -->
+		<div class="flex items-center justify-between gap-3 border-b border-outline-variant pb-2">
+			<h3 class="text-label-medium text-on-surface">
+				Bestellbedarf
+				<span class="font-normal text-on-surface-variant">· {kopfText}</span>
+			</h3>
+			{@render pdf()}
 		</div>
-
-		<!-- -mx-3 zieht den Zeilencontainer um genau das px-3 der Zeilen nach aussen: Der
-		     Zeilentext steht damit auf derselben Kante wie Ueberschrift und Spaltenkopf,
-		     waehrend die Hover-Flaeche weiterhin ueber den Text hinausreicht. Ohne den
-		     Kartenrahmen faellt eine Fehlausrichtung von 12 px sofort auf. -->
-		<!-- Die Liste endet am unteren Rand der Seite; die Höhe misst actions/resthoehe.js. -->
-		<div use:resthoehe class="overflow-y-auto max-h-(--resthoehe) -mx-3 py-3 space-y-1.5">
-			{#each sichtbare as r, _i (_i)}
+		<div
+			aria-hidden="true"
+			class="hidden items-center gap-x-3 pt-2 text-xs font-medium text-on-surface-variant select-none @3xl:flex"
+		>
+			<span class="w-7 shrink-0"></span>
+			<span class="flex-1">Titel</span>
+			<span class={STELLEN}>
+				<span class="{SPALTEN.bestand} text-right">Bestand</span>
+				<span class={SPALTEN.knopf}></span>
+			</span>
+			<span class="order-2 w-8 shrink-0"></span>
+		</div>
+		<ul class="divide-y divide-outline-variant">
+			{#each sichtbare as r (r.id)}
 				<BedarfZeile {r} {onAddToCart} onNeueAuflage={(z) => (neueAuflageFuer = z)} />
 			{/each}
-
-			{#if gefiltert.length > maxVisible}
-				<!-- Hausbauteil statt rohem <button> mit text-xs (12 px kennt M3 fuer keinen Knopf).
-				     typo-rollen sah ihn nie: erscheint erst ab 61 Titeln, auf dem Zielsystem (247) immer. -->
-				<Button variant="ghost" class="w-full sm:w-auto" onclick={() => (maxVisible += 60)}>
-					Weitere {gefiltert.length - maxVisible} anzeigen
-				</Button>
-			{/if}
-		</div>
+		</ul>
+		{#if offene.length > maxVisible}
+			<!-- Hausbauteil statt rohem <button> mit text-xs (12 px kennt M3 fuer keinen Knopf).
+			     typo-rollen sah ihn nie: erscheint erst ab 61 Titeln, auf dem Zielsystem (247) immer. -->
+			<Button variant="ghost" class="w-full sm:w-auto" onclick={() => (maxVisible += 60)}>
+				Weitere {offene.length - maxVisible} anzeigen
+			</Button>
+		{/if}
+		<p class="pt-3 text-xs text-on-surface-variant">
+			{grundlageText.charAt(0).toUpperCase() + grundlageText.slice(1)}
+		</p>
 	{/if}
 
 	<!-- Nach dem Zuordnen ist die Zeile ein Buch mit zwei Auflagen: neu laden, damit sie so dasteht. -->

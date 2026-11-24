@@ -90,7 +90,6 @@ const AUSNAHMEN = [
 	{ kennung: 'mahnwesen-suchfeld', grund: 'Suchpille des Mahnwesens' },
 	{ kennung: 'klassensaetze-suchfeld', grund: 'Suchpille der Klassensätze' },
 	{ kennung: 'etiketten-suchfeld', grund: 'Suchpille des Etiketten-Nachdrucks im Druck-Center' },
-	{ kennung: 'bestellbedarf-suchfeld', grund: 'Suchpille des Bestellbedarfs' },
 	{ kennung: 'titelverwaltung-suchfeld', grund: 'Suchpille der Titel-Verwaltung im Medienkatalog' },
 	{ kennung: 'benutzer-suchfeld', grund: 'Suchpille der Benutzerverwaltung' },
 	{ kennung: 'signaturen-suchfeld', grund: 'Suchpille der Signaturen-Ansicht' },

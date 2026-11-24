@@ -240,8 +240,28 @@ function entferne({ leser, titel }) {
 }
 
 /**
+ * Die Zeilen des Bestellbedarfs mit diesem Text. Die Liste zeigt 60 Titel auf einmal; der Helfer
+ * blättert über „Weitere … anzeigen", bis die Zeile dasteht oder die Liste zu Ende ist. Danach
+ * belegt `toHaveCount(0)` auch, dass es die Zeile nicht gibt. Gewartet wird auf die Antwort:
+ * „PDF-Bestellliste" steht in jedem Zustand außer Laden und Ladefehler.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} text
+ */
+export async function bedarfZeile(page, text) {
+	const { expect } = await import('@playwright/test');
+	const bereich = page.getByRole('region', { name: 'Bestellbedarf' });
+	await expect(bereich.getByRole('link', { name: /PDF-Bestellliste/ })).toBeVisible({
+		timeout: 15_000
+	});
+	const zeilen = bereich.getByRole('listitem').filter({ hasText: text });
+	const weiter = bereich.getByRole('button', { name: /^Weitere \d+ anzeigen$/ });
+	while ((await zeilen.count()) === 0 && (await weiter.isVisible())) await weiter.click();
+	return zeilen;
+}
+
+/**
  * Stellt her, dass die Bestellbedarfs-Liste gefüllt ist — Voraussetzung für jeden
- * Test, der im Bestell-Bildschirm auf „+ zur Bestellung hinzufügen" klickt.
+ * Test, der im Bestell-Bildschirm bei einem Titel auf „… hinzufügen" klickt.
  *
  * Die Liste hängt an zwei Bedingungen außerhalb des Tests: Steht der Schalter
  * `bestellbedarf_warnung_aktiv` aus, liefert /api/bestellungen keine Zeilen, ganz gleich wie

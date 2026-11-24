@@ -427,8 +427,10 @@ buchen, danach löscht das System von selbst (§8, [LUSD.md](LUSD.md) §4).
 ## Bestellwesen
 
 Fünf Reiter (§7):
-- **Bestellbedarf**: Schulbücher, deren Bestand nicht für die Kinder im nächsten Schuljahr reicht; das
-  Plus legt die fehlende Menge in den Warenkorb. Der Warenkorb hat bis zu drei Abschnitte,
+- **Bestellungen**: links die Bestellung, darunter der Bestellbedarf, rechts die Zusammenfassung mit
+  Lieferant, Summen und _Bestellung auslösen_. Der Bestellbedarf nennt die Schulbücher, deren Bestand
+  nicht für die Kinder im nächsten Schuljahr reicht; _N hinzufügen_ legt die fehlende Menge in die
+  Bestellung, dort trägt der Titel die Marke _Bestellbedarf N_. Der Warenkorb hat bis zu drei Abschnitte,
   _Lernmittelfreiheit · Land_, _Schülerbücherei · Schulträger_ und _Spende · ohne Topf_ (etwa Geld des
   Fördervereins); je Abschnitt geht eine eigene Bestellung an den Händler, und das Feld _Topf_ an jeder
   Position schiebt sie in einen anderen. Eine Spende läuft beim Händler wie die Schülerbücherei, mit deren Kundennummer

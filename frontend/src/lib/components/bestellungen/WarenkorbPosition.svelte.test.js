@@ -96,3 +96,26 @@ describe('WarenkorbPosition: der Topf', () => {
 		expect(bestellStore.cart[0].mittel).toBe('spende');
 	});
 });
+
+// Steht das Buch im Bestellbedarf, nennt die Position, wie viele fehlen, auch wenn eine ältere
+// Auflage bestellt wird; ohne Zeile im Bestellbedarf steht keine Marke.
+describe('WarenkorbPosition: die Marke „Bestellbedarf"', () => {
+	beforeEach(() => {
+		bestellStore.cart = [];
+		bestellStore.recommendations = [];
+	});
+
+	it('nennt die fehlende Menge des Buchs, zu dem die Position gehört', () => {
+		bestellStore.recommendations = [
+			{ id: 't-neu', isbn: '9789991940021', fehlen: 18, auflagen: [{ id: 't-1', isbn: '' }] }
+		];
+		position(5);
+		expect(screen.getByText('Bestellbedarf 18')).toBeTruthy();
+	});
+
+	it('zeigt keine Marke für einen Titel ohne Bestellbedarf', () => {
+		bestellStore.recommendations = [{ id: 't-anders', isbn: '9789991940038', fehlen: 3 }];
+		position(1);
+		expect(screen.queryByText(/^Bestellbedarf/)).toBeNull();
+	});
+});

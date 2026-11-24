@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix, seedFehlbestand } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	seedFehlbestand,
+	bedarfZeile
+} from './helpers.js';
 
 // „Neue Auflage bestellen": Die alte Auflage steht im
 // Bestellbedarf, der Besteller gibt im Menü der Zeile die ISBN der neuen ein, bestätigt den
@@ -36,9 +44,7 @@ test('Bestellbedarf: neue Auflage über das Menü der Zeile zuordnen und bestell
 
 		await uiLogin(page);
 		await gehZu(page, '/bestellungen');
-		const filter = page.getByRole('searchbox', { name: 'Bestellvorschläge filtern' });
-		await filter.fill(marke);
-		const zeilen = page.locator('div.group').filter({ hasText: marke });
+		const zeilen = await bedarfZeile(page, marke);
 		await expect(zeilen).toHaveCount(1);
 
 		await zeilen
@@ -54,14 +60,20 @@ test('Bestellbedarf: neue Auflage über das Menü der Zeile zuordnen und bestell
 		await dialog.getByRole('button', { name: 'Zuordnen und bestellen' }).click();
 		await expect(dialog).toBeHidden();
 
-		// Die Zeile ist jetzt das Buch: die neue Auflage vorn, beide in der Aufschlüsselung.
+		// Die neue Auflage steht in der Bestellung, mit der Marke des Bestellbedarfs, und deshalb
+		// nicht mehr darunter.
+		const lernmittel = page.getByRole('region', { name: 'Bestellung Lernmittelfreiheit' });
+		await expect(lernmittel).toContainText(`${marke} Neubearbeitung`);
+		await expect(lernmittel).toContainText(/Bestellbedarf \d+/);
+		await expect(zeilen).toHaveCount(0);
+
+		// Aus der Bestellung genommen, ist die Zeile das Buch: die neue Auflage vorn, beide in der
+		// Aufschlüsselung.
+		await lernmittel.getByRole('button', { name: 'Entfernen' }).click();
 		await expect(zeilen).toHaveCount(1);
 		await expect(zeilen.first()).toContainText(`${marke} Neubearbeitung`);
 		await expect(zeilen.first()).toContainText(
 			'Bestand aus 2 Auflagen: 0 Exemplare der 4. Aufl. · 2024, 1 Exemplar der 3. Aufl. · 2019'
-		);
-		await expect(page.getByRole('region', { name: 'Bestellung Lernmittelfreiheit' })).toContainText(
-			`${marke} Neubearbeitung`
 		);
 		expect(
 			querySQL(

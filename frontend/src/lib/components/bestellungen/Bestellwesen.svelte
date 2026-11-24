@@ -1,6 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import Icon from '../ui/Icon.svelte';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -8,8 +7,8 @@
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 
 	import BestellEntwurf from './BestellEntwurf.svelte';
+	import BestellZusammenfassung from './BestellZusammenfassung.svelte';
 	import Wareneingang from './Wareneingang.svelte';
-	import Bestellbedarf from './Bestellbedarf.svelte';
 	import BestellHistorie from './BestellHistorie.svelte';
 	import BestelllinkHinweis from './BestelllinkHinweis.svelte';
 	import Reiter from '../ui/Reiter.svelte';
@@ -31,18 +30,6 @@
 			0
 		)
 	);
-
-	// Bestellspalte ein-/ausklappbar. Sie belegt ein Drittel der Breite, auch wenn der
-	// Warenkorb leer ist — währenddaneben Titel wie „LMF-Bigalke/Köhler: Mathematik —
-	// Hessen — Ausgabe 2016/Grundkurs 2. Halbjahr — Band Q2" abgeschnitten werden.
-	//
-	// Bewusst OFFEN als Vorgabe: Wer die Seite kennt, soll sie unverändert vorfinden, und
-	// das E2E-Gate (bestellung-erreichbar.spec.js) prüft genau diesen Zustand.
-	// Bewusst NICHT gespeichert: Ein Wert für die Fensteraufteilung gehört weder in den
-	// localStorage (mehrere Arbeitsplätze) noch als geteilter Zustand ins Backend — an
-	// zwei Bildschirmen mit verschiedenen Grössen wäre „meine Breite" die falsche Vorgabe.
-	// Der Zustand gilt deshalb für die Sitzung.
-	let railOffen = $state(true);
 
 	onMount(() => {
 		bestellStore.init();
@@ -117,74 +104,31 @@
 
 	{#if aktiverReiter === 'bestellungen'}
 		{#key 'bestellungen'}
-			<div class="flex flex-col gap-5">
-				<!-- Zwei Bereiche statt zwei Karten. Die Trennung traegt eine senkrechte
-				     Haarlinie an der Bestellspalte (unten), nicht ein Rahmen je Block —
-				     dasselbe Muster wie auf der Signaturen-Seite. Waagerechter Abstand
-				     deshalb 0: Der Abstand entsteht aus der Polsterung links und rechts
-				     der Linie, sonst stuenden 24 px Luecke UND 24 px Polsterung. -->
-				<div class="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-0 items-start">
-					<!-- HERO: der Bestellbedarf ist die tägliche Arbeitsfläche.
-					     Die Spaltenbreiten stehen je Zustand VOLLSTÄNDIG da (lg und xl), statt sich
-					     auf die Reihenfolge im class-Attribut zu verlassen: Bei Utilities gleicher
-					     Spezifität entscheidet die Reihenfolge im Stylesheet, nicht die im Markup. -->
-					<div
-						class="min-w-0 lg:pr-6 {railOffen
-							? 'lg:col-span-7 xl:col-span-8'
-							: 'lg:col-span-11 xl:col-span-11'}"
-					>
-						<Bestellbedarf
-							vorschlaege={bestellStore.recommendations}
-							onAddToCart={(book, menge) => bestellStore.addToCart(book, menge)}
-						/>
-					</div>
-
-					<!-- Die Bestellspalte klebt beim Scrollen und reicht bis zum unteren Rand der Seite
-					     (actions/resthoehe.js): Ein voller Warenkorb scrollt in ihr, Absenden bleibt
-					     erreichbar, und die Trefferliste der Titelsuche läge bei leerem Korb sonst unter
-					     dem Rand (Gate: e2e/bestellung-erreichbar.spec.js). Oben und rechts reicht sie
-					     8 px über den Inhalt, so weit wie die Trefferfläche der Symbolknöpfe am Rand. -->
-					<div
-						use:resthoehe={{ haftet: true }}
-						id="bestellspalte"
-						class="space-y-3 lg:sticky lg:top-0 lg:-mt-2 lg:-mr-2 lg:pt-2 lg:pr-2 lg:h-(--resthoehe) lg:overflow-y-auto {railOffen
-							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-outline-variant lg:pl-6'
-							: 'lg:col-span-1 xl:col-span-1'}"
-					>
-						{#if !railOffen}
-							<!-- Eingeklappt: ein beschrifteter Streifen, kein stummes Rechteck. Die Zahl
-							     im Korb bleibt sichtbar — sonst müsste man aufklappen, um zu sehen, ob
-							     überhaupt etwas drin ist. -->
-							<button
-								onclick={() => (railOffen = true)}
-								aria-expanded="false"
-								aria-controls="bestellpanel"
-								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-outline-variant bg-surface-container-lowest cursor-pointer"
-							>
-								<Icon name="chevron_left" class="text-on-surface-variant" />
-								<span
-									class="text-label-medium text-on-surface-variant tracking-wide"
-									style="writing-mode: vertical-rl">Deine Bestellung</span
-								>
-								{#if bestellStore.totalQty > 0}
-									<span
-										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary text-label-small px-1.5 tabular-nums"
-										>{bestellStore.totalQty}</span
-									>
-								{/if}
-							</button>
-						{/if}
-
-						<!-- Das Panel bleibt eingehängt und wird nur verborgen: Beim Aus- und
-						     Wiedereinhängen gingen Lieferantenwahl und Suchfeld verloren.
-						     max-lg:block, weil unterhalb von lg gar nicht nebeneinander gelegt wird —
-						     ohne das wäre die Bestellung auf dem Tablet verschwunden, nachdem jemand
-						     am grossen Bildschirm eingeklappt hat. -->
-						<div id="bestellpanel" class={railOffen ? '' : 'hidden max-lg:block'}>
-							<BestellEntwurf onCollapse={() => (railOffen = false)} />
-						</div>
-					</div>
+			<!-- Aufteilung wie im Warenkorb des Google Store: breit die Bestellung mit dem
+			     Bestellbedarf darunter, daneben die Zusammenfassung. M3 Canonical layouts,
+			     Supporting pane: der Hauptbereich „occupies the majority of the window (typically
+			     about two-thirds)", der Nebenbereich daneben „Fixed (360 dp)"; ab xl 412 dp, die
+			     zweite Breite, die M3 für feste Bereiche nennt. Getrennt durch die senkrechte Linie
+			     wie auf der Signaturen-Seite; der Abstand entsteht aus der Polsterung beiderseits. -->
+			<div class="flex flex-col gap-y-6 lg:flex-row lg:items-start">
+				<div class="min-w-0 lg:flex-1 lg:pr-6">
+					<BestellEntwurf />
 				</div>
+
+				<!-- Die Zusammenfassung klebt beim Scrollen und reicht bis zum unteren Rand der Seite
+				     (actions/resthoehe.js): Summe und Knopf bleiben stehen, wie lang die Liste auch
+				     ist, und in einem kurzen Fenster scrollt sie in sich (Gate:
+				     e2e/bestellung-erreichbar.spec.js). Oben und rechts reicht sie 8 px über den
+				     Inhalt, damit overflow-y-auto Fokusring und Trefferflächen am Rand nicht
+				     abschneidet. -->
+				<aside
+					use:resthoehe={{ haftet: true }}
+					id="zusammenfassung"
+					aria-label="Zusammenfassung der Bestellung"
+					class="lg:sticky lg:top-0 lg:-mt-2 lg:-mr-2 lg:h-(--resthoehe) lg:w-90 lg:shrink-0 lg:overflow-y-auto lg:border-l lg:border-outline-variant lg:pt-2 lg:pr-2 lg:pl-6 xl:w-103"
+				>
+					<BestellZusammenfassung />
+				</aside>
 			</div>
 		{/key}
 	{/if}
