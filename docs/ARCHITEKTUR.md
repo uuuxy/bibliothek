@@ -630,6 +630,11 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
   Buchkacheln sind keine Karten: das Cover ohne Rahmen wie bei Google Play (`KACHEL`,
   `RASTER_ABSTAND` in `BuchKarte.svelte`); in Mein Portal öffnet die Kachel ein Seitenblatt
   (`ui/Seitenblatt`) statt eines Dialogs.
+- Zwei Bereiche nebeneinander (Bestellseite, Leserakte, Signaturen, Klassensatz-Dialog) trennt
+  eine senkrechte Linie in `outline-variant`, keine getönte Fläche. M3, Layout, Parts of layout,
+  lässt beides zu: „Explicit grouping uses distinct colors or outlines to visually delineate
+  content.“ Entschieden an Bildern beider Fassungen; die Fläche hätte je Bereich 15 bis 56 px
+  Breite und oben 24 px gekostet.
 - Ein Cover kommt aus `ui/BuchCover`, immer im Format 2:3 (`frontend-hygiene-cover.test.js`).
 - Farben nur aus den Rollen in `styles/rollen.css`, hell und dunkel; `.schema-dunkel` steht an
   `<html>` und an Bereichen, die immer dunkel sind (Flur-Monitor, Kamera-Sucher), und gilt nur in
