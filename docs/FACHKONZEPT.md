@@ -75,7 +75,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ### 2.2. Blockaden und Limits
 
-- **Ausleihlimit:** Es gibt ein konfigurierbares Maximum an gleichzeitigen Ausleihen pro Schüler (LMF-Bücher ausgenommen).
+- **Ausleihlimit:** Es gibt ein konfigurierbares Maximum an gleichzeitigen Ausleihen pro Schüler (LMF-Bücher ausgenommen). Geräte zählen nicht mit: Ein Gerät kann immer ausgeliehen werden; eine Sperre am Leser hält es wie beim Buch auf.
 - **Sperren: ein Prüfweg für Buch, Gerät und Nachbuchen** (entschieden am 24.09.2026, `pruefeAusleihSperren` in `internal/service/ausleih_sperren.go`). Die Regel richtet sich danach, wer gesperrt hat:
   - **Sperre am Leser** — von Hand (Akte → „Schüler sperren", Begründung Pflicht) oder vom Programm für Ehemalige (Versetzung, LUSD-Import). An der Theke geht dann nur die Rückgabe. Aufgehoben wird sie in der Akte oder im Sperr-Dialog der Theke („Sperre aufheben"), beides mit dem Recht `edit_students` über dieselbe Tür (`PATCH /api/admin/students/{id}/lock`); Aufheben nimmt beide Sperren weg.
   - **Hinweise** — eine unbezahlte Forderung, gleich aus welchem Topf (ein Konto je Leser), und die Überfällig-Automatik: ab `UeberfaelligSperreAbMedien` Medien, die länger als `UeberfaelligKarenzTage` überfällig sind. Wer das Recht „Leser bearbeiten“ hat, übergeht sie einmalig („Einmalig ignorieren", `override_block`).
