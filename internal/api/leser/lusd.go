@@ -117,7 +117,10 @@ const (
 func lusdDateiMeldung(err error) string {
 	var spalte *lusd.PflichtspalteFehler
 	var zeile *lusd.ZeileFehler
+	var zuViele *csvutil.ZuVieleZeilen
 	switch {
+	case errors.As(err, &zuViele):
+		return zuViele.Meldung()
 	case errors.Is(err, http.ErrMissingFile):
 		return meldungLUSDDateiFehlt
 	case errors.As(err, &spalte):

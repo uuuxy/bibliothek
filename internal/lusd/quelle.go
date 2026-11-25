@@ -132,6 +132,10 @@ func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
 		if err != nil {
 			return nil, &ZeileFehler{Fundstelle: Fundstelle{Zeile: gelesen}, Art: errZeileUnlesbar, Ursache: err}
 		}
+		// Dieselbe Grenze wie csvutil.LeseZeilen, das die Zeile in der Datei nicht nennt.
+		if len(tabelle) > csvutil.HoechstensZeilen {
+			return nil, &csvutil.ZuVieleZeilen{Hoechstens: csvutil.HoechstensZeilen}
+		}
 		// FieldPos liefert die Dateizeile — der Reader überspringt Leerzeilen still,
 		// ein eigener Zähler läge danach daneben.
 		nr, _ := csvLeser.FieldPos(0)

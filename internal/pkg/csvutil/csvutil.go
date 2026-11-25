@@ -3,8 +3,48 @@ package csvutil
 
 import (
 	"encoding/csv"
+	"fmt"
+	"io"
 	"strings"
 )
+
+// HoechstensZeilen ist die Zahl der Datenzeilen, die ein Import ohne eigene Grenze höchstens
+// liest: weit über dem Bestand der Schule (Littera 2010: 61.580 Exemplare) und doch fest. Eine
+// Datei von 100 MB aus kurzen Zeilen stünde sonst als 50 Millionen Zeilen im Speicher.
+const HoechstensZeilen = 1_000_000
+
+// ZuVieleZeilen heißt: Die Datei hat mehr Datenzeilen als Hoechstens.
+type ZuVieleZeilen struct {
+	Hoechstens int
+}
+
+func (e *ZuVieleZeilen) Error() string {
+	return fmt.Sprintf("csv: mehr als %d datenzeilen", e.Hoechstens)
+}
+
+// Meldung ist der Satz für die Person, die die Datei hochlädt.
+func (e *ZuVieleZeilen) Meldung() string {
+	return fmt.Sprintf("Die Datei hat mehr als %d Zeilen, höchstens %d sind möglich", e.Hoechstens, e.Hoechstens)
+}
+
+// LeseZeilen liest die Kopfzeile und höchstens hoechstens Datenzeilen, sonst *ZuVieleZeilen.
+// Gezählt wird beim Lesen, damit eine Datei aus kurzen Zeilen nicht erst ganz im Speicher steht.
+func LeseZeilen(leser *csv.Reader, hoechstens int) ([][]string, error) {
+	var zeilen [][]string
+	for {
+		zeile, err := leser.Read()
+		if err == io.EOF {
+			return zeilen, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(zeilen) > hoechstens {
+			return nil, &ZuVieleZeilen{Hoechstens: hoechstens}
+		}
+		zeilen = append(zeilen, zeile)
+	}
+}
 
 // BaueLeser liefert den Leser für eine hochgeladene CSV-Datei; trenner wählt aus dem Text der
 // Datei das Trennzeichen. Lose Anführungszeichen sind erlaubt: Titel und Namen aus Altdaten

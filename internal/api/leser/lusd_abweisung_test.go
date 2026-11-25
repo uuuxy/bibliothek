@@ -3,6 +3,7 @@ package leser
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -12,7 +13,16 @@ import (
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/auth"
+	"bibliothek/internal/pkg/csvutil"
 )
+
+// Eine Datei über der Zeilengrenze bekommt den Satz mit der Grenze, nicht „ließ sich nicht lesen“.
+func TestLUSDDateiMeldung_ZuVieleZeilen(t *testing.T) {
+	meldung := lusdDateiMeldung(fmt.Errorf("lesen: %w", &csvutil.ZuVieleZeilen{Hoechstens: 5}))
+	if meldung != "Die Datei hat mehr als 5 Zeilen, höchstens 5 sind möglich" {
+		t.Errorf("Meldung %q, erwartet die Grenze", meldung)
+	}
+}
 
 // Ein abgewiesener Abgleich steht als Warnung im Log, mit dem Grund aus der Antwort: Den sieht
 // sonst nur, wer den Abgleich gerade macht, und die Alarm-Mail nennt ihn mit dem Schalter

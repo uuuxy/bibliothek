@@ -2,8 +2,10 @@ package system
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
+	"bibliothek/internal/pkg/csvutil"
 	"bibliothek/internal/repository"
 )
 
@@ -21,5 +23,14 @@ func TestMeldungImportNummerIstAusweis_NenntZeilenUndZaehltDenRest(t *testing.T)
 		"in der Datei berichtigen und die Datei erneut hochladen."
 	if got != will {
 		t.Errorf("Meldung\n%q\nerwartet\n%q", got, will)
+	}
+}
+
+// Littera- und Bestandsimport lesen eine CSV nur bis zur festen Grenze, gezählt beim Lesen: 100 MB
+// aus kurzen Zeilen stünden sonst als Millionen Zeilen im Speicher. Die Meldung nennt die Grenze.
+func TestLeseCSVZeilen_BrichtUeberDerGrenzeAb(t *testing.T) {
+	_, err := leseCSVZeilen([]byte(strings.Repeat("Barcode;Titel\n", csvutil.HoechstensZeilen+2)))
+	if meldung := csvLesefehlerMeldung(err); !strings.Contains(meldung, fmt.Sprintf("höchstens %d", csvutil.HoechstensZeilen)) {
+		t.Errorf("Meldung %q (%v), erwartet die Grenze", meldung, err)
 	}
 }

@@ -3,6 +3,7 @@ package lusd
 import (
 	"bytes"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -249,5 +250,15 @@ func TestLeseDatei_XLSXEinBlattNenntKeinBlatt(t *testing.T) {
 	}
 	if len(datei.Zeilen) != 1 || datei.Zeilen[0].Nr != 3 || datei.Zeilen[0].fundstelle != (Fundstelle{Zeile: 3}) {
 		t.Errorf("Zeilen %+v, erwartet Anna mit Nr 3 und Fundstelle Zeile 3 ohne Blatt", datei.Zeilen)
+	}
+}
+
+// Eine CSV über der festen Zeilengrenze bricht beim Lesen ab, statt ganz in den Speicher zu gehen.
+func TestLeseDatei_CSVUeberDerZeilengrenze(t *testing.T) {
+	csv := "Nachname;Vorname;Klasse;Geburtsdatum\n" + strings.Repeat("M;M;5a;1.2.2012\n", csvutil.HoechstensZeilen+1)
+	_, err := LeseDatei([]byte(csv))
+	var zuViele *csvutil.ZuVieleZeilen
+	if !errors.As(err, &zuViele) {
+		t.Fatalf("LeseDatei = %v, erwartet *csvutil.ZuVieleZeilen", err)
 	}
 }

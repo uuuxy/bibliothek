@@ -1,6 +1,8 @@
 package csvutil
 
 import (
+	"errors"
+	"strings"
 	"testing"
 )
 
@@ -59,5 +61,23 @@ func TestHaeufigererTrenner_NachDerKopfzeile(t *testing.T) {
 		if got := HaeufigererTrenner(text); got != want {
 			t.Errorf("HaeufigererTrenner(%q) = %q, erwartet %q", text, got, want)
 		}
+	}
+}
+
+// Die Grenze zählt Datenzeilen hinter der Kopfzeile, und zwar beim Lesen.
+func TestLeseZeilen_BrichtUeberDerGrenzeAb(t *testing.T) {
+	lies := func(n int) ([][]string, error) {
+		leser, err := BaueLeser([]byte(strings.Repeat("a;b\n", n)), HaeufigererTrenner)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return LeseZeilen(leser, 3)
+	}
+	if zeilen, err := lies(4); err != nil || len(zeilen) != 4 {
+		t.Errorf("Kopfzeile und 3 Zeilen: %d Zeilen, %v; erwartet 4 ohne Fehler", len(zeilen), err)
+	}
+	var zuViele *ZuVieleZeilen
+	if _, err := lies(5); !errors.As(err, &zuViele) || zuViele.Hoechstens != 3 {
+		t.Errorf("Kopfzeile und 4 Zeilen: %v, erwartet *ZuVieleZeilen mit 3", err)
 	}
 }

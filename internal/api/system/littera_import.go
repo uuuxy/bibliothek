@@ -96,7 +96,7 @@ func leseCSVZeilen(inhalt []byte) ([][]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return leser.ReadAll()
+	return csvutil.LeseZeilen(leser, csvutil.HoechstensZeilen)
 }
 
 // importKopfMitPflichtspalten baut die Spaltenzuordnung und prüft die
@@ -324,6 +324,10 @@ func meldungHochladen(maxBytes int64) string {
 func csvLesefehlerMeldung(err error) string {
 	if errors.Is(err, csvutil.ErrKodierung) {
 		return csvutil.MeldungKodierung
+	}
+	var zuViele *csvutil.ZuVieleZeilen
+	if errors.As(err, &zuViele) {
+		return zuViele.Meldung()
 	}
 	var lesefehler *csv.ParseError
 	if errors.As(err, &lesefehler) {

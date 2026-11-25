@@ -56,21 +56,13 @@ func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, apierrors.BadRequest(csvutil.MeldungKodierung, err)
 	}
-	var zeilen [][]string
-	for {
-		zeile, err := leser.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
-		}
-		// Gezählt wird beim Lesen: 100 MB aus kurzen Zeilen stünden sonst als Millionen Zeilen
-		// im Speicher. Eine Zeile über der Grenze darf es sein, die Kopfzeile.
-		if len(zeilen) > maxImportZeilen {
-			return nil, apierrors.BadRequest(fmt.Sprintf("Die Datei hat mehr als %d Zeilen, höchstens %d sind möglich", maxImportZeilen, maxImportZeilen), nil)
-		}
-		zeilen = append(zeilen, zeile)
+	zeilen, err := csvutil.LeseZeilen(leser, maxImportZeilen)
+	var zuViele *csvutil.ZuVieleZeilen
+	if errors.As(err, &zuViele) {
+		return nil, apierrors.BadRequest(zuViele.Meldung(), nil)
+	}
+	if err != nil {
+		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}
 	if len(zeilen) == 0 {
 		return nil, apierrors.BadRequest("Die Datei ist leer", nil)
