@@ -413,7 +413,8 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 		return "", false
 	}
 	if vorhanden {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Ausweisnummer '%s' wird bereits verwendet", gewuenscht), nil)
+		// Derselbe Status und Satz wie bei der Kollision im selben Augenblick (IstAusweisKollision).
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Die Ausweisnummer %s trägt bereits eine andere Person", gewuenscht), nil)
 		return "", false
 	}
 	return gewuenscht, true
