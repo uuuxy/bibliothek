@@ -514,7 +514,9 @@ die Zahl); diese Bücher stehen dann im Fehlbestandsbericht. Ein Buch, das sich 
 unter _Gefunden_ oder ein Scan an der Theke zurück. _Liste drucken_ im Bericht druckt die fehlenden
 Exemplare nach Signatur mit Kästchen zum Abhaken. Verwerfen bucht nichts, der Bereich gilt dann nicht
 als geprüft. Eine frühere Inventur lässt sich löschen (⋮ → _Löschen_); die Bücher darin bleiben als
-verloren gebucht (§6).
+verloren gebucht (§6). Laufen zwei Inventuren zugleich, etwa für die Jahrgänge 5 und 6, reicht für
+ein Buch, das zu beiden gehört, ein Scan in einer von ihnen; die zuerst abgeschlossene lässt sich
+deshalb erst löschen, wenn auch die andere abgeschlossen ist.
 
 ---
 

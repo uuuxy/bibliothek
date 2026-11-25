@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -71,6 +72,49 @@ func TestSchliesseLaufAb_ScanEinesGleichzeitigenLaufsZaehlt(t *testing.T) {
 				t.Error("der im Lauf für Jahrgang 5 gescannte Band ist im Lauf für Jahrgang 6 als Verlust gebucht")
 			}
 		})
+	}
+}
+
+// Solange ein gleichzeitiger Lauf offen ist, zählt er die Scans eines schon abgeschlossenen mit.
+// Gelöscht nähme der abgeschlossene sie mit, und der offene buchte den gescannten Band als
+// Verlust. Das Löschen wartet deshalb, bis der andere Lauf abgeschlossen ist.
+func TestLoescheAbgeschlossenenLauf_WartetAufGleichzeitigenLauf(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
+
+	band := legeFachExemplarAn(t, pool, "Mathematik", 5, 6, "BC-MA56")
+	fuenf, sechs := 5, 6
+	lauf5, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Jahrgang: &fuenf}, "Kl. 5", "")
+	if err != nil {
+		t.Fatalf("Lauf für Jahrgang 5 anlegen: %v", err)
+	}
+	lauf6, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Jahrgang: &sechs}, "Kl. 6", "")
+	if err != nil {
+		t.Fatalf("Lauf für Jahrgang 6 anlegen: %v", err)
+	}
+	if _, err := repo.VerbucheScan(ctx, lauf5.ID, lauf5.Bereich(), band); err != nil {
+		t.Fatalf("Scan im Lauf für Jahrgang 5: %v", err)
+	}
+	if _, err := repo.SchliesseLaufAb(ctx, lauf5.ID, lauf5.Bereich(), bearbeiter); err != nil {
+		t.Fatalf("Abschluss Jahrgang 5: %v", err)
+	}
+
+	if err := repo.LoescheAbgeschlossenenLauf(ctx, lauf5.ID, bearbeiter); !errors.Is(err, ErrInventurlaufZaehltNoch) {
+		t.Fatalf("Löschen, während Jahrgang 6 läuft: Fehler %v, erwartet ErrInventurlaufZaehltNoch", err)
+	}
+	if n := erfassungsZahl(t, pool, lauf5.ID); n != 1 {
+		t.Fatalf("%d Erfassungen im Lauf für Jahrgang 5, erwartet die eine", n)
+	}
+	if verloren, err := repo.SchliesseLaufAb(ctx, lauf6.ID, lauf6.Bereich(), bearbeiter); err != nil {
+		t.Fatalf("Abschluss Jahrgang 6: %v", err)
+	} else if verloren != 0 {
+		t.Errorf("Abschluss Jahrgang 6 buchte %d Verluste, erwartet 0", verloren)
+	}
+	if err := repo.LoescheAbgeschlossenenLauf(ctx, lauf5.ID, bearbeiter); err != nil {
+		t.Errorf("Löschen nach dem Abschluss von Jahrgang 6: %v", err)
 	}
 }
 

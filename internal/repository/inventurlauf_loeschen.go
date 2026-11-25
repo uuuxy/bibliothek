@@ -8,6 +8,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// ErrInventurlaufZaehltNoch meldet beim Löschen, dass ein offener Lauf die Scans dieses Laufs noch
+// mitzählt; gelöscht werden kann er, wenn der offene abgeschlossen oder verworfen ist.
+var ErrInventurlaufZaehltNoch = errors.New("ein offener inventurlauf zählt die scans noch mit")
+
 // LoescheAbgeschlossenenLauf löscht einen abgeschlossenen Lauf mit seinen Erfassungen und seinem
 // Fehlbestandsbericht (beide fallen per ON DELETE CASCADE) und schreibt einen Eintrag ins
 // Protokoll. Was der Lauf an den Büchern gebucht hat, bleibt: Ein als Verlust gebuchtes Exemplar
@@ -30,6 +34,21 @@ func (a *InventurAbfragen) LoescheAbgeschlossenenLauf(ctx context.Context, laufI
 	}
 	if err != nil {
 		return fmt.Errorf("inventurlauf zum löschen lesen fehlgeschlagen: %w", err)
+	}
+
+	// Ein offener Lauf, der schon lief, als dieser abgeschlossen wurde, zählt dessen Scans mit
+	// (nichtErfasst). Gelöscht fehlten sie ihm, und er buchte gescannte Bücher als Verlust.
+	var zaehltNoch bool
+	if err := a.db.QueryRow(ctx, `
+		SELECT EXISTS (SELECT 1 FROM inventur_erfassungen WHERE session_id = $1)
+		   AND EXISTS (SELECT 1 FROM inventur_sessions o
+		               WHERE o.abgeschlossen_am IS NULL
+		                 AND o.gestartet_am <= (SELECT abgeschlossen_am FROM inventur_sessions WHERE id = $1))
+	`, laufID).Scan(&zaehltNoch); err != nil {
+		return fmt.Errorf("gleichzeitige inventurläufe prüfen fehlgeschlagen: %w", err)
+	}
+	if zaehltNoch {
+		return ErrInventurlaufZaehltNoch
 	}
 
 	tag, err := a.db.Exec(ctx, `DELETE FROM inventur_sessions WHERE id = $1`, laufID)

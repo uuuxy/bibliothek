@@ -136,6 +136,9 @@ func (t *Tueren) AbgeschlosseneInventurLoeschen() http.HandlerFunc {
 		if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
 			return apierrors.NotFound("Keine abgeschlossene Inventur mit dieser Kennung", err)
 		}
+		if errors.Is(err, repository.ErrInventurlaufZaehltNoch) {
+			return apierrors.Conflict("Eine laufende Inventur zählt diese Scans noch mit. Löschen geht nach ihrem Abschluss.", err)
+		}
 		if err != nil {
 			return apierrors.Internal("Die Inventur konnte nicht gelöscht werden", err)
 		}
