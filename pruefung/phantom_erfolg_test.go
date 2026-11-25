@@ -88,6 +88,10 @@ var phantomBestand = map[string]int{
 	// Anweisung sperrt und schreibt nicht; null Zeilen heißt, kein Exemplar steht mehr im Bestand,
 	// und die folgende Anweisung sondert dann auch nichts aus.
 	"internal/repository/exemplar_aussondern.go:sperreExemplareDerTitel": 1,
+	// Stempel der Freigabe aus dem Abholfach: Null Zeilen heißt, die Zeile ist gerade gesperrt
+	// (SKIP LOCKED, etwa von der Abholung an der Theke, die selbst stempelt) oder das Exemplar ist
+	// gelöscht. Einen Erfolg meldet niemand.
+	"internal/repository/vormerkung_nachruecken.go:stempleFreigabe": 1,
 	// Signaturen aus dem Bestands-Import: Null Zeilen heißt, der Titel wurde seit dem Laden des
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"internal/repository/bestandsimport.go:SetzeImportSignaturen": 1,

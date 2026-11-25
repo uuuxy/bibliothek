@@ -33,12 +33,15 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
 	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("BC-A-123"))
-	// Niemand wartet auf den Titel: Das Exemplar gehört ins Regal.
+	// Niemand wartet auf den Titel: Das Exemplar gehört ins Regal, eine Bewegung.
 	mock.ExpectQuery("v.status = 'wartend'").WithArgs("titel1").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	jetzt := time.Now()
+	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").WithArgs("exA", jetzt).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	resp := &AusleihErgebnis{}
-	if err := entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", time.Now(), resp); err != nil {
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", jetzt, resp); err != nil {
 		t.Fatalf("entferneErfuellteVormerkung: %v", err)
 	}
 

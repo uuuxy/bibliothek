@@ -56,8 +56,10 @@ func (s InventurBereich) bedingung(laufID string) (string, []any) {
 	bedingungen := append([]string{
 		"e.ist_ausgesondert = false",
 		"e.ist_ausleihbar = true",
-		// Ein Buch im Abholfach steht nicht im Regal; dieselbe Bedingung wie für „verfügbar“.
-		sqlExemplarNichtImAbholfach,
+		// Ein Buch im Abholfach steht nicht im Regal, auch nicht, wenn seine Abholfrist während des
+		// Laufs abgelaufen ist: Bis der stündliche Lauf es freigibt (stempleFreigabe), liegt es
+		// hinter der Theke. „Verfügbar“ (sqlExemplarNichtImAbholfach) verleiht es da schon wieder.
+		"e.id NOT IN (SELECT v.bereitgestellt_exemplar_id FROM vormerkungen v WHERE v.status = 'abholbereit' AND v.bereitgestellt_exemplar_id IS NOT NULL AND v.bereitgestellt_bis >= " + laufBeginn + ")",
 		"NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND (a.rueckgabe_am IS NULL OR a.rueckgabe_am >= " + laufBeginn + "))",
 		// Ausleihe, Rückgabe und jeder Wechsel von ist_ausleihbar oder ist_ausgesondert stempeln
 		// letzte_bewegung_am (invarianten.md 1); ein neues Exemplar trägt keinen Stempel.

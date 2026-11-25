@@ -17,12 +17,16 @@ const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false
 // desselben Titels zu, der abholen darf (neue Abholfrist ab jetzt, BestimmeAbholfrist), aber
 // nur, wenn das Exemplar noch frei ist: nicht ausgeliehen, gesperrt oder ausgesondert.
 // Verschwindet eine Vormerkung, für die schon ein Exemplar bereitlag, bliebe der Nächste sonst
-// für immer wartend, während das Buch im Regal steht.
+// für immer wartend, während das Buch im Regal steht. Das Exemplar verlässt dabei das Abholfach
+// (stempleFreigabe).
 //
 // Gesperrt wird nur die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade
 // bedient, wird übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an
 // der Reihe. Liefert true, wenn jemand bedient wurde.
 func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (bool, error) {
+	if err := stempleFreigabe(ctx, db, exemplarID, jetzt); err != nil {
+		return false, err
+	}
 	frist, err := BestimmeAbholfrist(ctx, db, jetzt)
 	if err != nil {
 		return false, err
@@ -57,8 +61,11 @@ func RueckeNachMitExemplar(ctx context.Context, db SpurenDatenbank, exemplarID, 
 	wartet, err := ersteZeile[bool](ctx, db, `SELECT EXISTS (
 		SELECT 1 FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
 		WHERE v.titel_id = $1 AND v.status = 'wartend' AND `+sqlWartenderDarfAbholen+`)`, titelID)
-	if err != nil || !wartet {
+	if err != nil {
 		return "", err
+	}
+	if !wartet {
+		return "", stempleFreigabe(ctx, db, exemplarID, jetzt)
 	}
 	bedient, err := bedieneNaechstenWartenden(ctx, db, exemplarID, titelID, jetzt)
 	if err != nil || !bedient {
@@ -78,6 +85,21 @@ func ersteZeile[T any](ctx context.Context, db SpurenDatenbank, sql string, args
 		return leer, err
 	}
 	return pgx.CollectOneRow(zeilen, pgx.RowTo[T])
+}
+
+// stempleFreigabe stempelt ein Exemplar, das das Abholfach verlässt, ohne verliehen zu werden: Es
+// geht ins Regal oder zum Nächsten in der Warteschlange, eine Bewegung (docs/invarianten.md 1).
+// Ohne den Stempel erwartete eine laufende Inventur es im Regal und buchte es als Verlust, wenn das
+// Regal schon gezählt war (InventurBereich.bedingung). Eine gerade gesperrte Zeile bleibt
+// ungestempelt, statt zu warten: Die Vormerkung ist hier schon gesperrt, und die Abholung an der
+// Theke sperrt umgekehrt erst das Exemplar; sie stempelt es selbst.
+func stempleFreigabe(ctx context.Context, db SpurenDatenbank, exemplarID string, jetzt time.Time) error {
+	_, err := db.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+`
+		WHERE id = (SELECT id FROM buecher_exemplare WHERE id = $1 FOR UPDATE SKIP LOCKED)`, exemplarID, jetzt)
+	if err != nil {
+		return fmt.Errorf("freigabe aus dem abholfach stempeln: %w", err)
+	}
+	return nil
 }
 
 // loescheVormerkungenUndRueckeNach ist der Schritt der Vormerkungen in der Tilgung der Spuren:
