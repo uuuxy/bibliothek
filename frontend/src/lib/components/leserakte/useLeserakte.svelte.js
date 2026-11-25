@@ -184,7 +184,7 @@ export function useLeserakte() {
 			}
 		} catch (e) {
 			console.error('Schaden melden fehlgeschlagen:', e);
-			snackbars.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler', 'error');
 		} finally {
 			meldetSchaden = false;
 		}

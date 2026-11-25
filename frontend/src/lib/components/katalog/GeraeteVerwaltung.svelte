@@ -71,7 +71,7 @@
 				snackbars.addToast(await leseApiFehler(res, 'Speichern fehlgeschlagen'), 'error');
 			}
 		} catch {
-			snackbars.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler', 'error');
 		} finally {
 			speichert = false;
 		}
@@ -90,7 +90,7 @@
 				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen'), 'error');
 			}
 		} catch {
-			snackbars.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler', 'error');
 		}
 	}
 </script>
@@ -163,7 +163,7 @@
 								: 'verliehen'
 							: g.ist_ausleihbar
 								? 'im Schrank'
-								: 'defekt/gesperrt'}
+								: 'defekt oder gesperrt'}
 					</span>
 					<!-- Bearbeiten als Symbolknopf wie in jeder Zeile; „Defekt melden" schaltet einen Zustand
 					     um, den ein Symbol allein nicht sagt. 16 px Abstand für die Trefferfläche. -->

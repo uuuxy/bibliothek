@@ -56,7 +56,7 @@
 			schliesseStorno();
 			onChanged?.();
 		} catch {
-			snackbars.addToast('Netzwerkfehler.', 'error');
+			snackbars.addToast('Netzwerkfehler', 'error');
 		} finally {
 			laeuft = false;
 		}
