@@ -93,6 +93,26 @@ func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
 	}
 }
 
+// Eine Liste nur mit ISBN und Bestand, deren ISBN kein Katalogdienst kennt: Der neue Titel heißt
+// „Unbekannter Titel“ wie bei einem Treffer ohne Titel und nicht leer. Beim Anlegen braucht ein
+// Buch ohne Katalogtreffer einen Namen (7c2d3d2f4); einen vorhandenen Titel überschreibt der
+// Platzhalter nicht (titelBeiKonflikt).
+func TestVerarbeiteImportZeile_OhneTitelUndOhneTrefferHatEinenNamen(t *testing.T) {
+	cfg := importZeile{
+		Zeile: []string{"9783161484100", "3"},
+		// Wie bestimmeSpalten: Eine fehlende Spalte steht auf -1.
+		Spalten:   map[string]int{"isbn": 0, "titel": -1, "autor": -1, "fach": -1, "klasse": -1, "bestand": 1},
+		Metadaten: offlineMetadatenClient(),
+	}
+	buch, err := verarbeiteImportZeile(t.Context(), cfg)
+	if err != nil || buch == nil {
+		t.Fatalf("Zeile: %v", err)
+	}
+	if buch.Titel != "Unbekannter Titel" || buch.Autor != "Unbekannter Autor" {
+		t.Errorf("Titel %q, Autor %q; erwartet die Platzhalter", buch.Titel, buch.Autor)
+	}
+}
+
 // Eine Liste ohne Kopfzeile, deren Zahlenspalte keine Stückzahl ist, legte zusammen Millionen
 // Exemplare an. Geprüft wird die Summe, bevor eine Zeile geschrieben ist.
 func TestPruefeImportMenge(t *testing.T) {

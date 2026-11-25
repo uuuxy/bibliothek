@@ -469,20 +469,20 @@ func ergaenzeMetadaten(ctx context.Context, metadaten *katalogdienste.MetadatenC
 	}
 
 	nachschlagen, _ := metadaten.SucheNachISBN(ctx, eintrag.ISBN) //nolint:errcheck
-	if nachschlagen == nil {
-		return
+	if nachschlagen != nil {
+		if eintrag.Titel == "" || eintrag.Titel == "Unbekannter Titel" {
+			eintrag.Titel = nachschlagen.Titel
+		}
+		if eintrag.Autor == "" || eintrag.Autor == "Unbekannter Autor" {
+			eintrag.Autor = nachschlagen.Autor
+		}
+		if eintrag.CoverURL == "" {
+			eintrag.CoverURL = nachschlagen.CoverURL
+		}
 	}
 
-	if eintrag.Titel == "" || eintrag.Titel == "Unbekannter Titel" {
-		eintrag.Titel = nachschlagen.Titel
-	}
-	if eintrag.Autor == "" || eintrag.Autor == "Unbekannter Autor" {
-		eintrag.Autor = nachschlagen.Autor
-	}
-	if eintrag.CoverURL == "" {
-		eintrag.CoverURL = nachschlagen.CoverURL
-	}
-
+	// Auch ohne Treffer: Ein neuer Titel braucht einen Namen, sonst stünde er leer im Katalog.
+	// Einen vorhandenen überschreibt der Platzhalter nicht (titelBeiKonflikt).
 	if eintrag.Titel == "" {
 		eintrag.Titel = "Unbekannter Titel"
 	}
