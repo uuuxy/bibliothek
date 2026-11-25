@@ -43,8 +43,8 @@ func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID
 // TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck: Schiebt eine Verlängerung die
 // Frist wieder in die Zukunft, wird die Mahn-Eskalation zurückgesetzt (mahnstufe = 0). Sonst
 // übersprang ein nach der 1. Mahnung verlängertes und erneut überzogenes Buch die 1. Stufe und
-// eskalierte sofort zur Rechnung. Bleibt die Frist trotz "Verlängerung" in der Vergangenheit,
-// bleibt die Mahnstufe erhalten (Eskalation berechtigt).
+// eskalierte sofort zur Rechnung. Ein Datum in der Vergangenheit weist die Tür ab, und die
+// Mahnstufe bleibt erhalten (Eskalation berechtigt).
 func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -72,10 +72,11 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 		t.Errorf("Verlängerung in die Zukunft: Mahnstufe = %d, erwartet 0 (Eskalations-Falle)", m)
 	}
 
-	// (b) Vergangenheit -> Mahnstufe bleibt erhalten.
+	// (b) Ein Datum in der Vergangenheit verlängert nichts und wird abgewiesen; die Mahnstufe
+	// bleibt erhalten.
 	vergangen := time.Now().AddDate(0, 0, -5).Format("2006-01-02")
-	if rec := verlaengereLernmittelDerKlasse(t, srv, "9y", vergangen); rec.Code != http.StatusOK {
-		t.Fatalf("Extend Vergangenheit = %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	if rec := verlaengereLernmittelDerKlasse(t, srv, "9y", vergangen); rec.Code != http.StatusBadRequest {
+		t.Fatalf("Extend Vergangenheit = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	if m := mahnstufeVon(t, pool, loanKeep); m != 2 {
 		t.Errorf("weiterhin überfällig: Mahnstufe = %d, erwartet 2 (unverändert)", m)

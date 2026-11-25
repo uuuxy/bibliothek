@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
 )
@@ -406,14 +407,14 @@ func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinm
 }
 
 // Die gezeigte Frist dient nur dem Abgleich mit dem Server. Die Grenze der Frist von Hand
-// (fristHoechstensJahre) galt auch ihr, und eine Ausleihe mit einer Frist dahinter, etwa aus den
+// (service.FristHoechstensJahre) galt auch ihr, und eine Ausleihe mit einer Frist dahinter, etwa aus den
 // Altdaten, ließ sich nicht mehr verlängern: 400 „zu weit in der Zukunft".
 func TestAusleiheVerlaengern_GezeigteFristHinterDerGrenzeDerHandeingabe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 
 	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VG-4", "Fern", "5a")
-	gezeigt := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(fristHoechstensJahre+7, 0, 0))
+	gezeigt := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(service.FristHoechstensJahre+7, 0, 0))
 	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, "Buch mit ferner Frist", gezeigt)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}

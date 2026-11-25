@@ -12,6 +12,18 @@ import (
 	"bibliothek/internal/repository"
 )
 
+// FristHoechstensJahre begrenzt eine Frist von Hand nach oben. Die längste, die das Programm selbst
+// vergibt, hat ein Band über alle Jahrgänge (1 bis 13, chk_jahrgang_spanne): zwölf Jahre nach dem
+// nächsten Stichtag. Ein Datum dahinter ist ein Tippfehler.
+const FristHoechstensJahre = 13
+
+// LetzteFristVonHand ist das späteste Datum, das eine Frist von Hand tragen kann: das Tagesende
+// FristHoechstensJahre nach jetzt. Es gilt für die Frist einer Ausleihe wie für die aller
+// Lernmittel einer Klasse.
+func LetzteFristVonHand(jetzt time.Time) time.Time {
+	return schulzeit.TagesEnde(jetzt.AddDate(FristHoechstensJahre, 0, 0))
+}
+
 // fristAngaben sind die Angaben, aus denen berechneFrist die Frist rechnet. Ein fehlendes Feld
 // wäre der Nullwert und damit eine Frist von 0 Tagen; parameter_strukturen_test.go verlangt
 // deshalb, dass jedes Literal jedes Feld setzt.

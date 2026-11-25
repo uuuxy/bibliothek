@@ -40,6 +40,16 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
 		// Frist, nicht roh 23:59:59 UTC.
 		frist = schulzeit.TagesEnde(frist)
+		// Verlängert wird in die Zukunft; ein Datum davor oder hinter der längsten Frist des
+		// Programms ist ein Tippfehler, der sonst die Fristen der ganzen Klasse verschöbe.
+		if !frist.After(t.Jetzt()) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das neue Rückgabedatum liegt in der Vergangenheit", nil)
+			return
+		}
+		if err := tuer.PruefeFristObergrenze(frist, t.Jetzt()); err != nil {
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			return
+		}
 
 		ctx := r.Context()
 		tx, err := t.DB.Pool.Begin(ctx)

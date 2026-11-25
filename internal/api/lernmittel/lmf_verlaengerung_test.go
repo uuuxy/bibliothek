@@ -19,6 +19,13 @@ import (
 
 var errTest = errors.New("testfehler")
 
+// kuenftigerTag liegt ein Jahr voraus, als Datum um Mitternacht UTC wie time.Parse es liest: Die
+// Verlängerung nimmt nur ein Datum in der Zukunft.
+var kuenftigerTag = func() time.Time {
+	j := time.Now().AddDate(1, 0, 0)
+	return time.Date(j.Year(), j.Month(), j.Day(), 0, 0, 0, 0, time.UTC)
+}()
+
 func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -31,7 +38,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			name: "Success",
 			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
-				NeuesRueckgabeDatum: "2023-12-31",
+				NeuesRueckgabeDatum: kuenftigerTag.Format("2006-01-02"),
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
@@ -39,7 +46,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 					WithArgs(
 						// Berliner Tagesende zum Datum, wie die Tür es setzt (nicht roh
 						// 23:59:59 UTC).
-						schulzeit.TagesEnde(time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC)),
+						schulzeit.TagesEnde(kuenftigerTag),
 						"10A",
 					).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 5))
@@ -72,7 +79,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			name: "Tx Begin Error",
 			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
-				NeuesRueckgabeDatum: "2023-12-31",
+				NeuesRueckgabeDatum: kuenftigerTag.Format("2006-01-02"),
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin().WillReturnError(errTest)
@@ -84,7 +91,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			name: "Tx Exec Error",
 			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
-				NeuesRueckgabeDatum: "2023-12-31",
+				NeuesRueckgabeDatum: kuenftigerTag.Format("2006-01-02"),
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
@@ -100,7 +107,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 			name: "Tx Commit Error",
 			payload: verlaengerungAnfrage{
 				Klasse:              "10A",
-				NeuesRueckgabeDatum: "2023-12-31",
+				NeuesRueckgabeDatum: kuenftigerTag.Format("2006-01-02"),
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()

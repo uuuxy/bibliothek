@@ -266,11 +266,6 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	})
 }
 
-// fristHoechstensJahre begrenzt eine Frist von Hand nach oben. Die längste, die das Programm selbst
-// vergibt, hat ein Band über alle Jahrgänge (1 bis 13, chk_jahrgang_spanne): zwölf Jahre nach dem
-// nächsten Stichtag. Ein Datum dahinter ist ein Tippfehler.
-const fristHoechstensJahre = 13
-
 // leseFristText liest eine Frist als Zeitstempel (ISO 8601) oder als Datum. Ein Datum gilt bis
 // zum Tagesende in der Schulzeitzone, nach derselben Definition wie die berechnete Frist
 // (schulzeit.TagesEnde): Roh in UTC wäre die gesetzte Frist ein bis zwei Stunden später fällig
@@ -294,9 +289,8 @@ func leseFaelligAm(text string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	if grenze := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(fristHoechstensJahre, 0, 0)); frist.After(grenze) {
-		return time.Time{}, apierrors.BadRequest(fmt.Sprintf("Das Rückgabedatum liegt zu weit in der Zukunft. Möglich ist höchstens der %s.",
-			grenze.Format(tuer.DatumsformatDE)), nil)
+	if err := tuer.PruefeFristObergrenze(frist, schulzeit.Jetzt()); err != nil {
+		return time.Time{}, err
 	}
 	return frist, nil
 }

@@ -9,9 +9,11 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/pkg/kennung"
+	"bibliothek/internal/service"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -222,4 +224,14 @@ func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 		return false
 	}
 	return true
+}
+
+// PruefeFristObergrenze weist eine Frist von Hand hinter service.LetzteFristVonHand ab (400) und
+// nennt das späteste mögliche Datum.
+func PruefeFristObergrenze(frist, jetzt time.Time) error {
+	if grenze := service.LetzteFristVonHand(jetzt); frist.After(grenze) {
+		return apierrors.BadRequest(fmt.Sprintf("Das Rückgabedatum liegt zu weit in der Zukunft. Möglich ist höchstens der %s.",
+			grenze.Format(DatumsformatDE)), nil)
+	}
+	return nil
 }
