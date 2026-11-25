@@ -65,3 +65,54 @@ func TestSchliesseLaufAb_WasWaehrendDesLaufsInsRegalKommtIstKeinVerlust(t *testi
 		t.Errorf("%d Bücher, die erst während des Laufs ins Regal kamen, als Verlust gebucht", aus)
 	}
 }
+
+// Ein Buch, das für eine Vormerkung im Abholfach liegt, steht nicht im Regal: Der Abschluss bucht
+// es nicht als Verlust, auch wenn es vor dem Beginn dorthin kam und niemand es scannt. Als Verlust
+// ausgesondert, teilte es der Verfall der Vormerkung keinem Wartenden mehr zu. Gegenprobe: Das
+// Buch, das im Regal fehlt, bucht er.
+func TestSchliesseLaufAb_BuchImAbholfachIstKeinVerlust(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
+
+	physik := "Physik"
+	// ex[0] liegt im Abholfach, ex[1] steht im Regal und fehlt.
+	ex := legeSignaturMitExemplarenAn(t, pool, physik, 2)
+	var schueler string
+	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('S-ABHOL', 'Test', 'Schueler', '7a', 2030) RETURNING id::text`).Scan(&schueler); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis)
+		SELECT titel_id, $2, 'abholbereit', id, now() + interval '3 days' FROM buecher_exemplare WHERE id = $1`,
+		ex[0], schueler); err != nil {
+		t.Fatalf("Vormerkung anlegen: %v", err)
+	}
+	lauf, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &physik}, "Physik", "")
+	if err != nil {
+		t.Fatalf("Lauf anlegen: %v", err)
+	}
+
+	stand, err := repo.ZaehleStand(ctx, lauf.ID, lauf.Bereich())
+	if err != nil {
+		t.Fatalf("ZaehleStand: %v", err)
+	}
+	if stand != (LaufStand{Erwartet: 1, Fehlend: 1}) {
+		t.Errorf("Stand = %+v, erwartet 1 erwartet und 1 fehlend: nur das Buch im Regal", stand)
+	}
+	verloren, err := repo.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), bearbeiter)
+	if err != nil {
+		t.Fatalf("Abschluss: %v", err)
+	}
+	if verloren != 1 {
+		t.Errorf("Abschluss buchte %d Verluste, erwartet 1", verloren)
+	}
+	if aus := ausgesonderteZahl(t, pool, ex[:1]); aus != 0 {
+		t.Error("das Buch im Abholfach ist als Verlust gebucht")
+	}
+	if aus := ausgesonderteZahl(t, pool, ex[1:]); aus != 1 {
+		t.Error("das Buch, das im Regal fehlt, ist nicht als Verlust gebucht")
+	}
+}

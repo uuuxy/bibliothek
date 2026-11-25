@@ -490,7 +490,8 @@ Prüfziffer bleibt, wie sie ist, denn umgerechnet führte sie auf ein anderes Bu
 ## Inventur
 
 _Inventur starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) → scannen. Gezählt wird, was
-der Abschluss erwartet; was während der Inventur an der Theke war oder neu dazukam, erwartet er nicht.
+der Abschluss erwartet; was während der Inventur an der Theke war oder neu dazukam, erwartet er nicht,
+ebenso wenig ein Buch im Abholfach.
 Ein verliehenes Buch im Regal bucht der Scan zurück (ist es vorgemerkt: „ins Abholfach legen“).
 **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im Umfang als Verlust (die Rückfrage nennt
 die Zahl); diese Bücher stehen dann im Fehlbestandsbericht. Ein Buch, das sich findet, holt ein Kreuz

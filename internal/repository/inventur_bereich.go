@@ -48,7 +48,7 @@ const laufBeginn = "(SELECT gestartet_am FROM inventur_sessions WHERE id = $1)"
 // bedingung liefert die Bedingung „erwartet" des Laufs laufID (ohne WHERE) samt Argumenten: die
 // ID des Laufs in $1, die Einschränkungen danach. Erwartet ist ein Exemplar im Bereich, das
 // vorhanden und ausleihbar ist und seit dem Beginn des Laufs im Regal stehen musste. Ein Buch beim
-// Schüler kann niemand scannen. Was seit dem Beginn verliehen oder zurückgegeben, angelegt,
+// Schüler kann niemand scannen, eins im Abholfach sucht niemand im Regal. Was seit dem Beginn verliehen oder zurückgegeben, angelegt,
 // entsperrt oder wieder aufgenommen wurde, kam erst während der Inventur ins Regal oder ging
 // hinaus; nicht gescannt bewiese es keinen Verlust.
 func (s InventurBereich) bedingung(laufID string) (string, []any) {
@@ -56,6 +56,8 @@ func (s InventurBereich) bedingung(laufID string) (string, []any) {
 	bedingungen := append([]string{
 		"e.ist_ausgesondert = false",
 		"e.ist_ausleihbar = true",
+		// Ein Buch im Abholfach steht nicht im Regal; dieselbe Bedingung wie für „verfügbar“.
+		sqlExemplarNichtImAbholfach,
 		"NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND (a.rueckgabe_am IS NULL OR a.rueckgabe_am >= " + laufBeginn + "))",
 		// Ausleihe, Rückgabe und jeder Wechsel von ist_ausleihbar oder ist_ausgesondert stempeln
 		// letzte_bewegung_am (invarianten.md 1); ein neues Exemplar trägt keinen Stempel.
