@@ -16,16 +16,19 @@ type MahnKennzahlen struct {
 //
 // typFilter ist das Stück aus BestandsFilterBedingung, mit dem die Statistik auch ihre übrigen
 // Kacheln filtert: Die Quote „überfällig ÷ laufende Ausleihen" teilte sonst eine Zahl der ganzen
-// Schule durch eine Zahl aus Freihand oder LMF. Ein Gerät hat kein Exemplar und fällt bei
-// gesetztem Filter heraus; ohne Filter zählt es wie bisher mit.
+// Schule durch eine Zahl aus Freihand oder LMF. Aus demselben Grund zählen Geräte nicht: Der
+// Nenner („aktuell verliehen“) zählt Bücher; überfällige Geräte stehen im Mahnwesen.
+//
+// Die Dauer zählt in vollen Tagen wie im Mahnwesen (tage_ueberfaellig, ab 15 Tagen „Mahnung“):
+// Ein Verzug von 14 Tagen und ein paar Stunden steht in beiden unter „bis 14 Tage“.
 func LadeMahnKennzahlen(ctx context.Context, db Datenbank, typFilter string) (MahnKennzahlen, error) {
 	var k MahnKennzahlen
 	err := db.QueryRow(ctx, `
 			WITH offen AS (
-				SELECT (CURRENT_TIMESTAMP - a.rueckgabe_frist) AS verzug
+				SELECT GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage
 				FROM ausleihen a
-				LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
-				LEFT JOIN buecher_titel t ON t.id = e.titel_id
+				JOIN buecher_exemplare e ON e.id = a.exemplar_id
+				JOIN buecher_titel t ON t.id = e.titel_id
 				-- Ohne Dauerleihen: Sie werden nicht überfällig (dieselbe Regel wie in der
 				-- Sperr-Automatik und in der Leserliste). Sonst zählt die Übersicht
 				-- Mahnfälle, die es nicht gibt — ein Kollege wird nicht gemahnt.
@@ -34,11 +37,11 @@ func LadeMahnKennzahlen(ctx context.Context, db Datenbank, typFilter string) (Ma
 			)
 			SELECT
 				COUNT(*)::int,
-				COALESCE(MAX(GREATEST(0, EXTRACT(DAY FROM verzug)::int)), 0)::int,
-				COUNT(*) FILTER (WHERE verzug <= INTERVAL '14 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '14 days' AND verzug <= INTERVAL '30 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '30 days' AND verzug <= INTERVAL '60 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '60 days')::int
+				COALESCE(MAX(tage), 0)::int,
+				COUNT(*) FILTER (WHERE tage <= 14)::int,
+				COUNT(*) FILTER (WHERE tage BETWEEN 15 AND 30)::int,
+				COUNT(*) FILTER (WHERE tage BETWEEN 31 AND 60)::int,
+				COUNT(*) FILTER (WHERE tage > 60)::int
 			FROM offen
 		`).Scan(&k.Ueberfaellig, &k.MaxTage, &k.Bis14, &k.Bis30, &k.Bis60, &k.Ueber60)
 	return k, err

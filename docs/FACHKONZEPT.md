@@ -559,7 +559,7 @@ Für die Schulleitung und Bibliotheks-Administration zählt das System, ganz ode
 nur LMF:
 
 - Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen pro Monat;
-  Überfällige nach Dauer.
+  Überfällige Bücher nach Dauer in vollen Tagen wie im Mahnwesen (überfällige Geräte stehen dort).
 - Hitlisten: Renner (meistausgeliehen) und Ladenhüter, mit Detailseite und Filter.
 
 Gezählt werden Ausleihen, nicht Personen. Eine Auswertung je Jahrgang oder Klasse, eine

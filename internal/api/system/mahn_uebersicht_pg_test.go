@@ -36,7 +36,7 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 	}
 	leser := testdaten.LegeSchuelerAn(t, pool, "M-UEBERSICHT", "Mahn", "07A")
 	for titel, tage := range map[string]int{
-		"Mahn 5": 5, "Mahn 10": 10, "Mahn 20": 20, "Mahn 45": 45, "Mahn 70": 70, "Mahn 80": 80,
+		"Mahn 5": 5, "Mahn 10": 10, "Mahn 14": 14, "Mahn 20": 20, "Mahn 45": 45, "Mahn 70": 70, "Mahn 80": 80,
 	} {
 		testdaten.LegeAusleiheMitFristAn(t, pool, leser, titel, vorTagen(tage))
 	}
@@ -62,11 +62,12 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
 
+	// 14 Tage und 12 Stunden zählen wie im Mahnwesen als 14 volle Tage: „1–14 Tage“.
 	erwartet := mahnUebersicht{
-		Ueberfaellig:        6,
+		Ueberfaellig:        7,
 		MaxTageUeberfaellig: 80,
 		Zeitspannen: []ueberfaelligZeitspanne{
-			{Bezeichnung: "1–14 Tage", Anzahl: 2},
+			{Bezeichnung: "1–14 Tage", Anzahl: 3},
 			{Bezeichnung: "15–30 Tage", Anzahl: 1},
 			{Bezeichnung: "31–60 Tage", Anzahl: 1},
 			{Bezeichnung: "über 60 Tage", Anzahl: 2},
@@ -80,7 +81,7 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 // Die Kachel „Überfällige Ausleihen" teilt die Zahl durch die laufenden Ausleihen aus
 // /api/statistiken, und die folgen dem Bestandsfilter. Ohne denselben Filter stand eine Zahl
 // der ganzen Schule über einer aus Freihand oder LMF („≈ 240 % der laufenden Ausleihen"). Ein
-// Gerät hat kein Exemplar: Ohne Filter zählt es mit, mit Filter gehört es zu keinem Bestand.
+// Gerät zählt nie: Der Nenner zählt Bücher, überfällige Geräte stehen im Mahnwesen.
 func TestMahnUebersicht_FolgtDemBestandsfilter(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -111,7 +112,7 @@ func TestMahnUebersicht_FolgtDemBestandsfilter(t *testing.T) {
 	}
 
 	for adresse, erwartet := range map[string]int{
-		"/api/dashboard/summary":               4,
+		"/api/dashboard/summary":               3,
 		"/api/dashboard/summary?type=lmf":      1,
 		"/api/dashboard/summary?type=freihand": 2,
 	} {
