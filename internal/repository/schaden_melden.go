@@ -39,6 +39,9 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 	if err != nil {
 		return "", err
 	}
+	if err := sperreSchadensGegenstand(ctx, tx, ausleihe); err != nil {
+		return "", err
+	}
 	vorhanden, erledigt, err := pruefeSchadensmeldung(ctx, tx, meldung, ausleihe)
 	if err != nil || erledigt {
 		return vorhanden, err
@@ -174,6 +177,20 @@ func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldun
 		a.ohneForderung = a.ohneForderung || kollegium
 	}
 	return a, nil
+}
+
+// sperreSchadensGegenstand sperrt die Zeile des Exemplars oder Geräts, nach der Ausleihe wie an
+// der Theke. Eine gleichzeitige Ausleihe wartet dann bis zum Commit und findet das Exemplar
+// ausgesondert; eine, die vorher committet hat, zählt pruefeSchadensmeldung als fremde aktive
+// Ausleihe. Ohne die Sperre zählte die Meldung vor dem Commit der Theke keine und stellte danach
+// ein verliehenes Exemplar still.
+func sperreSchadensGegenstand(ctx context.Context, tx pgx.Tx, a schadensAusleihe) error {
+	if a.geraetID != "" {
+		_, err := SperreGeraetezeile(ctx, tx, a.geraetID)
+		return err
+	}
+	_, err := SperreExemplarzeile(ctx, tx, a.exemplarID)
+	return err
 }
 
 // pruefeSchadensmeldung sagt, ob die Meldung noch etwas zu buchen hat. erledigt mit der

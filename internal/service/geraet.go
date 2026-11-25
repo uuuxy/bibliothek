@@ -78,6 +78,19 @@ func (d *GeraeteDienst) ladeGeraet(ctx context.Context, nummer string) (reposito
 	return g, nil
 }
 
+// sperreUndPruefeGeraet sperrt die Zeile des Geräts nach seiner Ausleihe und prüft den Stand
+// darunter neu, wie sperreUndPruefeExemplar beim Buch. Gelesen wurde das Gerät vor der
+// Transaktion; wurde es seitdem gesperrt oder ausgesondert, etwa von einer Schadensmeldung,
+// entsteht keine Ausleihe.
+func sperreUndPruefeGeraet(ctx context.Context, tx pgx.Tx, g *repository.Geraet) error {
+	stand, err := repository.SperreGeraetezeile(ctx, tx, g.ID)
+	if err != nil {
+		return err
+	}
+	g.IstAusleihbar, g.IstAusgesondert = stand.Ausleihbar, stand.Ausgesondert
+	return pruefeGeraetAusleihbar(*g)
+}
+
 // pruefeGeraetAusleihbar hält ausgesonderte und gesperrte Geräte (z. B. defekt) von der
 // Ausleihe fern. Die Rückgabe prüft sie nicht: Eine offene Ausleihe zu schließen ist immer
 // richtig, auch für ein Gerät, das inzwischen defekt oder ausgesondert ist.
@@ -300,7 +313,7 @@ func (d *GeraeteDienst) verarbeiteScan(
 	if istVerliehen {
 		leser, err = d.ladeRueckgeber(ctx, aktiverLeserID)
 	} else {
-		if err = pruefeGeraetAusleihbar(g); err != nil {
+		if err = sperreUndPruefeGeraet(ctx, tx, &g); err != nil {
 			return nil, err
 		}
 		leser, lage, err = d.ladeAkteur(ctx, aktiverLeserID, uebergehen)

@@ -37,3 +37,18 @@ func SperreExemplarzeile(ctx context.Context, tx pgx.Tx, exemplarID string) (Exe
 		FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, exemplarID).Scan(&s.Ausleihbar, &s.Ausgesondert, &s.LetzteBewegung)
 	return s, err
 }
+
+// GeraetStand ist der Stand eines Geräts, den Ausleihe und Schadensmeldung unter der Sperre lesen.
+type GeraetStand struct {
+	Ausleihbar   bool
+	Ausgesondert bool
+}
+
+// SperreGeraetezeile sperrt die Zeile des Geräts bis zum Ende der Transaktion und liefert seinen
+// Stand, wie SperreExemplarzeile beim Buch, in derselben Reihenfolge nach der Ausleihe.
+func SperreGeraetezeile(ctx context.Context, tx pgx.Tx, geraetID string) (GeraetStand, error) {
+	var s GeraetStand
+	err := tx.QueryRow(ctx, `SELECT ist_ausleihbar, ist_ausgesondert FROM geraete WHERE id = $1 FOR UPDATE`,
+		geraetID).Scan(&s.Ausleihbar, &s.Ausgesondert)
+	return s, err
+}

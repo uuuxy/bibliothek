@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/db"
 	"bibliothek/internal/testdaten"
 	"context"
 	"errors"
@@ -46,6 +47,84 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	}
 	if aktiveLoans != 1 {
 		t.Errorf("B's aktive Ausleihe = %d, erwartet 1", aktiveLoans)
+	}
+}
+
+// Schadensmeldung und Ausleihe im selben Augenblick: Die Theke hat das zurückgegebene Buch oder
+// Gerät unter der Sperre seiner Zeile neu verliehen und noch nicht abgeschlossen, als die Meldung
+// an der alten Ausleihe kommt. Die Meldung wartet auf die Zeile und findet danach die neue
+// Ausleihe. Zählte sie vorher, sähe sie keine und stellte nach dem Abschluss der Theke ein
+// verliehenes Exemplar still.
+func TestSchadenMelden_GleichzeitigeAusleiheGehtVor(t *testing.T) {
+	for _, fall := range []struct{ name, tabelle, spalte string }{
+		{"Buch", "buecher_exemplare", "exemplar_id"},
+		{"Gerät", "geraete", "geraet_id"},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			pool := pgTestPool(t)
+			resetInventurDaten(t, pool)
+			ctx := context.Background()
+			repo := NewSchadensAbfragen(pool)
+			schuelerA := legeSchuelerAn(t, pool, "GLZ-A", "Anna", "7a")
+			schuelerB := legeSchuelerAn(t, pool, "GLZ-B", "Ben", "7b")
+			bearbeiter := legeBearbeiterAn(t, pool)
+
+			var gegenstand string
+			if fall.tabelle == "geraete" {
+				if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Tablet', 'G-GLZ') RETURNING id`).Scan(&gegenstand); err != nil {
+					t.Fatalf("Gerät anlegen: %v", err)
+				}
+				t.Cleanup(func() {
+					for _, sql := range []string{
+						`DELETE FROM schadensfaelle WHERE geraet_id = $1`,
+						`DELETE FROM ausleihen WHERE geraet_id = $1`,
+						`DELETE FROM geraete WHERE id = $1`,
+					} {
+						if _, err := pool.Exec(context.Background(), sql, gegenstand); err != nil {
+							t.Errorf("Gerät aufräumen (%s): %v", sql, err)
+						}
+					}
+				})
+			} else {
+				gegenstand = legeSignaturMitExemplarenAn(t, pool, "Gleichzeitig", 1)[0]
+			}
+			var alte string
+			if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (`+fall.spalte+`, schueler_id, rueckgabe_frist, rueckgabe_am)
+				VALUES ($1, $2, CURRENT_DATE + 14, now()) RETURNING id`, gegenstand, schuelerA).Scan(&alte); err != nil {
+				t.Fatalf("zurückgegebene Ausleihe: %v", err)
+			}
+
+			theke := beginne(t, pool)
+			defer db.Verwerfe(ctx, theke)
+			if _, err := theke.Exec(ctx, `SELECT 1 FROM `+fall.tabelle+` WHERE id = $1 FOR UPDATE`, gegenstand); err != nil {
+				t.Fatalf("Zeile sperren: %v", err)
+			}
+			if _, err := theke.Exec(ctx, `INSERT INTO ausleihen (`+fall.spalte+`, schueler_id, rueckgabe_frist)
+				VALUES ($1, $2, CURRENT_DATE + 14)`, gegenstand, schuelerB); err != nil {
+				t.Fatalf("neue Ausleihe: %v", err)
+			}
+
+			fertig := make(chan error, 1)
+			go func() {
+				_, err := repo.Melde(ctx, alte, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 500)
+				fertig <- err
+			}()
+			ueberschneidung(t, pool, theke, fertig)
+			if err := theke.Commit(ctx); err != nil {
+				t.Fatalf("Theke abschließen: %v", err)
+			}
+			if err := <-fertig; !errors.Is(err, ErrExemplarNeuVerliehen) {
+				t.Errorf("Meldung: Fehler %v, erwartet ErrExemplarNeuVerliehen", err)
+			}
+			var stillgelegt bool
+			if err := pool.QueryRow(ctx, `SELECT ist_ausgesondert OR NOT ist_ausleihbar FROM `+fall.tabelle+` WHERE id = $1`,
+				gegenstand).Scan(&stillgelegt); err != nil {
+				t.Fatalf("Stand lesen: %v", err)
+			}
+			if stillgelegt {
+				t.Error("verliehen und stillgelegt zugleich")
+			}
+		})
 	}
 }
 

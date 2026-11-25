@@ -304,6 +304,44 @@ func TestGeraetAusleihe_ZweiterPlatzBekommtDenKonflikt(t *testing.T) {
 	}
 }
 
+// Ein Gerät, das gerade gesperrt wird (etwa von einer Schadensmeldung), wird nicht im selben
+// Augenblick verliehen: Die Ausleihe wartet auf die Zeile des Geräts und liest danach seinen
+// Stand neu, wie die Ausleihe eines Buchs (sperreUndPruefeExemplar). Ohne das läse sie den
+// Stand vor der Sperre, und das Gerät wäre verliehen und gesperrt zugleich.
+func TestGeraetAusleihe_WartetAufGleichzeitigeSperre(t *testing.T) {
+	g := newGeraeteTheke(t)
+	ctx := context.Background()
+	nummer := g.geraet(t, "gesperrt")
+	leser := g.schueler(t, "Gesperrt")
+
+	sperrer, err := g.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Verwerfe(ctx, sperrer)
+	if _, err := sperrer.Exec(ctx, `UPDATE geraete SET ist_ausleihbar = false, zustand_notiz = 'Display gesprungen'
+		WHERE barcode_id = $1`, nummer); err != nil {
+		t.Fatalf("Gerät sperren: %v", err)
+	}
+
+	fertig := make(chan error, 1)
+	go func() {
+		_, err := g.dienst.verarbeiteScan(ctx, nummer, &leser, true, false, g.ausgabe)
+		fertig <- err
+	}()
+	warteAufWartende(t, g.pool, sperrer, 1)
+	if err := sperrer.Commit(ctx); err != nil {
+		t.Fatalf("Sperre abschließen: %v", err)
+	}
+
+	if err := <-fertig; !errors.Is(err, ErrGesperrt) {
+		t.Errorf("Ausleihe des eben gesperrten Geräts: Fehler %v, erwartet ErrGesperrt", err)
+	}
+	if n := g.offeneAusleihen(t, nummer); n != 0 {
+		t.Errorf("%d offene Ausleihen des gesperrten Geräts, erwartet keine", n)
+	}
+}
+
 // Zwei Plätze nehmen dasselbe Gerät zugleich zurück: Einer bucht die Rückgabe, der andere
 // wartet an der gesperrten Ausleihe und findet danach ein freies Gerät, zu dem ihm der Ausweis
 // fehlt. Beide warten zuerst auf eine Transaktion des Tests, damit sie sicher zugleich ankommen.
