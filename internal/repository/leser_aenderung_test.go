@@ -111,3 +111,19 @@ func TestLeserAenderung_LeererWert(t *testing.T) {
 		t.Errorf("Werte:\n ist  %#v\n soll %#v", args, soll)
 	}
 }
+
+// Ein Geburtsdatum ohne Wert wird NULL, wie ein leerer Text bei der Anschrift (nur beim Kollegium,
+// die Tür prüft es); ein gesetztes geht, wie es ist.
+func TestLeserAenderung_GeburtsdatumLeeren(t *testing.T) {
+	leer := LeserAenderung{Geburtsdatum: &time.Time{}}
+	query, args := leer.anweisung("k")
+	if query != "UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP, geburtsdatum = $1 WHERE id = $2" ||
+		!cmp.Equal(args, []any{nil, "k"}) {
+		t.Errorf("leeres Geburtsdatum: %s %#v", query, args)
+	}
+	tag := time.Date(1980, 1, 2, 0, 0, 0, 0, time.UTC)
+	_, args = LeserAenderung{Geburtsdatum: &tag}.anweisung("k")
+	if !cmp.Equal(args, []any{&tag, "k"}) {
+		t.Errorf("gesetztes Geburtsdatum: %#v", args)
+	}
+}

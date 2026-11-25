@@ -178,6 +178,23 @@ describe('useLeserakteFormular.save', () => {
 			return hook;
 		}
 
+		// Ein Kollege braucht kein Geburtsdatum: Ein eingetragenes lässt sich wieder löschen.
+		it('schickt ein geleertes Geburtsdatum beim Kollegen als leeren String', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = useLeserakteFormular({
+				getStudent: () => ({ ...kollege, geburtsdatum: '1980-01-02' }),
+				onSave: () => {},
+				showSnackbar: () => {}
+			});
+			hook.uebernimmLeser();
+
+			hook.eingaben.geburtsdatum = '';
+			await hook.speichere();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload).toEqual({ geburtsdatum: '' });
+		});
+
 		it('lässt die Schülerfelder ganz weg, statt sie leer mitzuschicken', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();

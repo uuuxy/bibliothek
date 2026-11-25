@@ -676,7 +676,8 @@ Klasse und Abgangsjahr (eine Klasse hat nur ein Schüler, und das Abgangsjahr le
 Server aus ihr ab), die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler) sowie
 Anschrift und Eltern-E-Mail: Für das Kollegium führt das Programm keine Anschrift
 (`chk_leser_anschrift_nur_schueler`). Geburtsdatum und
-Ausweisnummer stehen jedem offen. Beim Kollegen bleibt das Geburtsdatum leer; eine
+Ausweisnummer stehen jedem offen. Beim Kollegen bleibt das Geburtsdatum leer, ein eingetragenes
+lässt sich in der Akte wieder löschen (beim Schüler nicht, es ist der Schlüssel des LUSD-Abgleichs); eine
 Ausweisnummer hat jeder mit freigeschaltetem Zugang, das Programm vergibt sie.
 
 **Die Schul-E-Mail ist beim Anlegen von Lehrkraft, LiV, Sekretariat und U-plus Pflicht.**

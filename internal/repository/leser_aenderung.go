@@ -17,12 +17,14 @@ type LeserAenderung struct {
 	Ausweisnummer *string
 	Klasse        *string
 	AbgaengerJahr *int
-	Geburtsdatum  *time.Time
-	Strasse       *string
-	Hausnummer    *string
-	Plz           *string
-	Ort           *string
-	ElternEmail   *string
+	// Ein Geburtsdatum ohne Wert (time.Time{}) wird NULL. Die Tür nennt es nur beim Kollegium:
+	// Beim Schüler ist es der Schlüssel des LUSD-Abgleichs.
+	Geburtsdatum *time.Time
+	Strasse      *string
+	Hausnummer   *string
+	Plz          *string
+	Ort          *string
+	ElternEmail  *string
 	// LUSDID und Art haben eigene Regeln (nur nachtragbar, kein Wechsel über die Grenze zum
 	// Schüler). Die Tür prüft sie, bevor sie eines der beiden Felder nennt.
 	LUSDID *string
@@ -72,7 +74,9 @@ func (a LeserAenderung) zuweisungen() spaltenWerte {
 	if a.AbgaengerJahr != nil {
 		z.setze("abgaenger_jahr", *a.AbgaengerJahr)
 	}
-	if a.Geburtsdatum != nil {
+	if a.Geburtsdatum != nil && a.Geburtsdatum.IsZero() {
+		z.setze("geburtsdatum", nil)
+	} else if a.Geburtsdatum != nil {
 		z.setze("geburtsdatum", a.Geburtsdatum)
 	}
 	z.leerbar("strasse", a.Strasse)

@@ -154,6 +154,23 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 			erwarte(t, aendern(t, f.id, f.rumpf), http.StatusBadRequest, f.meldung)
 		})
 	}
+	// Ein Kollege braucht kein Geburtsdatum, wie beim Anlegen: Ein versehentlich eingetragenes
+	// lässt sich wieder leeren. Beim Schüler lehnt die Tabelle darüber ab.
+	t.Run("Akte: Geburtsdatum eines Kollegen leeren", func(t *testing.T) {
+		if _, err := pool.Exec(ctx, `UPDATE leser SET geburtsdatum = '1980-01-02' WHERE id = $1`, lehrkraft); err != nil {
+			t.Fatalf("Geburtsdatum setzen: %v", err)
+		}
+		if rec := aendern(t, lehrkraft, `{"geburtsdatum":""}`); rec.Code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+		}
+		var leer bool
+		if err := pool.QueryRow(ctx, `SELECT geburtsdatum IS NULL FROM leser WHERE id = $1`, lehrkraft).Scan(&leer); err != nil {
+			t.Fatalf("Geburtsdatum lesen: %v", err)
+		}
+		if !leer {
+			t.Error("Geburtsdatum des Kollegen nicht geleert")
+		}
+	})
 	t.Run("Akte: ohne Sitzung", func(t *testing.T) {
 		rec := rufe(t, srv.LeserAendern(repository.NewProtokollAbfragen(pool)), http.MethodPatch, "/api/schueler/"+schueler, schueler, `{"vorname":"X"}`, nil)
 		erwarte(t, rec, http.StatusUnauthorized, "Nicht angemeldet. Bitte neu anmelden.")

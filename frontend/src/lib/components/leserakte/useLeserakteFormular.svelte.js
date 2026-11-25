@@ -39,7 +39,8 @@ function schulfelder(daten, leser, hatKonto) {
 /**
  * Die Maske in der Form, in der sie an den Server geht. Geräumte Felder sind leere Strings:
  * JSON-null hieße dort „nicht mitgeschickt", und Löschen wäre nicht möglich. Nur das
- * Geburtsdatum geht leer als null hinaus, der Server lässt es sich nicht leeren.
+ * Geburtsdatum eines Schülers geht leer als null hinaus: Es ist der Schlüssel des LUSD-Abgleichs,
+ * und der Server lässt es sich nicht leeren; das eines Kollegen lässt sich löschen.
  * @param {any} daten
  * @param {any} leser
  * @param {boolean} hatKonto
@@ -50,7 +51,7 @@ function nutzlast(daten, leser, hatKonto) {
 		vorname: daten.vorname,
 		nachname: daten.nachname,
 		art: daten.art,
-		geburtsdatum: daten.geburtsdatum || null,
+		geburtsdatum: daten.geburtsdatum || (istKollegium({ art: daten.art }) ? '' : null),
 		...schulfelder(daten, leser, hatKonto)
 	};
 }

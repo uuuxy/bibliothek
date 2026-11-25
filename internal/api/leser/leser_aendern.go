@@ -248,6 +248,9 @@ func (t *Tueren) pruefeLeserAenderung(ctx context.Context, w http.ResponseWriter
 	if !t.pruefeSchuelerfelder(ctx, w, id, req) {
 		return keine, false
 	}
+	if !t.pruefeGeburtsdatumLeeren(ctx, w, id, req) {
+		return keine, false
+	}
 	b, ok := baueLeserAenderung(w, req)
 	if !ok {
 		return keine, false
@@ -404,6 +407,30 @@ func (t *Tueren) pruefeSchuelerfelder(ctx context.Context, w http.ResponseWriter
 	}
 	apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, nil)
 	return false
+}
+
+// pruefeGeburtsdatumLeeren lässt ein leeres Geburtsdatum nur beim Kollegium zu, mit derselben
+// Regel wie das Anlegen (leser_anlegen.go): Beim Schüler ist es der Schlüssel des LUSD-Abgleichs,
+// beim Kollegen eine Angabe ohne Zweck, die sich wieder löschen lassen muss.
+func (t *Tueren) pruefeGeburtsdatumLeeren(ctx context.Context, w http.ResponseWriter, id string, req *leserAendernAnfrage) bool {
+	if req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) != "" {
+		return true
+	}
+	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrLeserNichtGefunden) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
+			return false
+		}
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("art des lesers laden: %w", err))
+		return false
+	}
+	if leserart.IstSchueler(art) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+			"Das Geburtsdatum lässt sich nicht leeren. Es ist der Schlüssel für den LUSD-Abgleich.", nil)
+		return false
+	}
+	return true
 }
 
 // pruefeUndSetzeArt ändert die Art eines Lesers (Migration 123). Erlaubt ist der Wechsel
@@ -593,14 +620,10 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		ElternEmail:   req.ElternEmail,
 	}
 
-	if req.Geburtsdatum != nil {
-		// Pflichtfeld (Schlüssel des LUSD-Abgleichs): POST verlangt es, also darf der PATCH
-		// es nicht mit "" still auf NULL setzen; zweite Tür, gleiche Regel. Leer = 400.
-		if strings.TrimSpace(*req.Geburtsdatum) == "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
-				"Das Geburtsdatum lässt sich nicht leeren. Es ist der Schlüssel für den LUSD-Abgleich.", nil)
-			return nil, false
-		}
+	if req.Geburtsdatum != nil && strings.TrimSpace(*req.Geburtsdatum) == "" {
+		// Leer heißt löschen; beim Schüler hat pruefeGeburtsdatumLeeren schon abgelehnt.
+		b.Geburtsdatum = &time.Time{}
+	} else if req.Geburtsdatum != nil {
 		datum, err := leseGeburtsdatum(*req.Geburtsdatum)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
