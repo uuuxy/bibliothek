@@ -36,7 +36,7 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 		if err := pool.QueryRow(ctx, "SELECT "+repository.AbschlussklasseSQL("$1::text"), klasse).Scan(&sqlAbschluss); err != nil {
 			t.Fatalf("%q: SQL: %v", klasse, err)
 		}
-		goAbschluss := jahrgang >= abschluss
+		goAbschluss := repository.IstAbschlussklasse(klasse)
 		// Die SQL-Regel kennt Klassen ohne führende Ziffer nicht als Abschlussklasse —
 		// „ET“ ist Jahrgang 11 und in beiden Welten keine.
 		if goAbschluss != sqlAbschluss {

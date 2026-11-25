@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -40,6 +41,57 @@ func TestGeraetAusleihe_FerienLeseclub(t *testing.T) {
 	}
 	if res.Frist == nil || res.Frist.After(schulzeit.Jetzt().AddDate(0, 0, 60)) {
 		t.Errorf("Frist %v nach dem Leseclub, erwartet die Leihfrist der Geräte", res.Frist)
+	}
+}
+
+// Ein Abgänger bekommt ein Gerät nicht über den letzten Schultag vor den Sommerferien hinaus,
+// auch nicht im Ferien-Leseclub. Ein Kind der Klasse 5 bekommt am selben Tag dessen Datum.
+func TestGeraetAusleihe_AbgaengerVorDenSommerferien(t *testing.T) {
+	g := newGeraeteTheke(t)
+	ctx := context.Background()
+	g.dienst.jetzt = func() time.Time { return time.Date(2031, time.June, 30, 10, 0, 0, 0, schulzeit.Zone()) }
+	setzeEinstellungenFuerTest(t, g.pool, map[string]*string{
+		"sommerferien":              strPtr(sommerferien2031),
+		"ferien_leseclub_aktiv":     strPtr("true"),
+		"ferien_leseclub_zieldatum": strPtr("2031-08-20"),
+	})
+	abgaenger := testdaten.LegeSchuelerMitNamenAn(t, g.pool, "GT-Abgang-"+g.suffix, "Geraetetheke", "Abgang", "10R1", 2031)
+	kind := g.schueler(t, "Fuenfte")
+
+	for _, f := range []struct {
+		name, leser string
+		erwartet    time.Time
+	}{
+		{"abgang", abgaenger, fristEnde2031(time.July, 4)},
+		{"fuenfte", kind, fristEnde2031(time.August, 20)},
+	} {
+		res, err := g.dienst.verarbeiteScan(ctx, g.geraet(t, f.name), &f.leser, true, false, g.ausgabe)
+		if err != nil {
+			t.Fatalf("%s: Ausleihe: %v", f.name, err)
+		}
+		if res.Frist == nil || !res.Frist.Equal(f.erwartet) {
+			t.Errorf("%s: Frist %v, erwartet %v", f.name, res.Frist, f.erwartet)
+		}
+	}
+
+	// Ein Leseclub über Ostern gilt für den Abgänger auch nicht: 14 Tage ab dem 01.04.2031.
+	g.dienst.jetzt = func() time.Time { return time.Date(2031, time.April, 1, 10, 0, 0, 0, schulzeit.Zone()) }
+	ostern := "2031-04-25"
+	setzeEinstellungenFuerTest(t, g.pool, map[string]*string{"ferien_leseclub_zieldatum": &ostern})
+	for _, f := range []struct {
+		name, leser string
+		erwartet    time.Time
+	}{
+		{"abgang-ostern", abgaenger, fristEnde2031(time.April, 15)},
+		{"fuenfte-ostern", kind, fristEnde2031(time.April, 25)},
+	} {
+		res, err := g.dienst.verarbeiteScan(ctx, g.geraet(t, f.name), &f.leser, true, false, g.ausgabe)
+		if err != nil {
+			t.Fatalf("%s: Ausleihe: %v", f.name, err)
+		}
+		if res.Frist == nil || !res.Frist.Equal(f.erwartet) {
+			t.Errorf("%s: Frist %v, erwartet %v", f.name, res.Frist, f.erwartet)
+		}
 	}
 }
 

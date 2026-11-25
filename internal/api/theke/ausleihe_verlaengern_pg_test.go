@@ -312,6 +312,32 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 	pruefeFrist(t, testdaten.LadeFrist(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 23))
 }
 
+// Ein Abgänger verlängert nicht über den letzten Schultag vor den Sommerferien hinaus: Statt des
+// Montags nach den Ferien (18.08.2031) ist das Buch am Freitag davor, dem 04.07.2031, fällig.
+func TestAusleiheVerlaengern_AbgaengerNichtUeberDieSommerferien(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-VF-ABG", "Abgang", "10R1")
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch eines Abgängers",
+		time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+
+	jetzt := time.Date(2031, time.June, 30, 10, 0, 0, 0, schulzeit.Zone())
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{
+			FristBuchTage: 21,
+			Sommerferien:  `[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]`,
+		},
+	}))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleihe+"/verlaengern", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Verlängerung: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleihe), testdaten.FristEnde(2031, time.July, 4))
+}
+
 // Ging die Antwort auf eine Verlängerung verloren, verlängerte der zweite Auftrag noch einmal: Aus
 // 21 Tagen wurden 42, und die Leserakte meldete nur „Verlängert bis …". Nennt die Oberfläche die
 // Frist, die sie zeigte, und steht am Server schon eine andere, antwortet die Tür mit 409 und der

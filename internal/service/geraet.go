@@ -41,6 +41,17 @@ type GeraeteDienst struct {
 	leserAbfragen     leserAbruf
 	ausleihAbfragen   *repository.AusleihAbfragen
 	protokollAbfragen buchungsProtokoll
+	// jetzt ist die Uhr der Fristen; nil heißt time.Now. Tests setzen einen festen Tag, wie
+	// beim AusleihDienst.
+	jetzt func() time.Time
+}
+
+// heute liefert den Zeitpunkt der Fristen in der Zone der Schule.
+func (d *GeraeteDienst) heute() time.Time {
+	if d.jetzt != nil {
+		return d.jetzt().In(schulzeit.Zone())
+	}
+	return schulzeit.Jetzt()
 }
 
 // NewGeraeteDienst baut den Dienst für Geräte.
@@ -132,28 +143,39 @@ func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle) time.Ti
 	return kalender.Tagesfrist(ab, geraeteLeihfristTage)
 }
 
+// geraeteFrist ist die Frist eines Geräts: bei der Dauerleihe die Jahresfrist wie beim Buch
+// (ladeVorgang), sonst die Leihfrist der Geräte oder im Ferien-Leseclub wie beim Buch dessen
+// Datum. Für einen Abgänger gilt der Leseclub nicht, und die Frist endet spätestens am letzten
+// Schultag vor den Sommerferien (AbgaengerFrist). einst ist nil, wenn die Sperrprüfung keine
+// Einstellungen gelesen hat.
+func geraeteFrist(leser *repository.Leser, dauerleihe bool, einst *ausleihEinstellungen, heute time.Time) time.Time {
+	if dauerleihe {
+		return schulzeit.TagesEnde(heute.AddDate(1, 0, 0))
+	}
+	sommerferien := ""
+	if einst != nil {
+		sommerferien = einst.Sommerferien
+	}
+	kalender := lmfplan.FerientabelleAus(sommerferien)
+	frist := geraeteRueckgabeFrist(heute, kalender)
+	if einst != nil && !repository.IstAbschlussklasse(leser.Klasse) {
+		if datum, ok := leseclubDatum(einst, heute); ok {
+			frist = datum
+		}
+	}
+	return AbgaengerFrist(frist, leser.Klasse, kalender, heute)
+}
+
 // leiheGeraetAus leiht das freie Gerät dem geöffneten Leser aus.
 func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*geraeteErgebnis, error) {
 	if leser == nil {
 		return nil, meldung(ErrUngueltigerZustand, "Bitte scannen Sie zuerst einen Ausweis")
 	}
 
-	sommerferien := ""
-	if lage.einst != nil {
-		sommerferien = lage.einst.Sommerferien
-	}
-	frist := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
-	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe mit der Jahresfrist, dieselbe Regel
-	// wie beim Buch (legeAusleiheAn, ladeVorgang).
+	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe, dieselbe Regel wie beim Buch
+	// (legeAusleiheAn).
 	dauerleihe := !leserart.IstSchueler(leser.Art)
-	if dauerleihe {
-		frist = schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(1, 0, 0))
-	} else if lage.einst != nil {
-		// Im Ferien-Leseclub ist ein Gerät wie ein Buch erst zu seinem Datum fällig.
-		if datum, ok := leseclubDatum(lage.einst, schulzeit.Jetzt()); ok {
-			frist = datum
-		}
-	}
+	frist := geraeteFrist(leser, dauerleihe, lage.einst, d.heute())
 	erg := &geraeteErgebnis{Leser: leser}
 	ausleiheID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{
 		GeraetID:       g.ID,

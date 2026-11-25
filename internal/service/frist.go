@@ -92,7 +92,7 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 	if err != nil {
 		// Lassen sich die Einstellungen nicht lesen, gelten feste Werte, damit die Ausleihe
 		// nicht an der Frist scheitert.
-		return berechneFrist(heute, fristAngaben{
+		frist := berechneFrist(heute, fristAngaben{
 			IstLernmittel:   exemplar.IstLernmittel,
 			Medientyp:       exemplar.Medientyp,
 			Klasse:          klasse,
@@ -100,17 +100,22 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 			FristMedienTage: repository.FristMedienTageVorgabe,
 			ZusatzJahre:     zusatzJahre,
 			Sommerferien:    "",
-		}), nil
+		})
+		return fristOhneSchulbuch(frist, exemplar, klasse, "", heute), nil
 	}
 
 	if frist, ok := d.ladeLMFPlanFrist(ctx, exemplar, klasse, heute, einst, zusatzJahre); ok {
 		return frist, nil
 	}
-	if frist, ok := leseclubFrist(exemplar, einst, heute); ok {
-		return frist, nil
+	// Ein Abgänger ist nach den Sommerferien nicht mehr an der Schule: Der Leseclub gilt für ihn
+	// nicht (AbgaengerFrist).
+	if !repository.IstAbschlussklasse(klasse) {
+		if frist, ok := leseclubFrist(exemplar, einst, heute); ok {
+			return frist, nil
+		}
 	}
 
-	return berechneFrist(heute, fristAngaben{
+	frist := berechneFrist(heute, fristAngaben{
 		IstLernmittel:   exemplar.IstLernmittel,
 		Medientyp:       exemplar.Medientyp,
 		Klasse:          klasse,
@@ -118,7 +123,40 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 		FristMedienTage: einst.FristMedienTage,
 		ZusatzJahre:     zusatzJahre,
 		Sommerferien:    einst.Sommerferien,
-	}), nil
+	})
+	return fristOhneSchulbuch(frist, exemplar, klasse, einst.Sommerferien, heute), nil
+}
+
+// fristOhneSchulbuch wendet AbgaengerFrist auf alles an, was kein Lernmittel ist: Schulbücher
+// haben ihre eigene Regel.
+func fristOhneSchulbuch(frist time.Time, exemplar *repository.Exemplar, klasse, sommerferien string, heute time.Time) time.Time {
+	if exemplar.IstLernmittel {
+		return frist
+	}
+	return AbgaengerFrist(frist, klasse, lmfplan.FerientabelleAus(sommerferien), heute)
+}
+
+// AbgaengerFrist begrenzt die Frist eines Abgängers auf den letzten Schultag vor den Sommerferien,
+// mit denen er die Schule verlässt; wer danach noch ausleiht, bekommt das Ende des Tages. Für
+// Schulbücher gilt sie nicht, die haben ihre eigene Regel. Ohne bekannte Sommerferien bleibt die
+// Frist, wie sie ist.
+func AbgaengerFrist(frist time.Time, klasse string, kalender lmfplan.Ferientabelle, heute time.Time) time.Time {
+	if !repository.IstAbschlussklasse(klasse) {
+		return frist
+	}
+	ferien, _, ok := kalender.Naechste(heute, false)
+	if !ok {
+		return frist
+	}
+	tag := lmfplan.LetzterSchultagVor(ferien)
+	grenze := schulzeit.TagesEnde(time.Date(tag.Year(), tag.Month(), tag.Day(), 12, 0, 0, 0, schulzeit.Zone()))
+	if heuteEnde := schulzeit.TagesEnde(heute); grenze.Before(heuteEnde) {
+		grenze = heuteEnde
+	}
+	if frist.After(grenze) {
+		return grenze
+	}
+	return frist
 }
 
 // mehrjahresbandJahre zählt die Jahre, die ein Band über mehrere Jahrgänge über das laufende

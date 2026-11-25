@@ -47,6 +47,20 @@ func TestErsterSchultagNach(t *testing.T) {
 	}
 }
 
+// Ferienbeginn Montag 28.06.2027, letzter Schultag Freitag 25.06.2027. Fällt der Freitag auf
+// einen Feiertag, ist es der Tag davor.
+func TestLetzterSchultagVor(t *testing.T) {
+	z, _ := Hessen().Sommerferien(2027)
+	if l := LetzterSchultagVor(z); !l.Equal(tag("2027-06-25")) {
+		t.Errorf("letzter Schultag vor den Ferien 2027: %s", l.Format("2006-01-02"))
+	}
+	// Karfreitag 26.03.2027: Ferien ab Montag 29.03. hätten den Donnerstag 25.03. als letzten
+	// Schultag.
+	if l := LetzterSchultagVor(Zeitraum{Von: tag("2027-03-29"), Bis: tag("2027-04-30")}); !l.Equal(tag("2027-03-25")) {
+		t.Errorf("letzter Schultag vor dem Karfreitag 2027: %s", l.Format("2006-01-02"))
+	}
+}
+
 // Von heute aus gesehen: Am 06.09.2026 liegen die nächsten Ferien 2027, für beide Pläne. Am
 // 01.07.2026 (in den Ferien) ist der Büchertausch schon vorbei (2027), die Ausgabe kommt noch
 // (2026). Am 07.08.2026 (letzter Ferientag) gilt die Ausgabe noch für 2026. Nach dem Ende der

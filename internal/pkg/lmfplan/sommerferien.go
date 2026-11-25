@@ -127,6 +127,12 @@ func DonnerstagVor(t time.Time) time.Time {
 	return d
 }
 
+// LetzterSchultagVor liefert den letzten Schultag vor dem Zeitraum: den Freitag vor den Ferien,
+// wenn er kein Feiertag ist.
+func LetzterSchultagVor(z Zeitraum) time.Time {
+	return vorigerSchultag(kalendertag(z.Von).AddDate(0, 0, -1), Schultage(nil))
+}
+
 // ErsterSchultagNach liefert den ersten Schultag nach dem Zeitraum: den Montag nach den
 // Ferien, wenn er kein Feiertag ist.
 func ErsterSchultagNach(z Zeitraum) time.Time {

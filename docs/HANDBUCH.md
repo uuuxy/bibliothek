@@ -432,7 +432,9 @@ offen, und der Hinweis sagt, die Aufsicht unverzüglich zu informieren.
 ## Abgänger
 
 Abgänger sind die Abschlussklassen des laufenden Schuljahres (9H und das freiwillige 10H, 10R, 13),
-die zum Schuljahresende gehen; sie leihen bis zuletzt aus. Die Liste zeigt **vom 1. Mai bis 31. Juli**
+die zum Schuljahresende gehen; sie leihen bis zuletzt aus. Was sie außer Schulbüchern leihen
+oder verlängern, ist spätestens am letzten Schultag vor den Sommerferien fällig; der Ferien-Leseclub
+gilt für sie nicht. Die Liste zeigt **vom 1. Mai bis 31. Juli**
 die Abgänger, die **noch Bücher haben**, zum Einsammeln vor der Entlassung: Kontoauszüge drucken oder
 an die Klassenleitungen mailen (Mailen nur mit _Bestellungen verwalten_, wie beim Mahnwesen); wer alles
 zurückgegeben hat, verschwindet. Gedruckt wird, was die

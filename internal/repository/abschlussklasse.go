@@ -124,6 +124,13 @@ func AbschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
 	}
 }
 
+// IstAbschlussklasse sagt, ob eine Klasse am Ende des Schuljahres abgeht, wie AbschlussklasseSQL:
+// Ihr Jahrgang hat das Ende ihres Bildungsgangs erreicht.
+func IstAbschlussklasse(klasse string) bool {
+	jahrgang, abschluss, ok := AbschlussJahrgang(klasse)
+	return ok && jahrgang >= abschluss
+}
+
 // AbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers aus seiner Klasse
 // und dem laufenden Schuljahr. Die Anlage von Hand, das Ändern der Klasse, das Zusammenführen
 // und der LUSD-Import fragen hier: eine Antwort auf dieselbe Frage.

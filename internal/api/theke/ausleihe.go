@@ -112,11 +112,11 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		antworteFristGeaendert(w, alteFrist)
 		return
 	}
-	basis := t.Jetzt()
-	if alteFrist.After(basis) {
-		basis = alteFrist
+	neueFrist, err := ladeVerlaengerteFrist(ctx, tx, ausleiheID, alteFrist, t.Jetzt(), tage, lmfplan.FerientabelleAus(sommerferien))
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einzel-verlängerung: %w", err))
+		return
 	}
-	neueFrist := lmfplan.FerientabelleAus(sommerferien).Tagesfrist(basis, tage)
 
 	_, gesetzteFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
 	if err != nil {
@@ -132,6 +132,26 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		"success":               true,
 		"neues_rueckgabe_datum": gesetzteFrist,
 	})
+}
+
+// ladeVerlaengerteFrist rechnet die neue Frist: die Tage ab dem späteren von altem Fristende und
+// jetzt. Ein Abgänger verlängert außer beim Schulbuch nicht über den letzten Schultag vor den
+// Sommerferien hinaus (service.AbgaengerFrist); kürzer als bisher wird die Frist dadurch nicht.
+func ladeVerlaengerteFrist(ctx context.Context, tx pgx.Tx, ausleiheID string, alteFrist, jetzt time.Time, tage int, kalender lmfplan.Ferientabelle) (time.Time, error) {
+	basis := jetzt
+	if alteFrist.After(basis) {
+		basis = alteFrist
+	}
+	neueFrist := kalender.Tagesfrist(basis, tage)
+	klasse, lernmittel, err := repository.LadeFristRegelDerAusleihe(ctx, tx, ausleiheID)
+	if err != nil || lernmittel {
+		return neueFrist, err
+	}
+	neueFrist = service.AbgaengerFrist(neueFrist, klasse, kalender, jetzt)
+	if neueFrist.Before(alteFrist) {
+		return alteFrist, nil
+	}
+	return neueFrist, nil
 }
 
 // leseGezeigteFrist liest die Frist, die die Oberfläche beim Klick zeigte; nil ohne Angabe.
