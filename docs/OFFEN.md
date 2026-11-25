@@ -41,7 +41,7 @@ Nur, was kein Test leisten kann.
 
 - [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [ ] Funde der Durchsicht auf Uneinheitliches und der Gegenprüfung der letzten Änderungen
-  einordnen und abarbeiten; neun sind am Code bestätigt. (5.201)
+  einordnen und abarbeiten; sechs sind am Code bestätigt. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -139,21 +139,11 @@ Am Code bestätigt:
   aber nicht auf die Tabelle (`BescheideTabelle.svelte` liest weder Suche noch Klasse).
 - Dauerleihen des Kollegiums bieten „Verlängern“ an (`LeserAusleihenListe.svelte` fragt nur
   `darfFristAendern`), obwohl eine Dauerleihe keine Frist hat.
-- Ein Gerät, das ohne geöffneten Leser zurückkommt (auch in der Schnellrückgabe), bucht der
-  Server als Fremdrückgabe, ein Buch als gewöhnliche Rückgabe. Jede Fremdrückgabe eines Geräts
-  endet an der Theke mit Fehlerton und Fehlermeldung, obwohl sie gebucht ist
-  (`omniboxAntwort.svelte.js` liest `daten.book.titel`).
-- Läuft eine Abholfrist während einer Inventur ab oder wird die Vormerkung gelöscht, erwartet
-  der Lauf das Buch im Regal: Das Freigeben aus dem Abholfach stempelt `letzte_bewegung_am`
-  nicht. War das Regal schon gescannt, bucht der Abschluss es als Verlust.
-- Die Geräteausleihe gibt dem Kollegium 14 Tage statt der Jahresfrist der Dauerleihe
-  (`geraet.go`, beim Buch `ausleih_vorgang.go`). Ob Geräte ins Ausleihlimit zählen und ob der
-  Ferien-Leseclub für sie gilt, ist nicht entschieden.
+- Geräteausleihe an Schüler: Ob Geräte ins Ausleihlimit zählen und ob der Ferien-Leseclub für
+  sie gilt, ist nicht entschieden (`geraet.go`).
 - Wettläufe bei gleichzeitigem Klicken: Ausleihe und Nachbuchen sperren die Leserzeile nur bei
   Schülern und lesen Sperre, Papierkorb und Anonymisierung danach nicht neu, das Gerät sperrt
   sie gar nicht; gegen den Papierkorb schützt die Sperre so nur in einer Richtung.
-- Trägt ein Titel beim Öffnen schon Schlagworte und entfernt man alle, fragt
-  `SchlagwortDnbVorschlag.svelte` die DNB doch von selbst.
 - Die Gesamtsumme einer Bestellung hat keine Grenze gegen den Überlauf von `DECIMAL(10,2)`:
   sechs Positionen zu 200 Stück à 99.999,99 € enden mit 500 statt 400.
 - Die Zeilengrenze beim Lesen einer CSV fehlt im Littera-, Bestands- und LUSD-Import; die
