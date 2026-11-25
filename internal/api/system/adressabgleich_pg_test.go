@@ -179,6 +179,23 @@ func TestAdressabgleich_ThroughTheDoors(t *testing.T) {
 	if stand := srv.ladeAdressabgleichStand(ctx); stand == nil || stand.Fehler != meldungWebmailAbgelehnt {
 		t.Errorf("Stand nach der Ablehnung %+v, erwartet den Satz der Ablehnung", stand)
 	}
+
+	// Leitet das Webmail auf http weiter, ist es erreichbar: Der Stand nennt die Weiterleitung.
+	umleitung := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "http://webmail.schule.invalid"+r.URL.RequestURI(), http.StatusFound)
+	}))
+	t.Cleanup(umleitung.Close)
+	if rec := tuerAufruf(srv.AdressabgleichZugangSchreiben(mailAbfragen), http.MethodPut,
+		`{"adresse":"`+umleitung.URL+`","benutzer":"bibliothek@schule.example","passwort":"richtig"}`); rec.Code != http.StatusOK {
+		t.Fatalf("Zugang ändern: Status %d", rec.Code)
+	}
+	rec = tuerAufruf(srv.AdressabgleichLauf(), http.MethodPost, `{"probelauf":false}`)
+	if rec.Code != http.StatusBadGateway || !strings.Contains(rec.Body.String(), "ohne https://") {
+		t.Errorf("Abgleich hinter einer Weiterleitung auf http: %d %s, erwartet 502 mit der Weiterleitung", rec.Code, rec.Body.String())
+	}
+	if stand := srv.ladeAdressabgleichStand(ctx); stand == nil || stand.Fehler != meldungWebmailWeiterleitungOhneHTTPS {
+		t.Errorf("Stand nach der Weiterleitung %+v, erwartet den Satz zur Weiterleitung", stand)
+	}
 }
 
 // Endet die Anfrage, bevor der Lauf fertig ist (Frist abgelaufen, Browser getrennt), muss der

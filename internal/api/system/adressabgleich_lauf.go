@@ -155,6 +155,8 @@ func (t *Tueren) berechneAdressabgleich(ctx context.Context, alsAdmin bool) (adr
 		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailAbgelehnt, ursache: err}
 	case errors.Is(err, adressabgleich.ErrKeinGlobalesAdressbuch):
 		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungKeinGlobalesAdressbuch, ursache: err}
+	case errors.Is(err, adressabgleich.ErrWeiterleitungOhneHTTPS):
+		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailWeiterleitungOhneHTTPS, ursache: err}
 	case err != nil:
 		return adressabgleich.Zuordnung{}, 0, &adressabgleichAbbruch{meldung: meldungWebmailUnerreichbar, ursache: err}
 	}

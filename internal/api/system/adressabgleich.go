@@ -32,10 +32,12 @@ const (
 	meldungWebmailAbgelehnt         = "Das Webmail hat die Anmeldung abgelehnt. Bitte Benutzername und Passwort prüfen."
 	meldungKeinGlobalesAdressbuch   = "Das Konto sieht im Webmail kein globales Adressbuch"
 	meldungWebmailUnerreichbar      = "Das Webmail ist nicht erreichbar oder antwortet nicht wie Roundcube"
-	meldungWebmailPasswortUnlesbar  = "Das gespeicherte Passwort des Webmails ist nicht lesbar. Bitte neu eintragen."
-	meldungSchulDomainFehlt         = "Die Domain der Schule ist nicht eingestellt: SELBSTANMELDUNG_DOMAIN ist leer"
-	meldungWebmailBenutzerFehlt     = "Bitte den Benutzernamen des Webmails eintragen"
-	meldungWebmailPasswortFehlt     = "Bitte das Passwort des Webmails eintragen"
+	// meldungWebmailWeiterleitungOhneHTTPS: Das Webmail ist erreichbar, leitet aber auf http weiter.
+	meldungWebmailWeiterleitungOhneHTTPS = "Das Webmail leitet auf eine Adresse ohne https:// weiter. Dorthin schickt der Abgleich das Passwort nicht."
+	meldungWebmailPasswortUnlesbar       = "Das gespeicherte Passwort des Webmails ist nicht lesbar. Bitte neu eintragen."
+	meldungSchulDomainFehlt              = "Die Domain der Schule ist nicht eingestellt: SELBSTANMELDUNG_DOMAIN ist leer"
+	meldungWebmailBenutzerFehlt          = "Bitte den Benutzernamen des Webmails eintragen"
+	meldungWebmailPasswortFehlt          = "Bitte das Passwort des Webmails eintragen"
 	// meldungWebmailPasswortZurNeuenAdresse geht hinaus, wenn die Adresse wechselt und das
 	// gespeicherte Passwort mitginge.
 	meldungWebmailPasswortZurNeuenAdresse = "Die Adresse des Webmails hat sich geändert. Bitte das Passwort neu eintragen."

@@ -38,6 +38,9 @@ var (
 	ErrKeinGlobalesAdressbuch = errors.New("das Webmail zeigt kein globales Adressbuch")
 	// ErrAdresseOhneHTTPS: Unverschlüsselt ginge das Passwort im Klartext durchs Netz.
 	ErrAdresseOhneHTTPS = errors.New("die Adresse des Webmails muss mit https:// beginnen")
+	// ErrWeiterleitungOhneHTTPS: Das Webmail leitet auf ein Ziel, an das die Anmeldung nicht gehen
+	// darf (istZulaessigesZiel).
+	ErrWeiterleitungOhneHTTPS = errors.New("das Webmail leitet auf eine Adresse ohne https:// weiter")
 )
 
 const (
@@ -135,7 +138,7 @@ func pruefeWeiterleitung(anfrage *http.Request, vorige []*http.Request) error {
 	}
 	if !istZulaessigesZiel(anfrage.URL) {
 		// Nur Schema und Rechner: Der Rest der Adresse kann das Anfrage-Token tragen.
-		return fmt.Errorf("das Webmail leitet auf %s://%s weiter: %w", anfrage.URL.Scheme, anfrage.URL.Host, ErrAdresseOhneHTTPS)
+		return fmt.Errorf("%w: %s://%s", ErrWeiterleitungOhneHTTPS, anfrage.URL.Scheme, anfrage.URL.Host)
 	}
 	return nil
 }

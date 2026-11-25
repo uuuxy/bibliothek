@@ -212,7 +212,7 @@ func TestHoleGlobalesAdressbuch_WeiterleitungOhneHTTPS(t *testing.T) {
 			t.Cleanup(server.Close)
 
 			_, err := HoleGlobalesAdressbuch(context.Background(), Zugang{Adresse: server.URL, Benutzer: "lehrer@schule.example", Passwort: "geheim"})
-			if !errors.Is(err, ErrAdresseOhneHTTPS) || !strings.Contains(err.Error(), "http://webmail.schule.invalid") {
+			if !errors.Is(err, ErrWeiterleitungOhneHTTPS) || !strings.Contains(err.Error(), "http://webmail.schule.invalid") {
 				t.Errorf("HoleGlobalesAdressbuch nach einer Weiterleitung auf http = %v, erwartet die Ablehnung mit dem Ziel", err)
 			}
 		})
