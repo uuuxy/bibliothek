@@ -170,7 +170,16 @@ func (d *AusleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *reposito
 // Lernmitteln, solange es nicht vorbei ist. Bliebe der Schalter nach den Ferien an, wäre sonst
 // jede neue Ausleihe sofort überfällig und nach 14 Tagen gesperrt.
 func leseclubFrist(exemplar *repository.Exemplar, einst *ausleihEinstellungen, heute time.Time) (time.Time, bool) {
-	if !exemplar.IstLernmittel && einst.FerienLeseclubAktiv && einst.FerienLeseclubZieldatum != nil {
+	if exemplar.IstLernmittel {
+		return time.Time{}, false
+	}
+	return leseclubDatum(einst, heute)
+}
+
+// leseclubDatum liefert das Zieldatum des Ferien-Leseclubs als Frist, solange er läuft und das
+// Datum nicht vorbei ist. Es gilt für Bücher, Medien und Geräte, nicht für Lernmittel.
+func leseclubDatum(einst *ausleihEinstellungen, heute time.Time) (time.Time, bool) {
+	if einst.FerienLeseclubAktiv && einst.FerienLeseclubZieldatum != nil {
 		t, err := time.Parse("2006-01-02", *einst.FerienLeseclubZieldatum)
 		if err == nil {
 			ende := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schulzeit.Zone())

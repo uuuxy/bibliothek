@@ -148,6 +148,11 @@ func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 	dauerleihe := !leserart.IstSchueler(leser.Art)
 	if dauerleihe {
 		frist = schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(1, 0, 0))
+	} else if lage.einst != nil {
+		// Im Ferien-Leseclub ist ein Gerät wie ein Buch erst zu seinem Datum fällig.
+		if datum, ok := leseclubDatum(lage.einst, schulzeit.Jetzt()); ok {
+			frist = datum
+		}
 	}
 	erg := &geraeteErgebnis{Leser: leser}
 	ausleiheID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{

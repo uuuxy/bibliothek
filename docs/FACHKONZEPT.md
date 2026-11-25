@@ -287,7 +287,8 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
   bei Ausleihe UND Rückgabe. Erst „Alles vollständig“ schickt den Scan mit
   Bestätigung erneut; Abbrechen bucht nichts.
 - **Fristen:** 14 Tage, auf das Tagesende in der Schul-Zeitzone normalisiert wie
-  Buch-Fristen; Lehrkräfte leihen Geräte als Handapparat (Dauerleihe).
+  Buch-Fristen; im Ferien-Leseclub wie ein Buch bis zu dessen Datum. Lehrkräfte leihen Geräte
+  als Dauerleihe mit der Jahresfrist wie beim Buch.
 - **Zustands-Sperre:** Defekte (`ist_ausleihbar = false`) und ausgesonderte Geräte
   verweigern die Ausleihe am Kiosk.
 - **Sperren des Lesers:** derselbe Prüfweg wie beim Buch (§2.2). Die Hinweise lassen
