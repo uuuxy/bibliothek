@@ -124,6 +124,9 @@ var (
 	// ErrZuVieleExemplare: Die Positionen zusammen zögen mehr Nummern, als eine Vergabe hergibt
 	// (repository.HoechstensNummernJeVergabe, dieselbe Grenze wie beim Listenimport).
 	ErrZuVieleExemplare = errors.New("die Bestellung darf zusammen höchstens 200.000 Exemplare umfassen")
+	// ErrTitelDoppelt: Ein Titel steht in zwei Positionen. Die Exemplare hängen an Bestellung und
+	// Titel, nicht an der Position; eine spätere Preisänderung der einen träfe die Exemplare beider.
+	ErrTitelDoppelt = errors.New("der Titel steht schon in einer anderen Position")
 )
 
 // HoechsterEinzelpreis begrenzt den Einzelpreis einer Position so, dass Menge mal Preis in die
@@ -294,6 +297,7 @@ func (d *BestellDienst) schreibeExemplareUndPositionen(ctx context.Context, tx p
 // und eine negative Menge am Ende höbe die Summe auf.
 func pruefePositionen(positionen []BestellAuftragPosition) error {
 	exemplare := 0
+	gesehen := make(map[string]int, len(positionen))
 	for i, position := range positionen {
 		if position.Menge <= 0 || position.Menge > 200 {
 			return &BestellpositionFehler{Position: i + 1, Grund: fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, position.Menge)}
@@ -301,6 +305,10 @@ func pruefePositionen(positionen []BestellAuftragPosition) error {
 		if position.Preis < 0 || position.Preis > HoechsterEinzelpreis {
 			return &BestellpositionFehler{Position: i + 1, Grund: ErrPreisUngueltig}
 		}
+		if erste, doppelt := gesehen[position.TitelID]; doppelt {
+			return &BestellpositionFehler{Position: i + 1, Grund: fmt.Errorf("%w (Position %d)", ErrTitelDoppelt, erste)}
+		}
+		gesehen[position.TitelID] = i + 1
 		exemplare += position.Menge
 	}
 	if exemplare > repository.HoechstensNummernJeVergabe {

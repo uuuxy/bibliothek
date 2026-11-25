@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/repository"
@@ -31,6 +32,7 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
 	})
 	titel := testdaten.LegeTitelAn(t, pool, "Titel im Warenkorb")
+	zweiter := testdaten.LegeTitelAn(t, pool, "Zweiter Titel im Warenkorb")
 
 	position := func(titelID string, menge int) string {
 		return fmt.Sprintf(`{"titel_id":%q,"menge":%d,"preis":9.5,"generate_barcodes":true}`, titelID, menge)
@@ -100,21 +102,37 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 
 	for _, menge := range []int{0, -1, 201} {
 		t.Run(fmt.Sprintf("Menge %d: 400 mit der Position", menge), func(t *testing.T) {
-			abgelehntOhneNummer(t, "Position 2", position(titel, 1), position(titel, menge))
+			abgelehntOhneNummer(t, "Position 2: Die Menge", position(titel, 1), position(zweiter, menge))
 		})
 	}
 
 	t.Run("Preis über 99.999,99 €: 400 mit der Position", func(t *testing.T) {
-		abgelehntOhneNummer(t, "Position 2", position(titel, 1),
-			fmt.Sprintf(`{"titel_id":%q,"menge":1,"preis":100000,"generate_barcodes":true}`, titel))
+		abgelehntOhneNummer(t, "Position 2: Der Preis", position(titel, 1),
+			fmt.Sprintf(`{"titel_id":%q,"menge":1,"preis":100000,"generate_barcodes":true}`, zweiter))
+	})
+	// Die Exemplare hängen an Bestellung und Titel, nicht an der Position: Mit demselben Titel in
+	// zwei Positionen träfe eine Preisänderung der einen auch die Exemplare der anderen.
+	t.Run("derselbe Titel in zwei Positionen: 400 mit der Position", func(t *testing.T) {
+		abgelehntOhneNummer(t, "Position 3: Der Titel steht schon in einer anderen Position",
+			position(titel, 1), position(zweiter, 1), position(titel, 2))
 	})
 
 	// Je Position gehen 200 Stück, die Zahl der Positionen begrenzt nur der Rumpf der Anfrage.
 	// Zusammen gilt dieselbe Grenze wie für einen Listenimport.
 	t.Run("zusammen mehr als 200.000 Exemplare: 400", func(t *testing.T) {
 		positionen := make([]string, repository.HoechstensNummernJeVergabe/200+1)
+		zeilen, err := pool.Query(context.Background(), `
+			INSERT INTO buecher_titel (titel, ist_lernmittel)
+			SELECT 'Grenze ' || g, false FROM generate_series(1, $1::int) g RETURNING id::text`, len(positionen))
+		if err != nil {
+			t.Fatalf("Titel für die Grenze anlegen: %v", err)
+		}
+		ids, err := pgx.CollectRows(zeilen, pgx.RowTo[string])
+		if err != nil {
+			t.Fatalf("Titel für die Grenze lesen: %v", err)
+		}
 		for i := range positionen {
-			positionen[i] = position(titel, 200)
+			positionen[i] = position(ids[i], 200)
 		}
 		abgelehntOhneNummer(t, "höchstens 200.000 Exemplare", positionen...)
 	})
