@@ -43,6 +43,7 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 	resp := &AusleihErgebnis{}
 
 	// bedieneVormerkung findet keine Vormerkung.
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
@@ -91,6 +92,7 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	resp := &AusleihErgebnis{}
 
 	// bedieneVormerkung findet keine Vormerkung.
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
@@ -170,6 +172,7 @@ func TestVerarbeiteFremdrueckgabe_CommitFehler(t *testing.T) {
 
 	resp := &AusleihErgebnis{}
 
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit().WillReturnError(pgx.ErrTxClosed)
 

@@ -12,6 +12,15 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
+// erwarteFreiesExemplar ist die Sperre der Zeile, unter der bedieneVormerkung liest, ob das
+// zurückgegebene Exemplar ausleihbar ist; hier ist es das.
+func erwarteFreiesExemplar(mock pgxmock.PgxPoolIface) {
+	mock.ExpectQuery(`SELECT ist_ausleihbar, ist_ausgesondert, letzte_bewegung_am`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"ist_ausleihbar", "ist_ausgesondert", "letzte_bewegung_am"}).
+			AddRow(true, false, nil))
+}
+
 // Die Rückgabe darf kein Abholfach behaupten, das es nicht gibt.
 //
 // Scheitert das UPDATE der Vormerkung, setzt die Antwort weder HatVormerkung noch
@@ -32,6 +41,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		}
 		defer mock.Close()
 		mock.ExpectBegin()
+		erwarteFreiesExemplar(mock)
 		mock.ExpectQuery(`SELECT v.id, s.vorname`).
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).
@@ -62,6 +72,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		}
 		defer mock.Close()
 		mock.ExpectBegin()
+		erwarteFreiesExemplar(mock)
 		mock.ExpectQuery(`SELECT v.id, s.vorname`).
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(errors.New("conn busy"))
@@ -83,6 +94,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 		}
 		defer mock.Close()
 		mock.ExpectBegin()
+		erwarteFreiesExemplar(mock)
 		mock.ExpectQuery(`SELECT v.id, s.vorname`).
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(pgx.ErrNoRows)

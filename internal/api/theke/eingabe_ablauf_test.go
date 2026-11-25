@@ -180,8 +180,11 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 		WithArgs(activeLoanID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	// Zuteilung an eine Vormerkung: Niemand wartet. Ein Fehler dieser Abfrage wird nicht
-	// verschluckt, deshalb muss die Attrappe sie ausdrücklich kennen.
+	// Zuteilung an eine Vormerkung: Das Exemplar ist ausleihbar, niemand wartet. Ein Fehler dieser
+	// Abfragen wird nicht verschluckt, deshalb muss die Attrappe sie ausdrücklich kennen.
+	mock.ExpectQuery("SELECT ist_ausleihbar, ist_ausgesondert, letzte_bewegung_am FROM buecher_exemplare WHERE id = \\$1 FOR UPDATE").
+		WithArgs(copyID).
+		WillReturnRows(pgxmock.NewRows([]string{"ist_ausleihbar", "ist_ausgesondert", "letzte_bewegung_am"}).AddRow(true, false, nil))
 	mock.ExpectQuery("SELECT v.id, s.vorname, s.nachname").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)

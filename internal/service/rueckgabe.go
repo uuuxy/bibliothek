@@ -20,7 +20,20 @@ import (
 // Ein Fehler kommt zurück, und der Aufrufer rollt die Rückgabe zurück: Meldete die Theke „ins
 // Abholfach legen", während die Vormerkung wartend bliebe, läge das Buch im Fach und wäre
 // zugleich frei ausleihbar. Die Theke wiederholt den Scan.
+//
+// Ein gesperrtes oder ausgesondertes Buch bekommt niemand: Es kann verliehen gesperrt worden sein
+// (etwa „Einband lose“) und kommt so zurück. Die Vormerkung wartet weiter, wie beim Nachrücken
+// (repository.RueckeNachMitExemplar); gelesen wird unter der Sperre der Zeile, damit kein
+// gleichzeitiges Sperren dazwischenkommt.
 func (d *AusleihDienst) bedieneVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, erg *AusleihErgebnis, rueckgeberID *string) error {
+	stand, err := repository.SperreExemplarzeile(ctx, tx, exemplar.ID)
+	if err != nil {
+		return fmt.Errorf("stand des exemplars für die vormerkung: %w", err)
+	}
+	if !stand.Ausleihbar || stand.Ausgesondert {
+		return nil
+	}
+
 	// Die älteste wartende Vormerkung eines Schülers, der abholen darf; die des Schülers, der
 	// gerade zurückgibt, ist ausgenommen.
 	wartende, da, err := repository.SperreNaechsteWartendeVormerkung(ctx, tx, exemplar.TitelID, rueckgeberID)

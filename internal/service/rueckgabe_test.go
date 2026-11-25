@@ -93,6 +93,7 @@ func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 	}
 
 	leserID := "leser1"
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
 		WithArgs("t1", &leserID).
 		WillReturnError(pgx.ErrNoRows)
@@ -139,6 +140,7 @@ func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 	}
 
 	leserID := "leser1"
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
 		WithArgs("t1", &leserID).
 		WillReturnError(pgx.ErrNoRows)
@@ -191,6 +193,7 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 	}
 
 	leserID := "leser1"
+	erwarteFreiesExemplar(mockPool)
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
 		WithArgs("t1", &leserID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).

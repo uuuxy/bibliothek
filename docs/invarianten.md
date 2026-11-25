@@ -138,6 +138,7 @@ Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
 | Ein Schüler merkt einen Titel höchstens einmal vor | 🟢 UNIQUE                  | `vormerkungen (titel_id, schueler_id)`    |
 | **[G2]** Status ∈ {`wartend`, `abholbereit`}       | 🟢 `chk_vormerkung_status` | `migrations/040`                          |
 | Bereitgestelltes Exemplar existiert                | 🟢 FK ON DELETE SET NULL   | `vormerkungen.bereitgestellt_exemplar_id` |
+| Ins Abholfach kommt nur ein ausleihbares Exemplar, auch wenn es verliehen gesperrt wurde und so zurückkommt; die Vormerkung wartet dann weiter | 🟢 Rückgabe liest den Stand unter der Zeilensperre (`bedieneVormerkung`), Nachrücken in der Bedingung (`bedieneNaechstenWartenden`) | `internal/service/rueckgabe_gesperrt_pg_test.go` |
 
 **Hinweis:** Das Vokabular ist bewusst zweiwertig — erfüllte Vormerkungen werden
 **gelöscht**, nicht auf einen Endstatus gesetzt (geprüft vor Migration 040).
