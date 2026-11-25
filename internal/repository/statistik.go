@@ -142,19 +142,23 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) 
 	return k, nil
 }
 
+// sqlSchulzone ist die Zeitzone der Schule als SQL-Literal.
+const sqlSchulzone = `'` + schulzeit.ZonenName + `'`
+
 // AusleihZeitraumBedingung bildet den Parameter ?zeitraum= auf ein SQL-Stück für die Rangliste
 // der Renner ab; die Werte bestimmt der Server, nie die Anfrage.
 //
 // Das Schuljahr wird in Go in der Zeitzone der Schule bestimmt (schulzeit), nicht per
 // CURRENT_DATE in der Zeitzone der Sitzung (UTC): Am 1. August und am 1. Januar zwischen 0 und
 // 1 Uhr Berliner Zeit läge der Stichtag sonst ein Jahr daneben. Das Datum wird als ISO-Literal
-// eingesetzt und ist kein Wert der Anfrage.
+// eingesetzt und ist kein Wert der Anfrage. Beide Grenzen beginnen um Mitternacht der Schule.
 func AusleihZeitraumBedingung(zeitraum string) string {
 	switch zeitraum {
 	case "schuljahr":
-		return "AND a.ausgeliehen_am >= '" + schuljahresBeginn(schulzeit.Jetzt()).Format("2006-01-02") + "'::date"
+		return "AND a.ausgeliehen_am >= ('" + schuljahresBeginn(schulzeit.Jetzt()).Format("2006-01-02") +
+			"'::timestamp AT TIME ZONE " + sqlSchulzone + ")"
 	case "monat":
-		return "AND a.ausgeliehen_am >= CURRENT_DATE - INTERVAL '30 days'"
+		return "AND a.ausgeliehen_am >= ((" + schulzeit.SQLHeute + " - 30)::timestamp AT TIME ZONE " + sqlSchulzone + ")"
 	default:
 		return ""
 	}
@@ -269,30 +273,29 @@ type MonatsTrendPunkt struct {
 // Schülerdaten.
 func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) ([]MonatsTrendPunkt, error) {
 	trend := []MonatsTrendPunkt{}
+	// Die Monate sind Kalendermonate der Schule, als Ortszeit ohne Zone gerechnet. In der Zone
+	// der Sitzung (im Image UTC) fiele eine Ausleihe am Monatsersten bis 2 Uhr in den Vormonat.
+	// %[2]s ist der Beginn des laufenden Monats, %[3]s die Zone der Schule.
 	q := fmt.Sprintf(`
 		WITH monate AS (
-			SELECT date_trunc('month', m) AS monat_start
-			FROM generate_series(
-				date_trunc('month', CURRENT_DATE) - INTERVAL '11 months',
-				date_trunc('month', CURRENT_DATE),
-				INTERVAL '1 month'
-			) AS m
+			SELECT m AS monat_start
+			FROM generate_series(%[2]s - INTERVAL '11 months', %[2]s, INTERVAL '1 month') AS m
 		),
 		ausl AS (
-			SELECT date_trunc('month', a.ausgeliehen_am) AS monat, COUNT(*) AS n
+			SELECT date_trunc('month', a.ausgeliehen_am AT TIME ZONE %[3]s) AS monat, COUNT(*) AS n
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON e.id = a.exemplar_id
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE a.ausgeliehen_am >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months' %[1]s
+			WHERE a.ausgeliehen_am >= (%[2]s - INTERVAL '11 months') AT TIME ZONE %[3]s %[1]s
 			GROUP BY 1
 		),
 		rueck AS (
-			SELECT date_trunc('month', a.rueckgabe_am) AS monat, COUNT(*) AS n
+			SELECT date_trunc('month', a.rueckgabe_am AT TIME ZONE %[3]s) AS monat, COUNT(*) AS n
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON e.id = a.exemplar_id
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE a.rueckgabe_am IS NOT NULL
-			  AND a.rueckgabe_am >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months' %[1]s
+			  AND a.rueckgabe_am >= (%[2]s - INTERVAL '11 months') AT TIME ZONE %[3]s %[1]s
 			GROUP BY 1
 		)
 		SELECT to_char(m.monat_start, 'YYYY-MM'),
@@ -302,7 +305,7 @@ func LadeMonatsTrend(ctx context.Context, db Datenbank, typFilter string) ([]Mon
 		LEFT JOIN ausl al ON al.monat = m.monat_start
 		LEFT JOIN rueck r ON r.monat = m.monat_start
 		ORDER BY m.monat_start
-	`, typFilter)
+	`, typFilter, `date_trunc('month', now() AT TIME ZONE `+sqlSchulzone+`)`, sqlSchulzone)
 	rows, err := db.Query(ctx, q)
 	if err != nil {
 		return nil, err

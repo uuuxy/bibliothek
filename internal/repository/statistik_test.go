@@ -42,7 +42,7 @@ func TestSchuljahresBeginn(t *testing.T) {
 			t.Errorf("%s → %s, erwartet %s", zeit, got, soll)
 		}
 	}
-	if f := AusleihZeitraumBedingung("schuljahr"); !strings.Contains(f, "'::date") || strings.Contains(f, "CURRENT_DATE") {
+	if f := AusleihZeitraumBedingung("schuljahr"); !strings.Contains(f, "'::timestamp AT TIME ZONE 'Europe/Berlin'") || strings.Contains(f, "CURRENT_DATE") {
 		t.Errorf("Schuljahr-Filter muss ein festes Datum aus der Schulzeitzone tragen: %q", f)
 	}
 }

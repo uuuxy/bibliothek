@@ -47,7 +47,6 @@ var bestandKalendertag = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"internal/repository/statistik.go": {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
 	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt
 	// in UTC verglichen wird.
 	"internal/service/frist.go":                    {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
