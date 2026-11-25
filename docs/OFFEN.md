@@ -40,7 +40,7 @@ Nur, was kein Test leisten kann.
 ### Nebenbei
 
 - [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
-- [ ] Funde der Durchsicht auf Uneinheitliches einordnen und abarbeiten: 21 Punkte, dazu drei
+- [ ] Funde der Durchsicht auf Uneinheitliches einordnen und abarbeiten: 21 Punkte, dazu zwei
   aus der Gegenprüfung der letzten Änderungen; zwei sind am Code bestätigt. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
@@ -141,8 +141,6 @@ Am Code bestätigt:
   `darfFristAendern`), obwohl eine Dauerleihe keine Frist hat.
 
 Noch am Code zu prüfen, Verdacht nach Regel 4:
-- `LoescheAbgaengerEndgueltig` sperrt die Zeile des Lesers nicht, anders als
-  `LegeLeserInPapierkorb`.
 - Drei Umrechnungen Klasse → Jahrgang behandeln Q1 bis Q4 verschieden (`AbschlussJahrgang`
   kennt sie nicht).
 - Geräteausleihe: kein Ausleihlimit, der Ferien-Leseclub zählt nicht, beim Kollegium 14 Tage

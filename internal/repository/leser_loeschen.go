@@ -152,7 +152,9 @@ func tilgeSpurenUndLoescheLeser(ctx context.Context, tx pgx.Tx, leserID, bearbei
 	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`, leserID); err != nil {
 		return fmt.Errorf("anonymizing loans: %w", err)
 	}
-	if _, err := tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1`, leserID); err != nil {
+	// Eine unbezahlte Forderung bleibt wie eine offene Ausleihe stehen, und ihr Fremdschlüssel hält
+	// das Löschen auf: Entsteht sie nach der Prüfung, verschwände sonst eine Schuld ohne Spur.
+	if _, err := tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt`, leserID); err != nil {
 		return fmt.Errorf("deleting damages: %w", err)
 	}
 	if err := TilgeSchuelerSpuren(ctx, tx, leserID, "DSGVO-Löschung"); err != nil {
