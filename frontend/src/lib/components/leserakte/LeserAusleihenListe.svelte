@@ -146,7 +146,8 @@
 					     und nach dem Klick sagt die Meldung, was geschehen ist. -->
 					<td class="text-right whitespace-nowrap">
 						<div class="flex items-center justify-end gap-1">
-							{#if darfFristAendern}
+							<!-- Eine Dauerleihe hat keine Frist, die sich verlängern ließe. -->
+							{#if darfFristAendern && !book.ist_dauerleihe}
 								<button
 									type="button"
 									class="icon-btn text-primary disabled:cursor-default disabled:text-on-surface/38"

@@ -58,6 +58,17 @@ describe('Ausleihliste: Verlängern', () => {
 		expect(screen.getByRole('button', { name: 'Rückgabedatum bearbeiten' })).toBeTruthy();
 	});
 
+	// Eine Dauerleihe des Kollegiums hat keine Frist: Der Knopf meldete „verlängert bis …“,
+	// und die Zeile zeigte weiter „Dauerleihe“.
+	it('bietet an der Dauerleihe kein Verlängern an', () => {
+		const screen = render(LeserAusleihenListe, {
+			ausleihen: [{ ...buch(), ist_dauerleihe: true }]
+		});
+
+		expect(screen.queryByRole('button', { name: 'Ausleihe verlängern' })).toBeNull();
+		expect(screen.getByText('Dauerleihe'), 'die Zeile steht da').toBeTruthy();
+	});
+
 	it('schickt die gezeigte Frist mit', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(
 			serverAntwort(200, { neues_rueckgabe_datum: '2026-10-19T11:00:00Z' })
