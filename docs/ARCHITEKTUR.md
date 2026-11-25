@@ -2213,11 +2213,8 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 
 #### Daten und Abläufe
 
-- **Forderung für ein Gerät:** Die Datenbank sieht sie vor (`check_damage_item`), `meldeSchaden`
-  nimmt nur Buch-Exemplare. Beim Bau mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne
-  Exemplar als Buch der Schülerbücherei (`BescheidPositionen.svelte`).
 - **Klassensätze** zählen nur Ausleihen auf die Ausweise der Kinder, nicht einen Stapel auf dem
-  Ausweis der Lehrkraft; die Theke warnt nicht bei einem anderen Jahrgang oder zweiten Exemplar.
+  Ausweis der Lehrkraft; dafür gibt es die Handliste (FACHKONZEPT 4.3).
 - **Kurze Nummer alter Littera-Etiketten:** Die Theke findet nur die EAN-13; die kurze Nummer
   steht ungelesen als `littera_exemplarnr`. Entschieden wird nach der Generalprobe
   ([OFFEN.md](OFFEN.md) 7.2).

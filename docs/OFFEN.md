@@ -181,9 +181,12 @@ Entschieden am 25.11.2026: „Verlust oder Schaden melden“ an der Gerätezeile
 das Gerät ist ausgesondert, verloren wie beschädigt: Ob sich ein beschädigtes Gerät reparieren
 lässt, weiß niemand. Eine Forderung entsteht nur mit eingetragenem Betrag.
 
+Die Datenbank sieht eine Forderung für ein Gerät vor (`check_damage_item`); der Bescheid-Dialog
+zeigt eine Forderung ohne Exemplar heute als Buch der Schülerbücherei (`BescheidPositionen.svelte`).
+
 Nächster Schritt: `meldeSchaden` für Geräte (der Bescheid nimmt weiter nur Bücher), die
-Forderung mit Gerät in den Listen und im Bescheid-Dialog (ARCHITEKTUR 11.5, „Forderung für ein
-Gerät“), Knopf und Dialog in der Leserakte; Bilder vor dem Push.
+Forderung mit Gerät in den Listen und im Bescheid-Dialog, Knopf und Dialog in der Leserakte;
+Bilder vor dem Push.
 
 ### 7.2 Frisches Littera-Backup
 

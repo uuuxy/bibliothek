@@ -297,7 +297,7 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
   Forderung für ein Gerät legt das Programm noch nicht an — der Schadensfall-Weg am
   Profil nimmt nur Buch-Exemplare und weist eine Geräteausleihe ab, die Datenbank sieht
   Geräte-Forderungen vor
-  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
+  ([OFFEN.md](OFFEN.md) 5.202).
 
 ---
 
