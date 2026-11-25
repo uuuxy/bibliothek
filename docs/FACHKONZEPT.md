@@ -1039,7 +1039,7 @@ Adressen stehen unter _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren.
 ### 16.1 Katalog (OPAC) — `/katalog`
 
 Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor, ISBN oder Schlagwort
-(Volltext über `search_vector` **oder** Teilstring; ein Verweis findet sein Schlagwort, §13;
+(die eine Titelsuche des Programms, `repository.sqlTitelTrifft`; ein Verweis findet sein Schlagwort, §13;
 `internal/api/portal/opac.go`), Trefferkarte mit Cover und
 „N von M verfügbar". Gezählt werden nur ausleihbare, nicht ausgesonderte Exemplare ohne offene
 Ausleihe, die nicht für eine Vormerkung im Abholfach liegen, solange die Abholfrist läuft; so

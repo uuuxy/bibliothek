@@ -16,22 +16,22 @@ import (
 // Länge seiner ISBN: Die Datenbank führt eine zehnstellige mit richtigem Prüfzeichen
 // dreizehnstellig (isbn_normalform), und beide Längen enden auf verschiedene Prüfzeichen.
 //
-// Die Regel: Wo SQL die Spalte isbn mit LIKE oder ILIKE gegen einen Suchtext vergleicht, steht in
-// derselben Deklaration auch repository.sqlSuchtextIstISBN, der Vergleich mit der Normalform des
-// Suchtexts.
+// Die Regel: SQL, das die Spalte isbn mit LIKE oder ILIKE gegen einen Suchtext vergleicht, steht
+// nur in der Titelsuche des Programms, repository.sqlTitelTrifft. Sie vergleicht daneben beide
+// Längen (isbnutil.Formen, Zwilling von isbnFormen im Browser); eine zweite Suche wäre eine
+// zweite Regel, die das nicht weiß.
 //
 // Blindheit: Liest Zeichenketten-Literale; SQL, das erst aus Sprintf-Teilen entsteht, sieht sie
-// nur, soweit Spalte und LIKE in einem Literal auf einer Zeile stehen. Ob der Baustein in
-// derselben Abfrage und an der richtigen Stelle steht, prüft sie nicht; das messen die Suchtests
-// je Paket (isbn_suche_pg_test.go, bestellsuche_pg_test.go, opac_isbn_laenge_pg_test.go). Andere
-// Teilstring-Vergleiche (~*, position, strpos, SIMILAR TO) fasst sie nicht; über die ISBN gibt es
-// im Baum keinen. Suchen, die die ISBN nur über den Volltext (search_vector) treffen, und Filter
-// im Browser sieht sie nicht.
-func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
+// nur, soweit Spalte und LIKE in einem Literal auf einer Zeile stehen. Ob sqlTitelTrifft beide
+// Längen findet, prüft sie nicht; das messen die gemeinsamen Fälle (titelsuche.faelle.json,
+// isbnFormen.faelle.json) und die Suchtests (isbn_suche_pg_test.go, bestellsuche_pg_test.go,
+// opac_isbn_laenge_pg_test.go). Andere Teilstring-Vergleiche (~*, position, strpos, SIMILAR TO)
+// fasst sie nicht; über die ISBN gibt es im Baum keinen. Filter im Browser sieht sie nicht.
+func TestISBNSuche_NurInDerTitelsuche(t *testing.T) {
 	wechsleInDieWurzel(t)
-	const baustein = "sqlSuchtextIstISBN"
+	const titelsuche = "internal/repository/titelsuche.go:sqlTitelTrifft"
 	var verstoesse []string
-	suchen := 0
+	titelsucheGefunden := false
 
 	fset := token.NewFileSet()
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -61,15 +61,16 @@ func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
 			if !sucht {
 				continue
 			}
-			suchen++
-			if !ruft(decl, baustein) {
-				ort := pfad
-				if fn, ok := decl.(*ast.FuncDecl); ok {
-					ort = pfad + ":" + fn.Name.Name
-				}
-				verstoesse = append(verstoesse, ort+": vergleicht die ISBN als Teilstring, ohne die "+
-					"Normalform des Suchtexts — dazu OR repository."+baustein+"(alias, suchtext)")
+			ort := pfad
+			if fn, ok := decl.(*ast.FuncDecl); ok {
+				ort = pfad + ":" + fn.Name.Name
 			}
+			if ort == titelsuche {
+				titelsucheGefunden = true
+				continue
+			}
+			verstoesse = append(verstoesse, ort+": sucht die ISBN als Teilstring mit eigener Regel — "+
+				"dazu die Titelsuche des Programms nehmen (repository.sqlTitelTrifft)")
 		}
 		return nil
 	})
@@ -81,11 +82,10 @@ func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
 		t.Error(v)
 	}
 
-	// Nicht-leer-Garantie, von Hand gezählt: Suchleiste und Thekensuche, die Titel-Verwaltung und
-	// die Lernmittel (alle repository), die Bestellsuche (service), der Katalog für Leser (api).
-	// Findet der Detektor weniger, misst er nichts mehr.
-	if suchen < 6 {
-		t.Errorf("nur %d Deklarationen mit einer Suche über die ISBN gefunden — erwartet mindestens 6: misst der Detektor noch?", suchen)
+	// Nicht-leer-Garantie: Die Titelsuche selbst vergleicht die ISBN als Teilstring. Findet der
+	// Detektor sie nicht, misst er nichts mehr.
+	if !titelsucheGefunden {
+		t.Errorf("%s nicht als Suche über die ISBN erkannt: misst der Detektor noch?", titelsuche)
 	}
 	for _, form := range []string{
 		"OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'",

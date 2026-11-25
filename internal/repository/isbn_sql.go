@@ -12,17 +12,6 @@ func sqlTitelTraegtISBN(titelAlias, wert string) string {
 	return `isbn_normalform(` + spalteISBN(titelAlias) + `) = isbn_normalform(` + wert + `)`
 }
 
-// sqlSuchtextIstISBN ist die Bedingung „der Suchtext ist die ISBN des Titels", für die
-// Suchfelder: Eine getippte zehnstellige ISBN findet den Titel, den die Datenbank unter der
-// dreizehnstelligen führt, und Bindestriche stören nicht. Der Teilstring-Vergleich der
-// Suchen sieht das nicht — beide Längen enden auf verschiedene Prüfzeichen.
-//
-// Die Spalte steht hier ohne Funktion, damit der UNIQUE-Index auf isbn greift; eine Suche
-// läuft bei jedem Tastendruck. suchtext ist der SQL-Ausdruck des Suchtexts.
-func sqlSuchtextIstISBN(titelAlias, suchtext string) string {
-	return spalteISBN(titelAlias) + ` = isbn_normalform(` + suchtext + `)`
-}
-
 func spalteISBN(titelAlias string) string {
 	if titelAlias == "" {
 		return "isbn"

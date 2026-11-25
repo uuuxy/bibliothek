@@ -15,7 +15,9 @@ import (
 // buecherSuchen im Medienkatalog (frontend/src/inventur/lib/startseiten_api.js); beide prüfen
 // die Fälle in frontend/src/inventur/lib/titelsuche.faelle.json.
 
-// titelKuerzel ersetzt ein ganzes Suchwort: „mathe“ sucht „mathematik“.
+// titelKuerzel nennt zu einem ganzen Suchwort seine Langform: „mathe“ sucht auch „mathematik“.
+// Das Wort selbst gilt weiter, wie ein Synonym bei Google („ninja OR assassin“, Programmable
+// Search Engine, Rewriting Queries): „Mathe live“ bleibt über „mathe“ zu finden.
 var titelKuerzel = map[string]string{
 	"powi":  "politik",
 	"mathe": "mathematik",
@@ -40,9 +42,11 @@ var titelFuellwoerter = map[string]bool{"klasse": true, "kl": true, "kl.": true,
 // denn „7“ steht in jeder ISBN-13.
 var jahrgangWort = regexp.MustCompile(`^\d{1,2}\.?$`)
 
-// titelSuchwort ist ein Wort der Eingabe nach Kürzel und Füllwörtern.
+// titelSuchwort ist ein Wort der Eingabe ohne Füllwörter.
 type titelSuchwort struct {
-	wort        string
+	wort string
+	// langform ist die Langform eines Kürzels (titelKuerzel), sonst leer.
+	langform    string
 	isbnFormen  []string
 	zahl        int64
 	hatZahl     bool
@@ -53,11 +57,8 @@ type titelSuchwort struct {
 func titelSuchwoerter(eingabe string) []titelSuchwort {
 	felder := strings.Fields(strings.ToLower(eingabe))
 	hatZahl := false
-	for i, f := range felder {
-		if ersatz, ok := titelKuerzel[f]; ok {
-			felder[i] = ersatz
-		}
-		if _, ok := zahlAmAnfang(felder[i]); ok {
+	for _, f := range felder {
+		if _, ok := zahlAmAnfang(f); ok {
 			hatZahl = true
 		}
 	}
@@ -66,7 +67,7 @@ func titelSuchwoerter(eingabe string) []titelSuchwort {
 		if hatZahl && titelFuellwoerter[f] {
 			continue
 		}
-		w := titelSuchwort{wort: f, isbnFormen: isbnutil.Formen(f), istJahrgang: jahrgangWort.MatchString(f)}
+		w := titelSuchwort{wort: f, langform: titelKuerzel[f], isbnFormen: isbnutil.Formen(f), istJahrgang: jahrgangWort.MatchString(f)}
 		w.zahl, w.hatZahl = zahlAmAnfang(f)
 		woerter = append(woerter, w)
 	}
@@ -116,20 +117,18 @@ func sqlTitelTrifft(alias, eingabe string, start int) (string, []any) {
 	for _, w := range woerter {
 		platz := fmt.Sprintf("$%d::text", start+len(args))
 		args = append(args, w.wort)
-		norm := sqlLikeMuster("suchnorm(" + platz + ")")
-		felder := []string{
-			"suchnorm(coalesce(" + alias + ".titel, '')) LIKE '%' || " + norm + " || '%'",
-			"suchnorm(coalesce(" + alias + ".autor, '')) LIKE '%' || " + norm + " || '%'",
-			"suchnorm(coalesce(" + alias + ".subject, '')) LIKE '%' || " + norm + " || '%'",
-			"suchnorm(coalesce(" + alias + ".signatur, '')) LIKE '%' || " + norm + " || '%'",
-			alias + ".id IN (SELECT tsw.titel_id FROM " + sqlWortZumTitel + " WHERE suchnorm(sw.wort) LIKE '%' || " + norm + " || '%')",
+		felder := sqlTextfelderEnthalten(alias, sqlLikeMuster("suchnorm("+platz+")"))
+		if w.langform != "" {
+			langPlatz := fmt.Sprintf("$%d::text", start+len(args))
+			args = append(args, w.langform)
+			felder = append(felder, sqlTextfelderEnthalten(alias, sqlLikeMuster("suchnorm("+langPlatz+")"))...)
 		}
 		// Ein Stück der ISBN, Bindestriche zählen auf keiner Seite.
 		if !w.istJahrgang && strings.ReplaceAll(w.wort, "-", "") != "" {
 			felder = append(felder, "lower(replace(coalesce("+alias+".isbn, ''), '-', '')) LIKE '%' || "+sqlLikeMuster("lower(replace("+platz+", '-', ''))")+" || '%'")
 		}
 		if len(w.isbnFormen) > 0 {
-			felder = append(felder, fmt.Sprintf("regexp_replace(upper(coalesce(%s.isbn, '')), '[^0-9X]', '', 'g') = ANY($%d::text[])", alias, start+len(args)))
+			felder = append(felder, sqlISBNInFormen(alias, start+len(args)))
 			args = append(args, w.isbnFormen)
 		}
 		if strings.Contains("lernmittel", w.wort) {
@@ -140,5 +139,47 @@ func sqlTitelTrifft(alias, eingabe string, start int) (string, []any) {
 		}
 		teile = append(teile, "("+strings.Join(felder, "\n\t\t\tOR ")+")")
 	}
-	return "(" + strings.Join(teile, "\n\t\tAND ") + ")", args
+	bedingung := "(" + strings.Join(teile, "\n\t\tAND ") + ")"
+	// Eine ISBN mit Leerzeichen („978 3 16 148410 0“) zerfällt in Wörter; als Ganzes ist sie eine.
+	if formen := isbnMitLeerzeichen(eingabe); len(formen) > 0 {
+		bedingung = "(" + bedingung + "\n\t\tOR " + sqlISBNInFormen(alias, start+len(args)) + ")"
+		args = append(args, formen)
+	}
+	return bedingung, args
+}
+
+// sqlTextfelderEnthalten liefert die Bedingungen „Titel, Autor, Fach, Signatur oder ein
+// Schlagwort enthält das Muster“; muster ist ein Suchwort nach suchnorm als LIKE-Teilstring.
+func sqlTextfelderEnthalten(alias, muster string) []string {
+	return []string{
+		"suchnorm(coalesce(" + alias + ".titel, '')) LIKE '%' || " + muster + " || '%'",
+		"suchnorm(coalesce(" + alias + ".autor, '')) LIKE '%' || " + muster + " || '%'",
+		"suchnorm(coalesce(" + alias + ".subject, '')) LIKE '%' || " + muster + " || '%'",
+		"suchnorm(coalesce(" + alias + ".signatur, '')) LIKE '%' || " + muster + " || '%'",
+		sqlTitelUeberSchlagwort(alias, muster),
+	}
+}
+
+// sqlISBNInFormen ist die Bedingung „die ISBN des Titels ist eine der Schreibweisen im
+// Parameter $platz“ (isbnutil.Formen); Trenner zählen auf der Seite des Titels nicht.
+func sqlISBNInFormen(alias string, platz int) string {
+	return fmt.Sprintf("regexp_replace(upper(coalesce(%s.isbn, '')), '[^0-9X]', '', 'g') = ANY($%d::text[])", alias, platz)
+}
+
+// isbnWort ist ein Wort aus Ziffern, X und Bindestrichen, ein mögliches Stück einer ISBN.
+var isbnWort = regexp.MustCompile(`^[0-9Xx-]+$`)
+
+// isbnMitLeerzeichen liefert die Schreibweisen einer mit Leerzeichen getippten ISBN; leer, wenn
+// die Eingabe nur ein Wort hat oder ein Wort kein Stück einer ISBN ist („atlas 3827049156“).
+func isbnMitLeerzeichen(eingabe string) []string {
+	felder := strings.Fields(eingabe)
+	if len(felder) < 2 {
+		return nil
+	}
+	for _, f := range felder {
+		if !isbnWort.MatchString(f) {
+			return nil
+		}
+	}
+	return isbnutil.Formen(eingabe)
 }

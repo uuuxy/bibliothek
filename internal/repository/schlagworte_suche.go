@@ -11,8 +11,8 @@ import (
 // „Fantasy" ist.
 //
 // Die Regel steht hier für beide Formen der Suche:
-//   - am Server (Titel-Verwaltung, öffentlicher Katalog und Portal) als Bedingung,
-//     sqlTitelUeberSchlagwort;
+//   - am Server als Bedingung, sqlTitelUeberSchlagwort, in der Titelsuche des Programms
+//     (sqlTitelTrifft);
 //   - im Browser (Medienkatalog „Suche & Filter" lädt die ganze Liste und filtert selbst)
 //     als Wörter je Titel, ladeSuchwoerterDerTitel.
 //
@@ -26,19 +26,15 @@ const sqlWortZumTitel = `schlagworte sw
 		JOIN titel_schlagworte tsw ON tsw.schlagwort_id = coalesce(sw.verweis_auf, sw.id)`
 
 // sqlTitelUeberSchlagwort ist die Bedingung „ein Schlagwort des Titels oder ein Verweis
-// darauf enthält den Suchtext". Verglichen wird wie bei Titel und Autor: Teilstring, ohne
-// Rücksicht auf Groß- und Kleinschreibung.
-//
-// muster ist der SQL-Ausdruck des Suchtexts (ein Parameter) — derselbe, den der Aufrufer
-// für Titel und Autor einsetzt. Maskiert der Aufrufer dort die LIKE-Joker (der öffentliche
-// Katalog), maskiert er sie damit auch hier.
+// darauf enthält das Muster". Verglichen wird wie bei Titel und Autor: Teilstring nach
+// suchnorm. muster ist der SQL-Ausdruck eines Suchworts nach suchnorm, als wörtlicher
+// LIKE-Teilstring (sqlLikeMuster) — derselbe, den sqlTitelTrifft für Titel und Autor einsetzt.
 //
 // Die Unterabfrage hängt nicht vom Titel ab; Postgres rechnet sie einmal je Suche und
 // prüft jeden Titel gegen die gehashte Menge.
 func sqlTitelUeberSchlagwort(titelAlias, muster string) string {
-	return titelAlias + `.id IN (
-		SELECT tsw.titel_id FROM ` + sqlWortZumTitel + `
-		WHERE sw.wort ILIKE '%' || ` + muster + ` || '%')`
+	return titelAlias + `.id IN (SELECT tsw.titel_id FROM ` + sqlWortZumTitel +
+		` WHERE suchnorm(sw.wort) LIKE '%' || ` + muster + ` || '%')`
 }
 
 // sqlTitelMitSchlagwort ist die Bedingung „der Titel trägt das Wort mit dieser Kennung" —

@@ -141,11 +141,12 @@ func TestTitelListe(t *testing.T) {
 			expectedBody: `[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]`,
 		},
 		{
-			name:    "Success - synonym translation",
+			// Ein Kürzel sucht das Wort und seine Langform (repository.titelKuerzel).
+			name:    "Success - Kürzel mit Langform",
 			adresse: "/api/books?q=powi",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", 50000, "politik").
+					WithArgs("", 50000, "powi", "politik").
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))

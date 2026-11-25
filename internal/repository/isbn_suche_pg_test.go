@@ -8,8 +8,8 @@ import (
 
 // Die Suchen vergleichen eine getippte ISBN als Teilstring. Die zehnstellige vom Titelblatt
 // und die dreizehnstellige, unter der die Datenbank den Titel führt, enden
-// auf verschiedene Prüfzeichen: Ohne den Vergleich mit der Normalform des Suchtexts
-// (sqlSuchtextIstISBN) fände die getippte zehnstellige den Titel nicht.
+// auf verschiedene Prüfzeichen: Ohne den Vergleich in beiden Längen (isbnutil.Formen in
+// sqlTitelTrifft) fände die getippte zehnstellige den Titel nicht.
 func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -41,8 +41,10 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		}
 	}
 
-	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if treffer, err := repo.FindeTitel(ctx, "0306406153"); err != nil || len(treffer) != 0 {
-		t.Errorf("FindeTitel mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(treffer), err)
+	// Gegenprobe: Eine andere Nummer findet den Titel nicht. Das Prüfzeichen der Eingabe prüft
+	// die Titelsuche nicht, wie der Medienkatalog (isbnFormen.faelle.json, 3499500252): Dieselben
+	// neun Ziffern mit falschem Prüfzeichen finden das Buch.
+	if treffer, err := repo.FindeTitel(ctx, "0306406162"); err != nil || len(treffer) != 0 {
+		t.Errorf("FindeTitel mit anderer Nummer: %d Treffer, %v — erwartet keinen", len(treffer), err)
 	}
 }

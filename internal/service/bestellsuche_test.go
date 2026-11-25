@@ -31,7 +31,7 @@ func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 
 	localQuery := `WITH matched_titels AS`
 	mock.ExpectQuery(localQuery).
-		WithArgs("TestBook").
+		WithArgs("TestBook", "testbook").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
 			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "cover-lokal", "SIG-1", true, 3))
 
@@ -125,7 +125,7 @@ func TestFindeZumBestellen_NurKatalogWennDNBScheitert(t *testing.T) {
 
 	localQuery := `WITH matched_titels AS`
 	mock.ExpectQuery(localQuery).
-		WithArgs("TestBook").
+		WithArgs("TestBook", "testbook").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
 			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", false, 3))
 
@@ -171,7 +171,7 @@ func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 
 	localQuery := `WITH matched_titels AS`
 	mock.ExpectQuery(localQuery).
-		WithArgs("TestBook").
+		WithArgs("TestBook", "testbook").
 		WillReturnError(errors.New("db error"))
 
 	mockTransport := &dnbTransportAttrappe{

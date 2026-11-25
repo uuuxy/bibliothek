@@ -467,7 +467,7 @@ var triggerBestand = []string{
 	// 157, auch eine Länge: Eine zehnstellige ISBN mit richtigem
 	// Prüfzeichen wird dreizehnstellig. Frage 12: Wer eine ISBN vergleicht, vergleicht die
 	// Normalform — Go über isbnutil.Normalform, SQL über isbn_normalform()
-	// (sqlTitelTraegtISBN, sqlSuchtextIstISBN); die Parität prüft
+	// (sqlTitelTraegtISBN; die Suche in beiden Längen über isbnutil.Formen); die Parität prüft
 	// internal/repository/isbn_normalform_pg_test.go. Wer eine Zuordnung ISBN → Titel in Go führt (die
 	// Importe, die Übernahme), führt sie unter der Normalform, sonst trifft der zweite Titel
 	// erst den UNIQUE-Index.

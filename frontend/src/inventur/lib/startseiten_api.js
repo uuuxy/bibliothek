@@ -17,7 +17,8 @@ export async function buecherLaden() {
 	return await antwort.json();
 }
 
-// WZ-Synonyme für Suchbegriffe auf der Startseite.
+// Kürzel und ihre Langform: Ein Kürzel sucht auch die Langform, das Wort selbst gilt weiter
+// (Zwilling titelKuerzel am Server).
 export const suchSynonyme = new Map([
 	['powi', 'politik'],
 	['mathe', 'mathematik'],
@@ -59,7 +60,7 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	const q = searchQuery.toLowerCase().trim();
 	if (q === '') return Array.isArray(buecherArray) ? buecherArray : [];
 
-	let terms = q.split(/\s+/).map((term) => suchSynonyme.get(term) || term);
+	let terms = q.split(/\s+/);
 	const hasNumber = terms.some((t) => !Number.isNaN(Number.parseInt(t, 10)));
 	if (hasNumber) {
 		terms = terms.filter((t) => !['klasse', 'kl', 'kl.', 'jahrgang', 'jg', 'jg.'].includes(t));
@@ -71,10 +72,22 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	// Ein oder zwei Ziffern sind ein Jahrgang und kein Stück einer ISBN: „7" steht in jeder
 	// ISBN-13 (978…) und träfe sonst fast jedes Buch.
 	const istJahrgang = terms.map((term) => /^\d{1,2}\.?$/.test(term));
-	const normJeTerm = terms.map((term) => suchnorm(term));
+	// Ein Kürzel sucht auch seine Langform, das Wort selbst gilt weiter („Mathe live“ über „mathe“).
+	const normenJeTerm = terms.map((term) => {
+		const lang = suchSynonyme.get(term);
+		return lang ? [suchnorm(term), suchnorm(lang)] : [suchnorm(term)];
+	});
+	// Eine ISBN mit Leerzeichen („978 3 16 148410 0“) zerfällt in Begriffe; als Ganzes ist sie eine.
+	const woerter = q.split(/\s+/);
+	const isbnGanz =
+		woerter.length > 1 && woerter.every((w) => /^[0-9x-]+$/.test(w)) ? isbnFormen(q) : [];
 
-	return (Array.isArray(buecherArray) ? buecherArray : []).filter((/** @type {any} */ b) =>
-		terms.every((term, i) => trifftBegriff(b, term, normJeTerm[i], isbnJeTerm[i], istJahrgang[i]))
+	return (Array.isArray(buecherArray) ? buecherArray : []).filter(
+		(/** @type {any} */ b) =>
+			terms.every((term, i) =>
+				trifftBegriff(b, term, normenJeTerm[i], isbnJeTerm[i], istJahrgang[i])
+			) ||
+			(Boolean(b.isbn) && isbnGanz.includes(normalisiereIsbn(b.isbn)))
 	);
 }
 
@@ -85,12 +98,13 @@ const enthaelt = (feld, norm) => typeof feld === 'string' && suchnorm(feld).incl
  * Trifft der Begriff das Buch in mindestens einem Feld?
  * @param {any} b
  * @param {string} term
- * @param {string} norm der Begriff in der Form von suchnorm
+ * @param {string[]} normen der Begriff in der Form von suchnorm, bei einem Kürzel auch die Langform
  * @param {string[]} isbnFormenDesBegriffs die Schreibweisen des Begriffs als ISBN; leer, wenn er keine ist
  * @param {boolean} istJahrgang der Begriff ist ein Jahrgang und kein Stück einer ISBN
  */
-function trifftBegriff(b, term, norm, isbnFormenDesBegriffs, istJahrgang) {
-	if (enthaelt(b.title, norm)) return true;
+function trifftBegriff(b, term, normen, isbnFormenDesBegriffs, istJahrgang) {
+	const enthaeltEins = (/** @type {unknown} */ feld) => normen.some((n) => enthaelt(feld, n));
+	if (enthaeltEins(b.title)) return true;
 	// Ein Stück der ISBN, Bindestriche zählen auf keiner Seite: „978-3-06“ findet 9783060….
 	const isbnStueck = term.replaceAll('-', '');
 	if (!istJahrgang && isbnStueck && b.isbn?.replaceAll('-', '').toLowerCase().includes(isbnStueck))
@@ -101,16 +115,16 @@ function trifftBegriff(b, term, norm, isbnFormenDesBegriffs, istJahrgang) {
 		isbnFormenDesBegriffs.includes(normalisiereIsbn(b.isbn))
 	)
 		return true;
-	if (enthaelt(b.author, norm) || enthaelt(b.subject, norm)) return true;
+	if (enthaeltEins(b.author) || enthaeltEins(b.subject)) return true;
 	if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
 	// Die Signatur ist die Regaladresse (Handbuch).
-	if (enthaelt(b.signatur, norm)) return true;
+	if (enthaeltEins(b.signatur)) return true;
 	// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
 	// Titel finden, entscheidet der Server (repository.ladeSuchwoerterDerTitel) — dieselbe
 	// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
 	if (
 		Array.isArray(b.suchwoerter) &&
-		b.suchwoerter.some((/** @type {string} */ w) => enthaelt(w, norm))
+		b.suchwoerter.some((/** @type {string} */ w) => enthaeltEins(w))
 	)
 		return true;
 	const num = Number.parseInt(term, 10);

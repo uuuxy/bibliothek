@@ -57,7 +57,7 @@
 			"id": "prozent",
 			"titel": "50% mehr Mut",
 			"autor": "Klaus Kühn",
-			"subject": "",
+			"subject": "Politik und Wirtschaft",
 			"isbn": "",
 			"signatur": "",
 			"ist_lernmittel": false,
@@ -76,13 +76,25 @@
 			"jahrgang_von": null,
 			"jahrgang_bis": null,
 			"schlagworte": []
+		},
+		{
+			"id": "mathelive",
+			"titel": "Mathe live",
+			"autor": "",
+			"subject": "",
+			"isbn": "",
+			"signatur": "",
+			"ist_lernmittel": false,
+			"jahrgang_von": null,
+			"jahrgang_bis": null,
+			"schlagworte": []
 		}
 	],
 	"faelle": [
 		{
 			"fall": "leer: alle",
 			"suche": "",
-			"treffer": ["mathe7", "raeuber", "atlas", "prozent", "biber"]
+			"treffer": ["mathe7", "raeuber", "atlas", "prozent", "biber", "mathelive"]
 		},
 		{ "fall": "Kürzel und Jahrgang", "suche": "mathe 7", "treffer": ["mathe7"] },
 		{
@@ -107,11 +119,24 @@
 		{ "fall": "Schlagwort ohne Umlaut", "suche": "buhnenstuck", "treffer": ["raeuber"] },
 		{ "fall": "Signatur", "suche": "erd 1", "treffer": ["atlas"] },
 		{ "fall": "Fach", "suche": "erdkunde", "treffer": ["atlas"] },
-		{ "fall": "Kürzel ersetzt das Wort", "suche": "bio", "treffer": ["biber"] },
+		{ "fall": "Kürzel trifft Wortlaut und Fach", "suche": "bio", "treffer": ["biber"] },
+		{
+			"fall": "Kürzel findet auch den Wortlaut",
+			"suche": "mathe",
+			"treffer": ["mathe7", "mathelive"]
+		},
+		{ "fall": "Kürzel findet die Langform", "suche": "powi", "treffer": ["prozent"] },
 		{ "fall": "ISBN-13 als Teilstring", "suche": "382704915", "treffer": ["mathe7"] },
 		{ "fall": "ISBN-10 findet die dreizehnstellige", "suche": "3827049156", "treffer": ["mathe7"] },
 		{ "fall": "ISBN mit Bindestrichen", "suche": "978-3-8270-4915-5", "treffer": ["mathe7"] },
 		{ "fall": "Anfang der ISBN mit Bindestrichen", "suche": "978-3-8270", "treffer": ["mathe7"] },
+		{ "fall": "ISBN mit Leerzeichen", "suche": "978 3 8270 4915 5", "treffer": ["mathe7"] },
+		{ "fall": "ISBN-10 mit Leerzeichen", "suche": "3 8270 4915 6", "treffer": ["mathe7"] },
+		{
+			"fall": "ISBN neben einem Wort bleibt ein Wort",
+			"suche": "atlas 3827049156",
+			"treffer": []
+		},
 		{ "fall": "nur ein Bindestrich", "suche": "-", "treffer": [] },
 		{ "fall": "das Wort lernmittel", "suche": "lernmittel", "treffer": ["mathe7", "atlas"] },
 		{ "fall": "Prozentzeichen ist ein Zeichen", "suche": "%", "treffer": ["prozent"] },

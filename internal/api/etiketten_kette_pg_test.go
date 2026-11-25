@@ -273,6 +273,8 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 		{"erledigt mit Marke", "?q=ZAEHLERMARKE&status=erledigt", 2},
 		{"alle mit Marke", "?q=ZAEHLERMARKE&status=alle", 5},
 		{"offen ueber Barcode", "?q=ZM-FREMD", 1},
+		// Die Titelsuche des Programms: jedes Wort für sich, die Reihenfolge zählt nicht.
+		{"Titel Wort fuer Wort", "?q=titel+zaehlermarke", 3},
 	}
 
 	for _, f := range faelle {
@@ -298,7 +300,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 
 }
 
-// Liste und Zähler vergleichen den Suchtext mit dem Wortlaut des Titels. Die Datenbank
+// Liste und Zähler suchen den Titel mit der Titelsuche des Programms. Die Datenbank
 // speichert Titeltexte mit einem Leerzeichen zwischen den Wörtern (Migration 160), und beide
 // lesen den Suchtext in derselben Form (etikettenSuchtext): Wer den Titel tippt, wie er in
 // Littera stand, findet seine Etiketten trotzdem.

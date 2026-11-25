@@ -19,9 +19,8 @@ type titelSucheAntwort struct {
 // view_books.
 //
 // Die Suche der Theke (GET /api/search) hängt am Recht perform_actions und liefert neben den
-// Titeln Schüler, die der Druck nicht zeigt; die Liste GET /api/books sucht ohne Signatur und
-// ohne Umlaut-Normalform. Diese Tür sucht deshalb mit der Abfrage der Theke,
-// KatalogAbfragen.FindeTitelUnscharf.
+// Titeln Schüler, die der Druck nicht zeigt. Diese Tür sucht deshalb mit der Abfrage der Theke,
+// KatalogAbfragen.FindeTitelUnscharf: zehn Titel mit Exemplar und die Gesamtzahl.
 func (t *Tueren) TitelSuche(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))

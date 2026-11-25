@@ -8,7 +8,7 @@ import (
 )
 
 // Suche über Schlagworte. Zwei Formen derselben Regel: die Bedingung
-// am Server (sqlTitelUeberSchlagwort — Titel-Verwaltung, öffentlicher Katalog, Portal) und
+// am Server (sqlTitelUeberSchlagwort in der Titelsuche des Programms, sqlTitelTrifft) und
 // die Wörter je Titel für die Suche im Browser (ladeSuchwoerterDerTitel — Medienkatalog „Suche
 // & Filter"). Beide müssen dieselben Titel finden, sonst fände der eine Reiter des
 // Medienkatalogs etwas anderes als der andere. Und beide müssen den Verweis auflösen:
@@ -48,7 +48,7 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 	amServer := func(muster string) []string {
 		t.Helper()
 		rows, err := pool.Query(ctx, `SELECT bt.titel FROM buecher_titel bt WHERE `+
-			sqlTitelUeberSchlagwort("bt", "$1")+` ORDER BY bt.titel`, muster)
+			sqlTitelUeberSchlagwort("bt", sqlLikeMuster("suchnorm($1::text)"))+` ORDER BY bt.titel`, muster)
 		if err != nil {
 			t.Fatalf("Bedingung %q: %v", muster, err)
 		}
@@ -67,7 +67,8 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 		return titel
 	}
 	// Die Browser-Regel aus buecherSuchen (startseiten_api.js): ein Wort enthält den
-	// Suchbegriff, ohne Rücksicht auf Groß- und Kleinschreibung.
+	// Suchbegriff, ohne Rücksicht auf Groß- und Kleinschreibung; Umlaute prüfen die gemeinsamen
+	// Fälle der Titelsuche.
 	imBrowser := func(muster string) []string {
 		var titel []string
 		for _, zeile := range []struct{ id, name string }{ // in der Reihenfolge der Titel

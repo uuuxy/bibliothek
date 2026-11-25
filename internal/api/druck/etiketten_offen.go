@@ -31,7 +31,7 @@ type ExemplarOhneEtikett struct {
 }
 
 // etikettenSuchtext liest ?q= für Liste und Zähler in der Form, in der Titeltexte gespeichert
-// sind (repository.TiteltextNormalform): Beide vergleichen den Text als Wortlaut.
+// sind (repository.TiteltextNormalform); beide filtern mit derselben Bedingung.
 func etikettenSuchtext(r *http.Request) string {
 	return repository.TiteltextNormalform(r.URL.Query().Get("q"))
 }

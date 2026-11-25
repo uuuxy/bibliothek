@@ -41,25 +41,18 @@ func SQLKollegiumSichtbar(titelAlias string) string {
 // unterscheiden sich allein in s.Sichtbar. Von den Ausleihen liest sie nur, ob eine läuft;
 // kein Wert einer Ausleihe und kein Leser erreicht die Antwort.
 //
-// Der Suchtext geht zweimal in die Abfrage: für die Volltextsuche, und mit maskierten
-// LIKE-Jokern für die Teilstring-Vergleiche. Ein nacktes „%" träfe sonst den ganzen Bestand.
-// Beide Male in der Form, in der Titeltexte und Schlagworte gespeichert sind
-// (TiteltextNormalform).
+// Der Suchtext geht durch die Titelsuche des Programms (sqlTitelTrifft).
 func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]KatalogTreffer, int, error) {
-	s.Suchtext = TiteltextNormalform(s.Suchtext)
+	s.Suchtext = strings.TrimSpace(s.Suchtext)
 	if s.Suchtext == "" && s.SchlagwortID == "" {
 		return []KatalogTreffer{}, 0, nil
 	}
 	bedingungen := []string{s.Sichtbar}
 	args := []any{}
 	if s.Suchtext != "" {
-		args = append(args, s.Suchtext, maskiereLikeJoker(s.Suchtext))
-		bedingungen = append(bedingungen, `(bt.search_vector @@ plainto_tsquery('german', $1)
-		   OR bt.titel ILIKE '%' || $2 || '%'
-		   OR bt.autor ILIKE '%' || $2 || '%'
-		   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%'
-		   OR `+sqlSuchtextIstISBN("bt", "$1")+`
-		   OR `+sqlTitelUeberSchlagwort("bt", "$2")+`)`)
+		trifft, suchArgs := sqlTitelTrifft("bt", s.Suchtext, 1)
+		args = append(args, suchArgs...)
+		bedingungen = append(bedingungen, trifft)
 	}
 	if s.SchlagwortID != "" {
 		args = append(args, s.SchlagwortID)
@@ -101,12 +94,6 @@ func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 		return nil, 0, fmt.Errorf("katalogtreffer lesen: %w", err)
 	}
 	return treffer, gesamt, nil
-}
-
-// maskiereLikeJoker macht aus einer Eingabe einen wörtlichen LIKE-Teilstring: Backslash,
-// Prozent und Unterstrich verlieren ihre Sonderbedeutung (Postgres-Vorgabe ESCAPE '\').
-func maskiereLikeJoker(s string) string {
-	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
 // LadeSchlagwortFilterImKatalog liefert die Wörter, die die Pflegeseite als Filter markiert hat

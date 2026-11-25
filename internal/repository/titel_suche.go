@@ -2,31 +2,23 @@ package repository
 
 import (
 	"context"
+	"strings"
 )
 
-// FindeTitel führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch und
-// vergleicht daneben Teile des Texts und die ISBN; die Treffer stehen nach ihrem Rang, höchstens
-// 50, und nur Titel mit einem Exemplar (sqlTitelHatExemplar). Der Teilstring-Vergleich nimmt den
-// Suchtext in der Form, in der Titeltexte gespeichert sind (TiteltextNormalform).
+// FindeTitel sucht mit der Titelsuche des Programms (sqlTitelTrifft) und liefert höchstens 50
+// Titel mit einem Exemplar (sqlTitelHatExemplar); vorn steht, was der Volltext am besten trifft.
 func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Titel, error) {
-	suchtext = TiteltextNormalform(suchtext)
+	trifft, args := sqlTitelTrifft("b", suchtext, 2)
 	query := `
 		SELECT 
 			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), b.mehrjahresband, b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
 			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `, ` + SQLBestandImZulauf + `
 		FROM buecher_titel b
-		WHERE (
-			b.search_vector @@ plainto_tsquery('german', $1::text) 
-			OR b.titel ILIKE '%' || $1::text || '%'
-			OR b.autor ILIKE '%' || $1::text || '%'
-			OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'
-			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
-			OR ` + sqlSuchtextIstISBN("b", "$1::text") + `
-		) AND ` + sqlTitelHatExemplar("b") + `
+		WHERE ` + trifft + ` AND ` + sqlTitelHatExemplar("b") + `
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel COLLATE deutsch ASC
 		LIMIT 50
 	`
-	rows, err := a.db.Query(ctx, query, suchtext)
+	rows, err := a.db.Query(ctx, query, append([]any{TiteltextNormalform(suchtext)}, args...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,62 +39,32 @@ func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Ti
 	return treffer, nil
 }
 
-// FindeTitelUnscharf führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus,
-// über Titel, Autor, ISBN und Signatur, höchstens limit Treffer, und liefert zusätzlich die
-// Gesamtzahl der Treffer (nicht nur die des Limits).
-//
-// Wie bei der Schülersuche muss jedes Token irgendeine Spalte treffen, statt die
-// komplette Eingabe eine einzelne: "rowling harry" findet damit den Titel über
-// Autor + Titel, was der frühere Ganzstring-Vergleich nicht konnte. Die
-// ISBN-Gleichheit bleibt als eigener Zweig bestehen — dort wird die ganze,
-// bindestrichbereinigte Eingabe verglichen, nicht tokenweise.
+// FindeTitelUnscharf sucht für die Liste beim Tippen mit der Titelsuche des Programms
+// (sqlTitelTrifft), höchstens limit Titel mit einem Exemplar, und liefert zusätzlich die
+// Gesamtzahl der Treffer (nicht nur die des Limits). Vorn steht, wessen Titel mit den meisten
+// eingegebenen Wörtern beginnt.
 func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error) {
-	tokens := suchTokens(suchtext)
-	if len(tokens) == 0 {
+	woerter := strings.Fields(suchtext)
+	if len(woerter) == 0 {
 		return nil, 0, nil
 	}
-
+	trifft, args := sqlTitelTrifft("b", suchtext, 3)
 	query := `
 		WITH tokens AS (
-			SELECT suchnorm(t) AS norm, lower(t) AS roh FROM unnest($1::text[]) AS t
+			SELECT suchnorm(t) AS norm FROM unnest($1::text[]) AS t
 		)
 		SELECT
 			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(auflage, ''), mehrjahresband, ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
 			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `, ` + SQLBestandImZulauf + `,
 			count(*) OVER () AS treffer_gesamt
 		FROM buecher_titel b
-		WHERE (
-			-- Index-Anker: erstes Token als direkte LIKE-Bedingung, damit der Planer
-			-- die Ausdrucks-Indizes per BitmapOr zieht. Die
-			-- Ausdrücke müssen buchstäblich denen der Indizes entsprechen — ein
-			-- coalesce() darum herum macht den Zweig unindexierbar und kippt die
-			-- ganze Abfrage in den Seq Scan (siehe LeserAbfragen.FindeUnscharf).
-			   suchnorm(b.titel)    LIKE '%' || suchnorm($4::text) || '%'
-			OR suchnorm(b.autor)    LIKE '%' || suchnorm($4::text) || '%'
-			OR lower(b.isbn)        LIKE '%' || lower($4::text) || '%'
-			OR lower(b.signatur)    LIKE '%' || lower($4::text) || '%'
-			OR replace(b.isbn, '-', '') = replace($2::text, '-', '')
-			OR ` + sqlSuchtextIstISBN("b", "$2::text") + `
-		  )
-		  AND (
-			   replace(b.isbn, '-', '') = replace($2::text, '-', '')
-			OR ` + sqlSuchtextIstISBN("b", "$2::text") + `
-			OR (
-				SELECT bool_and(
-					   suchnorm(coalesce(b.titel, ''))     LIKE '%' || tokens.norm || '%'
-					OR suchnorm(coalesce(b.autor, ''))     LIKE '%' || tokens.norm || '%'
-					OR lower(coalesce(b.isbn, ''))         LIKE '%' || tokens.roh || '%'
-					OR lower(coalesce(b.signatur, ''))     LIKE '%' || tokens.roh || '%')
-				FROM tokens
-			   )
-		  )
-		  AND ` + sqlTitelHatExemplar("b") + `
+		WHERE ` + trifft + ` AND ` + sqlTitelHatExemplar("b") + `
 		ORDER BY
-			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
+			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE ` + sqlLikeMuster("tokens.norm") + ` || '%') DESC,
 			b.titel COLLATE deutsch ASC
-		LIMIT $3
+		LIMIT $2
 	`
-	rows, err := a.db.Query(ctx, query, tokens, suchtext, limit, tokens[0])
+	rows, err := a.db.Query(ctx, query, append([]any{woerter, limit}, args...)...)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -29,22 +29,30 @@ type EtikettExemplar struct {
 	EtikettGedruckt bool
 }
 
+// etikettenSuchBedingung filtert Liste und Zähler nach „Titel oder Barcode“: den Titel mit der
+// Titelsuche des Programms (sqlTitelTrifft), Barcode und altes LMF-Etikett als Teilstring. Der
+// Suchtext ist $1, die Argumente der Titelsuche beginnen bei start.
+func etikettenSuchBedingung(suche string, start int) (string, []any) {
+	trifft, args := sqlTitelTrifft("t", suche, start)
+	return `($1 = '' OR ` + trifft + `
+			       OR e.barcode_id ILIKE '%' || $1 || '%' OR e.lmf_barcode ILIKE '%' || $1 || '%')`, args
+}
+
 // LadeEtikettenExemplare liefert die Exemplare eines Status (offen, erledigt, alle), die
 // neuesten zuerst und höchstens limit Zeilen; suche filtert über Titel, Barcode und ein altes
 // LMF-Etikett. Scheitert das Lesen der Zeilen, trägt der Fehler ErrZeileUnlesbar.
 func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche string, limit int) ([]EtikettExemplar, error) {
 	statusBedingung := etikettenStatusBedingung(status)
+	suchBedingung, suchArgs := etikettenSuchBedingung(suche, 3)
 	rows, err := db.Query(ctx, `
 			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY-MM-DD'),
 			       e.etikett_gedruckt
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE `+statusBedingung+`
-			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%'
-			       OR e.lmf_barcode ILIKE '%' || $1 || '%')
+			WHERE `+statusBedingung+` AND `+suchBedingung+`
 			ORDER BY COALESCE(e.zugang_am, e.erworben_am) DESC, e.erstellt_am DESC, e.barcode_id
 			LIMIT $2
-		`, suche, limit)
+		`, append([]any{suche, limit}, suchArgs...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +76,13 @@ func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche str
 // Liste. Derselbe JOIN wie in der Liste, er ist verlustfrei: titel_id ist NOT NULL.
 func ZaehleEtikettenExemplare(ctx context.Context, db Datenbank, status string, suche string) (int, error) {
 	var anzahl int
+	suchBedingung, suchArgs := etikettenSuchBedingung(suche, 2)
 	err := db.QueryRow(ctx, `
 			SELECT count(*)
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE `+etikettenStatusBedingung(status)+`
-			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%'
-			       OR e.lmf_barcode ILIKE '%' || $1 || '%')`,
-		suche,
+			WHERE `+etikettenStatusBedingung(status)+` AND `+suchBedingung,
+		append([]any{suche}, suchArgs...)...,
 	).Scan(&anzahl)
 	return anzahl, err
 }

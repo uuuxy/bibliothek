@@ -44,11 +44,14 @@ Müller) ebenso wenig wie Bindestrich, Apostroph und Leerzeichen („alkahil“ 
 „annalena“ Anna-Lena). Eine gescannte Ausweisnummer findet den Leser in Leserdatei, Mahnwesen,
 Abgängerliste und unter _Benutzer & Rechte_.
 
-Titel findet jede Suche nach der Regel von _Suche & Filter_: in der Titel-Verwaltung, beim Klassensatz,
-in den Dialogen _Andere Auflage zuordnen_ und _Titel zusammenführen_ und im Portal unter _Schulbücher_.
-Jedes Wort muss Titel, Autor, Fach, Signatur, ISBN (mit oder ohne Bindestriche, zehn- oder
-dreizehnstellig) oder ein Schlagwort treffen; Kürzel wie „mathe“, eine Zahl als Jahrgang und
-Umlaute ohne Punkte gelten überall.
+Titel findet jede Suche nach derselben Regel: _Suche & Filter_, die Titel-Verwaltung, der
+Klassensatz, die Dialoge _Andere Auflage zuordnen_ und _Titel zusammenführen_, das Feld der Theke,
+im Druck-Center _Buch-Etiketten_ und _Fehlende Etiketten_, die Suche unter _Bestellungen_, in
+_Mein Portal_ _Schulbücher_ und _Reservieren & Melden_ und der öffentliche Katalog. Jedes Wort muss
+Titel, Autor, Fach, Signatur, ISBN (mit oder ohne Bindestriche oder Leerzeichen, zehn- oder
+dreizehnstellig) oder ein Schlagwort treffen. Ein Kürzel wie „mathe“ findet auch die Langform
+„Mathematik“, eine Zahl gilt als Jahrgang, und Umlaute zählen auch ohne Punkte („rauber“ findet
+„Räuber“).
 
 ## Ausleihe (Theke)
 

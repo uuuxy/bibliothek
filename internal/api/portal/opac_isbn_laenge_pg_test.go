@@ -48,8 +48,10 @@ func TestOPACSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 			t.Errorf("q=%q: %d Treffer, erwartet den Titel %q", q, len(treffer), titel)
 		}
 	}
-	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if treffer := suche("0306406153"); len(treffer) != 0 {
-		t.Errorf("falsches Prüfzeichen: %d Treffer, erwartet keinen", len(treffer))
+	// Gegenprobe: Eine andere Nummer findet den Titel nicht. Das Prüfzeichen der Eingabe prüft
+	// die Titelsuche nicht, wie der Medienkatalog (isbnFormen.faelle.json, 3499500252): Dieselben
+	// neun Ziffern mit falschem Prüfzeichen finden das Buch.
+	if treffer := suche("0306406162"); len(treffer) != 0 {
+		t.Errorf("andere Nummer: %d Treffer, erwartet keinen", len(treffer))
 	}
 }

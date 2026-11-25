@@ -16,8 +16,7 @@ import (
 
 // GET /api/buecher/titel/suche sucht Titel für Bildschirme außerhalb der Theke, etwa die
 // Etiketten im Druck-Center. Sie liefert keine Schüler und hängt nicht am Recht der Theke
-// (perform_actions). Die Suchgüte bleibt die der Theke (KatalogAbfragen.FindeTitelUnscharf:
-// Signatur, ISBN, Umlaut-Normalform); die Liste GET /api/books kann das nicht.
+// (perform_actions). Sie sucht mit der Abfrage der Theke (KatalogAbfragen.FindeTitelUnscharf).
 func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

@@ -20,22 +20,17 @@ type BestellsucheTreffer struct {
 	Bestand int
 }
 
-// FindeTitelZumBestellen durchsucht den eigenen Katalog über den Volltext und über ein Stück von
-// Titel, Autor oder ISBN und liefert höchstens 50 Treffer, den besten zuerst. Anders als die
-// Suche der Theke nennt sie auch einen Titel ohne Exemplar: Der lässt sich bestellen. Der
-// Suchtext geht in die Form, in der Titeltexte gespeichert sind (TiteltextNormalform).
+// FindeTitelZumBestellen durchsucht den eigenen Katalog mit der Titelsuche des Programms
+// (sqlTitelTrifft) und liefert höchstens 50 Treffer; vorn steht, was der Volltext am besten
+// trifft. Anders als die Suche der Theke nennt sie auch einen Titel ohne Exemplar: Der lässt
+// sich bestellen.
 func FindeTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) ([]BestellsucheTreffer, error) {
+	trifft, args := sqlTitelTrifft("t", suchtext, 2)
 	rows, err := db.Query(ctx, `
 		WITH matched_titels AS (
 			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.ist_lernmittel, t.search_vector
 			FROM buecher_titel t
-			WHERE
-				t.search_vector @@ plainto_tsquery('german', $1)
-				OR t.titel ILIKE '%' || $1 || '%'
-				OR t.autor ILIKE '%' || $1 || '%'
-				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
-				OR replace(t.isbn, '-', '') = replace($1, '-', '')
-				OR `+sqlSuchtextIstISBN("t", "$1")+`
+			WHERE `+trifft+`
 			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel COLLATE deutsch ASC
 			LIMIT 50
 		)
@@ -50,7 +45,7 @@ func FindeTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) 
 			WHERE titel_id = mt.id AND ist_ausgesondert = false
 		) e ON true
 		ORDER BY ts_rank(mt.search_vector, plainto_tsquery('german', $1)) DESC, mt.titel COLLATE deutsch ASC
-	`, TiteltextNormalform(suchtext))
+	`, append([]any{TiteltextNormalform(suchtext)}, args...)...)
 	if err != nil {
 		return nil, err
 	}
