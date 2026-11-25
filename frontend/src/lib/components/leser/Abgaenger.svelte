@@ -60,7 +60,7 @@
 					b.ueberfaellig - a.ueberfaellig ||
 					b.offene_buecher - a.offene_buecher ||
 					String(a.klasse).localeCompare(String(b.klasse), 'de', { numeric: true }) ||
-					String(a.nachname).localeCompare(String(b.nachname), 'de')
+					String(a.nachname).localeCompare(String(b.nachname), 'de', { numeric: true })
 			)
 	);
 

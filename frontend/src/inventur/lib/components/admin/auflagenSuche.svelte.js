@@ -108,7 +108,7 @@ export function kandidaten(antworten, bekannte, passt = istLernmittel) {
 	return Object.values(gesehen)
 		.sort(
 			(a, b) =>
-				String(a.title).localeCompare(String(b.title), 'de') ||
+				String(a.title).localeCompare(String(b.title), 'de', { numeric: true }) ||
 				(b.erscheinungsjahr || 0) - (a.erscheinungsjahr || 0)
 		)
 		.slice(0, AUFLAGEN_TREFFER_MAX);

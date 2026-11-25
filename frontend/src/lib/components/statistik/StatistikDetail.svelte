@@ -52,11 +52,14 @@
 	let filterSystematik = $state('alle');
 	let suchbegriff = $state('');
 
+	// Deutsch und Zahlen nach Wert wie jede Liste (Intl.Collator('de', { numeric: true })).
+	/** @param {unknown} a @param {unknown} b */
+	const ordnung = (a, b) => String(a).localeCompare(String(b), 'de', { numeric: true });
 	const fachOptionen = $derived(
-		[...new Set(items.map((i) => i.fachbereich).filter((v) => v !== undefined))].sort()
+		[...new Set(items.map((i) => i.fachbereich).filter((v) => v !== undefined))].sort(ordnung)
 	);
 	const systematikOptionen = $derived(
-		[...new Set(items.map((i) => i.systematik).filter((v) => v !== undefined))].sort()
+		[...new Set(items.map((i) => i.systematik).filter((v) => v !== undefined))].sort(ordnung)
 	);
 
 	const gefiltert = $derived(

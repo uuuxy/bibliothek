@@ -31,7 +31,7 @@
 	function hinzufuegen() {
 		if (!datum) return;
 		tage = [...tage.filter((t) => t.datum !== datum), { datum, grund: grund.trim() }].sort((a, b) =>
-			a.datum.localeCompare(b.datum)
+			a.datum.localeCompare(b.datum, 'de', { numeric: true })
 		);
 		offen = false;
 	}

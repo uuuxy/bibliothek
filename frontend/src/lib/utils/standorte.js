@@ -51,7 +51,9 @@ export function standorteAusExemplaren(exemplare) {
  */
 export function standortZeile(standorte) {
 	return [...(standorte ?? [])]
-		.sort((a, b) => b.anzahl - a.anzahl || a.standort.localeCompare(b.standort, 'de'))
+		.sort(
+			(a, b) => b.anzahl - a.anzahl || a.standort.localeCompare(b.standort, 'de', { numeric: true })
+		)
 		.map((s) => `${s.standort}: ${s.anzahl}`)
 		.join(' · ');
 }

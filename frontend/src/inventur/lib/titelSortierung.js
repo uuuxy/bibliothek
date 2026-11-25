@@ -41,5 +41,5 @@ export function sortiereNachFachUndTitel(a, b) {
 	if (indexA !== indexB) {
 		return indexA - indexB;
 	}
-	return a.title.localeCompare(b.title);
+	return a.title.localeCompare(b.title, 'de', { numeric: true });
 }

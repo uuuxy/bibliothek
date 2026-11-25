@@ -21,7 +21,7 @@
 	const optionen = $derived(
 		[...new Set([...klassenListe.liste, ...vorhandeneGruppen.map((g) => g.className)])]
 			.filter((k) => !gewaehlteKlassen.includes(k))
-			.sort()
+			.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
 			.map((k) => ({ value: k, label: k }))
 	);
 

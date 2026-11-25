@@ -30,7 +30,9 @@
 	// neuen Fünftklässler bringt.
 	const klassenListe = erzeugeKlassenVorschlaege();
 	const optionen = $derived(
-		[...new Set([...klassenListe.liste, ...existing])].sort().map((k) => ({ value: k, label: k }))
+		[...new Set([...klassenListe.liste, ...existing])]
+			.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
+			.map((k) => ({ value: k, label: k }))
 	);
 
 	// Scheitert eine der beiden Quellen, fehlt womöglich genau die gesuchte Klasse; der Dialog

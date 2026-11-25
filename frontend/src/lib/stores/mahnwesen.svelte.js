@@ -105,7 +105,7 @@ function erzeugeMahnwesen() {
 		// die Liste von oben nach unten ab.
 		return [...liste].sort(
 			(/** @type {any} */ a, /** @type {any} */ b) =>
-				b.maxTage - a.maxTage || String(a.name).localeCompare(String(b.name), 'de')
+				b.maxTage - a.maxTage || `${a.name}`.localeCompare(`${b.name}`, 'de', { numeric: true })
 		);
 	});
 

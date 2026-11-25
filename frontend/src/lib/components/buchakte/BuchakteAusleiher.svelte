@@ -19,7 +19,9 @@
 
 	let availableKlassen = $derived([
 		'Alle',
-		...Array.from(new Set(ausleiher.map((b) => b.klasse || 'Unbekannt'))).sort()
+		...Array.from(new Set(ausleiher.map((b) => b.klasse || 'Unbekannt'))).sort((a, b) =>
+			a.localeCompare(b, 'de', { numeric: true })
+		)
 	]);
 
 	let gefilterteAusleiher = $derived(
