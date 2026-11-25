@@ -41,7 +41,7 @@ Nur, was kein Test leisten kann.
 
 - [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [ ] Funde der Durchsicht auf Uneinheitliches und der Gegenprüfung der letzten Änderungen
-  einordnen und abarbeiten; sechs sind am Code bestätigt. (5.201)
+  einordnen und abarbeiten; fünf sind am Code bestätigt. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -141,9 +141,6 @@ Am Code bestätigt:
   `darfFristAendern`), obwohl eine Dauerleihe keine Frist hat.
 - Geräteausleihe an Schüler: Ob Geräte ins Ausleihlimit zählen und ob der Ferien-Leseclub für
   sie gilt, ist nicht entschieden (`geraet.go`).
-- Wettläufe bei gleichzeitigem Klicken: Ausleihe und Nachbuchen sperren die Leserzeile nur bei
-  Schülern und lesen Sperre, Papierkorb und Anonymisierung danach nicht neu, das Gerät sperrt
-  sie gar nicht; gegen den Papierkorb schützt die Sperre so nur in einer Richtung.
 - Die Gesamtsumme einer Bestellung hat keine Grenze gegen den Überlauf von `DECIMAL(10,2)`:
   sechs Positionen zu 200 Stück à 99.999,99 € enden mit 500 statt 400.
 - Die Zeilengrenze beim Lesen einer CSV fehlt im Littera-, Bestands- und LUSD-Import; die

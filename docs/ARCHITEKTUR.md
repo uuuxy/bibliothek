@@ -2241,6 +2241,13 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 
 - **Zwei Rückgaben über Kreuz** können sich am Rückgabe-Trigger verklemmen (R2); Abhilfe wäre der
   Stempel in einer eigenen Tabelle.
+- **Ausleihe und Sperren im selben Augenblick:** Ausleihe und Nachbuchen sperren die Leserzeile
+  nur bei Schülern und prüfen Sperre, Papierkorb und Anonymisierung am Stand vor der Sperre; das
+  Gerät sperrt sie gar nicht. Sperrt oder löscht jemand den Leser genau dann, kann die Ausleihe
+  trotzdem entstehen; sie steht sichtbar in der Akte. Abhilfe wäre, die Zeile für jede Leserart
+  zu sperren und den Leser darunter neu zu lesen (`zaehleAktiveSchuelerAusleihen`,
+  `pruefeNachbuchSchranken`, `ladeAkteur`); das Kollegium käme dann zur Verklemmung über Kreuz
+  dazu. Anlass: ein solcher Fall.
 - **Ein Altausweis ohne Vorsilbe** ist ohne Netz „unklar“ ([OFFEN.md](OFFEN.md) 7.2).
 - **Schreibweise der Nummern:** Der Server schlägt exakt nach, die Theke vereinheitlicht vorher
   (`normalisiereScan`). Anlass: ein zweiter Aufrufer mit rohen Nummern.
