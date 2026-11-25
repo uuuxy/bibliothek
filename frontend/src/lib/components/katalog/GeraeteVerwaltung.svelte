@@ -8,6 +8,8 @@
 	import GeraetFelder from './GeraetFelder.svelte';
 	import { anzahlText } from '../../utils/format.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import Icon from '../ui/Icon.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
@@ -124,15 +126,14 @@
 		</div>
 	{/if}
 
+	<!-- Laden, Fehler und leere Liste wie auf den übrigen Verwaltungsseiten (AnliegenListe,
+	     BestellHistorie). -->
 	{#if geraete.laedt}
-		<p class="py-12 text-center text-sm text-on-surface-variant">Lade Geräte …</p>
+		<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 	{:else if geraete.ladefehler}
 		<LadeFehler onerneut={geraete.lade} titel="Geräte nicht geladen" text={geraete.ladefehler} />
 	{:else if geraete.liste.length === 0}
-		<div class="flex flex-col items-center gap-3 py-16 text-on-surface-variant">
-			<Icon name="devices" groesse={48} />
-			<p class="text-body-medium-emphasized">Noch keine Geräte erfasst</p>
-		</div>
+		<SuchZustand symbol="devices" titel="Noch keine Geräte erfasst" />
 	{:else}
 		<ul class="divide-y divide-outline-variant">
 			{#each geraete.liste as g (g.id)}
