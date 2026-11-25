@@ -8,6 +8,7 @@ import (
 	"bibliothek/internal/db"
 	"bibliothek/internal/pkg/leserart"
 	"bibliothek/internal/pkg/lmfplan"
+	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -142,15 +143,19 @@ func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 		sommerferien = lage.einst.Sommerferien
 	}
 	frist := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
+	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe mit der Jahresfrist, dieselbe Regel
+	// wie beim Buch (legeAusleiheAn, ladeVorgang).
+	dauerleihe := !leserart.IstSchueler(leser.Art)
+	if dauerleihe {
+		frist = schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(1, 0, 0))
+	}
 	erg := &geraeteErgebnis{Leser: leser}
-	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe, dieselbe Regel wie beim Buch
-	// (legeAusleiheAn).
 	ausleiheID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{
 		GeraetID:       g.ID,
 		LeserID:        leser.ID,
 		BearbeiterID:   bearbeiterID,
 		RueckgabeFrist: frist,
-		IstDauerleihe:  !leserart.IstSchueler(leser.Art),
+		IstDauerleihe:  dauerleihe,
 	})
 	if err != nil {
 		// Zwei Plätze leihen dasselbe Gerät zugleich aus: Der zweite verletzt

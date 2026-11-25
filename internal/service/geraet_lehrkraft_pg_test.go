@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
 )
@@ -103,14 +104,20 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 					t.Fatalf("verarbeiteScan(…) = Fehler %v, %d offen, erwartet die Ausleihe", err, offen)
 				}
 				var dauerleihe bool
+				var frist time.Time
 				if qerr := pool.QueryRow(ctx, `
-					SELECT a.ist_handapparat FROM ausleihen a JOIN geraete g ON g.id = a.geraet_id
+					SELECT a.ist_handapparat, a.rueckgabe_frist FROM ausleihen a JOIN geraete g ON g.id = a.geraet_id
 					WHERE g.barcode_id = $1 AND a.rueckgabe_am IS NULL
-				`, barcode).Scan(&dauerleihe); qerr != nil {
+				`, barcode).Scan(&dauerleihe, &frist); qerr != nil {
 					t.Fatalf("Merkmal der Ausleihe lesen: %v", qerr)
 				}
 				if dauerleihe != f.dauerleihe {
 					t.Errorf("Dauerleihe = %v, erwartet %v", dauerleihe, f.dauerleihe)
+				}
+				// Die Dauerleihe trägt die Jahresfrist wie beim Buch, das Gerät eines Schülers die kurze.
+				jahr := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(1, 0, 0))
+				if frist.Equal(jahr) != f.dauerleihe {
+					t.Errorf("Frist %v bei Dauerleihe %v, die Jahresfrist wäre %v", frist, f.dauerleihe, jahr)
 				}
 				return
 			}
