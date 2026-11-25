@@ -28,10 +28,10 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1", "b2"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"6A", "6B"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec(`INSERT INTO class_books`).
@@ -48,7 +48,7 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"6A"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec(`INSERT INTO class_books`).
@@ -65,7 +65,7 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
 				mock.ExpectCommit()
@@ -90,7 +90,7 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnError(errTest)
 				mock.ExpectRollback()
@@ -105,10 +105,10 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"6A"}).
 					WillReturnError(errTest)
 				mock.ExpectRollback()
@@ -123,10 +123,10 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"6A"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec(`INSERT INTO class_books`).
@@ -144,10 +144,10 @@ func TestAendereKlassensaetze(t *testing.T) {
 			bookIDs:       []string{"b1"},
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) = klassen_normkey\(\$1\)$`).
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"6A"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec(`INSERT INTO class_books`).
@@ -211,7 +211,7 @@ func TestLoescheKlassensatzGruppe(t *testing.T) {
 			name:       "success single",
 			classNames: []string{"5A"},
 			mockSetup: func() {
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"5A"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 1))
 			},
@@ -221,7 +221,7 @@ func TestLoescheKlassensatzGruppe(t *testing.T) {
 			name:       "success multiple",
 			classNames: []string{"5A", "5B"},
 			mockSetup: func() {
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"5A", "5B"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 2))
 			},
@@ -239,7 +239,7 @@ func TestLoescheKlassensatzGruppe(t *testing.T) {
 			name:       "db error",
 			classNames: []string{"10B"},
 			mockSetup: func() {
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+				mock.ExpectExec(`^DELETE FROM class_books WHERE klassen_normkey\(class_name\) IN \(SELECT klassen_normkey\(x\) FROM unnest\(\$1::text\[\]\) AS x\)$`).
 					WithArgs([]string{"10B"}).
 					WillReturnError(fmt.Errorf("db error"))
 			},

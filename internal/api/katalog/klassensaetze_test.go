@@ -474,10 +474,10 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			rumpf:  `{"oldClassName": "5A", "classNames": ["5B"], "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = \\$1$").
+				mock.ExpectExec("^DELETE FROM class_books WHERE klassen_normkey\\(class_name\\) = klassen_normkey\\(\\$1\\)$").
 					WithArgs("5A").
 					WillReturnResult(pgxmock.NewResult("DELETE", 1))
-				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = ANY\\(\\$1\\)$").
+				mock.ExpectExec("^DELETE FROM class_books WHERE klassen_normkey\\(class_name\\) IN \\(SELECT klassen_normkey\\(x\\) FROM unnest\\(\\$1::text\\[\\]\\) AS x\\)$").
 					WithArgs([]string{"05B"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec("^INSERT INTO class_books \\(class_name, book_id\\).*").
@@ -494,7 +494,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			rumpf:  `{"classNames": ["5C", "5D"], "bookIds": ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
-				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = ANY\\(\\$1\\)$").
+				mock.ExpectExec("^DELETE FROM class_books WHERE klassen_normkey\\(class_name\\) IN \\(SELECT klassen_normkey\\(x\\) FROM unnest\\(\\$1::text\\[\\]\\) AS x\\)$").
 					WithArgs([]string{"05C", "05D"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec("^INSERT INTO class_books \\(class_name, book_id\\).*").

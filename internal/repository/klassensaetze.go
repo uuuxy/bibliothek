@@ -231,16 +231,17 @@ func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse str
 	}
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
-	// Gibt es einen alten Namen der Klasse, wird er gelöscht.
+	// Gibt es einen alten Namen der Klasse, wird er gelöscht. Verglichen wird über den
+	// Normalschlüssel: „05a“ aus der Anfrage meint „05A“, wie der Auslöser die Klasse schreibt.
 	if alteKlasse != "" {
-		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, alteKlasse); err != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE klassen_normkey(class_name) = klassen_normkey($1)`, alteKlasse); err != nil {
 			return fmt.Errorf("alte zuweisungen konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
 	// Die bisherigen Zuordnungen aller Zielklassen in einem DELETE entfernen (überschreiben).
 	if len(neueKlassen) > 0 {
-		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, neueKlassen); err != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE `+sqlKlasseInListe, neueKlassen); err != nil {
 			return fmt.Errorf("vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: %w", err)
 		}
 	}
@@ -257,13 +258,17 @@ func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse str
 	return nil
 }
 
+// sqlKlasseInListe trifft die Zeilen von class_books, deren Klasse in der Liste $1 steht, über den
+// Normalschlüssel wie SetzeLernmittelFristFuerKlassen: „05a“ und „05A“ sind dieselbe Klasse.
+const sqlKlasseInListe = `klassen_normkey(class_name) IN (SELECT klassen_normkey(x) FROM unnest($1::text[]) AS x)`
+
 // LoescheKlassensatzGruppe löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
 // die Zuordnung — die Titel selbst bleiben im Katalog.
 func (a *TitelAbfragen) LoescheKlassensatzGruppe(ctx context.Context, klassen []string) error {
 	if len(klassen) == 0 {
 		return nil
 	}
-	_, err := a.pool.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, klassen)
+	_, err := a.pool.Exec(ctx, `DELETE FROM class_books WHERE `+sqlKlasseInListe, klassen)
 	if err != nil {
 		return fmt.Errorf("klassen konnten nicht gelöscht werden: %w", err)
 	}
