@@ -29,6 +29,12 @@ var ErrVormerkungBereitsVorhanden = errors.New("schüler hat den titel schon vor
 // Tür antwortet mit 409.
 var ErrVormerkungNurFuerSchueler = errors.New("vormerkung nur für schüler")
 
+// ErrVormerkungExemplarFrei meldet eine Vormerkung auf einen Titel, von dem ein Exemplar frei ist
+// (FACHKONZEPT 4.1: vormerken, wenn kein Exemplar mehr frei ist). Bedient wird eine Vormerkung
+// erst bei einer Rückgabe; mit einem Buch im Regal wartete der Schüler, bis jemand ein anderes
+// zurückbringt. Die Tür antwortet mit 409.
+var ErrVormerkungExemplarFrei = errors.New("ein exemplar des titels ist frei")
+
 // Vormerkung ist die Vormerkung eines Schülers auf einen Titel.
 type Vormerkung struct {
 	ID           string    `json:"id"`
@@ -211,6 +217,17 @@ func (a *VormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schuel
 		if bereitsAusgeliehen {
 			return "", ErrTitelBereitsAusgeliehen
 		}
+	}
+
+	// Frei heißt verfügbar wie im Katalog: im Bestand, ausleihbar, nicht verliehen, nicht im
+	// Abholfach. Ein bestelltes oder ganz verliehenes Buch lässt sich vormerken.
+	var frei int
+	if err := a.db.QueryRow(ctx, `SELECT `+SQLBestandVerfuegbar+` FROM buecher_titel b WHERE b.id = $1`,
+		titelID).Scan(&frei); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	if frei > 0 {
+		return "", ErrVormerkungExemplarFrei
 	}
 
 	var id string

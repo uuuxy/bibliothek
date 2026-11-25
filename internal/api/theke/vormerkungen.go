@@ -77,11 +77,11 @@ func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen vormerkungsAnlage) http.H
 
 		id, err := vormerkungsAbfragen.LegeAn(ctx, req.TitelID, req.Notiz, req.SchuelerID)
 		if err != nil {
-			// Drei fachliche Konflikte (409), kein Serverfehler: Der Schüler hat den Titel
+			// Vier fachliche Konflikte (409), kein Serverfehler: Der Schüler hat den Titel
 			// bereits selbst ausgeliehen und darf ihn nicht zusätzlich vormerken, er steht
-			// längst auf der Liste (UNIQUE(titel_id, schueler_id)) — oder die Id gehört
-			// keinem Schüler, und die Warteschlange würde sie nie bedienen. Jedes Mal soll
-			// die Theke den Satz lesen, der die Lage beschreibt, statt einer
+			// längst auf der Liste (UNIQUE(titel_id, schueler_id)), die Id gehört keinem
+			// Schüler, und die Warteschlange würde sie nie bedienen — oder ein Exemplar ist
+			// frei. Jedes Mal soll die Theke den Satz lesen, der die Lage beschreibt, statt einer
 			// Störungsmeldung, nach der unklar bleibt, ob die erste Vormerkung noch gilt.
 			if meldung, ok := vormerkungsKonflikt(err); ok {
 				return apierrors.Conflict(meldung, err)
@@ -127,6 +127,8 @@ func vormerkungsKonflikt(err error) (meldung string, ok bool) {
 		return "Dieser Schüler hat den Titel bereits vorgemerkt", true
 	case errors.Is(err, repository.ErrVormerkungNurFuerSchueler):
 		return "Vormerken lässt sich nur für Schüler", true
+	case errors.Is(err, repository.ErrVormerkungExemplarFrei):
+		return "Ein Exemplar steht frei im Regal – ausleihen statt vormerken", true
 	}
 	return "", false
 }

@@ -168,7 +168,7 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
 
 ### 4.1. Einzel-Vormerkungen
 
-- Ein Schüler kann ein Buch vormerken, wenn kein Exemplar mehr frei ist. Vormerken können nur Schüler (entschieden am 24.09.2026): Die Oberfläche bietet zum Vormerken nur Schüler an, und die Tür lehnt einen Kollegen mit 409 ab (`ErrVormerkungNurFuerSchueler`).
+- Ein Schüler kann ein Buch vormerken, wenn kein Exemplar mehr frei ist; steht eins verfügbar im Regal, lehnt die Tür mit 409 ab („ausleihen statt vormerken“, `ErrVormerkungExemplarFrei`). Ein bestelltes oder ganz verliehenes Buch lässt sich vormerken. Vormerken können nur Schüler (entschieden am 24.09.2026): Die Oberfläche bietet zum Vormerken nur Schüler an, und die Tür lehnt einen Kollegen mit 409 ab (`ErrVormerkungNurFuerSchueler`).
 - **Rückgabe-Match:** Wird ein Exemplar dieses Titels zurückgegeben, prüft das System, ob eine Vormerkung vorliegt.
 - **Abholbereitschaft:** Das Buch wird nicht freigegeben, sondern direkt dem wartenden Schüler zugeteilt (Status `abholbereit`). Es landet physisch im Bereitstellungsregal.
 - **Abholfrist** (entschieden am 28.09.2026): Das Buch liegt drei Tage bereit, gerechnet ab der Zuteilung — bei der Rückgabe oder wenn der Nächste nachrückt. Fällt das Ende auf ein Wochenende, einen Feiertag oder in die Ferien, gilt wie bei der Leihfrist der nächste Schultag, bis Tagesende (`repository.BestimmeAbholfrist`, §2.1). Kommt ein Buch kurz vor den Ferien zurück, liegt es also bis nach den Ferien bereit. Eine Einstellung dafür gibt es nicht. Danach verfällt die Vormerkung beim nächsten stündlichen Lauf, und das Buch geht an den Nächsten in der Warteschlange (`LasseAbgelaufeneVerfallen`).

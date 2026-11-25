@@ -38,6 +38,7 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 	ex2 := legeSignaturMitExemplarenAn(t, pool, "Vorm2", 1)
 	titel2 := titelIDVonExemplar(t, pool, ex2[0])
 	frisch := legeSchuelerAn(t, pool, "V-3", "Zoe", "7a")
+	sperreExemplare(t, pool, ex[0], ex2[0])
 
 	// (1) Solange die Eigen-Ausleihe offen ist, darf keine Vormerkung auf denselben Titel entstehen.
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
@@ -214,6 +215,7 @@ func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	ex := legeSignaturMitExemplarenAn(t, pool, "VormDup", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
 	schueler := legeSchuelerAn(t, pool, "V-DUP", "Ida", "7a")
+	sperreExemplare(t, pool, ex[0])
 	repo := NewVormerkungsAbfragen(pool)
 
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
@@ -231,5 +233,47 @@ func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	}
 	if _, err := repo.LegeAn(ctx, titelID, "anonym 2", ""); err != nil {
 		t.Fatalf("zweite anonyme Vormerkung darf nicht kollidieren: %v", err)
+	}
+}
+
+// sperreExemplare nimmt Exemplare aus „verfügbar“: Vorgemerkt wird nur ohne freies Exemplar
+// (ErrVormerkungExemplarFrei), und die Tests, die es rufen, prüfen andere Regeln.
+func sperreExemplare(t *testing.T, pool *pgxpool.Pool, ids ...string) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = ANY($1)`, ids); err != nil {
+		t.Fatalf("Exemplare sperren: %v", err)
+	}
+}
+
+// Vorgemerkt wird nur, wenn kein Exemplar frei ist (FACHKONZEPT 4.1): Steht eins im Regal,
+// lehnt LegeAn ab. Ist es verliehen oder erst bestellt, kommt der Schüler auf die Warteliste.
+func TestVormerkungLegeAn_NurOhneFreiesExemplar(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewVormerkungsAbfragen(pool)
+	schueler := legeSchuelerAn(t, pool, "V-FREI-1", "Mia", "7a")
+	anderer := legeSchuelerAn(t, pool, "V-FREI-2", "Ben", "7a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+
+	ex := legeSignaturMitExemplarenAn(t, pool, "Frei", 1)
+	titelID := titelIDVonExemplar(t, pool, ex[0])
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); !errors.Is(err, ErrVormerkungExemplarFrei) {
+		t.Fatalf("Titel mit freiem Exemplar: %v, erwartet ErrVormerkungExemplarFrei", err)
+	}
+	legeAusleiheAn(t, pool, ex[0], anderer, bearbeiter)
+	if _, err := repo.LegeAn(ctx, titelID, "", schueler); err != nil {
+		t.Fatalf("Titel mit verliehenem Exemplar: %v", err)
+	}
+
+	var bestellt string
+	if err := pool.QueryRow(ctx, `WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('Bestellt') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
+		SELECT id, 'BC-V-BESTELLT', false, 'bestellt' FROM t RETURNING titel_id::text`).Scan(&bestellt); err != nil {
+		t.Fatalf("bestellten Titel anlegen: %v", err)
+	}
+	if _, err := repo.LegeAn(ctx, bestellt, "", schueler); err != nil {
+		t.Fatalf("Titel mit bestelltem Exemplar: %v", err)
 	}
 }

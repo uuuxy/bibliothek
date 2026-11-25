@@ -55,6 +55,9 @@ func TestVormerkungLegeAn_ErlaubtWennNichtAusgeliehen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs("titel-1", "schueler-1").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	mock.ExpectQuery("FROM buecher_titel b").
+		WithArgs("titel-1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery("INSERT INTO vormerkungen").
 		WithArgs("titel-1", "Notiz", "schueler-1").
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("vorm-1"))
@@ -71,7 +74,7 @@ func TestVormerkungLegeAn_ErlaubtWennNichtAusgeliehen(t *testing.T) {
 	}
 }
 
-// Ohne Schüler gibt es keine Prüfung auf eine eigene Ausleihe; es wird direkt eingefügt.
+// Ohne Schüler gibt es keine Prüfung auf eine eigene Ausleihe, nur die auf ein freies Exemplar.
 func TestVormerkungLegeAn_OhneSchuelerKeinePruefung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -81,7 +84,10 @@ func TestVormerkungLegeAn_OhneSchuelerKeinePruefung(t *testing.T) {
 
 	repo := NewVormerkungsAbfragen(mock)
 
-	// Keine Prüfung mit EXISTS erwartet, direkt das INSERT.
+	// Keine Prüfung mit EXISTS erwartet; vor dem INSERT nur, ob ein Exemplar frei ist.
+	mock.ExpectQuery("FROM buecher_titel b").
+		WithArgs("titel-1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery("INSERT INTO vormerkungen").
 		WithArgs("titel-1", "", "").
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("vorm-2"))

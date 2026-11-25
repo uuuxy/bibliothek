@@ -140,7 +140,7 @@ falsches Passwort („Scan erkannt“).
   Sortiert wird nach dem Titel: Umlaute beim Grundbuchstaben, Zahlen nach ihrer Größe („Mathe 5“ vor
   „Mathe 10“), ein Artikel zählt mit („Die Räuber“ unter D).
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, Ausleiher, Vormerkungen (Warteliste mit
-  Schüler-Suche), Historie; beim Kollegium steht statt der Klasse die Art („Lehrkraft“,
+  Schüler-Suche; vormerken geht nur, wenn kein Exemplar frei im Regal steht), Historie; beim Kollegium steht statt der Klasse die Art („Lehrkraft“,
   „Fachbereich“). Das Drucksymbol an einem Exemplar legt sein Etikett ins Druck-Center. Je Exemplar
   steht:
   - **was es heute noch wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €“). Einen

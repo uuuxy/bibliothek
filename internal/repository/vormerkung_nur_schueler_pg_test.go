@@ -18,6 +18,7 @@ func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 
 	ex := legeSignaturMitExemplarenAn(t, pool, "NurSchueler", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
+	sperreExemplare(t, pool, ex[0])
 	kollege := legeKollegenAn(t, pool, "A-VM-K1", "Kim")
 	schueler := legeSchuelerAn(t, pool, "VM-S1", "Mia", "7a")
 	repo := NewVormerkungsAbfragen(pool)

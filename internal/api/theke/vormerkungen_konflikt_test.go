@@ -41,6 +41,8 @@ func TestVormerkungAnlegen_ZweiteIstKonflikt(t *testing.T) {
 			"Buch wird aktuell bereits von diesem Schüler ausgeliehen"},
 		{"kein Schüler", repository.ErrVormerkungNurFuerSchueler, http.StatusConflict,
 			"Vormerken lässt sich nur für Schüler"},
+		{"Exemplar frei", repository.ErrVormerkungExemplarFrei, http.StatusConflict,
+			"Ein Exemplar steht frei im Regal – ausleihen statt vormerken"},
 		{"echte Störung", errors.New("connection reset by peer"), http.StatusInternalServerError,
 			"Fehler beim Erstellen der Vormerkung"},
 	}
