@@ -55,6 +55,18 @@ describe('Feld: Betrag', () => {
 		expect(feld.value).toBe('7,9x');
 	});
 
+	it('nimmt beim Tippen nur Ziffern, Komma, Punkt und Vorzeichen an, wie Chrome am Zahlenfeld', () => {
+		const { feld } = zeige(7.9);
+		const tippe = (/** @type {string} */ data) => {
+			const e = new InputEvent('beforeinput', { data, inputType: 'insertText', cancelable: true });
+			feld.dispatchEvent(e);
+			return e.defaultPrevented;
+		};
+		expect(tippe('o'), 'ein Buchstabe').toBe(true);
+		expect(tippe('€'), 'das Eurozeichen').toBe(true);
+		for (const zeichen of ['5', ',', '.', '-']) expect(tippe(zeichen), zeichen).toBe(false);
+	});
+
 	it('lässt ganze Zahlen und Text, wie sie sind', async () => {
 		const r = render(Feld, { 'aria-label': 'Anzahl', type: 'number', value: 3 });
 		const t = render(Feld, { 'aria-label': 'Nummer', value: '0123' });

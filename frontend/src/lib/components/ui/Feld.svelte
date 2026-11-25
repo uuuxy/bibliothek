@@ -61,7 +61,7 @@
 	 * Symbol am Ende aus; hier bleiben die Knöpfe, denn sie führen oft aus dem Fehler heraus.
 	 */
 	import Icon from './Icon.svelte';
-	import { anzeige, beimVerlassen, stellenAus, wertAus } from './nachkommastellen.js';
+	import { anzeige, betragsEingabe, stellenAus, wertAus } from './nachkommastellen.js';
 
 	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
@@ -145,7 +145,7 @@
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value={() => anzeige(element, value, stellen), (v) => (value = wertAus(v, stellen))}
-			{@attach beimVerlassen(stellen)}
+			{@attach betragsEingabe(stellen)}
 			class={feldKlasse}
 			style:padding-right={abstandRechts}
 			{...rest}

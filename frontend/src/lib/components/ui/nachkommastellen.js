@@ -60,18 +60,27 @@ export function wertAus(eingabe, stellen) {
 }
 
 /**
- * `{@attach beimVerlassen(stellen)}`: Beim Verlassen steht eine Zahl mit allen Stellen da.
+ * `{@attach betragsEingabe(stellen)}`: Getippt werden nur Ziffern, Komma, Punkt und Vorzeichen,
+ * wie es Chrome am Zahlenfeld hielt; beim Verlassen steht eine Zahl mit allen Stellen da.
  * @param {number} stellen
  * @returns {import('svelte/attachments').Attachment<HTMLInputElement>}
  */
-export function beimVerlassen(stellen) {
+export function betragsEingabe(stellen) {
 	return (feld) => {
 		if (!stellen) return;
+		/** @param {InputEvent} e */
+		const sieben = (e) => {
+			if (e.data && /[^\d.,+-]/.test(e.data)) e.preventDefault();
+		};
 		const ordnen = () => {
 			const zahl = alsZahl(feld.value);
 			if (zahl !== null) feld.value = alsText(zahl, stellen);
 		};
+		feld.addEventListener('beforeinput', sieben);
 		feld.addEventListener('blur', ordnen);
-		return () => feld.removeEventListener('blur', ordnen);
+		return () => {
+			feld.removeEventListener('beforeinput', sieben);
+			feld.removeEventListener('blur', ordnen);
+		};
 	};
 }
