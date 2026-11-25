@@ -210,6 +210,10 @@ Zuschnitt begrenzt den Schaden:
 
 - **Der Token ist der Ausweis:** 32 Byte aus `crypto/rand` (256 Bit), Base64-URL. Raten ist
   ausgeschlossen; der globale Rate-Limiter steht zusätzlich davor.
+- **Der Link nennt https:** Er entsteht aus der öffentlichen Adresse der Einstellungen;
+  ohne Schema setzt `bestelllink.Adresse` https davor. Ein eingetragenes `http://` bleibt
+  stehen, und die Selbstprüfung warnt im Bereich „Bestell-Bestätigungslink“: Über http ginge
+  der Token beim Öffnen unverschlüsselt durchs Netz (Gate `internal/bereitschaft/bereitschaft_test.go`).
 - **In der Datenbank nur der SHA-256** (`bestellungen_verlauf.bestaetigungs_token_hash`,
   Migration 063). Ein DB-Auszug oder ein entwendetes Backup enthält keine benutzbaren
   Links. Kein langsamer KDF nötig — die Eingabe ist bereits 256 Bit Zufall, es gibt nichts

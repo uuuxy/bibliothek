@@ -2,10 +2,23 @@ package bereitschaft
 
 import (
 	"strings"
+
+	"bibliothek/internal/pkg/bestelllink"
 )
 
 func pruefeBestelllink(l Lage) Befund {
 	b := Befund{Bereich: "Bestell-Bestätigungslink"}
+	// Geprüft wird der Link, wie er in die Mail kommt: Ohne Schema setzt bestelllink.Adresse
+	// https davor, ein eingetragenes http:// lässt es stehen.
+	if strings.HasPrefix(bestelllink.Adresse(l.OeffentlicheAdresse, "token"), "http://") {
+		b.Stufe = StufeWarnung
+		b.Befund = "Links verweisen unverschlüsselt auf " + l.OeffentlicheAdresse
+		b.Folge = "Der Bestätigungslink trägt sein Geheimnis in der Adresse. Öffnet der Lieferant ihn, " +
+			"kann es unverschlüsselt durchs Netz gehen, und wer mitliest, kann die Bestellung ansehen " +
+			"und an seiner Stelle bestätigen."
+		b.Abhilfe = "Einstellungen → Erreichbarkeit & Alarme: die öffentliche Adresse mit https:// eintragen"
+		return b
+	}
 	if l.OeffentlicheAdresse != "" {
 		b.Stufe = StufeOK
 		b.Befund = "Links verweisen auf " + l.OeffentlicheAdresse

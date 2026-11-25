@@ -261,6 +261,13 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "bestätigen",
 		},
 		{
+			name:     "oeffentliche Adresse mit http",
+			aendere:  func(l *Lage) { l.OeffentlicheAdresse = "http://bibliothek.schule.example" },
+			bereich:  "Bestell-Bestätigungslink",
+			stufe:    StufeWarnung,
+			enthaelt: "unverschlüsselt",
+		},
+		{
 			name:     "kein SMTP-Server",
 			aendere:  func(l *Lage) { l.SMTPHost = "" },
 			bereich:  "Mailversand im Mahnwesen",
@@ -447,6 +454,15 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Eine Adresse ohne Schema bekommt im Link https (bestelllink.Adresse); das ist keine Lücke.
+func TestBetriebsbereitschaft_AdresseOhneSchemaGiltAlsHTTPS(t *testing.T) {
+	l := lageEingerichtet()
+	l.OeffentlicheAdresse = "bibliothek.schule.example"
+	if b := befundZu(t, Pruefe(l), "Bestell-Bestätigungslink"); b.Stufe != StufeOK {
+		t.Errorf("Pruefe mit der Adresse %q: Stufe %q, erwartet %q (%s)", l.OeffentlicheAdresse, b.Stufe, StufeOK, b.Befund)
 	}
 }
 
