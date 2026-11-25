@@ -3,7 +3,9 @@ import { render } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
 
+import { tick } from 'svelte';
 import { bescheideStore } from '../../stores/bescheide.svelte.js';
+import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 import BescheideTabelle from './BescheideTabelle.svelte';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
@@ -158,6 +160,43 @@ describe('BescheideTabelle', () => {
 
 		expect(meldung).toHaveBeenCalledWith(PDF_BLOCKIERT, 'warning');
 		vi.unstubAllGlobals();
+	});
+
+	it('Suche und Klassenfilter der Seite wirken auf Forderungen und Briefe', async () => {
+		const forderung = (id, name, klasse) => ({
+			schueler_id: id,
+			schueler_name: name,
+			klasse,
+			anzahl: 1,
+			summe: 10,
+			seit: '2026-09-01T00:00:00Z',
+			land: true
+		});
+		bescheideStore.ausstehend = [
+			forderung('s1', 'Mira Muster', '07B'),
+			forderung('s2', 'Ole Öztürk', '09A')
+		];
+		bescheideStore.liste = [{ ...faellig, schueler_name: 'Lea Lang', klasse: '09A' }];
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+
+		mahnwesenStore.suche = 'ozturk';
+		await tick();
+		expect(screen.queryByText('Ole Öztürk')).toBeTruthy();
+		expect(screen.queryByText('Mira Muster')).toBeNull();
+		expect(screen.queryByText('Lea Lang')).toBeNull();
+
+		mahnwesenStore.suche = '';
+		mahnwesenStore.gewaehlteKlasse = '09A';
+		await tick();
+		expect(screen.queryByText('Mira Muster')).toBeNull();
+		expect(screen.queryByText('Lea Lang')).toBeTruthy();
+		expect(bescheideStore.klassen).toEqual(['07B', '09A']);
+
+		mahnwesenStore.suche = 'niemand';
+		await tick();
+		expect(screen.getByText('Keine Treffer für die Klasse oder die Suche')).toBeTruthy();
+		mahnwesenStore.suche = '';
+		mahnwesenStore.gewaehlteKlasse = '';
 	});
 
 	it('sperrt „Übergeben", solange eine Übergabe läuft', () => {

@@ -12,6 +12,8 @@
      genau die Aktionen, die dazu passen: Bescheid erstellen, Nachdruck, Übergeben. -->
 <script>
 	import { bescheideStore } from '../../stores/bescheide.svelte.js';
+	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import { passtZurSuche } from '../../utils/suchnorm.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -41,6 +43,14 @@
 	const leer = $derived(
 		bescheideStore.ausstehend.length === 0 && bescheideStore.zeilen.length === 0
 	);
+
+	// Suche und Klassenfilter der Seite gelten auch hier, nach derselben Regel wie in der Mahnliste.
+	/** @param {any} z */
+	const passt = (z) =>
+		(!mahnwesenStore.gewaehlteKlasse || z.klasse === mahnwesenStore.gewaehlteKlasse) &&
+		passtZurSuche(mahnwesenStore.suche, z.schueler_name, z.klasse);
+	const ausstehend = $derived(bescheideStore.ausstehend.filter(passt));
+	const zeilen = $derived(bescheideStore.zeilen.filter(passt));
 </script>
 
 {#snippet schueler(id, name, klasse)}
@@ -90,7 +100,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each bescheideStore.ausstehend as z (z.schueler_id)}
+					{#each ausstehend as z (z.schueler_id)}
 						<tr>
 							<td><span class="text-sm text-on-surface-variant">noch keine</span></td>
 							<td>
@@ -125,7 +135,7 @@
 							</td>
 						</tr>
 					{/each}
-					{#each bescheideStore.zeilen as b (b.id)}
+					{#each zeilen as b (b.id)}
 						{@const stand = bescheidStatus(b, datum)}
 						<tr>
 							<!-- Optik gehört in die Zelle, nicht an sie (Tabellen-Ratsche): <td> trägt
@@ -175,6 +185,11 @@
 							</td>
 						</tr>
 					{/each}
+					{#if ausstehend.length === 0 && zeilen.length === 0}
+						<tr>
+							<td colspan="6" class="text-center">Keine Treffer für die Klasse oder die Suche</td>
+						</tr>
+					{/if}
 				</tbody>
 			</Tabelle>
 		</div>

@@ -29,6 +29,11 @@ class BescheideStore {
 
 	/** Die Briefe, die der Reiter zeigt: erledigte (bezahlt, storniert) bleiben in der Akte. */
 	zeilen = $derived(this.liste.filter((b) => b.status !== 'erledigt'));
+	/** Die Klassen dieser Zeilen für den Klassenfilter der Seite: Nach einem gemeldeten Verlust
+	 *  fällt das Kind aus der Mahnliste, deren Klassen es dann nicht mehr nennen. */
+	klassen = $derived([
+		...new Set([...this.ausstehend, ...this.zeilen].map((z) => z.klasse).filter(Boolean))
+	]);
 	/** Die Zahl am Reiter: was bei der Schule liegt. */
 	beiDerSchule = $derived(this.ausstehend.length + this.liste.filter(liegtBeiDerSchule).length);
 	/** Rückgabe nach der Übergabe: die Aufsicht ist zu informieren. */

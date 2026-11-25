@@ -14,6 +14,7 @@
 -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -90,7 +91,14 @@
 	{/if}
 {:else}
 	<!-- Wie in Verwaltungsprotokoll und Logbuch: Symbol und Wort. -->
-	<Button variant="secondary" onclick={mahnwesenStore.lade}>
+	<!-- Lädt beide Listen der Seite: die Mahnliste und die Forderungen im Reiter „Schadensersatz". -->
+	<Button
+		variant="secondary"
+		onclick={() => {
+			mahnwesenStore.lade();
+			bescheideStore.lade();
+		}}
+	>
 		<Icon name="refresh" />
 		Aktualisieren
 	</Button>

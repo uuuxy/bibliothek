@@ -16,12 +16,25 @@
      einzige Rückweg und muss stehen bleiben. -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import MahnwesenAktionen from './MahnwesenAktionen.svelte';
 
 	/** @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean, darfMahnen: boolean }} */
 	let { onMahnlauf, onBescheid, darfBescheid, darfMahnen } = $props();
+
+	// Eine Klassenliste für alle Reiter: die der Mahnliste und die der Forderungen, sortiert wie
+	// auf dem Server (COLLATE deutsch = de-u-kn), die Ehemaligen am Ende.
+	const klassen = $derived.by(() => {
+		const gruppen = mahnwesenStore.klassen;
+		const ehemalige = gruppen.filter((/** @type {any} */ k) => k.ehemalige).map((k) => k.klasse);
+		const uebrige = gruppen.filter((/** @type {any} */ k) => !k.ehemalige).map((k) => k.klasse);
+		const alle = [...new Set([...uebrige, ...bescheideStore.klassen])].filter(
+			(k) => !ehemalige.includes(k)
+		);
+		return [...alle.sort((a, b) => a.localeCompare(b, 'de', { numeric: true })), ...ehemalige];
+	});
 </script>
 
 <div class="mt-4 flex flex-col gap-3 print:hidden">
@@ -36,10 +49,7 @@
 			bind:value={mahnwesenStore.gewaehlteKlasse}
 			options={[
 				{ value: '', label: 'Alle Klassen' },
-				...mahnwesenStore.klassen.map((/** @type {any} */ k) => ({
-					value: k.klasse,
-					label: k.klasse
-				}))
+				...klassen.map((k) => ({ value: k, label: k }))
 			]}
 			class="w-40"
 			aria-label="Nach Klasse filtern"
