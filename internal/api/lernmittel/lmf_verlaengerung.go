@@ -18,6 +18,28 @@ type verlaengerungAnfrage struct {
 	NeuesRueckgabeDatum string `json:"neues_rueckgabe_datum"` // JJJJ-MM-TT
 }
 
+// leseNeueFrist liest das neue Rückgabedatum als Tagesende in der Schulzeitzone (Berlin), nach
+// derselben Definition wie jede andere Frist und nicht roh 23:59:59 UTC. Verlängert wird in die
+// Zukunft; ein Datum davor oder hinter der längsten Frist des Programms ist ein Tippfehler, der
+// sonst die Fristen der ganzen Klasse verschöbe. Bei false ist die Antwort (400) geschrieben.
+func (t *Tueren) leseNeueFrist(w http.ResponseWriter, text string) (time.Time, bool) {
+	datum, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Datum muss die Form JJJJ-MM-TT haben", nil)
+		return time.Time{}, false
+	}
+	frist := schulzeit.TagesEnde(datum)
+	if !frist.After(t.Jetzt()) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das neue Rückgabedatum liegt in der Vergangenheit", nil)
+		return time.Time{}, false
+	}
+	if err := tuer.PruefeFristObergrenze(frist, t.Jetzt()); err != nil {
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		return time.Time{}, false
+	}
+	return frist, true
+}
+
 // LernmittelDerKlasseVerlaengern verlängert alle Lernmittel einer Klasse auf ein Datum, in einer
 // Transaktion.
 func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
@@ -32,22 +54,8 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 			return
 		}
 
-		frist, err := time.Parse("2006-01-02", req.NeuesRueckgabeDatum)
-		if err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das Datum muss die Form JJJJ-MM-TT haben", nil)
-			return
-		}
-		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
-		// Frist, nicht roh 23:59:59 UTC.
-		frist = schulzeit.TagesEnde(frist)
-		// Verlängert wird in die Zukunft; ein Datum davor oder hinter der längsten Frist des
-		// Programms ist ein Tippfehler, der sonst die Fristen der ganzen Klasse verschöbe.
-		if !frist.After(t.Jetzt()) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Das neue Rückgabedatum liegt in der Vergangenheit", nil)
-			return
-		}
-		if err := tuer.PruefeFristObergrenze(frist, t.Jetzt()); err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		frist, ok := t.leseNeueFrist(w, req.NeuesRueckgabeDatum)
+		if !ok {
 			return
 		}
 
