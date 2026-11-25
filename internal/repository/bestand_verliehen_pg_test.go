@@ -93,3 +93,72 @@ func TestBestand_SenktNichtUnterDieVerliehenen(t *testing.T) {
 		t.Fatalf("Bestand 3 → 2: %v", err)
 	}
 }
+
+// Senkt die Maske den Bestand, sondert der Abgleich zuerst ein Exemplar aus dem Regal aus: Eins im
+// Abholfach liegt für einen Leser bereit, und ausgesondert scheiterte seine Abholung an der Theke.
+func TestBestand_SondertZuerstAusDemRegalAus(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	abfragen := NewTitelAbfragen(pool)
+	marke := fmt.Sprintf("ABH%d", time.Now().UnixNano())
+
+	var titelID, leserID, bearbeiterID string
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp) VALUES ($1, $2, 'Buch') RETURNING id`,
+		"Abholfach "+marke, marke).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art, klasse, abgaenger_jahr)
+		VALUES ($1, 'Lena', 'Leserin', 'schueler', '07A', 2031) RETURNING id`, "SCH-"+marke).Scan(&leserID); err != nil {
+		t.Fatalf("Leser anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (email, vorname, nachname, rolle)
+		VALUES ($1, 'Be', 'Arbeiter', 'mitarbeiter') RETURNING id`, marke+"@schule.invalid").Scan(&bearbeiterID); err != nil {
+		t.Fatalf("Bearbeiter anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		auf := context.Background()
+		for _, sql := range []string{
+			`DELETE FROM vormerkungen WHERE titel_id = $1`,
+			`DELETE FROM buecher_exemplare WHERE titel_id = $1`,
+			`DELETE FROM buecher_titel WHERE id = $1`,
+		} {
+			if _, err := pool.Exec(auf, sql, titelID); err != nil {
+				t.Errorf("Aufräumen: %v", err)
+			}
+		}
+		if _, err := pool.Exec(auf, `DELETE FROM leser WHERE id = $1`, leserID); err != nil {
+			t.Errorf("Aufräumen: %v", err)
+		}
+	})
+	// Das Exemplar im Abholfach zuerst angelegt: Ohne Reihenfolge träfe LIMIT es zuerst.
+	ids := make([]string, 2)
+	for nr := range ids {
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1, $2, true) RETURNING id`,
+			titelID, fmt.Sprintf("B-AB-%d-%s", nr, marke)).Scan(&ids[nr]); err != nil {
+			t.Fatalf("Exemplar %d anlegen: %v", nr, err)
+		}
+	}
+	abholfach, regal := ids[0], ids[1]
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis)
+		VALUES ($1, $2, 'abholbereit', $3, now() + interval '3 days')`, titelID, leserID, abholfach); err != nil {
+		t.Fatalf("Vormerkung anlegen: %v", err)
+	}
+
+	buecher, err := abfragen.LadeTitelNachIDs(ctx, []string{titelID})
+	if err != nil || len(buecher) != 1 {
+		t.Fatalf("Titel lesen: %v, %d Titel", err, len(buecher))
+	}
+	gesehen := 2
+	if err := abfragen.AendereTitel(ctx, titelID, buecher[0], alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen, BearbeiterID: bearbeiterID}); err != nil {
+		t.Fatalf("Bestand 2 → 1: %v", err)
+	}
+	var abholfachAus, regalAus bool
+	if err := pool.QueryRow(ctx, `SELECT
+			(SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = $1),
+			(SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = $2)`, abholfach, regal).Scan(&abholfachAus, &regalAus); err != nil {
+		t.Fatal(err)
+	}
+	if abholfachAus || !regalAus {
+		t.Errorf("ausgesondert: Abholfach %v, Regal %v; erwartet das Exemplar aus dem Regal", abholfachAus, regalAus)
+	}
+}

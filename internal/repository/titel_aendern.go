@@ -341,7 +341,8 @@ func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q Datenbank, titel
 
 // gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
 // expectedStock erreicht. Ausgesondert wird nur aus dem Bestand und nur, was nicht verliehen
-// ist: Bestellte und verliehene Exemplare lassen sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
+// ist: Bestellte und verliehene Exemplare lassen sich über die Zahl nicht aussondern, eins im
+// Abholfach kommt zuletzt an die Reihe. Ein neues Exemplar erbt den Standort der vorhandenen
 // (sqlGeerbterStandort). Jedes ausgesonderte Exemplar steht mit bearbeiterID im
 // Protokoll (protokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
 func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, titelID string, aktuellerBestand, erwarteterBestand int, bearbeiterID string) error {
@@ -387,6 +388,8 @@ func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, tit
 				FROM buecher_exemplare e
 				LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 				WHERE e.titel_id = $1 AND ` + SQLExemplarImBestand + ` AND a.id IS NULL
+				-- Zuerst aus dem Regal: Ein Exemplar im Abholfach liegt für einen Leser bereit.
+				ORDER BY (` + sqlExemplarNichtImAbholfach + `) DESC
 				LIMIT $2
 			)
 			RETURNING id::text
