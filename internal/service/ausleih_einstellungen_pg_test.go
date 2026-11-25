@@ -27,6 +27,7 @@ func TestLadeAusleihEinstellungen_AnDerDatenbank(t *testing.T) {
 	gesetzt := map[string]*string{
 		"frist_buch_tage":              strPtr("30"),
 		"frist_medien_tage":            strPtr(""),
+		"frist_geraete_tage":           strPtr("21"),
 		"max_ausleihen_schueler":       strPtr("8"),
 		"ferien_leseclub_aktiv":        strPtr("true"),
 		"ferien_leseclub_zieldatum":    nil,
@@ -48,6 +49,7 @@ func TestLadeAusleihEinstellungen_AnDerDatenbank(t *testing.T) {
 	soll := ausleihEinstellungen{
 		FristBuchTage:              30,
 		FristMedienTage:            7,
+		FristGeraeteTage:           21,
 		MaxAusleihenSchueler:       8,
 		FerienLeseclubAktiv:        true,
 		UeberfaelligKarenzTage:     10,

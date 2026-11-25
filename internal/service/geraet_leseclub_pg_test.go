@@ -95,6 +95,37 @@ func TestGeraetAusleihe_AbgaengerVorDenSommerferien(t *testing.T) {
 	}
 }
 
+// Die Leihfrist eines Geräts an einen Schüler kommt aus den Einstellungen („Leihfrist Geräte“),
+// ohne Eintrag gilt die Vorgabe von 14 Tagen.
+func TestGeraetAusleihe_LeihfristAusDenEinstellungen(t *testing.T) {
+	g := newGeraeteTheke(t)
+	ctx := context.Background()
+	g.dienst.jetzt = func() time.Time { return time.Date(2031, time.March, 3, 10, 0, 0, 0, schulzeit.Zone()) }
+	setzeEinstellungenFuerTest(t, g.pool, map[string]*string{
+		"sommerferien":          strPtr(sommerferien2031),
+		"ferien_leseclub_aktiv": strPtr("false"),
+		"frist_geraete_tage":    nil,
+	})
+	kind := g.schueler(t, "Leihfrist")
+
+	res, err := g.dienst.verarbeiteScan(ctx, g.geraet(t, "vorgabe"), &kind, true, false, g.ausgabe)
+	if err != nil {
+		t.Fatalf("Ausleihe mit der Vorgabe: %v", err)
+	}
+	if want := fristEnde2031(time.March, 17); res.Frist == nil || !res.Frist.Equal(want) {
+		t.Errorf("Frist mit der Vorgabe %v, erwartet %v", res.Frist, want)
+	}
+
+	setzeEinstellungenFuerTest(t, g.pool, map[string]*string{"frist_geraete_tage": strPtr("30")})
+	res, err = g.dienst.verarbeiteScan(ctx, g.geraet(t, "dreissig"), &kind, true, false, g.ausgabe)
+	if err != nil {
+		t.Fatalf("Ausleihe mit 30 Tagen: %v", err)
+	}
+	if want := fristEnde2031(time.April, 2); res.Frist == nil || !res.Frist.Equal(want) {
+		t.Errorf("Frist mit 30 Tagen %v, erwartet %v", res.Frist, want)
+	}
+}
+
 // setzeEinstellungenFuerTest setzt Einstellungen (nil = ohne Wert) und stellt am Ende des Tests
 // den Stand davor wieder her: den alten Wert oder keine Zeile.
 func setzeEinstellungenFuerTest(t *testing.T, pool *pgxpool.Pool, werte map[string]*string) {

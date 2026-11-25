@@ -30,6 +30,7 @@ type SystemEinstellungen struct {
 	MaxAusleihenSchueler int                           `json:"max_ausleihen_schueler"`
 	FristBuchTage        int                           `json:"frist_buch_tage"`
 	FristMedienTage      int                           `json:"frist_medien_tage"`
+	FristGeraeteTage     int                           `json:"frist_geraete_tage"`
 	// UeberfaelligKarenzTage und UeberfaelligSperreAbMedien steuern die Sperre wegen
 	// Überfälligkeit: Gesperrt ist, wer mindestens so viele Medien länger als die Karenz
 	// überfällig hat.
@@ -144,8 +145,9 @@ func NewEinstellungsAbfragen(pool db.Pool) *EinstellungsAbfragen {
 // mit denselben Werten (Ausleihe und Verlängerung); zwei Vorgaben für dieselbe Frist gäben je nach
 // Weg verschiedene Fristen.
 const (
-	FristBuchTageVorgabe   = 21
-	FristMedienTageVorgabe = 7
+	FristBuchTageVorgabe    = 21
+	FristMedienTageVorgabe  = 7
+	FristGeraeteTageVorgabe = 14
 )
 
 // einstellungenVorgabe liefert die Werte, die gelten, solange zu einem Schlüssel keine Zeile
@@ -157,6 +159,7 @@ func einstellungenVorgabe() *SystemEinstellungen {
 		MaxAusleihenSchueler:       5,
 		FristBuchTage:              FristBuchTageVorgabe,
 		FristMedienTage:            FristMedienTageVorgabe,
+		FristGeraeteTage:           FristGeraeteTageVorgabe,
 		UeberfaelligKarenzTage:     14,
 		UeberfaelligSperreAbMedien: 1,
 		BestellbedarfWarnungAktiv:  true,
@@ -216,6 +219,8 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 		setzeInt(wert, &e.FristBuchTage)
 	case "frist_medien_tage":
 		setzeInt(wert, &e.FristMedienTage)
+	case "frist_geraete_tage":
+		setzeInt(wert, &e.FristGeraeteTage)
 	case "max_overdue_days":
 		setzeInt(wert, &e.UeberfaelligKarenzTage)
 	case "max_overdue_items":

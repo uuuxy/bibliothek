@@ -28,6 +28,7 @@ type EinstellungenPatch struct {
 	MaxAusleihenSchueler       *int    `json:"max_ausleihen_schueler,omitempty"`
 	FristBuchTage              *int    `json:"frist_buch_tage,omitempty"`
 	FristMedienTage            *int    `json:"frist_medien_tage,omitempty"`
+	FristGeraeteTage           *int    `json:"frist_geraete_tage,omitempty"`
 	UeberfaelligKarenzTage     *int    `json:"max_overdue_days,omitempty"`
 	UeberfaelligSperreAbMedien *int    `json:"max_overdue_items,omitempty"`
 

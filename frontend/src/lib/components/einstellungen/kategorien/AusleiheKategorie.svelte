@@ -27,6 +27,7 @@
 	const geladen = {
 		frist_buch_tage: start.frist_buch_tage ?? 21,
 		frist_medien_tage: start.frist_medien_tage ?? 7,
+		frist_geraete_tage: start.frist_geraete_tage ?? 14,
 		max_ausleihen_schueler: start.max_ausleihen_schueler ?? 5,
 		lmf_eingangsjahrgaenge: start.lmf_eingangsjahrgaenge ?? '5, 7',
 		ferien_leseclub_aktiv: start.ferien_leseclub_aktiv ?? false,
@@ -34,6 +35,7 @@
 	};
 	let fristBuch = $state(geladen.frist_buch_tage);
 	let fristMedien = $state(geladen.frist_medien_tage);
+	let fristGeraete = $state(geladen.frist_geraete_tage);
 	let maxAusleihen = $state(geladen.max_ausleihen_schueler);
 	let lmfEingang = $state(geladen.lmf_eingangsjahrgaenge);
 	let leseclubAktiv = $state(geladen.ferien_leseclub_aktiv);
@@ -49,6 +51,7 @@
 		zahlen: [
 			{ schluessel: 'frist_buch_tage', label: 'Leihfrist Bücher', wert: fristBuch, min: 1 },
 			{ schluessel: 'frist_medien_tage', label: 'Leihfrist Medien', wert: fristMedien, min: 1 },
+			{ schluessel: 'frist_geraete_tage', label: 'Leihfrist Geräte', wert: fristGeraete, min: 1 },
 			{
 				schluessel: 'max_ausleihen_schueler',
 				label: 'Max. Ausleihen',
@@ -67,9 +70,9 @@
 >
 	{#snippet mehr()}
 		<p>
-			Bücher und Medien haben getrennte Fristen, weil eine DVD schneller zurückkommt als ein
-			Lesebuch. Lernmittel (LMF) laufen nicht auf Tage, sondern bis zum Donnerstag vor den
-			Sommerferien, in der Oberstufe bis zum 31. Juli.
+			Bücher, Medien und Geräte haben getrennte Fristen; eine DVD kommt schneller zurück als ein
+			Lesebuch. Geräte an Lehrkräfte sind Dauerleihen ohne Frist. Lernmittel (LMF) laufen nicht auf
+			Tage, sondern bis zum Donnerstag vor den Sommerferien, in der Oberstufe bis zum 31. Juli.
 		</p>
 		<p>
 			Die Eingangsjahrgänge sind die Klassen, die zum neuen Schuljahr neu gebildet werden, an dieser
@@ -78,8 +81,9 @@
 			hier.
 		</p>
 		<p>
-			Der Ferien-Leseclub überschreibt beide Fristen: Solange er aktiv ist, bekommt JEDE neue
-			Ausleihe das eingetragene Ferienende als Rückgabetermin
+			Der Ferien-Leseclub überschreibt diese Fristen: Solange er aktiv ist, bekommt JEDE neue
+			Ausleihe das eingetragene Ferienende als Rückgabetermin, außer bei Abgängern. Was sie außer
+			Schulbüchern leihen, ist spätestens am letzten Schultag vor den Sommerferien fällig.
 		</p>
 	{/snippet}
 
@@ -96,6 +100,14 @@
 			type="number"
 			bind:value={fristMedien}
 			etikett="Leihfrist Medien"
+			min={1}
+			max={365}
+			nachlaufend={tage}
+		/>
+		<Feld
+			type="number"
+			bind:value={fristGeraete}
+			etikett="Leihfrist Geräte"
 			min={1}
 			max={365}
 			nachlaufend={tage}

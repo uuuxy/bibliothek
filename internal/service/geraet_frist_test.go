@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/internal/pkg/lmfplan"
 	"bibliothek/internal/pkg/schulzeit"
+	"bibliothek/internal/repository"
 )
 
 // TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone sichert #4 ab: Die Geräte-Leihfrist muss —
@@ -18,7 +19,7 @@ func TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone(t *testing.T) {
 	// Ausleihe am 10.06.2026 um 10:00 Ortszeit (Sommerzeit, MESZ = UTC+2).
 	ausgeliehen := time.Date(2026, time.June, 10, 10, 0, 0, 0, loc)
 
-	frist := geraeteRueckgabeFrist(ausgeliehen, lmfplan.Hessen())
+	frist := geraeteRueckgabeFrist(ausgeliehen, lmfplan.Hessen(), repository.FristGeraeteTageVorgabe)
 
 	// 14 Tage später, auf 23:59:59 Ortszeit normalisiert.
 	if got, want := frist.In(loc), time.Date(2026, time.June, 24, 23, 59, 59, 0, loc); !got.Equal(want) {
@@ -37,7 +38,7 @@ func TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone(t *testing.T) {
 // fällig ist das Gerät am Montag danach, dem 19.10.
 func TestGeraeteRueckgabeFrist_FerienRueckenAufDenSchultag(t *testing.T) {
 	loc := schulzeit.Zone()
-	frist := geraeteRueckgabeFrist(time.Date(2026, time.September, 21, 10, 0, 0, 0, loc), lmfplan.Hessen())
+	frist := geraeteRueckgabeFrist(time.Date(2026, time.September, 21, 10, 0, 0, 0, loc), lmfplan.Hessen(), repository.FristGeraeteTageVorgabe)
 	if want := time.Date(2026, time.October, 19, 23, 59, 59, 0, loc); !frist.Equal(want) {
 		t.Errorf("Frist = %s, erwartet %s", frist.In(loc), want)
 	}

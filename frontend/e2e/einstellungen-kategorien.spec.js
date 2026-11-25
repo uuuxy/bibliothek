@@ -37,6 +37,7 @@ function ausgangsstand() {
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES
 			('frist_buch_tage', '28'),
 			('frist_medien_tage', '11'),
+			('frist_geraete_tage', '17'),
 			('max_ausleihen_schueler', '9'),
 			('bestelllink_gueltigkeit_tage', '30'),
 			('ferien_leseclub_aktiv', 'true'),
@@ -55,6 +56,7 @@ test.afterEach(() => {
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES
 			('frist_buch_tage', '21'),
 			('frist_medien_tage', '7'),
+			('frist_geraete_tage', '14'),
 			('max_ausleihen_schueler', '5'),
 			('bestelllink_gueltigkeit_tage', '21'),
 			('ferien_leseclub_aktiv', 'false'),
@@ -87,6 +89,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 		{
 			frist_buch_tage: wert('frist_buch_tage'),
 			frist_medien_tage: wert('frist_medien_tage'),
+			frist_geraete_tage: wert('frist_geraete_tage'),
 			max_ausleihen_schueler: wert('max_ausleihen_schueler'),
 			bestelllink_gueltigkeit_tage: wert('bestelllink_gueltigkeit_tage'),
 			ferien_leseclub_aktiv: wert('ferien_leseclub_aktiv'),
@@ -98,6 +101,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 	).toEqual({
 		frist_buch_tage: '28',
 		frist_medien_tage: '11',
+		frist_geraete_tage: '17',
 		max_ausleihen_schueler: '9',
 		bestelllink_gueltigkeit_tage: '30',
 		ferien_leseclub_aktiv: 'true',

@@ -13,6 +13,8 @@ type ausleihEinstellungen struct {
 	FristBuchTage int
 	// FristMedienTage ist die Frist für CDs, DVDs und Hörbücher in Tagen.
 	FristMedienTage int
+	// FristGeraeteTage ist die Frist eines Geräts an einen Schüler in Tagen.
+	FristGeraeteTage int
 	// MaxAusleihenSchueler begrenzt die gleichzeitigen Ausleihen eines Schülers außer den
 	// Lernmitteln.
 	MaxAusleihenSchueler int
@@ -54,6 +56,7 @@ func ausleihEinstellungenAus(e *repository.SystemEinstellungen) *ausleihEinstell
 	return &ausleihEinstellungen{
 		FristBuchTage:              e.FristBuchTage,
 		FristMedienTage:            e.FristMedienTage,
+		FristGeraeteTage:           e.FristGeraeteTage,
 		MaxAusleihenSchueler:       e.MaxAusleihenSchueler,
 		FerienLeseclubAktiv:        e.FerienLeseclubAktiv,
 		FerienLeseclubZieldatum:    e.FerienLeseclubZieldatum,

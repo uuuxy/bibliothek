@@ -37,6 +37,7 @@ func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 		{"max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 100, "Max. Ausleihen", ""},
 		{"frist_buch_tage", p.FristBuchTage, 1, 365, "Leihfrist Bücher", "Tagen"},
 		{"frist_medien_tage", p.FristMedienTage, 1, 365, "Leihfrist Medien", "Tagen"},
+		{"frist_geraete_tage", p.FristGeraeteTage, 1, 365, "Leihfrist Geräte", "Tagen"},
 		// 0 heißt sofort sperren.
 		{"max_overdue_days", p.UeberfaelligKarenzTage, 0, 365, "Tage bis Sperre", ""},
 		// Obergrenze 100: Die Sperre wegen Überfälligkeit ist eine Regel des Katalogs. Ein

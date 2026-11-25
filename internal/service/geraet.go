@@ -131,16 +131,13 @@ func (d *GeraeteDienst) ladeRueckgeber(ctx context.Context, aktiverLeserID *stri
 	return leser, nil
 }
 
-// geraeteLeihfristTage ist die Leihfrist eines Geräts in Tagen.
-const geraeteLeihfristTage = 14
-
 // geraeteRueckgabeFrist ist die Leihfrist eines Geräts als Tagesfrist wie die der Bücher
 // (frist.go): Tagesende in der Zone der Schule, und fällt der Tag auf ein Wochenende, einen
 // Feiertag oder in die Ferien, der nächste Schultag. Ohne das Tagesende fiele die Frist auf die
-// Sekunde genau 14 Tage später in der Zone des Servers, und Mahnlauf und die Anzeige „heute
+// Sekunde genau auf den Zeitpunkt in der Zone des Servers, und Mahnlauf und die Anzeige „heute
 // fällig" lägen daneben.
-func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle) time.Time {
-	return kalender.Tagesfrist(ab, geraeteLeihfristTage)
+func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle, tage int) time.Time {
+	return kalender.Tagesfrist(ab, tage)
 }
 
 // geraeteFrist ist die Frist eines Geräts: bei der Dauerleihe die Jahresfrist wie beim Buch
@@ -152,12 +149,13 @@ func geraeteFrist(leser *repository.Leser, dauerleihe bool, einst *ausleihEinste
 	if dauerleihe {
 		return schulzeit.TagesEnde(heute.AddDate(1, 0, 0))
 	}
-	sommerferien := ""
+	sommerferien, tage := "", repository.FristGeraeteTageVorgabe
 	if einst != nil {
 		sommerferien = einst.Sommerferien
+		tage = max(einst.FristGeraeteTage, 1)
 	}
 	kalender := lmfplan.FerientabelleAus(sommerferien)
-	frist := geraeteRueckgabeFrist(heute, kalender)
+	frist := geraeteRueckgabeFrist(heute, kalender, tage)
 	if einst != nil && !repository.IstAbschlussklasse(leser.Klasse) {
 		if datum, ok := leseclubDatum(einst, heute); ok {
 			frist = datum
