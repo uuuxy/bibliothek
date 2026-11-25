@@ -204,6 +204,10 @@ func (d *AusleihDienst) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *n
 // weiseImSavepointAb nimmt den Savepoint zurück und schließt die Transaktion ab — die
 // Rücknahme beim Vorbesitzer bleibt —, dann schreibt es die Abweisung als Meldung. schranke
 // ist der Fehler der Schranke, wenn es an einer lag; er reist mit dem Ergebnis zur Tür.
+//
+// Auch das Zurückholen eines abgeschriebenen Buchs vor dem Savepoint bleibt. Stand es auf einem
+// Bescheid, der schon bei der Aufsicht liegt, gehört der Hinweis darauf in Antwort und Meldung,
+// wie bei einer gelungenen Ausleihe.
 func (d *AusleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string, schranke error) (*NachbuchErgebnis, error) {
 	if err := sp.Rollback(ctx); err != nil {
 		return nil, err
@@ -211,11 +215,18 @@ func (d *AusleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	abweisung, err := d.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+	hinweis := l.befund.AufsichtHinweis()
+	meldungsGrund := grund
+	if hinweis != "" {
+		meldungsGrund = grund + " — " + hinweis
+	}
+	abweisung, err := d.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, meldungsGrund)
 	if err != nil {
 		return nil, err
 	}
+	abweisung.Grund = grund
 	abweisung.Schranke = schranke
+	abweisung.AufsichtHinweis = hinweis
 	return abweisung, nil
 }
 

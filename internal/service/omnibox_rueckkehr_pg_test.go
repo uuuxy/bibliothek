@@ -23,6 +23,8 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
+
+	"github.com/google/uuid"
 )
 
 func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
@@ -212,6 +214,46 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	}
 	if offen, _ := forderungOffen(t, barcodeDefekt); !offen {
 		t.Error("die Schadensforderung wurde mit storniert — der Hook darf nur „nicht zurückgegeben“ beenden")
+	}
+
+	// ── Ohne Netz nachgebucht, die neue Ausleihe scheitert ───────────────────────
+	// Das Kind ist von Hand gesperrt, beim Schulbuch die einzige Sperre, die eine Ausleihe
+	// anhält: Sie scheitert im Savepoint, das Zurückholen des Buchs davor bleibt. Auch dann nennt
+	// die Antwort die Aufsicht, und die Meldung des Nachbuchens trägt den Hinweis.
+	barcodeNach := "B-RUECK-D-" + suffix
+	bescheidNach := abgerechnet(t, barcodeNach, time.Now().AddDate(0, 0, -1))
+	if err := bescheidRepo.Uebergebe(ctx, bescheidNach); err != nil {
+		t.Fatalf("Übergabe an die Schulaufsicht: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE leser SET is_manually_blocked = true, block_reason = 'Test' WHERE id = $1`, schuelerID); err != nil {
+		t.Fatalf("Sperre von Hand: %v", err)
+	}
+	schluessel := uuid.NewString()
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM nachbuch_meldungen WHERE idempotency_key = $1`, schluessel); err != nil {
+			t.Errorf("Aufräumen Meldung: %v", err)
+		}
+	})
+	nachgebucht, err := NewNachbuchDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo).BucheNach(ctx, NachbuchEintrag{
+		Schluessel: schluessel, Absicht: NachbuchAbsichtAusleihe, Barcode: barcodeNach,
+		GescanntAm: time.Now(), LeserID: &schuelerID, BearbeiterID: mitarbeiterID,
+	})
+	if err != nil {
+		t.Fatalf("Nachbuchen: %v", err)
+	}
+	if nachgebucht.Ergebnis != repository.NachbuchNichtGebucht {
+		t.Fatalf("Nachbuchen: %q %s, erwartet die Abweisung am gesperrten Kind", nachgebucht.Ergebnis, nachgebucht.Grund)
+	}
+	if !strings.Contains(nachgebucht.AufsichtHinweis, "Schulaufsicht") {
+		t.Errorf("die Abweisung nennt die Aufsicht nicht: %q", nachgebucht.AufsichtHinweis)
+	}
+	var meldungsGrund string
+	if err := pool.QueryRow(ctx, `SELECT coalesce(grund, '') FROM nachbuch_meldungen WHERE idempotency_key = $1`,
+		schluessel).Scan(&meldungsGrund); err != nil {
+		t.Fatalf("Meldung lesen: %v", err)
+	}
+	if !strings.Contains(meldungsGrund, "Schulaufsicht") {
+		t.Errorf("die Meldung des Nachbuchens nennt die Aufsicht nicht: %q", meldungsGrund)
 	}
 }
 
