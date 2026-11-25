@@ -339,6 +339,42 @@ func TestAusleiheVerlaengern_AbgaengerNichtUeberDieSommerferien(t *testing.T) {
 	pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleihe), testdaten.FristEnde(2031, time.July, 4))
 }
 
+// Ein Gerät verlängert um die Leihfrist der Geräte, wie bei seiner Ausleihe (service.geraeteFrist),
+// nicht um die der Bücher. Montag 02.11.2026 plus 7 Tage ist Montag, der 09.11.2026; das Buch
+// daneben bekommt seine 21 Tage bis Montag, den 23.11.2026.
+func TestAusleiheVerlaengern_GeraetMitDerLeihfristDerGeraete(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-VF-GER", "Geraet", "7a")
+	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
+	var geraet, geraeteAusleihe string
+	if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Tablet', 'G-VF-1') RETURNING id`).Scan(&geraet); err != nil {
+		t.Fatalf("Gerät anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, $3) RETURNING id`,
+		geraet, sid, alteFrist).Scan(&geraeteAusleihe); err != nil {
+		t.Fatalf("Geräteausleihe anlegen: %v", err)
+	}
+	buchAusleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch neben dem Gerät", alteFrist)
+
+	jetzt := time.Date(2026, time.November, 2, 10, 0, 0, 0, schulzeit.Zone())
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21, FristGeraeteTage: 7},
+	}))
+	for _, id := range []string{geraeteAusleihe, buchAusleihe} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+id+"/verlaengern", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Verlängerung: Status %d: %s", rec.Code, rec.Body.String())
+		}
+	}
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, geraeteAusleihe), testdaten.FristEnde(2026, time.November, 9))
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, buchAusleihe), testdaten.FristEnde(2026, time.November, 23))
+}
+
 // Ging die Antwort auf eine Verlängerung verloren, verlängerte der zweite Auftrag noch einmal: Aus
 // 21 Tagen wurden 42, und die Leserakte meldete nur „Verlängert bis …". Nennt die Oberfläche die
 // Frist, die sie zeigte, und steht am Server schon eine andere, antwortet die Tür mit 409 und der

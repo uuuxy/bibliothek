@@ -135,17 +135,25 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 }
 
 // ladeVerlaengerteFrist rechnet die neue Frist: die Tage ab dem späteren von altem Fristende und
-// jetzt. Ein Abgänger verlängert außer beim Schulbuch nicht über den letzten Schultag vor den
-// Sommerferien hinaus (service.AbgaengerFrist); kürzer als bisher wird die Frist dadurch nicht.
-func ladeVerlaengerteFrist(ctx context.Context, tx pgx.Tx, ausleiheID string, alteFrist, jetzt time.Time, tage int, kalender lmfplan.Ferientabelle) (time.Time, error) {
+// jetzt, beim Gerät die der Geräte wie bei seiner Ausleihe. Ein Abgänger verlängert außer beim
+// Schulbuch nicht über den letzten Schultag vor den Sommerferien hinaus (service.AbgaengerFrist);
+// kürzer als bisher wird die Frist dadurch nicht.
+func ladeVerlaengerteFrist(ctx context.Context, tx pgx.Tx, ausleiheID string, alteFrist, jetzt time.Time, tage verlaengerungsTage, kalender lmfplan.Ferientabelle) (time.Time, error) {
+	klasse, lernmittel, geraet, err := repository.LadeFristRegelDerAusleihe(ctx, tx, ausleiheID)
+	if err != nil {
+		return time.Time{}, err
+	}
 	basis := jetzt
 	if alteFrist.After(basis) {
 		basis = alteFrist
 	}
-	neueFrist := kalender.Tagesfrist(basis, tage)
-	klasse, lernmittel, err := repository.LadeFristRegelDerAusleihe(ctx, tx, ausleiheID)
-	if err != nil || lernmittel {
-		return neueFrist, err
+	n := tage.buch
+	if geraet {
+		n = tage.geraet
+	}
+	neueFrist := kalender.Tagesfrist(basis, n)
+	if lernmittel {
+		return neueFrist, nil
 	}
 	neueFrist = service.AbgaengerFrist(neueFrist, klasse, kalender, jetzt)
 	if neueFrist.Before(alteFrist) {
@@ -295,17 +303,25 @@ func leseFaelligAm(text string) (time.Time, error) {
 	return frist, nil
 }
 
+// verlaengerungsTage sind die Tage einer Verlängerung: die Leihfrist der Bücher und die der Geräte.
+type verlaengerungsTage struct {
+	buch, geraet int
+}
+
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
-// Einstellungen. Sind sie nicht lesbar, gelten die Vorgabe der Leihfrist, mit der auch die
+// Einstellungen. Sind sie nicht lesbar, gelten die Vorgaben der Leihfristen, mit denen auch die
 // Ausleihe dann rechnet, und die Ferientabelle des Programms.
-func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsAbruf) (tage int, sommerferien string) {
+func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsAbruf) (tage verlaengerungsTage, sommerferien string) {
+	tage = verlaengerungsTage{buch: repository.FristBuchTageVorgabe, geraet: repository.FristGeraeteTageVorgabe}
 	einstellungen, err := einstellungsAbfragen.Lade(ctx)
 	if err != nil {
-		return repository.FristBuchTageVorgabe, ""
+		return tage, ""
 	}
-	tage = repository.FristBuchTageVorgabe
 	if einstellungen.FristBuchTage > 0 {
-		tage = einstellungen.FristBuchTage
+		tage.buch = einstellungen.FristBuchTage
+	}
+	if einstellungen.FristGeraeteTage > 0 {
+		tage.geraet = einstellungen.FristGeraeteTage
 	}
 	return tage, einstellungen.Sommerferien
 }

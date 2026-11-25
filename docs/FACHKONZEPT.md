@@ -74,7 +74,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
   Frist (Plan nachschlagen, Ersatz ohne Termin, Nachziehen beim Veröffentlichen) wöge mehr als ein
   paar Tage früher; zum Büchertausch zeigt die Abgängerliste, wer noch etwas hat.
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch die eine Definition des Tagesendes, `schulzeit.TagesEnde`; eine zweite, rohe Berechnung gibt es bewusst nicht.
-- **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, eine Sperre am Leser hält sie an — nach der Regel der Theke (§2.2), beim Schulbuch also nur die Sperre von Hand. Forderung, Überfällig-Automatik und Ausleihlimit halten eine Verlängerung nicht an. Die neue Frist ist die Leihfrist für Bücher (`frist_buch_tage`), gezählt ab dem späteren von alter Frist und heute, und rückt wie jede Tagesfrist auf den nächsten Schultag. Die Leserakte schickt die Frist mit, die sie zeigt (`frist_bisher`); steht am Server schon eine andere, verlängert die Tür nicht noch einmal, antwortet mit 409 und nennt die jetzige. So verlängert ein zweiter Klick nach einer verlorenen Antwort nicht doppelt, ebenso ein zweiter Platz mit derselben alten Frist; ohne Angabe verlängert die Tür wie bisher.
+- **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, eine Sperre am Leser hält sie an — nach der Regel der Theke (§2.2), beim Schulbuch also nur die Sperre von Hand. Forderung, Überfällig-Automatik und Ausleihlimit halten eine Verlängerung nicht an. Die neue Frist ist die Leihfrist für Bücher (`frist_buch_tage`), bei einem Gerät die Leihfrist der Geräte (`frist_geraete_tage`) wie bei seiner Ausleihe, gezählt ab dem späteren von alter Frist und heute, und rückt wie jede Tagesfrist auf den nächsten Schultag. Die Leserakte schickt die Frist mit, die sie zeigt (`frist_bisher`); steht am Server schon eine andere, verlängert die Tür nicht noch einmal, antwortet mit 409 und nennt die jetzige. So verlängert ein zweiter Klick nach einer verlorenen Antwort nicht doppelt, ebenso ein zweiter Platz mit derselben alten Frist; ohne Angabe verlängert die Tür wie bisher.
 
 ### 2.2. Blockaden und Limits
 
@@ -295,7 +295,7 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
   bei Ausleihe UND Rückgabe. Erst „Alles vollständig“ schickt den Scan mit
   Bestätigung erneut; Abbrechen bucht nichts.
 - **Fristen:** „Leihfrist Geräte“ (`frist_geraete_tage`, Vorgabe 14 Tage), auf das Tagesende in
-  der Schul-Zeitzone normalisiert wie Buch-Fristen; im Ferien-Leseclub wie ein Buch bis zu dessen Datum. Lehrkräfte leihen Geräte
+  der Schul-Zeitzone normalisiert wie Buch-Fristen; im Ferien-Leseclub wie ein Buch bis zu dessen Datum. Eine Verlängerung rechnet mit derselben Leihfrist (§2.1). Lehrkräfte leihen Geräte
   als Dauerleihe mit der Jahresfrist wie beim Buch.
 - **Zustands-Sperre:** Defekte (`ist_ausleihbar = false`) und ausgesonderte Geräte
   verweigern die Ausleihe am Kiosk.

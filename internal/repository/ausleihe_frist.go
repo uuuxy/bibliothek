@@ -18,17 +18,18 @@ func SperreOffeneAusleiheMitFrist(ctx context.Context, tx pgx.Tx, ausleiheID str
 }
 
 // LadeFristRegelDerAusleihe liest, was die Frist einer Ausleihe über ihre Tage hinaus bestimmt:
-// die Klasse des Schülers (leer beim Kollegium und ohne Leser) und ob es ein Lernmittel ist.
-func LadeFristRegelDerAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (klasse string, lernmittel bool, err error) {
+// die Klasse des Schülers (leer beim Kollegium und ohne Leser), ob es ein Lernmittel ist und ob
+// ein Gerät verliehen ist; für ein Gerät gilt die Leihfrist der Geräte.
+func LadeFristRegelDerAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (klasse string, lernmittel, geraet bool, err error) {
 	err = db.QueryRow(ctx, `
 		SELECT CASE WHEN l.art = 'schueler' THEN coalesce(l.klasse, '') ELSE '' END,
-		       coalesce(t.ist_lernmittel, false)
+		       coalesce(t.ist_lernmittel, false), a.geraet_id IS NOT NULL
 		FROM ausleihen a
 		LEFT JOIN leser l ON l.id = a.schueler_id
 		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE a.id = $1`, ausleiheID).Scan(&klasse, &lernmittel)
-	return klasse, lernmittel, err
+		WHERE a.id = $1`, ausleiheID).Scan(&klasse, &lernmittel, &geraet)
+	return klasse, lernmittel, geraet, err
 }
 
 // LadeFristDerOffenenAusleihe liest die Frist einer offenen Ausleihe ohne Sperre der Zeile.
