@@ -15,6 +15,7 @@ import (
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
+	"bibliothek/internal/auth"
 	"bibliothek/internal/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -109,40 +110,81 @@ func (t *Tueren) GeraetAnlegen(geraeteAbfragen *repository.GeraeteAbfragen) http
 	})
 }
 
-// GeraetAendern pflegt Stammdaten und den Defekt-Status.
+// GeraetAendern pflegt Stammdaten und den Defekt-Status und holt ein verlorenes Gerät zurück.
 // PUT /api/geraete/{id}
 func (t *Tueren) GeraetAendern(geraeteAbfragen *repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		var req geraetAendernAnfrage
-		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
-		if !tuer.LeseAnfrageStreng(w, r, &req) {
-			return nil
-		}
-		aenderung := repository.GeraetAenderung{
-			Modellname:   getrimmterZeiger(req.Modellname),
-			Zubehoer:     getrimmterZeiger(req.Zubehoer),
-			ZustandNotiz: getrimmterZeiger(req.ZustandNotiz),
-			Seriennummer: getrimmterZeiger(req.Seriennummer),
-			// Durchgereicht, nicht vorbelegt: Ein fehlendes Kennzeichen ist „unverändert". Mit
-			// einer Vorgabe hob jede Änderung der Stammdaten die Defekt-Markierung auf.
-			IstAusleihbar: req.IstAusleihbar,
-		}
-		if aenderung.Modellname != nil && *aenderung.Modellname == "" {
-			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
-		}
-		err := geraeteAbfragen.Aendere(r.Context(), r.PathValue("id"), aenderung)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return apierrors.NotFound("Gerät nicht gefunden", err)
-			}
-			if meldung, ok := geraetKonflikt(err); ok {
-				return apierrors.Conflict(meldung, err)
-			}
-			return apierrors.Internal("Fehler beim Speichern des Geräts", err)
-		}
-		tuer.AntworteErfolg(w)
-		return nil
+		return t.aendereGeraet(w, r, geraeteAbfragen)
 	})
+}
+
+// aendereGeraet ist der Rumpf von GeraetAendern.
+func (t *Tueren) aendereGeraet(w http.ResponseWriter, r *http.Request, geraeteAbfragen *repository.GeraeteAbfragen) error {
+	var req geraetAendernAnfrage
+	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
+		return nil
+	}
+	aenderung := repository.GeraetAenderung{
+		Modellname:   getrimmterZeiger(req.Modellname),
+		Zubehoer:     getrimmterZeiger(req.Zubehoer),
+		ZustandNotiz: getrimmterZeiger(req.ZustandNotiz),
+		Seriennummer: getrimmterZeiger(req.Seriennummer),
+		// Durchgereicht, nicht vorbelegt: Ein fehlendes Kennzeichen ist „unverändert". Mit
+		// einer Vorgabe hob jede Änderung der Stammdaten die Defekt-Markierung auf.
+		IstAusleihbar: req.IstAusleihbar,
+	}
+	if aenderung.Modellname != nil && *aenderung.Modellname == "" {
+		return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
+	}
+	// „Wieder freigeben“ an einem verlorenen Gerät holt es zurück: Dieselbe Tür macht ein
+	// defektes und ein wiedergefundenes Gerät ausleihbar, die Rückkehr bucht der Server.
+	var befund repository.RueckkehrBefund
+	zurueck := false
+	if req.IstAusleihbar != nil && *req.IstAusleihbar {
+		var err error
+		if befund, zurueck, err = t.holeVerlorenesGeraetZurueck(r); err != nil {
+			return err
+		}
+	}
+	if err := geraeteAbfragen.Aendere(r.Context(), r.PathValue("id"), aenderung); err != nil {
+		return geraetAenderungsFehler(err)
+	}
+	if zurueck {
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": "success", "zurueckgeholt": true,
+			"stornierte_forderungen": befund.StornierteForderungen, "stornierter_betrag": befund.StornierterBetrag})
+		return nil
+	}
+	tuer.AntworteErfolg(w)
+	return nil
+}
+
+// holeVerlorenesGeraetZurueck holt das Gerät der Anfrage zurück, wenn es als verloren gemeldet
+// ist (repository.HoleVerlorenesGeraetZurueck); zurueck ist false, wenn es nicht verloren war.
+func (t *Tueren) holeVerlorenesGeraetZurueck(r *http.Request) (befund repository.RueckkehrBefund, zurueck bool, err error) {
+	bearbeiter := ""
+	if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
+		bearbeiter = claims.KontoID
+	}
+	zurueck, befund, err = repository.HoleVerlorenesGeraetZurueck(r.Context(), t.DB.Pool, r.PathValue("id"), bearbeiter)
+	switch {
+	case errors.Is(err, repository.ErrAussonderungOhneBearbeiter):
+		return befund, false, apierrors.Unauthorized(auth.MeldungNichtAngemeldet, err)
+	case err != nil:
+		return befund, false, apierrors.Internal("Fehler beim Zurückholen des Geräts", err)
+	}
+	return befund, zurueck, nil
+}
+
+// geraetAenderungsFehler ordnet den Fehler einer Änderung Status und Satz zu.
+func geraetAenderungsFehler(err error) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return apierrors.NotFound("Gerät nicht gefunden", err)
+	}
+	if meldung, ok := geraetKonflikt(err); ok {
+		return apierrors.Conflict(meldung, err)
+	}
+	return apierrors.Internal("Fehler beim Speichern des Geräts", err)
 }
 
 // geraetKonflikt erkennt die Eingabe, die an einem anderen Gerät schon steht, und nennt im Satz

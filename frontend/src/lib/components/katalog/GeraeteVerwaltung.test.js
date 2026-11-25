@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import GeraeteVerwaltung from './GeraeteVerwaltung.svelte';
 import { apiFetch, apiClient } from '../../apiFetch.js';
 import { authStore } from '../../stores/authStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -150,9 +151,9 @@ describe('GeraeteVerwaltung ohne view_students', () => {
 });
 
 // Ein verlorenes Gerät verschwindet nicht: Es steht als „verloren“ da, ohne Bearbeiten und ohne
-// „Defekt melden“; ein beschädigtes steht als defekt und lässt sich wieder freigeben.
+// „Defekt melden“; taucht es auf, holt „Wieder freigeben“ es zurück wie ein repariertes.
 describe('GeraeteVerwaltung: verloren und defekt', () => {
-	it('zeigt das verlorene Gerät ohne Knöpfe und das defekte mit „Wieder freigeben“', async () => {
+	it('zeigt das verlorene und das defekte Gerät mit „Wieder freigeben“, nur das defekte mit Bearbeiten', async () => {
 		vi.mocked(apiFetch).mockReset();
 		const geraet = (id, modell, ausleihbar, ausgesondert) => ({
 			id,
@@ -177,6 +178,45 @@ describe('GeraeteVerwaltung: verloren und defekt', () => {
 		expect(screen.getByText('defekt oder gesperrt')).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'iPad weg bearbeiten' })).toBeNull();
 		expect(screen.getByRole('button', { name: 'iPad defekt bearbeiten' })).toBeTruthy();
-		expect(screen.getAllByRole('button', { name: /Wieder freigeben/ })).toHaveLength(1);
+		expect(screen.getAllByRole('button', { name: /Wieder freigeben/ })).toHaveLength(2);
+	});
+
+	it('holt ein verlorenes Gerät zurück und nennt die stornierte Forderung', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{
+						id: '2',
+						modellname: 'iPad weg',
+						barcode_id: 'G-2',
+						ist_ausleihbar: false,
+						ist_ausgesondert: true
+					}
+				]
+			})
+		);
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					status: 'success',
+					zurueckgeholt: true,
+					stornierte_forderungen: 1,
+					stornierter_betrag: 15
+				})
+			})
+		);
+		const screen = render(GeraeteVerwaltung);
+		await fireEvent.click(await screen.findByRole('button', { name: /Wieder freigeben/ }));
+
+		expect(apiClient.put).toHaveBeenCalledWith('/api/geraete/2', { ist_ausleihbar: true });
+		await waitFor(() =>
+			expect(snackbars.addToast).toHaveBeenCalledWith(
+				'Das Gerät ist wieder im Schrank, die Forderung über 15,00\u00a0€ ist storniert',
+				'success'
+			)
+		);
 	});
 });

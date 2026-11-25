@@ -102,7 +102,7 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 			befund.AufsichtInformieren = append(befund.AufsichtInformieren, f.referenznummer)
 			continue
 		}
-		if err := storniereWeilZurueck(ctx, q, f.id, f.betrag, bearbeiterID, grund); err != nil {
+		if err := storniereWeilZurueck(ctx, q, f.id, f.betrag, bearbeiterID, grund, "das Buch"); err != nil {
 			return befund, err
 		}
 		befund.StornierteForderungen++
@@ -114,8 +114,8 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 // storniereWeilZurueck beendet die Forderung wie StorniereForderung: ist_bezahlt wird mit
 // gesetzt, weil alle Filter auf „offen" daran hängen, und storniert_am unterscheidet sie von
 // einer Zahlung. Der Eintrag trägt dieselbe Aktion STORNIERUNG, damit das Protokoll eine Form
-// kennt.
-func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, hoehe betrag.Cent, bearbeiterID, grund string) error {
+// kennt. was nennt, was zurück ist („das Buch“, „das Gerät“).
+func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, hoehe betrag.Cent, bearbeiterID, grund, was string) error {
 	var leserID *string
 	err := q.QueryRow(ctx, `
 		UPDATE schadensfaelle
@@ -138,7 +138,7 @@ func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID strin
 	if leserID != nil {
 		details["schueler_id"] = *leserID
 	}
-	kontext := "Forderung storniert: das Buch ist zurück"
+	kontext := "Forderung storniert: " + was + " ist zurück"
 	return schreibeProtokollEintrag(ctx, q, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,

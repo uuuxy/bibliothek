@@ -306,9 +306,11 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
 - **Verlust oder Schaden:** „Verlust oder Schaden melden“ an der Gerätezeile der Leserakte
   beendet die Ausleihe. Das Gerät bleibt in der Geräteverwaltung und ist nicht ausleihbar:
   beschädigt steht es dort als defekt und lässt sich nach der Reparatur wieder freigeben,
-  verloren steht es als verloren. Die Forderung entsteht wie beim Buch mit dem eingetragenen
-  Betrag, beim Kollegium nicht; bezahlt wird in der Akte. Auf den Bescheid des Landes kommt ein
-  Gerät nicht.
+  verloren steht es als verloren; taucht es wieder auf, holt _Wieder freigeben_ es in den Schrank
+  zurück und storniert die Forderung „nicht zurückgegeben“ wie die Rückkehr eines Buchs
+  (`repository.HoleVerlorenesGeraetZurueck`, Eintrag im Logbuch). Die Forderung entsteht wie
+  beim Buch mit dem eingetragenen Betrag, beim Kollegium nicht; bezahlt wird in der Akte. Auf den
+  Bescheid des Landes kommt ein Gerät nicht.
 
 ---
 

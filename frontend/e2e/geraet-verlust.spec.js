@@ -6,7 +6,8 @@ import {
 	querySQL,
 	uniqueSuffix,
 	oeffneSchuelerProfil,
-	raeumtNachJedemFallAuf
+	raeumtNachJedemFallAuf,
+	menuepunkt
 } from './helpers.js';
 
 const angelegt = raeumtNachJedemFallAuf(test);
@@ -63,4 +64,21 @@ test('Gerät verloren: es bleibt als verloren stehen, die Forderung steht in der
 	// Die Forderung nennt das Modell, im Reiter „Gebühren & Schäden" der Akte.
 	await page.getByRole('tab', { name: /Gebühren & Schäden/ }).click();
 	await expect(page.getByText(`E2E-Tablet-${suffix}`).first()).toBeVisible();
+
+	// Taucht das Gerät wieder auf, holt „Wieder freigeben" es in den Schrank zurück, und die
+	// Forderung ist storniert wie beim Buch (entschieden am 25.11.2026).
+	await menuepunkt(page, 'Medienkatalog').click();
+	await page.getByRole('tab', { name: 'Geräte' }).click();
+	const zeile = page.locator('li').filter({ hasText: `E2E-Tablet-${suffix}` });
+	await expect(zeile.getByText('verloren', { exact: true })).toBeVisible();
+	await zeile.getByRole('button', { name: 'Wieder freigeben' }).click();
+	await expect(
+		page.getByText('Das Gerät ist wieder im Schrank, die Forderung über 149,00 € ist storniert')
+	).toBeVisible();
+	await expect(zeile.getByText('im Schrank', { exact: true })).toBeVisible();
+	const zurueck = querySQL(`
+		SELECT g.ist_ausgesondert, g.ist_ausleihbar,
+		       (SELECT count(*) FROM schadensfaelle f WHERE f.geraet_id = g.id AND f.storniert_am IS NOT NULL)
+		FROM geraete g WHERE g.barcode_id = 'G-${suffix}'`);
+	expect(zurueck, 'verloren | ausleihbar | Forderung storniert').toBe('f|t|1');
 });

@@ -76,23 +76,6 @@
 			speichert = false;
 		}
 	}
-
-	/** @param {any} g */
-	async function schalteDefekt(g) {
-		try {
-			// Nur das Kennzeichen: Die Zeile der Liste kann älter sein als das Gerät.
-			const res = await apiClient.put(`/api/geraete/${g.id}`, {
-				ist_ausleihbar: !g.ist_ausleihbar
-			});
-			if (res.ok) {
-				geraete.lade();
-			} else {
-				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen'), 'error');
-			}
-		} catch {
-			snackbars.addToast('Netzwerkfehler', 'error');
-		}
-	}
 </script>
 
 <div class="space-y-6 pt-2">
@@ -169,22 +152,24 @@
 					</span>
 					<!-- Bearbeiten als Symbolknopf wie in jeder Zeile; „Defekt melden" schaltet einen Zustand
 					     um, den ein Symbol allein nicht sagt. 16 px Abstand für die Trefferfläche. -->
-					<!-- Ein verlorenes Gerät steht nur noch da (Verlust gemeldet in der Leserakte). -->
-					{#if darfBearbeiten && !g.ist_ausgesondert}
+					<!-- Ein verlorenes Gerät hat nur „Wieder freigeben“: Taucht es auf, holt der Knopf es zurück. -->
+					{#if darfBearbeiten}
 						<div class="flex shrink-0 items-center gap-4">
-							<Button
-								variant="symbol"
-								size="sm"
-								onclick={() => oeffneBearbeiten(g)}
-								data-tip="Bearbeiten"
-								aria-label="{g.modellname} bearbeiten"
-							>
-								<Icon name="edit" />
-							</Button>
+							{#if !g.ist_ausgesondert}
+								<Button
+									variant="symbol"
+									size="sm"
+									onclick={() => oeffneBearbeiten(g)}
+									data-tip="Bearbeiten"
+									aria-label="{g.modellname} bearbeiten"
+								>
+									<Icon name="edit" />
+								</Button>
+							{/if}
 							<Button
 								variant={g.ist_ausleihbar ? 'danger' : 'secondary'}
 								size="sm"
-								onclick={() => schalteDefekt(g)}
+								onclick={() => geraete.schalteAusleihbar(g)}
 							>
 								<Icon name="build" groesse={18} />
 								{g.ist_ausleihbar ? 'Defekt melden' : 'Wieder freigeben'}

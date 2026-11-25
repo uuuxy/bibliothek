@@ -195,6 +195,68 @@ func TestSchadenMelden_GeraetBeschaedigtStehtAlsDefekt(t *testing.T) {
 	if !strings.Contains(w.lies(t, "/api/geraete"), `"ist_ausleihbar":true`) {
 		t.Error("das reparierte Gerät ist nicht wieder ausleihbar")
 	}
+	// Der Schaden bleibt eine Forderung, auch wenn das Gerät repariert ist.
+	if offen := pgtest.ZaehleZeilen(t, w.pool, `SELECT count(*) FROM schadensfaelle WHERE geraet_id = $1 AND storniert_am IS NULL`, geraet); offen != 1 {
+		t.Errorf("%d offene Forderung(en) zum reparierten Gerät, erwartet 1", offen)
+	}
+}
+
+// Taucht ein verlorenes Gerät wieder auf, holt „Wieder freigeben“ es zurück: wieder im Schrank,
+// die Forderung „nicht zurückgegeben“ storniert wie beim Buch, eine Zeile im Logbuch. Ein zweiter
+// Klick bucht nichts mehr. Entschieden am 25.11.2026: „verlorenes Gerät zurückholbar“.
+func TestGeraet_VerlorenesWiederFreigebenHoltEsZurueck(t *testing.T) {
+	w := baueSchadensWelt(t, "schaden-geraet-zurueck@example.org")
+	ctx := context.Background()
+	kind := testdaten.LegeSchuelerAn(t, w.pool, "S-OHNEBUCH-Z", "Zora", "07A")
+	ausleihe := w.geraeteAusleihe(t, kind, "G-OHNEBUCH-4")
+	if rec := w.sende(t, "/api/damage/report", fmt.Sprintf(
+		`{"loan_id":%q,"beschreibung":"weg","art":"nicht_zurueckgegeben","betrag":15}`, ausleihe)); rec.Code != http.StatusOK {
+		t.Fatalf("Verlust melden: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	var geraet string
+	if err := w.pool.QueryRow(ctx, `SELECT geraet_id FROM ausleihen WHERE id = $1`, ausleihe).Scan(&geraet); err != nil {
+		t.Fatalf("Gerät lesen: %v", err)
+	}
+	freigeben := func() *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPut, "/api/geraete/"+geraet, strings.NewReader(`{"ist_ausleihbar":true}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: w.sitzung})
+		rec := httptest.NewRecorder()
+		w.router.ServeHTTP(rec, tuertest.MitCSRF(req))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Wieder freigeben: %d %s", rec.Code, rec.Body.String())
+		}
+		return rec
+	}
+	if rumpf := freigeben().Body.String(); !strings.Contains(rumpf, `"zurueckgeholt":true`) ||
+		!strings.Contains(rumpf, `"stornierte_forderungen":1`) || !strings.Contains(rumpf, `"stornierter_betrag":15.00`) {
+		t.Errorf("Antwort nennt die Rückkehr nicht: %s", rumpf)
+	}
+	var verloren, ausleihbar bool
+	var notiz *string
+	var storniert, logbuch, stornoProtokoll int
+	if err := w.pool.QueryRow(ctx, `
+		SELECT g.ist_ausgesondert, g.ist_ausleihbar, g.zustand_notiz,
+		       (SELECT count(*) FROM schadensfaelle f WHERE f.geraet_id = g.id AND f.storniert_am IS NOT NULL
+		          AND f.stornierungsgrund LIKE 'Rückgabe am %'),
+		       (SELECT count(*) FROM audit_log l WHERE l.tabelle = 'geraete' AND l.datensatz_id = g.id
+		          AND l.details->>'action' = 'zurueck'),
+		       (SELECT count(*) FROM audit_log l JOIN schadensfaelle f ON f.id = l.datensatz_id
+		          WHERE f.geraet_id = g.id AND l.aktion = 'STORNIERUNG' AND l.kontext = 'Forderung storniert: das Gerät ist zurück')
+		FROM geraete g WHERE g.id = $1`, geraet).Scan(&verloren, &ausleihbar, &notiz, &storniert, &logbuch, &stornoProtokoll); err != nil {
+		t.Fatalf("Stand lesen: %v", err)
+	}
+	if verloren || !ausleihbar || notiz != nil || storniert != 1 || logbuch != 1 || stornoProtokoll != 1 {
+		t.Errorf("verloren %v, ausleihbar %v, Notiz %v, %d storniert, %d Logbuchzeile(n), %d Stornoeintrag; erwartet false, true, nil, 1, 1, 1",
+			verloren, ausleihbar, notiz, storniert, logbuch, stornoProtokoll)
+	}
+	if rumpf := freigeben().Body.String(); strings.Contains(rumpf, "zurueckgeholt") {
+		t.Errorf("der zweite Klick meldet noch einmal eine Rückkehr: %s", rumpf)
+	}
+	if n := pgtest.ZaehleZeilen(t, w.pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'geraete' AND datensatz_id = $1 AND details->>'action' = 'zurueck'`, geraet); n != 1 {
+		t.Errorf("%d Logbuchzeilen zur Rückkehr nach dem zweiten Klick, erwartet 1", n)
+	}
 }
 
 func TestBescheid_GeraeteausleiheBuchtNichts(t *testing.T) {

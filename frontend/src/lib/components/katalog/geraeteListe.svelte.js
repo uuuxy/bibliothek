@@ -1,4 +1,6 @@
-import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { apiClient, apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
+import { formatEuro } from '../../utils/format.js';
 
 /**
  * Die Geräteliste (Laptops, Tablets) — eigene Datei, weil GeraeteVerwaltung an der
@@ -35,6 +37,29 @@ export function erzeugeGeraeteListe() {
 		}
 	}
 
+	/**
+	 * „Defekt melden“ und „Wieder freigeben“ schalten nur das Kennzeichen um: Die Zeile der Liste
+	 * kann älter sein als das Gerät. An einem verlorenen Gerät holt „Wieder freigeben“ es zurück;
+	 * der Server storniert dann die Forderung wie beim Buch und sagt es.
+	 * @param {{ id: string, ist_ausleihbar: boolean }} g
+	 */
+	async function schalteAusleihbar(g) {
+		try {
+			const res = await apiClient.put(`/api/geraete/${g.id}`, {
+				ist_ausleihbar: !g.ist_ausleihbar
+			});
+			if (!res.ok) {
+				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen'), 'error');
+				return;
+			}
+			const antwort = await res.json().catch(() => null);
+			if (antwort?.zurueckgeholt) snackbars.addToast(zurueckSatz(antwort), 'success');
+			lade();
+		} catch {
+			snackbars.addToast('Netzwerkfehler', 'error');
+		}
+	}
+
 	return /** @satisfies {object} */ ({
 		get liste() {
 			return liste;
@@ -45,6 +70,19 @@ export function erzeugeGeraeteListe() {
 		get ladefehler() {
 			return ladefehler;
 		},
-		lade
+		lade,
+		schalteAusleihbar
 	});
+}
+
+/**
+ * Der Satz zu einem zurückgeholten Gerät, mit der stornierten Forderung, wenn es eine gab.
+ * @param {{ stornierte_forderungen?: number, stornierter_betrag?: number }} antwort
+ */
+function zurueckSatz(antwort) {
+	const n = antwort.stornierte_forderungen ?? 0;
+	const betrag = formatEuro(antwort.stornierter_betrag);
+	if (n === 0) return 'Das Gerät ist wieder im Schrank';
+	if (n === 1) return `Das Gerät ist wieder im Schrank, die Forderung über ${betrag} ist storniert`;
+	return `Das Gerät ist wieder im Schrank, ${n} Forderungen über zusammen ${betrag} sind storniert`;
 }
