@@ -13,9 +13,13 @@ func TestMaskiereToken(t *testing.T) {
 		"/api/public/bestellung/GEHEIM123/etiketten/klein": "/api/public/bestellung/***/etiketten/klein",
 		"/bestellung/GEHEIM123":                            "/bestellung/***",
 		// Mit doppeltem Schrägstrich führt der Router zur selben Seite.
-		"//api/public/bestellung/GEHEIM123":                                  "/api/public/bestellung/***",
-		"/api//public/bestellung/GEHEIM123/bestaetigen":                      "/api/public/bestellung/***/bestaetigen",
-		"//bestellung/GEHEIM123/":                                            "/bestellung/***",
+		"//api/public/bestellung/GEHEIM123":             "/api/public/bestellung/***",
+		"/api//public/bestellung/GEHEIM123/bestaetigen": "/api/public/bestellung/***/bestaetigen",
+		"//bestellung/GEHEIM123/":                       "/bestellung/***",
+		// Ein „/..“ hinter dem Token fällt beim Bereinigen samt Token weg.
+		"/bestellung/GEHEIM123/..":                                           "/bestellung/***/..",
+		"/api/public/bestellung/GEHEIM123/..":                                "/api/public/bestellung/***/..",
+		"/bestellung/GEHEIM123/../x":                                         "/bestellung/***",
 		"/api/bestellungen/11111111-1111-1111-1111-111111111111/bestaetigen": "/api/bestellungen/11111111-1111-1111-1111-111111111111/bestaetigen",
 		"/api/public/opac/suche":                                             "/api/public/opac/suche",
 		"/health":                                                            "/health",
