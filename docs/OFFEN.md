@@ -42,6 +42,8 @@ Nur, was kein Test leisten kann.
 - [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [ ] Namen vereinheitlichen: sieben Dinge tragen mehr als ein Wort; je Ding ein Vorschlag,
   dann die Wahl mit Bildern. (5.201)
+- [ ] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
+  sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid. (5.203)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -141,6 +143,17 @@ sind behoben oder am Code als gewollt belegt.
 
 Nächster Schritt: je Ding die Stellen zählen und ein Wort vorschlagen; ein sichtbares Wort ändert
 sich erst nach der Wahl, mit Bildern.
+
+### 5.203 Dialoge: gesperrter Knopf statt Fehlertext am Feld
+
+ARCHITEKTUR, „Felder und Eingabe“: „Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt
+am Feld, was fehlt“. Drei Dialoge sperren stattdessen: „Melden“ in `SchadenMeldenDialog` bei leerem
+Grund und bei fehlendem Betrag, jeder `ui/EingabeDialog` über `gueltig` (darunter „Preis ändern“),
+`BescheidDialog` bei fehlendem Betrag, dort mit Fehlertext am Feld. `sweeps.md` nennt dafür keine
+Abweichung mit Grund.
+
+Nächster Schritt: Material 3, Dialogs, lesen, ob ein Dialog anders verfährt; sonst die drei nach
+dem Muster `titelVerlangt` in `BuchFormular` angleichen, vorher mit Bildern.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -23,7 +23,7 @@
 	 */
 	let { bestellungId, position, onclose, onAktualisieren } = $props();
 
-	let preis = $state(/** @type {string | number} */ (''));
+	let preis = $state(/** @type {string | number | null} */ (''));
 	let sendet = $state(false);
 
 	// Beim Öffnen mit dem gespeicherten Preis füllen; ein Neuladen der Bestellung während der
@@ -35,6 +35,7 @@
 	const zahl = $derived(Number(preis));
 	const gueltig = $derived(
 		!sendet &&
+			preis !== null &&
 			String(preis).trim() !== '' &&
 			Number.isFinite(zahl) &&
 			zahl >= 0 &&

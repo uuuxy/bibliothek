@@ -31,8 +31,8 @@
 	 *
 	 * Zwei-Wege-Bindung erfordert eine Komponente (Snippets können `bind:` nicht
 	 * zurückpropagieren). Alles hier nicht Benannte (placeholder, min, required, list,
-	 * aria-label, oninput, onkeydown …) landet unverändert auf dem <input>. Ein `step` mit
-	 * Nachkommastellen legt fest, wie viele das Feld zeigt: ein Betrag (step="0.01") „7,90“.
+	 * aria-label, oninput, onkeydown …) landet unverändert auf dem <input>. Ein Zahlenfeld mit
+	 * Nachkommastellen im `step` ist ein Betrag: Text mit Zifferntastatur, „7,90“, gebunden die Zahl.
 	 *
 	 * @prop {string|number} [value] - Gebundener Wert (bindable).
 	 * @prop {string} [etikett] - Beschriftung über dem Feld.
@@ -61,7 +61,7 @@
 	 * Symbol am Ende aus; hier bleiben die Knöpfe, denn sie führen oft aus dem Fehler heraus.
 	 */
 	import Icon from './Icon.svelte';
-	import { nachkommastellen } from './nachkommastellen.js';
+	import { anzeige, beimVerlassen, stellenAus, wertAus } from './nachkommastellen.js';
 
 	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
@@ -85,6 +85,7 @@
 	const eigen = $props.id();
 	const feldId = $derived(id ?? `feld-${eigen}`);
 	const hinweisId = $derived(`${feldId}-hinweis`);
+	const stellen = $derived(type === 'number' ? stellenAus(rest.step) : 0);
 
 	// Wer einen Fehler zeigen kann, steht immer in der Hülle der Symbole: Käme sie erst mit dem
 	// Fehler, baute Svelte das <input> neu, und wer gerade tippt, verlöre den Cursor. Bei fester
@@ -135,15 +136,16 @@
 			class={feldKlasse}
 			{...restFuerTextarea}></textarea>
 	{:else}
-		<!-- Ein Element für alle Arten: bind:value liest die Zahl am type des Elements. -->
+		<!-- Ein Element für alle Arten; ein Betrag ist Text, gebunden die Zahl (nachkommastellen.js). -->
 		<input
 			bind:this={element}
 			id={feldId}
-			{type}
+			type={stellen ? 'text' : type}
+			inputmode={stellen ? 'decimal' : undefined}
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
-			bind:value
-			{@attach (feld) => nachkommastellen(feld, value)}
+			bind:value={() => anzeige(element, value, stellen), (v) => (value = wertAus(v, stellen))}
+			{@attach beimVerlassen(stellen)}
 			class={feldKlasse}
 			style:padding-right={abstandRechts}
 			{...rest}

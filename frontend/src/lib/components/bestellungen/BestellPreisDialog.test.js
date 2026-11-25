@@ -26,7 +26,7 @@ describe('BestellPreisDialog', () => {
 		});
 
 		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis'));
-		expect(Number(feld.value)).toBe(9.5);
+		expect(feld.value).toBe('9,50');
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Preis ändern' })
 		);
@@ -46,6 +46,20 @@ describe('BestellPreisDialog', () => {
 		);
 		await waitFor(() => expect(onclose).toHaveBeenCalled());
 		expect(onAktualisieren).toHaveBeenCalled();
+	});
+
+	it('sperrt ein leeres Feld und eines ohne Zahl, statt 0 € zu speichern', async () => {
+		const screen = render(BestellPreisDialog, {
+			props: { bestellungId: 'best-1', position, onclose: vi.fn(), onAktualisieren: vi.fn() }
+		});
+		const feld = await screen.findByLabelText('Einzelpreis');
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Preis ändern' })
+		);
+		for (const getippt of ['', 'zwölf']) {
+			await fireEvent.input(feld, { target: { value: getippt } });
+			expect(knopf.disabled).toBe(true);
+		}
 	});
 
 	it('sperrt einen negativen Preis', async () => {

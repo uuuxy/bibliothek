@@ -57,7 +57,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		});
 
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
-		await waitFor(() => expect(feld.value).toBe('24.90'));
+		await waitFor(() => expect(feld.value).toBe('24,90'));
 		expect(feld.value, 'die feste 15 darf nicht zurückkommen').not.toBe('15');
 	});
 
@@ -149,6 +149,24 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		expect(feld.value).toBe('12.5');
 		await fireEvent.click(screen.getByRole('button', { name: 'Melden' }));
 		expect(onSubmit).toHaveBeenCalledWith('Verloren', 12.5, 'nicht_zurueckgegeben');
+	});
+
+	it('meldet nicht mit leerem Betrag oder einem ohne Zahl: Der Server läse 0 €', async () => {
+		serverLiefert({ betrag: 24.9, herleitung: 'Kaufpreis', ist_lernmittel: true });
+		const onSubmit = vi.fn();
+		const screen = render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit });
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
+		await waitFor(() => expect(feld.value).toBe('24,90'));
+		const melden = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Melden' })
+		);
+
+		for (const getippt of ['', 'zwölf']) {
+			await fireEvent.input(feld, { target: { value: getippt } });
+			expect(melden.disabled).toBe(true);
+		}
+		await fireEvent.input(feld, { target: { value: '0' } });
+		expect(melden.disabled).toBe(false);
 	});
 
 	it('fragt bei einem Kollegen gar nicht erst — dort entsteht keine Forderung', async () => {

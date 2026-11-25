@@ -671,9 +671,10 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
   `BuchFormular.svelte`). Pflicht trägt `required` oder `aria-required` an `ui/Feld` (`aria-required` nimmt, wer die Pflicht
   selbst prüft; es sperrt im Browser nichts), das Sternchen
   hängt ohne Leerzeichen an der Beschriftung, `ui/Pflichthinweis` steht am Anfang der Maske.
-- Ein Betrag ist `ui/Feld` mit `type="number"` und `step="0.01"`: Das Feld zeigt ihn dann wie
-  `formatEuro` mit zwei Nachkommastellen („7,90“, `ui/nachkommastellen.js`), wer tippt, behält
-  seine Eingabe bis zum Verlassen des Feldes.
+- Ein Betrag ist `ui/Feld` mit `type="number"` und `step="0.01"`: Das Feld wird dann ein Textfeld
+  mit Zifferntastatur (`inputmode="decimal"`), zeigt den Betrag wie `formatEuro` („7,90“,
+  `ui/nachkommastellen.js`) und bindet die Zahl, leer oder ohne Zahl `null`; wer tippt, behält
+  seine Eingabe bis zum Verlassen des Feldes. Ein Zahlenfeld kürzte in Firefox „7,90“ zu „7,9“.
 - Den Fehlerzustand setzt `ungueltig` an `ui/Feld`, immer true oder false, nie undefined: Davon hängt
   die Hülle der Symbole ab, und käme sie erst mit dem Fehler, baute Svelte das Feld neu und nähme ihm
   den Fokus. Dann erscheint das Fehlersymbol im Feld (`frontend/e2e/feld-fehlersymbol.spec.js`).

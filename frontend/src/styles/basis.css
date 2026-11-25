@@ -73,7 +73,11 @@
 	}
 }
 
-/* Zahlenfelder zeigen überall keine Pfeile. */
+/* Zahlenfelder zeigen überall keine Pfeile: Firefox nimmt sie über appearance, Chrome und Safari
+   über die Pseudo-Elemente. */
+input[type='number'] {
+	appearance: textfield;
+}
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
 	-webkit-appearance: none;

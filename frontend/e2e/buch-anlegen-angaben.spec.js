@@ -44,7 +44,7 @@ test('die ISBN-Abfrage zeigt Untertitel, Listenpreis und Jahrgang; gespeichert w
 	await page.locator('#buch-isbn').press('Tab');
 	await expect(page.locator('#buch-titel')).toHaveValue(`Angaben ${s}`);
 	await expect(page.locator('#buch-untertitel')).toHaveValue(`Untertitel ${s}`);
-	await expect(page.locator('#buch-listenpreis')).toHaveValue('12.50');
+	await expect(page.locator('#buch-listenpreis')).toHaveValue('12,50');
 	await expect(page.locator('#buch-jahrgang-von')).toHaveValue('7');
 	await expect(page.locator('#buch-jahrgang-bis')).toHaveValue('10');
 

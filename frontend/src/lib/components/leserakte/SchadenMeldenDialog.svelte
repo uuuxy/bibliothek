@@ -31,6 +31,10 @@
 	// wie er entstanden ist. Bis seine Antwort da ist, steht hier lieber 0 als eine Zahl, die
 	// gleich wegspringt.
 	let schadensbetrag = $state(0);
+	// Leer oder keine Zahl hieße beim Server 0 €, also „ohne Forderung“, ohne dass es jemand wählte.
+	const betragFehlt = $derived(
+		!ohneForderung && !(Number.isFinite(schadensbetrag) && schadensbetrag >= 0)
+	);
 	// Hat jemand den Betrag selbst eingetragen? Dann bleibt er stehen, auch wenn der Vorschlag
 	// erst danach eintrifft — sonst entstünde die Forderung über den Vorschlag statt den Betrag.
 	let vonHand = false;
@@ -142,7 +146,7 @@
 					<Button
 						variant="danger-solid"
 						onclick={melde}
-						disabled={isSubmitting || !grund.trim() || schadensbetrag < 0}
+						disabled={isSubmitting || !grund.trim() || betragFehlt}
 					>
 						{isSubmitting ? 'Wird gemeldet …' : 'Melden'}
 					</Button>
