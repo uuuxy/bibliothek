@@ -423,7 +423,8 @@ offen, und der Hinweis sagt, die Aufsicht unverzüglich zu informieren.
 Abgänger sind die Abschlussklassen des laufenden Schuljahres (9H und das freiwillige 10H, 10R, 13),
 die zum Schuljahresende gehen; sie leihen bis zuletzt aus. Die Liste zeigt **vom 1. Mai bis 31. Juli**
 die Abgänger, die **noch Bücher haben**, zum Einsammeln vor der Entlassung: Kontoauszüge drucken oder
-an die Klassenleitungen mailen; wer alles zurückgegeben hat, verschwindet. Gedruckt wird, was die
+an die Klassenleitungen mailen (Mailen nur mit _Bestellungen verwalten_, wie beim Mahnwesen); wer alles
+zurückgegeben hat, verschwindet. Gedruckt wird, was die
 Liste zeigt (gewählte Klasse, Suche); so lässt sich ein einzelner Kontoauszug nachdrucken. Eine
 Klasse, die mit keinem Jahrgang von 1 bis 13 beginnt (14A, eine Buchnummer im Feld Klasse), versetzt
 der Schuljahreswechsel nicht; seine Vorschau nennt sie.
@@ -516,7 +517,7 @@ Zwei Reiter, je mit einem Blatt zum Abheften: **Zugangsbuch** (was in einem Zeit
 kam: Eingangsdatum, Titel, Anzahl, Barcodes, Lieferant) und **Abgangsbuch** (was hinausging: Datum,
 Titel, Signatur, Grund, Anzahl, Barcodes). Vorbelegt ist beim Zugangsbuch das vorige Schulhalbjahr,
 beim Abgangsbuch das laufende (Stichtage 15.3. und 15.9.); ein Zeitraum umfasst höchstens ein Jahr.
-Land und Schulträger stehen getrennt. Am Bildschirm zeigt jeder Abschnitt zuerst 50 Zeilen, _Mehr
+Land, Schulträger und Spende stehen getrennt. Am Bildschirm zeigt jeder Abschnitt zuerst 50 Zeilen, _Mehr
 laden_ die nächsten; Stückzahl und Ausdruck umfassen immer alle.
 
 Ein bestelltes Buch erscheint im Zugangsbuch erst nach dem Einbuchen im Wareneingang, mit dem Tag der
@@ -575,7 +576,7 @@ freigeschaltet wird; wer mehr können soll, bekommt eine der vier Rollen (§12).
 | Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, Eingangsjahrgänge, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                                                                                                                               |
 | Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                                                                                                                                                                                                                                                                                 |
 | Klassenleitungen        | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
-| Bestellwesen            | Bedarfswarnung, Preise erfassen                                                                                                                                                                                                                                                                                                                                                                |
+| Bestellwesen            | Bedarfswarnung, Preise erfassen, Gültigkeit des Bestätigungs-Links                                                                                                                                                                                                                                                                                                                            |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
 | Schlagworte             | Wörter umbenennen, zusammenführen und löschen (auch mehrere: vorn auswählen, unten „Löschen“), Verweise für andere Schreibweisen („Tierfantasy“ → „Fantasy“), Filter-Markierung fürs Portal; die Suche zeigt höchstens 200 Treffer und nennt, wie viele es sind |
 | Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |
