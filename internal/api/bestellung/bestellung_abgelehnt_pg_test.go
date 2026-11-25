@@ -1,6 +1,7 @@
 package bestellung_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/repository"
 	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 )
@@ -60,6 +62,26 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 		}
 	}
 
+	// nummernstand liest barcode_seq, ohne die Folge vorzurücken. Das Zurückrollen gibt gezogene
+	// Nummern nicht zurück; was vor dem Ziehen abgelehnt werden kann, darf keine verbrauchen.
+	nummernstand := func(t *testing.T) string {
+		t.Helper()
+		var letzte int64
+		var gezogen bool
+		if err := pool.QueryRow(context.Background(), `SELECT last_value, is_called FROM barcode_seq`).Scan(&letzte, &gezogen); err != nil {
+			t.Fatalf("Stand von barcode_seq lesen: %v", err)
+		}
+		return fmt.Sprintf("%d (gezogen: %t)", letzte, gezogen)
+	}
+	abgelehntOhneNummer := func(t *testing.T, steckt string, positionen ...string) {
+		t.Helper()
+		vorher := nummernstand(t)
+		abgelehnt(t, http.StatusBadRequest, steckt, lieferant, positionen...)
+		if nachher := nummernstand(t); nachher != vorher {
+			t.Errorf("die Ablehnung hat Nummern gezogen: barcode_seq %s → %s", vorher, nachher)
+		}
+	}
+
 	t.Run("Lieferant inzwischen gelöscht: 404", func(t *testing.T) {
 		abgelehnt(t, http.StatusNotFound, "Lieferant", uuid.NewString(), position(titel, 2))
 	})
@@ -78,10 +100,24 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 
 	for _, menge := range []int{0, -1, 201} {
 		t.Run(fmt.Sprintf("Menge %d: 400 mit der Position", menge), func(t *testing.T) {
-			abgelehnt(t, http.StatusBadRequest, "Position 2", lieferant,
-				position(titel, 1), position(titel, menge))
+			abgelehntOhneNummer(t, "Position 2", position(titel, 1), position(titel, menge))
 		})
 	}
+
+	t.Run("Preis über 99.999,99 €: 400 mit der Position", func(t *testing.T) {
+		abgelehntOhneNummer(t, "Position 2", position(titel, 1),
+			fmt.Sprintf(`{"titel_id":%q,"menge":1,"preis":100000,"generate_barcodes":true}`, titel))
+	})
+
+	// Je Position gehen 200 Stück, die Zahl der Positionen begrenzt nur der Rumpf der Anfrage.
+	// Zusammen gilt dieselbe Grenze wie für einen Listenimport.
+	t.Run("zusammen mehr als 200.000 Exemplare: 400", func(t *testing.T) {
+		positionen := make([]string, repository.HoechstensNummernJeVergabe/200+1)
+		for i := range positionen {
+			positionen[i] = position(titel, 200)
+		}
+		abgelehntOhneNummer(t, "höchstens 200.000 Exemplare", positionen...)
+	})
 
 	// Gegenprobe: Derselbe Warenkorb ohne die fehlerhafte Position wird gebucht. Ohne sie
 	// bestünde der Test auch an einer Tür, die jede Bestellung abweist.

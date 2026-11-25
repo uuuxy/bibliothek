@@ -119,6 +119,9 @@ var (
 	ErrTitelUnbekannt     = errors.New("der Titel steht nicht mehr im Katalog, bitte aus dem Warenkorb nehmen")
 	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
 	ErrPreisUngueltig     = errors.New("der Preis muss zwischen 0 und 99.999,99 € liegen")
+	// ErrZuVieleExemplare: Die Positionen zusammen zögen mehr Nummern, als eine Vergabe hergibt
+	// (repository.HoechstensNummernJeVergabe, dieselbe Grenze wie beim Listenimport).
+	ErrZuVieleExemplare = errors.New("die Bestellung darf zusammen höchstens 200.000 Exemplare umfassen")
 )
 
 // HoechsterEinzelpreis begrenzt den Einzelpreis einer Position so, dass Menge mal Preis in die
@@ -150,10 +153,14 @@ type positionsErgebnis struct {
 
 // LegeAn legt die Bestellung in einer Transaktion an und reserviert ihre Barcodes.
 func (d *BestellDienst) LegeAn(ctx context.Context, auftrag BestellAuftrag) (*BestellErgebnis, error) {
-	// Der Topf ist Pflicht und wird vor jedem Datenbankzugriff geprüft, damit keine Barcodes
-	// für eine Bestellung reserviert werden, die es nicht geben wird.
+	// Topf, Mengen und Preise werden vor jedem Datenbankzugriff geprüft, damit keine Barcodes
+	// für eine Bestellung reserviert werden, die es nicht geben wird: Das Zurückrollen gibt
+	// gezogene Nummern nicht zurück.
 	if !mitteltopf.IstGueltig(auftrag.Mittel) {
 		return nil, mitteltopf.ErrUngueltig
+	}
+	if err := pruefePositionen(auftrag.Positionen); err != nil {
+		return nil, err
 	}
 
 	lieferant, err := d.lieferantenAbfragen.Lade(ctx, auftrag.LieferantID)
@@ -280,17 +287,30 @@ func (d *BestellDienst) schreibeExemplareUndPositionen(ctx context.Context, tx p
 	return nil
 }
 
-// verarbeitePosition prüft eine Bestellposition, lädt den Titel, reserviert die Barcodes und
+// pruefePositionen prüft Menge und Preis jeder Position und die Zahl der Exemplare zusammen.
+// Stünde eine Prüfung erst in der Schleife, hätten die Positionen davor schon Nummern gezogen,
+// und eine negative Menge am Ende höbe die Summe auf.
+func pruefePositionen(positionen []BestellAuftragPosition) error {
+	exemplare := 0
+	for i, position := range positionen {
+		if position.Menge <= 0 || position.Menge > 200 {
+			return &BestellpositionFehler{Position: i + 1, Grund: fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, position.Menge)}
+		}
+		if position.Preis < 0 || position.Preis > HoechsterEinzelpreis {
+			return &BestellpositionFehler{Position: i + 1, Grund: ErrPreisUngueltig}
+		}
+		exemplare += position.Menge
+	}
+	if exemplare > repository.HoechstensNummernJeVergabe {
+		return fmt.Errorf("%w, angegeben sind %d", ErrZuVieleExemplare, exemplare)
+	}
+	return nil
+}
+
+// verarbeitePosition lädt den Titel einer geprüften Bestellposition, reserviert die Barcodes und
 // erzeugt die Exemplare samt ihren Etiketten.
 func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, position BestellAuftragPosition, lieferant *repository.Lieferant) (*positionsErgebnis, error) {
 	lieferantName := lieferant.Name
-
-	if position.Menge <= 0 || position.Menge > 200 {
-		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, position.Menge)
-	}
-	if position.Preis < 0 || position.Preis > HoechsterEinzelpreis {
-		return nil, ErrPreisUngueltig
-	}
 
 	titel, err := d.katalogAbfragen.LadeTitel(ctx, tx, position.TitelID)
 	if err != nil {
