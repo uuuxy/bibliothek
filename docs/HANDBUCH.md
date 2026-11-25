@@ -41,7 +41,8 @@ Abgängern, in der Buchakte bei den Ausleihern und unter _Benutzer & Rechte_: Ei
 oder Nachname genügt, die Reihenfolge
 zählt nicht, Akzente, Umlaute und ihre Ersatzschreibung („ozturk“ findet Öztürk, „mueller“
 Müller) ebenso wenig wie Bindestrich, Apostroph und Leerzeichen („alkahil“ findet Al-Kahil,
-„annalena“ Anna-Lena).
+„annalena“ Anna-Lena). Eine gescannte Ausweisnummer findet den Leser in Leserdatei, Mahnwesen,
+Abgängerliste und unter _Benutzer & Rechte_.
 
 ## Ausleihe (Theke)
 

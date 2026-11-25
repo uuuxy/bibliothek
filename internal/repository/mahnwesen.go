@@ -49,6 +49,9 @@ type UeberfaelligerSchueler struct {
 	// Klasse ist die Klasse des Schülers; die Mahnliste nennt bei einem Ehemaligen
 	// stattdessen den Namen seiner Gruppe.
 	Klasse string `json:"klasse"`
+	// BarcodeID ist die Ausweisnummer: Die Suche findet den Schüler auch über den gescannten
+	// Ausweis, wie in Leserdatei und Abgängerliste.
+	BarcodeID string `json:"barcode_id"`
 	// Medien listet alle überfälligen Buchexemplare auf, die auf diesen Schüler entfallen.
 	Medien []UeberfaelligesMedium `json:"medien"`
 }

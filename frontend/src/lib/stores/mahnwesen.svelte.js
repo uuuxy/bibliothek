@@ -48,7 +48,7 @@ function erzeugeMahnwesen() {
 	// Filter und Auswahl
 	let offeneKlassen = /** @type {Set<string>} */ (new SvelteSet());
 	let gewaehlteKlasse = $state(''); // Klassenfilter (leer = alle)
-	let suche = $state(''); // Freitextsuche über Name/Klasse
+	let suche = $state(''); // Freitextsuche über Name, Klasse und Ausweisnummer
 
 	// MD3 Filter & Bulk Actions
 	let stufenFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung"
@@ -100,7 +100,7 @@ function erzeugeMahnwesen() {
 			liste = liste.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
 		// Dieselbe Regel wie an der Theke: „ozturk" findet Öztürk, „alkahil" Al-Kahil.
 		if (suche.trim())
-			liste = liste.filter((/** @type {any} */ s) => passtZurSuche(suche, s.name, s.klasse));
+			liste = liste.filter((s) => passtZurSuche(suche, s.name, s.klasse, s.barcode_id));
 		// Dringlichkeit zuerst: am längsten überfällig oben, dann alphabetisch. So arbeitet man
 		// die Liste von oben nach unten ab.
 		return [...liste].sort(

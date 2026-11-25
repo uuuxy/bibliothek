@@ -31,10 +31,11 @@
 		frageLoeschen
 	} = $props();
 
-	// Dieselbe Regel wie an der Theke: Akzente, Bindestriche und die Reihenfolge zählen nicht.
+	// Dieselbe Regel wie an der Theke: Akzente, Bindestriche und die Reihenfolge zählen nicht. Die
+	// Rolle mit dem Namen, den die Tabelle zeigt („Administrator“, nicht „admin“).
 	let gefiltert = $derived(
 		konten.filter((u) =>
-			passtZurSuche(suchtext, u.vorname, u.nachname, u.email, u.barcode_id, u.rolle)
+			passtZurSuche(suchtext, u.vorname, u.nachname, u.email, u.barcode_id, rollenName(u.rolle))
 		)
 	);
 </script>

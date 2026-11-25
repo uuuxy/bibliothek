@@ -130,6 +130,26 @@ describe('KontenTabelle', () => {
 		expect(namen.some((n) => n.includes(gesucht))).toBe(true);
 	});
 
+	// Gesucht wird die Rolle, wie die Tabelle sie nennt: „Administrator“ und nicht nur „admin“.
+	it('findet die Rolle unter ihrem angezeigten Namen', () => {
+		const screen = tabelle(
+			[
+				konto({
+					id: 'u1',
+					vorname: 'Ada',
+					nachname: 'Admin',
+					email: 'ada@test.local',
+					rolle: 'admin'
+				}),
+				konto({ id: 'u2', vorname: 'Kora', nachname: 'Muster', email: 'k@test.local' })
+			],
+			{ suchtext: 'Administrator' }
+		);
+		const namen = screen.getAllByRole('row').map((z) => z.textContent ?? '');
+		expect(namen.some((n) => n.includes('Ada Admin'))).toBe(true);
+		expect(namen.some((n) => n.includes('Kora Muster'))).toBe(false);
+	});
+
 	it('sagt ohne Sinnbild, dass niemand gefunden wurde', () => {
 		const screen = tabelle([]);
 		expect(screen.container.textContent?.trim()).toBe('Keine Systembenutzer gefunden');

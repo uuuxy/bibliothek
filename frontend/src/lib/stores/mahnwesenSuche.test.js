@@ -13,6 +13,7 @@ const kind = (id, name) => ({
 	schueler_id: id,
 	name,
 	klasse: '07H2',
+	barcode_id: `A-0${id.slice(1)}`,
 	medien: [{ ausleihe_id: `a-${id}`, titel: 'Band', tage_ueberfaellig: 5, mahnstufe: 0 }]
 });
 
@@ -42,7 +43,9 @@ it.each([
 	['alkahil', ['Ahmad Al-Kahil']],
 	['al kahil', ['Ahmad Al-Kahil']],
 	['mueller anna', ['Anna Müller']],
-	['07h2', ['Ahmad Al-Kahil', 'Anna Müller', 'Mehmet Öztürk']]
+	['07h2', ['Ahmad Al-Kahil', 'Anna Müller', 'Mehmet Öztürk']],
+	// Der Scan des Ausweises, wie in Leserdatei und Abgängerliste.
+	['A-02', ['Ahmad Al-Kahil']]
 ])('die Mahnliste findet zu „%s“ %j', (suche, erwartet) => {
 	mahnwesenStore.suche = suche;
 	expect(mahnwesenStore.gefilterteSchueler.map((/** @type {any} */ s) => s.name)).toEqual(erwartet);

@@ -37,18 +37,18 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	var ohneDatum *time.Time
 
 	rows := pgxmock.NewRows([]string{
-		"id", "s_id", "name", "klasse", "ist_abgaenger",
+		"id", "s_id", "name", "klasse", "ist_abgaenger", "ausweis",
 		"titel", "autor", "isbn", "cover_url", "barcode",
 		"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 	}).
 		// Klasse 7A: zwei verschiedene Schülerinnen mit identischem Namen,
 		// deren Ausleihen nach Frist verzahnt sortiert sind.
-		AddRow("a1", "s1", "Anna Müller", "7A", false, "Faust", "Goethe", "978-1", "", "B-1", frist, 17, 2, &gemahnt).
-		AddRow("a2", "s2", "Anna Müller", "7A", false, "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16, 0, ohneDatum).
-		AddRow("a3", "s1", "Anna Müller", "7A", false, "Woyzeck", "Büchner", "978-3", "", "B-3", frist.AddDate(0, 0, 2), 15, 0, ohneDatum).
+		AddRow("a1", "s1", "Anna Müller", "7A", false, "A-1", "Faust", "Goethe", "978-1", "", "B-1", frist, 17, 2, &gemahnt).
+		AddRow("a2", "s2", "Anna Müller", "7A", false, "A-2", "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16, 0, ohneDatum).
+		AddRow("a3", "s1", "Anna Müller", "7A", false, "A-1", "Woyzeck", "Büchner", "978-3", "", "B-3", frist.AddDate(0, 0, 2), 15, 0, ohneDatum).
 		// Zweite Klasse — löst die Reallokation des klassen-Slices aus. Die Mahnstufe ohne
 		// Datum ist der Fall einer aus Littera übernommenen Ausleihe.
-		AddRow("a4", "s3", "Ben Yilmaz", "8B", false, "Effi Briest", "Fontane", "978-4", "", "B-4", frist, 17, 1, ohneDatum)
+		AddRow("a4", "s3", "Ben Yilmaz", "8B", false, "A-3", "Effi Briest", "Fontane", "978-4", "", "B-4", frist, 17, 1, ohneDatum)
 
 	mock.ExpectQuery(`SELECT a\.id, s\.id, s\.vorname \|\| ' ' \|\| s\.nachname, s\.klasse`).
 		WillReturnRows(rows)
@@ -69,6 +69,10 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	k7a := klassen[0]
 	if k7a.Klasse != "7A" || len(k7a.Schueler) != 2 {
 		t.Fatalf("7A = %+v, erwartet 2 Schüler", k7a)
+	}
+	// Die Ausweisnummer kommt mit: Die Suche im Mahnwesen findet den Schüler über den Scan.
+	if k7a.Schueler[0].BarcodeID != "A-1" {
+		t.Errorf("BarcodeID = %q, erwartet die Ausweisnummer A-1", k7a.Schueler[0].BarcodeID)
 	}
 	if k7a.LehrerEmail != "lehrer7a@schule.de" {
 		t.Errorf("LehrerEmail nicht zugeordnet: %q", k7a.LehrerEmail)
@@ -131,7 +135,7 @@ func TestLadeUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 	mock.ExpectQuery(`AND s\.klasse = \$1 AND s\.ist_abgaenger = false`).
 		WithArgs("7A").
 		WillReturnRows(pgxmock.NewRows([]string{
-			"id", "s_id", "name", "klasse", "ist_abgaenger",
+			"id", "s_id", "name", "klasse", "ist_abgaenger", "ausweis",
 			"titel", "autor", "isbn", "cover_url", "barcode",
 			"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 		}))

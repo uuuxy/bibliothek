@@ -28,7 +28,7 @@ func newKlassenGruppen() *klassenGruppen {
 // merke ordnet ein Medium seiner Gruppe zu. Ehemalige bilden eine Gruppe für sich, gleich
 // welche Klasse sie zuletzt trugen: Der Klassenname gehört nach der Versetzung einem
 // anderen Jahrgang.
-func (g *klassenGruppen) merke(klasse string, ehemalig bool, schuelerID, name string, medium UeberfaelligesMedium) {
+func (g *klassenGruppen) merke(klasse string, ehemalig bool, schuelerID, name, ausweis string, medium UeberfaelligesMedium) {
 	schluessel := "klasse|" + klasse
 	if ehemalig {
 		klasse, schluessel = GruppeEhemalige, "ehemalige"
@@ -47,6 +47,7 @@ func (g *klassenGruppen) merke(klasse string, ehemalig bool, schuelerID, name st
 			SchuelerID: schuelerID,
 			Name:       name,
 			Klasse:     klasse,
+			BarcodeID:  ausweis,
 		})
 		si = len(g.klassen[ki].Schueler) - 1
 		g.schuelerIdx[schuelerKey] = si
@@ -60,7 +61,7 @@ func (g *klassenGruppen) merke(klasse string, ehemalig bool, schuelerID, name st
 // optionaler Filter schränkt die Abfrage auf die heutigen Schüler einer Klasse ein.
 func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, klassenFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse, s.ist_abgaenger,
+		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse, s.ist_abgaenger, coalesce(s.barcode_id, ''),
 		       COALESCE(t.titel, g.modellname, ''), coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       COALESCE(e.barcode_id, g.barcode_id, ''),
 		       a.rueckgabe_frist,
@@ -96,19 +97,19 @@ func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, kla
 	g := newKlassenGruppen()
 
 	for rows.Next() {
-		var ausleiheID, schuelerID, name, klasse string
+		var ausleiheID, schuelerID, name, klasse, ausweis string
 		var ehemalig bool
 		var titel, autor, isbn, coverURL, exBarcode string
 		var frist time.Time
 		var tage, mahnstufe int
 		var mahndatum *time.Time
-		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse, &ehemalig,
+		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse, &ehemalig, &ausweis,
 			&titel, &autor, &isbn, &coverURL, &exBarcode,
 			&frist, &tage, &mahnstufe, &mahndatum); err != nil {
 			return nil, err
 		}
 
-		g.merke(klasse, ehemalig, schuelerID, name, UeberfaelligesMedium{
+		g.merke(klasse, ehemalig, schuelerID, name, ausweis, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
