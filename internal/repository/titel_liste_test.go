@@ -23,7 +23,7 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
-			WithArgs("Math", "algebra", 50000).
+			WithArgs("Math", 50000, "algebra").
 			WillReturnRows(pgxmock.NewRows([]string{
 				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
@@ -82,7 +82,7 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 		abfragen := NewTitelAbfragen(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
-			WithArgs("", "", 50000).
+			WithArgs("", 50000).
 			WillReturnError(fmt.Errorf("db connection failed"))
 
 		eintraege, err := abfragen.LadeTitelListe(ctx, "", "", false)

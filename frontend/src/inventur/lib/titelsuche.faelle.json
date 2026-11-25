@@ -1,0 +1,121 @@
+{
+	"_zweck": "Geteilte Fälle der Titelsuche: buecherSuchen im Browser (startseiten_api.js) und die Bedingung am Server (internal/repository/titelsuche.go) finden zu jeder Suche dieselben Titel. Die Kürzel beider Seiten müssen der Liste hier gleichen.",
+	"kuerzel": {
+		"powi": "politik",
+		"mathe": "mathematik",
+		"eng": "englisch",
+		"deu": "deutsch",
+		"franz": "französisch",
+		"bio": "biologie",
+		"che": "chemie",
+		"phy": "physik",
+		"geo": "geographie",
+		"info": "informatik",
+		"lat": "latein",
+		"span": "spanisch",
+		"rel": "religion",
+		"reli": "religion"
+	},
+	"titel": [
+		{
+			"id": "mathe7",
+			"titel": "Mathematik 7",
+			"autor": "Lambacher",
+			"subject": "Mathematik",
+			"isbn": "9783827049155",
+			"signatur": "",
+			"ist_lernmittel": true,
+			"jahrgang_von": 7,
+			"jahrgang_bis": 7,
+			"schlagworte": []
+		},
+		{
+			"id": "raeuber",
+			"titel": "Die Räuber",
+			"autor": "Friedrich Schiller",
+			"subject": "Deutsch",
+			"isbn": "",
+			"signatur": "SCH",
+			"ist_lernmittel": false,
+			"jahrgang_von": null,
+			"jahrgang_bis": null,
+			"schlagworte": ["Bühnenstück"]
+		},
+		{
+			"id": "atlas",
+			"titel": "Diercke Weltatlas",
+			"autor": "",
+			"subject": "Erdkunde",
+			"isbn": "",
+			"signatur": "ERD 1",
+			"ist_lernmittel": true,
+			"jahrgang_von": 5,
+			"jahrgang_bis": 10,
+			"schlagworte": []
+		},
+		{
+			"id": "prozent",
+			"titel": "50% mehr Mut",
+			"autor": "Klaus Kühn",
+			"subject": "",
+			"isbn": "",
+			"signatur": "",
+			"ist_lernmittel": false,
+			"jahrgang_von": null,
+			"jahrgang_bis": null,
+			"schlagworte": []
+		},
+		{
+			"id": "biber",
+			"titel": "Biografie eines Bibers",
+			"autor": "",
+			"subject": "Biologie",
+			"isbn": "",
+			"signatur": "",
+			"ist_lernmittel": false,
+			"jahrgang_von": null,
+			"jahrgang_bis": null,
+			"schlagworte": []
+		}
+	],
+	"faelle": [
+		{
+			"fall": "leer: alle",
+			"suche": "",
+			"treffer": ["mathe7", "raeuber", "atlas", "prozent", "biber"]
+		},
+		{ "fall": "Kürzel und Jahrgang", "suche": "mathe 7", "treffer": ["mathe7"] },
+		{
+			"fall": "Füllwort fällt neben einer Zahl weg",
+			"suche": "Mathematik Klasse 7",
+			"treffer": ["mathe7"]
+		},
+		{
+			"fall": "Zahl im Titel oder Jahrgang in der Spanne",
+			"suche": "7",
+			"treffer": ["mathe7", "atlas"]
+		},
+		{ "fall": "Jahrgang in der Spanne", "suche": "atlas 9", "treffer": ["atlas"] },
+		{ "fall": "Umlaut ohne Punkte", "suche": "rauber", "treffer": ["raeuber"] },
+		{ "fall": "Umlaut als ae", "suche": "raeuber", "treffer": ["raeuber"] },
+		{
+			"fall": "Wörter einzeln, Reihenfolge egal",
+			"suche": "schiller räuber",
+			"treffer": ["raeuber"]
+		},
+		{ "fall": "Autor ohne Umlaut", "suche": "kuhn", "treffer": ["prozent"] },
+		{ "fall": "Schlagwort ohne Umlaut", "suche": "buhnenstuck", "treffer": ["raeuber"] },
+		{ "fall": "Signatur", "suche": "erd 1", "treffer": ["atlas"] },
+		{ "fall": "Fach", "suche": "erdkunde", "treffer": ["atlas"] },
+		{ "fall": "Kürzel ersetzt das Wort", "suche": "bio", "treffer": ["biber"] },
+		{ "fall": "ISBN-13 als Teilstring", "suche": "382704915", "treffer": ["mathe7"] },
+		{ "fall": "ISBN-10 findet die dreizehnstellige", "suche": "3827049156", "treffer": ["mathe7"] },
+		{ "fall": "ISBN mit Bindestrichen", "suche": "978-3-8270-4915-5", "treffer": ["mathe7"] },
+		{ "fall": "Anfang der ISBN mit Bindestrichen", "suche": "978-3-8270", "treffer": ["mathe7"] },
+		{ "fall": "nur ein Bindestrich", "suche": "-", "treffer": [] },
+		{ "fall": "das Wort lernmittel", "suche": "lernmittel", "treffer": ["mathe7", "atlas"] },
+		{ "fall": "Prozentzeichen ist ein Zeichen", "suche": "%", "treffer": ["prozent"] },
+		{ "fall": "Unterstrich ist ein Zeichen", "suche": "_", "treffer": [] },
+		{ "fall": "ein Wort trifft nicht", "suche": "räuber goethe", "treffer": [] }
+	]
+}

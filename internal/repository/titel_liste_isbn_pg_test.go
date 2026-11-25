@@ -53,8 +53,10 @@ func TestTitelListe_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		}
 	}
 
-	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if liste, err := abfragen.LadeTitelListe(ctx, "", "0306406153", false); err != nil || len(liste) != 0 {
-		t.Errorf("Titel-Verwaltung mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
+	// Gegenprobe: Eine andere Nummer findet den Titel nicht. Das Prüfzeichen der Eingabe prüft
+	// die Titelsuche nicht, wie der Medienkatalog (isbnFormen.faelle.json, 3499500252): Dieselben
+	// neun Ziffern mit falschem Prüfzeichen finden das Buch.
+	if liste, err := abfragen.LadeTitelListe(ctx, "", "0306406162", false); err != nil || len(liste) != 0 {
+		t.Errorf("Titel-Verwaltung mit anderer Nummer: %d Treffer, %v — erwartet keinen", len(liste), err)
 	}
 }

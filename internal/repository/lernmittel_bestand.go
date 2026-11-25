@@ -79,20 +79,21 @@ type LernmittelFilter struct {
 const ZweigOhne = "-"
 
 // lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit), $2 Zweig,
-// $3 Suchtext über Titel, ISBN, Autor und Fach.
+// dazu die Titelsuche des Programms (sqlTitelTrifft) mit Argumenten ab $start.
 //
 // Zum Zweig: Ein leerer track heißt „gilt für alle Zweige"; so sagt es die Maske („leer heißt
 // gilt für alle"), und so ist der Altbestand: Littera hat den Zweig nie geliefert, 470 von 578
 // Schulbüchern tragen keinen. Ein Filter auf „Gymnasium", der nur `track = 'Gymnasium'` prüft,
 // versteckte deshalb fünf Sechstel des Bestands vor dem Fachsprecher. Gesucht wird darum
 // „dieser Zweig oder für alle"; zweigOhne ist die Gegenrichtung, nur die ohne Angabe.
-var lernmittelFilterSQL = `
+func lernmittelFilterSQL(suche string, start int) (string, []any) {
+	bedingung, args := sqlTitelTrifft("b", suche, start)
+	return `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
 	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
 	     OR ($2 <> '` + ZweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
-	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%'
-	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%'
-	     OR ` + sqlSuchtextIstISBN("b", "$3") + `)`
+	AND ` + bedingung, args
+}
 
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
@@ -107,13 +108,14 @@ const lernmittelJoins = `
 	WHERE b.ist_lernmittel`
 
 // lernmittelJeBuchSQL liefert eine Zeile je Buch: ein Treffer mit der Gesamtzahl und darunter
-// die Aufschlüsselung je Auflage. Die Filter ($1–$3) wählen die Bücher: Trifft eine Auflage,
+// die Aufschlüsselung je Auflage. Die Filter ($1, $2 und die Suche ab $start) wählen die Bücher: Trifft eine Auflage,
 // gehört das Buch dazu. Gezählt wird über alle Auflagen des Buchs, die Schulbücher sind, und
 // oben steht die neueste getroffene, nach einer ISBN also genau diese. Ein Titel ohne Werk ist
 // über COALESCE(werk_id, id) sein eigenes Buch: Für ihn ändert sich nichts. Liste, Zahlen je
 // Fach und PDF lesen dieselben Zeilen.
-func lernmittelJeBuchSQL() string {
+func lernmittelJeBuchSQL(suche string, start int) (string, []any) {
 	neueste := sqlNeuesteAuflageZuerst("t")
+	filter, args := lernmittelFilterSQL(suche, start)
 	return `
 		WITH titel AS (
 			SELECT b.id, COALESCE(b.werk_id, b.id) AS buch, b.titel, COALESCE(b.autor, '') AS autor,
@@ -122,7 +124,7 @@ func lernmittelJeBuchSQL() string {
 			       COALESCE(b.jahrgang_bis, 0) AS jahrgang_bis, COALESCE(b.track, '') AS track,
 			       COALESCE(TO_CHAR(b.last_counted, 'DD.MM.YYYY'), '') AS gezaehlt,
 			       b.auflage, b.erscheinungsjahr, b.erstellt_am,` + lernmittelZaehlung + `,
-			       (true ` + lernmittelFilterSQL + `) AS getroffen` + lernmittelJoins + `
+			       (true ` + filter + `) AS getroffen` + lernmittelJoins + `
 			GROUP BY b.id
 		),
 		buch AS (
@@ -142,18 +144,19 @@ func lernmittelJeBuchSQL() string {
 		       v.track, v.gezaehlt, b.gesamt, b.verliehen, b.verfuegbar, b.im_zulauf,
 		       CASE WHEN b.anzahl > 1 THEN b.auflagen END AS auflagen
 		FROM buch b
-		JOIN vertreter v ON v.buch = b.buch`
+		JOIN vertreter v ON v.buch = b.buch`, args
 }
 
 // LadeLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
 // (Fach ""), am Ende sortiert. Gezählt wird über dieselben Zeilen wie die Liste darunter
 // (lernmittelJeBuchSQL): „Titel" sind Bücher, ein Buch in drei Auflagen zählt einmal.
 func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
+	jeBuch, suchArgs := lernmittelJeBuchSQL(f.Suche, 3)
 	zeilen, err := a.pool.Query(ctx, `
 		SELECT subject, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
-		FROM (`+lernmittelJeBuchSQL()+`) zeilen
+		FROM (`+jeBuch+`) zeilen
 		GROUP BY subject
-		ORDER BY (subject = ''), subject COLLATE deutsch`, f.Jahrgang, f.Zweig, f.Suche)
+		ORDER BY (subject = ''), subject COLLATE deutsch`, append([]any{f.Jahrgang, f.Zweig}, suchArgs...)...)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
@@ -172,10 +175,11 @@ func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelF
 // LadeLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
 // alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert.
 func (a *TitelAbfragen) LadeLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
-	zeilen, err := a.pool.Query(ctx, lernmittelJeBuchSQL()+`
-		WHERE ($4 OR v.subject = $5)
+	jeBuch, suchArgs := lernmittelJeBuchSQL(f.Suche, 5)
+	zeilen, err := a.pool.Query(ctx, jeBuch+`
+		WHERE ($3 OR v.subject = $4)
 		ORDER BY (v.subject = ''), v.subject COLLATE deutsch, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel COLLATE deutsch`,
-		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
+		append([]any{f.Jahrgang, f.Zweig, alleFaecher, fach}, suchArgs...)...)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)
 	}

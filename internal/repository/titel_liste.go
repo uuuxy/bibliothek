@@ -139,34 +139,29 @@ func leseTitelZeilen(zeilen pgx.Rows) ([]KatalogTitel, error) {
 // Verwaltung mit genau den Titeln, die der Katalog nicht zeigt. Beide Sichten sind dieselbe
 // Bedingung mit und ohne NOT; eine dritte Zahl über denselben Titel gibt es nicht.
 //
-// Der Suchtext trifft auch die Schlagworte und die Verweise darauf
-// (sqlTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: „Suche & Filter", die
+// Der Suchtext geht durch die Titelsuche des Programms (sqlTitelTrifft), und jeder Titel bringt
+// seine Suchwörter mit: „Suche & Filter", die
 // Titel-Verwaltung und der Klassensatz-Dialog laden die ganze Liste und suchen im Browser; ohne
 // die Wörter fänden sie über ein Schlagwort nichts. Mit Suchtext fragen die Dialoge „Andere
 // Auflage zuordnen" und „Titel zusammenführen".
 //
 // Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet der
 // Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
-//
-// Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte und
-// Schlagworte gespeichert sind (TiteltextNormalform).
 func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanfrage string, nurOhneExemplare bool) ([]KatalogTitel, error) {
-	suchanfrage = TiteltextNormalform(suchanfrage)
 	sicht := sqlTitelHatExemplar("bt")
+	suche, suchArgs := sqlTitelTrifft("bt", suchanfrage, 3)
 	if nurOhneExemplare {
 		sicht = "NOT " + sicht
 	}
 	abfrage := buchListenSelectSchlank + `
 		WHERE ` + sicht + `
 		  AND ($1 = '' OR bt.subject = $1)
-		  AND ($2 = '' OR bt.titel ILIKE '%' || $2 || '%' OR bt.autor ILIKE '%' || $2 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $2 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $2 || '%'
-		       OR ` + sqlSuchtextIstISBN("bt", "$2") + `
-		       OR ` + sqlTitelUeberSchlagwort("bt", "$2") + `)
+		  AND ` + suche + `
 	` + buchListenGroupBySchlank + `
 		ORDER BY bt.titel COLLATE deutsch ASC, bt.id ASC
-		LIMIT $3`
+		LIMIT $2`
 
-	zeilen, err := a.pool.Query(ctx, abfrage, fach, suchanfrage, titelListeGrenze)
+	zeilen, err := a.pool.Query(ctx, abfrage, append([]any{fach, titelListeGrenze}, suchArgs...)...)
 	if err != nil {
 		return nil, fmt.Errorf("bücher konnten nicht geladen werden: %w", err)
 	}

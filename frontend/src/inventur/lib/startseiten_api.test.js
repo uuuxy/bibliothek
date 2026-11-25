@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { buecherLaden, buecherSuchen, buecherJeBuch } from './startseiten_api.js';
+import { buecherLaden, buecherSuchen, buecherJeBuch, suchSynonyme } from './startseiten_api.js';
+import titelsuche from './titelsuche.faelle.json';
 import { apiFetch } from '../../lib/apiFetch.js';
 import { serverAntwort } from '../../lib/serverAntwort.js';
 
@@ -267,4 +268,33 @@ describe('buecherLaden: der Server lehnt ab', () => {
 
 		await expect(buecherLaden()).rejects.toThrow('Nicht angemeldet. Bitte neu anmelden.');
 	});
+});
+
+// Dieselben Fälle prüft die Bedingung am Server (internal/repository/titelsuche_pg_test.go):
+// Beide Seiten finden zu jeder Suche dieselben Titel.
+describe('buecherSuchen: geteilte Fälle mit dem Server', () => {
+	const katalog = titelsuche.titel.map((t) => ({
+		id: t.id,
+		title: t.titel,
+		author: t.autor,
+		subject: t.subject,
+		isbn: t.isbn,
+		signatur: t.signatur,
+		istLernmittel: t.ist_lernmittel,
+		jahrgangVon: t.jahrgang_von ?? 0,
+		jahrgangBis: t.jahrgang_bis ?? 0,
+		suchwoerter: t.schlagworte
+	}));
+
+	it('hat dieselben Kürzel wie die Fall-Liste', () => {
+		expect(Object.fromEntries(suchSynonyme)).toEqual(titelsuche.kuerzel);
+	});
+
+	it.each(titelsuche.faelle.map((f) => [f.fall, f.suche, f.treffer]))(
+		'%s: „%s“',
+		(_fall, suche, treffer) => {
+			const ids = buecherSuchen(katalog, suche).map((b) => b.id);
+			expect([...ids].sort()).toEqual([...treffer].sort());
+		}
+	);
 });

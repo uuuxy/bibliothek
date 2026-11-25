@@ -44,6 +44,12 @@ Müller) ebenso wenig wie Bindestrich, Apostroph und Leerzeichen („alkahil“ 
 „annalena“ Anna-Lena). Eine gescannte Ausweisnummer findet den Leser in Leserdatei, Mahnwesen,
 Abgängerliste und unter _Benutzer & Rechte_.
 
+Titel findet jede Suche nach der Regel von _Suche & Filter_: in der Titel-Verwaltung, beim Klassensatz,
+in den Dialogen _Andere Auflage zuordnen_ und _Titel zusammenführen_ und im Portal unter _Schulbücher_.
+Jedes Wort muss Titel, Autor, Fach, Signatur, ISBN (mit oder ohne Bindestriche, zehn- oder
+dreizehnstellig) oder ein Schlagwort treffen; Kürzel wie „mathe“, eine Zahl als Jahrgang und
+Umlaute ohne Punkte gelten überall.
+
 ## Ausleihe (Theke)
 
 **Vor dem ersten Scan: Der Scanner muss auf deutsche Tastatur eingestellt sein** (Datalogic:
@@ -132,8 +138,8 @@ falsches Passwort („Scan erkannt“).
 
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur und Schlagwort,
   Kartenansicht mit Cover und Signatur. Jedes Wort zählt für sich, ein Kürzel wie „mathe“ steht
-  für das Fach und eine ein- oder zweistellige Zahl für den Jahrgang („mathe 7“). Die Titel-Verwaltung und die
-  Titelauswahl beim Klassensatz suchen genauso. Ein Barcode, gescannt oder getippt, zeigt den Titel des
+  für das Fach und eine ein- oder zweistellige Zahl für den Jahrgang („mathe 7“); Umlaute zählen nicht
+  („rauber“ findet „Die Räuber“). Wo sonst Titel gesucht werden, gilt dieselbe Regel (_Suchen_). Ein Barcode, gescannt oder getippt, zeigt den Titel des
   Exemplars, auch über das alte Littera-Etikett und eine lange LMF-Nummer. Ein Verweis findet sein
   Schlagwort („Tierfantasy“ findet „Fantasy“, wenn es unter _Einstellungen → Schlagworte_ so
   eingetragen ist), auch in der Titel-Verwaltung, im öffentlichen Katalog und in _Mein Portal_.

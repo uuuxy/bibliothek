@@ -1,5 +1,6 @@
 import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
 import { isbnFormen, normalisiereIsbn } from '../../lib/utils/isbnFormen.js';
+import { suchnorm } from '../../lib/utils/suchnorm.js';
 /**
  * Laden, Suchen und Zusammenfassen je Buch für den Medienkatalog (Suche & Filter).
  */
@@ -17,7 +18,7 @@ export async function buecherLaden() {
 }
 
 // WZ-Synonyme für Suchbegriffe auf der Startseite.
-const suchSynonyme = new Map([
+export const suchSynonyme = new Map([
 	['powi', 'politik'],
 	['mathe', 'mathematik'],
 	['eng', 'englisch'],
@@ -47,9 +48,10 @@ function trifftJahrgang(b, jahrgang) {
 }
 
 /**
- * Die Buch-Suche des Medienkatalogs: Jeder Begriff muss mindestens ein Feld treffen. Eine
- * Zahl zählt als Jahrgang (die Spanne von–bis), Füllwörter wie
- * „Klasse"/„Jg." fallen dann weg.
+ * Die Titelsuche des Programms: Jeder Begriff muss mindestens ein Feld treffen, Umlaute und
+ * Akzente zählen nicht (suchnorm). Eine Zahl zählt als Jahrgang (die Spanne von–bis),
+ * Füllwörter wie „Klasse"/„Jg." fallen dann weg. Zwilling der Bedingung am Server
+ * (internal/repository/titelsuche.go); beide prüfen titelsuche.faelle.json.
  * @param {any[]} buecherArray
  * @param {string} searchQuery
  */
@@ -69,39 +71,46 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	// Ein oder zwei Ziffern sind ein Jahrgang und kein Stück einer ISBN: „7" steht in jeder
 	// ISBN-13 (978…) und träfe sonst fast jedes Buch.
 	const istJahrgang = terms.map((term) => /^\d{1,2}\.?$/.test(term));
+	const normJeTerm = terms.map((term) => suchnorm(term));
 
 	return (Array.isArray(buecherArray) ? buecherArray : []).filter((/** @type {any} */ b) =>
-		terms.every((term, i) => trifftBegriff(b, term, isbnJeTerm[i], istJahrgang[i]))
+		terms.every((term, i) => trifftBegriff(b, term, normJeTerm[i], isbnJeTerm[i], istJahrgang[i]))
 	);
 }
+
+/** @param {unknown} feld @param {string} norm */
+const enthaelt = (feld, norm) => typeof feld === 'string' && suchnorm(feld).includes(norm);
 
 /**
  * Trifft der Begriff das Buch in mindestens einem Feld?
  * @param {any} b
  * @param {string} term
+ * @param {string} norm der Begriff in der Form von suchnorm
  * @param {string[]} isbnFormenDesBegriffs die Schreibweisen des Begriffs als ISBN; leer, wenn er keine ist
  * @param {boolean} istJahrgang der Begriff ist ein Jahrgang und kein Stück einer ISBN
  */
-function trifftBegriff(b, term, isbnFormenDesBegriffs, istJahrgang) {
-	if (b.title?.toLowerCase().includes(term)) return true;
-	if (!istJahrgang && b.isbn?.toLowerCase().includes(term)) return true;
+function trifftBegriff(b, term, norm, isbnFormenDesBegriffs, istJahrgang) {
+	if (enthaelt(b.title, norm)) return true;
+	// Ein Stück der ISBN, Bindestriche zählen auf keiner Seite: „978-3-06“ findet 9783060….
+	const isbnStueck = term.replaceAll('-', '');
+	if (!istJahrgang && isbnStueck && b.isbn?.replaceAll('-', '').toLowerCase().includes(isbnStueck))
+		return true;
 	if (
 		b.isbn &&
 		isbnFormenDesBegriffs.length > 0 &&
 		isbnFormenDesBegriffs.includes(normalisiereIsbn(b.isbn))
 	)
 		return true;
-	if (b.author?.toLowerCase().includes(term)) return true;
-	if (b.subject?.toLowerCase().includes(term)) return true;
+	if (enthaelt(b.author, norm) || enthaelt(b.subject, norm)) return true;
 	if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
 	// Die Signatur ist die Regaladresse (Handbuch).
-	if (b.signatur?.toLowerCase().includes(term)) return true;
+	if (enthaelt(b.signatur, norm)) return true;
 	// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
 	// Titel finden, entscheidet der Server (repository.ladeSuchwoerterDerTitel) — dieselbe
 	// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
 	if (
 		Array.isArray(b.suchwoerter) &&
-		b.suchwoerter.some((/** @type {string} */ w) => w.toLowerCase().includes(term))
+		b.suchwoerter.some((/** @type {string} */ w) => enthaelt(w, norm))
 	)
 		return true;
 	const num = Number.parseInt(term, 10);

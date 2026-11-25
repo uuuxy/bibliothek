@@ -19,8 +19,8 @@ import (
 )
 
 // TitelListe verarbeitet GET-Anfragen für die Bücherübersicht.
-// Die Funktion liest Suchparameter (Fach, Klasse, Suchbegriff) aus,
-// nutzt ein Wörterbuch für Synonyme (z.B. powi -> politik) und fragt die Datenbank ab.
+// Die Funktion liest Suchparameter (Fach, Suchbegriff) aus und fragt die Datenbank ab; den
+// Suchbegriff löst die Titelsuche des Programms auf (Wörter, Kürzel, Jahrgang).
 // Danach stehen die Bücher nach dem Titel (sortiereBuecherNachTitel) und gehen als JSON hinaus.
 func (t *Tueren) TitelListe() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
@@ -31,10 +31,6 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 		if len(suchbegriff) > 200 {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Suchbegriff ist zu lang, höchstens 200 Zeichen", nil)
 			return
-		}
-
-		if uebersetzt, existiert := suchSynonyme[suchbegriff]; existiert {
-			suchbegriff = uebersetzt
 		}
 
 		// bestand=ohne ist die Aufräumsicht der Verwaltung: nur Titel ohne ein einziges
@@ -54,24 +50,6 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 
 		tuer.AntworteJSON(antwort, http.StatusOK, buecher)
 	}
-}
-
-// Wörterbuch für Synonyme bei der Suche
-var suchSynonyme = map[string]string{
-	"powi":  "politik",
-	"mathe": "mathematik",
-	"eng":   "englisch",
-	"deu":   "deutsch",
-	"franz": "französisch",
-	"bio":   "biologie",
-	"che":   "chemie",
-	"phy":   "physik",
-	"geo":   "geographie",
-	"info":  "informatik",
-	"lat":   "latein",
-	"span":  "spanisch",
-	"rel":   "religion",
-	"reli":  "religion",
 }
 
 // sortiereBuecherNachTitel ordnet die Liste nach dem Titel, wie ein deutsches Register:

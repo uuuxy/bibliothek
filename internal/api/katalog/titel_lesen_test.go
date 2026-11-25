@@ -116,7 +116,7 @@ func TestTitelListe(t *testing.T) {
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				dateStr := "2023-01-01"
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", "", 50000).
+					WithArgs("", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}).AddRow(
@@ -145,7 +145,7 @@ func TestTitelListe(t *testing.T) {
 			adresse: "/api/books?q=powi",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", "politik", 50000).
+					WithArgs("", 50000, "politik").
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
@@ -159,7 +159,7 @@ func TestTitelListe(t *testing.T) {
 			adresse: "/api/books?bestand=ohne",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*WHERE NOT EXISTS.*").
-					WithArgs("", "", 50000).
+					WithArgs("", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
@@ -186,7 +186,7 @@ func TestTitelListe(t *testing.T) {
 			adresse: "/api/books?gradeLevel=abc&grade=7",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", "", 50000).
+					WithArgs("", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
@@ -199,7 +199,7 @@ func TestTitelListe(t *testing.T) {
 			adresse: "/api/books",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", "", 50000).
+					WithArgs("", 50000).
 					WillReturnError(errors.New("db fail"))
 			},
 			expectedStatus: http.StatusInternalServerError,

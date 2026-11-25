@@ -45,7 +45,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("die Abfrage scheitert", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "").WillReturnError(dbFehler)
+		mock.ExpectQuery(abfrage).WithArgs(0, "").WillReturnError(dbFehler)
 
 		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
@@ -58,7 +58,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("eine Zeile lässt sich nicht lesen", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "").
+		mock.ExpectQuery(abfrage).WithArgs(0, "").
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).AddRow("Mathematik", "zwei", 3, 1, 2))
 
 		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
@@ -73,7 +73,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 	// Der Fehler steht an der zweiten Zeile: Die erste wird gelesen, erst rows.Err() nennt ihn.
 	t.Run("die Datenbank bricht nach einer Zeile ab", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "").
+		mock.ExpectQuery(abfrage).WithArgs(0, "").
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).
 				AddRow("Mathematik", 2, 3, 1, 2).RowError(1, dbFehler))
 
@@ -96,7 +96,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("die Abfrage scheitert", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnError(dbFehler)
+		mock.ExpectQuery(abfrage).WithArgs(0, "", false, "Physik").WillReturnError(dbFehler)
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
@@ -109,7 +109,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("eine Zeile lässt sich nicht lesen", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnRows(zeile("fünf", nil))
+		mock.ExpectQuery(abfrage).WithArgs(0, "", false, "Physik").WillReturnRows(zeile("fünf", nil))
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
 		if err == nil {
@@ -122,7 +122,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("die Auflagen sind kein JSON", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
+		mock.ExpectQuery(abfrage).WithArgs(0, "", false, "Physik").
 			WillReturnRows(zeile(5, []byte(`kein json`)))
 
 		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
@@ -136,7 +136,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 
 	t.Run("die Datenbank bricht nach einer Zeile ab", func(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
-		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
+		mock.ExpectQuery(abfrage).WithArgs(0, "", false, "Physik").
 			WillReturnRows(zeile(5, nil).RowError(1, dbFehler))
 
 		_, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
