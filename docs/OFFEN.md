@@ -40,8 +40,8 @@ Nur, was kein Test leisten kann.
 ### Nebenbei
 
 - [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
-- [ ] Funde der Durchsicht auf Uneinheitliches und der Gegenprüfung der letzten Änderungen
-  einordnen und abarbeiten; vier sind am Code bestätigt. (5.201)
+- [ ] Namen vereinheitlichen: sieben Dinge tragen mehr als ein Wort; je Ding ein Vorschlag,
+  dann die Wahl mit Bildern. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -126,41 +126,21 @@ Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
 
-### 5.201 Funde der Durchsicht auf Uneinheitliches
+### 5.201 Namen: dieselbe Sache, verschiedene Wörter
 
-Eine Durchsicht des ganzen Programms auf Uneinheitliches (24./25.11.2026) brach mit dem Absturz
-des Rechners um 03:33 ab; ihr Zwischenstand nennt 36 Punkte. Erledigt sind 15 (Titelsuche,
-Namenssuche, Geburtsdatum, Vormerken, Statistik, Reservierung, Doku), entschieden ist das
-verlorene Gerät (5.202). Die Gegenprüfung der letzten Änderungen ist abgeschlossen; ihre Funde
-stehen unten, am Code nachgeprüft.
+Aus der Durchsicht auf Uneinheitliches bleiben Dinge mit mehr als einem Namen; die übrigen Funde
+sind behoben oder am Code als gewollt belegt.
 
-Am Code bestätigt:
-- Mahnwesen, Reiter „Schadensersatz“: Suche, Klassenfilter und Werkzeugleiste stehen da, wirken
-  aber nicht auf die Tabelle (`BescheideTabelle.svelte` liest weder Suche noch Klasse).
-- Dauerleihen des Kollegiums bieten „Verlängern“ an (`LeserAusleihenListe.svelte` fragt nur
-  `darfFristAendern`), obwohl eine Dauerleihe keine Frist hat.
-- Die Gesamtsumme einer Bestellung hat keine Grenze gegen den Überlauf von `DECIMAL(10,2)`:
-  sechs Positionen zu 200 Stück à 99.999,99 € enden mit 500 statt 400.
-- Die Zeilengrenze beim Lesen einer CSV fehlt im Littera-, Bestands- und LUSD-Import; die
-  Rechte dafür haben ab Werk auch Leitung und Mitarbeiter.
+- Kiosk, Theke und Ausleihe für denselben Platz.
+- Abgänger und Ehemalige im LUSD-Abgleich.
+- Sachgruppen und Systematik.
+- Meldungen und Anliegen.
+- Vier Wörter für „ohne Ausweis“.
+- „Systembenutzer“.
+- `topf` und `mittel` im Paket `schaden`.
 
-Noch am Code zu prüfen:
-- Vormerken in der Buchakte braucht neben `manage_vormerkungen` auch `view_students`.
-- Die Buchakte zeigt bei einer Vormerkung weder „abholbereit“ noch die Abholfrist.
-- Schlagworte im Bestellkorb: Lesen verlangt `view_books`, Anlegen `create_orders`.
-- Der Monatstrend der Statistik rechnet in UTC: 0 bis 2 Uhr am Monatsersten zählt zum Vormonat.
-- Der Papierkorb zeigt gelöschtes Kollegium als „Klasse unbekannt“, ohne „ohne Ausweis“.
-- Klassensätze und Klassenlisten sortieren nach Codepunkt („Mathe 10“ vor „Mathe 5“).
-- Die Geräteverwaltung zeigt Laden, leere Liste und Fehler anders als die übrigen
-  Verwaltungsseiten.
-- Auf der Seite Signaturen widersprechen sich zwei Hinweise über die Herkunft der Vorschläge.
-- Namen: Kiosk, Theke und Ausleihe für denselben Platz; Abgänger und Ehemalige im LUSD-Abgleich;
-  Sachgruppen und Systematik; Meldungen und Anliegen; vier Wörter für „ohne Ausweis“;
-  „Schüler ausgewählt“ in der Leserdatei auch für Lehrkräfte; „Systembenutzer“; `topf` und
-  `mittel` im Paket `schaden`; 400 statt 409 bei doppelter Ausweisnummer.
-
-Nächster Schritt: je Punkt am Code prüfen und nach Regel 4 einordnen; A sofort, B gebündelt, C
-nach ARCHITEKTUR 11.5.
+Nächster Schritt: je Ding die Stellen zählen und ein Wort vorschlagen; ein sichtbares Wort ändert
+sich erst nach der Wahl, mit Bildern.
 
 ### 5.202 Verlorenes Gerät melden
 
