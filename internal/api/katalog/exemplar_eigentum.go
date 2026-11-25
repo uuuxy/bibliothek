@@ -14,7 +14,7 @@ import (
 type exemplarEigentumAnfrage struct {
 	// Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.
 	ExemplarIDs []string `json:"exemplar_ids" validate:"required,dive,required,uuid_oder_leer"`
-	// Eigentum: "land", "schultraeger" oder "" — leer nimmt die Angabe am Exemplar weg, dann
+	// Eigentum: "land", "schultraeger", "spende" oder "" — leer nimmt die Angabe am Exemplar weg, dann
 	// gilt wieder der Topf der Bestellung oder die Faustregel aus dem Titel.
 	Eigentum string `json:"eigentum"`
 	Grund    string `json:"grund"`

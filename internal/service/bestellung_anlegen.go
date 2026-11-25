@@ -54,7 +54,8 @@ type BestellAuftrag struct {
 	// IdempotenzSchluessel vergibt die Oberfläche je Absende-Vorgang; ein Doppelklick schickt
 	// denselben. Leer heißt: ohne diesen Schutz.
 	IdempotenzSchluessel string
-	// Mittel ist der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger), Pflicht.
+	// Mittel ist der Topf der Bestellung (mitteltopf.Land, mitteltopf.Schultraeger oder
+	// mitteltopf.Spende), Pflicht.
 	Mittel string
 }
 
@@ -105,7 +106,8 @@ type BestellErgebnis struct {
 	// BereitsVorhanden sagt, dass derselbe Idempotenz-Schlüssel schon eine Bestellung erzeugt
 	// hat (Doppelklick); die Tür verschickt dann keine zweite Mail.
 	BereitsVorhanden bool
-	// Mittel ist der Topf dieser Bestellung (mitteltopf.Land / mitteltopf.Schultraeger). Er
+	// Mittel ist der Topf dieser Bestellung (mitteltopf.Land, mitteltopf.Schultraeger oder
+	// mitteltopf.Spende). Er
 	// steuert den Vermerk in Anschreiben und Mail; Kundennummer ist schon die Nummer dieses
 	// Topfs (Lieferant.KundennummerFuer).
 	Mittel string

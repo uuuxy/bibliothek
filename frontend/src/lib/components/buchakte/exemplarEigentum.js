@@ -18,7 +18,7 @@ import { MITTEL } from '../bestellungen/mittel.js';
  * @returns {{ wer: string, herkunft: string } | null}
  */
 export function eigentumZeile(ex) {
-	const eintrag = MITTEL[/** @type {'land' | 'schultraeger'} */ (ex.eigentum)];
+	const eintrag = MITTEL[/** @type {'land' | 'schultraeger' | 'spende'} */ (ex.eigentum)];
 	if (!eintrag) return null;
 	const vermerk = ex.littera_eigentumsvermerk ?? '';
 	let herkunft;

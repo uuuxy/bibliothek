@@ -30,7 +30,7 @@ var ErrEigentumUngueltig = errors.New("eigentum ungültig")
 // EigentumAenderung ist eine Änderung für mehrere Exemplare.
 type EigentumAenderung struct {
 	ExemplarIDs []string
-	// Eigentum ist mitteltopf.Land oder mitteltopf.Schultraeger. Leer nimmt die Angabe am Exemplar
+	// Eigentum ist mitteltopf.Land, mitteltopf.Schultraeger oder mitteltopf.Spende. Leer nimmt die Angabe am Exemplar
 	// weg: Dann gilt wieder der Topf der Bestellung, sonst die Faustregel aus dem Titel.
 	Eigentum     string
 	Grund        string

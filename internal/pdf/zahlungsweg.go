@@ -13,7 +13,7 @@ import (
 // Landes: „Es darf kein Schulgirokonto, kein anderes Bankkonto und keine Bargeldannahme
 // vorgesehen werden."
 //
-// Zwei Töpfe, zwei Wege. Das Vokabular ist das der Datenbank (`land` / `schultraeger`), die
+// Zwei Wege. Das Vokabular ist das der Datenbank (`land`, `schultraeger`, `spende`), die
 // Zuordnung dieselbe wie beim Bescheid: Lernmittel gehen an das Land, alles andere an den
 // Schulträger. Für das Land steht der Weg fest und kommt aus derselben Einstellung wie im
 // Bescheid (`repository.BescheidAngaben`); eine zweite Kontoangabe im selben Haus wäre eine

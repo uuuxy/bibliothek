@@ -53,7 +53,8 @@ type BestellMailWerte struct {
 	// GueltigBis ist der Ablauf des Links, nil ohne Link. Die Mail nennt ihn als Datum: Das
 	// kann der Händler in den Kalender schreiben, eine Tageszahl müsste er ausrechnen.
 	GueltigBis *time.Time
-	// Mittel ist der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger).
+	// Mittel ist der Topf der Bestellung (mitteltopf.Land, mitteltopf.Schultraeger oder
+	// mitteltopf.Spende).
 	Mittel string
 }
 

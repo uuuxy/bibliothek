@@ -37,7 +37,7 @@ type BestellungKopf struct {
 	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
 	LinkAktiv        bool    `json:"link_aktiv"`
 
-	// Mittel ist der Topf der Bestellung ('land' oder 'schultraeger'). Leer bei einer alten
+	// Mittel ist der Topf der Bestellung ('land', 'schultraeger' oder 'spende'). Leer bei einer alten
 	// Bestellung ohne eindeutige Zuordnung; die Oberfläche zeigt dann „ohne Zuordnung" und
 	// keinen geratenen Topf.
 	Mittel string `json:"mittel"`

@@ -25,7 +25,7 @@ type AbgangsZeile struct {
 	// Bildschirm dieselben vier Wörter benutzen — zwei Übersetzungen desselben
 	// Schlüssels laufen auseinander, sobald einer davon geändert wird.
 	GrundText string `json:"grund_text"`
-	// Topf ist 'land' oder 'schultraeger', dasselbe Vokabular wie bei Bestellung und Bescheid
+	// Topf ist 'land', 'schultraeger' oder 'spende', dasselbe Vokabular wie bei Bestellung und Bescheid
 	// und dieselbe Regel wie am Etikett (ExemplarTopfSQL): Eigentum am Exemplar, sonst Topf der
 	// Bestellung, sonst der Titel. Entschiede allein der Titel, ginge ein Buch, das der
 	// Schulträger bezahlt hat, als Abgang des Landes ab, obwohl sein Etikett den Schulträger

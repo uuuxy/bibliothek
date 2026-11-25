@@ -24,7 +24,7 @@ import (
 
 // topfAbschnitt ist der Teil eines Bestandsnachweises, der zu einem Topf gehört.
 type topfAbschnitt[T any] struct {
-	// Topf ist der gespeicherte Wert ('land', 'schultraeger', '' = ohne Zuordnung).
+	// Topf ist der gespeicherte Wert ('land', 'schultraeger', 'spende', '' = ohne Zuordnung).
 	Topf string `json:"topf"`
 	// Titel ist die Überschrift, wie ein Mensch sie liest.
 	Titel string `json:"titel"`

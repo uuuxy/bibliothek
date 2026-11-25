@@ -61,7 +61,7 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		// müsste die Karte die Antwort aus dem Herleitungssatz lesen — und 0,00 € heißt
 		// zweierlei (Totalschaden oder kein Preis erfasst).
 		ErsatzwertBekannt bool `json:"ersatzwert_bekannt"`
-		// Eigentum ('land' oder 'schultraeger') und woher es kommt ('littera', 'hand',
+		// Eigentum ('land', 'schultraeger' oder 'spende') und woher es kommt ('littera', 'hand',
 		// 'bestellung', 'vorgabe') — dieselbe Regel wie Etikett und Schadensersatz.
 		Eigentum         string `json:"eigentum"`
 		EigentumHerkunft string `json:"eigentum_herkunft"`

@@ -37,7 +37,7 @@ type BestellVerlaufEintrag struct {
 	Gesamtbetrag    betrag.Cent              `json:"gesamtbetrag"`
 	AnzahlExemplare int                      `json:"anzahl_exemplare"`
 	Positionen      []BestellVerlaufPosition `json:"positionen"`
-	// Mittel ist der Topf ('land' oder 'schultraeger'); leer bei einer alten Bestellung ohne
+	// Mittel ist der Topf ('land', 'schultraeger' oder 'spende'); leer bei einer alten Bestellung ohne
 	// eindeutige Zuordnung.
 	Mittel string `json:"mittel"`
 
