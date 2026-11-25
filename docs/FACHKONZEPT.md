@@ -555,12 +555,15 @@ Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein Audi
 
 ## 11. Statistiken & Dashboards
 
-Für die Schulleitung und Bibliotheks-Administration aggregiert das System Echtzeit-Metriken:
+Für die Schulleitung und Bibliotheks-Administration zählt das System, ganz oder nur Freihand oder
+nur LMF:
 
-- Auswertung von Ausleihen pro Jahrgang/Klasse.
-- Hitlisten der beliebtesten Medien (LMF vs. Freihand).
-- Warn-Dashboards für offene Schäden und eskalierte Mahnungen.
-- Export-Funktionen (CSV/PDF) für die Jahresberichte an die Schulleitung.
+- Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen pro Monat;
+  Überfällige nach Dauer.
+- Hitlisten: Renner (meistausgeliehen) und Ladenhüter, mit Detailseite und Filter.
+
+Gezählt werden Ausleihen, nicht Personen. Eine Auswertung je Jahrgang oder Klasse, eine
+Warnübersicht für Schäden und Mahnungen und einen Export der Statistik gibt es nicht.
 
 ---
 

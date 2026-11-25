@@ -358,7 +358,8 @@ Die Leserdatei führt **alle, die Bücher bekommen können**, Schüler und Kolle
   entsteht zugleich der Zugang zu „Mein Portal“, und die Person steht später nicht doppelt da, wenn
   sie sich selbst anmeldet. Freigeschaltet wird nur, wenn Sie auch _Benutzer & Rechte_ dürfen, sonst
   entsteht eine Zugangsanfrage. Eine Rolle vergibt dieses Formular nie.
-- **Stapelaktionen**: Klasse auswählen → Ausweise oder Etiketten für alle drucken.
+- **Stapelaktionen**: Leser markieren → Ausweise oder Etiketten drucken; eine ganze Klasse unter
+  _Ausweise je Klasse_ im Druck-Center.
 - **Ehemalige** nennt je Person die offenen und überfälligen Bücher; nach der Karenzzeit ist der
   Eintrag anonymisiert und verschwindet. Im Mahnwesen steht ein Ehemaliger, sobald eine Frist
   abgelaufen ist; läuft sie noch (Mehrjahresband), in der Akte das Rückgabedatum auf heute setzen.
