@@ -130,19 +130,32 @@ kennt keine Kürzel, dort zählt nur der Name.
 
 ### 5.201 Namen: dieselbe Sache, verschiedene Wörter
 
-Aus der Durchsicht auf Uneinheitliches bleiben Dinge mit mehr als einem Namen; die übrigen Funde
-sind behoben oder am Code als gewollt belegt.
+Aus der Durchsicht auf Uneinheitliches bleiben Dinge mit mehr als einem Namen. Gezählt ist, was
+sichtbar ist (Text in `.svelte`, Beschriftungen in `.js`); Maßstab ist das Glossar (ARCHITEKTUR
+12.1). Vorschlag je Ding:
 
-- Kiosk, Theke und Ausleihe für denselben Platz.
-- Abgänger und Ehemalige im LUSD-Abgleich.
-- Sachgruppen und Systematik.
-- Meldungen und Anliegen.
-- Vier Wörter für „ohne Ausweis“.
-- „Systembenutzer“.
-- `topf` und `mittel` im Paket `schaden`.
+- Kiosk, Theke und Ausleihe für denselben Platz: Menü „Kiosk“ mit dem Punkt „Ausleihe“, die Rechte
+  „Kiosk bedienen“ und „Bestellungen & Kiosk“, zwei Hinweise „am Kiosk“; „Theke“ in den
+  Einstellungen und in Hinweisen der Leserdatei. Vorschlag „Theke“ wie im Glossar, „Ausleihe“ nur
+  für den Vorgang.
+- Abgänger und Ehemalige im LUSD-Abgleich: Wer im Export fehlt, heißt im Abgleich „Abgänger“, in
+  der Leserdatei „Ehemalige“; „Abgänger“ heißt zugleich die Abschlussklasse, die noch ausleiht
+  (Menü, Abgängerliste). Vorschlag „Ehemalige“ für alle, die im Export fehlen, „Abgänger“ nur für
+  die Abschlussklasse; der Eintrag im Glossar zieht nach.
+- Sachgruppen und Systematik: Die Verwaltung unter „Signaturen“ sagt „Sachgruppen“, Filter,
+  Spaltenkopf und ein Hinweis sagen „Systematik“. Vorschlag „Sachgruppe“.
+- Meldungen und Anliegen: Sichtbar heißt es schon „Meldungen“; „Erledigte Anliegen aufbewahren“
+  bleibt, weil die Frist auch Klassensatz-Reservierungen löscht; der Code sagt „Anliegen“
+  (`lehrer_anliegen`), das Glossar nennt beides. Vorschlag: so lassen, eine Umbenennung kostete
+  eine Migration ohne Nutzen an der Theke.
+- Vier Wörter für „ohne Ausweis“: Sichtbar steht nur „ohne Ausweis“; Code und Dokumente sagen
+  daneben „nur Name“, „über den Namen“, „Namenssuche“ und „kein Ausweis“. Vorschlag „ohne Ausweis“.
+- „Systembenutzer“: einmal, als leere Liste unter „Benutzer & Rechte“. Vorschlag „Benutzer“ wie
+  der Menüpunkt.
+- `topf` und `mittel` im Paket `schaden`: Das Glossar führt „Mittel, Topf“ als eine Sache.
+  Vorschlag `topf` wie bei Bestellung und Abgangsbuch; nur Code, nichts Sichtbares.
 
-Nächster Schritt: je Ding die Stellen zählen und ein Wort vorschlagen; ein sichtbares Wort ändert
-sich erst nach der Wahl, mit Bildern.
+Nächster Schritt: Wahl je Ding; ein sichtbares Wort ändert sich erst danach, mit Bildern.
 
 ### 5.203 Dialoge: gesperrter Knopf statt Fehlertext am Feld
 
