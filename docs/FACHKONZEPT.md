@@ -70,6 +70,9 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
   gehen; wer danach noch ausleiht, bekommt das Ende des Tages. Der Ferien-Leseclub gilt für sie
   nicht, und eine Verlängerung geht nicht über diesen Tag hinaus (`service.AbgaengerFrist`).
   Schulbücher behalten ihre Regel.
+  Der Rückgabe-Termin der Klasse im LMF-Plan bestimmt diese Frist nicht: Ein zweiter Weg zur selben
+  Frist (Plan nachschlagen, Ersatz ohne Termin, Nachziehen beim Veröffentlichen) wöge mehr als ein
+  paar Tage früher; zum Büchertausch zeigt die Abgängerliste, wer noch etwas hat.
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch die eine Definition des Tagesendes, `schulzeit.TagesEnde`; eine zweite, rohe Berechnung gibt es bewusst nicht.
 - **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, eine Sperre am Leser hält sie an — nach der Regel der Theke (§2.2), beim Schulbuch also nur die Sperre von Hand. Forderung, Überfällig-Automatik und Ausleihlimit halten eine Verlängerung nicht an. Die neue Frist ist die Leihfrist für Bücher (`frist_buch_tage`), gezählt ab dem späteren von alter Frist und heute, und rückt wie jede Tagesfrist auf den nächsten Schultag. Die Leserakte schickt die Frist mit, die sie zeigt (`frist_bisher`); steht am Server schon eine andere, verlängert die Tür nicht noch einmal, antwortet mit 409 und nennt die jetzige. So verlängert ein zweiter Klick nach einer verlorenen Antwort nicht doppelt, ebenso ein zweiter Platz mit derselben alten Frist; ohne Angabe verlängert die Tür wie bisher.
 
