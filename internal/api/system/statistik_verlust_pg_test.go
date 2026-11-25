@@ -96,3 +96,81 @@ func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 			antwort.Zirkulation.Verliehen, antwort.Quote)
 	}
 }
+
+// Ein endgültig gelöschter Verlust zählt in der Statistik weiter, wie im Abgangsbuch: Verluste,
+// Wiederbeschaffungswert und Quote bleiben, nur der Gesamtbestand nennt das Exemplar nicht mehr.
+// Der Filter Lernmittel/Freihand ordnet die Zeile nach der Art ihres Titels.
+func TestStatistik_GeloeschterVerlustZaehltWeiter(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	lernmittel := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Lernmittel", "Sta 3")
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
+		t.Fatalf("Lernmittel setzen: %v", err)
+	}
+	freihand := testdaten.LegeTitelMitSignaturAn(t, pool, "Statistik Freihand", "Sta 4")
+	verloren := testdaten.LegeExemplarAn(t, pool, lernmittel, "SG-VERLOREN", true, "")
+	testdaten.LegeExemplarAn(t, pool, lernmittel, "SG-DA", true, "")
+	verlorenFrei := testdaten.LegeExemplarAn(t, pool, freihand, "SG-FREI-VERLOREN", true, "")
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET einkaufspreis = CASE WHEN id = $1 THEN 20 ELSE 10 END
+		WHERE id = ANY($2)`, verloren, []string{verloren, verlorenFrei}); err != nil {
+		t.Fatalf("Preis setzen: %v", err)
+	}
+	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
+	buecher := repository.NewKatalogAbfragen(pool)
+	for _, id := range []string{verloren, verlorenFrei} {
+		if err := buecher.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, bearbeiter); err != nil {
+			t.Fatalf("als verloren ausbuchen: %v", err)
+		}
+	}
+
+	type zahlen struct {
+		Gesamt, Verlorene int
+		Quote, Wert       float64
+	}
+	lies := func(filter string) zahlen {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		srv.Statistik().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken?type="+filter, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Verluste struct {
+				Gesamt    int     `json:"gesamt_bestand"`
+				Verlorene int     `json:"verlorene_exemplare"`
+				Quote     float64 `json:"verlust_quote"`
+			} `json:"loss_stats"`
+			Wert float64 `json:"wiederbeschaffungswert_defekt"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v", err)
+		}
+		return zahlen{antwort.Verluste.Gesamt, antwort.Verluste.Verlorene, antwort.Verluste.Quote, antwort.Wert}
+	}
+	erwartet := map[string]zahlen{
+		"":         {Gesamt: 3, Verlorene: 2, Quote: 66.67, Wert: 30},
+		"lmf":      {Gesamt: 2, Verlorene: 1, Quote: 50, Wert: 20},
+		"freihand": {Gesamt: 1, Verlorene: 1, Quote: 100, Wert: 10},
+	}
+	for filter, soll := range erwartet {
+		if ist := lies(filter); ist != soll {
+			t.Fatalf("vor dem Löschen, Filter %q: %+v, erwartet %+v", filter, ist, soll)
+		}
+	}
+
+	geloescht, err := repository.NewInventurAbfragen(pool).LoescheVerlusteEndgueltig(ctx, []string{verloren}, bearbeiter)
+	if err != nil || len(geloescht) != 1 {
+		t.Fatalf("endgültig löschen: %v, %d gelöscht", err, len(geloescht))
+	}
+
+	for filter, soll := range erwartet {
+		if filter != "freihand" {
+			soll.Gesamt-- // Exemplare im System: das gelöschte fehlt
+		}
+		if ist := lies(filter); ist != soll {
+			t.Errorf("nach dem Löschen, Filter %q: %+v, erwartet %+v — der gelöschte Verlust zählt weiter", filter, ist, soll)
+		}
+	}
+}

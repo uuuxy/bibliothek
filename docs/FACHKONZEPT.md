@@ -897,7 +897,9 @@ Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
   der beiden Bücher (`sqlIstAbgang`). Ein gelöschtes Exemplar steht am Tag des Löschens darin, ein schon
   ausgesondertes mit Tag und Grund von damals. Die Statistik zählt nur, was im Bestand ist oder war
   (`repository.sqlWarImBestand`); Verluste, Verlustquote und Wiederbeschaffungswert folgen der Grenze
-  des Abgangsbuchs, gelöschte Exemplare zählt sie nicht. Vorbelegt ist das laufende Schulhalbjahr mit
+  des Abgangsbuchs und zählen wie dieses gelöschte Exemplare mit (`geloeschte_exemplare` trägt dafür
+  Einkaufspreis und Art des Titels). Die Quote teilt durch alles, was im Bestand war; der Gesamtbestand
+  nennt die Exemplare im System. Vorbelegt ist das laufende Schulhalbjahr mit
   den Stichtagen der Bestandskartei (15.3. und 15.9.). Der Zeitraum wird am Server bestimmt, damit
   Bildschirm und Ausdruck denselben meinen, und umfasst höchstens ein Jahr (entschieden am 16.10.2026):
   Jede Zeile steht in der Antwort, weil jemand den Nachweis unterschreibt; mehrere Jahre gehen als

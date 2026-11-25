@@ -40,20 +40,21 @@ type Ladenhueter struct {
 	Erscheinungsjahr int    `json:"erscheinungsjahr,omitempty"`
 }
 
-// BestandKennzahlen bündelt alle aggregierten Zahlen aus einem Scan über
-// buecher_exemplare (statt mehrerer Subselects pro Kennzahl).
+// BestandKennzahlen bündelt alle aggregierten Zahlen aus einem Scan über buecher_exemplare und
+// einem über geloeschte_exemplare (statt mehrerer Subselects pro Kennzahl).
 type BestandKennzahlen struct {
 	GesamtBestand    int
 	AktiverBestand   int // physisch vorhanden = nicht ausgesondert
 	AktuellVerliehen int
 	// VerloreneExemplare: nur echte Abgänge (aussonderung_grund VERLUST oder
-	// BESCHAEDIGUNG). Bewusst Aussortiertes und Bestandskorrekturen zählen nicht.
+	// BESCHAEDIGUNG), auch endgültig gelöschte. Bewusst Aussortiertes und Bestandskorrekturen
+	// zählen nicht.
 	VerloreneExemplare int
 	// Wiederbeschaffungswert: Summe der Einkaufspreise der echten Verluste
 	// (VERLUST/BESCHAEDIGUNG) — also der Bücher, die tatsächlich nachgekauft werden
 	// müssen. Kuratiert Aussortiertes und Bestandskorrekturen bleiben aussen vor.
 	WiederbeschaffungswertDefekt float64
-	VerlustQuote                 float64 // echte Verluste / Gesamtbestand
+	VerlustQuote                 float64 // echte Verluste / alles, was im Bestand war, auch Gelöschtes
 	Zirkulationsquote            float64 // verliehen / aktiver Bestand
 }
 
@@ -83,33 +84,52 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) 
 	// Die Grenze ist die des Abgangsbuchs: Ein bestelltes Exemplar, das nie eintraf und
 	// als verloren ausgebucht wurde, war nie im Bestand und ist kein Verlust.
 	const istVerlust = sqlIstAbgang + " AND e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
+	const geloeschtIstVerlust = "t.grund IN ('VERLUST', 'BESCHAEDIGUNG')"
 
 	// Die offenen Ausleihen stehen als CTE mit DISTINCT vor der Abfrage: So wählt der Planer
 	// bei wachsendem Bestand einen Hash-Join statt einer verschachtelten Schleife, und ein
 	// Exemplar mit zwei offenen Ausleihen verdoppelt keine Zeile.
+	//
+	// Endgültig gelöschte Exemplare zählen bei den Verlusten weiter, wie im Abgangsbuch
+	// (geloeschte_exemplare, nur Exemplare aus dem Bestand); die Quote teilt durch alles, was im
+	// Bestand war. Der Gesamtbestand bleibt bei den Exemplaren im System. Die Zeile eines
+	// gelöschten Exemplars trägt die Art ihres Titels; der Alias t lässt den Filter des Bestands
+	// (BestandsFilterBedingung) auch dort greifen.
 	q := fmt.Sprintf(`
 		WITH aktive_ausleihen AS (
 			SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL
+		), bestand AS (
+			SELECT
+				COUNT(*)::int AS gesamt,
+				COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert)::int AS aktiv,
+				COUNT(*) FILTER (WHERE al.exemplar_id IS NOT NULL AND NOT e.ist_ausgesondert)::int AS verliehen,
+				COUNT(*) FILTER (WHERE %[1]s)::int AS verlorene,
+				COALESCE(SUM(e.einkaufspreis) FILTER (WHERE %[1]s), 0) AS wiederbeschaffung
+			FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id
+			LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
+			-- Gezählt wird, was im Bestand ist oder war; ein bestelltes Exemplar zählt ab dem Eintreffen.
+			WHERE %[3]s %[2]s
+		), geloescht AS (
+			SELECT
+				COUNT(*)::int AS gesamt,
+				COUNT(*) FILTER (WHERE %[4]s)::int AS verlorene,
+				COALESCE(SUM(t.einkaufspreis) FILTER (WHERE %[4]s), 0) AS wiederbeschaffung
+			FROM geloeschte_exemplare t
+			WHERE TRUE %[2]s
 		)
 		SELECT
-			COUNT(*)::int AS gesamt,
-			COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert)::int AS aktiv,
-			COUNT(*) FILTER (WHERE al.exemplar_id IS NOT NULL AND NOT e.ist_ausgesondert)::int AS verliehen,
-			COUNT(*) FILTER (WHERE %[1]s)::int AS verlorene,
-			COALESCE(SUM(e.einkaufspreis) FILTER (WHERE %[1]s), 0)::float8 AS wiederbeschaffung,
-			CASE WHEN COUNT(*) = 0 THEN 0.0
-				 ELSE ROUND(COUNT(*) FILTER (WHERE %[1]s) * 100.0 / COUNT(*), 2)
+			b.gesamt, b.aktiv, b.verliehen,
+			b.verlorene + g.verlorene,
+			(b.wiederbeschaffung + g.wiederbeschaffung)::float8 AS wiederbeschaffung,
+			CASE WHEN b.gesamt + g.gesamt = 0 THEN 0.0
+				 ELSE ROUND((b.verlorene + g.verlorene) * 100.0 / (b.gesamt + g.gesamt), 2)
 			END::float8 AS verlust_quote,
-			CASE WHEN COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert) = 0 THEN 0.0
-				 ELSE ROUND(COUNT(*) FILTER (WHERE al.exemplar_id IS NOT NULL AND NOT e.ist_ausgesondert) * 100.0
-					   / COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert), 2)
+			CASE WHEN b.aktiv = 0 THEN 0.0
+				 ELSE ROUND(b.verliehen * 100.0 / b.aktiv, 2)
 			END::float8 AS zirkulationsquote
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
-		-- Gezählt wird, was im Bestand ist oder war; ein bestelltes Exemplar zählt ab dem Eintreffen.
-		WHERE %[3]s %[2]s
-	`, istVerlust, typFilter, sqlWarImBestand)
+		FROM bestand b, geloescht g
+	`, istVerlust, typFilter, sqlWarImBestand, geloeschtIstVerlust)
 
 	k := &BestandKennzahlen{}
 	err := db.QueryRow(ctx, q).Scan(

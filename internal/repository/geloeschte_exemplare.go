@@ -28,7 +28,7 @@ const (
 // auch ein Exemplar, das zwischen Lesen und Löschen dazukam.
 //
 // Ein schon ausgesondertes Exemplar behält Tag und Grund seiner Aussonderung; es bleibt in dem
-// Halbjahr, in dem es abging. Für jedes andere ist das Löschen der Abgang, mit dem Grund, den der
+// Halbjahr, in dem es abging. Einkaufspreis und Art des Titels bleiben für die Statistik. Für jedes andere ist das Löschen der Abgang, mit dem Grund, den der
 // Rufer übergibt. Ausleihen und Schadensfälle muss der Rufer vorher entfernen (ON DELETE
 // RESTRICT). Die Antwort ist die Zahl der gelöschten Exemplare.
 func loescheExemplareMitBuchzeile(ctx context.Context, q Datenbank, nach exemplareNach, ids []string, grund string) (int64, error) {
@@ -39,11 +39,13 @@ func loescheExemplareMitBuchzeile(ctx context.Context, q Datenbank, nach exempla
 			RETURNING e.*
 		), eingetragen AS (
 			INSERT INTO geloeschte_exemplare
-				(exemplar_id, barcode, titel, signatur, zugang_am, lieferant, topf_belegt, topf, abgang_am, grund)
+				(exemplar_id, barcode, titel, signatur, zugang_am, lieferant, topf_belegt, topf, abgang_am, grund,
+				 einkaufspreis, ist_lernmittel)
 			SELECT e.id, e.barcode_id, t.titel, COALESCE(t.signatur, ''), e.zugang_am,
 			       COALESCE(bv_topf.lieferant_name, ''), `+exemplarTopfBelegtSQL+`, `+ExemplarTopfSQL+`,
 			       CASE WHEN e.ist_ausgesondert THEN e.ausgesondert_am ELSE now() END,
-			       CASE WHEN e.ist_ausgesondert THEN e.aussonderung_grund ELSE $2 END
+			       CASE WHEN e.ist_ausgesondert THEN e.aussonderung_grund ELSE $2 END,
+			       e.einkaufspreis, t.ist_lernmittel
 			FROM weg e
 			JOIN buecher_titel t ON t.id = e.titel_id
 			`+ExemplarTopfJoin+`

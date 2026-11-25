@@ -2003,7 +2003,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('181_anschrift_nur_schueler.sql'),
 ('182_topf_spende.sql'),
 ('183_namenssuche_ohne_trenner.sql'),
-('184_namenssuche_apostroph_und_festes_leerzeichen.sql')
+('184_namenssuche_apostroph_und_festes_leerzeichen.sql'),
+('185_geloeschte_exemplare_preis.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2318,7 +2319,11 @@ CREATE TABLE IF NOT EXISTS geloeschte_exemplare (
     grund       VARCHAR(20) NOT NULL
         CONSTRAINT chk_geloeschte_exemplare_grund
         CHECK (grund IN ('VERLUST', 'BESCHAEDIGUNG', 'AUSSORTIERT', 'BESTANDSKORREKTUR')),
-    geloescht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    geloescht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    -- Einkaufspreis und Art des Titels für die Statistik (Migration 185): Sie zählt Verluste wie
+    -- das Abgangsbuch, auch gelöschte. NULL bei Zeilen von vor der Migration.
+    einkaufspreis DECIMAL(10,2),
+    ist_lernmittel BOOLEAN
 );
 
 CREATE INDEX IF NOT EXISTS idx_geloeschte_exemplare_abgang_am ON geloeschte_exemplare (abgang_am);
