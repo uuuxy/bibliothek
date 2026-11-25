@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pkg/code39"
+
 	"github.com/google/uuid"
 )
 
@@ -70,6 +72,36 @@ func TestAltesLMFEtikett_AusgesondertGehtZurueckUndNenntDieNummer(t *testing.T) 
 	}
 	if n, _ := w.offen(t); n != 0 {
 		t.Errorf("nach der Fremdrückgabe %d offene Ausleihen, erwartet keine", n)
+	}
+}
+
+// Ohne Netz legt die Theke jeden Scan mit Vorsilbe ab, wie er kommt, auch mit dem Prüfzeichen
+// eines alten Code-39-Aufdrucks. Das Nachbuchen löst Ausweis und Buch dann wie der Scan am Netz
+// auf (VerarbeiteEingabe): erst wie gescannt, dann ohne Prüfzeichen.
+func TestAltesCode39Pruefzeichen_WirdOhneNetzNachgebucht(t *testing.T) {
+	w := baueNachbuchWelt(t)
+	var ausweis string
+	if err := w.pool.QueryRow(context.Background(), `SELECT barcode_id FROM leser WHERE id = $1`, w.anna).Scan(&ausweis); err != nil {
+		t.Fatalf("Ausweis von Anna: %v", err)
+	}
+	mitPruefzeichen := func(nummer string) string {
+		t.Helper()
+		zeichen, ok := code39.Pruefzeichen(nummer)
+		if !ok {
+			t.Fatalf("kein Prüfzeichen zu %q", nummer)
+		}
+		return nummer + string(zeichen)
+	}
+
+	ergebnisse := w.nachbuchen(t, map[string]any{
+		"schluessel": uuid.NewString(), "absicht": "ausleihe", "barcode": mitPruefzeichen(w.code),
+		"gescannt_am": time.Now(), "ausweis_barcode": mitPruefzeichen(ausweis),
+	})
+	if ergebnisse[0].Ergebnis != "ausgeliehen" {
+		t.Fatalf("Nachbuchen mit Prüfzeichen an Ausweis und Buch: %q %s", ergebnisse[0].Ergebnis, ergebnisse[0].Grund)
+	}
+	if n, bei := w.offen(t); n != 1 || bei != w.anna {
+		t.Errorf("%d offene Ausleihen bei %q, erwartet eine bei Anna", n, bei)
 	}
 }
 

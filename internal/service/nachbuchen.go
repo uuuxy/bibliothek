@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/code39"
 	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
 
@@ -232,17 +233,10 @@ func holeAbgeschriebenesZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage,
 	return nil
 }
 
-// loeseExemplar findet das Exemplar zum gescannten Barcode — direkt, über ein altes
-// LMF-Etikett oder über die EAN-13 eines Littera-Etiketts (dieselben Formen wie der Online-Scan).
+// loeseExemplar findet das Exemplar zum gescannten Barcode über dieselben alten Aufdrucke wie der
+// Scan am Netz (findeExemplarZumScan).
 func (d *AusleihDienst) loeseExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
-	exemplar, err := d.katalogAbfragen.FindeExemplar(ctx, barcode)
-	if err != nil || exemplar != nil {
-		return exemplar, err
-	}
-	if nummer, istEtikett := dekodiereLitteraEtikett(barcode); istEtikett {
-		return d.katalogAbfragen.FindeExemplar(ctx, nummer)
-	}
-	return nil, nil
+	return findeExemplarZumScan(ctx, d.katalogAbfragen, barcode)
 }
 
 // loesePerson bestimmt, wer ausleiht: die schon aufgelöste Person des Eintrags, sonst der ohne
@@ -263,6 +257,13 @@ func (d *AusleihDienst) loesePerson(ctx context.Context, l *nachbuchLage) error 
 	leser, err := d.leserAbfragen.FindeZuBarcode(ctx, *e.AusweisBarcode)
 	if err != nil {
 		return err
+	}
+	// Ein alter Ausweis in Code 39 trägt ein Prüfzeichen, das der Scanner mitliefert. Gekürzt wird
+	// wie am Netz (VerarbeiteEingabe) nur als zweiter Versuch.
+	if kern, hatPruefzeichen := code39.OhnePruefzeichen(*e.AusweisBarcode); leser == nil && hatPruefzeichen {
+		if leser, err = d.leserAbfragen.FindeZuBarcode(ctx, kern); err != nil {
+			return err
+		}
 	}
 	if leser != nil {
 		l.leser = leser

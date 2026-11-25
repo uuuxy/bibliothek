@@ -1874,8 +1874,9 @@ Gedruckt wird Code 128 ohne Prüfzeichen. Alte Code-39-Aufdrucke trugen eines, d
 Teil der Nummer liefert; die Theke sah dann aus, als täte sie nichts. Ohne Treffer wird ein
 mögliches Prüfzeichen abgeschnitten und einmal neu aufgelöst, nur als späterer Versuch: an der
 Theke in `VerarbeiteEingabe`, überall sonst, wo ein Buch zu einem Scan gesucht wird (Inventur,
-Medienkatalog), über `service.ExemplarKandidaten`, das auch das Etikett von Littera
-zurückrechnet. Alle alten Aufdrucke bleiben dauerhaft nutzbar.
+Nachbuchen, Medienkatalog), über `service.ExemplarKandidaten`, das auch das Etikett von Littera
+zurückrechnet; beim Nachbuchen ebenso den Ausweis. Alle alten Aufdrucke bleiben dauerhaft
+nutzbar.
 Fundstelle: `internal/pkg/code39`, `internal/service/scan_erkennung.go`,
 `frontend/e2e/barcode-lesbar.spec.js`.
 

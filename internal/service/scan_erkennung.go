@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"bibliothek/internal/pkg/code39"
+	"bibliothek/internal/repository"
 )
 
 // ExemplarTreffer ist das Exemplar zu einem gescannten oder getippten Wert, ohne Wirkung. Die
@@ -18,19 +19,29 @@ type ExemplarTreffer struct {
 	Ausgesondert bool `json:"ausgesondert,omitempty"`
 }
 
-// ErkenneExemplar löst einen Wert zu einem Exemplar auf, über ExemplarKandidaten und je Wert auch
-// ein altes LMF-Etikett (FindeExemplar); nil, wenn keines ihn trägt.
+// ErkenneExemplar löst einen Wert zu einem Exemplar auf (findeExemplarZumScan); nil, wenn
+// keines ihn trägt.
 func ErkenneExemplar(ctx context.Context, katalogAbfragen exemplarErkennung, text string) (*ExemplarTreffer, error) {
+	exemplar, err := findeExemplarZumScan(ctx, katalogAbfragen, text)
+	if err != nil {
+		return nil, fmt.Errorf("exemplar auflösen: %w", err)
+	}
+	if exemplar == nil {
+		return nil, nil
+	}
+	return &ExemplarTreffer{
+		ID: exemplar.ID, TitelID: exemplar.TitelID, Barcode: exemplar.BarcodeID,
+		Ausgesondert: exemplar.IstAusgesondert,
+	}, nil
+}
+
+// findeExemplarZumScan liefert das Exemplar zum ersten der ExemplarKandidaten, der eines trägt;
+// FindeExemplar liest je Wert auch ein altes LMF-Etikett. nil, wenn keiner eines trägt.
+func findeExemplarZumScan(ctx context.Context, katalogAbfragen exemplarErkennung, text string) (*repository.Exemplar, error) {
 	for _, kandidat := range ExemplarKandidaten(text) {
 		exemplar, err := katalogAbfragen.FindeExemplar(ctx, kandidat)
-		if err != nil {
-			return nil, fmt.Errorf("exemplar auflösen: %w", err)
-		}
-		if exemplar != nil {
-			return &ExemplarTreffer{
-				ID: exemplar.ID, TitelID: exemplar.TitelID, Barcode: exemplar.BarcodeID,
-				Ausgesondert: exemplar.IstAusgesondert,
-			}, nil
+		if err != nil || exemplar != nil {
+			return exemplar, err
 		}
 	}
 	return nil, nil
