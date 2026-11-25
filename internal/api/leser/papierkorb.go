@@ -44,6 +44,7 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 				"vorname":        z.Vorname,
 				"nachname":       z.Nachname,
 				"klasse":         z.Klasse,
+				"art":            z.Art,
 				"abgaenger_jahr": z.AbgaengerJahr,
 				"ist_gesperrt":   z.Gesperrt,
 				"deleted_at":     z.GeloeschtAm,

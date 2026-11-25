@@ -8,11 +8,13 @@ import (
 // PapierkorbZeile ist ein Leser im Papierkorb. AnonymisiertAm ist gesetzt, wenn die Zeile nach
 // der Frist anonymisiert wurde: Dann ist sie kein Leser mehr, sondern ein Pseudonym.
 type PapierkorbZeile struct {
-	ID             string
-	Barcode        string
-	Vorname        string
-	Nachname       string
-	Klasse         string
+	ID       string
+	Barcode  string
+	Vorname  string
+	Nachname string
+	Klasse   string
+	// Art unterscheidet Schüler vom Kollegium, das keine Klasse und oft keinen Ausweis hat.
+	Art            string
 	AbgaengerJahr  *int
 	Gesperrt       bool
 	GeloeschtAm    time.Time
@@ -24,7 +26,7 @@ type PapierkorbZeile struct {
 func LadePapierkorb(ctx context.Context, db Datenbank, limit int) ([]PapierkorbZeile, error) {
 	rows, err := db.Query(ctx, `
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
-			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
+			       coalesce(klasse, ''), coalesce(art, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
 			       anonymized_at
 			FROM leser
 			WHERE deleted_at IS NOT NULL
@@ -39,7 +41,7 @@ func LadePapierkorb(ctx context.Context, db Datenbank, limit int) ([]PapierkorbZ
 	zeilen := []PapierkorbZeile{}
 	for rows.Next() {
 		var z PapierkorbZeile
-		if err := rows.Scan(&z.ID, &z.Barcode, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr, &z.Gesperrt, &z.GeloeschtAm, &z.AnonymisiertAm); err != nil {
+		if err := rows.Scan(&z.ID, &z.Barcode, &z.Vorname, &z.Nachname, &z.Klasse, &z.Art, &z.AbgaengerJahr, &z.Gesperrt, &z.GeloeschtAm, &z.AnonymisiertAm); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)

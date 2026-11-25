@@ -140,6 +140,10 @@ func TestKollegeLoeschen(t *testing.T) {
 		if !strings.Contains(rec.Body.String(), "Papierkorb") {
 			t.Errorf("der gelöschte Kollege fehlt im Papierkorb: %s", rec.Body.String())
 		}
+		// Die Art reist mit: Ohne sie stand der Kollege dort als „Klasse unbekannt“.
+		if !strings.Contains(rec.Body.String(), `"art":"lehrkraft"`) {
+			t.Errorf("die Zeile nennt die Art des Kollegen nicht: %s", rec.Body.String())
+		}
 	})
 
 	t.Run("wiederhergestellt kommt er ohne Zugang zurück", func(t *testing.T) {

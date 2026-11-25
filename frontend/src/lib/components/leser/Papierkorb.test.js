@@ -160,3 +160,18 @@ describe('Papierkorb', () => {
 		);
 	});
 });
+
+// Wie in der Leserdatei: Ein gelöschter Kollege stand als „Klasse unbekannt“ und ohne Ausweiszeile da.
+describe('Papierkorb: Kollegium', () => {
+	it('nennt beim Kollegen die Art statt einer Klasse und „ohne Ausweis“', async () => {
+		const kollege = { ...NORMAL, id: 'k-1', art: 'lehrkraft', klasse: '', barcode_id: '' };
+		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ (antwort([kollege, NORMAL])));
+		render(Papierkorb, { props: {} });
+
+		await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(3));
+		expect(screen.getByText('Lehrkraft')).toBeTruthy();
+		expect(screen.getByText('ohne Ausweis')).toBeTruthy();
+		expect(screen.getByText('Kl. 07H1')).toBeTruthy();
+		expect(screen.queryByText('Klasse unbekannt')).toBeNull();
+	});
+});

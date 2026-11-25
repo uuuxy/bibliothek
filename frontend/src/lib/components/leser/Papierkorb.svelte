@@ -14,6 +14,7 @@
 	import Icon from '../ui/Icon.svelte';
 	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
 	import { erzeugePapierkorb, istAnonymisiert } from './papierkorbListe.svelte.js';
+	import { istKollegium, leserArtText } from './leserArt.js';
 
 	let { onRestoreSuccess = () => {}, darfEndgueltigLoeschen = false } = $props();
 
@@ -95,12 +96,22 @@
 							<td class="text-body-medium-emphasized">
 								{s.vorname}
 								{s.nachname}
-								<div class="text-sm font-mono text-on-surface-variant font-normal mt-0.5">
-									{s.barcode_id}
+								<!-- Wie in der Leserdatei: Ein Kollege hat oft keinen Ausweis und nie eine
+								     Klasse; statt der Klasse steht seine Art wie in der Buchakte. -->
+								<div
+									class="text-sm text-on-surface-variant font-normal mt-0.5 {s.barcode_id
+										? 'font-mono'
+										: 'italic'}"
+								>
+									{s.barcode_id || 'ohne Ausweis'}
 								</div>
 							</td>
 							<td class="font-medium">
-								{s.klasse ? `Kl. ${s.klasse}` : 'Klasse unbekannt'}
+								{#if istKollegium(s)}
+									{leserArtText(s.art)}
+								{:else}
+									{s.klasse ? `Kl. ${s.klasse}` : 'Klasse unbekannt'}
+								{/if}
 							</td>
 							<td>
 								{new Date(s.deleted_at).toLocaleString('de-DE', {
