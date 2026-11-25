@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+
+	"bibliothek/internal/pkg/code39"
 )
 
 // ExemplarTreffer ist das Exemplar zu einem gescannten oder getippten Wert, ohne Wirkung. Die
@@ -16,11 +18,10 @@ type ExemplarTreffer struct {
 	Ausgesondert bool `json:"ausgesondert,omitempty"`
 }
 
-// ErkenneExemplar löst einen Wert zu einem Exemplar auf, über den Barcode selbst, ein altes
-// LMF-Etikett (FindeExemplar) und das Etikett von Littera (EAN-13 → Mediennummer), in der
-// Reihenfolge der Theke (verarbeiteOhneVorsilbe); nil, wenn keines ihn trägt.
+// ErkenneExemplar löst einen Wert zu einem Exemplar auf, über ExemplarKandidaten und je Wert auch
+// ein altes LMF-Etikett (FindeExemplar); nil, wenn keines ihn trägt.
 func ErkenneExemplar(ctx context.Context, katalogAbfragen exemplarErkennung, text string) (*ExemplarTreffer, error) {
-	for _, kandidat := range exemplarKandidaten(text) {
+	for _, kandidat := range ExemplarKandidaten(text) {
 		exemplar, err := katalogAbfragen.FindeExemplar(ctx, kandidat)
 		if err != nil {
 			return nil, fmt.Errorf("exemplar auflösen: %w", err)
@@ -35,12 +36,18 @@ func ErkenneExemplar(ctx context.Context, katalogAbfragen exemplarErkennung, tex
 	return nil, nil
 }
 
-// exemplarKandidaten sind der Wert selbst und, wenn er ein Etikett von Littera ist, die
-// zurückgerechnete Mediennummer.
-func exemplarKandidaten(text string) []string {
+// ExemplarKandidaten sind die Werte, unter denen ein gescanntes Buch im Bestand stehen kann, in
+// der Reihenfolge der Theke: der Scan selbst, beim Etikett von Littera die zurückgerechnete
+// Mediennummer, zuletzt der Scan ohne ein Prüfzeichen von Code 39 (code39.OhnePruefzeichen, nur
+// als späterer Versuch). Wer zu einem Scan ein Buch sucht, nimmt die Liste von hier, damit jeder
+// alte Aufdruck überall gilt.
+func ExemplarKandidaten(text string) []string {
 	kandidaten := []string{text}
 	if nummer, istEtikett := dekodiereLitteraEtikett(text); istEtikett {
 		kandidaten = append(kandidaten, nummer)
+	}
+	if kern, hatPruefzeichen := code39.OhnePruefzeichen(text); hatPruefzeichen {
+		kandidaten = append(kandidaten, kern)
 	}
 	return kandidaten
 }

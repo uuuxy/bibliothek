@@ -47,6 +47,11 @@ func TestErkenneExemplar(t *testing.T) {
 			soll:      &ExemplarTreffer{ID: "ex-2", TitelID: "titel-2", Barcode: "58968"},
 		},
 		{
+			name: "Code-39-Etikett: das mitgelieferte Prüfzeichen fällt weg", wert: "B-12345J",
+			exemplare: nurUnter("B-12345", exemplar),
+			soll:      &ExemplarTreffer{ID: "ex-1", TitelID: "titel-1", Barcode: "B-12345"},
+		},
+		{
 			name: "ausgesondertes Exemplar", wert: "B-99", exemplare: nurUnter("B-99", ausgesondert),
 			soll: &ExemplarTreffer{ID: "ex-3", TitelID: "titel-3", Barcode: "B-99", Ausgesondert: true},
 		},

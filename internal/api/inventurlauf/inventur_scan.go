@@ -9,27 +9,35 @@ import (
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
 
 	"github.com/jackc/pgx/v5"
 )
 
 const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar"
 
-// ladeExemplarFuerScan lädt die Angaben zum Exemplar, die der Scan braucht. Bei false ist die
-// Fehlerantwort schon geschrieben: 404 bei unbekanntem Barcode, sonst 500.
+// ladeExemplarFuerScan lädt die Angaben zum Exemplar, die der Scan braucht, über dieselben alten
+// Aufdrucke wie die Theke (service.ExemplarKandidaten). Bei false ist die Fehlerantwort schon
+// geschrieben: 404 bei unbekanntem Barcode, sonst 500.
 func ladeExemplarFuerScan(ctx context.Context, abfragen *repository.InventurAbfragen, w http.ResponseWriter, barcodeID string) (*repository.InventurExemplar, bool) {
-	exemplar, err := abfragen.LadeExemplar(ctx, barcodeID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank geht
-			// ins Log.
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungUnbekannterBarcode, err)
+	var unbekannt error
+	for _, kandidat := range service.ExemplarKandidaten(barcodeID) {
+		exemplar, err := abfragen.LadeExemplar(ctx, kandidat)
+		if err == nil {
+			return exemplar, true
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return nil, false
 		}
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-		return nil, false
+		if unbekannt == nil {
+			unbekannt = err
+		}
 	}
-	return exemplar, true
+	// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank zum Scan, wie
+	// er kam, geht ins Log.
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungUnbekannterBarcode, unbekannt)
+	return nil, false
 }
 
 // scanAnfrage nennt den Lauf und den gescannten Barcode.
