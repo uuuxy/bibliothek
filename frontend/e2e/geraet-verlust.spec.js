@@ -60,5 +60,7 @@ test('Gerät verloren: es bleibt als verloren stehen, die Forderung steht in der
 		       (SELECT count(*) FROM schadensfaelle f WHERE f.geraet_id = g.id AND f.betrag = 149)
 		FROM geraete g JOIN ausleihen a ON a.geraet_id = g.id WHERE g.barcode_id = 'G-${suffix}'`);
 	expect(stand, 'verloren | Ausleihe beendet | Forderung zu 149 €').toBe('t|t|1');
+	// Die Forderung nennt das Modell, im Reiter „Gebühren & Schäden" der Akte.
+	await page.getByRole('tab', { name: /Gebühren & Schäden/ }).click();
 	await expect(page.getByText(`E2E-Tablet-${suffix}`).first()).toBeVisible();
 });
