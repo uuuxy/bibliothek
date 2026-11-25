@@ -39,11 +39,16 @@
 		).length;
 	});
 
-	// Einmal je Fenster: Wer danach die ISBN ändert oder alle Wörter entfernt, fragt mit dem Knopf.
+	// Einmal je Fenster, entschieden an den geladenen Schlagworten: Wer danach die ISBN ändert oder
+	// alle Wörter entfernt, fragt mit dem Knopf.
 	let vonSelbstGefragt = false;
 	$effect(() => {
-		if (!vonSelbst || vonSelbstGefragt || disabled || !hatIsbn || status !== '') return;
-		if (!Array.isArray(werte) || werte.length > 0) return;
+		if (!vonSelbst || vonSelbstGefragt || !Array.isArray(werte)) return;
+		if (werte.length > 0) {
+			vonSelbstGefragt = true;
+			return;
+		}
+		if (disabled || !hatIsbn || status !== '') return;
 		vonSelbstGefragt = true;
 		vorschlag.lade(isbn);
 	});

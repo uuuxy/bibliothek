@@ -23,7 +23,7 @@ function dnbAntwortet(antwort, status = 200) {
 	);
 }
 
-/** @param {{ isbn?: string, werte?: string[] }} [props] */
+/** @param {{ isbn?: string, werte?: string[], vonSelbst?: boolean }} [props] */
 function knopf(props = {}) {
 	const vorschlag = erzeugeDnbSchlagwortVorschlag();
 	const screen = render(SchlagwortDnbVorschlag, { vorschlag, isbn: ISBN, werte: [], ...props });
@@ -120,6 +120,18 @@ describe('SchlagwortDnbVorschlag', () => {
 	it('zeigt ohne ISBN keinen Knopf', () => {
 		const { screen } = knopf({ isbn: '' });
 		expect(screen.queryByRole('button')).toBeNull();
+	});
+
+	// Von selbst fragt der Teil einmal je Fenster, und nur, wenn der Titel beim Laden kein
+	// Schlagwort trägt. Wer danach alle entfernt, fragt mit dem Knopf.
+	it('fragt von selbst nicht, wenn jemand die geladenen Schlagworte alle entfernt', async () => {
+		dnbAntwortet({ dnb_satz: true, schlagwort_vorschlaege: ['Krieg'] });
+		const { screen } = knopf({ werte: ['Krieg'], vonSelbst: true });
+
+		await screen.rerender({ werte: [] });
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeTruthy();
 	});
 });
 
