@@ -194,6 +194,60 @@ func TestGrundadresse(t *testing.T) {
 	}
 }
 
+// Leitet das Webmail auf http weiter, ginge die Anmeldung im Klartext durchs Netz.
+// webmail.schule.invalid steht für einen fremden Rechner; folgte der Abruf, scheiterte er dort an
+// der Namensauflösung statt an der Regel.
+func TestHoleGlobalesAdressbuch_WeiterleitungOhneHTTPS(t *testing.T) {
+	for _, methode := range []string{http.MethodGet, http.MethodPost} {
+		t.Run(methode, func(t *testing.T) {
+			f := &fakeRoundcube{t: t}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == methode && r.URL.Query().Get("_task") == "login" {
+					// 307 behält Methode und Rumpf: Beim POST ginge das Passwort mit.
+					http.Redirect(w, r, "http://webmail.schule.invalid"+r.URL.RequestURI(), http.StatusTemporaryRedirect)
+					return
+				}
+				f.ServeHTTP(w, r)
+			}))
+			t.Cleanup(server.Close)
+
+			_, err := HoleGlobalesAdressbuch(context.Background(), Zugang{Adresse: server.URL, Benutzer: "lehrer@schule.example", Passwort: "geheim"})
+			if !errors.Is(err, ErrAdresseOhneHTTPS) || !strings.Contains(err.Error(), "http://webmail.schule.invalid") {
+				t.Errorf("HoleGlobalesAdressbuch nach einer Weiterleitung auf http = %v, erwartet die Ablehnung mit dem Ziel", err)
+			}
+		})
+	}
+}
+
+// Ein Ziel mit https lässt die Regel zu, auch auf einem anderen Rechner; nach zehn
+// Weiterleitungen ist Schluss wie mit der Vorgabe von net/http.
+func TestPruefeWeiterleitung(t *testing.T) {
+	tests := []struct {
+		ziel    string
+		vorige  int
+		wantErr bool
+	}{
+		{ziel: "https://mail.schule.example/roundcube/?_task=login"},
+		{ziel: "http://127.0.0.1:8099/?_task=login"},
+		{ziel: "http://localhost/roundcube/?_task=login"},
+		{ziel: "http://mail.schule.example/?_task=login", wantErr: true},
+		{ziel: "http://169.254.169.254/latest/meta-data/", wantErr: true},
+		{ziel: "ftp://mail.schule.example/", wantErr: true},
+		{ziel: "https://mail.schule.example/?_task=login", vorige: 9},
+		{ziel: "https://mail.schule.example/?_task=login", vorige: 10, wantErr: true},
+	}
+	for _, tt := range tests {
+		anfrage, err := http.NewRequest(http.MethodGet, tt.ziel, nil)
+		if err != nil {
+			t.Fatalf("http.NewRequest(%q): %v", tt.ziel, err)
+		}
+		err = pruefeWeiterleitung(anfrage, make([]*http.Request, tt.vorige))
+		if (err != nil) != tt.wantErr {
+			t.Errorf("pruefeWeiterleitung(%q nach %d Weiterleitungen) = %v, erwartet Fehler: %v", tt.ziel, tt.vorige, err, tt.wantErr)
+		}
+	}
+}
+
 func TestHoleGlobalesAdressbuch_ErrorCarriesNoToken(t *testing.T) {
 	f := &fakeRoundcube{t: t}
 	server := httptest.NewServer(f)

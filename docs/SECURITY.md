@@ -357,6 +357,7 @@ ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
   Warnung. Nur für ein Legacy-Relay, das anders nicht erreichbar ist.
 - **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
 - **Ein gespeichertes Passwort bleibt bei seinem Server:** Wer den Mailserver (`PUT /api/admin/settings/mail`) oder die Adresse des Webmails (`PUT /api/admin/settings/adressabgleich`) ändert, trägt die gespeicherten Passwörter neu ein, auch das des zweiten Absenders. Sonst gingen sie beim nächsten Versand oder Abgleich an den neuen Server (Gate `internal/api/system/passwort_bei_neuem_server_pg_test.go`).
+- **Weiterleitungen des Webmails:** Der Abruf des Adressbuchs folgt einer Weiterleitung nur, wenn ihr Ziel auch als eingetragene Adresse zulässig wäre: https, unverschlüsselt nur an den eigenen Rechner, höchstens zehnmal (`pruefeWeiterleitung` in `internal/adressabgleich/webmail.go`). Sonst ginge die Anmeldung samt Passwort nach einer Weiterleitung auf http im Klartext durchs Netz. Ein Ziel im Schulnetz bleibt erlaubt, weil das Webmail selbst dort stehen kann; eintragen kann es ohnehin, wer Einstellungen ändern darf (Gate `internal/adressabgleich/webmail_test.go`).
 
 ### IMAP
 

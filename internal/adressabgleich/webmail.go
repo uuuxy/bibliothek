@@ -51,6 +51,8 @@ const (
 	// (frontend/src/lib/components/admin/AdressabgleichEinstellungen.svelte), damit sie die
 	// Antwort noch sieht.
 	gesamtfrist = 2 * time.Minute
+	// hoechstensWeiterleitungen ist die Vorgabe von net/http für einen Client ohne CheckRedirect.
+	hoechstensWeiterleitungen = 10
 )
 
 var (
@@ -82,7 +84,7 @@ func holeAdressbuch(ctx context.Context, zugang Zugang, quelle string) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	s := &sitzung{client: &http.Client{Jar: jar, Timeout: wartezeit}, basis: basis, quelle: quelle}
+	s := &sitzung{client: &http.Client{Jar: jar, Timeout: wartezeit, CheckRedirect: pruefeWeiterleitung}, basis: basis, quelle: quelle}
 
 	if err := s.meldeAn(ctx, zugang.Benutzer, zugang.Passwort); err != nil {
 		return nil, err
@@ -110,12 +112,32 @@ func Grundadresse(adresse string) (string, error) {
 	if err != nil || u.Host == "" {
 		return "", fmt.Errorf("die Adresse des Webmails %q ist keine gültige Adresse", adresse)
 	}
-	if u.Scheme != "https" && (u.Scheme != "http" || !istEigenerRechner(u.Hostname())) {
+	if !istZulaessigesZiel(u) {
 		return "", ErrAdresseOhneHTTPS
 	}
 	u.RawQuery, u.Fragment = "", ""
 	u.Path = strings.TrimSuffix(strings.TrimSuffix(u.Path, "/"), "index.php")
 	return strings.TrimSuffix(u.String(), "/"), nil
+}
+
+// istZulaessigesZiel ist die Regel für jede Adresse, an die die Anmeldung gehen kann, die
+// eingetragene wie das Ziel einer Weiterleitung: https, unverschlüsselt nur an den eigenen Rechner.
+func istZulaessigesZiel(u *url.URL) bool {
+	return u.Scheme == "https" || (u.Scheme == "http" && istEigenerRechner(u.Hostname()))
+}
+
+// pruefeWeiterleitung lässt eine Weiterleitung nur auf ein zulässiges Ziel zu. Sonst ginge die
+// Anmeldung nach einer Weiterleitung auf http im Klartext durchs Netz. Die Zahl der
+// Weiterleitungen begrenzt sie wie die Vorgabe von net/http, die mit ihr nicht mehr gilt.
+func pruefeWeiterleitung(anfrage *http.Request, vorige []*http.Request) error {
+	if len(vorige) >= hoechstensWeiterleitungen {
+		return errors.New("das Webmail leitet zu oft weiter")
+	}
+	if !istZulaessigesZiel(anfrage.URL) {
+		// Nur Schema und Rechner: Der Rest der Adresse kann das Anfrage-Token tragen.
+		return fmt.Errorf("das Webmail leitet auf %s://%s weiter: %w", anfrage.URL.Scheme, anfrage.URL.Host, ErrAdresseOhneHTTPS)
+	}
+	return nil
 }
 
 func istEigenerRechner(host string) bool {
