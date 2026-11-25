@@ -86,8 +86,8 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 		srv.leser().LeserAnlegen().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
 			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"AW118-A"}`))
 		code, body := rec.Code, rec.Body.String()
-		if code != http.StatusBadRequest || !strings.Contains(body, "bereits verwendet") {
-			t.Fatalf("code = %d, erwartet 400 „bereits verwendet“: %s", code, body)
+		if code != http.StatusConflict || !strings.Contains(body, "trägt bereits eine andere Person") {
+			t.Fatalf("code = %d, erwartet 409 „trägt bereits eine andere Person“: %s", code, body)
 		}
 	})
 
