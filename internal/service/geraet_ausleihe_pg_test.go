@@ -169,7 +169,8 @@ func TestGeraet_UnbekannteNummerIstNichtGefunden(t *testing.T) {
 
 // Bringt ein anderer als der Ausleiher das Gerät zurück, ist es eine Fremdrückgabe: Die
 // Antwort nennt den Vorbesitzer mit Name und Klasse, die Zeile trägt das Merkmal und den
-// Mitarbeiter, der angenommen hat. Bringt es der Ausleiher selbst, steht keines von beidem da.
+// Mitarbeiter, der angenommen hat. Bringt es der Ausleiher selbst oder ist kein Leser geöffnet,
+// steht keines von beidem da.
 func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 	g := newGeraeteTheke(t)
 	ctx := context.Background()
@@ -207,6 +208,21 @@ func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 	if res.Fremdrueckgabe || res.Vorbesitzer != nil || z.offen || z.fremd || z.annahme != g.annahme {
 		t.Errorf("eigene Rückgabe: Antwort %+v, Zeile %+v; erwartet ohne Fremdrückgabe und Vorbesitzer", res, z)
 	}
+
+	// Ohne geöffneten Leser ist es eine gewöhnliche Rückgabe wie beim Buch (NimmZurueck): Die
+	// Antwort nennt den Ausleiher, damit die Schnellrückgabe sagen kann, bei wem das Gerät war.
+	ohne := g.geraet(t, "ohne")
+	if _, err := g.dienst.verarbeiteScan(ctx, ohne, &ausleiher, true, false, g.ausgabe); err != nil {
+		t.Fatalf("Ausleihe: %v", err)
+	}
+	res, err = g.dienst.verarbeiteScan(ctx, ohne, nil, true, false, g.annahme)
+	if err != nil {
+		t.Fatalf("Rückgabe ohne geöffneten Leser: %v", err)
+	}
+	z = g.letzteAusleihe(t, ohne)
+	if res.Fremdrueckgabe || res.Vorbesitzer != nil || res.Leser == nil || res.Leser.ID != ausleiher || z.offen || z.fremd {
+		t.Errorf("Rückgabe ohne geöffneten Leser: Antwort %+v, Zeile %+v; erwartet eine gewöhnliche Rückgabe mit dem Ausleiher", res, z)
+	}
 }
 
 // Ist der Vorbesitzer inzwischen gelöscht, bleibt er in der Antwort ohne Namen, und die
@@ -214,24 +230,37 @@ func TestGeraetRueckgabe_FremdrueckgabeNenntDenVorbesitzer(t *testing.T) {
 func TestGeraetRueckgabe_GeloeschterVorbesitzerHaeltNichtAuf(t *testing.T) {
 	g := newGeraeteTheke(t)
 	ctx := context.Background()
-	nummer := g.geraet(t, "geloescht")
+	fremd := g.geraet(t, "geloescht")
+	ohne := g.geraet(t, "geloescht-ohne")
 	ausleiher := g.schueler(t, "Geloescht")
-	if _, err := g.dienst.verarbeiteScan(ctx, nummer, &ausleiher, true, false, g.ausgabe); err != nil {
-		t.Fatalf("Ausleihe: %v", err)
+	bringer := g.schueler(t, "Bringt")
+	for _, nummer := range []string{fremd, ohne} {
+		if _, err := g.dienst.verarbeiteScan(ctx, nummer, &ausleiher, true, false, g.ausgabe); err != nil {
+			t.Fatalf("Ausleihe: %v", err)
+		}
 	}
 	if _, err := g.pool.Exec(ctx, `UPDATE leser SET deleted_at = now() WHERE id = $1`, ausleiher); err != nil {
 		t.Fatalf("Leser löschen: %v", err)
 	}
 
-	res, err := g.dienst.verarbeiteScan(ctx, nummer, nil, true, false, g.annahme)
+	res, err := g.dienst.verarbeiteScan(ctx, fremd, &bringer, true, false, g.annahme)
 	if err != nil {
-		t.Fatalf("Rückgabe: %v", err)
+		t.Fatalf("Rückgabe durch einen anderen: %v", err)
 	}
 	if !res.Fremdrueckgabe || res.Vorbesitzer == nil || res.Vorbesitzer.Vorname != "" || res.Vorbesitzer.Nachname != "" {
 		t.Errorf("Antwort %+v mit Vorbesitzer %+v, erwartet eine Fremdrückgabe ohne Namen", res, res.Vorbesitzer)
 	}
-	if g.offeneAusleihen(t, nummer) != 0 {
-		t.Error("die Ausleihe ist nach der Rückgabe noch offen")
+	res, err = g.dienst.verarbeiteScan(ctx, ohne, nil, true, false, g.annahme)
+	if err != nil {
+		t.Fatalf("Rückgabe ohne geöffneten Leser: %v", err)
+	}
+	if res.Fremdrueckgabe || res.Leser != nil {
+		t.Errorf("Antwort %+v, erwartet eine gewöhnliche Rückgabe ohne Leser", res)
+	}
+	for _, nummer := range []string{fremd, ohne} {
+		if g.offeneAusleihen(t, nummer) != 0 {
+			t.Errorf("die Ausleihe von %s ist nach der Rückgabe noch offen", nummer)
+		}
 	}
 }
 

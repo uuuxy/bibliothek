@@ -180,13 +180,10 @@ func (d *GeraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 	return erg, nil
 }
 
-// findeVorbesitzer sagt, ob es eine Fremdrückgabe ist (der Rückgeber ist nicht der Ausleiher),
-// und legt dann den Ausleiher als Vorbesitzer in erg.
+// findeVorbesitzer sagt, ob es eine Fremdrückgabe ist (ein anderer Leser als der Ausleiher ist
+// geöffnet), und legt dann den Ausleiher als Vorbesitzer in erg.
 func (d *GeraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *geraeteErgebnis) (bool, error) {
-	if offeneAusleihe.SchuelerID == nil {
-		return false, nil
-	}
-	if leser != nil && *offeneAusleihe.SchuelerID == leser.ID {
+	if offeneAusleihe.SchuelerID == nil || leser == nil || *offeneAusleihe.SchuelerID == leser.ID {
 		return false, nil
 	}
 	// Ein gelöschter Vorbesitzer bleibt ohne Namen; eine Fremdrückgabe ist es trotzdem.
@@ -205,6 +202,13 @@ func (d *GeraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repo
 	istFremd, err := d.findeVorbesitzer(ctx, offeneAusleihe, leser, erg)
 	if err != nil {
 		return nil, err
+	}
+	// Ohne geöffneten Leser ist es eine gewöhnliche Rückgabe wie beim Buch (NimmZurueck): Die
+	// Antwort nennt den Ausleiher, damit die Schnellrückgabe sagen kann, bei wem das Gerät war.
+	if leser == nil && offeneAusleihe.SchuelerID != nil {
+		if erg.Leser, err = d.leserAbfragen.Finde(ctx, *offeneAusleihe.SchuelerID); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := repository.BucheGeraeteRueckgabe(ctx, tx, offeneAusleihe.ID, bearbeiterID, istFremd); err != nil {

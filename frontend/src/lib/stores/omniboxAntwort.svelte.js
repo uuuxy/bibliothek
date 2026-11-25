@@ -64,7 +64,7 @@ export function erzeugeOmniboxAntwort({
 		const nachsatz = aktiv ? `Erneut scannen, um es an ${aktiv} auszuleihen` : '';
 		melde(
 			verbindeSaetze(
-				`„${daten.book.titel}" war auf ${prevName} verbucht und wurde dort zurückgegeben`,
+				`„${daten.book?.titel ?? daten.geraet?.modellname}" war auf ${prevName} verbucht und wurde dort zurückgegeben`,
 				nachsatz
 			),
 			'warning'

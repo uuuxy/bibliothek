@@ -114,10 +114,15 @@ describe('Omnibox offline', () => {
 	// der Server schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
 	it('reiht eine gelungene, aber unauswertbare Antwort NICHT ein', async () => {
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
-			// Eine Fremdrückgabe ohne Buch: Die Auswertung greift auf data.book.titel zu.
+			// Die Auswertung wirft beim ersten Blick auf das Buch.
 			/** @type {any} */ ({
 				ok: true,
-				json: async () => ({ type: 'rueckgabe', fremdrueckgabe: true })
+				json: async () => ({
+					type: 'rueckgabe',
+					get book() {
+						throw new TypeError('Antwort nicht auswertbar');
+					}
+				})
 			})
 		);
 		omniboxStore.eingabe = 'B-10234';

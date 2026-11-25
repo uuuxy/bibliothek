@@ -135,6 +135,23 @@ describe('Theke: Ausleihe', () => {
 		expect(snackbars.addToast).toHaveBeenCalledWith('„Tablet 9" ausgeliehen an Ida', 'success');
 	});
 
+	// Ein Gerät hat kein `book`: Die Meldung der Fremdrückgabe nennt das Modell.
+	it('nennt bei der Fremdrückgabe eines Geräts das Modell und lädt die Akte neu', async () => {
+		const store = neuerStore(IDA);
+		const neuLaden = await scanne(store, {
+			type: 'rueckgabe',
+			geraet: { modellname: 'Tablet 9' },
+			fremdrueckgabe: true,
+			vorbesitzer: OLE
+		});
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			expect.stringContaining('„Tablet 9" war auf Ole Kern verbucht'),
+			'warning'
+		);
+		expect(store.rueckmeldung.randLeuchten).toBe('orange');
+		expect(neuLaden).toHaveBeenCalledTimes(1);
+	});
+
 	// Der Leser hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen.
 	it('sagt, welches reservierte Exemplar zurück ins Regal muss', async () => {
 		const store = neuerStore(IDA);
