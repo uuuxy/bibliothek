@@ -74,8 +74,8 @@ Nur, was kein Test leisten kann.
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
-- [ ] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer und `topf` sind gewählt; vor dem
-  Umbau Bilder. (5.201)
+- [ ] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer, Ehemalige und `topf` sind
+  gewählt; vor dem Umbau Bilder. (5.201)
 
 ### Termin
 
@@ -156,7 +156,8 @@ sichtbar ist (Text in `.svelte`, Beschriftungen in `.js`); Maßstab ist das Glos
   Vorschlag `topf` wie bei Bestellung und Abgangsbuch; nur Code, nichts Sichtbares.
 
 Gewählt: „Theke“, „Benutzer“ und im Code `topf` wie vorgeschlagen; statt „Sachgruppe“ bleibt
-„Systematik“ das Wort. Zurückgestellt: „Abgänger“ und „Ehemalige“ sowie „ohne Ausweis“.
+„Systematik“ das Wort. Wer im LUSD-Export fehlt, heißt überall „Ehemalige“, „Abgänger“ nur die
+Abschlussklasse. „ohne Ausweis“ steht sichtbar schon überall; dort bleibt nur Code.
 
 Nächster Schritt: Bilder der sichtbaren Änderungen, dann der Umbau; der Punkt steht im Fahrplan
 zuletzt.
