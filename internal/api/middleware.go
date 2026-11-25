@@ -350,26 +350,23 @@ func maskiereToken(pfad string) string {
 	// Der Router führt „//bestellung/…" zur selben Seite; geprüft wird deshalb der bereinigte Pfad.
 	sauber := path.Clean("/" + pfad)
 	for _, praefix := range tokenPfade {
-		if strings.HasPrefix(sauber, praefix) {
-			return schneideToken(sauber, len(praefix))
+		if !strings.HasPrefix(sauber, praefix) {
+			continue
 		}
+		rest := strings.TrimPrefix(sauber, praefix)
+		if i := strings.Index(rest, "/"); i >= 0 {
+			return praefix + "***" + rest[i:]
+		}
+		return praefix + "***"
 	}
-	// Ein „/..“ hinter dem Token nimmt ihn beim Bereinigen mit; im Pfad, wie er kam, steht er noch.
+	// Ein „..“ nimmt den Token beim Bereinigen mit; im Pfad, wie er kam, steht er noch, aber nicht
+	// sicher im ersten Abschnitt („//“, „./“). Deshalb fällt dort alles hinter dem Präfix weg.
 	for _, praefix := range tokenPfade {
 		if i := strings.Index(pfad, praefix); i >= 0 {
-			return schneideToken(pfad, i+len(praefix))
+			return pfad[:i+len(praefix)] + "***"
 		}
 	}
 	return pfad
-}
-
-// schneideToken ersetzt im Pfad das Stück ab der Stelle ab bis zum nächsten Schrägstrich durch „***“.
-func schneideToken(pfad string, ab int) string {
-	rest := pfad[ab:]
-	if i := strings.Index(rest, "/"); i >= 0 {
-		return pfad[:ab] + "***" + rest[i:]
-	}
-	return pfad[:ab] + "***"
 }
 
 // logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode, Pfad, Route

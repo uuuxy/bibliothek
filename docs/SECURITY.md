@@ -231,7 +231,7 @@ Zuschnitt begrenzt den Schaden:
   und Panic-Recovery — und in der Meldung „Unbekannter Endpunkt“, die mit der Fehlerantwort ins
   Log geht. Geprüft wird der bereinigte Pfad, damit ein doppelter Schrägstrich die Maske nicht
   umgeht, und danach der Pfad, wie er kam: Ein „/..“ hinter dem Token nähme ihn beim Bereinigen
-  mit. Ohne das enthielte ein weitergereichtes Logfile funktionierende Links und entwertete
+  mit; dort fällt alles hinter dem Präfix weg. Ohne das enthielte ein weitergereichtes Logfile funktionierende Links und entwertete
   die Hash-Speicherung.
 - **CSRF gilt weiter:** Die Seite nutzt den normalen Double-Submit-Weg; ein POST ohne
   `X-CSRF-Token` wird mit 403 abgewiesen (nachgewiesen am laufenden Server).
