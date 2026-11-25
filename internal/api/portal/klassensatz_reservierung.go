@@ -64,7 +64,7 @@ func (t *Tueren) legeKlassensatzReservierungAn(w http.ResponseWriter, r *http.Re
 	}
 
 	// Mehr Exemplare, als die Bibliothek besitzt, ergäben eine Aufgabe, die sich nie erfüllen
-	// lässt; die Menge wird deshalb gegen den Bestand ohne ausgesonderte Exemplare geprüft.
+	// lässt; die Menge wird deshalb gegen den Bestand geprüft (ohne ausgesonderte und bestellte).
 	bestand, err := abfragen.ZaehleTitelBestand(ctx, req.TitelID)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

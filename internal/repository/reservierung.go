@@ -65,15 +65,16 @@ func (a *ReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID s
 	return vorhanden, err
 }
 
-// ZaehleTitelBestand zählt die vorhandenen (nicht ausgesonderten) Exemplare eines Titels. Eine
+// ZaehleTitelBestand zählt die Exemplare eines Titels, die im Bestand stehen, wie „Gesamt“ im
+// Katalog: ohne ausgesonderte und ohne bestellte, die noch nicht geliefert sind. Eine
 // Reservierung über diese Zahl hinaus ließe sich nie erfüllen und bliebe als Aufgabe in der
 // Liste stehen.
 func (a *ReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelID string) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `
-		SELECT COUNT(*) FROM buecher_exemplare
-		WHERE titel_id = $1 AND ist_ausgesondert = false
-	`, titelID).Scan(&anzahl)
+		SELECT COUNT(*) FROM buecher_exemplare e
+		WHERE e.titel_id = $1 AND `+SQLExemplarImBestand,
+		titelID).Scan(&anzahl)
 	return anzahl, err
 }
 

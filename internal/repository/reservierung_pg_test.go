@@ -182,3 +182,31 @@ func TestReservierungIdempotenz(t *testing.T) {
 		t.Fatalf("bewusste zweite Reservierung muss durchgehen: neu=%v err=%v", neu3, err)
 	}
 }
+
+// Reservieren lässt sich, was im Bestand steht (SQLExemplarImBestand), wie „Gesamt“ im Katalog:
+// Ein bestelltes, noch nicht geliefertes Exemplar besitzt die Bibliothek noch nicht, ein
+// ausgesondertes nicht mehr. Ein gesperrtes zählt mit wie dort.
+func TestZaehleTitelBestand_NurWasImBestandSteht(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewReservierungsAbfragen(pool)
+
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSQ-Bestand", "KSB")
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus, ist_ausgesondert, aussonderung_grund)
+		VALUES ($1, 'BC-KSB-regal', true, NULL, false, NULL),
+		       ($1, 'BC-KSB-gesperrt', false, NULL, false, NULL),
+		       ($1, 'BC-KSB-bestellt', false, 'bestellt', false, NULL),
+		       ($1, 'BC-KSB-zulauf', false, 'im_zulauf', false, NULL),
+		       ($1, 'BC-KSB-ausgesondert', false, NULL, true, 'VERLUST')`, titel); err != nil {
+		t.Fatalf("Exemplare anlegen: %v", err)
+	}
+
+	bestand, err := repo.ZaehleTitelBestand(ctx, titel)
+	if err != nil {
+		t.Fatalf("ZaehleTitelBestand: %v", err)
+	}
+	if bestand != 2 {
+		t.Errorf("Bestand = %d, erwartet 2 (im Regal und gesperrt, ohne Bestellung und Aussonderung)", bestand)
+	}
+}
