@@ -10,7 +10,6 @@
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import AusweisDruckSteuerung from './AusweisDruckSteuerung.svelte';
-	import { anzahlText } from '../../utils/format.js';
 	import AusweisStapeldruck from './AusweisStapeldruck.svelte';
 	import { erzeugeAusweisdruck, mitAusweisnummer } from './ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './schuelerSuche.svelte.js';
@@ -137,8 +136,8 @@
 					<!-- Letztes Kind der Spalte: Die Leiste klebt unten unter ihrer Liste. -->
 					{#if gewaehlt.markierte.length > 0}
 						<AuswahlLeiste
-							satz="{anzahlText(gewaehlt.markierte.length, 'Schüler', 'Schüler')} ausgewählt"
-							beschriftung="Aktionen für die ausgewählten Schüler"
+							satz="{gewaehlt.markierte.length} ausgewählt"
+							beschriftung="Aktionen für die ausgewählten Leser"
 							onleeren={gewaehlt.leeren}
 						>
 							<AusweisDruckSteuerung

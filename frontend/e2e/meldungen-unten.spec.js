@@ -137,7 +137,7 @@ test('Eine Meldung rückt über die Leiste der Leserdatei, die unten am Rand kle
 		await page
 			.getByRole('checkbox', { name: `${vorname} Probe1 für den Ausweisdruck auswählen` })
 			.check();
-		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Schüler' });
+		const leiste = page.getByRole('region', { name: 'Aktionen für die ausgewählten Leser' });
 		await expect(leiste).toBeVisible();
 		const l = await kasten(leiste);
 		expect(720 - (l.y + l.height), 'Die Leiste klebt nicht unten.').toBeCloseTo(40, 0);
