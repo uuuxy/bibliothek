@@ -21,9 +21,12 @@ const libDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(libDir, '..', '..', '..');
 
 const schema = readFileSync(join(repoRoot, 'schema.sql'), 'utf8');
-// Die UI-Dateien, die den Vormerkungs-Status anzeigen dürfen.
-const uiQuellen = [
-	readFileSync(join(libDir, 'components', 'leserakte', 'LeserVormerkungenKarte.svelte'), 'utf8')
+// Den Stand formuliert ein Helfer, und jede Anzeige der Vormerkungen muss ihn nutzen: Eine Anzeige
+// mit eigener Formel zeigte eine abholbereite Vormerkung still als wartend.
+const uiQuellen = [readFileSync(join(libDir, 'utils', 'vormerkungStand.js'), 'utf8')];
+const anzeigen = [
+	join('components', 'leserakte', 'LeserVormerkungenKarte.svelte'),
+	join('components', 'buchakte', 'BuchakteVormerkungen.svelte')
 ];
 
 /** Liest die erlaubten Statuswerte aus chk_vormerkung_status. */
@@ -56,5 +59,13 @@ describe('Vormerkung-Status-Vokabular', () => {
 			`Diese von der DB erlaubten Vormerkungs-Status werden in keiner Anzeige-Datei explizit\n` +
 				`behandelt — die Oberfläche würde sie still als "Wartet seit …" rendern:\n  ${fehlend.join('\n  ')}`
 		).toEqual([]);
+	});
+
+	it('jede Anzeige der Vormerkungen nimmt den Stand aus dem Helfer', () => {
+		for (const datei of anzeigen) {
+			const quelle = readFileSync(join(libDir, datei), 'utf8');
+			expect(quelle, datei).toContain('vormerkungStand(');
+			expect(quelle, `${datei} rechnet den Stand selbst`).not.toMatch(/erstellt_am/);
+		}
 	});
 });

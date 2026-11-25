@@ -3,7 +3,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { formatDatum } from '../../utils/format.js';
+	import { vormerkungStand } from '../../utils/vormerkungStand.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BuchakteVormerken from './BuchakteVormerken.svelte';
@@ -49,7 +49,7 @@
 		<Tabelle beschriftung="Vormerkungen" class="whitespace-nowrap">
 			<thead>
 				<tr>
-					<th>Wartet seit</th>
+					<th>Stand</th>
 					<th>Schüler</th>
 					<th>Notiz</th>
 					<th class="text-right">Aktion</th>
@@ -58,7 +58,8 @@
 			<tbody>
 				{#each vormerkungen as v, _i (_i)}
 					<tr>
-						<td class="font-medium">{formatDatum(v.erstellt_am)}</td>
+						<!-- Wie in der Leserakte: Eine abholbereite Vormerkung nennt ihre Abholfrist. -->
+						<td class="font-medium">{vormerkungStand(v)}</td>
 						<td class="text-primary text-body-medium-emphasized">
 							{v.schueler_name || 'Unbekannt'}
 						</td>

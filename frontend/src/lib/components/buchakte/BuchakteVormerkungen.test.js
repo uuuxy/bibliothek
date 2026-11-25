@@ -149,7 +149,19 @@ describe('BuchakteVormerkungen', () => {
 			vormerkungen: [VORMERKUNG],
 			titel: { id: 't1' }
 		});
-		expect(screen.getByText('20.09.2026')).toBeTruthy();
+		expect(screen.getByText('Wartet seit: 20.09.2026')).toBeTruthy();
+	});
+
+	// Wie in der Leserakte: Eine abholbereite Vormerkung stand hier als „wartet seit".
+	it('nennt bei einer abholbereiten Vormerkung die Abholfrist', () => {
+		const screen = render(BuchakteVormerkungen, {
+			vormerkungen: [
+				{ ...VORMERKUNG, status: 'abholbereit', bereitgestellt_bis: '2026-09-27T16:00:00Z' }
+			],
+			titel: { id: 't1' }
+		});
+		expect(screen.getByText('Abholbereit bis: 27.09.2026')).toBeTruthy();
+		expect(screen.queryByText(/Wartet seit/)).toBeNull();
 	});
 });
 
