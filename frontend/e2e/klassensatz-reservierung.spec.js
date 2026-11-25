@@ -55,7 +55,13 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	//    bereitgestellt" zeigt die Zeile samt Notiz, ohne Reload. Vorher existierte die
 	//    Notiz nur in der Bereit-Mail; scheiterte die, war sie für immer unsichtbar.
 	await expect(page.getByText('Zuletzt bereitgestellt')).toBeVisible();
-	await expect(page.getByText('Notiz: „24 von 25, eines fehlt noch"')).toBeVisible();
+	// In der eigenen Zeile gesucht: Die Notiz ist fest, und ein abgebrochener Lauf lässt seine
+	// erledigte Reservierung bis zum nächsten Aufräumen in derselben Liste stehen.
+	const bereitgestellt = page
+		.locator('li')
+		.filter({ hasText: `Klasse k8b${s}` })
+		.filter({ hasText: 'Notiz:' });
+	await expect(bereitgestellt.getByText('Notiz: „24 von 25, eines fehlt noch"')).toBeVisible();
 
 	// 8. Und der Abschlusszeitpunkt (Migration 089) steht in der Zeile.
 	await expect
