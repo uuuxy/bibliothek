@@ -115,8 +115,7 @@
 		<LadeFehler titel="Sachgruppen nicht geladen" text={ladefehler} onerneut={laden} />
 	{:else if liste.length === 0}
 		<p class="text-sm text-on-surface-variant">
-			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne Fachkürzel
-			vor.
+			Noch keine Sachgruppen. Ohne sie lässt sich im Buchformular kein Fach wählen.
 		</p>
 	{:else}
 		<SystematikTabelle
