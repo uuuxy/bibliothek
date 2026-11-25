@@ -40,8 +40,6 @@ Nur, was kein Test leisten kann.
 ### Nebenbei
 
 - [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
-- [ ] Namen vereinheitlichen: sieben Dinge tragen mehr als ein Wort; je Ding ein Vorschlag,
-  dann die Wahl mit Bildern. (5.201)
 - [ ] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
   sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid. (5.203)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
@@ -76,6 +74,8 @@ Nur, was kein Test leisten kann.
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
+- [ ] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer und `topf` sind gewählt; vor dem
+  Umbau Bilder. (5.201)
 
 ### Termin
 
@@ -155,7 +155,11 @@ sichtbar ist (Text in `.svelte`, Beschriftungen in `.js`); Maßstab ist das Glos
 - `topf` und `mittel` im Paket `schaden`: Das Glossar führt „Mittel, Topf“ als eine Sache.
   Vorschlag `topf` wie bei Bestellung und Abgangsbuch; nur Code, nichts Sichtbares.
 
-Nächster Schritt: Wahl je Ding; ein sichtbares Wort ändert sich erst danach, mit Bildern.
+Gewählt: „Theke“, „Benutzer“ und im Code `topf` wie vorgeschlagen; statt „Sachgruppe“ bleibt
+„Systematik“ das Wort. Zurückgestellt: „Abgänger“ und „Ehemalige“ sowie „ohne Ausweis“.
+
+Nächster Schritt: Bilder der sichtbaren Änderungen, dann der Umbau; der Punkt steht im Fahrplan
+zuletzt.
 
 ### 5.203 Dialoge: gesperrter Knopf statt Fehlertext am Feld
 
