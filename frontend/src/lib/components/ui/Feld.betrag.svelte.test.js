@@ -42,6 +42,11 @@ describe('Feld: Betrag', () => {
 		expect(props.value).toBe(8.25);
 		await fireEvent.blur(feld);
 		expect(feld.value).toBe('8,25');
+
+		await fireEvent.input(feld, { target: { value: '12,50 €' } });
+		expect(props.value, 'eingefügt mit Eurozeichen').toBe(12.5);
+		await fireEvent.blur(feld);
+		expect(feld.value).toBe('12,50');
 	});
 
 	it('bindet null, wenn das Feld leer ist oder keine Zahl trägt, und lässt den Text stehen', async () => {
@@ -81,6 +86,8 @@ describe('Feld: Betrag', () => {
 
 	it('liest Komma und Punkt, aber keine Tausenderpunkte und keine Exponenten', () => {
 		expect(alsZahl(' 7,90 ')).toBe(7.9);
+		expect(alsZahl('12,50 €'), 'mit Eurozeichen').toBe(12.5);
+		expect(alsZahl('€ 12,50'), 'Eurozeichen davor').toBe(12.5);
 		expect(alsZahl('.5')).toBe(0.5);
 		expect(alsZahl('1.234,50')).toBeNull();
 		expect(alsZahl('1e3')).toBeNull();

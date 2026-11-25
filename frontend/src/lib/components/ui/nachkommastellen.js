@@ -18,12 +18,16 @@ export function stellenAus(step) {
 }
 
 /**
- * „7,9“, „7.9“ und „ 7,90 “ ergeben 7.9; leer oder keine Zahl ergibt null.
+ * „7,9“, „7.9“ und „7,90 €“ ergeben 7.9: Das € steht schon neben dem Feld, wer es mittippt oder
+ * mit einfügt, meint denselben Betrag. Leer oder keine Zahl ergibt null.
  * @param {unknown} text
  * @returns {number | null}
  */
 export function alsZahl(text) {
-	const roh = String(text).trim().replace(',', '.');
+	const roh = String(text)
+		.replace(/\s*€\s*/g, '')
+		.trim()
+		.replace(',', '.');
 	return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(roh) ? Number(roh) : null;
 }
 
