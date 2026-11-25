@@ -153,9 +153,11 @@ var phantomBestand = map[string]int{
 	"internal/repository/leser_zusammenfuehren.go:verschiebeVorgaenge": 1,
 	"internal/repository/titel_schreiben.go:SchreibeTitel":             1,
 	// meldeSchaden läuft in der Transaktion des Aufrufers, damit der Bescheid Verlust und Brief in
-	// einer Transaktion bucht. Die drei Stellen: Exemplar aussondern, Vormerkung lösen, Ausleihe
-	// beenden; die Ausleihe ist per FOR UPDATE gelesen.
-	"internal/repository/schaden_melden.go:meldeSchaden": 3,
+	// einer Transaktion bucht. Die zwei Stellen: Exemplar aussondern, Vormerkung lösen; die
+	// Ausleihe ist per FOR UPDATE gelesen. beendeGemeldeteAusleihe beendet sie mit der Bedingung
+	// rueckgabe_am IS NULL: 0 Zeilen ist der zweite Klick, kein Phantom.
+	"internal/repository/schaden_melden.go:meldeSchaden":            2,
+	"internal/repository/schaden_melden.go:beendeGemeldeteAusleihe": 1,
 	// INSERT … ON CONFLICT DO NOTHING: 0 Zeilen ist die Wiederholung desselben Schlüssels
 	// vom Theken-Rechner — kein Phantom, sondern gewollte Idempotenz.
 	"internal/repository/nachbuch_meldungen.go:SchreibeNachbuchMeldung":   1,

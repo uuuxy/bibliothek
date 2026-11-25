@@ -161,13 +161,16 @@
 							? g.ausgeliehen_an
 								? `verliehen an ${g.ausgeliehen_an}`
 								: 'verliehen'
-							: g.ist_ausleihbar
-								? 'im Schrank'
-								: 'defekt oder gesperrt'}
+							: g.ist_ausgesondert
+								? 'verloren'
+								: g.ist_ausleihbar
+									? 'im Schrank'
+									: 'defekt oder gesperrt'}
 					</span>
 					<!-- Bearbeiten als Symbolknopf wie in jeder Zeile; „Defekt melden" schaltet einen Zustand
 					     um, den ein Symbol allein nicht sagt. 16 px Abstand für die Trefferfläche. -->
-					{#if darfBearbeiten}
+					<!-- Ein verlorenes Gerät steht nur noch da (Verlust gemeldet in der Leserakte). -->
+					{#if darfBearbeiten && !g.ist_ausgesondert}
 						<div class="flex shrink-0 items-center gap-4">
 							<Button
 								variant="symbol"

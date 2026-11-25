@@ -49,6 +49,9 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 	if meldung.art == SchadensArtNichtZurueck {
 		grund = "VERLUST"
 	}
+	if ausleihe.geraetID != "" {
+		return meldeGeraeteSchaden(ctx, tx, meldung, ausleihe, grund)
+	}
 	if _, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = $1,
@@ -93,14 +96,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 		return "", err
 	}
 
-	// Die Bedingung rueckgabe_am IS NULL: Ohne Forderung gibt es keine Zeile, an der ein
-	// zweiter Klick zu erkennen wäre, und er verschöbe das Rückgabedatum auf jetzt. Mit
-	// Forderung ändert die Bedingung nichts; dort bremst schon der Schadensfall.
-	if _, err := tx.Exec(ctx, `
-		UPDATE ausleihen
-		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
-		WHERE id = $2 AND rueckgabe_am IS NULL
-	`, meldung.bearbeiterID, meldung.ausleiheID); err != nil {
+	if err := beendeGemeldeteAusleihe(ctx, tx, meldung); err != nil {
 		return "", err
 	}
 	// Ohne Forderung ist die Kennung leer: Es gibt keinen Schadensfall, auf den sie zeigen
@@ -109,15 +105,32 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 	return schadensID, nil
 }
 
+// beendeGemeldeteAusleihe beendet die Ausleihe einer Meldung. Die Bedingung rueckgabe_am IS
+// NULL: Ohne Forderung gibt es keine Zeile, an der ein zweiter Klick zu erkennen wäre, und er
+// verschöbe das Rückgabedatum auf jetzt. Mit Forderung ändert die Bedingung nichts; dort bremst
+// schon der Schadensfall.
+func beendeGemeldeteAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) error {
+	_, err := tx.Exec(ctx, `
+		UPDATE ausleihen
+		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
+		WHERE id = $2 AND rueckgabe_am IS NULL
+	`, meldung.bearbeiterID, meldung.ausleiheID)
+	return err
+}
+
 // schadensAusleihe ist, was eine Meldung von der gesperrten Ausleihe liest.
 type schadensAusleihe struct {
 	// schuelerID ist nil bei einer anonymisierten Ausleihe; der Schadensfall bleibt dann
 	// ohne Person.
-	schuelerID           *string
-	exemplarID           string
-	zurueck              bool
-	exemplarAusgesondert bool
-	ohneForderung        bool
+	schuelerID *string
+	exemplarID string
+	zurueck    bool
+	// geraetID ist bei einer Geräteausleihe gesetzt, exemplarID dann leer.
+	geraetID string
+	// stillgelegt heißt: Das Exemplar ist ausgesondert, das Gerät nicht mehr ausleihbar (defekt
+	// oder verloren). Daran erkennt ein zweiter Klick ohne Forderung die erste Meldung.
+	stillgelegt   bool
+	ohneForderung bool
 }
 
 // ladeSchadensAusleihe sperrt die Ausleihe und liest Schuldner und Exemplar von ihr. Die
@@ -132,26 +145,33 @@ type schadensAusleihe struct {
 // Gebucht wird trotzdem, was den Bestand angeht.
 func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (schadensAusleihe, error) {
 	var a schadensAusleihe
-	var exemplarID *string
+	var exemplarID, geraetID *string
 	if err := tx.QueryRow(ctx, `
-		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
-		       COALESCE(e.ist_ausgesondert, false)
+		SELECT a.schueler_id, a.exemplar_id::text, a.geraet_id::text, a.rueckgabe_am IS NOT NULL,
+		       COALESCE(e.ist_ausgesondert, NOT g.ist_ausleihbar, false)
 		FROM ausleihen a
 		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
+		LEFT JOIN geraete g ON g.id = a.geraet_id
 		WHERE a.id = $1 FOR UPDATE OF a`, meldung.ausleiheID,
-	).Scan(&a.schuelerID, &exemplarID, &a.zurueck, &a.exemplarAusgesondert); err != nil {
+	).Scan(&a.schuelerID, &exemplarID, &geraetID, &a.zurueck, &a.stillgelegt); err != nil {
 		return a, err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
-	if exemplarID == nil {
+	switch {
+	case exemplarID != nil:
+		a.exemplarID = *exemplarID
+	case geraetID != nil:
+		a.geraetID = *geraetID
+	default:
 		return a, ErrAusleiheOhneBuch
 	}
-	a.exemplarID = *exemplarID
 	if a.schuelerID != nil {
+		var kollegium bool
 		if err := tx.QueryRow(ctx,
 			`SELECT art <> 'schueler' FROM leser WHERE id = $1`, *a.schuelerID,
-		).Scan(&a.ohneForderung); err != nil {
+		).Scan(&kollegium); err != nil {
 			return a, err
 		}
+		a.ohneForderung = a.ohneForderung || kollegium
 	}
 	return a, nil
 }
@@ -173,11 +193,16 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, meldung schadensMeldu
 
 	// Blieb der Dialog offen, während das Buch zurückkam und neu verliehen wurde, träfe die
 	// Aussonderung die Ausleihe eines anderen.
+	// Dasselbe für ein Gerät; die Spalte ist einer von zwei festen Namen.
+	spalte, gegenstand := "exemplar_id", a.exemplarID
+	if a.geraetID != "" {
+		spalte, gegenstand = "geraet_id", a.geraetID
+	}
 	var fremdeAktive int
 	if err := tx.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
-		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, a.exemplarID, meldung.ausleiheID).Scan(&fremdeAktive); err != nil {
+		WHERE `+spalte+` = $1 AND rueckgabe_am IS NULL AND id <> $2
+	`, gegenstand, meldung.ausleiheID).Scan(&fremdeAktive); err != nil {
 		return "", false, err
 	}
 	if fremdeAktive > 0 {
@@ -185,9 +210,9 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, meldung schadensMeldu
 	}
 
 	// Beim Kollegium gibt es keine Forderung, an der die eigene frühere Meldung zu erkennen wäre;
-	// dort zeigt sie das ausgesonderte Exemplar an der beendeten Ausleihe, und der zweite Klick
-	// ändert nichts, in beiden Fallgruppen.
-	if a.zurueck && a.ohneForderung && a.exemplarAusgesondert {
+	// dort zeigt sie das stillgelegte Exemplar oder Gerät an der beendeten Ausleihe, und der zweite
+	// Klick ändert nichts, in beiden Fallgruppen.
+	if a.zurueck && a.ohneForderung && a.stillgelegt {
 		return "", true, nil
 	}
 	// „Nicht zurückgegeben" für eine beendete Ausleihe ohne Schadensfall: Das Buch kam an einem

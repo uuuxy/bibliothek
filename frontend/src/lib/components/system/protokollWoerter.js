@@ -10,6 +10,7 @@ export const BEREICHE = {
 	buecher_exemplare: 'Exemplare',
 	buecher_titel: 'Titel',
 	class_books: 'Klassensätze',
+	geraete: 'Geräte',
 	inventur_sessions: 'Inventur',
 	klassensatz_reservierungen: 'Klassensatz-Reservierungen',
 	lehrer_anliegen: 'Meldungen',

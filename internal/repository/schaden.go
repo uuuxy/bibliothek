@@ -34,8 +34,8 @@ type SchadensAbfragen struct {
 }
 
 // Schadensfall ist eine Zeile der Liste der Forderungen in der Akte eines Lesers. Titel und
-// BarcodeID sind Zeiger, weil exemplar_id bei einem Geräteschaden leer ist und sich NULL nicht
-// in einen Text lesen lässt.
+// BarcodeID nennen beim Gerät Modell und Gerätenummer; Zeiger, weil die Liste sie über LEFT JOIN
+// liest und sich NULL nicht in einen Text lesen lässt.
 type Schadensfall struct {
 	ID                string      `json:"id"`
 	Beschreibung      string      `json:"beschreibung"`
@@ -57,15 +57,17 @@ func NewSchadensAbfragen(db db.Pool) *SchadensAbfragen {
 }
 
 // LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst, für die Liste der
-// Forderungen in der Akte. Mit LEFT JOIN, weil exemplar_id bei einem Geräteschaden leer ist;
-// Titel und Barcode bleiben dann leer.
+// Forderungen in der Akte. Eine Forderung steht an einem Exemplar oder an einem Gerät
+// (check_damage_item), deshalb beide mit LEFT JOIN.
 func (a *SchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
-		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id, sf.bescheid_id
+		       sf.storniert_am, sf.stornierungsgrund, COALESCE(t.titel, g.modellname),
+		       COALESCE(e.barcode_id, g.barcode_id), sf.bescheid_id
 		FROM schadensfaelle sf
 		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN geraete g ON sf.geraet_id = g.id
 		WHERE sf.schueler_id = $1
 		ORDER BY sf.erstellt_am DESC
 	`, leserID)
@@ -90,8 +92,8 @@ func (a *SchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]S
 // während das Formular der Schadensmeldung offen stand. Die Tür antwortet mit 409.
 var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 
-// ErrAusleiheOhneBuch meldet eine Geräteausleihe an Schadensmeldung oder Bescheid: Es gibt kein
-// Buch, das sich aussondern ließe. Die Tür antwortet mit 409.
+// ErrAusleiheOhneBuch meldet eine Geräteausleihe am Bescheid, der nur Bücher nimmt, oder eine
+// Ausleihe ohne Buch und ohne Gerät. Die Tür antwortet mit 409.
 var ErrAusleiheOhneBuch = errors.New("ausleihe ohne buch")
 
 // Melde bucht einen Verlust oder Schaden an einer Ausleihe in eigener Transaktion, für

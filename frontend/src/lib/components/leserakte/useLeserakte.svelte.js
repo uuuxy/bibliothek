@@ -5,6 +5,7 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 import { ladeLeserakte } from './ladeLeserakte.js';
+import { schadenGebuchtSatz } from './schadenGebuchtSatz.js';
 
 export function useLeserakte() {
 	/** @type {any} */
@@ -171,12 +172,7 @@ export function useLeserakte() {
 			});
 			if (res.ok) {
 				// Der Bescheid ist ein eigener Schritt: „Bescheid erstellen" an der Gebühren-Karte.
-				snackbars.addToast(
-					exemplar.ohneForderung
-						? 'Verlust oder Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
-						: 'Verlust oder Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
-					'success'
-				);
+				snackbars.addToast(schadenGebuchtSatz(exemplar, art), 'success');
 				if (schadenExemplar === exemplar) schadenOffen = false;
 				if (akte?.id === studentId) ladeAkte(studentId);
 			} else {

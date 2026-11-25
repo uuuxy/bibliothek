@@ -360,7 +360,9 @@ Die Leserdatei führt **alle, die Bücher bekommen können**, Schüler und Kolle
   Bescheide stehen mit _Nachdruck_ darunter (§14).
 - **Verlust oder Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an;
   das Kind steht danach im Mahnwesen unter _Schadensersatz_ statt in der Mahnliste. Der Brief an die
-  Eltern ist ein eigener Schritt.
+  Eltern ist ein eigener Schritt. An einem Gerät gilt dasselbe für die Forderung; das Gerät steht
+  danach in der Geräteverwaltung als defekt (nach der Reparatur _Wieder freigeben_) oder als
+  verloren. Einen Bescheid gibt es für Geräte nicht, bezahlt wird in der Akte.
 - **Sperren** verlangt eine Begründung, die danach an der Theke steht; **Sperre aufheben** nimmt jede
   Sperre weg. Beides steht im Protokoll. Einen Kollegen sperrt man nicht.
 - **Leser anlegen**: Der Dialog fragt zuerst nach der Art. Klassenweise legt man Schüler über den

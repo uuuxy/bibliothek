@@ -73,7 +73,7 @@ func (a *BescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID
 	// SchuljahrBeginn und nicht ein zweites Mal in einer Abfrage; eine abweichende Auslegung
 	// verschöbe jeden Betrag um eine Stufe der Staffel.
 	rows, err := a.db.Query(ctx, `
-		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
+		SELECT f.id, f.art, coalesce(t.titel, g.modellname, f.beschreibung), coalesce(t.isbn, ''),
 		       coalesce(e.einkaufspreis, 0),
 		       coalesce(t.listenpreis, 0),
 		       coalesce(e.zustand_abwertung_prozent, 0),
@@ -83,12 +83,13 @@ func (a *BescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID
 		FROM schadensfaelle f
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		LEFT JOIN geraete g ON g.id = f.geraet_id
 		`+ExemplarTopfJoin+`
 		WHERE f.schueler_id = $1
 		  AND f.bescheid_id IS NULL
 		  AND f.ist_bezahlt = false
 		  AND f.storniert_am IS NULL
-		ORDER BY f.art, coalesce(t.titel, f.beschreibung) COLLATE deutsch`, schuelerID)
+		ORDER BY f.art, coalesce(t.titel, g.modellname, f.beschreibung) COLLATE deutsch`, schuelerID)
 	if err != nil {
 		return nil, err
 	}

@@ -302,11 +302,13 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
 - **Sperren des Lesers:** derselbe Prüfweg wie beim Buch (§2.2). Die Hinweise lassen
   sich auch am Gerät übergehen; die Zubehör-Liste reicht das Übergehen weiter, und
   protokolliert wird erst mit der Ausleihe.
-- Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab. Eine
-  Forderung für ein Gerät legt das Programm noch nicht an — der Schadensfall-Weg am
-  Profil nimmt nur Buch-Exemplare und weist eine Geräteausleihe ab, die Datenbank sieht
-  Geräte-Forderungen vor
-  ([OFFEN.md](OFFEN.md) 5.202).
+- Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab.
+- **Verlust oder Schaden:** „Verlust oder Schaden melden“ an der Gerätezeile der Leserakte
+  beendet die Ausleihe. Das Gerät bleibt in der Geräteverwaltung und ist nicht ausleihbar:
+  beschädigt steht es dort als defekt und lässt sich nach der Reparatur wieder freigeben,
+  verloren steht es als verloren. Die Forderung entsteht wie beim Buch mit dem eingetragenen
+  Betrag, beim Kollegium nicht; bezahlt wird in der Akte. Auf den Bescheid des Landes kommt ein
+  Gerät nicht.
 
 ---
 

@@ -58,9 +58,12 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="truncate text-body-medium-emphasized text-on-surface">{p.titel}</div>
-							<div class="text-xs text-on-surface-variant">
-								{p.isbn || 'ohne ISBN'} · {p.herleitung}
-							</div>
+							<!-- Ohne Topf ist es ein Gerät: keine ISBN, kein Ersatzwert nach einer Regel. -->
+							{#if p.topf}
+								<div class="text-xs text-on-surface-variant">
+									{p.isbn || 'ohne ISBN'} · {p.herleitung}
+								</div>
+							{/if}
 							{#if p.quelle === 'ausleihe'}
 								<div class="text-xs text-on-surface-variant">
 									Fällig seit {datum(p.faellig_seit)} · {gemahntSatz(
@@ -71,7 +74,9 @@
 							{/if}
 							{#if p.topf !== 'land'}
 								<div class="text-xs text-on-surface-variant">
-									Buch der Schülerbücherei, gehört nicht auf den Bescheid des Landes
+									{p.topf
+										? 'Buch der Schülerbücherei, gehört nicht auf den Bescheid des Landes'
+										: 'Gerät, gehört auf keinen Bescheid'}
 								</div>
 							{/if}
 						</div>

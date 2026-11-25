@@ -39,7 +39,7 @@ Nur, was kein Test leisten kann.
 
 ### Nebenbei
 
-- [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
+- [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [ ] Namen vereinheitlichen: sieben Dinge tragen mehr als ein Wort; je Ding ein Vorschlag,
   dann die Wahl mit Bildern. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
@@ -141,24 +141,6 @@ sind behoben oder am Code als gewollt belegt.
 
 Nächster Schritt: je Ding die Stellen zählen und ein Wort vorschlagen; ein sichtbares Wort ändert
 sich erst nach der Wahl, mit Bildern.
-
-### 5.202 Verlorenes Gerät melden
-
-Ein Gerät, das nicht zurückkommt, lässt sich nicht aus der Ausleihe buchen: Die Leserakte bietet
-„Verlust oder Schaden melden“ nur an Büchern, `meldeSchaden` weist eine Geräteausleihe ab
-(`ErrAusleiheOhneBuch`), die Geräteverwaltung kann nur sperren. Die offene Ausleihe hält das
-Löschen des Lesers auf.
-
-Entschieden am 25.11.2026: „Verlust oder Schaden melden“ an der Gerätezeile. Die Ausleihe endet,
-das Gerät ist ausgesondert, verloren wie beschädigt: Ob sich ein beschädigtes Gerät reparieren
-lässt, weiß niemand. Eine Forderung entsteht nur mit eingetragenem Betrag.
-
-Die Datenbank sieht eine Forderung für ein Gerät vor (`check_damage_item`); der Bescheid-Dialog
-zeigt eine Forderung ohne Exemplar heute als Buch der Schülerbücherei (`BescheidPositionen.svelte`).
-
-Nächster Schritt: `meldeSchaden` für Geräte (der Bescheid nimmt weiter nur Bücher), die
-Forderung mit Gerät in den Listen und im Bescheid-Dialog, Knopf und Dialog in der Leserakte;
-Bilder vor dem Push.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -50,7 +50,7 @@ describe('BescheideTabelle', () => {
 		];
 		bescheideStore.liste = [];
 		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
-		expect(screen.getByText('Bücherei-Buch, kein Bescheid')).toBeTruthy();
+		expect(screen.getByText('Kein Bescheid des Landes')).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Bescheid erstellen' })).toBeNull();
 	});
 

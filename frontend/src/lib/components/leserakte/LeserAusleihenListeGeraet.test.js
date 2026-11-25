@@ -3,8 +3,8 @@ import { render } from '@testing-library/svelte';
 import LeserAusleihenListe from './LeserAusleihenListe.svelte';
 import LeserAusleihenKarte from './LeserAusleihenKarte.svelte';
 
-// Ein verliehenes Gerät steht in der Akte wie ein Buch. Verlust oder Schaden meldet die
-// Geräteverwaltung, nicht der Schadensfall eines Exemplars; zurückgeben geht wie beim Buch.
+// Ein verliehenes Gerät steht in der Akte wie ein Buch: zurückgeben und Verlust oder Schaden
+// melden gehen wie beim Buch (OFFEN 5.202 entschieden: das Gerät wird ausgesondert).
 describe('Ausleihliste: Gerät', () => {
 	/** @param {boolean} geraet */
 	const zeile = (geraet) => ({
@@ -18,9 +18,9 @@ describe('Ausleihliste: Gerät', () => {
 	});
 	const aktionen = { onReturnClick: () => {}, onDamageClick: () => {} };
 
-	it('bietet am Gerät kein „Verlust oder Schaden melden“ und nennt die Rückgabe des Geräts', () => {
+	it('bietet am Gerät „Verlust oder Schaden melden“ und nennt die Rückgabe des Geräts', () => {
 		const screen = render(LeserAusleihenListe, { ausleihen: [zeile(true)], ...aktionen });
-		expect(screen.queryByRole('button', { name: 'Verlust oder Schaden melden' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Verlust oder Schaden melden' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Gerät zurückgeben' })).toBeTruthy();
 	});
 

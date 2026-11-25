@@ -127,19 +127,20 @@ func (a *BescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schue
 // Kind, läuft noch und trägt keine Forderung. Der Dialog kann minutenlang offen stehen, während
 // das Buch an der Theke zurückkommt oder jemand in der Akte den Verlust meldet; ohne die
 // Prüfung entstünde ein Brief über ein Buch, das im Regal steht, oder eine zweite Forderung für
-// dasselbe Buch. Das Exemplar liest meldeSchaden von der Ausleihe; eine Geräteausleihe kommt
-// von dort als ErrAusleiheOhneBuch zurück.
+// dasselbe Buch. Das Exemplar liest meldeSchaden von der Ausleihe. Eine Geräteausleihe weist
+// diese Prüfung mit ErrAusleiheOhneBuch ab: Der Bescheid des Landes nimmt nur Bücher.
 func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznummer string) ([]BescheidPositionEingabe, error) {
 	beschreibung := "Nicht zurückgegeben, Schadensersatz-Bescheid " + referenznummer
 	positionen := make([]BescheidPositionEingabe, 0, len(e.Verluste))
 	for _, v := range e.Verluste {
 		var schuelerID *string
-		var zurueck, gemeldet bool
+		var zurueck, gemeldet, ohneBuch bool
 		err := tx.QueryRow(ctx, `
 			SELECT a.schueler_id, a.rueckgabe_am IS NOT NULL,
-			       EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
+			       EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL),
+			       a.exemplar_id IS NULL
 			FROM ausleihen a WHERE a.id = $1 FOR UPDATE`, v.AusleiheID,
-		).Scan(&schuelerID, &zurueck, &gemeldet)
+		).Scan(&schuelerID, &zurueck, &gemeldet, &ohneBuch)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrAusleiheFremd
 		}
@@ -149,6 +150,8 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 		switch {
 		case schuelerID == nil || *schuelerID != e.SchuelerID:
 			return nil, ErrAusleiheFremd
+		case ohneBuch:
+			return nil, ErrAusleiheOhneBuch
 		case gemeldet:
 			return nil, ErrAusleiheSchonGemeldet
 		case zurueck:

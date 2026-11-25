@@ -21,6 +21,10 @@
 	/** @type {{ ausleihe: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
 	let { ausleihe, onCancel, onSubmit, isSubmitting } = $props();
 	const ohneForderung = $derived(!!ausleihe?.ohneForderung);
+	// Ein Gerät bleibt in der Geräteverwaltung: beschädigt als defekt, verloren als verloren
+	// (internal/repository/schaden_geraet.go). Die Forderung entsteht wie beim Buch; einen Vorschlag
+	// gibt es nicht, weil keine Regel einen Ersatzwert für Geräte nennt.
+	const geraet = $derived(!!ausleihe?.ist_geraet);
 
 	let grund = $state('Verloren');
 	// Startwert 0, kein fester Betrag: Der Server rechnet den Vorschlag am Buch und sagt dazu,
@@ -35,6 +39,7 @@
 	// Die Fallgruppe steht im Bescheid an die Eltern (welches Kästchen, ob Rückgabe
 	// verlangt wird) — deshalb eine Wahl, kein Rückschluss aus dem Freitext.
 	let art = $state('nicht_zurueckgegeben');
+	const geraetZustand = $derived(art === 'beschaedigt' ? 'defekt' : 'verloren');
 
 	// Der Vorschlag kommt vom Server, weil dort die Regeln liegen: die Staffel der
 	// Arbeitshilfe für Lernmittel, der Neuwert ohne Abschlag für den Bücherei-Bestand
@@ -44,7 +49,7 @@
 	// Ohne Forderung (Kollege) wird nicht gefragt: Dann gibt es kein Betragsfeld.
 	$effect(() => {
 		const exemplarId = ausleihe?.id;
-		if (!exemplarId || ohneForderung) return;
+		if (!exemplarId || ohneForderung || geraet) return;
 
 		let abgebrochen = false;
 		vonHand = false;
@@ -82,8 +87,17 @@
 		<div class="p-6">
 			<h3 id="schaden-titel" class="dialog-titel mb-2">Verlust oder Schaden melden</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
-				Für <strong>{ausleihe.titel}</strong>, Exemplar {ausleihe.barcode_id}.
-				{#if ohneForderung}
+				Für <strong>{ausleihe.titel}</strong>, {geraet ? 'Gerät' : 'Exemplar'}
+				{ausleihe.barcode_id}.
+				{#if geraet && ohneForderung}
+					Die Ausleihe wird beendet, das Gerät steht danach als {geraetZustand} in der Geräteverwaltung
+					und ist nicht ausleihbar. Eine Forderung entsteht nicht: Ersatz von einer Lehrkraft zu verlangen
+					ist Sache der Schulleitung, nicht der Bücherei.
+				{:else if geraet}
+					Die Ausleihe wird beendet, das Gerät steht danach als {geraetZustand} in der Geräteverwaltung
+					und ist nicht ausleihbar. Die Forderung steht danach unter „Gebühren &amp; Schäden" und wird
+					dort bezahlt; einen Bescheid gibt es für Geräte nicht.
+				{:else if ohneForderung}
 					Die Ausleihe wird beendet und das Exemplar ausgesondert. Eine Forderung entsteht nicht:
 					Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung, nicht der Bücherei.
 				{:else}
@@ -116,7 +130,7 @@
 						type="number"
 						step="0.01"
 						min="0"
-						hint={herleitung}
+						hint={geraet ? 'Für Geräte gibt es keinen Vorschlag' : herleitung}
 						bind:value={schadensbetrag}
 						oninput={() => (vonHand = true)}
 					>

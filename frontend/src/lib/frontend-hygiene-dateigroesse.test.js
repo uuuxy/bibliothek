@@ -33,7 +33,7 @@ const BESTAND = {
 	'src/lib/stores/offlineSync.svelte.js': 381,
 	'src/lib/stores/omnibox.svelte.js': 412,
 	'src/lib/components/inventur/useInventur.svelte.js': 232,
-	'src/lib/components/leserakte/useLeserakte.svelte.js': 298
+	'src/lib/components/leserakte/useLeserakte.svelte.js': 294
 };
 
 describe('Dateigröße: höchstens 200 Zeilen je Komponente und JS-Modul', () => {

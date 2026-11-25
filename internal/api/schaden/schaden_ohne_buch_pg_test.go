@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,12 +20,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Verlust und Schaden gehören an das Buch, das die Ausleihe nennt. Eine Geräteausleihe hat
-// keins; die Tür nahm dann das Exemplar aus der Anfrage. Mit der Kennung eines Regalbuchs
-// sonderte „Verlust oder Schaden melden" es als Verlust aus, das Kind mit dem Gerät bekam dafür eine
-// Forderung, und die Geräteausleihe galt als beendet, obwohl das Gerät noch draußen war. Beide
-// Türen, die Schadensmeldung und der Bescheid, lehnen eine Geräteausleihe jetzt ab und buchen
-// nichts.
+// Verlust und Schaden gehören an den Gegenstand, den die Ausleihe nennt, nie an das Exemplar aus
+// der Anfrage. Bei einer Geräteausleihe sondert die Schadensmeldung das Gerät aus und beendet die
+// Ausleihe; eine Forderung entsteht nur mit Betrag. Der Bescheid des Landes nimmt nur Bücher und
+// weist eine Geräteausleihe ab, ohne etwas zu buchen.
 
 const meldungAusleiheOhneBuch = "Verlust und Schaden lassen sich hier nur für ein ausgeliehenes Buch buchen, nicht für ein Gerät"
 
@@ -58,6 +57,19 @@ func (w schadensWelt) sende(t *testing.T, pfad, rumpf string) *httptest.Response
 	rec := httptest.NewRecorder()
 	w.router.ServeHTTP(rec, req)
 	return rec
+}
+
+// lies holt pfad mit GET und liefert den Rumpf; ein anderer Status als 200 bricht ab.
+func (w schadensWelt) lies(t *testing.T, pfad string) string {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, pfad, nil)
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: w.sitzung})
+	rec := httptest.NewRecorder()
+	w.router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET %s: %d %s", pfad, rec.Code, rec.Body.String())
+	}
+	return rec.Body.String()
 }
 
 // geraeteAusleihe legt ein Gerät an und leiht es dem Kind aus.
@@ -104,24 +116,85 @@ func ausgesondert(t *testing.T, pool *pgxpool.Pool, exemplar string) bool {
 	return ja
 }
 
-func TestSchadenMelden_GeraeteausleiheBuchtNichts(t *testing.T) {
+func TestSchadenMelden_GeraetVerlorenBleibtSichtbar(t *testing.T) {
 	w := baueSchadensWelt(t, "schaden-geraet@example.org")
+	ctx := context.Background()
 	kind := testdaten.LegeSchuelerAn(t, w.pool, "S-OHNEBUCH-A", "Gerda", "07A")
 	ausleihe := w.geraeteAusleihe(t, kind, "G-OHNEBUCH-1")
 	regalbuch := testdaten.LegeExemplarAn(t, w.pool, testdaten.LegeTitelAn(t, w.pool, "Regaltitel"), "EX-OHNEBUCH-1", true, "")
-
 	rec := w.sende(t, "/api/damage/report", fmt.Sprintf(
-		`{"loan_id":%q,"copy_id":%q,"beschreibung":"weg","art":"nicht_zurueckgegeben","betrag":1500}`, ausleihe, regalbuch))
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
-	}
-	if got := tuertest.Fehlermeldung(t, rec); got != meldungAusleiheOhneBuch {
-		t.Errorf("Meldung %q, erwartet %q", got, meldungAusleiheOhneBuch)
+		`{"loan_id":%q,"copy_id":%q,"beschreibung":"weg","art":"nicht_zurueckgegeben","betrag":15}`, ausleihe, regalbuch))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status %d, erwartet 200 — %s", rec.Code, rec.Body.String())
 	}
 	if ausgesondert(t, w.pool, regalbuch) {
 		t.Error("das Regalbuch aus der Anfrage ist ausgesondert, es war nie verliehen")
 	}
-	w.pruefeGeraetUnberuehrt(t, ausleihe)
+	var geraetWeg, ausleihbar, beendet bool
+	var forderung, protokoll int
+	if err := w.pool.QueryRow(ctx, `
+		SELECT g.ist_ausgesondert, g.ist_ausleihbar, a.rueckgabe_am IS NOT NULL,
+		       (SELECT count(*) FROM schadensfaelle f
+		        WHERE f.ausleihe_id = a.id AND f.geraet_id = g.id AND f.exemplar_id IS NULL AND f.betrag = 15),
+		       (SELECT count(*) FROM audit_log l
+		        WHERE l.tabelle = 'geraete' AND l.datensatz_id = g.id AND l.details->>'action' = 'verloren'
+		          AND l.details->>'grund' = 'VERLUST')
+		FROM ausleihen a JOIN geraete g ON g.id = a.geraet_id WHERE a.id = $1`, ausleihe,
+	).Scan(&geraetWeg, &ausleihbar, &beendet, &forderung, &protokoll); err != nil {
+		t.Fatalf("Stand lesen: %v", err)
+	}
+	if !geraetWeg || ausleihbar || !beendet || forderung != 1 || protokoll != 1 {
+		t.Errorf("verloren %v, ausleihbar %v, Ausleihe beendet %v, %d Forderung(en) zu 15 €, %d Logbuchzeile(n); erwartet true, false, true, 1, 1",
+			geraetWeg, ausleihbar, beendet, forderung, protokoll)
+	}
+	// Ein verlorenes Gerät verschwindet nicht aus der Geräteverwaltung.
+	if liste := w.lies(t, "/api/geraete"); !strings.Contains(liste, `"barcode_id":"G-OHNEBUCH-1"`) ||
+		!strings.Contains(liste, `"ist_ausgesondert":true`) {
+		t.Errorf("die Geräteverwaltung zeigt das verlorene Gerät nicht: %s", liste)
+	}
+}
+
+// Beschädigt bleibt das Gerät im Bestand und steht als defekt da; die Forderung entsteht wie beim
+// Buch. Ein zweiter Klick bucht nichts doppelt, und nach der Reparatur lässt es sich in der
+// Geräteverwaltung wieder freigeben.
+func TestSchadenMelden_GeraetBeschaedigtStehtAlsDefekt(t *testing.T) {
+	w := baueSchadensWelt(t, "schaden-geraet-defekt@example.org")
+	ctx := context.Background()
+	kind := testdaten.LegeSchuelerAn(t, w.pool, "S-OHNEBUCH-D", "Dora", "07A")
+	ausleihe := w.geraeteAusleihe(t, kind, "G-OHNEBUCH-3")
+	rumpf := fmt.Sprintf(`{"loan_id":%q,"beschreibung":"Display gesprungen","art":"beschaedigt","betrag":30}`, ausleihe)
+	var geraet string
+	for i := range 2 {
+		if rec := w.sende(t, "/api/damage/report", rumpf); rec.Code != http.StatusOK {
+			t.Fatalf("Meldung %d: Status %d, erwartet 200 — %s", i+1, rec.Code, rec.Body.String())
+		}
+		var verloren, ausleihbar, beendet bool
+		var notiz string
+		var forderungen int
+		if err := w.pool.QueryRow(ctx, `
+			SELECT g.id, g.ist_ausgesondert, g.ist_ausleihbar, coalesce(g.zustand_notiz, ''),
+			       a.rueckgabe_am IS NOT NULL, (SELECT count(*) FROM schadensfaelle WHERE geraet_id = g.id)
+			FROM ausleihen a JOIN geraete g ON g.id = a.geraet_id WHERE a.id = $1`, ausleihe,
+		).Scan(&geraet, &verloren, &ausleihbar, &notiz, &beendet, &forderungen); err != nil {
+			t.Fatalf("Stand lesen: %v", err)
+		}
+		if verloren || ausleihbar || notiz != "Display gesprungen" || !beendet || forderungen != 1 {
+			t.Errorf("Meldung %d: verloren %v, ausleihbar %v, Notiz %q, beendet %v, %d Forderung(en); erwartet defekt im Bestand mit einer Forderung",
+				i+1, verloren, ausleihbar, notiz, beendet, forderungen)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/api/geraete/"+geraet, strings.NewReader(`{"ist_ausleihbar":true}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: w.sitzung})
+	rec := httptest.NewRecorder()
+	w.router.ServeHTTP(rec, tuertest.MitCSRF(req))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Wieder freigeben: %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(w.lies(t, "/api/geraete"), `"ist_ausleihbar":true`) {
+		t.Error("das reparierte Gerät ist nicht wieder ausleihbar")
+	}
 }
 
 func TestBescheid_GeraeteausleiheBuchtNichts(t *testing.T) {

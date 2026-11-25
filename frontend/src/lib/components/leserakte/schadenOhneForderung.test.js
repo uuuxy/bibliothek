@@ -15,7 +15,7 @@ describe('Verlust oder Schaden melden', () => {
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});
-		const text = screen.container.textContent ?? '';
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 
 		expect(screen.queryByLabelText(/Ersatzbetrag/)).toBeNull();
 		expect(text).toContain('Eine Forderung entsteht nicht');
@@ -43,5 +43,44 @@ describe('Verlust oder Schaden melden', () => {
 
 		expect(screen.getByLabelText(/Ersatzbetrag/)).not.toBeNull();
 		expect(screen.container.textContent ?? '').toContain('Forderung angelegt');
+	});
+});
+
+// Ein Gerät bleibt in der Geräteverwaltung, verloren als verloren, beschädigt als defekt; die
+// Forderung entsteht wie beim Buch. Ein Ersatzwert-Vorschlag kommt nicht, weil keine Regel einen
+// für Geräte nennt.
+describe('Verlust oder Schaden melden: Gerät', () => {
+	const geraet = {
+		id: 'g1',
+		ausleihe_id: 'a2',
+		titel: 'iPad 9',
+		barcode_id: 'G-1',
+		ist_geraet: true
+	};
+
+	it('nennt das Gerät und seinen Zustand danach und fragt keinen Vorschlag ab', async () => {
+		const onSubmit = vi.fn();
+		const screen = render(SchadenMeldenDialog, { ausleihe: geraet, onCancel: vi.fn(), onSubmit });
+		const text = () => (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+
+		expect(text()).toContain('Gerät G-1');
+		expect(text()).toContain('steht danach als verloren in der Geräteverwaltung');
+		expect(text()).toContain('Die Forderung steht danach unter');
+		expect(screen.getByText('Für Geräte gibt es keinen Vorschlag')).toBeTruthy();
+		await fireEvent.click(screen.getByLabelText('Beschädigt zurückgegeben'));
+		expect(text()).toContain('steht danach als defekt in der Geräteverwaltung');
+		await fireEvent.click(screen.getByText('Melden'));
+		expect(onSubmit).toHaveBeenCalledWith('Verloren', 0, 'beschaedigt');
+	});
+
+	it('legt beim Kollegen auch für ein Gerät keine Forderung an', () => {
+		const screen = render(SchadenMeldenDialog, {
+			ausleihe: { ...geraet, ohneForderung: true },
+			onCancel: vi.fn(),
+			onSubmit: vi.fn()
+		});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain('Eine Forderung entsteht nicht');
+		expect(screen.queryByLabelText(/Ersatzbetrag/)).toBeNull();
 	});
 });

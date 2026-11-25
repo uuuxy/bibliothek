@@ -123,8 +123,8 @@
 								{:else}
 									<StatusChip
 										ton="neutral"
-										text="Bücherei-Buch, kein Bescheid"
-										tip="Für Bestände der Schülerbücherei gibt es keinen Bescheid des Landes; bezahlt wird in der Akte"
+										text="Kein Bescheid des Landes"
+										tip="Für Bücher der Schülerbücherei und für Geräte gibt es keinen Bescheid des Landes; bezahlt wird in der Akte"
 									/>
 								{/if}
 							</td>

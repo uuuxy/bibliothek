@@ -93,8 +93,9 @@ func NewGeraeteAbfragen(pool db.Pool) *GeraeteAbfragen {
 	return &GeraeteAbfragen{db: pool}
 }
 
-// LadeAlle liefert alle Geräte, die nicht ausgesondert sind, das neueste zuerst, mit dem
-// Namen dessen, der das Gerät gerade hat; uniq_ausleihen_aktiv_geraet lässt höchstens einen zu.
+// LadeAlle liefert alle Geräte, die verlorenen (ist_ausgesondert, meldeGeraeteSchaden) am Ende,
+// sonst das neueste zuerst, mit dem Namen dessen, der das Gerät gerade hat;
+// uniq_ausleihen_aktiv_geraet lässt höchstens einen zu. Ein verlorenes Gerät bleibt sichtbar.
 func (a *GeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT g.id, g.modellname, g.seriennummer, g.barcode_id, g.zubehoer,
@@ -107,8 +108,7 @@ func (a *GeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, erro
 		-- leser, nicht die Sicht schueler: Sonst stünde bei einem Gerät in der Hand
 		-- eines Kollegen kein Name.
 		LEFT JOIN leser l ON l.id = a.schueler_id
-		WHERE g.ist_ausgesondert = false
-		ORDER BY g.erstellt_am DESC
+		ORDER BY g.ist_ausgesondert, g.erstellt_am DESC
 	`)
 	if err != nil {
 		return nil, err

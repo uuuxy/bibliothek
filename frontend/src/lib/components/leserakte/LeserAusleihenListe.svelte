@@ -163,8 +163,8 @@
 									{/if}
 								</button>
 							{/if}
-							<!-- Verlust oder Schaden an einem Gerät meldet die Geräteverwaltung. -->
-							{#if onDamageClick && !book.ist_geraet}
+							<!-- Auch am Gerät: Es wird ausgesondert, die Ausleihe endet (SchadenMeldenDialog). -->
+							{#if onDamageClick}
 								<button
 									type="button"
 									class="icon-btn text-error"

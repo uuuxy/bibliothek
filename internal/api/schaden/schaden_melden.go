@@ -15,8 +15,7 @@ import (
 // schadensMeldung bucht einen Verlust oder Schaden an einer Ausleihe und liefert die ID des
 // Schadensfalls (repository.SchadensAbfragen). Hat sich die Lage geändert, seit die Akte offen
 // steht, liefert es repository.ErrExemplarNeuVerliehen oder
-// repository.ErrAusleiheInzwischenZurueck, für eine Geräteausleihe
-// repository.ErrAusleiheOhneBuch.
+// repository.ErrAusleiheInzwischenZurueck.
 type schadensMeldung interface {
 	Melde(ctx context.Context, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, hoehe betrag.Cent) (string, error)
 }

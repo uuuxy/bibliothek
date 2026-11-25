@@ -148,3 +148,35 @@ describe('GeraeteVerwaltung ohne view_students', () => {
 		expect(getAllByText('im Schrank')).toHaveLength(1);
 	});
 });
+
+// Ein verlorenes Gerät verschwindet nicht: Es steht als „verloren“ da, ohne Bearbeiten und ohne
+// „Defekt melden“; ein beschädigtes steht als defekt und lässt sich wieder freigeben.
+describe('GeraeteVerwaltung: verloren und defekt', () => {
+	it('zeigt das verlorene Gerät ohne Knöpfe und das defekte mit „Wieder freigeben“', async () => {
+		vi.mocked(apiFetch).mockReset();
+		const geraet = (id, modell, ausleihbar, ausgesondert) => ({
+			id,
+			modellname: modell,
+			barcode_id: `G-${id}`,
+			ist_ausleihbar: ausleihbar,
+			ist_ausgesondert: ausgesondert,
+			ausgeliehen_an: null
+		});
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					geraet('1', 'iPad defekt', false, false),
+					geraet('2', 'iPad weg', false, true)
+				]
+			})
+		);
+		const screen = render(GeraeteVerwaltung);
+
+		expect(await screen.findByText('verloren')).toBeTruthy();
+		expect(screen.getByText('defekt oder gesperrt')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'iPad weg bearbeiten' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'iPad defekt bearbeiten' })).toBeTruthy();
+		expect(screen.getAllByRole('button', { name: /Wieder freigeben/ })).toHaveLength(1);
+	});
+});
