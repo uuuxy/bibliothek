@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 24.11.2026
+Stand: 25.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -39,6 +39,9 @@ Nur, was kein Test leisten kann.
 
 ### Nebenbei
 
+- [ ] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
+- [ ] Funde der Durchsicht auf Uneinheitliches einordnen und abarbeiten: 21 Punkte, dazu vier
+  aus der Gegenprüfung der letzten Änderungen; zwei sind am Code bestätigt. (5.201)
 - [ ] Oberstufe zum Schuljahresbeginn: ein entspannter Übergang bei Ausleihe und Rückgabe, und ob
   überfällige Schulbücher dort zur Sperre führen sollen. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -122,6 +125,65 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
+
+### 5.201 Funde der Durchsicht auf Uneinheitliches
+
+Eine Durchsicht des ganzen Programms auf Uneinheitliches (24./25.11.2026) brach mit dem Absturz
+des Rechners um 03:33 ab; ihr Zwischenstand nennt 36 Punkte. Erledigt sind 15 (Titelsuche,
+Namenssuche, Geburtsdatum, Vormerken, Statistik, Reservierung, Doku), entschieden ist das
+verlorene Gerät (5.202). Die Gegenprüfung der letzten Änderungen kam bis in Schritt 4; ihre
+Funde sind vorläufig.
+
+Am Code bestätigt:
+- Mahnwesen, Reiter „Schadensersatz“: Suche, Klassenfilter und Werkzeugleiste stehen da, wirken
+  aber nicht auf die Tabelle (`BescheideTabelle.svelte` liest weder Suche noch Klasse).
+- Dauerleihen des Kollegiums bieten „Verlängern“ an (`LeserAusleihenListe.svelte` fragt nur
+  `darfFristAendern`), obwohl eine Dauerleihe keine Frist hat.
+
+Noch am Code zu prüfen, Verdacht nach Regel 4:
+- Die Maske für das Token im Pfad lässt einen Pfad mit `/..` hinter dem Token durch: Landet das
+  Token dann im Protokoll?
+- `LoescheAbgaengerEndgueltig` sperrt die Zeile des Lesers nicht, anders als
+  `LegeLeserInPapierkorb`.
+- Drei Umrechnungen Klasse → Jahrgang behandeln Q1 bis Q4 verschieden (`AbschlussJahrgang`
+  kennt sie nicht).
+- Geräteausleihe: kein Ausleihlimit, der Ferien-Leseclub zählt nicht, beim Kollegium 14 Tage
+  statt Dauerleihe.
+
+Noch am Code zu prüfen, sonst:
+- Vormerken in der Buchakte braucht neben `manage_vormerkungen` auch `view_students`.
+- Die Buchakte zeigt bei einer Vormerkung weder „abholbereit“ noch die Abholfrist.
+- Schlagworte im Bestellkorb: Lesen verlangt `view_books`, Anlegen `create_orders`.
+- Der Monatstrend der Statistik rechnet in UTC: 0 bis 2 Uhr am Monatsersten zählt zum Vormonat.
+- Die Gesamtsumme einer Bestellung hat keine Grenze gegen den Überlauf von `DECIMAL(10,2)`.
+- Die Zeilengrenze beim Lesen einer CSV fehlt im Littera- und im LUSD-Import.
+- Der Papierkorb zeigt gelöschtes Kollegium als „Klasse unbekannt“, ohne „ohne Ausweis“.
+- Klassensätze und Klassenlisten sortieren nach Codepunkt („Mathe 10“ vor „Mathe 5“).
+- Die Geräteverwaltung zeigt Laden, leere Liste und Fehler anders als die übrigen
+  Verwaltungsseiten.
+- Auf der Seite Signaturen widersprechen sich zwei Hinweise über die Herkunft der Vorschläge.
+- Namen: Kiosk, Theke und Ausleihe für denselben Platz; Abgänger und Ehemalige im LUSD-Abgleich;
+  Sachgruppen und Systematik; Meldungen und Anliegen; vier Wörter für „ohne Ausweis“;
+  „Schüler ausgewählt“ in der Leserdatei auch für Lehrkräfte; „Systembenutzer“; `topf` und
+  `mittel` im Paket `schaden`; 400 statt 409 bei doppelter Ausweisnummer.
+
+Nächster Schritt: je Punkt am Code prüfen und nach Regel 4 einordnen; A sofort, B gebündelt, C
+nach ARCHITEKTUR 11.5.
+
+### 5.202 Verlorenes Gerät melden
+
+Ein Gerät, das nicht zurückkommt, lässt sich nicht aus der Ausleihe buchen: Die Leserakte bietet
+„Verlust oder Schaden melden“ nur an Büchern, `meldeSchaden` weist eine Geräteausleihe ab
+(`ErrAusleiheOhneBuch`), die Geräteverwaltung kann nur sperren. Die offene Ausleihe hält das
+Löschen des Lesers auf.
+
+Entschieden am 25.11.2026: „Verlust oder Schaden melden“ an der Gerätezeile. Die Ausleihe endet,
+das Gerät ist ausgesondert, verloren wie beschädigt: Ob sich ein beschädigtes Gerät reparieren
+lässt, weiß niemand. Eine Forderung entsteht nur mit eingetragenem Betrag.
+
+Nächster Schritt: `meldeSchaden` für Geräte (der Bescheid nimmt weiter nur Bücher), die
+Forderung mit Gerät in den Listen und im Bescheid-Dialog (ARCHITEKTUR 11.5, „Forderung für ein
+Gerät“), Knopf und Dialog in der Leserakte; Bilder vor dem Push.
 
 ### 7.2 Frisches Littera-Backup
 
