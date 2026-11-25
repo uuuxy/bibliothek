@@ -142,6 +142,7 @@ const (
 	meldungTitelUnbekannt     = "Der Titel steht nicht mehr im Katalog. Bitte aus dem Warenkorb nehmen."
 	meldungMengeUngueltig     = "Die Menge muss zwischen 1 und 200 liegen"
 	meldungPreisUngueltig     = "Der Preis muss zwischen 0 und 99.999,99 € liegen"
+	meldungSummeZuHoch        = "Die Summe der Bestellung darf 99.999.999,99 € nicht übersteigen"
 )
 
 // antworteAufBestellfehler ordnet den benannten Ablehnungen von BestellDienst.LegeAn Status und
@@ -161,6 +162,8 @@ func antworteAufBestellfehler(w http.ResponseWriter, err error) {
 		status, satz = http.StatusBadRequest, meldungMengeUngueltig
 	case errors.Is(err, service.ErrPreisUngueltig):
 		status, satz = http.StatusBadRequest, meldungPreisUngueltig
+	case errors.Is(err, repository.ErrBestellsummeZuHoch):
+		status, satz = http.StatusBadRequest, meldungSummeZuHoch
 	default:
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return

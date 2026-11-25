@@ -2,11 +2,37 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"bibliothek/internal/db"
 	"bibliothek/internal/pkg/betrag"
+
+	"github.com/jackc/pgx/v5"
 )
+
+// HoechsteBestellsumme ist der größte Betrag, den die Summe einer Bestellung fasst
+// (bestellungen_verlauf.gesamtbetrag, NUMERIC(10,2)). Sechs Positionen zu 200 Stück zum höchsten
+// Einzelpreis überschreiten ihn schon; ohne die Prüfung endete das mit einem Serverfehler.
+const HoechsteBestellsumme = betrag.Cent(9_999_999_999)
+
+// ErrBestellsummeZuHoch heißt: Die Summe der Bestellung überstiege HoechsteBestellsumme.
+var ErrBestellsummeZuHoch = errors.New("die summe der bestellung überstiege 99.999.999,99 €")
+
+// pruefeBestellsumme liefert ErrBestellsummeZuHoch, wenn die Positionen der Bestellung zusammen
+// mehr ergeben, als die Summe der Bestellung fasst.
+func pruefeBestellsumme(ctx context.Context, tx pgx.Tx, bestellungID string) error {
+	var summe betrag.Cent
+	if err := tx.QueryRow(ctx, `
+		SELECT coalesce(sum(menge * einzelpreis), 0) FROM bestellungen_positionen WHERE bestellung_id = $1`,
+		bestellungID).Scan(&summe); err != nil {
+		return err
+	}
+	if summe > HoechsteBestellsumme {
+		return ErrBestellsummeZuHoch
+	}
+	return nil
+}
 
 // AenderePositionspreis setzt den Einzelpreis einer Bestellposition neu und zieht mit, was ihn
 // beim Bestellen übernommen hat: den Einkaufspreis der Exemplare dieses Titels aus der Bestellung
@@ -37,6 +63,9 @@ func AenderePositionspreis(ctx context.Context, pool db.Pool, bestellungID, posi
 	}
 	if tag.RowsAffected() != 1 {
 		return "", 0, 0, fmt.Errorf("position %s: %d Zeilen geändert, erwartet 1", positionID, tag.RowsAffected())
+	}
+	if err := pruefeBestellsumme(ctx, tx, bestellungID); err != nil {
+		return "", 0, 0, err
 	}
 	// Null Exemplare ist kein Fehler: Eine Bestellung ohne Barcodes oder eine alte Bestellung
 	// hat keine.

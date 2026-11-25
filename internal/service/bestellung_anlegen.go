@@ -259,6 +259,9 @@ func (d *BestellDienst) verarbeitePositionen(ctx context.Context, tx pgx.Tx, auf
 		posten.gesamtbetrag += erg.betrag
 		posten.menge += erg.position.Menge
 	}
+	if posten.gesamtbetrag > repository.HoechsteBestellsumme {
+		return bestellPosten{}, repository.ErrBestellsummeZuHoch
+	}
 	return posten, nil
 }
 

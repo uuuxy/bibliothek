@@ -149,3 +149,31 @@ func TestPositionspreis_UngueltigesAendertNichts(t *testing.T) {
 		t.Errorf("%d Protokolleinträge, erwartet keinen", n)
 	}
 }
+
+// Auch ein geänderter Preis hält die Summe der Bestellung in ihrer Spalte (NUMERIC(10,2)): Bis an
+// die Grenze geht es, darüber kommt der Satz statt eines Serverfehlers, und nichts ändert sich.
+func TestPositionspreis_SummeUeberDerGrenze(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	bestellungID, positionID := bestellungMitPosition(t, srv, pool, "Preis-Summe")
+	// Fünf Positionen zu 200 × 99.999,99 € ergeben 99.999.990,00 €; die Position der Bestellung
+	// (2 Stück) darf danach höchstens 4,99 € kosten.
+	if _, err := pool.Exec(context.Background(), `
+		INSERT INTO bestellungen_positionen (bestellung_id, titel_name, menge, einzelpreis)
+		SELECT $1, 'Füllposten', 200, 99999.99 FROM generate_series(1, 5)`, bestellungID); err != nil {
+		t.Fatalf("Füllposten anlegen: %v", err)
+	}
+
+	if rec := aenderePreisUeberTuer(t, srv, pool, bestellungID, positionID, `{"einzelpreis":4.99}`); rec.Code != http.StatusOK {
+		t.Fatalf("Preis an der Grenze: %d %s", rec.Code, rec.Body.String())
+	}
+	rec := aenderePreisUeberTuer(t, srv, pool, bestellungID, positionID, `{"einzelpreis":5}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "99.999.999,99") {
+		t.Errorf("Preis über der Grenze: Status %d, %s, erwartet 400 mit der Grenze der Summe", rec.Code, rec.Body.String())
+	}
+	if einzel, exemplare, summe := preiseInDB(t, pool, bestellungID, positionID); einzel != "4.99" ||
+		strings.Join(exemplare, ",") != "4.99,4.99" || summe != "99999999.98" {
+		t.Errorf("nachher: Position %s, Exemplare %v, Summe %s; erwartet 4.99, zweimal 4.99, 99999999.98", einzel, exemplare, summe)
+	}
+}

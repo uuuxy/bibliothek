@@ -54,6 +54,10 @@ func (t *Tueren) aenderePositionspreis(w http.ResponseWriter, r *http.Request) {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Diese Position gehört nicht zu der Bestellung", nil)
 		return
 	}
+	if errors.Is(err, repository.ErrBestellsummeZuHoch) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungSummeZuHoch, nil)
+		return
+	}
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
