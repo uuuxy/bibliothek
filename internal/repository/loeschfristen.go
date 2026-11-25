@@ -210,9 +210,9 @@ func praedikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung
 
 // praedikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
 // Protokoll (audit_log, Alias `al`) die Schüler-Zuordnung genommen wird. datensatz_id
-// ist dort das Exemplar (so schreibt protokolliereLeihvorgang), die Klasse kommt über sein Eigentum.
-// Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat oder ein
-// offener Schadensfall daran hängt.
+// ist dort das Exemplar oder das Gerät (so schreibt protokolliereLeihvorgang), die Klasse kommt
+// über das Eigentum des Exemplars. Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar
+// oder Gerät noch offen hat oder ein offener Schadensfall daran hängt.
 func praedikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
@@ -220,12 +220,12 @@ func praedikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
 		        SELECT 1 FROM ausleihen a
-		        WHERE a.exemplar_id = al.datensatz_id
+		        WHERE (a.exemplar_id = al.datensatz_id OR a.geraet_id = al.datensatz_id)
 		          AND a.schueler_id::text = al.details->>'schueler_id'
 		          AND a.rueckgabe_am IS NULL)
 		  AND NOT EXISTS (
 		        SELECT 1 FROM schadensfaelle sf
-		        WHERE sf.exemplar_id = al.datensatz_id
+		        WHERE (sf.exemplar_id = al.datensatz_id OR sf.geraet_id = al.datensatz_id)
 		          AND sf.schueler_id::text = al.details->>'schueler_id'
 		          AND sf.ist_bezahlt = false
 		          AND sf.storniert_am IS NULL)

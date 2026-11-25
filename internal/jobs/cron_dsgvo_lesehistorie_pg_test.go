@@ -226,3 +226,76 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Errorf("L-AUS: Lernmittel-Frist muss unabhängig vom Schülerbücherei-Schalter weiterlaufen")
 	}
 }
+
+// Ein Gerät hat kein Exemplar: Sein Protokoll trägt das Gerät als datensatz_id. Solange es beim
+// Schüler ist oder ein offener Schaden daran hängt, behält das Protokoll den Schüler, wie bei
+// einem Buch. Ein zurückgegebenes Gerät ohne Schaden verliert ihn nach der kurzen Frist.
+func TestLesehistorieBefristung_OffenesGeraetBehaeltSeinProtokoll(t *testing.T) {
+	adminDSN := os.Getenv(datenbankVariable)
+	if adminDSN == "" {
+		t.Skipf("%s nicht gesetzt — Test übersprungen", datenbankVariable)
+	}
+	_, dsn := legeProbeDatenbankAn(t, adminDSN, "lesehistgeraet")
+	befuelleQuelle(t, dsn)
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Pool: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	var schuelerID string
+	if err := pool.QueryRow(ctx, `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`).Scan(&schuelerID); err != nil {
+		t.Fatalf("Probeschüler: %v", err)
+	}
+	// geraet legt ein Gerät mit einer Ausleihe an, die vor 100 Tagen begann, und mit ihrem
+	// Protokoll von damals; zurueck sagt, ob sie vor 100 Tagen endete.
+	geraet := func(barcode string, zurueck bool) (geraetID, ausleiheID string) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Tablet', $1) RETURNING id`,
+			barcode).Scan(&geraetID); err != nil {
+			t.Fatalf("Gerät %s: %v", barcode, err)
+		}
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO ausleihen (geraet_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+			VALUES ($1, $2, NOW() - interval '101 days', NOW() + interval '10 days',
+			        CASE WHEN $3 THEN NOW() - interval '100 days' END)
+			RETURNING id`, geraetID, schuelerID, zurueck).Scan(&ausleiheID); err != nil {
+			t.Fatalf("Ausleihe %s: %v", barcode, err)
+		}
+		if _, err := pool.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+			VALUES ('ausleihen', 'CHECKOUT', $1::uuid, 'USER', jsonb_build_object('schueler_id', $2::text),
+			        NOW() - interval '101 days')`, geraetID, schuelerID); err != nil {
+			t.Fatalf("Protokoll %s: %v", barcode, err)
+		}
+		return geraetID, ausleiheID
+	}
+	offen, _ := geraet("G-OFFEN", false)
+	mitSchaden, ausleiheMitSchaden := geraet("G-SCHADEN", true)
+	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (geraet_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
+		VALUES ($1, $2, $3, 'Display gesprungen', 80.00, false)`, mitSchaden, ausleiheMitSchaden, schuelerID); err != nil {
+		t.Fatalf("Schaden am Gerät: %v", err)
+	}
+	zurueck, _ := geraet("G-ZURUECK", true)
+
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreLesehistorieBefristungAus(ctx)
+
+	for name, fall := range map[string]struct {
+		geraetID string
+		bleibt   bool
+	}{
+		"noch ausgeliehen":            {offen, true},
+		"zurück, mit offenem Schaden": {mitSchaden, true},
+		"zurück, ohne Schaden":        {zurueck, false},
+	} {
+		var traegt bool
+		if err := pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM audit_log
+			WHERE tabelle = 'ausleihen' AND datensatz_id = $1 AND details ? 'schueler_id')`, fall.geraetID).Scan(&traegt); err != nil {
+			t.Fatalf("Protokoll %s lesen: %v", name, err)
+		}
+		if traegt != fall.bleibt {
+			t.Errorf("Gerät %s: Protokoll trägt den Schüler = %v, erwartet %v", name, traegt, fall.bleibt)
+		}
+	}
+}
