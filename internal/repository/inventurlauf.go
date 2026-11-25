@@ -98,8 +98,8 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 
 // LaufStand ist der Fortschritt eines offenen Laufs, gezählt nach den Bedingungen des
 // Abschlusses: Erwartet sind die Exemplare im Bereich, die seit dem Beginn des Laufs im Regal
-// stehen müssten (InventurBereich.bedingung), Fehlend die davon, die der Lauf noch nicht erfasst
-// hat. Fehlend ist genau die Zahl, die SchliesseLaufAb
+// stehen müssten (InventurBereich.bedingung), Fehlend die davon, die noch nicht gescannt sind
+// (nichtErfasst). Fehlend ist genau die Zahl, die SchliesseLaufAb
 // jetzt als Verlust buchen würde; ein gescanntes Buch, das der Bereich nicht erwartet
 // (verliehen, gesperrt), ändert keine der beiden Zahlen.
 type LaufStand struct {

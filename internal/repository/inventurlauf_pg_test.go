@@ -9,7 +9,7 @@ import (
 )
 
 // Zwei Läufe in verschiedenen Bereichen beeinflussen sich weder im Fortschritt noch beim
-// Abschluss: Jede Erfassung hängt an ihrem Lauf.
+// Abschluss: Sie haben kein Exemplar gemeinsam.
 func TestInventurParallelbetrieb(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

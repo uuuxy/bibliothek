@@ -149,8 +149,7 @@ func ladeBereicheOffenerLaeufe(ctx context.Context, tx pgx.Tx) ([]offenerLauf, e
 
 // hatGemeinsamenBestand prüft am Bestand, ob ein Exemplar in beiden Bereichen liegt. Maßstab
 // sind dieselben Einschränkungen, mit denen der Scan ein Buch als „im Bereich" annimmt: Ein
-// Exemplar, das beide Läufe annähmen, kann nur in einem verbucht werden und würde beim
-// Abschluss des anderen als Verlust ausgesondert. Ausgesonderte Exemplare zählen nicht (niemand
+// Exemplar, das beide Läufe annähmen, würde in beiden gesucht. Ausgesonderte Exemplare zählen nicht (niemand
 // kann sie scannen), verliehene schon: Sie können während der Inventur zurückkommen.
 func hatGemeinsamenBestand(ctx context.Context, tx pgx.Tx, a, b InventurBereich) (bool, error) {
 	bedingungA, argsA := a.dimensionBedingung(1)

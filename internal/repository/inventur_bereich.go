@@ -69,12 +69,17 @@ func (s InventurBereich) bedingung(laufID string) (string, []any) {
 	return strings.Join(bedingungen, "\n  AND "), append([]any{laufID}, args...)
 }
 
-// nichtErfasst ist die Bedingung „in diesem Lauf nicht gescannt" für das Exemplar e; die ID des
-// Laufs steht in $1. Was erwartet ist und sie erfüllt, bucht der Abschluss als Verlust; die
-// Zählung davor (ZaehleStand) nimmt sie von hier, damit beide dieselben Bücher meinen.
+// nichtErfasst ist die Bedingung „nicht gescannt" für das Exemplar e im Lauf, dessen ID in $1
+// steht. Es zählt der Scan in jedem Lauf, der zugleich mit diesem offen war: Ein Band für die
+// Jahrgänge 5 und 6 gehört zu beiden Läufen, steht aber in einem Regal und wird nur in einem
+// gescannt. Ein Lauf, der vor dem Beginn dieses Laufs abgeschlossen war, zählt nicht. Was
+// erwartet ist und die Bedingung erfüllt, bucht der Abschluss als Verlust; die Zählung davor
+// (ZaehleStand) nimmt sie von hier, damit beide dieselben Bücher meinen.
 const nichtErfasst = `NOT EXISTS (
 		SELECT 1 FROM inventur_erfassungen ie
-		WHERE ie.session_id = $1 AND ie.exemplar_id = e.id
+		JOIN inventur_sessions s ON s.id = ie.session_id
+		WHERE ie.exemplar_id = e.id
+		  AND (s.id = $1 OR s.abgeschlossen_am IS NULL OR s.abgeschlossen_am >= ` + laufBeginn + `)
 	)`
 
 // dimensionBedingung liefert nur die Einschränkungen (Signatur, Fach, Jahrgang), für die

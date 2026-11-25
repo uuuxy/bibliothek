@@ -29,8 +29,8 @@ func (a *InventurAbfragen) SperreLaufFuerAbschluss(ctx context.Context, id strin
 
 // SchliesseLaufAb schließt einen Lauf ab: Jedes Exemplar im Bereich, das in diesem Lauf nicht
 // erfasst wurde, wird als Verlust ausgesondert. Verliehene Exemplare liegen nicht im Bereich
-// (InventurBereich.bedingung); ein Buch beim Schüler wird nie als verloren gebucht. Was ein
-// anderer Lauf erfasst hat, bleibt unberührt, weil jede Erfassung an ihrem Lauf hängt.
+// (InventurBereich.bedingung); ein Buch beim Schüler wird nie als verloren gebucht. Ein Scan in
+// einem anderen Lauf, der zugleich offen war, zählt mit (nichtErfasst).
 //
 // bearbeiterID nennt, wer abschließt: Der Lauf trägt nur, wer ihn begonnen hat, und jedes als
 // Verlust gebuchte Exemplar steht mit dieser Person im Protokoll (protokolliereAussonderung).
