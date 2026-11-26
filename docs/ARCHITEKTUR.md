@@ -857,9 +857,10 @@ sequenceDiagram
     end
 ```
 
-Jede folgende Anfrage prüft `verlangeRecht`: JWT (nur HMAC), Sperrliste, Kontostatus live in der
-Datenbank, die Sperre in `sitzungen` (nach Inaktivität oder 10 Stunden nach der letzten
-Passworteingabe: 423 bis zur Eingabe), das Recht (60 s Cache mit Epoche) und die UUID im Pfad.
+Jede folgende Anfrage prüft `verlangeRecht`: zuerst die UUID im Pfad (eine ungültige ist 400, auch
+ohne Anmeldung), dann JWT (nur HMAC), Sperrliste, Kontostatus live in der Datenbank, die Sperre in
+`sitzungen` (nach Inaktivität oder 10 Stunden nach der letzten Passworteingabe: 423 bis zur
+Eingabe) und das Recht (60 s Cache mit Epoche).
 Ein Aussetzer der Datenbank ergibt 503, nicht 401, und „gesperrt“ ist 423: Beides soll den
 Arbeitsplatz nicht abmelden.
 
@@ -940,8 +941,8 @@ gebucht ist; die Gleichzeitigkeit des Lasttests zählt so nicht in jeder Runde g
 | Scan eines Exemplars                   | die aktive Ausleihe, danach die Exemplarzeile (ihr Stand darunter neu gelesen) | `AusleihAbfragen.SperreOffene` (`internal/repository/ausleihe.go`), `sperreUndPruefeExemplar` (`internal/service/ausleihe_am_leser.go`) |
 | Ausleihe an einen Schüler, Sperren am Leser | die Leser-Zeile                                                     | `SperreLeserzeile` (`internal/repository/ausleihe_zeilensperren.go`), `LeserSperren` |
 | Rückgabe mit Vormerkung, Nachrücken    | die Vormerkung, `FOR UPDATE OF v SKIP LOCKED`: `OF v`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt (sie könnte sich mit der Ausleihe verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe); ein Verbund nennt seine Tabelle (`zeilensperre_verbund_ratsche_test.go`) | `SperreNaechsteWartendeVormerkung`, `bedieneNaechstenWartenden` |
-| Geräte-Ausleihe                        | die aktive Geräte-Ausleihe                                               | `SperreOffeneGeraeteAusleihe`                                       |
-| Nachbuchen                             | erst `leser`, dann `buecher_exemplare`                                   | `internal/service/nachbuchen.go`                                    |
+| Geräte-Ausleihe                        | die aktive Geräte-Ausleihe, beim Verleihen danach die Gerätezeile (gesperrt oder ausgesondert?) | `SperreOffeneGeraeteAusleihe`, `SperreGeraetezeile` (`internal/service/geraet.go`) |
+| Nachbuchen                             | erst `leser`, dann die offene Ausleihe des Exemplars, dann `buecher_exemplare` | `internal/service/nachbuchen.go`                                    |
 | Verlust oder Schaden melden            | die Ausleihe-Zeile; sonst legten zwei Klicks zwei Schadensfälle an       | `internal/repository/schaden_melden.go`                             |
 | Rückgabe (Trigger)                     | die Leser-Zeile nach der Ausleihe, gegen die Folge (R2)                  | `trg_leser_stempel_rueckgabe` (`schema.sql`)                        |
 | Verlängerung                           | die Ausleihe-Zeile                                                       | `verlaengereAusleihe` (`internal/api/theke/ausleihe.go`)            |
@@ -1029,10 +1030,12 @@ beginnt die Mahnfolge neu (A18).
              4. Papierkorb nach 180 Tagen   5. Lesehistorie   6. Anliegen
              7. Klassensatz-Reservierungen   8. quittierte Nachbuch-Meldungen
            └─ Löschung NACH Anonymisierung, damit die Karenz für beides gilt
-02:30      Backup → Volume, optional S3; ohne BACKUP_ENCRYPTION_KEY überspringt es sich,
-           und die Selbstprüfung meldet das
+02:30      Backup → Volume, optional S3, nur mit eingeschalteter Sicherung (sicherung_an,
+           Vorgabe aus, 7.7; sonst laufen nur alte Stände aus); ohne BACKUP_ENCRYPTION_KEY
+           überspringt es sich, und die Selbstprüfung meldet das
 03:00      Protokoll-Aufbewahrung
-So 03:30   Restore-Probe in eine Wegwerf-Datenbank; das Ergebnis wird Befund der Selbstprüfung
+So 03:30   Restore-Probe in eine Wegwerf-Datenbank, ebenfalls nur mit eingeschalteter Sicherung
+           und nie zwei zugleich; das Ergebnis wird Befund der Selbstprüfung
 ```
 
 Der Zeitplan läuft auf UTC: In der Nacht der Zeitumstellung gäbe es 02:30 Ortszeit nicht (A16).

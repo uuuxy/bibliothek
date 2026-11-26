@@ -7,9 +7,10 @@
 > erwartet.
 >
 > **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen
-> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Die Flows 1 bis 3 haben
-> zusätzlich eine unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils
-> letzte, deutlich beschriftete Button schreibt in die Datenbank. Flow 4 hat keine Vorschau:
+> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Die Flows 1 und 2 haben
+> zusätzlich eine unverbindliche Vorschau-Stufe, die **nichts verändert**; Flow 3 zeigt vor dem
+> Abschluss eine Bestätigungszeile mit einer Notiz für die Bereit-Mail. Erst der jeweils letzte,
+> deutlich beschriftete Button schreibt in die Datenbank. Flow 4 hat keine Vorschau:
 > Dort entscheidet ein Mensch über eine einzelne Person, und die Freischaltung ist
 > zurücknehmbar.
 

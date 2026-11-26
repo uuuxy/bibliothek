@@ -11,8 +11,9 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
   Passwort des Schulnetzes (LDAP). Ist die Domain der Schule eingerichtet, genügt der Name vor
   dem @; den Rest ergänzt das Programm. Wer kein Konto hat, kann sich mit dem Postfach selbst
   anmelden und wird von der Bibliothek freigeschaltet (→ Benutzer & Rechte).
-- **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
-  Theke ohne Leserakten, Mitarbeitende den Thekenbetrieb, Admins alles.
+- **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer die Theke
+  ohne Leserakten und lesend den Bestand (Medienkatalog, Signaturen, Klassensätze,
+  Bestandsbücher), Mitarbeitende den Thekenbetrieb, Admins alles.
 
 ---
 
@@ -405,8 +406,8 @@ bietet die Seite nur Rollen an, die _Mahnungen versenden_ dürfen; mit _Leserdat
 lässt sich die Liste ansehen und drucken.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, senden): je
-Kind ein Blatt zum Austeilen; ein zweiter Lauf, auch von einem anderen Platz, wartet, bis der erste
-fertig ist. **Liste drucken** druckt die Mahnliste so, wie Reiter, Filter und Suche sie zeigen. Mail
+Kind ein Blatt zum Austeilen; einen zweiten Lauf, auch von einem anderen Platz, weist das Programm
+ab („Es läuft bereits ein Mahnlauf“), bis der erste fertig ist. **Liste drucken** druckt die Mahnliste so, wie Reiter, Filter und Suche sie zeigen. Mail
 und Liste zählen nicht als Mahnung. Lehrkräfte werden nie angemahnt. Ehemalige stehen unter
 „Ehemalige“ statt unter ihrer früheren Klasse und bekommen den Mahnbrief über die Auswahl, an eine
 Klassenleitung geht nichts. Welche Klasse an welche Lehrkraft geht, wird unter _Einstellungen →
