@@ -86,6 +86,27 @@ func TestMailEinstellungen_NeuerServerVerlangtDasPasswort(t *testing.T) {
 			t.Errorf("gespeicherter Server %q, erwartet den neuen", got)
 		}
 	})
+
+	// Wer den zweiten Absender entfernt, nimmt sein Passwort mit: Es gehört zu keinem Absender
+	// mehr, und ein späterer Serverwechsel verlangt es nicht neu.
+	t.Run("ein entfernter zweiter Absender hält den Serverwechsel nicht auf", func(t *testing.T) {
+		if err := repo.SchreibePortalAbsender(ctx, "portal@schule.invalid", "portal", "auch-geheim", nil); err != nil {
+			t.Fatalf("zweiten Absender schreiben: %v", err)
+		}
+		rec := speichere(`{"smtp_host":"smtp.neu.invalid",` + kopf + `,"smtp_password":"",
+			"portal":{"sender_email":"","smtp_user":"","smtp_password":""}}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("zweiten Absender entfernen: Status %d — %s, erwartet 200", rec.Code, rec.Body.String())
+		}
+		if e, err := repo.Lade(ctx); err != nil || len(e.PortalSMTPPasswortVerschluesselt) > 0 {
+			t.Errorf("das Passwort des entfernten Absenders steht noch in der Datenbank (Lesefehler: %v)", err)
+		}
+		rec = speichere(`{"smtp_host":"smtp.anders.invalid",` + kopf + `,"smtp_password":"neu",
+			"portal":{"sender_email":"","smtp_user":"","smtp_password":""}}`)
+		if rec.Code != http.StatusOK {
+			t.Errorf("Serverwechsel ohne zweiten Absender: Status %d — %s, erwartet 200", rec.Code, rec.Body.String())
+		}
+	})
 }
 
 // Dasselbe für das Webmail des Adressabgleichs: Eine neue Adresse verlangt das Passwort neu.

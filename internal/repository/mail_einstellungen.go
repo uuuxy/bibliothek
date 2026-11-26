@@ -111,7 +111,10 @@ func (a *MailEinstellungsAbfragen) Schreibe(ctx context.Context, host, port, ben
 
 // SchreibePortalAbsender schreibt den zweiten Absender in die Zeile, die Schreibe angelegt hat.
 // Ein leeres Passwort lässt das gespeicherte stehen, wie bei Schreibe; fuer nil lässt die Arten
-// von Mails stehen, die über ihn gehen, eine leere Liste nimmt alle heraus.
+// von Mails stehen, die über ihn gehen, eine leere Liste nimmt alle heraus. Ohne Adresse oder
+// ohne eigenen Benutzer fällt das gespeicherte Passwort weg: Gesendet wird dann über den
+// Postausgang, und ein Passwort ohne Absender verlangte beim nächsten Serverwechsel eine
+// Eingabe für einen Zugang, den es nicht mehr gibt.
 func (a *MailEinstellungsAbfragen) SchreibePortalAbsender(ctx context.Context, absender, benutzer, passwort string, fuer []string) error {
 	var verschluesselt []byte // nil wird NULL, und COALESCE behält das gespeicherte Passwort
 	if passwort != "" {
@@ -123,9 +126,10 @@ func (a *MailEinstellungsAbfragen) SchreibePortalAbsender(ctx context.Context, a
 	}
 	tag, err := a.pool.Exec(ctx, `
 		UPDATE mail_settings_config SET
-			portal_absender_email = $1,
-			portal_smtp_benutzer = $2,
-			portal_smtp_passwort_verschluesselt = COALESCE($3, portal_smtp_passwort_verschluesselt),
+			portal_absender_email = $1::text,
+			portal_smtp_benutzer = $2::text,
+			portal_smtp_passwort_verschluesselt = CASE WHEN $1::text = '' OR $2::text = '' THEN NULL
+				ELSE COALESCE($3, portal_smtp_passwort_verschluesselt) END,
 			portal_absender_fuer = COALESCE($4::text[], portal_absender_fuer)
 		WHERE id = 1
 	`, absender, benutzer, verschluesselt, fuer)

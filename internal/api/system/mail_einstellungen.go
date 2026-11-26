@@ -219,7 +219,13 @@ func pruefePasswortZumNeuenServer(ctx context.Context, w http.ResponseWriter, ma
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPasswortZumNeuenServer, nil)
 		return false
 	}
-	if len(konfig.PortalSMTPPasswortVerschluesselt) > 0 && (req.Portal == nil || req.Portal.SMTPPasswort == "") {
+	// Das Passwort des zweiten Absenders nur, wenn er mit eigenem Zugang bleibt: Wer ihn im selben
+	// Speichern entfernt, nimmt das Passwort mit (SchreibePortalAbsender).
+	bleibt := konfig.PortalAbsenderEmail != "" && konfig.PortalSMTPBenutzer != ""
+	if req.Portal != nil {
+		bleibt = req.Portal.AbsenderEmail != "" && req.Portal.SMTPBenutzer != ""
+	}
+	if len(konfig.PortalSMTPPasswortVerschluesselt) > 0 && bleibt && (req.Portal == nil || req.Portal.SMTPPasswort == "") {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungPortalPasswortZumNeuenServer, nil)
 		return false
 	}
