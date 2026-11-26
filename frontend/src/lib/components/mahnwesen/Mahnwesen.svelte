@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { offlineSync } from '../../stores/offlineSync.svelte.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import MahnwesenFilters from './MahnwesenFilters.svelte';
 	import MahnwesenTabelle from './MahnwesenTabelle.svelte';
 	import BescheideTabelle from './BescheideTabelle.svelte';
@@ -35,6 +36,16 @@
 			mahnwesenStore.lade();
 		}
 	});
+
+	// Eine Rückgabe an einem anderen Platz nimmt ein Buch aus der Liste; ohne Nachladen stünde es
+	// hier weiter als überfällig. Eine Ausleihe macht nichts überfällig und lädt nicht nach.
+	onMount(() =>
+		abonniereNeuladen(
+			'action',
+			() => offlineSync.wartendeAnzahl > 0 || mahnwesenStore.lade({ still: true }),
+			(e) => JSON.parse(e.data).event !== 'ausleihe'
+		)
+	);
 
 	// Die Zahl am Reiter „Schadensersatz" steht schon vor dem ersten Blick darauf — sonst
 	// zeigte er 0, solange niemand hineingesehen hat, und wäre damit eine Falschaussage.

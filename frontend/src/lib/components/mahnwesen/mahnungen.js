@@ -45,3 +45,27 @@ export function gemahntSatz(anzahl, zuletzt) {
 	const datum = formatDatum(zuletzt);
 	return datum ? `${anzahl}× gemahnt, zuletzt ${datum}` : `${anzahl}× gemahnt`;
 }
+
+/**
+ * Höchste Überfälligkeit (Tage) über alle Medien eines Schülers.
+ * @param {any[]} medien
+ * @returns {number}
+ */
+export function maxTageUeberfaellig(medien) {
+	let maxTage = 0;
+	for (const m of medien) {
+		if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
+	}
+	return maxTage;
+}
+
+/**
+ * Reiter eines Schülers nach Überfälligkeit. Die Liste enthält nur überfällige Ausleihen;
+ * tage_ueberfaellig ist unter 24 Stunden 0, das heißt „gerade fällig“, nicht „erledigt“.
+ * @param {number} maxTage
+ * @returns {string}
+ */
+export function berechneMahnstufe(maxTage) {
+	if (maxTage > 14) return 'Mahnung';
+	return '1. Erinnerung';
+}

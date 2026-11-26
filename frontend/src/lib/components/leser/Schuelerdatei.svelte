@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Leserakte from '../leserakte/Leserakte.svelte';
+	import { ladeAkteBeiBuchung } from '../leserakte/leserakteLive.js';
 	import LeserAnlegenDialog from './LeserAnlegenDialog.svelte';
 	import EhemaligeListe from './EhemaligeListe.svelte';
 	import AktiveLeserListe from './AktiveLeserListe.svelte';
@@ -26,6 +27,14 @@
 	let aktiverReiter = $state('active');
 
 	let geoeffneterLeser = $state(/** @type {any} */ (null));
+	let leserakte = $state(/** @type {any} */ (null));
+	// Eine Ausleihe oder Rückgabe an der Theke zeigt sich in der hier offenen Akte sofort.
+	onMount(() =>
+		ladeAkteBeiBuchung(
+			() => geoeffneterLeser?.id,
+			() => leserakte?.ladeNeu()
+		)
+	);
 
 	// Die Klassen des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
 	const klassen = erzeugeKlassenVorschlaege();
@@ -78,6 +87,7 @@
 	{#if geoeffneterLeser}
 		<div class="animate-fade-in flex-1 overflow-y-auto">
 			<Leserakte
+				bind:this={leserakte}
 				leser={geoeffneterLeser}
 				startReiter={profilReiter}
 				onMerged={(id) => (geoeffneterLeser = { id })}

@@ -13,7 +13,7 @@
 	import { omniboxStore } from '../../stores/omnibox.svelte.js';
 	import { thekenTasten } from './scanOhneFokus.js';
 	import { escapeAnDerTheke } from './thekeEscape.js';
-	import { abonniere } from '../../liveEvents.js';
+	import { ladeAkteBeiBuchung } from '../leserakte/leserakteLive.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 
 	let { onSelectBook } = $props();
@@ -43,24 +43,14 @@
 		}
 	});
 
-	onMount(() => {
-		// Live-Aktualisierung des Schülerprofils: nur abonnieren, nicht verbinden.
-		// Die Leitung gehört der Sitzung (liveEvents.js, aufgebaut vom Auth-Store) —
-		// eine eigene aufzumachen hiesse, sie beim Verlassen der Ansicht auch wieder
-		// zuzumachen, und das nähme sie allen anderen weg.
-		const abmelden = abonniere('action', (e) => {
-			try {
-				const nachricht = JSON.parse(e.data);
-				if (omniboxStore.aktiverLeser && nachricht.student_id === omniboxStore.aktiverLeser.id) {
-					leserakte?.ladeNeu();
-				}
-			} catch (err) {
-				console.error('SSE Parsing-Fehler in der Omnibox:', err);
-			}
-		});
-
-		return abmelden;
-	});
+	// Live-Aktualisierung des Schülerprofils: nur abonnieren, nicht verbinden. Die Leitung gehört
+	// der Sitzung (liveEvents.js, aufgebaut vom Auth-Store).
+	onMount(() =>
+		ladeAkteBeiBuchung(
+			() => omniboxStore.aktiverLeser?.id,
+			() => leserakte?.ladeNeu()
+		)
+	);
 
 	// Fokussprung über den Store: EIN Zeitgeber mit Handle statt zweier gleicher Aufrufe.
 	$effect(() => {

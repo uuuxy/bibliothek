@@ -5,37 +5,13 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
-import { mahnungenJeKind } from '../components/mahnwesen/mahnungen.js';
+import {
+	mahnungenJeKind,
+	maxTageUeberfaellig,
+	berechneMahnstufe
+} from '../components/mahnwesen/mahnungen.js';
 import { passtZurSuche } from '../utils/suchnorm.js';
 import { SvelteSet } from 'svelte/reactivity';
-
-/**
- * Höchste Überfälligkeit (Tage) über alle Medien eines Schülers.
- * @param {any[]} medien
- * @returns {number}
- */
-function maxTageUeberfaellig(medien) {
-	let maxTage = 0;
-	for (const m of medien) {
-		if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
-	}
-	return maxTage;
-}
-
-/**
- * Reiter eines Schülers nach Überfälligkeit. (Die frühere Sonderstufe
- * 'Lehrerkollegium' für klasse='lehrer' ist mit Migration 072 gefallen —
- * Lehrkräfte sind keine Schülerzeilen mehr.)
- * @param {number} maxTage
- * @returns {string}
- */
-function berechneMahnstufe(maxTage) {
-	// Diese Liste enthält ausschließlich überfällige Ausleihen (rueckgabe_frist < now).
-	// tage_ueberfaellig kann bei <24 h Überfälligkeit rechnerisch 0 sein — das ist dann
-	// „gerade fällig", NICHT „erledigt". Daher gibt es hier bewusst kein 'Erledigt'.
-	if (maxTage > 14) return 'Mahnung';
-	return '1. Erinnerung';
-}
 
 /**
  * Creates the central Mahnwesen store.
@@ -109,21 +85,38 @@ function erzeugeMahnwesen() {
 		);
 	});
 
+	let laufNr = 0;
 	/**
-	 * Fetches Mahnwesen data from API.
+	 * Lädt die Liste. Eine überholte Antwort wird verworfen, sonst überschriebe ein langsamer
+	 * früherer Abruf den neueren Stand. still: das Nachladen nach einer Rückgabe an einem anderen
+	 * Platz; es behält die Auswahl, soweit die Kinder noch in der Liste stehen, zeigt keinen
+	 * Ladekreis und meldet ein Scheitern dem Aufrufer (false), der es später neu versucht.
+	 * @param {{ still?: boolean }} [art]
 	 */
-	async function lade() {
-		laedt = true;
-		fehler = null;
+	async function lade({ still = false } = {}) {
+		const lauf = ++laufNr;
+		if (!still) {
+			laedt = true;
+			fehler = null;
+		}
 		try {
 			const res = await apiFetch('/api/mahnwesen');
 			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden'));
-			daten = await res.json();
-			gewaehlteKennungen.clear();
+			const neu = await res.json();
+			if (lauf !== laufNr) return true;
+			daten = neu;
+			const da = new Set(
+				neu.klassen.flatMap((/** @type {any} */ k) =>
+					k.schueler.map((/** @type {any} */ s) => s.schueler_id)
+				)
+			);
+			for (const id of gewaehlteKennungen) if (!still || !da.has(id)) gewaehlteKennungen.delete(id);
+			return true;
 		} catch (e) {
-			fehler = fehlertext(e);
+			if (lauf === laufNr && !still) fehler = fehlertext(e);
+			return false;
 		} finally {
-			laedt = false;
+			if (lauf === laufNr) laedt = false;
 		}
 	}
 
