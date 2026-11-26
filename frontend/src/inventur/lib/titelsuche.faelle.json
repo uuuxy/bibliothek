@@ -146,6 +146,11 @@
 		{ "fall": "das Wort lernmittel", "suche": "lernmittel", "treffer": ["mathe7", "atlas"] },
 		{ "fall": "Prozentzeichen ist ein Zeichen", "suche": "%", "treffer": ["prozent"] },
 		{ "fall": "Unterstrich ist ein Zeichen", "suche": "_", "treffer": [] },
-		{ "fall": "ein Wort trifft nicht", "suche": "räuber goethe", "treffer": [] }
+		{ "fall": "ein Wort trifft nicht", "suche": "räuber goethe", "treffer": [] },
+		{
+			"fall": "ein Wort trifft nicht über zwei Felder hinweg",
+			"suche": "räuberfriedrich",
+			"treffer": []
+		}
 	]
 }

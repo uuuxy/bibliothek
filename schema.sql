@@ -528,6 +528,15 @@ CREATE TABLE buecher_titel (
             coalesce(verlag, '') || ' ' ||
             coalesce(isbn, '')
         )
+    ) STORED,
+    -- Migration 186: Titel, Autor, Fach und Signatur nach suchnorm, getrennt durch einen
+    -- Zeilenumbruch, für die Titelsuche des Programms (repository.sqlTextfelderEnthalten). Ein
+    -- Suchwort enthält keinen Zeilenumbruch und trifft deshalb nie über zwei Felder hinweg.
+    suchtext TEXT GENERATED ALWAYS AS (
+        suchnorm(coalesce(titel, '')) || E'\n' ||
+        suchnorm(coalesce(autor, '')) || E'\n' ||
+        suchnorm(coalesce(subject, '')) || E'\n' ||
+        suchnorm(coalesce(signatur, ''))
     ) STORED
 );
 
@@ -2004,7 +2013,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('182_topf_spende.sql'),
 ('183_namenssuche_ohne_trenner.sql'),
 ('184_namenssuche_apostroph_und_festes_leerzeichen.sql'),
-('185_geloeschte_exemplare_preis.sql')
+('185_geloeschte_exemplare_preis.sql'),
+('186_titelsuche_suchtext.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

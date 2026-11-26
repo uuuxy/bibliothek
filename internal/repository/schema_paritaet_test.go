@@ -34,6 +34,7 @@ var nichtVonAendereTitel = map[string]string{
 	"erstellt_am":   "wird beim Anlegen gesetzt und danach nie wieder",
 	"sort_order":    "laufende Nummer aus dem Anlegen (SERIAL), ohne Schreiber; die Dublettenkontrolle liest sie als Reihenfolge des Anlegens",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
+	"suchtext":      "GENERATED ALWAYS wie search_vector, aus Titel, Autor, Fach und Signatur (Migration 186)",
 	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover.go)",
 	"werk_id": "gehört internal/repository/auflagen.go (FasseAuflagenZusammen, LoeseAuflage, Migration 148): " +
 		"Dort stehen die Regeln — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger " +

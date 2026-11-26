@@ -42,15 +42,18 @@ func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Ti
 // FindeTitelUnscharf sucht für die Liste beim Tippen mit der Titelsuche des Programms
 // (sqlTitelTrifft), höchstens limit Titel mit einem Exemplar, und liefert zusätzlich die
 // Gesamtzahl der Treffer (nicht nur die des Limits). Vorn steht, wessen Titel mit den meisten
-// eingegebenen Wörtern beginnt.
+// eingegebenen Wörtern beginnt; suchtext beginnt mit dem normalisierten Titel, und ein Wort ohne
+// Zeilenumbruch reicht nicht über ihn hinaus.
 func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error) {
 	woerter := strings.Fields(suchtext)
 	if len(woerter) == 0 {
 		return nil, 0, nil
 	}
 	trifft, args := sqlTitelTrifft("b", suchtext, 3)
+	// MATERIALIZED: Sonst rechnet Postgres suchnorm der Wörter für jeden Treffer neu, bei einem
+	// Buchstaben über 10.000-mal.
 	query := `
-		WITH tokens AS (
+		WITH tokens AS MATERIALIZED (
 			SELECT suchnorm(t) AS norm FROM unnest($1::text[]) AS t
 		)
 		SELECT
@@ -60,7 +63,7 @@ func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext strin
 		FROM buecher_titel b
 		WHERE ` + trifft + ` AND ` + sqlTitelHatExemplar("b") + `
 		ORDER BY
-			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE ` + sqlLikeMuster("tokens.norm") + ` || '%') DESC,
+			(SELECT count(*) FROM tokens WHERE b.suchtext LIKE ` + sqlLikeMuster("tokens.norm") + ` || '%') DESC,
 			b.titel COLLATE deutsch ASC
 		LIMIT $2
 	`

@@ -97,12 +97,12 @@ func (p *genanntProbe) aendere(id string, rumpf any) (int, string) {
 }
 
 // zeile liest den Titel, wie er in der Tabelle steht, ohne den Zeitstempel des Speicherns und
-// ohne die Suchspalte, die Postgres aus den Texten ableitet.
+// ohne die beiden Suchspalten, die Postgres aus den Texten ableitet.
 func (p *genanntProbe) zeile(id string) map[string]string {
 	p.t.Helper()
 	var roh []byte
 	if err := p.pool.QueryRow(context.Background(), `
-		SELECT (to_jsonb(t) - 'aktualisiert_am' - 'search_vector')::text FROM buecher_titel t WHERE id = $1`, id).
+		SELECT (to_jsonb(t) - 'aktualisiert_am' - 'search_vector' - 'suchtext')::text FROM buecher_titel t WHERE id = $1`, id).
 		Scan(&roh); err != nil {
 		p.t.Fatalf("Titel lesen: %v", err)
 	}

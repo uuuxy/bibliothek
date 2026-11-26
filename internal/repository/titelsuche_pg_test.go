@@ -125,3 +125,32 @@ func TestTitelsuche_GemeinsameFaelle(t *testing.T) {
 		}
 	}
 }
+
+// Der Zeilenumbruch trennt in suchtext die Felder (Migration 186). Ein Suchwort enthält keinen,
+// weil strings.Fields die Eingabe an ihm teilt; suchnorm darf auch aus keinem anderen Zeichen
+// einen machen, sonst träfe ein Wort über zwei Felder hinweg.
+func TestTitelsuche_SuchnormMachtKeinenZeilenumbruch(t *testing.T) {
+	pool := pgtest.Pool(t)
+	var zeichen []int
+	zeilen, err := pool.Query(context.Background(), `
+		SELECT i FROM generate_series(1, 1114111) AS i
+		WHERE i NOT BETWEEN 55296 AND 57343 AND i <> 10
+		  AND position(E'\n' IN suchnorm(chr(i))) > 0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zeilen.Close()
+	for zeilen.Next() {
+		var i int
+		if err := zeilen.Scan(&i); err != nil {
+			t.Fatal(err)
+		}
+		zeichen = append(zeichen, i)
+	}
+	if err := zeilen.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if len(zeichen) > 0 {
+		t.Errorf("suchnorm macht aus den Zeichen %U einen Zeilenumbruch", zeichen)
+	}
+}

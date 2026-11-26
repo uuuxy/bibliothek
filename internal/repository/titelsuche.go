@@ -150,15 +150,12 @@ func sqlTitelTrifft(alias, eingabe string, start int) (string, []any) {
 
 // sqlTextfelderEnthalten liefert die Bedingungen „Titel, Autor, Fach, Signatur oder ein
 // Schlagwort enthält das Muster“; muster ist ein Suchwort nach suchnorm als LIKE-Teilstring.
+// Die vier Felder stehen schon normalisiert in suchtext (Migration 186): suchnorm je Feld und
+// Titel kostete jede Suche rund 40 ms. Ein Suchwort enthält keinen Zeilenumbruch, den Trenner
+// der Felder, und trifft deshalb nie über zwei Felder hinweg.
 func sqlTextfelderEnthalten(alias, muster string) []string {
-	enthaelt := func(feld string) string {
-		return "suchnorm(coalesce(" + alias + "." + feld + ", '')) LIKE '%' || " + muster + " || '%'"
-	}
 	return []string{
-		enthaelt("titel"),
-		enthaelt("autor"),
-		enthaelt("subject"),
-		enthaelt("signatur"),
+		alias + ".suchtext LIKE '%' || " + muster + " || '%'",
 		sqlTitelUeberSchlagwort(alias, muster),
 	}
 }
