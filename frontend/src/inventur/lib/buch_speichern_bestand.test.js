@@ -93,6 +93,18 @@ describe('buch_speichern: der Bestand eines vorhandenen Titels', () => {
 		expect(fehler.bestand).toBe(6);
 		expect(fehler.message).toBe('jetzt 6 statt 1');
 	});
+
+	// Der zweite 409 des Bestands trägt keinen Stand: Unter die verliehenen Exemplare geht es
+	// nicht. Als BestandVeraltetFehler stellte die Maske ihr Feld auf einen Stand ohne Zahl.
+	it('409 ohne Stand bleibt eine Ablehnung mit dem Grund des Servers', async () => {
+		const grund = 'Verliehen sind 3 Exemplare, der Bestand kann nicht darunter liegen';
+		vi.mocked(apiFetch).mockResolvedValue(antwort(409, { error: grund }));
+		const fehler = await speichereBuch(
+			geoeffnet({ id: 'abc', isbn: '978', stock: 2, stockGesehen: 5 })
+		).catch((e) => e);
+		expect(fehler).not.toBeInstanceOf(BestandVeraltetFehler);
+		expect(fehler.message).toBe(grund);
+	});
 });
 
 describe('buch_speichern: der Bestand eines neuen Titels', () => {

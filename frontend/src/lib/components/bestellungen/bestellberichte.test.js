@@ -43,6 +43,21 @@ describe('berichtURL', () => {
 		expect(param(url, 'lieferant_id')).toBe('l-1');
 		expect(param(url, 'mittel')).toBe('schultraeger');
 	});
+
+	// Gegen das Blatt wird eine Händlerrechnung geprüft: Der Titel nennt den gewählten
+	// Lieferanten, nicht den ersten der Liste.
+	it('nennt im Titel den gewählten Lieferanten', () => {
+		const url = berichtURL({
+			...eingabe,
+			typ: 'lieferant',
+			lieferantId: 'l-2',
+			suppliers: [
+				{ id: 'l-1', name: 'Testhändler' },
+				{ id: 'l-2', name: 'Buchhaus Zwei' }
+			]
+		});
+		expect(param(url, 'titel')).toBe('Lieferantenabrechnung: Buchhaus Zwei');
+	});
 });
 
 describe('monatIstGueltig', () => {

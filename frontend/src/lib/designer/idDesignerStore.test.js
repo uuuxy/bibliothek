@@ -8,7 +8,10 @@ import {
 	PLATZHALTER_SCHULNAME,
 	PLATZHALTER_ADRESSE,
 	fuegeRahmenHinzu,
-	serializeDesign
+	serializeDesign,
+	entferne,
+	bringForward,
+	sendBackward
 } from './idDesignerStore.svelte.js';
 import { designStand, designWurdeGeladen, vergissDesignLadezustand } from './designSitzung.js';
 
@@ -171,5 +174,32 @@ describe('applyDesign: Änderungsstand', () => {
 		applyDesign({ stand: 'alt' });
 		applyDesign({});
 		expect(designStand()).toBe('');
+	});
+});
+
+// Löschen nimmt genau das gewählte Element vom Ausweis, die Ebenen-Knöpfe bewegen genau das
+// gewählte. Ein vertauschter Vergleich löschte alle übrigen oder hob ein fremdes Element.
+describe('ein Element bearbeiten', () => {
+	/** @param {string} id @param {number} zIndex */
+	const element = (id, zIndex) => ({ id, zIndex, type: 'text', content: id });
+
+	beforeEach(() => {
+		idStore.front.elements = /** @type {any} */ ([
+			element('a', 1),
+			element('b', 2),
+			element('c', 3)
+		]);
+	});
+
+	it('löscht nur das gewählte Element', () => {
+		entferne('front', 'b');
+		expect(idStore.front.elements.map((e) => e.id)).toEqual(['a', 'c']);
+	});
+
+	it('hebt und senkt nur das gewählte Element', () => {
+		bringForward('front', 'a');
+		expect(idStore.front.elements.map((e) => e.zIndex)).toEqual([2, 2, 3]);
+		sendBackward('front', 'c');
+		expect(idStore.front.elements.map((e) => e.zIndex)).toEqual([2, 2, 2]);
 	});
 });

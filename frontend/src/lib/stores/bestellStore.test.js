@@ -218,6 +218,27 @@ describe('bestellStore Summen', () => {
 		bestellStore.cart[0].preis = /** @type {any} */ ('abc');
 		expect(bestellStore.total).toBe(0);
 	});
+
+	// Die Zusammenfassung nennt je Topf eine eigene Summe, und je Topf geht eine eigene
+	// Bestellung hinaus.
+	it('summiert je Topf Menge und Betrag', () => {
+		bestellStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
+		bestellStore.addToCart({ id: 'b', titel: 'B', autor: '', isbn: '2' }, 3);
+		bestellStore.addToCart({ id: 'c', titel: 'C', autor: '', isbn: '3' }, 1);
+		bestellStore.cart[0].preis = 10.5;
+		bestellStore.cart[1].preis = /** @type {any} */ ('4.50');
+		bestellStore.cart[2].preis = 7;
+		bestellStore.cart[0].mittel = 'land';
+		bestellStore.cart[1].mittel = 'land';
+		bestellStore.cart[2].mittel = 'spende';
+		const jeTopf = Object.fromEntries(
+			bestellStore.gruppen.map((g) => [g.mittel, { menge: g.menge, summe: g.summe }])
+		);
+		expect(jeTopf.land.menge).toBe(5);
+		expect(jeTopf.land.summe).toBeCloseTo(2 * 10.5 + 3 * 4.5);
+		expect(jeTopf.spende).toEqual({ menge: 1, summe: 7 });
+		expect(jeTopf.schultraeger).toBeUndefined();
+	});
 });
 
 describe('bestellStore.submitOrder', () => {

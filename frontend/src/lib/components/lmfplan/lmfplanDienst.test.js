@@ -5,6 +5,7 @@ import {
 	ladePdf,
 	ladePlan,
 	ladeStand,
+	speicherePlan,
 	veroeffentlichePlan
 } from './lmfplanDienst.js';
 import { apiFetch } from '../../apiFetch.js';
@@ -83,6 +84,36 @@ describe('Abrufe des Plans: der Grund des Servers', () => {
 
 // Ein veröffentlichter Rückgabe-Plan verschiebt die Fristen der Klassen; die Meldung nennt, wie viele
 // Ausleihen das traf, und schweigt, wenn es keine waren.
+// Ein Entwurf heißt Entwurf: Portal und PDF zeigen ihn erst nach dem Veröffentlichen. Ein
+// veröffentlichter Plan nennt beim Speichern die Fristen, die ihm gefolgt sind.
+describe('speicherePlan: die Meldung', () => {
+	/** @type {any} */
+	const entwurf = { zeilen: [] };
+
+	it('nennt einen unveröffentlichten Plan einen Entwurf', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(200, { plan: { veroeffentlicht_am: null } })
+		);
+		expect(await speicherePlan('rueckgabe', entwurf)).toEqual({
+			ok: true,
+			meldung: 'Entwurf gespeichert'
+		});
+	});
+
+	it('nennt beim veröffentlichten Plan die angepassten Fristen', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(200, {
+				plan: { veroeffentlicht_am: '2026-11-20T10:00:00Z' },
+				fristen_angepasst: 2
+			})
+		);
+		expect(await speicherePlan('rueckgabe', entwurf)).toEqual({
+			ok: true,
+			meldung: 'Plan gespeichert · Frist von 2 Ausleihen angepasst'
+		});
+	});
+});
+
 describe('veroeffentlichePlan: die Meldung', () => {
 	it('nennt die Zahl der angepassten Fristen', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(200, { fristen_angepasst: 3 }));

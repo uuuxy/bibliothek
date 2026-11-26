@@ -42,6 +42,8 @@ describe('MailEinstellungen', () => {
 
 		const host = /** @type {HTMLInputElement} */ (await screen.findByLabelText('SMTP Host*'));
 		expect(host.value).toBe('mail.schule.example');
+		// Auch der Benutzername: Stünde er leer da, löschte ihn das nächste Speichern.
+		expect(screen.getByDisplayValue('bibliothek')).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 });

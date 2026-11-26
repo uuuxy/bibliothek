@@ -17,7 +17,8 @@ import {
 	loescheVerlustEndgueltig,
 	ladeFehlbestand,
 	loescheAbgeschlosseneInventur,
-	scanne
+	scanne,
+	deuteScanErgebnis
 } from './inventurApi.js';
 
 // Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den Bindestrich
@@ -28,6 +29,32 @@ describe('inventurApi: Scan', () => {
 		await scanne('lauf-1', 'Bß00123');
 		const optionen = /** @type {any} */ (vi.mocked(apiFetch).mock.calls.at(-1)?.[1]);
 		expect(JSON.parse(optionen.body)).toEqual({ session_id: 'lauf-1', barcode_id: 'B-00123' });
+	});
+});
+
+// Nur „außer Bereich“ ist ein 409, der als Scan gilt: Er wird gezeigt und nicht gezählt. Ein
+// anderer 409, etwa nach dem Abschluss der Inventur, ist eine Ablehnung mit seinem Grund; als
+// Erfolg gezeigt, erführe niemand, dass der Scan nicht gezählt ist.
+describe('inventurApi: Scan mit 409', () => {
+	it('zeigt „außer Bereich“ als Scan, der nicht zählt', () => {
+		const r = {
+			ok: false,
+			status: 409,
+			data: { status: 'ausser_scope', barcode_id: 'B-1', titel: 'Atlas' }
+		};
+		const erg = deuteScanErgebnis(r, 'B-1');
+		expect(erg.zaehlen).toBe(false);
+		expect(erg.lastScan.success).toBe(true);
+		expect(erg.lastScan.title).toBe('Atlas');
+	});
+
+	it('meldet einen anderen 409 als Ablehnung mit dem Grund des Servers', () => {
+		const grund = 'Die Inventur wurde gerade abgeschlossen. Dieser Scan wurde nicht gezählt.';
+		const r = { ok: false, status: 409, error: grund, data: { error: grund } };
+		const erg = deuteScanErgebnis(r, 'B-1');
+		expect(erg.zaehlen).toBe(false);
+		expect(erg.lastScan.success).toBe(false);
+		expect(erg.lastScan.warnings).toEqual([grund]);
 	});
 });
 

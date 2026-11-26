@@ -34,6 +34,13 @@ describe('lmfplanZeilen.einordnen', () => {
 		expect(index).toBe(5); // hinter 06G1
 	});
 
+	// Auf die erste Zeile gezogen, steht die Klasse ganz oben, nicht nach der Nachbar-Regel.
+	it('setzt eine auf die erste Zeile gezogene Klasse ganz oben ein', () => {
+		const { zeilen, index } = einordnen(plan, '06F3', 0);
+		expect(index).toBe(0);
+		expect(zeilen[0].klassen).toEqual(['06F3']);
+	});
+
 	it('ohne Jahrgang im Plan ans Ende — auch Klassen ohne Jahrgangszahl', () => {
 		expect(einordnen(plan, '08G1').index).toBe(plan.length);
 		expect(einordnen(plan, 'ET1').index).toBe(plan.length);

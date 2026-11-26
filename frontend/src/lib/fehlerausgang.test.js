@@ -88,6 +88,16 @@ describe('Sweep: verschluckte Fehlantworten', () => {
 			}`;
 		expect(findeVerschluckteFehlantworten('probe.js', mitElse)).toHaveLength(0);
 
+		// Eine Rückkehr in nur einem Zweig ist keine frühe Rückkehr: Der andere läuft ohne
+		// Fehlerbehandlung weiter.
+		const halbeRueckkehr = `
+			async function f() {
+				const res = await fetch('/x');
+				if (res.ok) { if (a) { return await res.json(); } else { daten = 1; } }
+				weiter(daten);
+			}`;
+		expect(findeVerschluckteFehlantworten('probe.js', halbeRueckkehr)).toHaveLength(1);
+
 		// Seit dem 12.09.2026: die UND-Kette. Die Wettlauf-Form der Suchfelder
 		// (`if (res.ok && nr === ladeNr)`) rutschte vorher durch — und das ist die Stelle,
 		// an der der Sweep angefangen hat.

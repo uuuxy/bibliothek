@@ -95,6 +95,29 @@ describe('MahnwesenAktionen', () => {
 		}
 	});
 
+	// Der Bescheid ist ein Einzelfall: Jede Referenznummer wird unwiderruflich verbraucht. Der
+	// Knopf erscheint bei genau einer Markierung und trägt deren Kennung.
+	it('zeigt den Bescheid nur bei genau einer Markierung, für genau diese', async () => {
+		const onBescheid = vi.fn();
+		mahnwesenStore.gewaehlteKennungen.add('s1');
+		try {
+			const r = render(MahnwesenAktionen, {
+				...PROPS,
+				onBescheid,
+				darfBescheid: true,
+				darfMahnen: false
+			});
+			await fireEvent.click(r.getByRole('button', { name: 'Schadensersatz-Bescheid' }));
+			expect(onBescheid).toHaveBeenCalledWith('s1');
+
+			mahnwesenStore.gewaehlteKennungen.add('s2');
+			await tick();
+			expect(r.queryByRole('button', { name: 'Schadensersatz-Bescheid' })).toBeNull();
+		} finally {
+			mahnwesenStore.waehleKeine();
+		}
+	});
+
 	it('druckt mit „Liste drucken" die Liste, wie sie gerade dasteht', async () => {
 		const fenster = {
 			document: { open: vi.fn(), write: vi.fn(), close: vi.fn() },

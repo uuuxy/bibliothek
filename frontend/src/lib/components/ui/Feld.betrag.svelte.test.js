@@ -31,6 +31,16 @@ describe('Feld: Betrag', () => {
 		expect(feld.value).toBe('12,00');
 	});
 
+	// Ein Betrag ohne Wert ist leer: „0,00“ sähe aus wie ein erfasster Preis von null Euro.
+	it.each([null, undefined, ''])(
+		'zeigt einen Betrag ohne Wert (%o) als leeres Feld',
+		async (value) => {
+			const { feld } = zeige(value);
+			await tick();
+			expect(feld.value).toBe('');
+		}
+	);
+
 	it('lässt die Eingabe beim Tippen stehen, bindet die Zahl und ergänzt beim Verlassen', async () => {
 		const { props, feld } = zeige(7.9);
 		feld.focus();

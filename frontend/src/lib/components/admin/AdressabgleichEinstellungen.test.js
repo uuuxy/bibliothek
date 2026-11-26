@@ -91,6 +91,10 @@ describe('AdressabgleichEinstellungen', () => {
 			await screen.findByRole('button', { name: 'Zugang speichern' })
 		);
 		expect(speichern.disabled).toBe(true);
+		// Der gespeicherte Benutzername steht im Feld; leer, schickte das Speichern einen leeren.
+		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Benutzername')).value).toBe(
+			'bibliothek@schule.example'
+		);
 		await fireEvent.input(screen.getByLabelText('Benutzername'), {
 			target: { value: 'neu@schule.example' }
 		});

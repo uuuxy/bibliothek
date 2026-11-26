@@ -451,6 +451,20 @@ describe('etikettenStore: Klassen nicht geladen', () => {
 		expect(etikettenStore.klassenFehler).toBe('Keine Verbindung zum Server');
 	});
 
+	it('bietet nach der Wahl einer Klasse ihre Bücher an', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [{ className: '5a', books: [{ id: 1, title: 'Atlas' }] }]
+			})
+		);
+		await etikettenStore.ladeKlassen();
+		etikettenStore.gewaehlteKlasse = '5a';
+		etikettenStore.wechsleKlasse();
+
+		expect(etikettenStore.klassenTitel.map((/** @type {any} */ b) => b.title)).toEqual(['Atlas']);
+	});
+
 	it('lädt erneut, zeigt die Klassen und vergisst den Fehler', async () => {
 		apiFetchMock.mockResolvedValueOnce(
 			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
