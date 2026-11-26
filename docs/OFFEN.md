@@ -78,6 +78,9 @@ Nur, was kein Test leisten kann.
   gewählt; vor dem Umbau Bilder. (5.201)
 - [ ] Firefox: Die scrollbare Liste auf „Signaturen“ bekommt beim Tabben den Fokusring von
   Firefox statt des M3-Rings; nur auf Auftrag, vorher Bild. (5.204)
+- [ ] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
+  Ersatzforderung sprechen Volljährige selbst an. Entscheiden, ob der Mahnbrief es ebenso hält.
+  (5.205)
 
 ### Termin
 
@@ -292,6 +295,18 @@ Beide Entwürfe stehen ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
 - **Die Probe** der Vertretung: 7.4.
 
 ---
+
+### 5.205 Mahnbrief an Volljährige
+
+`mahnbriefAnschrift` (`internal/pdf/mahnbrief.go`) setzt ins Fensterfeld immer „Eltern von
+<Name>“, den Text liefert die Vorlage der Schule. Bescheid und Ersatzforderung wählen die Anrede
+nach `repository.sqlVolljaehrig`: Volljährige werden selbst angeschrieben. Bei einem
+volljährigen Schüler ginge der Mahnbrief damit an die Eltern, obwohl der Schüler selbst
+ausgeliehen hat.
+
+Frage: Soll der Mahnbrief Volljährige selbst anschreiben? Empfehlung: ja, wie der Bescheid.
+Umfang: die Abfrage der Empfänger um `sqlVolljaehrig` ergänzen, die Anschrift ohne „Eltern von“,
+und ein Text, der zu beiden passt, oder eine zweite Vorlage.
 
 ## So wird die Liste geführt
 
