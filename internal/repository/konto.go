@@ -259,6 +259,10 @@ func (a *KontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoSta
 	}
 	defer db.Verwerfe(ctx, tx)
 
+	if err := sperreLeserzeileDesKontos(ctx, tx, p.ID); err != nil {
+		return stand, err
+	}
+
 	// Ein nicht genanntes Feld kommt als NULL an und behält seinen Wert; leeren lässt sich
 	// über diese Tür keine der Spalten.
 	var leserID *string
@@ -303,6 +307,21 @@ func (a *KontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoSta
 		}
 	}
 	return stand, tx.Commit(ctx)
+}
+
+// sperreLeserzeileDesKontos sperrt die Leserzeile eines Kontos, bevor das Konto geschrieben
+// wird: erst leser, dann benutzer, wie AendereLeser und die Folge Schüler → Ausleihe → Exemplar
+// (ARCHITEKTUR 6.4). Andersherum verklemmten sich zwei Plätze, die dieselbe Person zugleich in
+// der Akte und in der Benutzerverwaltung ändern. Ein Konto ohne Leserzeile sperrt nichts.
+func sperreLeserzeileDesKontos(ctx context.Context, tx pgx.Tx, kontoID string) error {
+	var leserID string
+	err := tx.QueryRow(ctx, `
+		SELECT l.id::text FROM leser l JOIN benutzer b ON b.leser_id = l.id
+		WHERE b.id = $1 FOR UPDATE OF l`, kontoID).Scan(&leserID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("leserzeile des kontos sperren: %w", err)
+	}
+	return nil
 }
 
 // barcodeText macht aus dem Ausweis, der fehlen darf, einen Text: nil und "" heißen beide

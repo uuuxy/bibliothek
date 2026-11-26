@@ -32,6 +32,10 @@ func TestLoescheKonto_LehntAbBeiOffenenAusleihen(t *testing.T) {
 	const userID = "user-123"
 
 	mock.ExpectBegin()
+	// Erst die Leserzeile des Kontos (sperreLeserzeileDesKontos); dieses Konto hat keine.
+	mock.ExpectQuery("FROM leser l JOIN benutzer b").
+		WithArgs(userID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
 	mock.ExpectQuery("FROM benutzer WHERE id").
 		WithArgs(userID).
 		WillReturnRows(snapshotBenutzerRows())
@@ -66,6 +70,10 @@ func TestLoescheKonto_LoeschtOhneOffeneAusleihen(t *testing.T) {
 	const userID = "user-456"
 
 	mock.ExpectBegin()
+	// Erst die Leserzeile des Kontos (sperreLeserzeileDesKontos); dieses Konto hat keine.
+	mock.ExpectQuery("FROM leser l JOIN benutzer b").
+		WithArgs(userID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
 	mock.ExpectQuery("FROM benutzer WHERE id").
 		WithArgs(userID).
 		WillReturnRows(snapshotBenutzerRows())

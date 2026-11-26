@@ -29,6 +29,10 @@ func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbe
 	}
 	defer db.Verwerfe(ctx, tx)
 
+	if err := sperreLeserzeileDesKontos(ctx, tx, kontoID); err != nil {
+		return false, err
+	}
+
 	// Was der Eintrag nennt, wird vor dem Löschen gelesen. Die leser_id auch: Nach dem DELETE
 	// ist sie nicht mehr zu finden.
 	var vorname, nachname, email, rolle string
