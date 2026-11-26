@@ -48,6 +48,18 @@ describe('Datumsfeld', () => {
 		expect(beschreibung(feld)).toBe('Datum entspricht nicht dem erwarteten Format: TT.MM.JJJJ');
 	});
 
+	it('meldet das Tippen an oninput und nimmt das Datum trotzdem an', async () => {
+		const oninput = vi.fn();
+		const props = $state({ value: '', etikett: 'Von', oninput });
+		const feld = /** @type {HTMLInputElement} */ (
+			render(Datumsfeld, { props }).getByLabelText('Von')
+		);
+		await fireEvent.input(feld, { target: { value: '01.0' } });
+		await fireEvent.input(feld, { target: { value: '01.04.2026' } });
+		expect(oninput).toHaveBeenCalledTimes(2);
+		expect(props.value).toBe('2026-04-01');
+	});
+
 	it('ersetzt das Format durch den Fehlertext, statt ihn anzuhängen', () => {
 		const { getByLabelText } = render(Datumsfeld, {
 			props: { value: '2026-08-01', etikett: 'Bis', ungueltig: true, hint: 'Ende nach dem Beginn' }

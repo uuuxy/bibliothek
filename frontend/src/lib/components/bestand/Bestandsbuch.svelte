@@ -68,9 +68,15 @@
 	);
 	const druckAdresse = $derived(`/api/bestand/${pfad}/pdf${druckZeitraum}`);
 
+	// Was jemand in den Zeitraum tippt oder im Kalender wählt, während das Buch lädt, bleibt
+	// stehen: Die Antwort füllt nur die Felder, die seit der Anfrage niemand angefasst hat.
+	const angefasst = { von: false, bis: false };
+
 	async function laden() {
 		laeuft = true;
 		fehler = '';
+		const gesendet = { von, bis };
+		angefasst.von = angefasst.bis = false;
 		try {
 			const adresse =
 				von && bis
@@ -82,8 +88,8 @@
 				return;
 			}
 			buch = await res.json();
-			von = String(buch.von).slice(0, 10);
-			bis = String(buch.bis).slice(0, 10);
+			if (!angefasst.von && von === gesendet.von) von = String(buch.von).slice(0, 10);
+			if (!angefasst.bis && bis === gesendet.bis) bis = String(buch.bis).slice(0, 10);
 		} catch (e) {
 			fehler = `Das ${buchname} konnte nicht geladen werden`;
 			console.error(`${buchname}:`, e);
@@ -103,8 +109,18 @@
 <div class="py-6 space-y-6">
 	<div class="space-y-4">
 		<div class="flex flex-wrap items-end gap-4">
-			<Datumsfeld bind:value={von} etikett="Von" class="w-44" />
-			<Datumsfeld bind:value={bis} etikett="Bis" class="w-44" />
+			<Datumsfeld
+				bind:value={von}
+				etikett="Von"
+				class="w-44"
+				oninput={() => (angefasst.von = true)}
+			/>
+			<Datumsfeld
+				bind:value={bis}
+				etikett="Bis"
+				class="w-44"
+				oninput={() => (angefasst.bis = true)}
+			/>
 			<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
 			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen. -->
 			<Button href={druckAdresse} class="ml-auto">

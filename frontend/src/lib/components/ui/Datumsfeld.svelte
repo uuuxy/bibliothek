@@ -33,6 +33,7 @@
 		hint = '',
 		ungueltig = undefined,
 		disabled = false,
+		oninput = undefined,
 		...rest
 	} = $props();
 
@@ -80,6 +81,8 @@
 		text = e.currentTarget.value;
 		// Wie beim Feld des Browsers: ein unvollständiges Datum ist noch keins.
 		value = zuletzt = leseDatum(text) ?? '';
+		// Wer das Feld einsetzt, hört das Tippen mit, auch ein unvollständiges Datum.
+		oninput?.(e);
 	}
 
 	function festlegen() {
