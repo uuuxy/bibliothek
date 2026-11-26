@@ -44,7 +44,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen *repository.LeserAbfragen) http
 			return
 		}
 
-		if fehler := pruefeBogenParameter(&req); fehler != nil {
+		if fehler := pruefeBogenParameter(req.FormatID, &req.Startposition); fehler != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, fehler)
 			return
 		}
@@ -72,19 +72,19 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen *repository.LeserAbfragen) http
 //
 // Ein unbekanntes Format wird abgewiesen und nicht still auf die Vorgabe gedreht: Wer
 // avery_3475 anfordert und zweckform_l4760 bekommt, merkt es erst am verdruckten Bogen.
-// Gleiche Regel wie bei den Buch-Etiketten (pdf.IstBekanntesEtikettFormat).
-func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
-	if !pdf.IstBekanntesEtikettFormat(req.FormatID) {
-		return apierrors.BadRequest(fmt.Sprintf("Das Etikettenformat „%s“ gibt es nicht", req.FormatID), nil)
+// Dieselbe Prüfung gilt für die Bögen der Buch-Etiketten (Etikettenbogen).
+func pruefeBogenParameter(formatID string, startposition *int) error {
+	if !pdf.IstBekanntesEtikettFormat(formatID) {
+		return apierrors.BadRequest(fmt.Sprintf("Das Etikettenformat „%s“ gibt es nicht", formatID), nil)
 	}
-	format, _ := pdf.FindeEtikettFormat(req.FormatID)
+	format, _ := pdf.FindeEtikettFormat(formatID)
 
-	if req.Startposition == 0 {
-		req.Startposition = 1
+	if *startposition == 0 {
+		*startposition = 1
 	}
 	proSeite := format.Spalten * format.Zeilen
-	if req.Startposition < 1 || req.Startposition > proSeite {
-		return apierrors.BadRequest(fmt.Sprintf("Startposition %d liegt außerhalb des Bogens mit den Plätzen 1 bis %d", req.Startposition, proSeite), nil)
+	if *startposition < 1 || *startposition > proSeite {
+		return apierrors.BadRequest(fmt.Sprintf("Startposition %d liegt außerhalb des Bogens mit den Plätzen 1 bis %d", *startposition, proSeite), nil)
 	}
 	return nil
 }

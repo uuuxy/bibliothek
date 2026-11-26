@@ -60,6 +60,12 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 			return
 		}
 
+		// Ein unbekanntes Format druckte sonst still auf den Bogen der Vorgabe, und das fiele erst
+		// am verdruckten Bogen auf; dieselbe Regel wie bei den Schüler-Etiketten.
+		if fehler := pruefeBogenParameter(req.FormatID, &req.Startposition); fehler != nil {
+			apierrors.AntworteFehler(w, http.StatusBadRequest, fehler)
+			return
+		}
 		bogen, err := pdf.ErzeugeBuchEtiketten(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, kopf))
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
