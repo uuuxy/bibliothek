@@ -1,9 +1,12 @@
 package theke
 
 import (
+	"bytes"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/api/tuer"
@@ -34,6 +37,11 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		t.Fatalf("aussondern: %v", err)
 	}
 
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	hole := func(ifNoneMatch string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -50,6 +58,10 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	rec := hole("")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
+	}
+	// Eine Liste unter 4 MB ist der Normalfall: Eine Warnung landete im Fehlerstand.
+	if strings.Contains(protokoll.String(), "als erwartet") {
+		t.Errorf("eine kleine Liste meldet sich als zu groß:\n%s", protokoll.String())
 	}
 	var antwort buchbarcodesAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {

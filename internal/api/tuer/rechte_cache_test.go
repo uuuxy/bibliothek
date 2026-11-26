@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/internal/db"
 
@@ -74,5 +75,15 @@ func TestRechteCache_MerkeFuerTestLegtDieEntscheidungAb(t *testing.T) {
 	c.Leere()
 	if _, gefunden := c.recht("helfer:view_students"); gefunden {
 		t.Error("nach der Invalidierung liegt die Entscheidung noch vor")
+	}
+}
+
+// Ein Eintrag gilt nur bis zu seinem Ablauf, danach fragt die Tür wieder die Datenbank: Die 60 s
+// sind die Grenze, bis zu der eine Rechteänderung wirkt, die den Cache nicht leert.
+func TestRechteCache_AbgelaufenerEintragGiltNicht(t *testing.T) {
+	var c RechteCache
+	c.schreibe("helfer:view_students", cacheEintrag{erlaubt: true, giltBis: time.Now().Add(-time.Second)})
+	if erlaubt, gefunden := c.recht("helfer:view_students"); gefunden {
+		t.Errorf("abgelaufener Eintrag gilt noch (erlaubt=%v)", erlaubt)
 	}
 }

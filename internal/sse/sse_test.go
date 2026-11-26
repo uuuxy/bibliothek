@@ -2,9 +2,11 @@ package sse
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -409,6 +411,55 @@ func TestMeldeAn_GrenzenJeKontoUndGesamt(t *testing.T) {
 	if _, err := broker.meldeAn("a"); err != nil {
 		t.Errorf("meldeAn(a) nach dem Abmelden eines Stroms von a = %v, erwartet angenommen", err)
 	}
+}
+
+// Jede Überlast steht einmal im Log: beim ersten abgewiesenen Strom, nicht bei jedem weiteren.
+// Ist ein Strom gegangen, meldet sich die nächste Überlast wieder; sonst bliebe sie ohne Warnung
+// und ohne Alarm.
+func TestMeldeAn_JedeUeberlastMeldetSichEinmal(t *testing.T) {
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+	zaehle := func(stufe, text string) int {
+		n := 0
+		for _, zeile := range strings.Split(protokoll.String(), "\n") {
+			if strings.Contains(zeile, `"level":"`+stufe+`"`) && strings.Contains(zeile, text) {
+				n++
+			}
+		}
+		return n
+	}
+	ueberlast := func(warnungen, alarme int) {
+		t.Helper()
+		if w, a := zaehle("WARN", "je Konto"), zaehle("ERROR", "aller Ströme"); w != warnungen || a != alarme {
+			t.Errorf("%d Warnungen je Konto und %d Alarme gesamt im Log, erwartet %d und %d", w, a, warnungen, alarme)
+		}
+	}
+
+	broker := NewBroker()
+	broker.grenzeJeKonto, broker.grenzeGesamt = 1, 2
+	melde := func(konto string, will error) chan string {
+		t.Helper()
+		kanal, err := broker.meldeAn(konto)
+		if !errors.Is(err, will) {
+			t.Fatalf("meldeAn(%s) = %v, erwartet %v", konto, err, will)
+		}
+		return kanal
+	}
+	a := melde("a", nil)
+	melde("a", errZuVieleJeKonto)
+	melde("a", errZuVieleJeKonto)
+	melde("b", nil)
+	melde("c", errZuVieleGesamt)
+	melde("c", errZuVieleGesamt)
+	ueberlast(1, 1)
+
+	broker.meldeAb(a)
+	melde("a", nil)
+	melde("a", errZuVieleJeKonto)
+	melde("c", errZuVieleGesamt)
+	ueberlast(2, 2)
 }
 
 // Über der Grenze antwortet die Tür sofort mit 429, statt einen Strom zu öffnen.

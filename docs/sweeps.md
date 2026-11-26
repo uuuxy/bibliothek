@@ -591,7 +591,9 @@ geschrieben.
    die Oberfläche eine Stichprobe von rund 400 mit Vitest, und was dort unbemerkt bleibt, gezielt gegen
    die zuständigen Specs an einem Entwicklungsserver aus einer eigenen Arbeitskopie. Die
    Überlebenden am Code lesen; ein Teil ist ohne Folge. Eine Logzeile der Stufe ERROR gehört nicht
-   dazu: Jede zählt der Fehlerstand, und sein Wächter mailt sie. Text-Prüfungen lesen die Datei auf der
+   dazu: Jede zählt der Fehlerstand, und sein Wächter mailt sie; WARN zählt er ebenso und zeigt sie in
+   der Selbstprüfung. Ein umgedrehter Schwellwert vor einer solchen Zeile meldet bei jedem Aufruf, ein
+   Merker, der nicht zurückfällt, verschweigt die nächste Überlast. Text-Prüfungen lesen die Datei auf der
    Platte und sehen das Overlay nicht. `golangci-lint` zeigt je Meldungstext nur drei Funde, wer
    Rückbauten mit Meldungen abgleicht, braucht `--max-same-issues=0`. Ein neuer Test zählt erst,
    wenn er im Nachlauf gegen denselben Rückbau rot wird: Eine Prüfung auf `IS NOT NULL` ergab

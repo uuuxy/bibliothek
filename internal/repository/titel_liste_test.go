@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -21,6 +23,12 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 		}
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
+		// Unter der Kappung schreibt die Liste keine Zeile der Stufe ERROR: Jede zählt der
+		// Fehlerstand, und sein Wächter mailt sie.
+		var protokoll bytes.Buffer
+		vorher := slog.Default()
+		slog.SetDefault(slog.New(slog.NewJSONHandler(&protokoll, nil)))
+		t.Cleanup(func() { slog.SetDefault(vorher) })
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs("Math", 50000, "algebra").
@@ -70,6 +78,9 @@ func TestTitelAbfragen_LadeTitelListe(t *testing.T) {
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)
+		}
+		if strings.Contains(protokoll.String(), `"level":"ERROR"`) {
+			t.Errorf("die Liste unter der Kappung schreibt ERROR ins Log:\n%s", protokoll.String())
 		}
 	})
 
