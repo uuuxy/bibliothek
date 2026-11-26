@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 25.11.2026
+Stand: 26.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -76,6 +76,8 @@ Nur, was kein Test leisten kann.
   Knöpfe, `text-xs`. (5.189)
 - [ ] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer, Ehemalige und `topf` sind
   gewählt; vor dem Umbau Bilder. (5.201)
+- [ ] Firefox: Die scrollbare Liste auf „Signaturen“ bekommt beim Tabben den Fokusring von
+  Firefox statt des M3-Rings; nur auf Auftrag, vorher Bild. (5.204)
 
 ### Termin
 
@@ -172,6 +174,16 @@ Abweichung mit Grund.
 
 Nächster Schritt: Material 3, Dialogs, lesen, ob ein Dialog anders verfährt; sonst die drei nach
 dem Muster `verlangt` in `BuchFormular` angleichen, vorher mit Bildern.
+
+### 5.204 Fokusring an scrollbaren Listen in Firefox
+
+Firefox macht einen scrollbaren Bereich von sich aus zum Tab-Halt, auch wenn er Knöpfe enthält;
+Chromium tut das nicht. Für ein `ul` ohne `tabindex` greift keine Regel des Fokusrings in
+`frontend/src/styles/komponenten.css`, also zeichnet Firefox seinen eigenen Ring ohne Abstand.
+Gemessen hat es `frontend/e2e/zustaende.spec.js` in Firefox an der Signaturliste
+(`frontend/src/lib/components/signaturen/Signaturen.svelte`, `ul.overflow-y-auto`); die übrigen
+Seiten waren ohne Abweichung. Abhilfe wäre eine Regel, die scrollbaren Bereichen den Ring der
+Knöpfe gibt; sie ist sichtbar und kommt deshalb nur auf Auftrag.
 
 ### 7.2 Frisches Littera-Backup
 
