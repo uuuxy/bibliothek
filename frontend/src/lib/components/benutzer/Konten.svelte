@@ -47,11 +47,9 @@
 		ladefehler = '';
 		try {
 			const res = await apiFetch('/api/benutzer');
-			if (!res.ok) {
-				if (res.status === 403)
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
-				throw new Error(await leseApiFehler(res));
-			}
+			// Auch ein 403 mit der Meldung des Servers: Die Liste hängt am Recht „Benutzer & Rechte
+			// verwalten", nicht an der Rolle Administrator.
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			konten = await res.json();
 		} catch (err) {
 			// Steht eine Liste von vorhin, bleibt sie, und der Grund steht oben im Band; sonst steht er

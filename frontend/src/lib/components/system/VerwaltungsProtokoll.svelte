@@ -26,12 +26,10 @@
 		fehler = null;
 		try {
 			const res = await apiFetch('/api/admin/auditlog');
-			if (!res.ok) {
-				if (res.status === 403) {
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
-				}
+			// Auch ein 403 mit der Meldung des Servers: Die Liste hängt am Recht „Benutzer & Rechte
+			// verwalten", nicht an der Rolle Administrator.
+			if (!res.ok)
 				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Admin-Logbuchs'));
-			}
 			grenze = grenzeAus(res);
 			logs = await res.json();
 		} catch (err) {

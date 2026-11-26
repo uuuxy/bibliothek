@@ -40,12 +40,9 @@
 		fehler = null;
 		try {
 			const res = await apiFetch('/api/audit');
-			if (!res.ok) {
-				if (res.status === 403) {
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren');
-				}
-				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Logbuchs'));
-			}
+			// Auch ein 403 mit der Meldung des Servers: Das Logbuch hängt am Recht „System-Logs
+			// einsehen", nicht an der Rolle Administrator.
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Logbuchs'));
 			grenze = grenzeAus(res);
 			logs = await res.json();
 		} catch (err) {
