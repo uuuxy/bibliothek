@@ -193,7 +193,17 @@ for (const schema of /** @type {const} */ (['light', 'dark'])) {
 test('Icons nach M3 auf dem Flur-Monitor, jede Folie', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
-	await zeigeMonitorMitPlantag(page);
+	// Icons in einer Textzeile stehen nur auf den Folien mit Büchern. Eine davon bringt der Test
+	// selbst mit, statt von den Büchern anderer Specs zu leben.
+	await zeigeMonitorMitPlantag(page, {
+		buch_des_monats: {
+			id: 'e2e-monitor',
+			titel: 'Monitor-Probe',
+			autor: '',
+			cover_url: '',
+			isbn: ''
+		}
+	});
 	await page.goto('/monitor');
 	const anzeige = page.getByTestId('monitor-folie');
 	await anzeige.waitFor();

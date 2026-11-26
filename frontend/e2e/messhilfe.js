@@ -114,10 +114,12 @@ export async function pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemesse
 /**
  * Der Flur-Monitor zeigt die Folie „Heute" nur an einem Tag des LMF-Plans. Damit die messenden
  * Specs auch sie sehen, bekommt die echte Antwort des Servers die Zeilen eines solchen Tages,
- * eine mit Vermerk und eine ohne Klasse.
+ * eine mit Vermerk und eine ohne Klasse. `folien` ersetzt weitere Folien der Antwort, damit ein
+ * Spec sie auch allein auf frischer Datenbank sieht.
  * @param {import('@playwright/test').Page} page
+ * @param {Record<string, unknown>} [folien]
  */
-export async function zeigeMonitorMitPlantag(page) {
+export async function zeigeMonitorMitPlantag(page, folien = {}) {
 	await page.route('**/api/monitor/slides', async (route) => {
 		const antwort = await route.fetch();
 		const lmf_heute = {
@@ -129,6 +131,9 @@ export async function zeigeMonitorMitPlantag(page) {
 				{ stunde: 3, klassen: [], vermerk: 'Nachzügler' }
 			]
 		};
-		await route.fulfill({ response: antwort, json: { ...(await antwort.json()), lmf_heute } });
+		await route.fulfill({
+			response: antwort,
+			json: { ...(await antwort.json()), lmf_heute, ...folien }
+		});
 	});
 }
