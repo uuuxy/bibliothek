@@ -50,6 +50,14 @@ const (
 // Sicherung oder die DATABASE_URL, unterbleibt sie ohne Meldung; diesen Zustand meldet die
 // Betriebsbereitschaft schon über den Befund der Sicherung als kritisch.
 func (z *Zeitplan) fuehreRestoreProbeAus(ctx context.Context) {
+	// Die Probe nach einem Neustart (probeBeimStartNachFehlschlag) und der Lauf am Sonntag können
+	// sich überschneiden. Beide legten dieselbe Wegwerf-Datenbank an und löschten sie einander
+	// weg; die Probe schiene gescheitert, und die Alarm-Mail ginge hinaus.
+	if !z.probeLaeuft.CompareAndSwap(false, true) {
+		slog.Info("Restore-Probe: übersprungen, es läuft schon eine")
+		return
+	}
+	defer z.probeLaeuft.Store(false)
 	// Ohne eigene Sicherung gibt es nichts zu proben; das letzte Ergebnis bleibt stehen.
 	if z.sicherungAbgeschaltet(ctx) {
 		slog.Info("Restore-Probe: übersprungen, die eigene Sicherung ist abgeschaltet")

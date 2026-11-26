@@ -132,3 +132,26 @@ func TestRestoreProbe_AbgeschaltetUebersprungen(t *testing.T) {
 		t.Errorf("die Probe lief trotz abgeschalteter Sicherung:\n%s", protokoll.String())
 	}
 }
+
+// Läuft schon eine Restore-Probe, kehrt eine zweite sofort zurück, ohne die Datenbank zu fragen.
+// Die Probe nach einem Neustart und der Lauf am Sonntag legten sonst dieselbe Wegwerf-Datenbank
+// an und löschten sie einander weg.
+func TestRestoreProbe_ZweiteLaeuftNichtNeben(t *testing.T) {
+	// Der Zeitplan erwartet, dass die Probe zuerst den Schalter der Sicherung liest; die zweite
+	// Probe darf so weit gar nicht kommen.
+	z := zeitplanMitSicherungAus(t, true)
+	z.probeLaeuft.Store(true)
+
+	z.fuehreRestoreProbeAus(context.Background())
+
+	mock, ok := z.pool.(pgxmock.PgxPoolIface)
+	if !ok {
+		t.Fatal("der Zeitplan hat keine Attrappe als Datenbank")
+	}
+	if err := mock.ExpectationsWereMet(); err == nil {
+		t.Error("die zweite Probe hat die Einstellungen gelesen, lief also neben der ersten")
+	}
+	if !z.probeLaeuft.Load() {
+		t.Error("die zweite Probe hat die Sperre der ersten gelöst")
+	}
+}

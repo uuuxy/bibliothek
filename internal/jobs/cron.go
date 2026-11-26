@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"bibliothek/internal/db"
@@ -25,6 +26,8 @@ type Zeitplan struct {
 	// Pool, ein Test setzt eine Attrappe ein.
 	leserLoeschung leserLoeschung
 	cron           *cron.Cron
+	// probeLaeuft hält zwei Restore-Proben auseinander (fuehreRestoreProbeAus).
+	probeLaeuft atomic.Bool
 }
 
 // leserLoeschung sind die zwei Wege, auf denen ein nächtlicher Lauf einen Leser endgültig löscht
