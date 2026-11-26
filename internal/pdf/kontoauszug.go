@@ -53,6 +53,13 @@ const (
 	kontoauszugSpalteBarcode     = 5
 	kontoauszugSpalteAusgeliehen = 4
 	kontoauszugSpalteRueckgabe   = 5
+
+	// kontoauszugZeileMindestens ist die Höhe einer Buchzeile in mm. Ein langer Titel bricht in
+	// der Titelspalte um; die Zeile wächst dann mit ihm, statt in die nächste zu ragen.
+	kontoauszugZeileMindestens = 8.0
+	// kontoauszugTextHoehe ist die Höhe einer Zeile Text in 10 pt, wie maroto sie rechnet
+	// (Punkt durch Punkte je mm).
+	kontoauszugTextHoehe = 10 * 25.4 / 72
 )
 
 // ErzeugeKontoauszug erzeugt einen Kontoauszug ohne Unterschriftszeile, den Auszug zum Lesen
@@ -158,10 +165,15 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, s
 			rueckgabe += " überfällig"
 			rueckgabeText.Style = fontstyle.Bold
 		}
+		// Die Höhe der Zeile richtet sich nach der höchsten Spalte (row.New ohne Höhe). Der Abstand
+		// unter dem Barcode, der immer in eine Zeile passt, hält die übliche Höhe von 8 mm; der unter
+		// dem Titel lässt einen zweizeiligen Titel bei 8 mm und gibt einem längeren denselben Rand.
+		barcodeText := props.Text{Size: 10, Align: align.Center, Bottom: kontoauszugZeileMindestens - kontoauszugTextHoehe}
+		titelText := props.Text{Size: 10, Bottom: kontoauszugZeileMindestens - 2*kontoauszugTextHoehe}
 		zeilen = append(zeilen,
-			row.New(8).Add(
-				col.New(kontoauszugSpalteTitel).Add(marotoText(buch.Titel, props.Text{Size: 10})),
-				col.New(kontoauszugSpalteBarcode).Add(marotoText(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
+			row.New().Add(
+				col.New(kontoauszugSpalteTitel).Add(marotoText(buch.Titel, titelText)),
+				col.New(kontoauszugSpalteBarcode).Add(marotoText(buch.Barcode, barcodeText)),
 				col.New(kontoauszugSpalteAusgeliehen).Add(marotoText(buch.Ausleihdatum.In(schulzeit.Zone()).Format(datumsformat), props.Text{Size: 10})),
 				col.New(kontoauszugSpalteRueckgabe).Add(marotoText(rueckgabe, rueckgabeText)),
 			),
