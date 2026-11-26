@@ -160,3 +160,33 @@ func TestAbgaengerKarenz_NegativWirdAbgelehntUndBeimLesenVorgabe(t *testing.T) {
 		t.Error("0 bleibt 0 (sofort), nur negativ wird ersetzt")
 	}
 }
+
+// Die Maske zeigt Zahlstelle und Bankverbindung, die der Brief druckt: ungesetzt und leer
+// gespeichert die Angaben des Musterschreibens, sonst die eigenen. Vorher zeigte sie leere
+// Felder, während jeder Bescheid die Vorgabe druckte.
+func TestBescheidZahlstelle_MaskeZeigtWasDerBriefDruckt(t *testing.T) {
+	for _, fall := range []struct {
+		name        string
+		gespeichert *string
+		erwartet    string
+	}{
+		{"nie gesetzt", nil, bescheidZahlstelleVorgabe},
+		{"leer gespeichert", ptr(""), bescheidZahlstelleVorgabe},
+		{"eigene Angabe", ptr("Kreiskasse"), "Kreiskasse"},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			e := einstellungenVorgabe()
+			if fall.gespeichert != nil {
+				setzeBescheidEinstellung(e, "bescheid_zahlstelle", fall.gespeichert)
+				setzeBescheidEinstellung(e, "bescheid_bankverbindung", fall.gespeichert)
+			}
+			brief := BescheidAngabenAus(e)
+			if e.BescheidZahlstelle != fall.erwartet || brief.Zahlstelle != fall.erwartet {
+				t.Errorf("Maske %q, Brief %q, erwartet beide %q", e.BescheidZahlstelle, brief.Zahlstelle, fall.erwartet)
+			}
+			if e.BescheidBankverbindung != brief.Bankverbindung {
+				t.Errorf("Bankverbindung: Maske %q, Brief %q", e.BescheidBankverbindung, brief.Bankverbindung)
+			}
+		})
+	}
+}

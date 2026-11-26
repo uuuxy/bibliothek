@@ -40,9 +40,10 @@ func setzeBescheidEinstellung(e *SystemEinstellungen, schluessel string, wert *s
 	case "bescheid_durchwahl":
 		setzeStringRoh(wert, &e.BescheidDurchwahl)
 	case "bescheid_zahlstelle":
-		setzeStringRoh(wert, &e.BescheidZahlstelle)
+		// Leer heißt im Brief „wie im Musterschreiben“; die Maske zeigt dann dieselbe Angabe.
+		setzeStringNichtLeer(wert, &e.BescheidZahlstelle)
 	case "bescheid_bankverbindung":
-		setzeStringRoh(wert, &e.BescheidBankverbindung)
+		setzeStringNichtLeer(wert, &e.BescheidBankverbindung)
 	case "bescheid_frist_tage":
 		setzeIntZeiger(wert, &e.BescheidFristTage)
 	default:

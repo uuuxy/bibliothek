@@ -166,6 +166,10 @@ func einstellungenVorgabe() *SystemEinstellungen {
 		BestelllinkGueltigkeitTage: bestelllink.TageVorgabe,
 		// An: Wer Preise führt, soll sie nach einem Update nicht vermissen.
 		PreiseErfassen: true,
+		// Die Angaben des Musterschreibens, wie sie der Brief druckt (BescheidAngabenAus): Die
+		// Maske zeigt so, wohin die Eltern zahlen sollen, statt leerer Felder.
+		BescheidZahlstelle:     bescheidZahlstelleVorgabe,
+		BescheidBankverbindung: bescheidBankverbindungVorgabe,
 	}
 	setzeDatenschutzVorgaben(e)
 	return e
