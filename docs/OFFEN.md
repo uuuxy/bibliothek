@@ -74,7 +74,7 @@ Nur, was kein Test leisten kann.
   ([sweeps.md](sweeps.md), Date pickers). (5.193)
 - [x] Laufweite der Titel- und Label-Rollen auf Googles Werte bringen: Abschnitte in 16 px,
   Knöpfe, `text-xs`. (5.189)
-- [ ] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer, Ehemalige und `topf` sind
+- [x] Namen vereinheitlichen, zuletzt: Theke, Systematik, Benutzer, Ehemalige und `topf` sind
   gewählt; vor dem Umbau Bilder. (5.201)
 - [ ] Firefox: Die scrollbare Liste auf „Signaturen“ bekommt beim Tabben den Fokusring von
   Firefox statt des M3-Rings; nur auf Auftrag, vorher Bild. (5.204)
@@ -114,8 +114,8 @@ Stand im Programm: Schulbücher der Oberstufe haben den 31. Juli als Frist (FACH
 `internal/repository/lmf_stichtag.go`). Ein Schulbuch hält nur eine Sperre von Hand auf (Entscheidung der
 Schule, FACHKONZEPT 2.2). Die Überfällig-Automatik zählt aber jede überfällige Ausleihe
 außer Handapparat und Gerät, also auch Schulbücher (`repository.ZaehleUeberfaelligeAusleihen`):
-Wer im September Bücher des Vorjahres noch hat, wird nach den Toleranztagen für Bücher der
-Bibliothek gesperrt, für Schulbücher nicht.
+Wer im September Schulbücher des Vorjahres noch hat, bekommt neue Schulbücher ohne Hinweis; ein
+Buch der Bibliothek hält die Theke nach den Toleranztagen an, bis jemand „Einmalig ignorieren“ wählt.
 
 Nächster Schritt: den Ablauf zum Schuljahresbeginn an der Theke durchgehen, dann entscheiden, ob
 die Frist der Oberstufe oder die Zählung der Automatik sich ändert.
@@ -129,40 +129,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.201 Namen: dieselbe Sache, verschiedene Wörter
-
-Aus der Durchsicht auf Uneinheitliches bleiben Dinge mit mehr als einem Namen. Gezählt ist, was
-sichtbar ist (Text in `.svelte`, Beschriftungen in `.js`); Maßstab ist das Glossar (ARCHITEKTUR
-12.1). Vorschlag je Ding:
-
-- Kiosk, Theke und Ausleihe für denselben Platz: Menü „Kiosk“ mit dem Punkt „Ausleihe“, die Rechte
-  „Kiosk bedienen“ und „Bestellungen & Kiosk“, zwei Hinweise „am Kiosk“; „Theke“ in den
-  Einstellungen und in Hinweisen der Leserdatei. Vorschlag „Theke“ wie im Glossar, „Ausleihe“ nur
-  für den Vorgang.
-- Abgänger und Ehemalige im LUSD-Abgleich: Wer im Export fehlt, heißt im Abgleich „Abgänger“, in
-  der Leserdatei „Ehemalige“; „Abgänger“ heißt zugleich die Abschlussklasse, die noch ausleiht
-  (Menü, Abgängerliste). Vorschlag „Ehemalige“ für alle, die im Export fehlen, „Abgänger“ nur für
-  die Abschlussklasse; der Eintrag im Glossar zieht nach.
-- Sachgruppen und Systematik: Die Verwaltung unter „Signaturen“ sagt „Sachgruppen“, Filter,
-  Spaltenkopf und ein Hinweis sagen „Systematik“. Vorschlag „Sachgruppe“.
-- Meldungen und Anliegen: Sichtbar heißt es schon „Meldungen“; „Erledigte Anliegen aufbewahren“
-  bleibt, weil die Frist auch Klassensatz-Reservierungen löscht; der Code sagt „Anliegen“
-  (`lehrer_anliegen`), das Glossar nennt beides. Vorschlag: so lassen, eine Umbenennung kostete
-  eine Migration ohne Nutzen an der Theke.
-- Vier Wörter für „ohne Ausweis“: Sichtbar steht nur „ohne Ausweis“; Code und Dokumente sagen
-  daneben „nur Name“, „über den Namen“, „Namenssuche“ und „kein Ausweis“. Vorschlag „ohne Ausweis“.
-- „Systembenutzer“: einmal, als leere Liste unter „Benutzer & Rechte“. Vorschlag „Benutzer“ wie
-  der Menüpunkt.
-- `topf` und `mittel` im Paket `schaden`: Das Glossar führt „Mittel, Topf“ als eine Sache.
-  Vorschlag `topf` wie bei Bestellung und Abgangsbuch; nur Code, nichts Sichtbares.
-
-Gewählt: „Theke“, „Benutzer“ und im Code `topf` wie vorgeschlagen; statt „Sachgruppe“ bleibt
-„Systematik“ das Wort. Wer im LUSD-Export fehlt, heißt überall „Ehemalige“, „Abgänger“ nur die
-Abschlussklasse. „ohne Ausweis“ steht sichtbar schon überall; dort bleibt nur Code.
-
-Nächster Schritt: Bilder der sichtbaren Änderungen, dann der Umbau; der Punkt steht im Fahrplan
-zuletzt.
 
 ### 5.203 Dialoge: gesperrter Knopf statt Fehlertext am Feld
 
