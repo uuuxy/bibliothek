@@ -289,6 +289,31 @@ describe('useLeserakte.ladeAkte', () => {
 			st.kameraOffen
 		]).toEqual([false, false, false, false, false]);
 	});
+
+	// Nach jedem Scan lädt die Theke denselben Leser neu, über die Antwort und die Live-Leitung.
+	// laedt schaltet in Leserakte.svelte den Ladekreis statt des Profils: Die Akte verschwand
+	// so je Scan zweimal und blendete sich neu ein.
+	it('lässt die Akte desselben Lesers beim Neuladen stehen; ein anderer Leser lädt sichtbar', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			const u = String(url);
+			if (u.includes('schadensfaelle') || u.includes('bescheide') || u.includes('vormerkungen'))
+				return /** @type {any} */ (ok([]));
+			return /** @type {any} */ (ok({ id: u.endsWith('/B') ? 'B' : 'A', vorname: 'X' }));
+		});
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+		expect(st.laedt).toBe(false);
+
+		const neuLaden = st.ladeAkte('A');
+		expect(st.laedt, 'die Akte desselben Lesers verschwindet beim Neuladen').toBe(false);
+		expect(st.akte?.id).toBe('A');
+		await neuLaden;
+
+		const anderer = st.ladeAkte('B');
+		expect(st.laedt).toBe(true);
+		await anderer;
+		expect([st.akte?.id, st.laedt]).toEqual(['B', false]);
+	});
 });
 
 // Der Mensch an der Theke liest den Satz des Servers, nicht seinen JSON-Rumpf.

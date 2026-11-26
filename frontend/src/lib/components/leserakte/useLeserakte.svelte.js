@@ -8,8 +8,7 @@ import { ladeLeserakte } from './ladeLeserakte.js';
 import { schadenGebuchtSatz } from './schadenGebuchtSatz.js';
 
 export function useLeserakte() {
-	/** @type {any} */
-	let akte = $state(null);
+	let akte = $state(/** @type {any} */ (null));
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
 	/** @type {any[]} */
@@ -52,7 +51,8 @@ export function useLeserakte() {
 		}
 		nachladen = false;
 		const meine = ++laufNr;
-		laedt = true;
+		// Derselbe Leser lädt nach jedem Scan neu; seine Akte bleibt dabei stehen, statt zu blinken.
+		if (untrack(() => akte?.id !== studentId)) laedt = true;
 		try {
 			const neu = await ladeLeserakte(studentId);
 			if (meine !== laufNr) return;
