@@ -171,7 +171,7 @@ Grund und bei fehlendem Betrag, jeder `ui/EingabeDialog` über `gueltig` (darunt
 Abweichung mit Grund.
 
 Nächster Schritt: Material 3, Dialogs, lesen, ob ein Dialog anders verfährt; sonst die drei nach
-dem Muster `titelVerlangt` in `BuchFormular` angleichen, vorher mit Bildern.
+dem Muster `verlangt` in `BuchFormular` angleichen, vorher mit Bildern.
 
 ### 7.2 Frisches Littera-Backup
 
