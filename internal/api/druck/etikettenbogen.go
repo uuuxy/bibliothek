@@ -60,23 +60,28 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 			return
 		}
 
-		// Ein unbekanntes Format druckte sonst still auf den Bogen der Vorgabe, und das fiele erst
-		// am verdruckten Bogen auf; dieselbe Regel wie bei den Schüler-Etiketten.
-		if fehler := pruefeBogenParameter(req.FormatID, &req.Startposition); fehler != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, fehler)
-			return
-		}
-		bogen, err := pdf.ErzeugeBuchEtiketten(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, kopf))
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
-			return
-		}
+		antworteBuchEtiketten(w, req, kopf)
+	}
+}
 
-		tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Zeigen, "etiketten_custom.pdf")
+// antworteBuchEtiketten setzt die Etiketten auf einen der Bögen aus pdf.etikettFormate. Ein
+// unbekanntes Format druckte sonst still auf den Bogen der Vorgabe, und das fiele erst am
+// verdruckten Bogen auf; dieselbe Prüfung wie bei den Schüler-Etiketten.
+func antworteBuchEtiketten(w http.ResponseWriter, req etikettenbogenAnfrage, kopf buchetikett.Kopf) {
+	if fehler := pruefeBogenParameter(req.FormatID, &req.Startposition); fehler != nil {
+		apierrors.AntworteFehler(w, http.StatusBadRequest, fehler)
+		return
+	}
+	bogen, err := pdf.ErzeugeBuchEtiketten(req.FormatID, req.Startposition, req.AlsQR, buchetikett.PDFEtiketten(req.Etiketten, kopf))
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
+		return
+	}
 
-		if err := bogen.Output(w); err != nil {
-			slog.Error("Fehler beim Senden des PDFs", "fehler", err)
-		}
+	tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Zeigen, "etiketten_custom.pdf")
+
+	if err := bogen.Output(w); err != nil {
+		slog.Error("Fehler beim Senden des PDFs", "fehler", err)
 	}
 }
 
