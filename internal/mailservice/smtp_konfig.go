@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/smtp"
 	"os"
+	"slices"
 	"strings"
 
 	"bibliothek/internal/crypto"
@@ -92,6 +93,10 @@ func (k SMTPKonfig) auth() smtp.Auth {
 	return smtp.PlainAuth("", k.Benutzer, k.Passwort, k.Host)
 }
 
+// beispielPasswoerter sind die Passwörter früherer Beispielkonfigurationen. Verglichen wird der
+// ganze Wert: Ein echtes Passwort, das das Wort „Passwort“ enthält, sperrte sonst jeden Versand.
+var beispielPasswoerter = []string{"IhrPasswort", "Ihr Passwort", "secret"}
+
 // istKonfiguriert meldet, ob mit dieser Konfiguration ein Versand überhaupt versucht
 // werden kann. Eine nicht ausgefüllte Beispielkonfiguration führt zu „übersprungen" und nicht
 // zu einem Versuch, einen Host namens "Ihr SMTP-Host" zu erreichen.
@@ -102,7 +107,7 @@ func (k SMTPKonfig) istKonfiguriert() bool {
 	if k.Host == "Ihr SMTP-Host" {
 		return false
 	}
-	return !strings.Contains(k.Passwort, "Passwort") && k.Passwort != "secret"
+	return !slices.Contains(beispielPasswoerter, k.Passwort)
 }
 
 // KonfigAusUmgebung liest die Konfiguration aus den Umgebungsvariablen. Sie ist der

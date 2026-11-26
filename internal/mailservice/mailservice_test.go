@@ -90,7 +90,7 @@ func TestBaueTextNachrichtGlaettetBetreff(t *testing.T) {
 		name, _, _ := strings.Cut(z, ":")
 		namen = append(namen, name)
 	}
-	want := []string{"From", "To", "Subject", "Date", "Message-ID", "MIME-Version", "Content-Type"}
+	want := []string{"From", "To", "Subject", "Date", "Message-ID", "MIME-Version", "Content-Type", "Content-Transfer-Encoding"}
 	if !slices.Equal(namen, want) {
 		t.Errorf("Kopfzeilen %v, erwartet %v:\n%s", namen, want, kopf)
 	}

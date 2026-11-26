@@ -84,7 +84,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	// 3. Und dieselben Nummern stehen gedruckt auf dem Bogen hinter dem Link. Der Bogen
 	//    ist der zweite Weg zu denselben Daten (er liest neu aus der Datenbank); genau an
 	//    solchen Nahtstellen sind hier schon zweimal Felder verlorengegangen.
-	treffer := linkMuster.FindStringSubmatch(nachricht)
+	treffer := linkMuster.FindStringSubmatch(smtptest.TextAusMail(t, nachricht))
 	if treffer == nil {
 		t.Fatal("kein Bestätigungs-Link in der Mail")
 	}

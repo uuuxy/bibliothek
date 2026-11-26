@@ -221,12 +221,18 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 	if len(mail.Empfaenger) != 1 || mail.Empfaenger[0] != "berichtigt@example.invalid" {
 		t.Errorf("Empfänger %v, erwartet die heutige Adresse des Lieferanten", mail.Empfaenger)
 	}
+	for _, anhang := range []string{"bestellanschreiben", "barcode_mapping"} {
+		if !strings.Contains(mail.Nachricht, anhang) {
+			t.Errorf("Anhang %q fehlt in der erneut gesendeten Mail:\n%s", anhang, smtptest.Kopf(mail.Nachricht))
+		}
+	}
+	text := smtptest.TextAusMail(t, mail.Nachricht)
 	for _, teil := range []string{
-		"https://bib.example.invalid/bestellung/", "bestellanschreiben", "barcode_mapping",
+		"https://bib.example.invalid/bestellung/",
 		"zur Kundennummer K-Naacher-Erneut", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2",
 	} {
-		if !strings.Contains(mail.Nachricht, teil) {
-			t.Errorf("%q fehlt in der erneut gesendeten Mail:\n%s", teil, smtptest.Kopf(mail.Nachricht))
+		if !strings.Contains(text, teil) {
+			t.Errorf("%q fehlt im Text der erneut gesendeten Mail:\n%s", teil, text)
 		}
 	}
 	// Das Anschreiben nennt die bestellten Titel; ohne sie hielte der Händler eine leere Bestellung.
@@ -238,7 +244,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 		t.Error("Der Etikettenbogen hängt an der Mail, obwohl ein Link mitgeht")
 	}
 	// Der Link aus der Mail führt zur Bestellung.
-	token := zwischen(mail.Nachricht, "https://bib.example.invalid/bestellung/")
+	token := zwischen(text, "https://bib.example.invalid/bestellung/")
 	if oeffentlich := l.rufe(t, http.MethodGet, "/api/public/bestellung/"+token, ""); oeffentlich.Code != http.StatusOK {
 		t.Errorf("Der Link aus der Mail öffnet die Bestellung nicht: Status %d", oeffentlich.Code)
 	}

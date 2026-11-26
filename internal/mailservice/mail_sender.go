@@ -6,8 +6,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log/slog"
+	"mime"
 	"mime/multipart"
+	"mime/quotedprintable"
 	"net/mail"
 	"net/textproto"
 	"strings"
@@ -165,11 +168,12 @@ func baueMailNachricht(nachricht Nachricht, absender string) ([]byte, error) {
 
 	kopfDesTexts := make(textproto.MIMEHeader)
 	kopfDesTexts.Set("Content-Type", "text/plain; charset=utf-8")
+	kopfDesTexts.Set("Content-Transfer-Encoding", "quoted-printable")
 	teil, err := teile.CreatePart(kopfDesTexts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create email body part: %w", err)
 	}
-	if _, err := teil.Write([]byte(nachricht.Text)); err != nil {
+	if err := schreibeQuotedPrintable(teil, nachricht.Text); err != nil {
 		return nil, fmt.Errorf("failed to write email body: %w", err)
 	}
 
@@ -187,22 +191,65 @@ func baueMailNachricht(nachricht Nachricht, absender string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// base64Zeilenlaenge ist die längste Zeile in Base64 nach RFC 2045 (6.8). Ohne Umbruch stünde ein
+// Anhang als eine Zeile da, weit über den 998 Zeichen, die RFC 5321 einer Zeile erlaubt, und ein
+// strenger Mailserver wiese die Mail ab oder bräche die Daten selbst um.
+const base64Zeilenlaenge = 76
+
+// zeilenUmbruch schreibt nach je base64Zeilenlaenge Zeichen ein CRLF.
+type zeilenUmbruch struct {
+	ziel   io.Writer
+	spalte int
+}
+
+func (z *zeilenUmbruch) Write(p []byte) (int, error) {
+	geschrieben := 0
+	for len(p) > 0 {
+		if z.spalte == base64Zeilenlaenge {
+			if _, err := z.ziel.Write([]byte("\r\n")); err != nil {
+				return geschrieben, err
+			}
+			z.spalte = 0
+		}
+		stueck := min(len(p), base64Zeilenlaenge-z.spalte)
+		n, err := z.ziel.Write(p[:stueck])
+		geschrieben += n
+		z.spalte += n
+		if err != nil {
+			return geschrieben, err
+		}
+		p = p[stueck:]
+	}
+	return geschrieben, nil
+}
+
+// schreibeQuotedPrintable schreibt einen Text in quoted-printable: Umlaute als ASCII und Zeilen
+// höchstens 76 Zeichen lang, auch wenn ein Absatz einer Vorlage keinen Umbruch hat.
+func schreibeQuotedPrintable(ziel io.Writer, text string) error {
+	kodierer := quotedprintable.NewWriter(ziel)
+	if _, err := kodierer.Write([]byte(text)); err != nil {
+		return err
+	}
+	return kodierer.Close()
+}
+
 // schreibeAnhang hängt eine Datei in Base64 als Teil der Nachricht an. Aus Dateiname und
 // Content-Type entfernt sie Zeilenumbrüche und Anführungszeichen: CreatePart schreibt die Werte
-// ungeprüft, ein eingeschleuster Umbruch erzeugte weitere Kopfzeilen.
+// ungeprüft, ein eingeschleuster Umbruch erzeugte weitere Kopfzeilen. Einen Dateinamen mit Umlaut
+// (ein Kontoauszug trägt den Namen des Kindes) kodiert mime.FormatMediaType nach RFC 2231.
 func schreibeAnhang(teile *multipart.Writer, anhang Anhang) error {
 	name := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(anhang.Name)
 	contentType := strings.NewReplacer("\r", "", "\n", "").Replace(anhang.ContentType)
 	kopf := make(textproto.MIMEHeader)
 	kopf.Set("Content-Type", contentType)
 	kopf.Set("Content-Transfer-Encoding", "base64")
-	kopf.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
+	kopf.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
 	teil, err := teile.CreatePart(kopf)
 	if err != nil {
 		return fmt.Errorf("failed to create attachment part for %s: %w", anhang.Name, err)
 	}
 
-	kodierer := base64.NewEncoder(base64.StdEncoding, teil)
+	kodierer := base64.NewEncoder(base64.StdEncoding, &zeilenUmbruch{ziel: teil})
 	if _, err := kodierer.Write(anhang.Inhalt); err != nil {
 		return fmt.Errorf("failed to write attachment data for %s: %w", anhang.Name, err)
 	}

@@ -188,6 +188,9 @@ func TestIstKonfiguriert(t *testing.T) {
 		"Platzhalter-Host":  {SMTPKonfig{Host: "Ihr SMTP-Host", Port: "587"}, false},
 		"Platzhalter-Pass":  {SMTPKonfig{Host: "smtp.schule.de", Port: "587", Passwort: "IhrPasswort"}, false},
 		"Beispiel-Passwort": {SMTPKonfig{Host: "smtp.schule.de", Port: "587", Passwort: "secret"}, false},
+		// Ein echtes Passwort darf das Wort enthalten; nur der ganze Beispielwert gilt als Platzhalter.
+		"Passwort mit dem Wort": {SMTPKonfig{Host: "smtp.schule.de", Port: "587", Passwort: "MeinPasswort2026!"}, true},
+		"Passwort mit secret":   {SMTPKonfig{Host: "smtp.schule.de", Port: "587", Passwort: "secret-7Kq"}, true},
 	}
 
 	for name, f := range faelle {

@@ -96,7 +96,11 @@ func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
 
 	var buf bytes.Buffer
 	schreibeKopf(&buf, absender, an, betreff)
-	fmt.Fprintf(&buf, "Content-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n", text)
+	buf.WriteString("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n")
+	if err := schreibeQuotedPrintable(&buf, text); err != nil {
+		return nil, err
+	}
+	buf.WriteString("\r\n")
 	return buf.Bytes(), nil
 }
 

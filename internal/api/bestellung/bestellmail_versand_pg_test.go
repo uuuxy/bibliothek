@@ -62,7 +62,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 
 	// Der Link ist der Ablauf selbst: Ohne ihn kann der Händler nicht bestätigen, und genau das
 	// war der gemeldete Fehler.
-	if !strings.Contains(nachricht, "https://bib.example.invalid/bestellung/") {
+	if !strings.Contains(smtptest.TextAusMail(t, nachricht), "https://bib.example.invalid/bestellung/") {
 		t.Errorf("kein Bestätigungs-Link in der Mail:\n%s", smtptest.Kopf(nachricht))
 	}
 	// Und die Etiketten liegen nicht daneben im Postfach: Wer sie von dort druckt,
@@ -104,7 +104,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
-	if strings.Contains(nachricht, "/bestellung/") {
+	if strings.Contains(smtptest.TextAusMail(t, nachricht), "/bestellung/") {
 		t.Error("Link in der Mail, obwohl keine öffentliche Adresse hinterlegt ist")
 	}
 	for _, name := range []string{"etiketten_klein", "etiketten_gross"} {
@@ -132,8 +132,9 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
+	text := smtptest.TextAusMail(t, nachricht)
 	for _, zeile := range []string{"zur Kundennummer K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
-		if !strings.Contains(nachricht, zeile) {
+		if !strings.Contains(text, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
@@ -163,12 +164,15 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
+	if !strings.Contains(nachricht, "Subject: Buchbestellung Lernmittelfreiheit vom ") {
+		t.Errorf("Betreff fehlt in der Mail:\n%s", smtptest.Kopf(nachricht))
+	}
+	text := smtptest.TextAusMail(t, nachricht)
 	for _, zeile := range []string{
-		"Subject: Buchbestellung Lernmittelfreiheit vom ",
 		"Diese Bestellung: Lernmittelfreiheit",
 		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(tuer.DatumsformatDE),
 	} {
-		if !strings.Contains(nachricht, zeile) {
+		if !strings.Contains(text, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
@@ -200,8 +204,9 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
+	text := smtptest.TextAusMail(t, nachricht)
 	for _, zeile := range []string{"Bestellte Titel: 2", "Gesamtanzahl Exemplare: 5"} {
-		if !strings.Contains(nachricht, zeile) {
+		if !strings.Contains(text, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
