@@ -49,7 +49,9 @@ func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 			Ueberfaellig:        k.Ueberfaellig,
 			MaxTageUeberfaellig: k.MaxTage,
 			Zeitspannen: []ueberfaelligZeitspanne{
-				{Bezeichnung: "1–14 Tage", Anzahl: k.Bis14},
+				// „bis 14 Tage" und nicht „1–14": Ein Buch, dessen Frist erst vor Stunden ablief, steht
+				// mit 0 vollen Tagen hier, wie im Reiter „Akut fällig" des Mahnwesens.
+				{Bezeichnung: "bis 14 Tage", Anzahl: k.Bis14},
 				{Bezeichnung: "15–30 Tage", Anzahl: k.Bis30},
 				{Bezeichnung: "31–60 Tage", Anzahl: k.Bis60},
 				{Bezeichnung: "über 60 Tage", Anzahl: k.Ueber60},

@@ -36,7 +36,7 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 	}
 	leser := testdaten.LegeSchuelerAn(t, pool, "M-UEBERSICHT", "Mahn", "07A")
 	for titel, tage := range map[string]int{
-		"Mahn 5": 5, "Mahn 10": 10, "Mahn 14": 14, "Mahn 20": 20, "Mahn 45": 45, "Mahn 70": 70, "Mahn 80": 80,
+		"Mahn 0": 0, "Mahn 5": 5, "Mahn 10": 10, "Mahn 14": 14, "Mahn 20": 20, "Mahn 45": 45, "Mahn 70": 70, "Mahn 80": 80,
 	} {
 		testdaten.LegeAusleiheMitFristAn(t, pool, leser, titel, vorTagen(tage))
 	}
@@ -62,12 +62,13 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 		t.Fatalf("Antwort unlesbar: %v", err)
 	}
 
-	// 14 Tage und 12 Stunden zählen wie im Mahnwesen als 14 volle Tage: „1–14 Tage“.
+	// 14 Tage und 12 Stunden zählen wie im Mahnwesen als 14 volle Tage, 12 Stunden als 0: beide
+	// stehen unter „bis 14 Tage“.
 	erwartet := mahnUebersicht{
-		Ueberfaellig:        7,
+		Ueberfaellig:        8,
 		MaxTageUeberfaellig: 80,
 		Zeitspannen: []ueberfaelligZeitspanne{
-			{Bezeichnung: "1–14 Tage", Anzahl: 3},
+			{Bezeichnung: "bis 14 Tage", Anzahl: 4},
 			{Bezeichnung: "15–30 Tage", Anzahl: 1},
 			{Bezeichnung: "31–60 Tage", Anzahl: 1},
 			{Bezeichnung: "über 60 Tage", Anzahl: 2},
