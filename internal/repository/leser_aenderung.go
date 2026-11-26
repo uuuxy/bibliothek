@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"bibliothek/internal/db"
 )
 
 // LeserAenderung nennt, was an einer Leserzeile geändert wird. Ein Feld ohne Wert (nil) ist
@@ -118,11 +120,33 @@ func (a LeserAenderung) anweisung(id string) (string, []any) {
 // gibt. Geschrieben wird die Tabelle leser, nicht die Sicht schueler: In der Sicht steht ein
 // Kollege nicht, die Änderung träfe ihn nie. Nennt die Änderung kein Feld, setzt die
 // Anweisung nur den Zeitpunkt der Änderung.
-func AendereLeser(ctx context.Context, db Datenbank, id string, a LeserAenderung) (bool, error) {
-	query, args := a.anweisung(id)
-	tag, err := db.Exec(ctx, query, args...)
+//
+// Ein geänderter Name geht in derselben Transaktion an das Konto der Person, wie umgekehrt
+// KontoAbfragen.Aendere den Namen vom Konto an die Leserzeile gibt. Sonst hieße eine Kollegin
+// nach der Heirat an der Theke anders als in der Benutzerverwaltung, im Protokoll und in der
+// Auskunft.
+func AendereLeser(ctx context.Context, q Datenbank, id string, a LeserAenderung) (bool, error) {
+	tx, err := q.Begin(ctx)
 	if err != nil {
 		return false, err
 	}
-	return tag.RowsAffected() > 0, nil
+	defer db.Verwerfe(ctx, tx)
+
+	query, args := a.anweisung(id)
+	tag, err := tx.Exec(ctx, query, args...)
+	if err != nil {
+		return false, err
+	}
+	if tag.RowsAffected() == 0 {
+		return false, nil
+	}
+	if a.Vorname != nil || a.Nachname != nil {
+		if _, err := tx.Exec(ctx, `
+			UPDATE benutzer b SET vorname = COALESCE(l.vorname, ''), nachname = l.nachname
+			FROM leser l
+			WHERE l.id = $1 AND b.leser_id = l.id`, id); err != nil {
+			return false, err
+		}
+	}
+	return true, tx.Commit(ctx)
 }

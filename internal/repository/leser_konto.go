@@ -99,8 +99,8 @@ type KontoDerLeserzeile struct {
 }
 
 // LadeLeserName liefert Vor- und Nachnamen einer Leserzeile.
-func LadeLeserName(ctx context.Context, pool db.Pool, leserID string) (vorname, nachname string, err error) {
-	err = pool.QueryRow(ctx,
+func LadeLeserName(ctx context.Context, q Datenbank, leserID string) (vorname, nachname string, err error) {
+	err = q.QueryRow(ctx,
 		`SELECT COALESCE(vorname, ''), nachname FROM leser WHERE id = $1`, leserID).Scan(&vorname, &nachname)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", "", ErrLeserNichtGefunden

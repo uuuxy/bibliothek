@@ -10,6 +10,8 @@ import (
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/pkg/leserart"
 	"bibliothek/internal/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Die Schul-E-Mail in der Leserakte: nachtragbar, nicht änderbar.
@@ -115,8 +117,8 @@ func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 // trageKontoNach legt das Konto zu einer bestehenden Leserzeile an. Namen kommen aus der
 // Zeile selbst und nicht aus der Anfrage: Wer im selben Speichern den Namen ändert, soll
 // ihn nicht in zwei Schreibweisen bekommen — Leserzeile und Konto sind dieselbe Person.
-func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, leserID, email string, aktiv bool) (kontoID string, ok bool) {
-	vorname, nachname, err := repository.LadeLeserName(ctx, t.DB.Pool, leserID)
+func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, tx pgx.Tx, leserID, email string, aktiv bool) (kontoID string, ok bool) {
+	vorname, nachname, err := repository.LadeLeserName(ctx, tx, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
@@ -132,7 +134,7 @@ func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 		LeserID:  leserID,
 		Aktiv:    aktiv,
 	}
-	kontoID, err = repository.LegeKollegiumskontoAn(ctx, t.DB.Pool, params)
+	kontoID, err = repository.LegeKollegiumskontoAn(ctx, tx, params)
 	if err != nil {
 		antworteAufKontoFehler(w, err, email)
 		return "", false

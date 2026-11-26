@@ -12,6 +12,7 @@ import (
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
 	"bibliothek/internal/auth"
+	"bibliothek/internal/db"
 	"bibliothek/internal/pkg/clientip"
 	"bibliothek/internal/pkg/httpresp"
 	"bibliothek/internal/pkg/leserart"
@@ -215,12 +216,11 @@ func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollA
 	if !ok {
 		return
 	}
-	if !t.schreibeLeserAenderung(ctx, w, id, aenderung.update) {
+	kontoID, ok := t.schreibeAenderungUndKonto(ctx, w, r, id, aenderung)
+	if !ok {
 		return
 	}
-	if !t.trageNachUndProtokolliere(w, r, protokollAbfragen, claims, id, aenderung) {
-		return
-	}
+	t.protokolliereNachtraege(r, protokollAbfragen, claims, id, aenderung, kontoID)
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	antwort := map[string]any{"status": "success"}
@@ -284,19 +284,41 @@ func (t *Tueren) pruefeLeserAenderung(ctx context.Context, w http.ResponseWriter
 	return leserAenderung{update: b, lusdNachgetragen: lusdNachgetragen, kontoAdresse: kontoAdresse}, true
 }
 
-// trageNachUndProtokolliere legt nach dem Schreiben das Konto zur Schul-E-Mail an und
-// schreibt die Protokolleinträge der Nachträge. false heißt: Die Ablehnung ist schon
-// beantwortet.
-func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen, claims *auth.Claims, id string, a leserAenderung) bool {
-	ctx := r.Context()
+// schreibeAenderungUndKonto schreibt die Änderung an die Leserzeile und legt, wenn die Anfrage
+// eine Schul-E-Mail nachträgt, das Konto dazu an, beides in einer Transaktion: Scheitert das
+// Konto an einer vergebenen Adresse, bleibt auch die Leserzeile, wie sie war, und die Meldung
+// „nicht gespeichert“ stimmt. false heißt: Die Ablehnung ist schon beantwortet.
+func (t *Tueren) schreibeAenderungUndKonto(ctx context.Context, w http.ResponseWriter, r *http.Request, id string, a leserAenderung) (kontoID string, ok bool) {
+	tx, err := t.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return "", false
+	}
+	defer db.Verwerfe(ctx, tx)
+
+	if !t.schreibeLeserAenderung(ctx, w, tx, id, a.update) {
+		return "", false
+	}
 	if a.kontoAdresse != "" {
 		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim
 		// Anlegen (leser_anlegen.go). Wer hier nur edit_students hat, bekäme sonst still
 		// das Recht, Zugänge freizuschalten.
-		kontoID, ok := t.trageKontoNach(ctx, w, id, a.kontoAdresse, t.HatRecht(r, "manage_users"))
-		if !ok {
-			return false
+		if kontoID, ok = t.trageKontoNach(ctx, w, tx, id, a.kontoAdresse, t.HatRecht(r, "manage_users")); !ok {
+			return "", false
 		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return "", false
+	}
+	return kontoID, true
+}
+
+// protokolliereNachtraege schreibt nach dem Speichern die Protokolleinträge der Nachträge: das
+// nachgetragene Konto und die nachgetragene LUSD-ID.
+func (t *Tueren) protokolliereNachtraege(r *http.Request, protokollAbfragen *repository.ProtokollAbfragen, claims *auth.Claims, id string, a leserAenderung, kontoID string) {
+	ctx := r.Context()
+	if kontoID != "" {
 		// ziel_id ist die Kennung des Kontos: Daran findet die Auskunft den Eintrag beim Konto,
 		// auch nachdem es gelöscht ist. Mit dem Leser fällt sie wieder (Tilgung).
 		if protokollFehler := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
@@ -315,7 +337,6 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 			slog.Error("Audit für LUSD-ID-Nachtrag fehlgeschlagen", "fehler", protokollFehler)
 		}
 	}
-	return true
 }
 
 // pruefeUndSetzeLUSDID trägt die LUSD-ID kontrolliert nach. Die LUSD-ID ist der
@@ -640,8 +661,8 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 // schreibeLeserAenderung schreibt die Änderung an die Leserzeile. ok=false: Die Ablehnung
 // (409 bei einer vergebenen Nummer oder einem vergebenen Namen, 404 bei unbekanntem Leser,
 // sonst 500) ist schon beantwortet.
-func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWriter, id string, b *repository.LeserAenderung) bool {
-	gefunden, err := repository.AendereLeser(ctx, t.DB.Pool, id, *b)
+func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWriter, q repository.Datenbank, id string, b *repository.LeserAenderung) bool {
+	gefunden, err := repository.AendereLeser(ctx, q, id, *b)
 	if err != nil {
 		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
 		// eine Auskunft, kein Serverfehler.

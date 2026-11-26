@@ -48,6 +48,9 @@ var phantomBestand = map[string]int{
 	// Klassenleitung, deren Zeile die Transaktion unmittelbar davor gelesen hat.
 	"internal/repository/schuljahreswechsel.go:SperreSchuljahreswechsel": 1,
 	"internal/repository/klassenleitung.go:BenenneKlassenleitungUm":      1,
+	// Der neue Name der Leserzeile geht an das Konto der Person; null Zeilen heißt, sie hat
+	// keins. Ob es die Leserzeile gibt, prüft die Anweisung davor über RowsAffected.
+	"internal/repository/leser_aenderung.go:AendereLeser": 1,
 	// Räumt den bisherigen Hauptlieferanten; null Zeilen heißt, es gab keinen.
 	"internal/repository/lieferanten_pflege.go:SetzeHauptlieferant": 1,
 	// Sachgruppe ändern und löschen: Die Tür liest die Zeile unmittelbar davor und antwortet

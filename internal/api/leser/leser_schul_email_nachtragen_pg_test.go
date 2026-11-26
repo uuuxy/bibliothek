@@ -172,12 +172,39 @@ func TestSchulEmailNachtragen(t *testing.T) {
 			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
 		}
 		zweiter := altbestand(t, "Zweiter", "Belegt2", "lehrkraft")
-		rec := patch(t, zweiter, `{"nachname":"Belegt2","email":"belegt@schule.invalid"}`, auth.RolleAdmin)
+		rec := patch(t, zweiter, `{"nachname":"Belegt2-Neu","email":"belegt@schule.invalid"}`, auth.RolleAdmin)
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Antwort %d (erwartet 409): %s", rec.Code, rec.Body.String())
 		}
 		if !strings.Contains(rec.Body.String(), "bereits ein Zugang") {
 			t.Errorf("die Meldung soll auf den vorhandenen Eintrag zeigen: %s", rec.Body.String())
+		}
+		// Abgelehnt heißt nicht gespeichert: Der Name aus demselben Speichern steht nicht in der
+		// Leserzeile, sonst sagte die Maske „Fehler“, während die Hälfte geschrieben ist.
+		var nachname string
+		if err := pool.QueryRow(ctx, `SELECT nachname FROM leser WHERE id = $1`, zweiter).Scan(&nachname); err != nil {
+			t.Fatalf("Leserzeile lesen: %v", err)
+		}
+		if nachname != "Belegt2" {
+			t.Errorf("Nachname %q nach der Ablehnung, erwartet unverändert %q", nachname, "Belegt2")
+		}
+	})
+
+	t.Run("ein neuer Name in der Akte steht auch am Konto", func(t *testing.T) {
+		id := altbestand(t, "Hanna", "Ledig", "lehrkraft")
+		if rec := patch(t, id, `{"nachname":"Ledig","email":"hanna.ledig@schule.invalid"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
+			t.Fatalf("Nachtrag: %d %s", rec.Code, rec.Body.String())
+		}
+		if rec := patch(t, id, `{"vorname":"Johanna","nachname":"Verheiratet"}`, auth.RolleAdmin); rec.Code != http.StatusOK {
+			t.Fatalf("Namensänderung: %d %s", rec.Code, rec.Body.String())
+		}
+		// Kontenliste, Anmeldung, Protokoll und Auskunft lesen den Namen am Konto.
+		var vorname, nachname string
+		if err := pool.QueryRow(ctx, `SELECT vorname, nachname FROM benutzer WHERE leser_id = $1`, id).Scan(&vorname, &nachname); err != nil {
+			t.Fatalf("Konto lesen: %v", err)
+		}
+		if vorname != "Johanna" || nachname != "Verheiratet" {
+			t.Errorf("Konto heißt %q %q, erwartet den neuen Namen aus der Akte", vorname, nachname)
 		}
 	})
 
