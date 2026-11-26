@@ -858,9 +858,10 @@ sequenceDiagram
 ```
 
 Jede folgende Anfrage prüft `verlangeRecht`: zuerst die UUID im Pfad (eine ungültige ist 400, auch
-ohne Anmeldung), dann JWT (nur HMAC), Sperrliste, Kontostatus live in der Datenbank, die Sperre in
-`sitzungen` (nach Inaktivität oder 10 Stunden nach der letzten Passworteingabe: 423 bis zur
-Eingabe) und das Recht (60 s Cache mit Epoche).
+ohne Anmeldung: Welche Route eine Kennung erwartet, steht ohnehin im ausgelieferten Code), dann
+JWT (nur HMAC), Sperrliste, Kontostatus live in der Datenbank, die Sperre in `sitzungen` (nach
+Inaktivität oder 10 Stunden nach der letzten Passworteingabe: 423 bis zur Eingabe) und das Recht
+(60 s Cache mit Epoche).
 Ein Aussetzer der Datenbank ergibt 503, nicht 401, und „gesperrt“ ist 423: Beides soll den
 Arbeitsplatz nicht abmelden.
 
