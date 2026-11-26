@@ -32,7 +32,7 @@ func TestPruefeBescheidAnfrage_Betraege(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			var req bescheidErstellenAnfrage
-			rumpf := `{"mittel":"land","frist_bis":"` + frist + `","positionen":` + f.positionen + `,"ausleihen":` + f.ausleihen + `}`
+			rumpf := `{"topf":"land","frist_bis":"` + frist + `","positionen":` + f.positionen + `,"ausleihen":` + f.ausleihen + `}`
 			if err := json.Unmarshal([]byte(rumpf), &req); err != nil {
 				t.Fatalf("Rumpf %s: %v", rumpf, err)
 			}

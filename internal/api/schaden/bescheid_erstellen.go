@@ -22,7 +22,7 @@ import (
 
 // bescheidErstellenAnfrage ist die Eingabe des Dialogs.
 type bescheidErstellenAnfrage struct {
-	Mittel     string `json:"mittel"`
+	Topf       string `json:"topf"`
 	FristBis   string `json:"frist_bis"`
 	Positionen []struct {
 		SchadensfallID string      `json:"schadensfall_id" validate:"required,uuid_oder_leer"`
@@ -81,7 +81,7 @@ func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, besche
 
 	eingabe := repository.BescheidEingabe{
 		SchuelerID:     id,
-		Mittel:         req.Mittel,
+		Mittel:         req.Topf,
 		Kassenjahr:     frist.Year(),
 		FristBis:       frist,
 		Empfaenger:     snapshot,
@@ -118,15 +118,15 @@ func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, besche
 // pruefeBescheidAnfrage prüft Topf, Auswahl und Frist, bevor irgendetwas gelesen oder
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
 func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
-	if !mitteltopf.IstGueltig(req.Mittel) {
+	if !mitteltopf.IstGueltig(req.Topf) {
 		return time.Time{}, apierrors.BadRequest(mitteltopf.MeldungUngueltig, mitteltopf.ErrUngueltig)
 	}
 	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Für die Bücher der
-	// Schülerbücherei (Mittel des Schulträgers) gibt es noch keinen Brief; „schultraeger" gäbe
+	// Schülerbücherei (Topf des Schulträgers) gibt es noch keinen Brief; „schultraeger" gäbe
 	// sonst einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
-	if req.Mittel != mitteltopf.Land {
+	if req.Topf != mitteltopf.Land {
 		return time.Time{}, apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
-			errors.New("bescheid nur für mittel=land"))
+			errors.New("bescheid nur für topf=land"))
 	}
 	if len(req.Positionen) == 0 && len(req.Ausleihen) == 0 {
 		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen", errors.New("keine positionen"))

@@ -98,10 +98,10 @@ func TestSchluesselUndPflichtkennungSind400VorDerDatenbank(t *testing.T) {
 		{"Schaden melden, leere Ausleihe", "/api/damage/report", `{"loan_id":"","art":"beschaedigt","betrag":1}`,
 			mitAnmeldung(s.schaden().SchadenMelden(nil))},
 		{"Bescheid, leere Forderung", "/api/schueler/" + titel + "/bescheide",
-			`{"mittel":"land","frist_bis":"` + frist + `","positionen":[{"schadensfall_id":"","betrag":500}]}`,
+			`{"topf":"land","frist_bis":"` + frist + `","positionen":[{"schadensfall_id":"","betrag":500}]}`,
 			mitKennungImPfad(s.schaden().BescheidErstellen(nil, nil), titel)},
 		{"Bescheid, leere Ausleihe", "/api/schueler/" + titel + "/bescheide",
-			`{"mittel":"land","frist_bis":"` + frist + `","ausleihen":[{"ausleihe_id":"","betrag":500}]}`,
+			`{"topf":"land","frist_bis":"` + frist + `","ausleihen":[{"ausleihe_id":"","betrag":500}]}`,
 			mitKennungImPfad(s.schaden().BescheidErstellen(nil, nil), titel)},
 	}
 	for _, f := range faelle {

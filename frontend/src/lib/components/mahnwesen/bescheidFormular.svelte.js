@@ -57,7 +57,7 @@ export class BescheidFormular {
 	/** Der Brief ist der des Landes (Wortlaut und Konto der Lernmittelfreiheit). Die
 	 *  Rechnung der Schülerbücherei ist noch nicht gebaut (Konzept 4.7, Etappe 3); ihre
 	 *  Zeilen stehen gesperrt in der Liste, und der Server weist alles andere ab. */
-	mittel = 'land';
+	topf = 'land';
 	/** @type {string} */
 	#schuelerId;
 
@@ -105,7 +105,7 @@ export class BescheidFormular {
 	rumpf() {
 		const betrag = (/** @type {any} */ p) => Number(this.betraege[p.key]) || 0;
 		return {
-			mittel: this.mittel,
+			topf: this.topf,
 			frist_bis: this.frist,
 			positionen: this.ausgewaehlt
 				.filter((p) => p.quelle === 'forderung')

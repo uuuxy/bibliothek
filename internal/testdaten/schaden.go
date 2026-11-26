@@ -85,7 +85,7 @@ func BescheidRumpf(frist string, betraege map[string]float64) string {
 	for id, betrag := range betraege {
 		teile = append(teile, fmt.Sprintf(`{"schadensfall_id":%q,"betrag":%.2f}`, id, betrag))
 	}
-	return fmt.Sprintf(`{"mittel":"land","frist_bis":%q,"positionen":[%s]}`, frist, strings.Join(teile, ","))
+	return fmt.Sprintf(`{"topf":"land","frist_bis":%q,"positionen":[%s]}`, frist, strings.Join(teile, ","))
 }
 
 // In28Tagen ist der Kalendertag in 28 Tagen, als Frist eines Bescheids.

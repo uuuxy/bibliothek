@@ -85,19 +85,19 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 		status             int
 		meldung            string
 	}{
-		{"unbekannter Topf", sid, `{"mittel":"quatsch","frist_bis":"bald","positionen":[]}`,
+		{"unbekannter Topf", sid, `{"topf":"quatsch","frist_bis":"bald","positionen":[]}`,
 			http.StatusBadRequest, mitteltopf.MeldungUngueltig},
-		{"Topf des Schulträgers", sid, `{"mittel":"schultraeger","frist_bis":"bald","positionen":[]}`,
+		{"Topf des Schulträgers", sid, `{"topf":"schultraeger","frist_bis":"bald","positionen":[]}`,
 			http.StatusConflict, "nur für Lernmittel des Landes"},
 		// Die Spende gilt beim Ersatz wie die Schülerbücherei; chk_bescheid_mittel kennt sie nicht,
 		// die Tür muss vorher ablehnen.
-		{"Topf Spende", sid, `{"mittel":"spende","frist_bis":"bald","positionen":[]}`,
+		{"Topf Spende", sid, `{"topf":"spende","frist_bis":"bald","positionen":[]}`,
 			http.StatusConflict, "nur für Lernmittel des Landes"},
-		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,
+		{"keine Auswahl", sid, `{"topf":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,
 			http.StatusBadRequest, "mindestens ein Buch"},
-		{"Frist ist kein Datum", sid, `{"mittel":"land","frist_bis":"bald","positionen":` + position + `}`,
+		{"Frist ist kein Datum", sid, `{"topf":"land","frist_bis":"bald","positionen":` + position + `}`,
 			http.StatusBadRequest, "Die Frist muss ein Datum der Form JJJJ-MM-TT sein"},
-		{"Leser unbekannt", unbekannt, `{"mittel":"land","frist_bis":"` + testdaten.In28Tagen() + `","positionen":` + position + `}`,
+		{"Leser unbekannt", unbekannt, `{"topf":"land","frist_bis":"` + testdaten.In28Tagen() + `","positionen":` + position + `}`,
 			http.StatusNotFound, "nicht gefunden"},
 	} {
 		rec := bescheidErstellenUeberTuer(t, srv, pool, fall.leser, fall.rumpf)

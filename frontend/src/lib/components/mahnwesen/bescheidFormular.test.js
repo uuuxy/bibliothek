@@ -74,7 +74,7 @@ describe('BescheidFormular', () => {
 		await f.laden();
 		f.betraege.a1 = 20;
 		expect(f.rumpf()).toEqual({
-			mittel: 'land',
+			topf: 'land',
 			frist_bis: '2026-10-13',
 			positionen: [{ schadensfall_id: 'f1', betrag: 12 }],
 			ausleihen: [{ ausleihe_id: 'a1', betrag: 20 }]

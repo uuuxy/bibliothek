@@ -45,7 +45,7 @@ func bescheidRumpfMitAusleihen(frist string, betraege map[string]float64) string
 	for id, betrag := range betraege {
 		teile = append(teile, fmt.Sprintf(`{"ausleihe_id":%q,"betrag":%.2f}`, id, betrag))
 	}
-	return fmt.Sprintf(`{"mittel":"land","frist_bis":%q,"positionen":[],"ausleihen":[%s]}`, frist, strings.Join(teile, ","))
+	return fmt.Sprintf(`{"topf":"land","frist_bis":%q,"positionen":[],"ausleihen":[%s]}`, frist, strings.Join(teile, ","))
 }
 
 // bescheidVorschlagUeberTuer ruft GET /api/schueler/{id}/bescheid-vorschlag.

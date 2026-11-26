@@ -304,7 +304,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		}
 
 		rec := rufe(t, http.MethodPost, "/api/schueler/"+schueler+"/bescheide", fmt.Sprintf(
-			`{"mittel":"land","frist_bis":%q,"positionen":[],"ausleihen":[{"ausleihe_id":%q,"betrag":12.00}]}`,
+			`{"topf":"land","frist_bis":%q,"positionen":[],"ausleihen":[{"ausleihe_id":%q,"betrag":12.00}]}`,
 			testdaten.In28Tagen(), ausleiheID))
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Bescheid erstellen: Status %d: %s", rec.Code, rec.Body.String())

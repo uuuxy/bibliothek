@@ -268,7 +268,7 @@ func TestBescheid_GeraeteausleiheBuchtNichts(t *testing.T) {
 	frist := time.Now().AddDate(0, 0, 28).Format("2006-01-02")
 
 	rec := w.sende(t, "/api/schueler/"+kind+"/bescheide", fmt.Sprintf(
-		`{"mittel":"land","frist_bis":%q,"ausleihen":[{"ausleihe_id":%q,"betrag":100}]}`, frist, ausleihe))
+		`{"topf":"land","frist_bis":%q,"ausleihen":[{"ausleihe_id":%q,"betrag":100}]}`, frist, ausleihe))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
 	}

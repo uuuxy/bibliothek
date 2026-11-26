@@ -60,12 +60,12 @@ func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 	roman := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Roman der Buecherei", "Autor", true, 0)
 	f := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, roman, "BESCH-TOPF-1", true, ""), "beschaedigt", "Roman beschädigt")
 
-	for _, mittel := range []string{"land", "schultraeger"} {
-		rumpf := fmt.Sprintf(`{"mittel":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
-			mittel, testdaten.In28Tagen(), f)
+	for _, topf := range []string{"land", "schultraeger"} {
+		rumpf := fmt.Sprintf(`{"topf":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
+			topf, testdaten.In28Tagen(), f)
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid, rumpf)
 		if rec.Code != http.StatusConflict {
-			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, erwartet 409: %s", mittel, rec.Code, rec.Body.String())
+			t.Errorf("topf=%s für ein Nicht-Lernmittel: Status %d, erwartet 409: %s", topf, rec.Code, rec.Body.String())
 		}
 	}
 	var briefe, nummern int
