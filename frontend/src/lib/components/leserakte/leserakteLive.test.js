@@ -12,15 +12,20 @@ it('lädt die offene Akte nur bei einer Buchung für denselben Leser neu', () =>
 	ladeAkteBeiBuchung(() => offen, ladeNeu);
 	const [name, handler] = /** @type {any} */ (abonniere).mock.calls[0];
 	expect(name).toBe('action');
+	/** Eine Live-Meldung, wie sie die Leitung zustellt. @param {object} inhalt */
+	const melde = (inhalt) => {
+		const data = JSON.stringify(inhalt);
+		handler({ data });
+	};
 
-	handler({ data: JSON.stringify({ event: 'rueckgabe', student_id: 'leser-2' }) });
+	melde({ event: 'rueckgabe', student_id: 'leser-2' });
 	expect(ladeNeu).not.toHaveBeenCalled();
-	handler({ data: JSON.stringify({ event: 'rueckgabe', student_id: 'leser-1' }) });
+	melde({ event: 'rueckgabe', student_id: 'leser-1' });
 	expect(ladeNeu).toHaveBeenCalledTimes(1);
 
 	// Ohne offene Akte und ohne Kennung im Ereignis (Platz ohne Vertrauen) geschieht nichts.
-	handler({ data: JSON.stringify({ event: 'rueckgabe' }) });
+	melde({ event: 'rueckgabe' });
 	offen = undefined;
-	handler({ data: JSON.stringify({ event: 'rueckgabe', student_id: 'leser-1' }) });
+	melde({ event: 'rueckgabe', student_id: 'leser-1' });
 	expect(ladeNeu).toHaveBeenCalledTimes(1);
 });
