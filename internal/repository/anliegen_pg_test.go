@@ -22,6 +22,17 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 	}
 
 	repo := NewAnliegenAbfragen(pool)
+	// Die Zahl am Menüpunkt zählt nur Offenes; andere Tests lassen Anliegen stehen, deshalb
+	// zählt hier der Unterschied.
+	zaehle := func() int {
+		t.Helper()
+		n, err := repo.ZaehleOffene(ctx)
+		if err != nil {
+			t.Fatalf("ZaehleOffene: %v", err)
+		}
+		return n
+	}
+	vorher := zaehle()
 	id1, err := repo.LegeAn(ctx, NeuesAnliegen{
 		Art: "wunsch", TitelText: "Markl Biologie 2",
 		Klasse: "8G3", Kommentar: "bitte zum Halbjahr", AngefordertVon: lehrkraftID,
@@ -34,6 +45,9 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 		Klasse: "8G3", AngefordertVon: lehrkraftID,
 	}); err != nil {
 		t.Fatalf("Create Meldung: %v", err)
+	}
+	if n := zaehle(); n != vorher+2 {
+		t.Errorf("ZaehleOffene = %d nach zwei neuen Anliegen, erwartet %d", n, vorher+2)
 	}
 
 	offene, err := repo.LadeOffene(ctx)
@@ -79,6 +93,9 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 	}
 	if erledigt.ErledigtNotiz != "bestellt, kommt Anfang September" {
 		t.Errorf("Notiz fehlt in den Mail-Daten: %+v", erledigt)
+	}
+	if n := zaehle(); n != vorher+1 {
+		t.Errorf("ZaehleOffene = %d nach dem Abhaken, erwartet %d", n, vorher+1)
 	}
 
 	// Der zweite Arbeitsplatz drückt denselben Haken: nichts, keine zweite Mail.

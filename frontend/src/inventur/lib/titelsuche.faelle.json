@@ -108,6 +108,11 @@
 			"treffer": ["mathe7", "atlas"]
 		},
 		{ "fall": "Jahrgang in der Spanne", "suche": "atlas 9", "treffer": ["atlas"] },
+		{
+			"fall": "Jahrgang mit einer Null, Rand der Spanne",
+			"suche": "atlas 10",
+			"treffer": ["atlas"]
+		},
 		{ "fall": "Umlaut ohne Punkte", "suche": "rauber", "treffer": ["raeuber"] },
 		{ "fall": "Umlaut als ae", "suche": "raeuber", "treffer": ["raeuber"] },
 		{

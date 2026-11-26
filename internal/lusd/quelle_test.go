@@ -262,3 +262,14 @@ func TestLeseDatei_CSVUeberDerZeilengrenze(t *testing.T) {
 		t.Fatalf("LeseDatei = %v, erwartet *csvutil.ZuVieleZeilen", err)
 	}
 }
+
+// Excel lässt leere Zellen am Ende einer Zeile weg: Eine Zeile eines späteren Blatts ist dann
+// kürzer als seine Kopfzeile. Die fehlende Spalte bleibt leer, die übrigen kommen an ihren Platz.
+func TestUmsortiert_KurzeZeileEinesSpaeterenBlatts(t *testing.T) {
+	kopf := map[string]int{"vorname": 0, "nachname": 1, "klasse": 2}
+	ersterKopf := map[string]int{"nachname": 0, "vorname": 1, "klasse": 2}
+	got := umsortiert([]string{"Mia", "Muster"}, kopf, ersterKopf, 3)
+	if strings.Join(got, "|") != "Muster|Mia|" {
+		t.Errorf("umsortiert = %q, erwartet [Muster Mia \"\"]", got)
+	}
+}

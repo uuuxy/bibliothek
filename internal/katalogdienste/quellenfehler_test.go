@@ -30,6 +30,7 @@ func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 		teil          string
 	}{
 		{"5xx: Quelle kaputt", antwort(http.StatusServiceUnavailable), true, "status 503"},
+		{"5xx: die Grenze 500 gehört dazu", antwort(http.StatusInternalServerError), true, "status 500"},
 		{"4xx: Quelle hat geantwortet", antwort(http.StatusNotFound), false, "status 404"},
 		{"Transportfehler", func(*http.Request) (*http.Response, error) {
 			return nil, errors.New("connection refused")

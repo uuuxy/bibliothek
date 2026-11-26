@@ -433,3 +433,41 @@ func TestFuehreTitelZusammen_GleichOderUnbekannt(t *testing.T) {
 		t.Errorf("unbekannter Titel: Fehler %v, erwartet ErrTitelNichtGefunden", err)
 	}
 }
+
+// Zwei gleich alte Vormerkungen desselben Lesers, je eine an jedem Titel, etwa aus einer
+// Transaktion: Es bleibt genau eine, die des Ziels. Der Leser verliert seine Vormerkung nicht.
+func TestFuehreTitelZusammen_GleichAlteVormerkungenBehaltenDieDesZiels(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	p := legeZusammenfuehrenProbeAn(t, pool)
+	ada := testdaten.LegeSchuelerAn(t, pool, "S-ZF-G", "Ada", "07A")
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO vormerkungen (titel_id, schueler_id, status, erstellt_am)
+		VALUES ($1, $3, 'wartend', date_trunc('second', now()) - interval '1 day'),
+		       ($2, $3, 'wartend', date_trunc('second', now()) - interval '1 day')`,
+		p.gross, p.klein, ada); err != nil {
+		t.Fatalf("Vormerkungen: %v", err)
+	}
+
+	if _, err := FuehreTitelZusammen(ctx, pool, TitelZusammenfuehrenAuftrag{ZielID: p.gross, QuelleID: p.klein, BearbeiterID: p.bearbeiter}); err != nil {
+		t.Fatalf("FuehreTitelZusammen: %v", err)
+	}
+	var titel []string
+	rows, err := pool.Query(ctx, `SELECT titel_id::text FROM vormerkungen WHERE schueler_id = $1`, ada)
+	if err != nil {
+		t.Fatalf("Vormerkungen lesen: %v", err)
+	}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			t.Fatalf("Vormerkung lesen: %v", err)
+		}
+		titel = append(titel, id)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("Vormerkungen lesen: %v", err)
+	}
+	if !slices.Equal(titel, []string{p.gross}) {
+		t.Errorf("Vormerkungen von Ada an %q, erwartet genau eine am Ziel %s", titel, p.gross)
+	}
+}

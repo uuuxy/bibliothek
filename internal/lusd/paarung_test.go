@@ -29,6 +29,9 @@ func TestIstKlassenNachbar(t *testing.T) {
 	}{
 		{"05F1", "05F1", true}, {"5f1", "05F1", true}, {"05F1", "06F1", true}, {"06F1", "05F1", true},
 		{"05F1", "07F1", false}, {"05F1", "06F2", false}, {"E1", "Q1", false}, {"E1", "E1", true},
+		// Eine Null im Jahrgang („10“) und eine Klasse nur aus Ziffern: Die Zahl wird bis zu
+		// ihrer letzten Ziffer gelesen.
+		{"9F1", "10F1", true}, {"10F1", "11F1", true}, {"11", "12", true},
 	}
 	for _, f := range faelle {
 		if got := istKlassenNachbar(f.a, f.b); got != f.soll {

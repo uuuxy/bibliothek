@@ -1,6 +1,7 @@
 package katalog
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -185,5 +186,18 @@ func TestErrateSpaltenAusInhalt(t *testing.T) {
 				t.Errorf("f.initIdx = %v, erwartet %v", f.initIdx, f.expected)
 			}
 		})
+	}
+}
+
+// Excel lässt leere Zellen am Ende einer Zeile weg. Endet die Zeile vor der Spalte der ISBN, ist
+// die ISBN leer und die Zeile wird übersprungen; der Import läuft weiter.
+func TestVerarbeiteImportZeile_ZeileEndetVorDerISBN(t *testing.T) {
+	konfig := importZeile{
+		Zeile:   []string{"Mathematik 7"},
+		Spalten: map[string]int{"titel": 0, "isbn": 1, "autor": -1, "fach": -1, "klasse": -1, "bestand": -1},
+	}
+	eintrag, err := verarbeiteImportZeile(context.Background(), konfig)
+	if err != nil || eintrag != nil {
+		t.Errorf("verarbeiteImportZeile = %v, %v; erwartet eine übersprungene Zeile", eintrag, err)
 	}
 }

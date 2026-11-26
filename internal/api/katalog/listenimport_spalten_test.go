@@ -32,3 +32,14 @@ func TestErrateFachAusTitel(t *testing.T) {
 		})
 	}
 }
+
+// Die Spalte des Bestands heißt in den Listen verschieden. Jeder dieser Namen allein trifft sie;
+// eine nicht erkannte Spalte bliebe neben einer erkannten Kopfzeile ungelesen, und jeder Titel
+// käme mit dem Bestand 0.
+func TestFeldZurKopfzeile_NamenDesBestands(t *testing.T) {
+	for _, kopf := range []string{"Bestand", "Anzahl", "Stock", "Menge", "Stück", "Stueck"} {
+		if got := feldZurKopfzeile(kopf); got != "bestand" {
+			t.Errorf("feldZurKopfzeile(%q) = %q, erwartet bestand", kopf, got)
+		}
+	}
+}
