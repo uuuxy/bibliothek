@@ -70,6 +70,7 @@ func ErzeugeAbgangsbuch(buch Abgangsbuch, schule SchuleInfo) ([]byte, error) {
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
 	tr := pdfzeichen.Ersetze
+	bestandsbuchSeitenzahlen(p, tr)
 	p.AddPage()
 
 	bestandsbuchKopf(p, tr, "Abgangsbuch", buch.Von, buch.Bis, schule)

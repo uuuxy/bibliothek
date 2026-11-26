@@ -251,6 +251,28 @@ func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testin
 	}
 }
 
+// Jede Seite des Abgangsbuchs trägt „Seite x von y" wie das Zugangsbuch: Beide werden
+// abgeheftet, und der Leitfaden verlangt beide fortlaufend paginiert.
+func TestAbgangsbuch_ZaehltSeitenJeAusdruck(t *testing.T) {
+	zeilen := make([]AbgangsZeile, 0, 120)
+	for i := 0; i < cap(zeilen); i++ {
+		zeilen = append(zeilen, AbgangsZeile{Datum: buchVon, Anzahl: 1, Barcodes: fmt.Sprintf("B-%05d", 80000+i), Titel: "Lesebuch", GrundText: "verschlissen"})
+	}
+	roh, err := ErzeugeAbgangsbuch(Abgangsbuch{Von: buchVon, Bis: buchBis, Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: zeilen}}}, SchuleInfo{})
+	if err != nil {
+		t.Fatalf("Abgangsbuch drucken: %v", err)
+	}
+	seiten := pdftest.TexteJeSeite(t, roh)
+	if len(seiten) < 2 {
+		t.Fatalf("%d Seite, erwartet mehrere", len(seiten))
+	}
+	for nr, seite := range seiten {
+		if soll := fmt.Sprintf("Seite %d von %d", nr+1, len(seiten)); !slices.Contains(seite, soll) {
+			t.Errorf("Seite %d: %q fehlt", nr+1, soll)
+		}
+	}
+}
+
 // Jede Seite des Zugangsbuchs trägt „Seite x von y", gezählt je Ausdruck: Am abgehefteten Blatt
 // sieht man, ob eine Seite fehlt.
 func TestZugangsbuch_ZaehltSeitenJeAusdruck(t *testing.T) {

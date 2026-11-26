@@ -12,6 +12,21 @@ import (
 	"github.com/phpdave11/gofpdf"
 )
 
+// bestandsbuchSeitenzahlen setzt „Seite x von y" unter jede Seite beider Bücher, gezählt je
+// Ausdruck: Am abgehefteten Blatt sieht man, ob eine Seite fehlt. Der Leitfaden
+// Lernmittelfreiheit (11.5) verlangt den Ausdruck „fortlaufend paginiert"; über alle Ausdrucke
+// hinweg wird nicht gezählt (FACHKONZEPT §20). Vor der ersten Seite aufzurufen.
+func bestandsbuchSeitenzahlen(p *gofpdf.Fpdf, tr func(string) string) {
+	p.AliasNbPages("")
+	p.SetFooterFunc(func() {
+		p.SetY(-12)
+		p.SetFont(pdfzeichen.Schrift, "", 8)
+		p.SetTextColor(120, 120, 120)
+		p.CellFormat(0, 5, tr(fmt.Sprintf("Seite %d von {nb}", p.PageNo())), "", 0, "C", false, 0, "")
+		p.SetTextColor(0, 0, 0)
+	})
+}
+
 // bestandsbuchKopf zeichnet den Briefkopf beider Bücher: Schule, Datum, Titel, Zeitraum.
 func bestandsbuchKopf(p *gofpdf.Fpdf, tr func(string) string, titel string, von, bis time.Time, schule SchuleInfo) {
 	p.SetFont(pdfzeichen.Schrift, "B", 12)
