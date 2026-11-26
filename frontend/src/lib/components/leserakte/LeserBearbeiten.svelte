@@ -60,7 +60,8 @@
 </script>
 
 <!-- Full Page View (Replaces the side sheet) -->
-<div class="w-full h-full bg-surface-container-lowest flex flex-col animate-fade-in">
+<!-- no-print wie das Raster der Akte: Gedruckt wird aus der offenen Akte nur die Ausleih-Quittung. -->
+<div class="no-print w-full h-full bg-surface-container-lowest flex flex-col animate-fade-in">
 	<!-- ── Header ─────────────────────────────────────────────────────────── -->
 	<header
 		class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-outline-variant"
