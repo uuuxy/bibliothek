@@ -329,3 +329,34 @@ func TestSchreibeTitel_SpanneKommtAlsVonUndBisAn(t *testing.T) {
 		}
 	}
 }
+
+// Ein Reimport nimmt einem Lernmittel das Merkmal nicht und kann es setzen: Eine Quelle ohne die
+// Angabe heißt „weiß nicht“, nicht „kein Lernmittel“. An dem Merkmal hängen LMF-Plan und Portal.
+func TestSchreibeTitel_LernmittelBleibtUndKommtHinzu(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewKatalogAbfragen(pool)
+
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
+		{Titel: "Lernmittel bleibt", ISBN: "9783150011", IstLernmittel: true},
+		{Titel: "Lernmittel kommt", ISBN: "9783150012"},
+	}); err != nil {
+		t.Fatalf("Erstimport: %v", err)
+	}
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
+		{Titel: "Lernmittel bleibt", ISBN: "9783150011"},
+		{Titel: "Lernmittel kommt", ISBN: "9783150012", IstLernmittel: true},
+	}); err != nil {
+		t.Fatalf("Reimport: %v", err)
+	}
+	for _, titel := range []string{"Lernmittel bleibt", "Lernmittel kommt"} {
+		var lernmittel bool
+		if err := pool.QueryRow(ctx, `SELECT ist_lernmittel FROM buecher_titel WHERE titel = $1`, titel).Scan(&lernmittel); err != nil {
+			t.Fatalf("%s lesen: %v", titel, err)
+		}
+		if !lernmittel {
+			t.Errorf("%s: kein Lernmittel nach dem Reimport", titel)
+		}
+	}
+}

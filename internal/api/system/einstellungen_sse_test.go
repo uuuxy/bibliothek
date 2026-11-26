@@ -22,8 +22,9 @@ import (
 // Vorgaben-Logik, hier wäre sie dupliziert).
 //
 // Geprüft am echten Strom, nicht an einer Attrappe des Brokers: erst ein Patch ohne
-// Sitzungsfelder, dann einer mit — das nächste Ereignis auf der Leitung muss
-// `sitzungsfristen` sein. Hätte der erste Patch gesendet, stünde ein Ereignis davor.
+// Sitzungsfelder und gleich danach eine Marke über den Broker — das nächste Ereignis muss die
+// Marke sein, denn die Leitung hält die Reihenfolge. Danach sendet jedes der beiden
+// Sitzungsfelder allein `sitzungsfristen`.
 func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,8 +87,14 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	}
 
 	speichere(`{"lesehistorie_tage": 120}`)
-	speichere(`{"sperre_minuten": 0}`)
-	if e := naechstes(); e != "sitzungsfristen" {
-		t.Fatalf("naechstes() = %q, erwartet sitzungsfristen als nächstes Ereignis", e)
+	broker.Verteile("marke", "{}")
+	if e := naechstes(); e != "marke" {
+		t.Fatalf("naechstes() = %q nach einem Patch ohne Sitzungsfelder, erwartet die Marke", e)
+	}
+	for _, rumpf := range []string{`{"sperre_minuten": 0}`, `{"theke_leeren_minuten": 5}`} {
+		speichere(rumpf)
+		if e := naechstes(); e != "sitzungsfristen" {
+			t.Fatalf("naechstes() = %q nach %s, erwartet sitzungsfristen", e, rumpf)
+		}
 	}
 }

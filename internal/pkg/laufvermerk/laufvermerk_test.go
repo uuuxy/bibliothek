@@ -104,6 +104,12 @@ func TestFasseAbsturzZusammen(t *testing.T) {
 			"jobs/zeitplan.go:88: fatal error: concurrent map writes",
 		},
 		{"panic: ohne Stapel", "panic: ohne Stapel"},
+		// Abgeschnitten, etwa bei voller Platte: Die letzte Zeile nennt eine Funktion ohne ihre
+		// Datei. Es bleibt die Meldung; die Zusammenfassung läuft beim Start und darf nicht scheitern.
+		{
+			"panic: abgeschnitten\n\ngoroutine 1 [running]:\nbibliothek/internal/jobs.(*Zeitplan).zaehle(...)",
+			"panic: abgeschnitten",
+		},
 	}
 	for _, f := range faelle {
 		if ist := fasseAbsturzZusammen(f.text); ist != f.will {
