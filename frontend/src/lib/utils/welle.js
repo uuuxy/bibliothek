@@ -24,7 +24,7 @@ function wirt(ziel) {
 	const el = ziel instanceof Element ? ziel.closest(ZIEL) : null;
 	if (!el || el.matches(':disabled, [aria-disabled="true"]')) return null;
 	// Die Schicht von Kästchen und Radio ist gesperrt, wenn ihr Feld es ist.
-	if (el.hasAttribute('data-welle') && el.querySelector(':disabled')) return null;
+	if (el.matches('[data-welle]') && el.querySelector(':disabled')) return null;
 	// Ein leeres Element nimmt keine Kinder auf.
 	return /^(INPUT|SELECT|TEXTAREA|IMG)$/.test(el.tagName) ? null : el;
 }

@@ -10,7 +10,7 @@
  */
 
 /**
- * @param {unknown} step
+ * @param {string | number | null | undefined} step
  * @returns {number} die Nachkommastellen, 0 bei ganzen Schritten
  */
 export function stellenAus(step) {
@@ -24,11 +24,14 @@ export function stellenAus(step) {
  * @returns {number | null}
  */
 export function alsZahl(text) {
+	if (typeof text !== 'string' && typeof text !== 'number') return null;
+	// Die Stücke um jedes € ohne Leerraum zusammengesetzt; ein Durchgang, auch bei langer Eingabe.
 	const roh = String(text)
-		.replace(/\s*€\s*/g, '')
-		.trim()
+		.split('€')
+		.map((stueck) => stueck.trim())
+		.join('')
 		.replace(',', '.');
-	return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(roh) ? Number(roh) : null;
+	return /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(roh) ? Number(roh) : null;
 }
 
 /**

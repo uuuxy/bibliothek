@@ -24,11 +24,11 @@ import (
 func TestMonitorFolien_LMFHeute(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ausgabe := legeLMFPlanAn(t, pool, "ausgabe", "2099-08-01", true)
-	legeLMFTerminAn(t, pool, ausgabe, 1, "2099-08-18", 1, "", "05A", "05B")
-	legeLMFTerminAn(t, pool, ausgabe, 2, "2099-08-18", 2, "Nachzügler")
-	legeLMFTerminAn(t, pool, ausgabe, 3, "2099-08-19", 1, "", "07A")
+	legeLMFTerminAn(t, pool, ausgabe, lmfTermin{position: 1, datum: "2099-08-18", stunde: 1}, "05A", "05B")
+	legeLMFTerminAn(t, pool, ausgabe, lmfTermin{position: 2, datum: "2099-08-18", stunde: 2, vermerk: "Nachzügler"})
+	legeLMFTerminAn(t, pool, ausgabe, lmfTermin{position: 3, datum: "2099-08-19", stunde: 1}, "07A")
 	entwurf := legeLMFPlanAn(t, pool, "rueckgabe", "2098-08-01", false)
-	legeLMFTerminAn(t, pool, entwurf, 1, "2099-06-24", 1, "", "06A")
+	legeLMFTerminAn(t, pool, entwurf, lmfTermin{position: 1, datum: "2099-06-24", stunde: 1}, "06A")
 
 	heute := &repository.MonitorLMFTag{Art: "ausgabe", Datum: "2099-08-18", Termine: []repository.MonitorLMFTermin{
 		{Stunde: 1, Klassen: []string{"05A", "05B"}, Vermerk: ""},
@@ -80,16 +80,24 @@ func legeLMFPlanAn(t *testing.T, pool *pgxpool.Pool, art, schuljahrBeginn string
 	return id
 }
 
+// lmfTermin ist eine Zeile des Plans, wie legeLMFTerminAn sie anlegt.
+type lmfTermin struct {
+	position int
+	datum    string
+	stunde   int
+	vermerk  string
+}
+
 // legeLMFTerminAn legt eine Zeile des Plans an, mit oder ohne Klassen.
-func legeLMFTerminAn(t *testing.T, pool *pgxpool.Pool, planID string, position int, datum string, stunde int, vermerk string, klassen ...string) {
+func legeLMFTerminAn(t *testing.T, pool *pgxpool.Pool, planID string, z lmfTermin, klassen ...string) {
 	t.Helper()
 	ctx := context.Background()
 	var id string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
 		SELECT $1, $2, $3::date, $4, art, $5 FROM lmf_plaene WHERE id = $1
-		RETURNING id`, planID, position, datum, stunde, vermerk).Scan(&id); err != nil {
-		t.Fatalf("Zeile %d anlegen: %v", position, err)
+		RETURNING id`, planID, z.position, z.datum, z.stunde, z.vermerk).Scan(&id); err != nil {
+		t.Fatalf("Zeile %d anlegen: %v", z.position, err)
 	}
 	for _, k := range klassen {
 		if _, err := pool.Exec(ctx, `INSERT INTO lmf_termin_klassen (termin_id, klasse) VALUES ($1, $2)`, id, k); err != nil {

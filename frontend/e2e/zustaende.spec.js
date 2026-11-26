@@ -194,7 +194,8 @@ test('Gesperrt keine Schicht, Textfeld zeigt mit Rahmen in on-surface', async ({
 	await email.fill('');
 	const anmelden = page.getByRole('button', { name: 'Anmelden' });
 	if (await anmelden.isDisabled()) {
-		await anmelden.hover({ force: true });
+		// Der gesperrte Knopf ist nie bereit; gezeigt wird absichtlich trotzdem.
+		await anmelden.hover({ force: true }); // NOSONAR
 		expect((await anmelden.evaluate(schicht)).deckkraft, 'gesperrt ohne Schicht').toBe(0);
 	}
 });

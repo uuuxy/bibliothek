@@ -71,7 +71,7 @@ export function elemente(quelle, tag) {
 		const istTag = !/\w/.test(quelle[nachName] ?? '');
 		const i = istTag ? kopfEnde(quelle, nachName) : nachName;
 		// Prettier bricht einen Schluss-Tag hinter Text um („</button" und „>" in der nächsten Zeile).
-		const schluss = new RegExp(`</${tag}\\s*>`, 'g');
+		const schluss = new RegExp(String.raw`</${tag}\s*>`, 'g');
 		schluss.lastIndex = i;
 		const ende = schluss.exec(quelle)?.index ?? -1;
 		if (istTag && ende !== -1 && quelle[i - 1] !== '/') {
@@ -85,7 +85,7 @@ export function elemente(quelle, tag) {
 /** Die Köpfe aller Elemente eines Tags, auch der ohne Inhalt (`<Kaestchen … />`).
  * @param {string} quelle @param {string} tag */
 export const koepfe = (quelle, tag) =>
-	[...quelle.matchAll(new RegExp(`<${tag}\\b`, 'g'))].map((m) =>
+	[...quelle.matchAll(new RegExp(String.raw`<${tag}\b`, 'g'))].map((m) =>
 		quelle.slice(m.index, kopfEnde(quelle, m.index + tag.length + 1) + 1)
 	);
 

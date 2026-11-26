@@ -89,7 +89,7 @@ const AUSNAHMEN = new Map([
 	['ⱦ', 't'] // U+2C66
 ]);
 
-/** @param {unknown} text */
+/** @param {string | number | null | undefined} text */
 export function suchnorm(text) {
 	let ergebnis = '';
 	for (const zeichen of String(text ?? '').toLowerCase()) {
@@ -121,7 +121,7 @@ const NAMEN_TRENNER =
 /**
  * Die Form, in der Namen verglichen werden: suchnorm ohne die Trenner, Zwilling von sqlNameKompakt
  * in leser_suche.go. „Al-Kahil", „Al Kahil" und „Alkahil" werden gleich.
- * @param {unknown} text
+ * @param {string | number | null | undefined} text
  */
 export function kompakt(text) {
 	return suchnorm(text).replace(NAMEN_TRENNER, '');
@@ -132,7 +132,7 @@ export function kompakt(text) {
  * der Theke: Akzente, Groß und klein, Bindestrich, Apostroph und Leerzeichen zählen nicht, die
  * Reihenfolge der Wörter auch nicht („Müller Anna" findet „Anna Müller").
  * @param {string} suche
- * @param {...unknown} felder
+ * @param {...(string | number | null | undefined)} felder
  */
 export function passtZurSuche(suche, ...felder) {
 	const woerter = String(suche ?? '')

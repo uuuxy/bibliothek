@@ -92,4 +92,12 @@ describe('Feld: Betrag', () => {
 		expect(alsZahl('1.234,50')).toBeNull();
 		expect(alsZahl('1e3')).toBeNull();
 	});
+
+	it('prüft eine lange Eingabe ohne Zahl in einem Durchgang', () => {
+		// Ein Muster, das dieselben Ziffern auf zwei Arten verteilen kann, probierte jede Teilung
+		// durch: Die Zeit wuchs mit dem Quadrat der Länge, 100.000 Ziffern brauchten Sekunden.
+		const anfang = performance.now();
+		expect(alsZahl('1'.repeat(100_000) + 'x')).toBeNull();
+		expect(performance.now() - anfang).toBeLessThan(200);
+	});
 });

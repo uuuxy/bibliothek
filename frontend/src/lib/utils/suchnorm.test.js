@@ -45,7 +45,7 @@ describe('kompakt', () => {
 				weg.push(zeichen);
 		}
 		expect(weg.filter((z) => !trenner.has(z))).toEqual([]);
-		expect(weg.length).toBe(trenner.size);
+		expect(weg).toHaveLength(trenner.size);
 	});
 });
 

@@ -62,9 +62,9 @@ describe('Welle beim Drücken (utils/welle.js)', () => {
 		expect(el.querySelector('.m3-welle')?.getAttribute('aria-hidden')).toBe('true');
 		zeiger(el, 'pointerup');
 		vi.advanceTimersByTime(224);
-		expect(animationen.length, 'erst nach 225 ms ausblenden').toBe(2);
+		expect(animationen, 'erst nach 225 ms ausblenden').toHaveLength(2);
 		vi.advanceTimersByTime(1);
-		expect(animationen.length).toBe(3);
+		expect(animationen).toHaveLength(3);
 		animationen[2].onfinish?.();
 		expect(el.querySelector('.m3-welle')).toBeNull();
 	});

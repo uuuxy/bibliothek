@@ -7,7 +7,8 @@ import { formatDatum } from './format.js';
  * @param {{ status?: string, bereitgestellt_bis?: string, erstellt_am: string }} v
  */
 export function vormerkungStand(v) {
-	return v.status === 'abholbereit'
-		? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + formatDatum(v.bereitgestellt_bis) : ''}`
-		: `Wartet seit: ${formatDatum(v.erstellt_am)}`;
+	if (v.status !== 'abholbereit') return `Wartet seit: ${formatDatum(v.erstellt_am)}`;
+	return v.bereitgestellt_bis
+		? `Abholbereit bis: ${formatDatum(v.bereitgestellt_bis)}`
+		: 'Abholbereit';
 }
