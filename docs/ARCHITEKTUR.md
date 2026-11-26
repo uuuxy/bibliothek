@@ -1291,7 +1291,7 @@ Stellen zugleich.
 | SQL-Injection          | Nur parametrisierte Abfragen über `pgx`                                                     |
 | XSS                    | Svelte escapet; die eine Naht ist das erzeugte HTML des Drucks, dort wird kodiert           |
 | CSV-/Formel-Injection  | `internal/pkg/csvutil.EntschaerfeZeile` (CWE-1236)                                          |
-| SSRF, Parsing-Differential | `internal/pkg/safehttp` ohne nicht öffentliche IPs; `coverquelle` baut die URL aus geprüften Teilen neu |
+| SSRF, Parsing-Differential | `internal/pkg/safehttp` ohne nicht öffentliche IPs; `coverquelle` baut die URL aus geprüften Teilen neu. Ausgenommen sind die Server, die beim Einrichten (Umgebung) oder unter Einstellungen (`manage_settings`) eingetragen werden: SMTP, IMAP, LDAP und das Webmail des Adressabgleichs dürfen im Schulnetz liegen |
 | Path-Traversal         | `os.OpenRoot` bindet Dateizugriffe an ein Verzeichnis                                       |
 | Log-Injection          | `slog` mit JSON-Handler: ein Zeilenumbruch bleibt im JSON-String                            |
 | SMTP-Header            | `mailservice.kopfzeilenWert` weist CR/LF ab                                                 |
