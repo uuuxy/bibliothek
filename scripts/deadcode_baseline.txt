@@ -68,6 +68,10 @@ internal/smtptest/warten.go: unreachable func: Kopf
 internal/smtptest/anhang.go: unreachable func: DateiAusMail
 internal/smtptest/anhang.go: unreachable func: PDFAusMail
 internal/smtptest/anhang.go: unreachable func: mimeGrenze
+# Dazu der Text der abgefangenen Nachricht, wie ihn der Empfänger liest: Er geht in
+# quoted-printable hinaus, Sätze und Links stehen im rohen Inhalt umbrochen (Tests der Bestellmail).
+internal/smtptest/text.go: unreachable func: TextAusMail
+internal/smtptest/text.go: unreachable func: leseText
 
 # Episodischer Littera-Werkzeugkasten: Prüfwerkzeug für die noch ausstehende
 # Littera-Migration (nächster Lauf nach frischem Littera-Backup). barcodeInhalt
