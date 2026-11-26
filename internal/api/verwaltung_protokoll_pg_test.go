@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -195,20 +196,24 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Lernmittel einer Klasse verlängern", func(t *testing.T) {
+		// Der Server rechnet mit der echten Uhr und nimmt nur ein künftiges Datum an; ein festes
+		// Jahr machte den Test an dessen 1. Juli rot.
+		jahr := time.Now().Year() + 1
+		neu := fmt.Sprintf("%d-06-30", jahr)
 		kind := testdaten.LegeSchuelerAn(t, pool, "S-VPR-1", "Protokoll", "5a")
-		testdaten.LegeAusleiheMitFristAn(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(2027, time.March, 31))
+		testdaten.LegeAusleiheMitFristAn(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(jahr, time.March, 31))
 
 		rec := rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
-			`{"klasse":"5a","neues_rueckgabe_datum":"2027-06-30"}`)
+			`{"klasse":"5a","neues_rueckgabe_datum":"`+neu+`"}`)
 		erwarte(t, rec, http.StatusOK, "verlängern")
 		d := letzter(t, "FRIST_KLASSE_GEAENDERT")
 		frist, istText := d["neue_frist"].(string)
-		if !istText || d["klasse"] != "5a" || d["fristen_angepasst"] != float64(1) || !strings.HasPrefix(frist, "2027-06-30") {
+		if !istText || d["klasse"] != "5a" || d["fristen_angepasst"] != float64(1) || !strings.HasPrefix(frist, neu) {
 			t.Errorf("Eintrag nach dem Verlängern: %v", d)
 		}
 
 		erwarte(t, rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
-			`{"klasse":"VP9","neues_rueckgabe_datum":"2027-06-30"}`), http.StatusOK, "Klasse ohne Ausleihe")
+			`{"klasse":"VP9","neues_rueckgabe_datum":"`+neu+`"}`), http.StatusOK, "Klasse ohne Ausleihe")
 		if n := eintraege(t, "FRIST_KLASSE_GEAENDERT"); n != 1 {
 			t.Errorf("%d Einträge, nachdem für eine Klasse ohne Ausleihe nichts geändert wurde; erwartet 1", n)
 		}
