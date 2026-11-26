@@ -26,17 +26,22 @@ func TestVolljaehrigkeit_RechnetInDerSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	// Genau der Ausdruck aus LadeEmpfaenger — abgeschrieben, also nachgeprüft:
-	// Ohne diesen Wächter bliebe der Test grün, während die Abfrage längst wieder mit
-	// CURRENT_DATE rechnet. Er misst dann seine eigene Kopie.
-	ausdruck := `coalesce(geburtsdatum <= ` + sqlSchulHeute + ` - INTERVAL '18 years', false)`
-	quelle, err := os.ReadFile("bescheid_vorschlag.go")
-	if err != nil {
-		t.Fatalf("bescheid_vorschlag.go nicht lesbar: %v", err)
+	// Der Ausdruck ist sqlVolljaehrig, die eine Regel für Bescheid und Ersatzforderung. Der
+	// Wächter prüft, dass beide Abfragen ihn lesen: Ohne ihn bliebe der Test grün, während eine
+	// Abfrage längst wieder mit CURRENT_DATE rechnet.
+	ausdruck := sqlVolljaehrig
+	if !strings.Contains(ausdruck, sqlSchulHeute) {
+		t.Fatal("sqlVolljaehrig rechnet nicht mit sqlSchulHeute")
 	}
-	if !strings.Contains(string(quelle), "geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years'") {
-		t.Fatal("LadeEmpfaenger rechnet die Volljährigkeit nicht mehr mit sqlSchulHeute — " +
-			"entweder ist der Test nachzuziehen oder die Abfrage ist zurückgefallen")
+	for _, datei := range []string{"bescheid_vorschlag.go", "schadensbrief.go"} {
+		quelle, err := os.ReadFile(datei)
+		if err != nil {
+			t.Fatalf("%s nicht lesbar: %v", datei, err)
+		}
+		if !strings.Contains(string(quelle), "`+sqlVolljaehrig+`") {
+			t.Errorf("%s liest die Volljährigkeit nicht über sqlVolljaehrig — entweder ist der Test "+
+				"nachzuziehen oder die Abfrage ist zurückgefallen", datei)
+		}
 	}
 
 	faelle := []struct {
