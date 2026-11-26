@@ -75,18 +75,19 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 
 	/** @type {string[]} */
 	const funde = [];
-	let besuchtGesamt = 0;
+	let mitBildschirm = 0;
 	const akten = legeAktenAn();
 	try {
 		for (const { name, rechte } of faelle) {
 			await setzeRechte(page, rechte);
 			const kontext = await browser.newContext();
 			const seite = await kontext.newPage();
+			const pfade = bildschirmeMit(rechte, akten.buchakte);
 			// Die Theke und das Scannen verlangen perform_actions.
 			const { stoerungen, besucht, gescannt } = await geheRundgang(
 				seite,
 				EMAIL,
-				bildschirmeMit(rechte, akten.buchakte),
+				pfade,
 				rechte.includes('perform_actions') ? akten.ausweis : undefined
 			);
 			await kontext.close();
@@ -94,7 +95,14 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 			if (rechte.includes('perform_actions') && !gescannt) {
 				funde.push(`${name}: Die Theke ging nicht auf, gescannt wurde nichts.`);
 			}
-			besuchtGesamt += besucht.size;
+			// Manche Rechte geben nur Knöpfe auf Seiten frei, die ein anderes Recht öffnet, etwa
+			// „Mahnungen versenden“; allein öffnen sie keinen Bildschirm. Alle anderen mindestens einen.
+			if (pfade.length > 0) {
+				mitBildschirm++;
+				if (besucht.size === 0) {
+					funde.push(`${name}: ${pfade.length} Bildschirme angeboten, keiner ging auf.`);
+				}
+			}
 		}
 	} finally {
 		await setzeRechte(page, abWerk);
@@ -103,6 +111,6 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 	}
 
 	expect(funde, 'Störungen im Rundgang je Recht').toEqual([]);
-	// Jeder Fall öffnet mindestens seine Startseite.
-	expect(besuchtGesamt).toBeGreaterThanOrEqual(faelle.length);
+	// Grün heißt nur dann etwas, wenn Fälle mit Bildschirm gelaufen sind.
+	expect(mitBildschirm).toBeGreaterThan(faelle.length / 2);
 });
