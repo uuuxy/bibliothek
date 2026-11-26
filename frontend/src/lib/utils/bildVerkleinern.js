@@ -16,7 +16,9 @@ export function passendeMasse(breite, hoehe, maxBreite, maxHoehe) {
 
 /**
  * Zeichnet die Bilddatei in den Rahmen und liefert sie als WebP. Ein Browser ohne
- * WebP-Kodierer liefert nach der Regel von toBlob PNG; verkleinert ist das Bild auch dann.
+ * WebP-Kodierer (Safari) liefert nach der Regel von toBlob PNG, und ein Foto wird als PNG oft
+ * größer als das Original: Ein JPEG kodiert die Funktion dann wieder als JPEG. Jedes andere
+ * Bild bleibt PNG, damit ein durchsichtiger Hintergrund durchsichtig bleibt.
  * @param {Blob} datei
  * @param {{ maxBreite: number, maxHoehe: number, guete: number }} rahmen
  * @returns {Promise<Blob>}
@@ -31,8 +33,16 @@ export function verkleinereBild(datei, { maxBreite, maxHoehe, guete }) {
 			flaeche.width = breite;
 			flaeche.height = hoehe;
 			flaeche.getContext('2d')?.drawImage(bild, 0, 0, breite, hoehe);
+			/** @param {Blob | null} blob */
+			const fertig = (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed')));
 			flaeche.toBlob(
-				(blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+				(blob) => {
+					if (blob && blob.type !== 'image/webp' && datei.type === 'image/jpeg') {
+						flaeche.toBlob(fertig, 'image/jpeg', guete);
+						return;
+					}
+					fertig(blob);
+				},
 				'image/webp',
 				guete
 			);
