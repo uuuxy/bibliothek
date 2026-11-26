@@ -39,6 +39,9 @@ var langLaufendePfade = []string{
 	"/api/admin/sync-",      // Cover-Abgleich über den ganzen Bestand
 	"/api/lusd/",            // LUSD-Vorschau und -Import (ganze Jahrgänge)
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
+	// Sammelversand: je Klasse eine Mail, die Oberfläche wartet FRIST_SAMMELVERSAND_MS.
+	"/api/mail/send-bulk-overdue",
+	"/api/abgaenger/mail",
 	// Adressabgleich von Hand: Anmeldung am Webmail und Abruf des Adressbuchs dürfen zwei Minuten
 	// dauern (adressabgleich.gesamtfrist), die Maske wartet 150 Sekunden.
 	"/api/admin/settings/adressabgleich/lauf",
