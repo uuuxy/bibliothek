@@ -823,7 +823,7 @@ Routen gegen Aufrufer: `./scripts/api_inventar.sh` → [api_inventar.md](api_inv
 
 ## 6. Laufzeitsicht
 
-Stand: 28.10.2026
+Stand: 26.11.2026
 
 Zehn Abläufe, in denen die Architektur arbeitet; der Normalfall „Liste laden“ erklärt nichts.
 
@@ -917,18 +917,27 @@ anderen (`pruefeVormerkungKonflikt`, mit PG-Test).
 ```
 Station 1: Exemplar X → Schüler A        Station 2: Exemplar X → Schüler B
       ├─ FOR UPDATE auf Schüler A              ├─ FOR UPDATE auf Schüler B
-      ├─ keine gemeinsame Sperre ──────────────┤
-      ├─ INSERT ausleihen (X, A) ✓             ├─ INSERT ausleihen (X, B)
-      │                                        │      └─ uniq_ausleihen_aktiv_exemplar → 23505
-      └─ 200                                   └─ deuteAnlegeFehler → 409 Conflict
+      ├─ keine offene Ausleihe von X           ├─ keine offene Ausleihe von X
+      ├─ FOR UPDATE auf Exemplar X ────────────┼─ FOR UPDATE auf Exemplar X: wartet
+      ├─ INSERT ausleihen (X, A) ✓             │
+      └─ COMMIT, 200                           ├─ INSERT ausleihen (X, B) ON CONFLICT DO NOTHING
+                                               │      └─ uniq_ausleihen_aktiv_exemplar: keine Zeile
+                                               └─ deuteAusleiheKonflikt → 409 Conflict
 ```
 
-Zwei Stationen, die dasselbe Exemplar für verschiedene Leser scannen, teilen keine Zeile; der
-partielle Unique-Index ist hier der einzige Schutz.
+Zwei Stationen, die dasselbe Exemplar zugleich für verschiedene Leser scannen, warten an der Zeile
+des Exemplars aufeinander (`sperreUndPruefeExemplar`); die zweite prallt danach am partiellen
+Unique-Index ab und meldet „soeben an einem anderen Arbeitsplatz verbucht“. Ob ein Scan verleiht
+oder zurücknimmt, steht schon vor dieser Sperre fest: Eine offene Ausleihe sperrt er vorher, eine
+fehlende kann er nicht sperren. Ein Scan, der erst nach dem COMMIT ankommt, nimmt die neue Ausleihe
+deshalb als Fremdrückgabe zurück, und ein wartender, der sich für die Ausleihe entschieden hatte,
+verleiht das Exemplar danach wieder. Doppelt verliehen ist nie etwas, und jede Station meldet, was
+gebucht ist; die Gleichzeitigkeit des Lasttests zählt so nicht in jeder Runde genau eine Ausleihe
+(am Stand 0bf9832ec in 6 von 25 Runden zwei). Die Stempel solcher Paare überlappen (11.5).
 
 | Pfad                                   | gesperrte Zeile                                                          | Fundstelle                                                          |
 | -------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| Scan eines Exemplars                   | die aktive Ausleihe                                                      | `AusleihAbfragen.SperreOffene` (`internal/repository/ausleihe.go`)  |
+| Scan eines Exemplars                   | die aktive Ausleihe, danach die Exemplarzeile (ihr Stand darunter neu gelesen) | `AusleihAbfragen.SperreOffene` (`internal/repository/ausleihe.go`), `sperreUndPruefeExemplar` (`internal/service/ausleihe_am_leser.go`) |
 | Ausleihe an einen Schüler, Sperren am Leser | die Leser-Zeile                                                     | `SperreLeserzeile` (`internal/repository/ausleihe_zeilensperren.go`), `LeserSperren` |
 | Rückgabe mit Vormerkung, Nachrücken    | die Vormerkung, `FOR UPDATE OF v SKIP LOCKED`: `OF v`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt (sie könnte sich mit der Ausleihe verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe); ein Verbund nennt seine Tabelle (`zeilensperre_verbund_ratsche_test.go`) | `SperreNaechsteWartendeVormerkung`, `bedieneNaechstenWartenden` |
 | Geräte-Ausleihe                        | die aktive Geräte-Ausleihe                                               | `SperreOffeneGeraeteAusleihe`                                       |
@@ -2242,8 +2251,10 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 - **Eine ausgeschiedene `A-`-Nummer** lässt sich von Hand wieder eintragen, ohne Hinweis.
 - **Anmeldungen stehen nicht im Protokoll;** das wären neue Personendaten des Personals.
 - **Ausleihe und Rückgabe stempeln den Beginn ihrer Transaktion;** im Lasttest überlappten so
-  Paare um wenige Millisekunden. Anlass: eine Abfrage „wer hatte das Exemplar wann“; dann
-  `clock_timestamp()`.
+  Paare um wenige Millisekunden, etwa in der Kette aus 6.4: Wer nach der Fremdrückgabe wieder
+  verleiht, trägt den Stempel vom Beginn seiner Transaktion, vor dem Warten am Exemplar. Begänne
+  die Transaktion einer Rückgabe vor der ihrer Ausleihe, wiese `check_return_date` die Rückgabe ab.
+  Anlass: eine Abfrage „wer hatte das Exemplar wann“; dann `clock_timestamp()`.
 
 #### Theke, Netz und Zwischenspeicher
 
