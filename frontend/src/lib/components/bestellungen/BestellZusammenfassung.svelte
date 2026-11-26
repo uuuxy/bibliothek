@@ -8,6 +8,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { formatEuro, anzahlText } from '../../utils/format.js';
 
 	const anzahlBestellungen = $derived(bestellStore.gruppen.length);
@@ -23,16 +24,22 @@
 			<label for="supplier" class="block text-sm font-medium text-on-surface-variant"
 				>Lieferant</label
 			>
-			<Select
-				id="supplier"
-				bind:value={bestellStore.selectedSupplierId}
-				options={bestellStore.suppliers.map((s) => ({
-					value: s.id,
-					label: s.name,
-					zusatz: s.customerNumber
-				}))}
-				placeholder="Kein Lieferant angelegt"
-			/>
+			<!-- Wie in den Bestellberichten: Kam die Liste nicht, wäre „Kein Lieferant angelegt" eine
+			     falsche Auskunft. -->
+			{#if bestellStore.nichtGeladen.lieferanten && bestellStore.suppliers.length === 0}
+				<LadeFehler knapp titel="Lieferanten nicht geladen" />
+			{:else}
+				<Select
+					id="supplier"
+					bind:value={bestellStore.selectedSupplierId}
+					options={bestellStore.suppliers.map((s) => ({
+						value: s.id,
+						label: s.name,
+						zusatz: s.customerNumber
+					}))}
+					placeholder="Kein Lieferant angelegt"
+				/>
+			{/if}
 		</div>
 
 		{#if bestellStore.cart.length}

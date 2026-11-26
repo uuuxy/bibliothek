@@ -17,6 +17,7 @@ import Bestellbedarf from './Bestellbedarf.svelte';
 import WareneingangTabelle from './WareneingangTabelle.svelte';
 import Lieferanten from './Lieferanten.svelte';
 import BestellBerichte from './BestellBerichte.svelte';
+import BestellZusammenfassung from './BestellZusammenfassung.svelte';
 
 const GRUND = 'Die Datenbank antwortet nicht';
 const scheitert = () => vi.mocked(apiGet).mockRejectedValue(new Error(GRUND));
@@ -152,5 +153,14 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 
 		await vi.waitFor(() => expect(screen.getByText('Lieferanten nicht geladen')).toBeTruthy());
 		expect(screen.queryByText('Keine Lieferanten vorhanden')).toBeNull();
+	});
+
+	it('die Zusammenfassung sagt beim Lieferanten, dass die Liste nicht kam', async () => {
+		scheitert();
+		await bestellStore.loadSuppliers();
+		render(BestellZusammenfassung);
+
+		expect(screen.getByText('Lieferanten nicht geladen')).toBeTruthy();
+		expect(screen.queryByText('Kein Lieferant angelegt')).toBeNull();
 	});
 });

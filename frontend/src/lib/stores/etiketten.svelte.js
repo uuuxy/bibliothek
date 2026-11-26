@@ -5,6 +5,7 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { felderProBogen, startfeldAufBogen } from '../components/etiketten/etikettformate.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
+import { erzeugeKlassenBuecher } from './klassenBuecher.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { normalisiereScan } from '../utils/scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../utils/litteraEtikett.js';
@@ -16,7 +17,7 @@ function erzeugeEtikettenStore() {
 	let treffer = $state.raw(/** @type {any[]} */ ([]));
 	let sucht = $state(false);
 
-	let klassen = $state.raw(/** @type {any[]} */ ([]));
+	const klassenBuecher = erzeugeKlassenBuecher();
 	let gewaehlteKlasse = $state('');
 	let klassenTitel = $state.raw(/** @type {any[]} */ ([]));
 
@@ -91,17 +92,8 @@ function erzeugeEtikettenStore() {
 		return [...leereFelder, ...etikettenListe];
 	});
 
-	async function ladeKlassen() {
-		try {
-			const res = await apiFetch('/api/class-books');
-			if (res.ok) klassen = await res.json();
-		} catch (err) {
-			console.error('Fehler beim Laden der Klassengruppen:', err);
-		}
-	}
-
 	function wechsleKlasse() {
-		klassenTitel = klassen.find((g) => g.className === gewaehlteKlasse)?.books || [];
+		klassenTitel = klassenBuecher.liste.find((g) => g.className === gewaehlteKlasse)?.books || [];
 		gewaehlterTitel = null;
 		vorhandeneExemplare = [];
 		ausgesondertAnzahl = 0;
@@ -258,7 +250,10 @@ function erzeugeEtikettenStore() {
 		},
 
 		get klassen() {
-			return klassen;
+			return klassenBuecher.liste;
+		},
+		get klassenFehler() {
+			return klassenBuecher.ladefehler;
 		},
 		get gewaehlteKlasse() {
 			return gewaehlteKlasse;
@@ -330,7 +325,7 @@ function erzeugeEtikettenStore() {
 			return felderJeBogen;
 		},
 
-		ladeKlassen,
+		ladeKlassen: klassenBuecher.lade,
 		wechsleKlasse,
 		verarbeiteSuche,
 		waehleTitel,

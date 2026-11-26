@@ -8,6 +8,7 @@
 	import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
 	import EtikettLayoutOptionen from './EtikettLayoutOptionen.svelte';
 	import Select from '../ui/Select.svelte';
+	import { klassenLadefehler } from '../leser/klassenVorschlaege.svelte.js';
 </script>
 
 <!-- Die drei Schritte sind eine Maske: höchstens 44rem breit (max-w-maske), damit Suchfeld und
@@ -105,6 +106,11 @@
 							placeholder="Klasse wählen"
 							aria-label="Aus Klasse laden"
 						/>
+						{#if etikettenStore.klassenFehler}
+							<span role="alert" class="text-xs text-error"
+								>{klassenLadefehler(etikettenStore.klassenFehler)}</span
+							>
+						{/if}
 					</div>
 
 					<div class="space-y-1.5">

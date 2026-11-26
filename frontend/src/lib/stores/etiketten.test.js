@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('./snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
@@ -419,5 +419,49 @@ describe('etikettenStore: Startfeld', () => {
 		leereDruckwarteschlange();
 		etikettenStore.startFeld = 1;
 		expect(etikettenStore.bogen.filter((l) => l.isBlank)).toEqual([]);
+	});
+});
+
+// Die Klassenauswahl des Druck-Centers: Ein gescheiterter Abruf nennt seinen Grund, statt eine
+// leere Auswahl stehen zu lassen, als hätte die Schule keine Klassen.
+describe('etikettenStore: Klassen nicht geladen', () => {
+	/** @type {import('vitest').MockInstance} */
+	let konsole;
+	beforeEach(() => {
+		vi.clearAllMocks();
+		konsole = vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+	afterEach(() => {
+		konsole.mockRestore();
+	});
+
+	it('nennt den Grund einer Fehlantwort', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		);
+		await etikettenStore.ladeKlassen();
+
+		expect(etikettenStore.klassenFehler).toBe('Die Datenbank antwortet nicht');
+	});
+
+	it('nennt den Grund eines Fehlers ohne Antwort', async () => {
+		apiFetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server'));
+		await etikettenStore.ladeKlassen();
+
+		expect(etikettenStore.klassenFehler).toBe('Keine Verbindung zum Server');
+	});
+
+	it('lädt erneut, zeigt die Klassen und vergisst den Fehler', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		);
+		await etikettenStore.ladeKlassen();
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => [{ className: '5a', books: [] }] })
+		);
+		await etikettenStore.ladeKlassen();
+
+		expect(etikettenStore.klassenFehler).toBe('');
+		expect(etikettenStore.klassen.map((/** @type {any} */ g) => g.className)).toEqual(['5a']);
 	});
 });

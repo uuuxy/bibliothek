@@ -33,10 +33,6 @@ const BESTAND = {
 		1,
 		'Systematik-Vorschläge (Datalist)'
 	],
-	'src/lib/stores/etiketten.svelte.js': [
-		1,
-		'Klassengruppen als Filter (die Titelsuche daneben ist behoben)'
-	],
 	'src/lib/components/inventur/useInventurlauf.svelte.js': [
 		2,
 		'Signaturen- und Fächerliste als Filter'
