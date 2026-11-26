@@ -16,9 +16,9 @@ import (
 // eines Schülers und den LUSD-Abgleich (pruefeLeserLoeschbar, der Abgleich prüft
 // ist_bezahlt = false); deshalb braucht jede einen Weg zu ihrem Ende.
 //
-// Recht: edit_students wie beim Anlegen (POST /api/damage/report), nicht bloß eine Sitzung:
-// Arbeitsplätze am Kiosk sind dauerhaft mit der Rolle Helfer angemeldet, und Forderungen
-// erledigen dürfen nur Rollen, die Schülerdaten bearbeiten.
+// Recht: manage_claims, nicht bloß eine Sitzung: Arbeitsplätze am Kiosk sind dauerhaft mit der
+// Rolle Helfer angemeldet. Getrennt vom Anlegen (POST /api/damage/report, edit_students), damit
+// eine Schule das Melden eines Schadens erlauben kann, ohne das Erlassen einer Forderung.
 
 // zahlungsBuchung verbucht die Zahlung einer offenen Forderung (repository.SchadensAbfragen);
 // repository.ErrSchadensfallNichtGefunden oder repository.ErrSchadensfallErledigt, wenn es keine

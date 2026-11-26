@@ -18,14 +18,14 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 
 /**
  * „Alle anmahnen" schickt an POST /api/mail/send-bulk-overdue, und diese Route verlangt
- * create_orders (internal/api/routen_leser.go). Die Seite selbst hängt an view_students — wer
+ * send_dunning (internal/api/routen_leser.go). Die Seite selbst hängt an view_students — wer
  * sie sehen darf, darf also nicht zwangsläufig mahnen.
  *
  * Bis zum 18.09.2026 stand der Knopf trotzdem für jeden da: Er erschien allein, sobald
  * überfällige Schüler geladen waren. Wer ihn ohne das Recht drückte, bekam nach dem
  * Versanddialog samt Klassenauswahl einen 403 — nachgestellt am 18.09.2026 an der echten
  * Route mit der echten Middleware. Ab Werk trifft es niemanden (alle Rollen mit
- * view_students haben auch create_orders); die Berechtigungsseite erlaubt die Kombination
+ * view_students haben auch send_dunning); die Berechtigungsseite erlaubt die Kombination
  * aber, und „mahnen ja, bestellen nein" ist eine, die eine Schule plausibel will.
  *
  * Dieselbe Lücke wie beim Abgänger-Mail-Knopf (AbgaengerKopfzeile.test.js, 12.09.2026),
@@ -204,7 +204,7 @@ describe('MahnwesenAktionen', () => {
 		expect(knopf.querySelector('[role="progressbar"]')).toBeNull();
 	});
 
-	it('bindet beide Knöpfe in Mahnwesen.svelte an create_orders — das Recht der Routen', () => {
+	it('bindet beide Knöpfe in Mahnwesen.svelte an send_dunning — das Recht der Routen', () => {
 		// Quelltext-Prüfung, weil die Seite selbst (Live-Ereignisse, Laden beim Mount) hier
 		// nicht gerendert wird. Die Knöpfe hängen an einem Prop; ohne diese Prüfung könnte die
 		// Seite sie an ein beliebiges Recht binden, und die Tests oben blieben grün.
@@ -219,9 +219,9 @@ describe('MahnwesenAktionen', () => {
 			'utf8'
 		);
 		// Bekannte Zeile als Nicht-leer-Garantie: Sie steht seit dem Bescheid-Knopf dort.
-		expect(seite).toContain("hatRecht(authStore.currentUser, 'edit_students')");
+		expect(seite).toContain("hatRecht(authStore.currentUser, 'manage_claims')");
 		expect(seite).toContain(
-			"const darfMahnen = $derived(hatRecht(authStore.currentUser, 'create_orders'))"
+			"const darfMahnen = $derived(hatRecht(authStore.currentUser, 'send_dunning'))"
 		);
 		expect(seite).toContain('{darfMahnen}');
 		// Der Versand-Dialog bietet nur Klassen an, nicht die Gruppe der Ehemaligen.

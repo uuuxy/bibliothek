@@ -394,7 +394,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   die Rolle Mitarbeiter nacheinander auf einzelne Rechte und erst am Ende zurück. Bricht der Lauf ab,
   bleibt sie auf einem Recht stehen, und ein Neubau ändert das nicht: Die Vorgabe (`internal/db/rechte_vorgabe.go`)
   ergänzt nur fehlende Zeilen. Abhilfe: die Haken der Rolle unter Benutzer & Rechte nach der Vorgabe
-  setzen. Ab Werk hält sie 18 von 24 Rechten.
+  setzen. Ab Werk hält sie 21 von 27 Rechten.
 - **Das Seitenbild eines roten Browser-Tests zeigt eine Seite, die der Test nie geöffnet hat.**
   Zu einem roten Test legt Playwright Abzüge aller offenen Seiten des Browsers ab, und das
   Seitenbild in `error-context.md` kann von einer davon stammen. Ein Kontext aus

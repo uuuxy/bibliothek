@@ -21,14 +21,14 @@
 	let mahnlaufOffen = $state(false);
 	// Der Bescheid-Dialog trägt die ID des einen markierten Schülers; leer = zu.
 	let bescheidFuer = $state('');
-	// Schreiben verlangt edit_students wie die Route (UI entscheidet nach Recht, nicht
+	// Schreiben verlangt manage_claims wie die Route (UI entscheidet nach Recht, nicht
 	// nach Rolle); LESEN darf jeder, der das Mahnwesen sieht.
-	const darfBescheid = $derived(hatRecht(authStore.currentUser, 'edit_students'));
-	// Mahnen verlangt create_orders, nicht view_students, an dem diese Seite hängt: „Alle
+	const darfBescheid = $derived(hatRecht(authStore.currentUser, 'manage_claims'));
+	// Mahnen verlangt send_dunning, nicht view_students, an dem diese Seite hängt: „Alle
 	// anmahnen" (POST /api/mail/send-bulk-overdue) verschickt, „Mahnbriefe drucken"
 	// (POST /api/admin/mahnungen/bulk-print) zählt die Mahnung. Sichtbarkeit einer Aktion =
 	// hatRecht(user, '<Recht der Route>') — frontend-hygiene-rechte.test.js.
-	const darfMahnen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
+	const darfMahnen = $derived(hatRecht(authStore.currentUser, 'send_dunning'));
 
 	$effect(() => {
 		if (offlineSync.wartendeAnzahl === 0) {

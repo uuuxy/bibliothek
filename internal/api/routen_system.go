@@ -64,9 +64,9 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 
 	// Druck und Berichte
 	mux.Handle("GET /api/print/rechnung/{schueler_id}", s.verlangeRecht("view_students")(s.schaden().RechnungPDF()))
-	// Der Druck zählt die Mahnung: dasselbe Recht wie der Mahnversand (create_orders), nicht
+	// Der Druck zählt die Mahnung: dasselbe Recht wie der Mahnversand (send_dunning), nicht
 	// das Leserecht der Seite.
-	mux.Handle("POST /api/admin/mahnungen/bulk-print", s.verlangeRecht("create_orders")(s.mahnwesen().MahnbriefeDrucken()))
+	mux.Handle("POST /api/admin/mahnungen/bulk-print", s.verlangeRecht("send_dunning")(s.mahnwesen().MahnbriefeDrucken()))
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.verlangeRecht("view_students")(s.leser().KontoauszugPDF()))
 
 	// Übersicht und Statistik

@@ -47,3 +47,19 @@ describe('loeschenMitZugang', () => {
 		expect(schuelerRechte({ rolle: 'admin', permissions: [] }).loeschenMitZugang).toBe(true);
 	});
 });
+
+// Forderungen erledigen (bezahlt, storniert, Bescheid) hat ein eigenes Recht, getrennt vom
+// Bearbeiten der Stammdaten (POST /api/schadensfaelle/{id}/…, internal/api/routen_leser.go).
+// Die Gebühren-Karte der Akte fragt es; wer nur Adressen pflegt, sieht die Knöpfe nicht.
+describe('forderungen', () => {
+	it('folgt manage_claims, nicht edit_students', () => {
+		const nurBearbeiten = { rolle: 'mitarbeiter', permissions: ['view_students', 'edit_students'] };
+		expect(schuelerRechte(nurBearbeiten).bearbeiten).toBe(true);
+		expect(schuelerRechte(nurBearbeiten).forderungen).toBe(false);
+		const mitForderungen = {
+			rolle: 'mitarbeiter',
+			permissions: ['view_students', 'manage_claims']
+		};
+		expect(schuelerRechte(mitForderungen).forderungen).toBe(true);
+	});
+});

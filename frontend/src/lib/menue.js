@@ -226,17 +226,17 @@ export const menueGruppen = [
 			{
 				// Ein Sammelpunkt: Die Kategorien dahinter hängen an verschiedenen Rechten
 				// (kategorien.js) — Schule/Fristen/Mail an manage_settings, LMF-Aktionen an
-				// edit_books, Datenverwaltung an manage_inventory, LUSD & Versetzung (LUSD,
-				// Versetzung) an import_students/manage_students_admin. Öffnete nur manage_settings
-				// die Tür, hätte ein Mitarbeiter mit import_students oder manage_inventory Rechte
-				// ohne Tür. Die Liste hier spiegelt deshalb die Rechte aus kategorien.js
-				// (Gate: menue.test.js).
+				// extend_loans, Schlagworte an edit_books, Datenverwaltung an manage_inventory,
+				// LUSD & Versetzung an import_students/manage_students_admin. Öffnete nur
+				// manage_settings die Tür, hätten Mitarbeiter mit import_students oder manage_inventory
+				// Rechte ohne Tür; die Liste spiegelt deshalb kategorien.js (Gate: menue.test.js).
 				id: 'settings',
 				label: 'Einstellungen',
 				icon: 'cog',
 				permissions: [
 					'manage_settings',
 					'edit_books',
+					'extend_loans',
 					'manage_inventory',
 					'import_students',
 					'manage_students_admin',

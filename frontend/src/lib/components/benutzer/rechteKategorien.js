@@ -25,7 +25,17 @@ export const rechteBeschreibungen = [
 			{
 				key: 'edit_students',
 				label: 'Leser bearbeiten',
-				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen und aufheben, Buchschäden melden sowie Schadensfälle als bezahlt buchen oder stornieren'
+				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen und aufheben, Buchschäden melden'
+			},
+			{
+				key: 'manage_claims',
+				label: 'Forderungen und Bescheide',
+				desc: 'Schadensfälle als bezahlt buchen oder stornieren, Bescheide über Schadensersatz erstellen und als übergeben vermerken'
+			},
+			{
+				key: 'send_dunning',
+				label: 'Mahnungen versenden',
+				desc: 'Mahnbriefe drucken, was die Mahnung zählt, sowie Mahnlisten und die Kontoauszüge der Abgänger an die Klassenleitungen mailen'
 			},
 			{
 				key: 'delete_students',
@@ -56,7 +66,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'edit_books',
 				label: 'Medienkatalog bearbeiten',
-				desc: 'Titel und Exemplare anlegen und ändern: Barcode, Status, Schadensnotiz, Defekt, Aussonderung; Ausleihen verlängern und Fälligkeit setzen; Etiketten-Druckstatus, Geräte und Systematik pflegen'
+				desc: 'Titel und Exemplare anlegen und ändern: Barcode, Status, Schadensnotiz, Defekt, Aussonderung; Etiketten-Druckstatus, Geräte und Systematik pflegen; den LMF-Plan pflegen und veröffentlichen, wobei ein Rückgabe-Plan die Fristen der Lernmittel setzt'
 			},
 			{
 				key: 'delete_books',
@@ -85,6 +95,11 @@ export const rechteBeschreibungen = [
 				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk, die Kernfunktion der Helfer-Rolle, ohne Leserdatei und Mahnwesen'
 			},
 			{
+				key: 'extend_loans',
+				label: 'Ausleihen verlängern und Fristen ändern',
+				desc: 'Ausleihen in der Leserakte verlängern oder ihre Fälligkeit setzen und unter Einstellungen, LMF-Aktionen die Lernmittel einer Klasse verlängern. Die Ausleihen dazu sieht nur, wer die Leserdatei anzeigen darf.'
+			},
+			{
 				key: 'create_reservations',
 				label: 'Klassensatz reservieren',
 				desc: 'Erlaubt das Absenden einer Klassensatz-Reservierung im Kollegiums-Portal. Öffnet keine Schülerdaten, das Portal sucht über den öffentlichen OPAC.'
@@ -102,7 +117,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'create_orders',
 				label: 'Bestellungen verwalten',
-				desc: 'Bestellungen anlegen, bestätigen und Lieferungen einbuchen; Titel per ISBN anlegen und Signatur setzen; Lieferanten pflegen; Mahnbriefe drucken, Mahn- und Abgänger-Mails versenden; Reservierungen und Anliegen erledigen'
+				desc: 'Bestellungen anlegen, bestätigen und Lieferungen einbuchen; Titel per ISBN anlegen und Signatur setzen; Lieferanten pflegen; Reservierungen und Anliegen erledigen'
 			},
 			{
 				key: 'view_graduates',

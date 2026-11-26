@@ -1,6 +1,6 @@
 # Landesmittel und Kreismittel — Konzept
 
-Stand: 01.11.2026
+Stand: 26.11.2026
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
@@ -126,7 +126,7 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum), `buecher_titel.listenpreis` und `buecher_exemplare.zustand_abwertung_prozent` (Migration 127) | ✅ Der Listenpreis kommt beim Anlegen über die ISBN aus der DNB (MARC21 020 $c) und ist von Hand überschreibbar; leer heißt „nicht erfasst", dann weicht die Staffel auf den Kaufpreis aus und sagt es. |
 | Ausleihhistorie je Exemplar          | `ausleihen` (Zeilen bleiben nach der Anonymisierung ohne Person)                                                                                              | Zählbar. Aus Littera kamen nur die **offenen** Ausleihen — für den Altbestand ist die Zahl der Verleihjahre unbekannt.                                             |
 | Volljährigkeit                       | `leser.geburtsdatum` (NULL bei Altdaten)                                                                                                                   | Anrede „Erziehungsberechtigte" vs. volljährig ableitbar.                                                                                                           |
-| Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Kein eigenes Recht für den Bescheid: Erstellen und Übergeben verlangen `edit_students`, Lesen `view_students` (`internal/api/routen_leser.go`; Grund in 4.7).                 |
+| Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Eigenes Recht `manage_claims` („Forderungen und Bescheide“): Erstellen, Übergeben, bezahlt und storniert; Lesen `view_students` (`internal/api/routen_leser.go`; Grund in 4.7).                 |
 | Nummernkreise                        | `barcode_seq`; Regel: EIN Generator, nie recyceln (Register 068)                                                                                              | Die Referenznummer zählt `schadensersatz_nummern` je Topf und Kassenjahr (Migration 110).                                                                                                      |
 
 **Kern:** Die Forderung (`schadensfaelle`) ist die Wahrheit — Sperre (nur Schülerbücherei),
@@ -219,8 +219,8 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    **zwei** Werte statt drei (genau die zwei Kästchen des Formulars — „Verlust" IST die
    erste Gruppe); `schueler_id` ist **SET NULL** statt RESTRICT (der Brief überlebt die
    DSGVO-Löschung als Beleg ohne Person, RESTRICT hätte die berechtigte Löschung
-   blockiert); das Recht ist `edit_students` statt eines neuen — ein eigenes Recht bliebe
-   ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
+   blockiert); das Recht ist `manage_claims`, das seine Halter von `edit_students` erbt
+   (`internal/db/rechte_vorgabe.go`): ab Werk dieselben Rollen, getrennt vergebbar.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
    Gebaut sind Anbindung, Liste, Rückgabe-Hook und die Übergabe als Status. Das Exemplar
    steht schon beim Erstellen des Briefs oder beim Melden auf `VERLUST` (`bucheVerluste`,

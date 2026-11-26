@@ -19,11 +19,11 @@ import (
 )
 
 // „Mahnbriefe drucken" zählt die Mahnung. Die Route verlangt deshalb das Recht des
-// Mahnversands (create_orders) und nicht das Leserecht, an dem die Seite hängt
-// (view_students). Am echten Router: Eine Rolle mit view_students und ohne create_orders
+// Mahnversands (send_dunning) und nicht das Leserecht, an dem die Seite hängt
+// (view_students). Am echten Router: Eine Rolle mit view_students und ohne send_dunning
 // bekommt 403 vom Rechte-Wächter, und an der Ausleihe ändert sich nichts.
 //
-// Gegenprobe mit derselben Sitzung und derselben Anfrage: Mit create_orders kommt der Brief,
+// Gegenprobe mit derselben Sitzung und derselben Anfrage: Mit send_dunning kommt der Brief,
 // und die Mahnung ist gezählt. Ohne sie bewiese das 403 nur, dass die Anfrage scheitert.
 func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -82,10 +82,10 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		t.Errorf("abgewiesener Druck hat gezählt: Mahnstufe %d, Mahndatum %v", stufe, datum)
 	}
 
-	tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, "create_orders")
+	tuertest.SetzeGenauEinRecht(t, pool, &srv.Rechte, "send_dunning")
 	rec = drucke()
 	if rec.Code != http.StatusOK {
-		t.Fatalf("mit create_orders: HTTP %d statt 200 — %s", rec.Code, rec.Body.String())
+		t.Fatalf("mit send_dunning: HTTP %d statt 200 — %s", rec.Code, rec.Body.String())
 	}
 	if kopf := rec.Body.Bytes(); len(kopf) < 4 || string(kopf[:4]) != "%PDF" {
 		t.Fatalf("Antwort ist kein PDF (Kopf: %q)", pdftest.ErsteBytes(rec.Body.Bytes(), 8))

@@ -97,10 +97,10 @@ export const KATEGORIEN = [
 		titel: 'LMF-Aktionen',
 		kurz: 'Massenverlängerung je Klasse',
 		icon: 'schedule',
-		// POST /api/ausleihen/global-extend-lmf verlangt edit_books (die Klassenliste
-		// dazu view_students). Ohne diese Zeile stand die Kategorie jedem mit
-		// manage_settings offen — mit leerer Klassenliste und 403 beim Ausführen.
-		rechte: ['edit_books']
+		// POST /api/ausleihen/global-extend-lmf verlangt extend_loans (die Klassenliste,
+		// GET /api/klassen, nur eine Anmeldung). Ohne diese Zeile stand die Kategorie jedem
+		// mit manage_settings offen, mit 403 beim Ausführen.
+		rechte: ['extend_loans']
 	},
 	{
 		id: 'daten',

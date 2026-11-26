@@ -88,4 +88,17 @@ describe('Einbauorte der Schülerakte', () => {
 			expect(ohne, `${komponente} ohne ${prop}`).toEqual([]);
 		});
 	}
+
+	// Die Knöpfe der Gebühren-Karte (bezahlt, storniert, Bescheid) folgen manage_claims wie ihre
+	// Routen, nicht dem Bearbeiten der Stammdaten.
+	it('gibt der Gebühren-Karte das Recht der Forderungen', () => {
+		const akte = dateien.find((p) => p.endsWith('/components/leserakte/Leserakte.svelte'));
+		expect(akte, 'Leserakte.svelte nicht gefunden').toBeTruthy();
+		const tags = einbauorte(
+			readFileSync(/** @type {string} */ (akte), 'utf8'),
+			'LeserakteGebuehren'
+		);
+		expect(tags).toHaveLength(1);
+		expect(tags[0]).toMatch(/darfBearbeiten=\{rechte\.forderungen\}/);
+	});
 });

@@ -59,8 +59,8 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 		.map((z) => z.split('|').map((teil) => teil.trim()));
 	const alle = zeilen.map(([recht]) => recht);
 	const abWerk = zeilen.filter(([, erlaubt]) => erlaubt === 't').map(([recht]) => recht);
-	// Grün heißt nur dann etwas, wenn die Liste auch gelesen wurde: 24 Rechte stehen in der Matrix.
-	expect(alle.length).toBeGreaterThanOrEqual(24);
+	// Grün heißt nur dann etwas, wenn die Liste auch gelesen wurde: 27 Rechte stehen in der Matrix.
+	expect(alle.length).toBeGreaterThanOrEqual(27);
 
 	/** @type {{ name: string, rechte: string[] }[]} */
 	const faelle = alle.map((recht) => ({ name: `nur ${recht}`, rechte: [recht] }));

@@ -57,6 +57,12 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "manage_settings", true},
 	{"ADMIN", "manage_students_admin", true},
 	{"ADMIN", "merge_students", true},
+	// Drei Rechte, die aus breiteren hervorgingen (sqlVererbeAbgespalteneRechte): Mahnen aus
+	// „Bestellungen verwalten“, Forderungen und Bescheide aus „Leser bearbeiten“, Verlängern und
+	// Fristen aus „Medienkatalog bearbeiten“. Ab Werk hat sie, wer das Ursprungsrecht hat.
+	{"ADMIN", "send_dunning", true},
+	{"ADMIN", "manage_claims", true},
+	{"ADMIN", "extend_loans", true},
 
 	// Leitung: alle Rechte außer „Benutzer & Rechte" und „Einstellungen".
 	//
@@ -93,6 +99,9 @@ var RechteVorgabe = []RechteEintrag{
 	{"LEITUNG", "manage_settings", false},
 	{"LEITUNG", "manage_students_admin", true},
 	{"LEITUNG", "merge_students", true},
+	{"LEITUNG", "send_dunning", true},
+	{"LEITUNG", "manage_claims", true},
+	{"LEITUNG", "extend_loans", true},
 
 	// Mitarbeiter
 	{"MITARBEITER", "perform_actions", true},
@@ -119,6 +128,9 @@ var RechteVorgabe = []RechteEintrag{
 	{"MITARBEITER", "manage_settings", false},
 	{"MITARBEITER", "manage_students_admin", false},
 	{"MITARBEITER", "merge_students", false},
+	{"MITARBEITER", "send_dunning", true},
+	{"MITARBEITER", "manage_claims", true},
+	{"MITARBEITER", "extend_loans", true},
 
 	// Kollegium: Eine Lehrkraft meldet sich an, um im Portal einen Klassensatz zu reservieren;
 	// dafür reicht create_reservations, das keine Personendaten öffnet. Jedes weitere Recht
@@ -148,6 +160,9 @@ var RechteVorgabe = []RechteEintrag{
 	{"KOLLEGIUM", "manage_settings", false},
 	{"KOLLEGIUM", "manage_students_admin", false},
 	{"KOLLEGIUM", "merge_students", false},
+	{"KOLLEGIUM", "send_dunning", false},
+	{"KOLLEGIUM", "manage_claims", false},
+	{"KOLLEGIUM", "extend_loans", false},
 
 	// Helfer: leiht an der Theke aus und nimmt zurück (perform_actions: /api/action, /scan,
 	// /search, /events). view_students bleibt zu: Es öffnete Schülerlisten, Profile, das
@@ -184,6 +199,9 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "manage_settings", false},
 	{"HELFER", "manage_students_admin", false},
 	{"HELFER", "merge_students", false},
+	{"HELFER", "send_dunning", false},
+	{"HELFER", "manage_claims", false},
+	{"HELFER", "extend_loans", false},
 }
 
 // RechteOptional nennt die Paare aus Rolle und Recht, deren Wert der Admin entscheidet: Die
@@ -199,6 +217,11 @@ var RechteOptional = mitLeitungAlsStartwert(map[string]bool{
 	"MITARBEITER/manage_students_admin": true,
 	// Das Zusammenführen zweier Datensätze ebenso.
 	"MITARBEITER/merge_students": true,
+	// Die drei abgespaltenen Rechte gibt es, damit der Admin sie den Mitarbeitern nehmen kann;
+	// tut er es, ist das eine Entscheidung und keine Abweichung.
+	"MITARBEITER/send_dunning":  true,
+	"MITARBEITER/manage_claims": true,
+	"MITARBEITER/extend_loans":  true,
 })
 
 // mitLeitungAlsStartwert nimmt jedes Paar der Leitung dazu. Bei den anderen Rollen ist ein
@@ -242,9 +265,21 @@ const sqlVererbeZusammenfuehren = `
 	ON CONFLICT (role, permission) DO NOTHING
 `
 
+// sqlVererbeAbgespalteneRechte gibt den drei Rechten, die aus breiteren hervorgingen, je Rolle
+// den Wert ihres Ursprungs. So behält eine Rolle beim Update, was sie konnte, und bekommt nichts
+// dazu, was der Admin ihr genommen hatte.
+const sqlVererbeAbgespalteneRechte = `
+	INSERT INTO role_permissions (role, permission, allowed)
+	SELECT rp.role, neu.permission, rp.allowed
+	FROM role_permissions rp
+	JOIN (VALUES ('send_dunning', 'create_orders'), ('manage_claims', 'edit_students'),
+		('extend_loans', 'edit_books')) AS neu(permission, ursprung) ON rp.permission = neu.ursprung
+	ON CONFLICT (role, permission) DO NOTHING
+`
+
 // SchreibeRechteVorgabe schreibt die Zeilen aus RechteVorgabe, die in role_permissions fehlen;
-// bestehende fasst sie nicht an. Vorher erben zwei Rechte den Wert des Rechts, aus dem sie
-// hervorgingen. Der Start schreibt nur Daten, das Schema kommt aus den Migrationen
+// bestehende fasst sie nicht an. Vorher erben die abgespaltenen Rechte den Wert des Rechts, aus
+// dem sie hervorgingen. Der Start schreibt nur Daten, das Schema kommt aus den Migrationen
 // (kein_ddl_im_schreibpfad_test.go).
 func (v *Verbindung) SchreibeRechteVorgabe(ctx context.Context) error {
 	if _, err := v.Pool.Exec(ctx, sqlVererbeAufgeteilteRechte); err != nil {
@@ -252,6 +287,9 @@ func (v *Verbindung) SchreibeRechteVorgabe(ctx context.Context) error {
 	}
 	if _, err := v.Pool.Exec(ctx, sqlVererbeZusammenfuehren); err != nil {
 		return fmt.Errorf("vererbung manage_students_admin → merge_students: %w", err)
+	}
+	if _, err := v.Pool.Exec(ctx, sqlVererbeAbgespalteneRechte); err != nil {
+		return fmt.Errorf("vererbung der abgespaltenen Rechte send_dunning, manage_claims, extend_loans: %w", err)
 	}
 	for _, e := range RechteVorgabe {
 		_, err := v.Pool.Exec(ctx, sqlFehlendesRecht, e.Rolle, e.Recht, e.Erlaubt)

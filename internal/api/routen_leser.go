@@ -77,41 +77,41 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen *repos
 	// Abgänger
 	mux.Handle("GET /api/abgaenger", s.verlangeRecht("view_graduates")(s.mahnwesen().Abgaenger()))
 	mux.Handle("GET /api/abgaenger/pdf", s.verlangeRecht("view_graduates")(s.mahnwesen().AbgaengerKontoauszuegePDF()))
-	// Versand ist mehr als Lesen: dasselbe Recht wie der Mahnlauf (create_orders),
+	// Versand ist mehr als Lesen: dasselbe Recht wie der Mahnlauf (send_dunning),
 	// nicht das reine view_graduates der Liste.
-	mux.Handle("POST /api/abgaenger/mail", s.verlangeRecht("create_orders")(s.mahnwesen().AbgaengerKontoauszuegeVersenden()))
+	mux.Handle("POST /api/abgaenger/mail", s.verlangeRecht("send_dunning")(s.mahnwesen().AbgaengerKontoauszuegeVersenden()))
 
 	// Schäden
 	schadensAbfragen := repository.NewSchadensAbfragen(s.DB.Pool)
 	mux.Handle("POST /api/damage/report", s.verlangeRecht("edit_students")(s.schaden().SchadenMelden(schadensAbfragen)))
-	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
-	// Anlegen (edit_students); die Begründung steht im Kopf von internal/api/schaden/forderung_erledigen.go.
+	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen mit manage_claims; die
+	// Begründung steht im Kopf von internal/api/schaden/forderung_erledigen.go.
 	protokollDerBescheide := repository.NewProtokollAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.verlangeRecht("view_students")(s.schaden().SchadensfaelleDesSchuelers(schadensAbfragen)))
 
 	// ── Bescheide über Schadensersatz ──
 	//
-	// Rechte wie an den übrigen Routen der Forderungen: lesen mit view_students (die Akte zeigt
-	// die Briefe eines Schülers, die Arbeitsliste die offenen), schreiben mit edit_students; wer
-	// eine Forderung anlegen und stornieren darf, schreibt auch den Brief dazu. Ein eigenes Recht
-	// bliebe ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
+	// Rechte wie beim Erledigen der Forderungen: lesen mit view_students (die Akte zeigt die
+	// Briefe eines Schülers, die Arbeitsliste die offenen), schreiben mit manage_claims; wer eine
+	// Forderung stornieren darf, schreibt auch den Brief dazu. Das Recht erbt seine Halter von
+	// edit_students (internal/db/rechte_vorgabe.go), ab Werk hat es also, wer es vorher hatte.
 	bescheidAbfragen := repository.NewBescheidAbfragen(s.DB.Pool)
-	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.verlangeRecht("edit_students")(s.schaden().BescheidVorschlag(bescheidAbfragen)))
+	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.verlangeRecht("manage_claims")(s.schaden().BescheidVorschlag(bescheidAbfragen)))
 	// Der Vorschlag für den Betrag im Dialog zum Melden: dasselbe Recht wie das Melden selbst;
 	// wer die Forderung anlegen darf, darf auch den Vorschlag dafür sehen.
 	mux.Handle("GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag", s.verlangeRecht("edit_students")(s.schaden().ErsatzwertVorschlag(bescheidAbfragen)))
 	mux.Handle("GET /api/schueler/{id}/bescheide", s.verlangeRecht("view_students")(s.schaden().BescheideDesSchuelers(bescheidAbfragen)))
-	mux.Handle("POST /api/schueler/{id}/bescheide", s.verlangeRecht("edit_students")(s.schaden().BescheidErstellen(bescheidAbfragen, protokollDerBescheide)))
+	mux.Handle("POST /api/schueler/{id}/bescheide", s.verlangeRecht("manage_claims")(s.schaden().BescheidErstellen(bescheidAbfragen, protokollDerBescheide)))
 	mux.Handle("GET /api/bescheide", s.verlangeRecht("view_students")(s.schaden().Bescheide(bescheidAbfragen)))
 	mux.Handle("GET /api/bescheide/ausstehend", s.verlangeRecht("view_students")(s.schaden().BescheideAusstehend(bescheidAbfragen)))
 	mux.Handle("GET /api/bescheide/{id}/pdf", s.verlangeRecht("view_students")(s.schaden().BescheidPDF(bescheidAbfragen)))
-	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.verlangeRecht("edit_students")(s.schaden().BescheidUebergeben(bescheidAbfragen, protokollDerBescheide)))
-	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.verlangeRecht("edit_students")(s.schaden().ZahlungVerbuchen(schadensAbfragen)))
-	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.verlangeRecht("edit_students")(s.schaden().ForderungStornieren(schadensAbfragen)))
+	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.verlangeRecht("manage_claims")(s.schaden().BescheidUebergeben(bescheidAbfragen, protokollDerBescheide)))
+	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.verlangeRecht("manage_claims")(s.schaden().ZahlungVerbuchen(schadensAbfragen)))
+	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.verlangeRecht("manage_claims")(s.schaden().ForderungStornieren(schadensAbfragen)))
 
 	// Mahnwesen
 	mux.Handle("GET /api/mahnwesen", s.verlangeRecht("view_students")(s.mahnwesen().UeberfaelligeAusleihen(mahnAbfragen)))
 	// Massenversand: je überfällige Klasse eine Mahnliste an die Klassenleitung
 	// (nie direkt an Schüler, Datenschutz durch Gestaltung; internal/api/mahnwesen/mahnlisten_versand.go).
-	mux.Handle("POST /api/mail/send-bulk-overdue", s.verlangeRecht("create_orders")(s.mahnwesen().MahnlistenVersenden(mahnAbfragen)))
+	mux.Handle("POST /api/mail/send-bulk-overdue", s.verlangeRecht("send_dunning")(s.mahnwesen().MahnlistenVersenden(mahnAbfragen)))
 }

@@ -8,7 +8,7 @@ import { hatRecht } from '../../menue.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, loeschenMitZugang: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, frist: boolean, zusammenfuehren: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, forderungen: boolean, loeschen: boolean, loeschenMitZugang: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, frist: boolean, zusammenfuehren: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -16,8 +16,10 @@ export function schuelerRechte(user) {
 		einsehen: hatRecht(user, 'view_students'),
 		// POST /api/schueler
 		anlegen: hatRecht(user, 'create_students'),
-		// Stammdaten, Abgangsjahr, Sperre, Schadensmeldung, Gebühren (PATCH /api/schueler/{id}, …)
+		// Stammdaten, Abgangsjahr, Sperre, Schadensmeldung (PATCH /api/schueler/{id}, …)
 		bearbeiten: hatRecht(user, 'edit_students'),
+		// Forderungen als bezahlt buchen oder stornieren (POST /api/schadensfaelle/{id}/…)
+		forderungen: hatRecht(user, 'manage_claims'),
 		// Papierkorb: DELETE /api/schueler/{id}, GET …/deleted, POST …/restore
 		loeschen: hatRecht(user, 'delete_students'),
 		// Hängt am Leser ein Zugang (`hat_zugang`), verlangt das Löschen zusätzlich manage_users:
@@ -36,7 +38,7 @@ export function schuelerRechte(user) {
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
 		// POST /api/ausleihen/{id}/verlaengern, PATCH /api/admin/ausleihen/{id}/faelligkeit
-		frist: hatRecht(user, 'edit_books'),
+		frist: hatRecht(user, 'extend_loans'),
 		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
 		// ohne Schüler-ID, Dublette). Unumkehrbar, deshalb ein eigenes Recht, das der Admin
 		// einzeln delegieren kann.

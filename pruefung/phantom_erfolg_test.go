@@ -69,9 +69,9 @@ var phantomBestand = map[string]int{
 	"internal/db/migrationen.go:spieleMigrationEin":                2,
 	"internal/db/migrationen.go:spieleSchemaEin":                   1,
 	"internal/db/migrationen.go:legeMigrationstabelleAn":           1,
-	// Drei Stellen: Auch die Vererbungen von Rechten (etwa manage_students_admin → merge_students)
+	// Vier Stellen: Auch die Vererbungen von Rechten (etwa manage_students_admin → merge_students)
 	// sind INSERT … ON CONFLICT DO NOTHING; 0 Zeilen beim zweiten Start sind der Normalfall.
-	"internal/db/rechte_vorgabe.go:SchreibeRechteVorgabe":      3,
+	"internal/db/rechte_vorgabe.go:SchreibeRechteVorgabe":      4,
 	"internal/littera/schreiber_ausleihen.go:schreibeAusleihe": 1,
 	// Gerüst der Tests (nur von *_test.go eingebunden): advisory_lock, DROP SCHEMA und das Laden von
 	// schema.sql sind DDL und Aufbau; 0 Zeilen ist dort kein meldbarer Erfolg.

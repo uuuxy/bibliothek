@@ -136,7 +136,7 @@
 							gebuehren={st.gebuehren}
 							bescheide={st.bescheide}
 							fehlendeListen={st.fehlendeListen.filter((l) => l.name !== 'Vormerkungen')}
-							darfBearbeiten={rechte.bearbeiten}
+							darfBearbeiten={rechte.forderungen}
 							onChanged={() => st.ladeAkte(st.akte.id)}
 						/>
 					{:else if st.aktiverReiter === 'stammdaten'}

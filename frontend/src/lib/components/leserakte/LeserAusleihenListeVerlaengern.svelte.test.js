@@ -37,13 +37,14 @@ describe('Ausleihliste: Verlängern', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(melde).mockReset();
-		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books'] };
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['extend_loans'] };
 	});
 
-	// Beide Knöpfe hängen an edit_books, die Akte selbst an view_students. Ab Werk hält eine Rolle
-	// beide Rechte; fehlt edit_books, lehnte der Server den Knopf ab.
-	it('bietet ohne edit_books weder das Verlängern noch das Ändern des Datums an', () => {
-		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['view_students'] };
+	// Beide Knöpfe hängen an extend_loans, die Akte selbst an view_students. Ab Werk hält eine
+	// Rolle beide Rechte; fehlt extend_loans, lehnte der Server den Knopf ab. Das Pflegen des
+	// Katalogs (edit_books) allein öffnet sie nicht mehr.
+	it('bietet ohne extend_loans weder das Verlängern noch das Ändern des Datums an', () => {
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['view_students', 'edit_books'] };
 		const screen = render(LeserAusleihenListe, { ausleihen: beobachtet() });
 
 		expect(screen.queryByRole('button', { name: 'Ausleihe verlängern' })).toBeNull();
@@ -51,7 +52,7 @@ describe('Ausleihliste: Verlängern', () => {
 		expect(screen.getByText('28.09.2026'), 'das Datum bleibt lesbar').toBeTruthy();
 	});
 
-	it('bietet mit edit_books beides an', () => {
+	it('bietet mit extend_loans beides an', () => {
 		const screen = render(LeserAusleihenListe, { ausleihen: beobachtet() });
 
 		expect(screen.getByRole('button', { name: 'Ausleihe verlängern' })).toBeTruthy();

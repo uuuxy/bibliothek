@@ -116,9 +116,11 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.verlangeRecht("edit_books")(s.katalog().ExemplarStatusAendern(katalogAbfragen, repository.NewBescheidAbfragen(s.DB.Pool))))
 
 	// ── Ausleihen ──
+	// Verlängern und Fristen setzen haben ein eigenes Recht (extend_loans), getrennt vom Pflegen
+	// des Katalogs; es erbt seine Halter von edit_books (internal/db/rechte_vorgabe.go).
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(s.DB.Pool)
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.verlangeRecht("edit_books")(s.theke().AusleiheVerlaengern(einstellungsAbfragen)))
-	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.verlangeRecht("edit_books")(s.lernmittel().LernmittelDerKlasseVerlaengern()))
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.verlangeRecht("extend_loans")(s.theke().AusleiheVerlaengern(einstellungsAbfragen)))
+	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.verlangeRecht("extend_loans")(s.lernmittel().LernmittelDerKlasseVerlaengern()))
 
 	// ── LMF-Plan (Termine für Rückgabe und Ausgabe je Klasse) ──
 	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; PII-Stufe 0, Daten und
@@ -137,7 +139,7 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	// Veröffentlichen: Speichern legt einen Entwurf an, erst dieser Aufruf macht ihn für
 	// Portal und PDF sichtbar und setzt bei einem Rückgabe-Plan die Fristen.
 	mux.Handle("POST /api/lmf-plan/{art}/veroeffentlichen", s.verlangeRecht("edit_books")(s.lernmittel().LMFPlanVeroeffentlichen()))
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.verlangeRecht("edit_books")(s.theke().AusleihFristSetzen(protokollAbfragen)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.verlangeRecht("extend_loans")(s.theke().AusleihFristSetzen(protokollAbfragen)))
 
 	// Der Titel zu einer ISBN, notfalls aus den Katalogdiensten
 	mux.Handle("POST /api/buecher/aus-isbn", s.verlangeRecht("create_orders")(s.katalog().ISBNZuTitel()))

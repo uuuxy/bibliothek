@@ -4,7 +4,7 @@ import AbgaengerKopfzeile from './AbgaengerKopfzeile.svelte';
 import { authStore } from '../../stores/authStore.svelte.js';
 
 // Der Knopf „An Klassenleitungen mailen" schickt an POST /api/abgaenger/mail, und diese
-// Route verlangt create_orders (internal/api/routen_leser.go). Die Seite selbst hängt an
+// Route verlangt send_dunning (internal/api/routen_leser.go). Die Seite selbst hängt an
 // view_graduates — wer sie sehen darf, darf also nicht zwangsläufig mailen.
 //
 // Bis zum 12.09.2026 stand der Knopf trotzdem für jeden da (Bestands-Durchgang
@@ -30,8 +30,8 @@ function alsBenutzerMit(permissions) {
 }
 
 describe('AbgaengerKopfzeile', () => {
-	it('zeigt den Mail-Knopf nur mit create_orders', () => {
-		alsBenutzerMit(['view_graduates', 'create_orders']);
+	it('zeigt den Mail-Knopf nur mit send_dunning', () => {
+		alsBenutzerMit(['view_graduates', 'send_dunning']);
 		const mit = render(AbgaengerKopfzeile, { ...PROPS });
 		expect(mit.queryByRole('button', { name: /An Klassenleitungen mailen/ })).toBeTruthy();
 		mit.unmount();
@@ -42,6 +42,12 @@ describe('AbgaengerKopfzeile', () => {
 		// Der Druck bleibt: /api/abgaenger/pdf hängt an view_graduates, also am Recht,
 		// mit dem diese Seite überhaupt offen ist. Papier ist hier der Notweg.
 		expect(ohne.queryByRole('button', { name: /Kontoauszüge/ })).toBeTruthy();
+		ohne.unmount();
+
+		// „Bestellungen verwalten“ allein mahnt nicht mehr: Der Versand hat sein eigenes Recht.
+		alsBenutzerMit(['view_graduates', 'create_orders']);
+		const nurBestellen = render(AbgaengerKopfzeile, { ...PROPS });
+		expect(nurBestellen.queryByRole('button', { name: /An Klassenleitungen mailen/ })).toBeNull();
 	});
 
 	// Der Druck folgt der Suche (seit 21.09.2026): gedruckt wird, was die Liste zeigt. Zeigt
@@ -69,7 +75,7 @@ describe('AbgaengerKopfzeile', () => {
 	// indicator can be placed in a button to show that the button's action is currently in
 	// progress."
 	it('sperrt den Mail-Knopf und zeigt den Lauf, solange ein Versand läuft', () => {
-		alsBenutzerMit(['view_graduates', 'create_orders']);
+		alsBenutzerMit(['view_graduates', 'send_dunning']);
 		const laeuft = render(AbgaengerKopfzeile, { ...PROPS, mailLaeuft: true });
 		const knopf = laeuft.getByRole('button', { name: /An Klassenleitungen mailen/ });
 		expect(knopf.hasAttribute('disabled')).toBe(true);

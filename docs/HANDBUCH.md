@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-23. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-26. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -401,7 +401,7 @@ Adressfeld, und der Brief geht über das Kind. Der Druck zählt die Mahnung, hö
 je Buch; ein zweiter Druck am selben Tag (Papierstau) zählt nicht. Die Liste zeigt je Kind, wie oft
 und wann zuletzt gemahnt wurde („2× gemahnt, zuletzt 26.09.2026“); an die Zahl knüpft das Programm
 nichts. Auf den Brief kommt nur ein Buch, dessen Frist abgelaufen ist. Drucken und den Mahnlauf
-bietet die Seite nur Rollen an, die _Bestellungen verwalten_ dürfen; mit _Leserdatei anzeigen_
+bietet die Seite nur Rollen an, die _Mahnungen versenden_ dürfen; mit _Leserdatei anzeigen_
 lässt sich die Liste ansehen und drucken.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, senden): je
@@ -439,7 +439,7 @@ die zum Schuljahresende gehen; sie leihen bis zuletzt aus. Was sie außer Schulb
 oder verlängern, ist spätestens am letzten Schultag vor den Sommerferien fällig; der Ferien-Leseclub
 gilt für sie nicht. Die Liste zeigt **vom 1. Mai bis 31. Juli**
 die Abgänger, die **noch Bücher haben**, zum Einsammeln vor der Entlassung: Kontoauszüge drucken oder
-an die Klassenleitungen mailen (Mailen nur mit _Bestellungen verwalten_, wie beim Mahnwesen); wer alles
+an die Klassenleitungen mailen (Mailen nur mit _Mahnungen versenden_, wie beim Mahnwesen); wer alles
 zurückgegeben hat, verschwindet. Gedruckt wird, was die
 Liste zeigt (gewählte Klasse, Suche); so lässt sich ein einzelner Kontoauszug nachdrucken. Eine
 Klasse, die mit keinem Jahrgang von 1 bis 13 beginnt (14A, eine Buchnummer im Feld Klasse), versetzt
@@ -583,6 +583,11 @@ und den Einstellungen, die „Einstellungen verwalten“ verlangen; unter _Einst
 ändert, ändert E-Mail-Adressen, und die Adresse ist die Anmeldung. **Kollegium steht nicht in der
 Matrix:** Es ist der Ausgangszustand jeder Lehrkraft, die sich über „Mein Portal“ selbst anmeldet und
 freigeschaltet wird; wer mehr können soll, bekommt eine der vier Rollen (§12).
+
+**Mahnen, Forderungen und Verlängern sind eigene Rechte:** _Mahnungen versenden_, _Forderungen und
+Bescheide_ (bezahlt, storniert, Bescheid) und _Ausleihen verlängern und Fristen ändern_. Ab Werk hat sie,
+wer _Bestellungen verwalten_, _Leser bearbeiten_ bzw. _Medienkatalog bearbeiten_ darf; in der Matrix
+lassen sie sich getrennt vergeben, etwa Schäden melden ohne Forderungen erlassen.
 
 ## Einstellungen
 

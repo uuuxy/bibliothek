@@ -39,12 +39,12 @@
 		onMailen
 	} = $props();
 
-	// Die Seite selbst hängt an view_graduates, der Versand an create_orders
+	// Die Seite selbst hängt an view_graduates, der Versand an send_dunning
 	// (internal/api/routen_leser.go). Wer die Liste sehen darf, darf also nicht zwangsläufig
 	// mailen — ohne diese Frage stand der Knopf für jeden da und quittierte nach dem
 	// ganzen Versanddialog mit 403. Der Druck daneben bleibt: Er hängt am selben Recht
 	// wie die Seite, und Papier ist hier der Notweg.
-	const darfMailen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
+	const darfMailen = $derived(hatRecht(authStore.currentUser, 'send_dunning'));
 </script>
 
 <div class="flex flex-col gap-3 border-b border-outline-variant pb-5">
