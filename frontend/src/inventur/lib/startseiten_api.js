@@ -91,8 +91,21 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	);
 }
 
+// suchnorm je Text einmal: Suche & Filter und die Titel-Verwaltung suchen bei jedem Tastendruck
+// über alle Titel, und suchnorm ist dabei der teure Teil (13.000 Titel: 13 bis 30 ms je Taste).
+const gemerkt = new Map();
+/** @param {string} text */
+function normiert(text) {
+	let norm = gemerkt.get(text);
+	if (norm === undefined) {
+		if (gemerkt.size > 200_000) gemerkt.clear();
+		gemerkt.set(text, (norm = suchnorm(text)));
+	}
+	return norm;
+}
+
 /** @param {unknown} feld @param {string} norm */
-const enthaelt = (feld, norm) => typeof feld === 'string' && suchnorm(feld).includes(norm);
+const enthaelt = (feld, norm) => typeof feld === 'string' && normiert(feld).includes(norm);
 
 /**
  * Trifft der Begriff das Buch in mindestens einem Feld?

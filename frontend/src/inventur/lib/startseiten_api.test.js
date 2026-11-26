@@ -298,3 +298,15 @@ describe('buecherSuchen: geteilte Fälle mit dem Server', () => {
 		}
 	);
 });
+
+// buecherSuchen merkt sich suchnorm je Text. Ein Titel, der in der Liste geändert wird, behält
+// dasselbe Objekt; gesucht wird trotzdem sein neuer Text, nicht der gemerkte alte.
+describe('buecherSuchen: geänderter Titel', () => {
+	it('sucht den neuen Text eines geänderten Titels', () => {
+		const b = buch({ title: 'Die Räuber', author: 'Schiller', subject: '', signatur: '' });
+		expect(buecherSuchen([b], 'räuber')).toEqual([b]);
+		b.title = 'Weltatlas';
+		expect(buecherSuchen([b], 'räuber')).toEqual([]);
+		expect(buecherSuchen([b], 'atlas')).toEqual([b]);
+	});
+});
