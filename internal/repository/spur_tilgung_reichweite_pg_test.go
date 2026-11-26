@@ -11,9 +11,9 @@ import (
 )
 
 // Die Tilgung trifft genau die Spuren des Lesers: den Empfänger in seinem Bescheid, seine
-// Datensatz-Historie auch ohne details und den Stornogrund eines Falls ohne Beschreibung. Die
-// Spuren eines anderen Lesers bleiben stehen. Jede Prüfung gehört zu einer Bedingung der
-// Anweisungen in spur_tilgung.go.
+// Datensatz-Historie auch ohne details, den Stornogrund eines Falls ohne Beschreibung und sein
+// Feld in einer Nachbuch-Meldung. Die Spuren eines anderen Lesers bleiben stehen. Jede Prüfung
+// gehört zu einer Bedingung der Anweisungen in spur_tilgung.go.
 func TestTilgeSchuelerSpuren_TrifftGenauDenLeser(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -47,6 +47,13 @@ func TestTilgeSchuelerSpuren_TrifftGenauDenLeser(t *testing.T) {
 		VALUES ($1, $2, '', 10.00, true, NOW(), 'Familie zieht nach Kassel') RETURNING id`,
 		exID, sid).Scan(&fall); err != nil {
 		t.Fatalf("stornierten Fall anlegen: %v", err)
+	}
+
+	var meldung string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, ausleiher_schueler_id, vorbesitzer_schueler_id, gescannt_am)
+		VALUES (gen_random_uuid(), 'REICH-1', 'umgebucht', $1, $2, NOW()) RETURNING id`, sid, fremd).Scan(&meldung); err != nil {
+		t.Fatalf("Nachbuch-Meldung anlegen: %v", err)
 	}
 
 	if err := repository.TilgeSchuelerSpuren(ctx, pool, sid, "Test"); err != nil {
@@ -87,5 +94,17 @@ func TestTilgeSchuelerSpuren_TrifftGenauDenLeser(t *testing.T) {
 	}
 	if grund != nil {
 		t.Errorf("der Stornogrund eines Falls ohne Beschreibung steht noch da: %q", *grund)
+	}
+
+	var ausleiher, vorbesitzer *string
+	if err := pool.QueryRow(ctx, `SELECT ausleiher_schueler_id::text, vorbesitzer_schueler_id::text
+		FROM nachbuch_meldungen WHERE id = $1`, meldung).Scan(&ausleiher, &vorbesitzer); err != nil {
+		t.Fatalf("Nachbuch-Meldung lesen: %v", err)
+	}
+	if ausleiher != nil {
+		t.Error("die Nachbuch-Meldung nennt den Leser noch als Ausleiher")
+	}
+	if vorbesitzer == nil || *vorbesitzer != fremd {
+		t.Errorf("der Vorbesitzer, ein anderer Leser, ist nicht mehr eingetragen: %v", vorbesitzer)
 	}
 }

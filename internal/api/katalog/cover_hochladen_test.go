@@ -19,6 +19,7 @@ import (
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/imageutil"
 )
 
 // erzeugeTestbild liefert die Bytes eines Bildes im genannten Format.
@@ -36,6 +37,9 @@ func erzeugeTestbild(format string, breite, hoehe int) []byte {
 		_ = png.Encode(&puffer, bild) //nolint:errcheck
 	case "jpeg", "jpg":
 		_ = jpeg.Encode(&puffer, bild, nil) //nolint:errcheck
+	case "webp":
+		daten, _ := imageutil.ErzeugeWebP(bild, 80) //nolint:errcheck
+		return daten
 	}
 	return puffer.Bytes()
 }
@@ -86,6 +90,21 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 		}
 		if len(ergebnis) == 0 {
 			t.Error("verarbeiteHochgeladenesBild(png) lieferte keine Bilddaten")
+		}
+	})
+
+	// Die Oberfläche verkleinert jedes Cover vor dem Hochladen zu WebP (bildVerkleinern.js).
+	t.Run("Valid WebP", func(t *testing.T) {
+		bildDaten := erzeugeTestbild("webp", 100, 150)
+		ergebnis, ext, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if ext != ".webp" {
+			t.Errorf("verarbeiteHochgeladenesBild(webp) = Endung %s, erwartet .webp", ext)
+		}
+		if len(ergebnis) == 0 {
+			t.Error("verarbeiteHochgeladenesBild(webp) lieferte keine Bilddaten")
 		}
 	})
 
