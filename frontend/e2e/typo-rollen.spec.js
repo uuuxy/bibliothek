@@ -119,7 +119,7 @@ test.afterEach(() => {
 	`);
 });
 
-test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht <= 700)', async ({
+test('Lesetext liegt auf der M3-Skala (td 14, th 14, Knopf 14, h2/h3 16, Gewicht <= 700)', async ({
 	page
 }) => {
 	const anfragen = beobachteDatenanfragen(page);
