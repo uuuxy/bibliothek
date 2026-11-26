@@ -68,6 +68,11 @@ const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE
 // Zeit noch den Vortag.
 const sqlSchulHeute = schulzeit.SQLHeute
 
+// sqlVolljaehrig sagt, ob der Schüler am Kalendertag der Schule 18 ist; ohne Geburtsdatum gilt er
+// als minderjährig, an einer Schule der Regelfall und der schonendere Fehler. Bescheid und
+// Ersatzforderung wählen danach die Anrede.
+const sqlVolljaehrig = `coalesce(geburtsdatum <= ` + sqlSchulHeute + ` - INTERVAL '18 years', false)`
+
 // bescheidFristAbgelaufen heißt: offen, Frist vorbei, und es ist noch etwas zu zahlen. Die
 // Frist ist ein Kalendertag in der Zeitzone der Schule (internal/api/schaden/bescheid_erstellen.go) und
 // wird deshalb gegen sqlSchulHeute verglichen: Mit CURRENT_DATE gälte eine Frist von gestern

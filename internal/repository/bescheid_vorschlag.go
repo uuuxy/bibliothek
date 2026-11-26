@@ -61,7 +61,7 @@ func (a *BescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID string
 		       -- UTC): Am 18. Geburtstag galt das Kind bis 2 Uhr Berliner Zeit noch als
 		       -- minderjährig, und der Bescheid ging an die Eltern statt an die Person.
 		       -- Dieselbe Rechnung wie die Frist (sqlSchulHeute).
-		       coalesce(geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years', false)
+		       `+sqlVolljaehrig+`
 		FROM schueler WHERE id = $1`, schuelerID).
 		Scan(&d.Vorname, &d.Nachname, &d.Klasse, &d.Strasse, &d.Hausnummer, &d.PLZ, &d.Ort, &d.Volljaehrig)
 	return d, err

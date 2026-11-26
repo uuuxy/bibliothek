@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/db"
+	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 
@@ -138,5 +139,42 @@ func TestRechnungPDF_AlleForderungenAufBescheid(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "Bescheid") {
 		t.Errorf("Meldung nennt den Bescheid nicht: %s", rec.Body.String())
+	}
+}
+
+// Die Ersatzforderung an eine volljährige Schülerin spricht sie selbst an; die Volljährigkeit
+// kommt über die Tür aus dem Geburtsdatum, nach derselben Regel wie beim Bescheid
+// (repository.sqlVolljaehrig).
+func TestRechnungPDF_VolljaehrigeWirdSelbstAngesprochen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	for _, fall := range []struct {
+		barcode, geburtsdatum, anrede string
+	}{
+		{"S-RECH-18", "2001-03-04", "Sehr geehrte Damen und Herren,"},
+		{"S-RECH-12", "2014-03-04", "Sehr geehrte Erziehungsberechtigte,"},
+	} {
+		sid := testdaten.LegeSchuelerAn(t, pool, fall.barcode, "Anredekind", "13T1")
+		if _, err := pool.Exec(context.Background(), `UPDATE schueler SET geburtsdatum = $1 WHERE id = $2`, fall.geburtsdatum, sid); err != nil {
+			t.Fatalf("Geburtsdatum setzen: %v", err)
+		}
+		titelID := testdaten.LegeLernmittelAn(t, pool, "Physik "+fall.barcode)
+		ex := testdaten.LegeExemplarAn(t, pool, titelID, "EX-"+fall.barcode, true, "")
+		testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "nicht zurück")
+
+		req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
+		req.SetPathValue("schueler_id", sid)
+		rec := httptest.NewRecorder()
+		srv.RechnungPDF()(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: Status %d: %s", fall.barcode, rec.Code, rec.Body.String())
+		}
+		if blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), " "); !strings.Contains(blatt, fall.anrede) {
+			t.Errorf("%s (geboren %s): Anrede %q fehlt: %q", fall.barcode, fall.geburtsdatum, fall.anrede, blatt)
+		}
 	}
 }

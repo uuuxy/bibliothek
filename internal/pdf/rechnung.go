@@ -19,13 +19,16 @@ import (
 )
 
 // Schueler ist der Empfänger der Rechnung mit seiner Anschrift für das Fensterkuvert.
+// Volljaehrig wählt die Anrede: Einen volljährigen Schüler spricht der Brief selbst an, wie der
+// Bescheid (bescheidSnapshotAus).
 type Schueler struct {
-	Vorname    string
-	Nachname   string
-	Strasse    string
-	Hausnummer string
-	PLZ        string
-	Ort        string
+	Vorname     string
+	Nachname    string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
 }
 
 // RechnungsPosition ist eine Zeile der Rechnung: eine offene Forderung.
@@ -61,7 +64,7 @@ func ErzeugeRechnung(schueler Schueler, positionen []RechnungsPosition, schule S
 
 	baueAnschrift(m, schule, schueler)
 	baueKopf(m)
-	baueEinleitung(m)
+	baueEinleitung(m, schueler.Volljaehrig)
 	bauePositionen(m, positionen)
 	baueFuss(m, positionen, zahlung)
 
@@ -137,11 +140,14 @@ func baueKopf(m core.Maroto) {
 	)
 }
 
-func baueEinleitung(m core.Maroto) {
-	// Einleitung
+func baueEinleitung(m core.Maroto, volljaehrig bool) {
+	anrede := "Sehr geehrte Erziehungsberechtigte,"
+	if volljaehrig {
+		anrede = "Sehr geehrte Damen und Herren,"
+	}
 	m.AddRow(10,
 		col.New(12).Add(
-			marotoText("Sehr geehrte Erziehungsberechtigte,", props.Text{Size: 10}),
+			marotoText(anrede, props.Text{Size: 10}),
 		),
 	)
 	m.AddRow(15,

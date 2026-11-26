@@ -88,13 +88,15 @@ func HatOffeneForderungAufBescheid(ctx context.Context, db Datenbank, schuelerID
 }
 
 // BriefAnschrift sind Name und Anschrift eines Schülers für einen Brief im Fensterkuvert.
+// Volljaehrig entscheidet über die Anrede (sqlVolljaehrig).
 type BriefAnschrift struct {
-	Vorname    string
-	Nachname   string
-	Strasse    string
-	Hausnummer string
-	PLZ        string
-	Ort        string
+	Vorname     string
+	Nachname    string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
 }
 
 // LadeBriefAnschrift liest Name und Anschrift eines Schülers, der nicht im Papierkorb liegt;
@@ -104,8 +106,8 @@ func LadeBriefAnschrift(ctx context.Context, db Datenbank, schuelerID uuid.UUID)
 	err := db.QueryRow(ctx, `
 		SELECT vorname, nachname,
 		       COALESCE(strasse, ''), COALESCE(hausnummer, ''),
-		       COALESCE(plz, ''), COALESCE(ort, '')
+		       COALESCE(plz, ''), COALESCE(ort, ''), `+sqlVolljaehrig+`
 		FROM schueler WHERE id = $1 AND deleted_at IS NULL
-	`, schuelerID).Scan(&a.Vorname, &a.Nachname, &a.Strasse, &a.Hausnummer, &a.PLZ, &a.Ort)
+	`, schuelerID).Scan(&a.Vorname, &a.Nachname, &a.Strasse, &a.Hausnummer, &a.PLZ, &a.Ort, &a.Volljaehrig)
 	return a, err
 }

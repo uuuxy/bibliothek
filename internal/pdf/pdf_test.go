@@ -71,6 +71,28 @@ func TestErzeugeRechnung(t *testing.T) {
 	istPDF(t, got, "Rechnung")
 }
 
+// Die Ersatzforderung an einen volljährigen Schüler spricht ihn selbst an, wie der Bescheid; an
+// einen minderjährigen die Erziehungsberechtigten.
+func TestErzeugeRechnung_AnredeNachVolljaehrigkeit(t *testing.T) {
+	posten := []RechnungsPosition{{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1000}}
+	for _, fall := range []struct {
+		volljaehrig   bool
+		anrede, nicht string
+	}{
+		{false, "Sehr geehrte Erziehungsberechtigte,", "Sehr geehrte Damen und Herren,"},
+		{true, "Sehr geehrte Damen und Herren,", "Erziehungsberechtigte"},
+	} {
+		got, err := ErzeugeRechnung(Schueler{Vorname: "Ada", Nachname: "Q", Volljaehrig: fall.volljaehrig}, posten, testSchule(), testZahlung())
+		if err != nil {
+			t.Fatalf("ErzeugeRechnung: %v", err)
+		}
+		blatt := strings.Join(pdftest.Texte(t, got), " ")
+		if !strings.Contains(blatt, fall.anrede) || strings.Contains(blatt, fall.nicht) {
+			t.Errorf("volljährig=%v: Anrede %q erwartet, %q nicht: %q", fall.volljaehrig, fall.anrede, fall.nicht, blatt)
+		}
+	}
+}
+
 // Drei Posten zu 0,10 € ergeben auf der Rechnung 0,30 €. Als float64 summiert wären es
 // 0.30000000000000004 gewesen; in Cent ist die Summe genau, und das Blatt zeigt sie so.
 func TestRechnungSummeRundetAufCent(t *testing.T) {
