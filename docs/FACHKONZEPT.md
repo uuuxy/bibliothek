@@ -4,9 +4,9 @@ Beschreibt die funktionale Business-Logik der Bibliothekssoftware auf Basis der 
 
 ---
 
-## 1. Zentrale Scanner-Omnibox (Kiosk)
+## 1. Zentrale Scanner-Omnibox (Theke)
 
-Die Software nutzt ein eingabefokussiertes Kiosk-Design für die Ausleihe und Rückgabe. Ein
+Die Software nutzt an der Theke ein eingabefokussiertes Design für Ausleihe und Rückgabe. Ein
 einziges Eingabefeld (Omnibox) verarbeitet alle Scans.
 
 **Der Normalfall ist ohne Präfix.** Die Ausweise und Buchetiketten aus dem Littera-
@@ -213,7 +213,7 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
 - Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen
   ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
-  läuft über die normalen Wege (Kiosk je Schüler oder Lehrer-Handapparat).
+  läuft über die normalen Wege (Theke je Schüler oder Lehrer-Handapparat).
 - **Die Abschluss-Notiz hat zwei Rückwege neben der Bereit-Mail** (scheitert die Mail oder
   fehlt die Adresse, bliebe die Zusage sonst unsichtbar): Die Theke zeigt „Zuletzt bereitgestellt“ (die jüngsten zehn,
   mit Notiz und Abschlussdatum), und das Portal zeigt der Lehrkraft unter
@@ -287,10 +287,10 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
 ## 5. Geräteausleihe (Hardware)
 
 - **Verwaltung** im Medienkatalog, Bereich „Geräte“ (kein eigener Menüpunkt —
-  ausgebucht wird ohnehin am Kiosk): anlegen (Barcode zwingend mit `G-`-Präfix,
-  sonst findet der Kiosk-Scan das Gerät nicht), Liste mit aktuellem Ausleiher,
+  ausgebucht wird ohnehin an der Theke): anlegen (Barcode zwingend mit `G-`-Präfix,
+  sonst findet der Scan an der Theke das Gerät nicht), Liste mit aktuellem Ausleiher,
   Zubehör- und Stammdaten-Pflege, Defekt-Schalter (`ist_ausleihbar`).
-- **Checklisten-Zwang am Kiosk:** Trägt ein Gerät Zubehör (kommaseparierte Liste),
+- **Checklisten-Zwang an der Theke:** Trägt ein Gerät Zubehör (kommaseparierte Liste),
   unterbricht der Scan mit einem Bestätigungs-Dialog, der jedes Teil nennt —
   bei Ausleihe UND Rückgabe. Erst „Alles vollständig“ schickt den Scan mit
   Bestätigung erneut; Abbrechen bucht nichts.
@@ -298,7 +298,7 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
   der Schul-Zeitzone normalisiert wie Buch-Fristen; im Ferien-Leseclub wie ein Buch bis zu dessen Datum. Eine Verlängerung rechnet mit derselben Leihfrist (§2.1). Lehrkräfte leihen Geräte
   als Dauerleihe mit der Jahresfrist wie beim Buch.
 - **Zustands-Sperre:** Defekte (`ist_ausleihbar = false`) und ausgesonderte Geräte
-  verweigern die Ausleihe am Kiosk.
+  verweigern die Ausleihe an der Theke.
 - **Sperren des Lesers:** derselbe Prüfweg wie beim Buch (§2.2). Die Hinweise lassen
   sich auch am Gerät übergehen; die Zubehör-Liste reicht das Übergehen weiter, und
   protokolliert wird erst mit der Ausleihe.
@@ -415,18 +415,17 @@ was dort fehlt:
   Rechnung und Mahnung. Ein gefüllter Exportwert überschreibt den Bestand, ein leerer lässt ihn
   stehen; Handkorrekturen überleben den nächsten Import nicht (Entscheidung 02.09.2026).
 
-### 8.2. DSGVO und Lösch-Routinen (Abgänger)
+### 8.2. DSGVO und Lösch-Routinen (Ehemalige)
 
-- Fehlt ein bestätigter Schüler im LUSD-Export, wird er **Abgänger** im Sinne des Imports
-  (`ist_abgaenger = true`): Er ist weg. Die Abgänger-Ansicht (§8.x) meint etwas anderes, die
-  Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb
-  „Ehemalige“.
-- **Karenzzeit und Sperre:** Ein Abgänger wird gesperrt, nicht sofort anonymisiert; der nächtliche
+- Fehlt ein bestätigter Schüler im LUSD-Export, gehört er zu den **Ehemaligen**
+  (`ist_abgaenger = true`): Er ist weg. „Abgänger“ heißen nur die Abschlussklassen, die noch da
+  sind (Abgänger-Ansicht, §8.x); der Code sagt für beide „abgaenger“.
+- **Karenzzeit und Sperre:** Ein Ehemaliger wird gesperrt, nicht sofort anonymisiert; der nächtliche
   Job anonymisiert ihn nach der Karenzzeit (`abgaenger_karenz_tage`, Vorgabe 90 Tage, 0 = sofort),
   sofern nichts offen ist. Uhr (`repository.sqlKarenzUhr`), Gründe der Sperre und warum 90 Tage:
   [LUSD.md](LUSD.md) §4. Die
   Sperre lässt sich in der Akte aufheben (§2.2); ein späterer Import sperrt den Ehemaligen nicht
-  wieder, denn er behandelt nur aktive Schüler als neue Abgänger (`sammleAbgaenger`), und die
+  wieder, denn er behandelt nur aktive Schüler als neue Ehemalige (`sammleAbgaenger`), und die
   Karenz läuft unabhängig von der Sperre weiter. Die endgültige Löschung ab dem 30. Januar des
   Folgejahres trifft nur anonymisierte Datensätze; im Cron läuft die Anonymisierung deshalb vor der
   Löschung (`fuehreNaechtlicheDSGVOAus`).
@@ -453,7 +452,7 @@ was dort fehlt:
 
 Die Abgänger-Ansicht (`/abgaenger`) zeigt die **Abschlussklassen mit noch offenen Ausleihen**:
 H-Zweig ab Jahrgang 9 (9H, auch das freiwillige 10H), R-Zweig ab 10, sonst ab 13 —
-`repository.AbschlussklasseSQL`, dieselbe Regel, mit der die Versetzung Abgänger markiert und
+`repository.AbschlussklasseSQL`, dieselbe Regel, mit der die Versetzung Ehemalige markiert und
 ihre Klassenleitungs-Zuordnung entfernt (Paar-Gate `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`,
 Regel-Tabelle `TestAbschlussklasseSQL_Regel`). Eine Klasse, die mit keinem Jahrgang von 1 bis 13
 beginnt (14A, eine Buchnummer im Feld Klasse), ist keine Abschlussklasse: Die Versetzung lässt
@@ -634,7 +633,7 @@ Schule — das ist eine Produktentscheidung.
 
    **Die Tabelle der Rechte entscheidet auch an der Route:** `role_permissions` steuert das Menü und `verlangeRecht`; ein Recht zu viel ist keine Frage der Anzeige. Das Kollegium hält nur `create_reservations`. Wer einer Lehrkraft gezielt mehr geben will, tut das unter Benutzer & Rechte — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
 
-**Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (entschieden am 30.07.2026): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zur Akte zieht weiterhin `view_students`.
+**Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Theken-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (entschieden am 30.07.2026): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zur Akte zieht weiterhin `view_students`.
 
    **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver oder ein LDAP-Konto** (§12.1); einen Code- oder Barcode-Anmeldeweg gibt es nicht. Wer eine Hilfskraft aufnimmt, lässt zuerst das Postfach anlegen und trägt die Person dann unter System → Benutzer & Rechte mit der Rolle „Helfer“ ein.
 
@@ -973,7 +972,7 @@ Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
 - **Erledigt wird eine Gebühr in der Leserakte** auf genau zwei Wegen:
   **„Bezahlt“** (Barzahlung an der Theke) oder **„Stornieren“** mit Pflicht-Begründung
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —
-  bewusst nicht die Kiosk-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
+  bewusst nicht die Theken-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
   stammt immer aus der Datenbank, nie aus der Anfrage; eine bereits erledigte Gebühr
   meldet dem zweiten Bearbeiter einen Konflikt (409) statt einer Doppelbuchung. Die getippte
   Begründung steht an der Forderung und im Eintrag; mit der Anonymisierung oder dem
@@ -1147,7 +1146,7 @@ mit Leerwerten überschrieben.
 | 6   | **Lieferanten**             | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant und wird im Bestellformular vorausgewählt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `create_orders`                                                 |
 | 7   | **Schlagworte**             | Pflege der Schlagworte am Titel (§13): umbenennen und zusammenführen (alle Titel ändern sich mit, die alte Schreibweise wahlweise als Verweis), Verweise anlegen, löschen — auch mehrere auf einmal —, Filter-Markierung fürs Portal                                                                                                                                                                                                                                                                                                                                                                                                | `edit_books`                                                    |
 | 8   | **Schadensersatz**          | Angaben für den Schadensersatz-Bescheid: Nummer des Schulamtsbereichs und Schulnummer (Teil der Referenznummer), Aufsichtsbehörde (Name und Anschrift), Name der Schulleitung, Geschäftszeichen, Bearbeiter, Durchwahl (freiwillig), Zahlstelle und Bankverbindung (vorbelegt aus dem Musterschreiben), Zahlungsfrist in Tagen ab Briefdatum (Vorgabe 28); Schalter **„Immer mit dem Einkaufspreis rechnen"** (`ersatzwert_immer_kaufpreis`): aus gilt ab dem zweiten Verleihjahr der Listenpreis (Arbeitshilfe des Landes), ohne erfassten Listenpreis ersatzweise der Einkaufspreis; an gilt immer der Einkaufspreis              | `manage_settings`                                               |
-| 9   | **Datenschutz & Sitzung**   | Löschfristen (Lesehistorie 1 Tag, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Abgänger-Karenzzeit (Vorgabe 90 Tage, §8.2), Theke leeren nach _n_ Minuten (Vorgabe 5), Sperrbildschirm nach _n_ Minuten (Vorgabe 15)                                                                                                                                                                                                                                                                                                                                                                                          | `manage_settings`                                               |
+| 9   | **Datenschutz & Sitzung**   | Löschfristen (Lesehistorie 1 Tag, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Karenzzeit für Ehemalige (Vorgabe 90 Tage, §8.2), Theke leeren nach _n_ Minuten (Vorgabe 5), Sperrbildschirm nach _n_ Minuten (Vorgabe 15)                                                                                                                                                                                                                                                                                                                                                                                     | `manage_settings`                                               |
 | 10  | **Erreichbarkeit & Alarme** | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog- und Monitor-Adresse; leer = keine Links), Alarm-Empfänger (leer = alle aktiven Admins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `manage_settings`                                               |
 | 11  | **Mail**                    | SMTP-Postausgang mit Verbindungstest, Test-Mail; zweiter Absender mit Häkchen, welche Mails über ihn gehen: Mails aus Mein Portal (ab Werk), Mahnlisten und Abgänger-Auszüge an die Klassenleitungen, Bestellmails; alle anderen, und ohne Adresse alle, gehen über den Postausgang; **Adressen aus dem Webmail**: Zugang zum Roundcube der Schule, monatlicher Abgleich mit dem globalen Adressbuch, der Konten mit Platzhalter-Adresse ihre Adresse der Schule einträgt (Probelauf und Knopf „Jetzt abgleichen“); **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}} {{.LinkGueltigBis}} {{.Mittel}}`) — Platzhalter je Typ, Gate `mail_vorlagen_platzhalter_test.go`. Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings`                                               |
 | 12  | **LMF-Aktionen**            | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen. Verlängert wird nur, was früher fällig ist; ein Band für mehrere Jahre behält seine Frist. Ein Datum in der Vergangenheit oder mehr als 13 Jahre voraus weist der Server ab                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `edit_books`                                                    |

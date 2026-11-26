@@ -77,13 +77,13 @@ describe('SchuelerZusammenfuehrenDialog: der offene Datensatz', () => {
 			props: { open: true, leser: { ...PROFIL, ist_abgaenger: true }, onMerged: vi.fn() }
 		});
 
-		expect(screen.getByText('Abgänger')).toBeTruthy();
+		expect(screen.getByText('ehemalig')).toBeTruthy();
 	});
 
 	it('nennt niemanden Abgänger, der keiner ist', () => {
 		const screen = oeffne();
 
-		expect(screen.queryByText('Abgänger')).toBeNull();
+		expect(screen.queryByText('ehemalig')).toBeNull();
 	});
 });
 

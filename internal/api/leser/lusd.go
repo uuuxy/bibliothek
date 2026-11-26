@@ -176,7 +176,7 @@ func lusdLaufFehler(err error) (status int, meldung string) {
 	var wahl *lusd.UmbenennungUngueltigFehler
 	switch {
 	case errors.As(err, &massenabgang):
-		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Abgängern, die Schwelle liegt bei %d%%. "+
+		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Ehemaligen, die Schwelle liegt bei %d%%. "+
 			"Bitte die Datei prüfen. Ist der Massenabgang zum Schuljahreswechsel beabsichtigt, den Import mit "+
 			"Bestätigung wiederholen.", massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
 	case errors.As(err, &wahl):

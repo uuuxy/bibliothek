@@ -26,7 +26,7 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 5. Verifizieren, dass Ergebnisse in der Vorschau angezeigt werden
 	await expect(page.getByText('Unverbindliche Vorschau')).toBeVisible();
 	await expect(page.getByText('Versetzte Schüler')).toBeVisible();
-	await expect(page.getByText('Neue Abgänger')).toBeVisible();
+	await expect(page.getByText('Neue Ehemalige')).toBeVisible();
 
 	// 6. Ausführen
 	await page.getByRole('button', { name: 'Schuljahr wechseln' }).click();

@@ -493,8 +493,8 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 // Routinen erhoben, keine überfällige Zeile, keine Frist auf 0.
 func rueckstandSauber() []repository.LoeschRueckstand {
 	return []repository.LoeschRueckstand{
-		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage nach dem Löschen, für Abgänger 360 Tage Karenz"},
-		{Routine: "Abgänger endgültig löschen", Frist: "30 Tage nach Schuljahresende"},
+		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage nach dem Löschen, für Ehemalige 360 Tage Karenz"},
+		{Routine: "Ehemalige endgültig löschen", Frist: "30 Tage nach Schuljahresende"},
 		{Routine: "Lesehistorie Schülerbücherei", Frist: "90 Tage"},
 		{Routine: "Lesehistorie Lernmittel", Frist: "730 Tage"},
 		{Routine: "Erledigte Anliegen", Frist: "365 Tage"},

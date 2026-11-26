@@ -263,7 +263,7 @@
 						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
 						<Icon name="warning" /><span
-							>Auffällig viele Abgänger: {probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
+							>Auffällig viele Ehemalige: {probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
 							aktiven Schülern. Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span
 						>

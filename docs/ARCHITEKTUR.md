@@ -360,7 +360,7 @@ Die tragenden Entscheidungen in Kurzform; die ausführliche Fassung steht in
 | Redis oder Memcached              | Ein Prozess auf einem Host braucht keinen; der Preis steht in Kapitel 11                     |
 | TypeScript                        | JSDoc mit `svelte-check` prüft ohne Umbau von rund 300 Komponenten                           |
 | Kubernetes                        | `docker compose` und `update.sh` versteht eine Person auch im Ernstfall                      |
-| Soft-Delete überall               | Wo die DSGVO Löschung verlangt, ist Soft-Delete keine; die Abgänger-Tilgung löscht hart      |
+| Soft-Delete überall               | Wo die DSGVO Löschung verlangt, ist Soft-Delete keine; die Tilgung der Ehemaligen löscht hart      |
 
 ---
 
@@ -763,7 +763,7 @@ Ein „zentraler Event-Loop“ mit Register-Kanälen machte jeden Deploy zum `os
 
 | Job                              | Zeitplan (UTC)            | Inhalt                                                                          |
 | -------------------------------- | ------------------------- | ------------------------------------------------------------------------------- |
-| `fuehreNaechtlicheDSGVOAus`      | `0 0 * * *`               | In dieser Reihenfolge: Ausleihen anonymisieren → fällige Schülerdaten anonymisieren → Abgänger löschen → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen |
+| `fuehreNaechtlicheDSGVOAus`      | `0 0 * * *`               | In dieser Reihenfolge: Ausleihen anonymisieren → fällige Schülerdaten anonymisieren → Ehemalige löschen → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen |
 | `fuehreProtokollAufbewahrungAus` | `0 3 * * *`               | Protokoll jenseits der Frist löschen (Vorgabe 24 Monate)                        |
 | `BackupLauf.FuehreAus`           | `30 2 * * *`              | `pg_dump` → gzip → AES-256-GCM, Volume, optional S3                             |
 | Idempotenz-TTL                   | `17 * * * *`              | Schlüssel älter als 24 h entfernen                                              |
@@ -772,7 +772,7 @@ Ein „zentraler Event-Loop“ mit Register-Kanälen machte jeden Deploy zum `os
 | `fuehreRestoreProbeAus`          | `30 3 * * 0`              | Jüngstes Backup in eine Wegwerf-Datenbank; das Ergebnis wird Befund der Selbstprüfung |
 
 Daneben im Prozess: `starteDSGVOLauf` (beim Start und alle 24 h, nur Bearbeiter-Anonymisierung
-und Abgänger-Löschung) und `starteBereitschaftsWaechter` (3 Minuten nach dem Start, dann alle
+und Löschung der Ehemaligen) und `starteBereitschaftsWaechter` (3 Minuten nach dem Start, dann alle
 24 h), damit ein Deploy mit kaputter Umgebung sich noch am selben Tag meldet.
 
 ---
@@ -869,7 +869,7 @@ Arbeitsplatz nicht abmelden.
 
 ```mermaid
 sequenceDiagram
-    participant K as Kiosk (Omnibox)
+    participant K as Theke (Omnibox)
     participant H as api/action
     participant S as internal/service
     participant DB as PostgreSQL
@@ -957,7 +957,7 @@ gebucht ist; die Gleichzeitigkeit des Lasttests zählt so nicht in jeder Runde g
 
 ```mermaid
 sequenceDiagram
-    participant K as Kiosk (offline)
+    participant K as Theke (offline)
     participant IDB as IndexedDB
     participant N as POST /api/action/nachbuchen
     participant DB as PostgreSQL
@@ -999,7 +999,7 @@ Datei (xlsx oder Semikolon-CSV mit BOM)
    │     Schlüssel ist die Normalform »suchnorm« (Müller ≡ Mueller ≡ MÜLLER)
    ├─ Vorschau: neu · geändert · »vermutlich dieselbe Person«; mehrdeutig → gemeldet, nicht angefasst
    ├─ Anwenden: jede gefundene oder angelegte Zeile stempelt lusd_bestaetigt_am
-   └─ Abgänger = war bestätigt, fehlt jetzt
+   └─ Ehemalige = war bestätigt, fehlt jetzt
          ├─ offene Ausleihe oder Schaden → gesperrt, Name und Anschrift bleiben
          ├─ nichts offen, Karenz > 0     → gesperrt; abgaenger_seit startet die Uhr
          └─ nichts offen, Karenz = 0     → sofort anonymisiert
@@ -1025,7 +1025,7 @@ beginnt die Mahnfolge neu (A18).
 ```
 00:00 UTC  fuehreNaechtlicheDSGVOAus
              1. Bearbeiter nach 14 Tagen entfernen     2. fällige Schülerdaten tilgen
-             3. Abgänger löschen (ab 30. Januar des Folgejahres, nur anonymisierte Zeilen)
+             3. Ehemalige löschen (ab 30. Januar des Folgejahres, nur anonymisierte Zeilen)
              4. Papierkorb nach 180 Tagen   5. Lesehistorie   6. Anliegen
              7. Klassensatz-Reservierungen   8. quittierte Nachbuch-Meldungen
            └─ Löschung NACH Anonymisierung, damit die Karenz für beides gilt
@@ -1332,8 +1332,8 @@ Zweitname der Variable abweichend gesetzt, startet der Server nicht.
 ```
 Ausleihbearbeiter (bearbeiter_id)  →  nach 14 Tagen entfernt
 Schülerdaten fällig                →  anonymisiert (auch im Protokoll)
-Abgänger ohne offene Vorgänge      →  Karenz (Vorgabe 90 Tage) → Anonymisierung
-Anonymisierte Abgänger             →  gelöscht ab 30. Januar des Folgejahres
+Ehemalige ohne offene Vorgänge     →  Karenz (Vorgabe 90 Tage) → Anonymisierung
+Anonymisierte Ehemalige            →  gelöscht ab 30. Januar des Folgejahres
 Protokoll                          →  gelöscht nach der Frist (Vorgabe 24 Monate)
 Lesehistorie, Anliegen             →  eigene Läufe in derselben Nachtkette
 ```
@@ -2066,7 +2066,7 @@ Der Nachweis nennt das Gate, das rot wird, wenn die Zusage nicht mehr gilt.
 | S24 | Verbindung bricht mitten in einer Liste ab                    | Fehler, keine gekürzte Liste                                   | `rows.Err()` und `golangci-lint`; kein eigenes Gate                  |
 | S6  | Aufruf von `/katalog`, `/monitor`, `/uploads/` ohne Anmeldung | Nur Titeldaten und Cover                                       | `pii_matrix_test.go`, `pii_antwort_pg_test.go`                       |
 | S7  | Rolle ohne Recht ruft eine Schreibroute direkt                | 403                                                            | `rechte_schreibwege_pg_test.go`, `geschuetzte_routen_test.go`        |
-| S8  | Abgänger ohne offene Vorgänge                                 | Sperre, Karenz, Anonymisierung, Löschung, in dieser Folge      | `cron_dsgvo_karenz_pg_test.go`, `cron_dsgvo_abgaenger_pg_test.go`, `nachtlauf_ratsche_test.go` |
+| S8  | Ehemalige ohne offene Vorgänge                                | Sperre, Karenz, Anonymisierung, Löschung, in dieser Folge      | `cron_dsgvo_karenz_pg_test.go`, `cron_dsgvo_abgaenger_pg_test.go`, `nachtlauf_ratsche_test.go` |
 | S9  | Start mit Beispiel-Geheimnis                                  | Start verweigert                                               | `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`  |
 | S19 | Mailserver ohne STARTTLS                                      | Versand abgebrochen                                            | `internal/mailservice/versand_test.go`                               |
 | S20 | Zeilenumbruch aus einer Anfrage im Log                        | Ein JSON-Eintrag, kein gefälschter zweiter                     | `slog` mit JSON-Handler; am laufenden Server nachgemessen            |
@@ -2352,7 +2352,7 @@ Wo ein Begriff im Code anders heißt als in der Oberfläche, steht beides.
 
 | Begriff                | Bedeutung                                                                   | Im Code / in der DB                                     |
 | ---------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Abgänger               | War bestätigt in der LUSD, fehlt im neuen Export; Sperre, Karenz, Löschung  | `abgaenger_seit`, `internal/jobs/cron_dsgvo_abgaenger.go` |
+| Abgänger               | Schüler einer Abschlussklasse, noch an der Schule (Abgängerliste)           | `repository/abgaenger_liste.go`                         |
 | Abgangsbuch            | Ausgegangene Bücher je Halbjahr mit Grund, nach Topf                        | `internal/api/katalog/abgangsbuch.go`, `internal/pdf/abgangsbuch.go` |
 | Abholfach              | Wo ein vorgemerktes Exemplar wartet                                         | `vormerkungen`                                          |
 | Abwertung              | Minderung des Ersatzwerts nach Alter und Zustand                            | `internal/pkg/ersatzwert`, `internal/repository/ersatzwert_groessen.go`                               |
@@ -2364,13 +2364,14 @@ Wo ein Begriff im Code anders heißt als in der Oberfläche, steht beides.
 | Bestand, Katalog       | Die Stücke; die Titel, einer je Auflage (in der Oberfläche „Titel“)         | `buecher_exemplare`, `buecher_titel`                    |
 | Betriebsbereitschaft   | Die Selbstprüfung                                                           | `internal/api/system/betriebsbereitschaft*.go`          |
 | Dauerleihe             | Ausleihe ans Kollegium, nie überfällig, „ohne Frist“; gespeichert ein Jahr  | `internal/service/ausleih_vorgang.go`                   |
+| Ehemalige              | Fehlt im LUSD-Export oder kam aus der Abschlussklasse; Sperre, Karenz, Löschung; im Code „abgaenger“ | `ist_abgaenger`, `abgaenger_seit`, `internal/jobs/cron_dsgvo_abgaenger.go` |
 | Ersatzwert             | Was ein Buch heute wert ist, als Vorschlag mit Herleitung                   | `internal/pkg/ersatzwert`                               |
 | Exemplar               | Ein Stück mit eigenem Barcode                                               | `buecher_exemplare`                                     |
 | Freihand               | CDs, DVDs, Hörbücher mit rollierender Frist                                 | `internal/service/frist.go`                             |
 | Gerät                  | Ausleihbare Hardware mit Zubehör-Checkliste, Vorsilbe `G-`                  | `geraete`, `internal/service/geraet.go`                 |
 | Inventur               | Zählung je Sitzung; im Code auch Inventurlauf                               | `inventur_sessions`, `internal/repository/inventurlauf.go` |
 | Jahrgang (am Titel)    | „Im Unterricht von … bis“, ganz oder gar nicht                              | `jahrgang_von`, `jahrgang_bis`                          |
-| Karenzzeit             | Frist bis zur Anonymisierung eines Abgängers (Vorgabe 90 Tage)              | `abgaenger_karenz_tage`, `PraedikatAnonymisierung`      |
+| Karenzzeit             | Frist bis zur Anonymisierung eines Ehemaligen (Vorgabe 90 Tage)             | `abgaenger_karenz_tage`, `PraedikatAnonymisierung`      |
 | Klassensatz            | Exemplare eines Titels für eine Klasse                                      | `class_books`, `klassensatz_reservierungen`             |
 | Kollegium              | Grundzustand jeder Lehrkraft mit einem Recht                                | `benutzer_rolle = 'kollegium'`                          |
 | Leser, Leserdatei      | Jeder Entleiher; die Liste in der Oberfläche                                | `leser`, `components/leser/Schuelerdatei.svelte`        |
@@ -2390,7 +2391,8 @@ Wo ein Begriff im Code anders heißt als in der Oberfläche, steht beides.
 | Schlagwort, Verweis    | Freies Wort am Titel; eine Schreibweise, die auf ein Schlagwort umleitet    | `schlagworte`, `schlagworte.verweis_auf`                |
 | Schnellrückgabe        | Theke nimmt nur zurück, bis ein Ausweis kommt                               | `OmniboxSchnellrueckgabe.svelte`                        |
 | Standort               | Wo ein Exemplar abweichend steht                                            | `buecher_exemplare.standort`                            |
-| Theke                  | Der Arbeitsplatz mit Scanner („Kiosk“)                                      | `components/omnibox/Omnibox.svelte`, `stores/thekeLeeren.js`                     |
+| Systematik             | Die Fächer mit Kürzel, aus denen die Signatur entsteht; im Code auch „Sachgruppe“ | `internal/api/katalog/systematik.go`                    |
+| Theke                  | Der Arbeitsplatz mit Scanner; im Code und in der Adresse „kiosk“            | `components/omnibox/Omnibox.svelte`, `stores/thekeLeeren.js`                     |
 | Vormerkung             | Reservierung durch einen Leser, rückt nach                                  | `vormerkungen`, `internal/repository/vormerkung_nachruecken.go`                                          |
 | Zugangsbuch            | Eingegangene Bücher je Halbjahr mit Lieferant                               | `internal/api/katalog/bestandsbuch.go`                  |
 

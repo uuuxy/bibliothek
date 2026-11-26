@@ -42,7 +42,7 @@
 
 <KategorieRahmen
 	titel="Mahnwesen"
-	kurz="Ab wann überfällige Medien die Ausleihe am Kiosk sperren"
+	kurz="Ab wann überfällige Medien die Ausleihe an der Theke sperren"
 	{eingabe}
 	{onSaved}
 >

@@ -39,8 +39,8 @@ export function modusInfo(modus) {
  */
 export function abgaengerHinweis(karenzTage) {
 	return karenzTage > 0
-		? `Fehlen in der Datei und werden als Abgänger gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert, einstellbar unter Einstellungen › Datenschutz & Sitzung`
-		: 'Fehlen in der Datei und werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert, weil die Karenzzeit 0 ist';
+		? `Fehlen in der Datei und werden als Ehemalige gesperrt; ohne offene Vorgänge nach ${anzahlText(karenzTage, 'Tag', 'Tagen')} Karenz anonymisiert, einstellbar unter Einstellungen › Datenschutz & Sitzung`
+		: 'Fehlen in der Datei und werden als Ehemalige markiert; ohne offene Vorgänge sofort anonymisiert, weil die Karenzzeit 0 ist';
 }
 
 /**
@@ -114,13 +114,13 @@ export function rubriken(r) {
 		{
 			key: 'returners',
 			label: 'Rückkehrer',
-			hint: 'Abgänger, die wieder im Export stehen, werden reaktiviert',
+			hint: 'Ehemalige, die wieder im Export stehen, werden reaktiviert',
 			items: r.rueckkehrer || [],
 			valueClass: 'text-primary'
 		},
 		{
 			key: 'graduates',
-			label: 'Abgänger',
+			label: 'Ehemalige',
 			// Rückfall 90, nicht 0: So rechnet der Server ohne Einstellung
 			// (AbgaengerKarenzTageVorgabe). Eine 0 hier versprach „sofort anonymisiert“ — und log.
 			hint: abgaengerHinweis(r.karenz_tage ?? 90),

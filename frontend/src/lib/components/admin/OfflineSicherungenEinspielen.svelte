@@ -60,7 +60,7 @@
 <div>
 	<h3 class="text-title-medium text-on-surface">Offline-Sicherungen einspielen</h3>
 	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
-		Fällt an einem Kiosk-Rechner das Netz aus, werden Rückgaben dort zwischengespeichert und die
+		Fällt an einem Rechner der Theke das Netz aus, werden Rückgaben dort zwischengespeichert und die
 		Kraft speichert vor dem Ausschalten eine Sicherungsdatei. Diese Dateien werden hier eingespielt,
 		mehrere auf einmal, eine je Rechner.
 	</p>

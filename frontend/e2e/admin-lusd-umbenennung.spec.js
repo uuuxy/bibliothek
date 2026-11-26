@@ -85,14 +85,14 @@ test('Leserakte eines Abgängers: der Dialog nennt ihn Abgänger', async ({ page
 
 		const dialog = page.getByRole('dialog', { name: 'Datensatz zusammenführen' });
 		await expect(dialog.getByText('Dieser Datensatz')).toBeVisible();
-		await expect(dialog.getByText('Abgänger', { exact: true })).toBeVisible();
+		await expect(dialog.getByText('ehemalig', { exact: true })).toBeVisible();
 	} finally {
 		seedSQL(`DELETE FROM leser WHERE barcode_id = 'ZMA-${s}';`);
 	}
 });
 
 // Zusammenführen von Hand: zwei Datensätze derselben Testperson, die Akte des einen
-// öffnen, den anderen suchen (auch als Abgänger auffindbar), zusammenführen. Danach ein
+// öffnen, den anderen suchen (auch als Ehemaliger auffindbar), zusammenführen. Danach ein
 // Datensatz mit dem Barcode des behaltenen und dem Namen des LUSD-frischeren.
 test('Leserakte: zwei Datensätze zusammenführen', async ({ page }) => {
 	const s = uniqueSuffix();

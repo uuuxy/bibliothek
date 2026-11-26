@@ -111,7 +111,7 @@ export function bildschirmTitel(tab) {
 
 export const menueGruppen = [
 	{
-		name: 'Kiosk',
+		name: 'Theke',
 		items: [{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk', permission: 'perform_actions' }]
 	},
 	{

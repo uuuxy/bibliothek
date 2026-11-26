@@ -290,7 +290,7 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
   nicht neu erfunden, sondern aus `internal/repository/schuljahreswechsel.go` (`is_graduating`) übernommen,
   damit Import und Schuljahreswechsel dieselbe Aussage treffen. Die Förderstufe rechnet
   bewusst mit dem längsten Weg (13): Solange der Schüler da ist, steht das Jahr nur im
-  Profil; als Abgänger markieren ihn Versetzung und LUSD-Import, und beide setzen dann das
+  Profil; als Ehemaligen markieren ihn Versetzung und LUSD-Import, und beide setzen dann das
   tatsächliche Jahr — ein zu spätes kostet nichts, ein zu frühes stünde falsch in der Akte.
   Eine Klasse ohne Jahrgang („AUS") bekommt das Jahr der Handanlage (Kalenderjahr + 5,
   `repository.AbgangsjahrOhneKlasse`) und eine Warnung im Protokoll.

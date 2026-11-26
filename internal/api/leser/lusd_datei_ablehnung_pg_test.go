@@ -174,7 +174,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 			http.StatusBadRequest, "Die Zuordnung für Zeile 2 im Blatt „7b“ ist nicht mehr gültig. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
-		const meldung = "4 von 10 aktiven Schülern würden zu Abgängern, die Schwelle liegt bei 30%. Bitte die Datei prüfen. Ist der " +
+		const meldung = "4 von 10 aktiven Schülern würden zu Ehemaligen, die Schwelle liegt bei 30%. Bitte die Datei prüfen. Ist der " +
 			"Massenabgang zum Schuljahreswechsel beabsichtigt, den Import mit Bestätigung wiederholen."
 		protokoll := leseLogMit(t)
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict, meldung)

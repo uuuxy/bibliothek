@@ -49,12 +49,12 @@
 					<p class="text-xs text-on-surface-variant mt-0.5">
 						{#if abgeschlossen}
 							{bestaetigte} von {anzahlText(paare.length, 'Paar', 'Paaren')} bestätigt. Bestätigte Schüler
-							behielten ihren Datensatz, die übrigen wurden als Abgänger + Neuzugang behandelt.
+							behielten ihren Datensatz, die übrigen wurden als Ehemaliger + Neuzugang behandelt.
 						{:else}
-							Ein Abgänger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
+							Ein Ehemaliger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
 							Anschrift zusammengehören, etwa nach einer Namensänderung oder Datumskorrektur in der
 							LUSD. Angekreuzt heißt: derselbe Datensatz bekommt den neuen Namen, Ausweis und Bücher
-							bleiben. Nicht angekreuzt: Abgänger + Neuanlage wie bisher.
+							bleiben. Nicht angekreuzt: Ehemaliger + Neuanlage wie bisher.
 						{/if}
 					</p>
 				</div>
@@ -103,7 +103,7 @@
 								{#if p.war_abgaenger}
 									<span
 										class="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-label-small"
-										>früherer Abgänger</span
+										>bereits ehemalig</span
 									>
 								{/if}
 								{#if abgeschlossen && p.bestaetigt}

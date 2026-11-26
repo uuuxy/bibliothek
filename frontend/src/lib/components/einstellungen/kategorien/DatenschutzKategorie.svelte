@@ -85,7 +85,7 @@
 			{
 				// 0 = sofort anonymisieren: ein echter Wert.
 				schluessel: 'abgaenger_karenz_tage',
-				label: 'Abgänger-Karenzzeit',
+				label: 'Karenzzeit für Ehemalige',
 				wert: abgaengerKarenz,
 				min: 0
 			}
@@ -114,12 +114,13 @@
 			Sperrbildschirm kommt. Entsperrt wird mit dem eigenen Passwort.
 		</p>
 		<p>
-			Abgänger-Karenzzeit: So viele Tage bleibt ein Abgänger ohne offene Vorgänge nur gesperrt,
-			bevor er anonymisiert wird. Sie zählen ab dem letzten Vorgang, also dem Abgang im LUSD-Import,
-			der letzten Rückgabe oder der Schadensregulierung. In dieser Zeit lässt sich eine falsche
-			Zuordnung noch reparieren, etwa ein umbenannter Schüler, den der Export ohne Schüler-ID nicht
-			wiedererkannt hat; zusammengeführt wird in der Leserakte. Die endgültige Löschung ab dem 30.
-			Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen haben.
+			Karenzzeit für Ehemalige: So viele Tage bleibt ein Ehemaliger ohne offene Vorgänge nur
+			gesperrt, bevor er anonymisiert wird. Sie zählen ab dem letzten Vorgang, also dem Abgang im
+			LUSD-Import, der letzten Rückgabe oder der Schadensregulierung. In dieser Zeit lässt sich eine
+			falsche Zuordnung noch reparieren, etwa ein umbenannter Schüler, den der Export ohne
+			Schüler-ID nicht wiedererkannt hat; zusammengeführt wird in der Leserakte. Die endgültige
+			Löschung ab dem 30. Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen
+			haben.
 		</p>
 		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort</p>
 	{/snippet}
@@ -182,7 +183,7 @@
 		<Feld
 			type="number"
 			bind:value={abgaengerKarenz}
-			etikett="Abgänger-Karenzzeit"
+			etikett="Karenzzeit für Ehemalige"
 			nachlaufend={tage}
 			min={0}
 			max={365}

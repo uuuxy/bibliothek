@@ -58,7 +58,7 @@ func zahlenFelder(p *EinstellungenPatch) []zahlFeld {
 		{"sperre_minuten", p.SperreMinuten, 0, 1440, "Sperrbildschirm nach", "Minuten"},
 		// 0 heißt sofort anonymisieren: der schärfste Wert des Schalters, aber ein gewollter.
 		// Er wird angenommen und nicht ersetzt.
-		{AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 3650, "Abgänger-Karenzzeit", "Tagen"},
+		{AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 3650, "Karenzzeit für Ehemalige", "Tagen"},
 	}
 }
 

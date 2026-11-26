@@ -18,7 +18,7 @@ import (
 // meldungSachgruppeNichtGeaendert ist die Meldung bei jedem Abbruch der Änderung: Beginn,
 // Änderung und Commit sprechen mit einer Stimme, denn für den Benutzer ist es derselbe Vorgang,
 // der nicht stattgefunden hat.
-const meldungSachgruppeNichtGeaendert = "Sachgruppe konnte nicht geändert werden"
+const meldungSachgruppeNichtGeaendert = "Systematik konnte nicht geändert werden"
 
 // sachgruppeAnfrage ist die Eingabe für Anlegen und Ändern einer Sachgruppe.
 type sachgruppeAnfrage struct {
@@ -58,8 +58,8 @@ func istDoppelteSachgruppe(err error) bool {
 
 // Sätze zur doppelten Sachgruppe (meldungDoppelteSachgruppe).
 const (
-	meldungBezeichnungVergeben = "Eine Sachgruppe mit dieser Bezeichnung gibt es schon"
-	meldungKuerzelVergeben     = "Eine Sachgruppe mit diesem Kürzel gibt es schon"
+	meldungBezeichnungVergeben = "Eine Systematik mit dieser Bezeichnung gibt es schon"
+	meldungKuerzelVergeben     = "Eine Systematik mit diesem Kürzel gibt es schon"
 )
 
 // meldungDoppelteSachgruppe benennt das Feld, das kollidiert: „Kürzel existiert bereits" bei
@@ -91,7 +91,7 @@ func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 			if istDoppelteSachgruppe(err) {
 				return apierrors.Conflict(meldungDoppelteSachgruppe(err), err)
 			}
-			return apierrors.Internal("Sachgruppe konnte nicht angelegt werden", err)
+			return apierrors.Internal("Systematik konnte nicht angelegt werden", err)
 		}
 
 		tuer.AntworteJSON(w, http.StatusCreated, map[string]string{
@@ -146,7 +146,7 @@ func (t *Tueren) aendereSachgruppe(w http.ResponseWriter, r *http.Request) error
 	var mitgezogen int64
 	if alteBezeichnung != req.Bezeichnung {
 		if mitgezogen, err = repository.ZaehleTitelDerSachgruppe(ctx, tx, alteBezeichnung); err != nil {
-			return apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
+			return apierrors.Internal("Verwendung der Systematik konnte nicht geprüft werden", err)
 		}
 	}
 
@@ -186,9 +186,9 @@ func ladeSachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (stri
 	bezeichnung, err := repository.LadeSachgruppenBezeichnung(ctx, tx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", apierrors.NotFound("Sachgruppe nicht gefunden", err)
+			return "", apierrors.NotFound("Systematik nicht gefunden", err)
 		}
-		return "", apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
+		return "", apierrors.Internal("Systematik konnte nicht geladen werden", err)
 	}
 	return bezeichnung, nil
 }
@@ -206,9 +206,9 @@ func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 		bezeichnung, err := repository.LadeSachgruppenBezeichnung(r.Context(), t.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return apierrors.NotFound("Sachgruppe nicht gefunden", err)
+				return apierrors.NotFound("Systematik nicht gefunden", err)
 			}
-			return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
+			return apierrors.Internal("Systematik konnte nicht geladen werden", err)
 		}
 
 		betroffen, err := t.zaehleTitelMitFach(r.Context(), bezeichnung)
@@ -217,7 +217,7 @@ func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 		}
 		if betroffen > 0 {
 			return apierrors.Conflict(
-				"Diese Sachgruppe hängt noch an Büchern und kann nicht gelöscht werden",
+				"Diese Systematik hängt noch an Büchern und kann nicht gelöscht werden",
 				errors.New("systematik noch in verwendung"))
 		}
 
@@ -228,9 +228,9 @@ func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
 				return apierrors.Conflict(
-					"Diese Sachgruppe hängt noch an Büchern und kann nicht gelöscht werden", err)
+					"Diese Systematik hängt noch an Büchern und kann nicht gelöscht werden", err)
 			}
-			return apierrors.Internal("Sachgruppe konnte nicht gelöscht werden", err)
+			return apierrors.Internal("Systematik konnte nicht gelöscht werden", err)
 		}
 
 		w.WriteHeader(http.StatusNoContent)
@@ -242,7 +242,7 @@ func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 func (t *Tueren) zaehleTitelMitFach(ctx context.Context, bezeichnung string) (int, error) {
 	anzahl, err := repository.ZaehleTitelMitFach(ctx, t.DB.Pool, bezeichnung)
 	if err != nil {
-		return 0, apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
+		return 0, apierrors.Internal("Verwendung der Systematik konnte nicht geprüft werden", err)
 	}
 	return anzahl, nil
 }

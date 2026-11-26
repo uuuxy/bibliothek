@@ -57,7 +57,7 @@
 			bezeichnung = '';
 			await laden();
 			onChanged?.();
-			snackbars.addToast('Sachgruppe angelegt', 'success');
+			snackbars.addToast('Systematik angelegt', 'success');
 		} catch {
 			// Meldung kam bereits aus apiPost.
 		} finally {
@@ -71,7 +71,7 @@
      beides zu gleichrangigen Objekten machte. -->
 <section class="space-y-4 border-t border-outline-variant pt-6">
 	<div>
-		<h2 class="text-on-surface text-title-medium">Sachgruppen</h2>
+		<h2 class="text-on-surface text-title-medium">Systematik</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
 			Das Fach-Vokabular des Katalogs. Die Signatur am Regal schlägt es nicht mehr vor: Dort gelten
 			die Adressen aus dem Bestand.
@@ -109,13 +109,13 @@
 	</form>
 
 	{#if laedt}
-		<div class="flex justify-center py-6"><Ladekreis etikett="Sachgruppen laden" /></div>
+		<div class="flex justify-center py-6"><Ladekreis etikett="Systematik laden" /></div>
 	{:else if ladefehler && liste.length === 0}
-		<!-- Nicht „Noch keine Sachgruppen": Die Liste kam nicht. -->
-		<LadeFehler titel="Sachgruppen nicht geladen" text={ladefehler} onerneut={laden} />
+		<!-- Nicht „Noch keine Systematik": Die Liste kam nicht. -->
+		<LadeFehler titel="Systematik nicht geladen" text={ladefehler} onerneut={laden} />
 	{:else if liste.length === 0}
 		<p class="text-sm text-on-surface-variant">
-			Noch keine Sachgruppen. Ohne sie lässt sich im Buchformular kein Fach wählen.
+			Noch keine Systematik. Ohne sie lässt sich im Buchformular kein Fach wählen.
 		</p>
 	{:else}
 		<SystematikTabelle

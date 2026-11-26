@@ -37,7 +37,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 2. [ ] **Banner lesen:** Welche Zuordnungsstufe gilt? Bei „nur Name" ist mit
        Mehrdeutigkeiten zu rechnen — das ist kein Fehler, sondern die Schutzmaßnahme.
 3. [ ] Vorschau prüfen. Zuoberst **„Vermutlich dieselbe Person"** (nur wenn es Paare gibt):
-       ein Abgänger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
+       ein Ehemaliger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
        Anschrift zusammengehören. „sicher" ist vorangekreuzt, „vermutlich" nicht — jedes
        Paar lesen und entscheiden; angekreuzt behält der Schüler seinen Datensatz.
        Darunter bis zu **sieben** Gruppen — die letzten vier sind die, bei denen das
@@ -46,9 +46,9 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
    - **Klassenwechsel** → Stichprobe: stimmen alte und neue Klasse?
    - **Zusammengeführt** (Bestandsschüler, den der Export eindeutig trifft) → bekommt
      fehlende LUSD-ID bzw. fehlendes Geburtsdatum nachgetragen, **kein** Duplikat
-   - **Abgänger** → Stichprobe: sind die wirklich weg? (Ohne offene Vorgänge bleiben sie
+   - **Ehemalige** → Stichprobe: sind die wirklich weg? (Ohne offene Vorgänge bleiben sie
      für die Karenzzeit gesperrt erhalten, Vorgabe 90 Tage ab dem letzten Vorgang — erst danach anonymisiert und erst danach endgültig gelöscht.)
-   - **Rückkehrer** → früherer Abgänger steht wieder in der Datei; prüfen, ob das
+   - **Rückkehrer** → ein Ehemaliger steht wieder in der Datei; prüfen, ob das
      dieselbe Person ist
    - **Mehrdeutig** → Name kommt mehrfach vor; bleibt unverändert
    - **Nicht abgleichbar** → im Bestand fehlt das Geburtsdatum; bleibt unverändert.
@@ -68,7 +68,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 **Eingebaute Bremsen:**
 
 - Falsche Datei (fehlende Pflichtspalten, Binärmüll) → verständliche deutsche Fehlermeldung, kein Import.
-- Mehr als 30 % der aktiven Schüler würden zu Abgängern → Warnung; der Import verlangt dann
+- Mehr als 30 % der aktiven Schüler würden zu Ehemaligen → Warnung; der Import verlangt dann
   die zusätzliche rote Bestätigung **„Massenabgang bestätigen & endgültig importieren"**.
   Diese Bremse schützt vor einem versehentlichen Teilexport (z. B. nur eine Jahrgangsstufe exportiert).
 
@@ -86,7 +86,7 @@ oder nur die Versetzung nutzen, wenn kein frischer LUSD-Export vorliegt.
 1. [ ] **„Vorschau berechnen"** — der Server rechnet die komplette Versetzung durch und
        verwirft sie wieder (echter Dry-Run). Es wird nichts geändert.
 2. [ ] Vorschau prüfen: Anzahl versetzte Schüler plausibel? Werden Klassen korrekt
-       hochgezählt (z. B. `05a` → `06a`)? Höchste Jahrgangsstufe → Abgänger?
+       hochgezählt (z. B. `05a` → `06a`)? Höchste Jahrgangsstufe → Ehemalige?
 3. [ ] Ausführen (rote Bestätigungsstufe) → Erfolgsmeldung.
 4. [ ] Gegenprobe: je einen Schüler aus niedrigster und höchster Stufe prüfen.
 
@@ -140,7 +140,7 @@ Kollegium“ grün. Eine Lehrkraft mit Schulpostfach, die **kein** Konto hat.
 3. [ ] Person prüfen (ist das wirklich eine Lehrkraft?), „Bearbeiten“ → „Benutzerkonto ist
        aktiv“ → Speichern. Die Zeile über der Tabelle verschwindet.
 4. [ ] Die Lehrkraft meldet sich erneut an — jetzt kommt sie hinein und sieht **genau einen**
-       Menüpunkt: „Mein Portal“. Kein Kiosk, keine Leserdatei.
+       Menüpunkt: „Mein Portal“. Keine Theke, keine Leserdatei.
 5. [ ] Gegenprobe: Ein Postfach einer **fremden** Domain landet nicht in der Benutzerliste
        (normale „Anmeldung fehlgeschlagen“).
 

@@ -41,7 +41,7 @@
 		<p class="text-xs text-on-surface-variant flex flex-wrap gap-x-3 gap-y-0.5">
 			<span class="font-mono">{kandidat.barcode_id}</span>
 			{#if kandidat.geburtsdatum}<span>geb. {datum(kandidat.geburtsdatum)}</span>{/if}
-			{#if kandidat.ist_abgaenger}<span class="text-body-small-emphasized">Abgänger</span>{/if}
+			{#if kandidat.ist_abgaenger}<span class="text-body-small-emphasized">ehemalig</span>{/if}
 			{#if kandidat.ist_gesperrt}<span class="text-error text-body-small-emphasized">gesperrt</span
 				>{/if}
 			{#if offene > 0}<span>{offene} offene {offene === 1 ? 'Ausleihe' : 'Ausleihen'}</span>{/if}

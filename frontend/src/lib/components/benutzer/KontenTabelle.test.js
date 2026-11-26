@@ -152,7 +152,7 @@ describe('KontenTabelle', () => {
 
 	it('sagt ohne Sinnbild, dass niemand gefunden wurde', () => {
 		const screen = tabelle([]);
-		expect(screen.container.textContent?.trim()).toBe('Keine Systembenutzer gefunden');
+		expect(screen.container.textContent?.trim()).toBe('Keine Benutzer gefunden');
 	});
 
 	// Das eigene Konto löscht niemand: Der Server lehnt es ab, der Knopf ist deshalb schon in der

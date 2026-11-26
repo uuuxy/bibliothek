@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 
 // Kommt eine Liste der Signaturen-Seite nicht, steht ihr Grund da: „Noch kein Buch trägt eine
-// Signatur", „Unter … steht kein Buch" und „Noch keine Sachgruppen" wären falsche Auskünfte,
-// und die letzte lüde dazu ein, vorhandene Sachgruppen noch einmal anzulegen.
+// Signatur", „Unter … steht kein Buch" und „Noch keine Systematik" wären falsche Auskünfte,
+// und die letzte lüde dazu ein, vorhandene Systematik noch einmal anzulegen.
 vi.mock('../../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
 	apiGet: vi.fn(),
@@ -41,10 +41,10 @@ describe('Signaturen: eine Liste kommt nicht', () => {
 		await vi.waitFor(() => expect(screen.getByText(/steht kein Buch/)).toBeTruthy());
 	});
 
-	it('die Sachgruppen zeigen den Grund statt „Noch keine Sachgruppen"', async () => {
+	it('die Systematik zeigen den Grund statt „Noch keine Systematik"', async () => {
 		render(SystematikVerwaltung);
-		await vi.waitFor(() => expect(screen.getByText('Sachgruppen nicht geladen')).toBeTruthy());
+		await vi.waitFor(() => expect(screen.getByText('Systematik nicht geladen')).toBeTruthy());
 		expect(screen.getByText(GRUND)).toBeTruthy();
-		expect(screen.queryByText(/Noch keine Sachgruppen/)).toBeNull();
+		expect(screen.queryByText(/Noch keine Systematik/)).toBeNull();
 	});
 });

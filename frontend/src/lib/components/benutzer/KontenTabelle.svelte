@@ -43,10 +43,10 @@
 {#if laedt}
 	<div class="flex justify-center py-16"><Ladekreis size="lg" verzoegert /></div>
 {:else if ladefehler}
-	<!-- Nicht „Keine Systembenutzer gefunden": Die Konten kamen nicht. -->
+	<!-- Nicht „Keine Benutzer gefunden": Die Konten kamen nicht. -->
 	<LadeFehler titel="Benutzerkonten nicht geladen" text={ladefehler} onerneut={ladeKonten} />
 {:else if gefiltert.length === 0}
-	<SuchZustand symbol="search" titel="Keine Systembenutzer gefunden" />
+	<SuchZustand symbol="search" titel="Keine Benutzer gefunden" />
 {:else}
 	<div class="overflow-x-auto">
 		<Tabelle beschriftung="Benutzerkonten">

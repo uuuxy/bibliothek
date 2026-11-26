@@ -22,7 +22,7 @@ export function zeilen(r) {
 				},
 				{
 					key: 'archived',
-					label: 'Neue Abgänger',
+					label: 'Neue Ehemalige',
 					hint: 'Abschlussklassen werden archiviert',
 					value: r.archived_count,
 					valueClass: 'text-error'

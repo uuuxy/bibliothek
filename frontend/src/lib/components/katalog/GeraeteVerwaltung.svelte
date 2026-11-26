@@ -86,7 +86,8 @@
 				{anzahlText(geraete.liste.length, 'Gerät', 'Geräte')}
 			</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
-				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste bestätigt
+				Ausgebucht wird an der Theke über den G--Barcode; das Zubehör wird dort als Checkliste
+				bestätigt
 			</p>
 		</div>
 		{#if darfBearbeiten}

@@ -15,7 +15,7 @@ import LusdImport from './LusdImport.svelte';
 // Ablagefläche wählte (sie bleibt im Vorschau-Schritt sichtbar), bekam nach deren
 // Vorschau sofort den roten Knopf „Massenabgang bestätigen" — der erste Klick schickte
 // confirm_graduates=true für eine Datei, die der Server nie gebremst hatte. Ein
-// Teilexport machte so Hunderte zu Abgängern.
+// Teilexport machte so Hunderte zu Ehemaligen.
 
 /** @type {any} */
 const vorschau = {
@@ -52,7 +52,7 @@ describe('LusdImport: Massenabgang-Bestätigung', () => {
 		vi.mocked(apiFetch)
 			.mockResolvedValueOnce(/** @type {any} */ (antwort(true, 200, vorschau)))
 			.mockResolvedValueOnce(
-				/** @type {any} */ (antwort(false, 409, { error: 'Auffällig viele Abgänger' }))
+				/** @type {any} */ (antwort(false, 409, { error: 'Auffällig viele Ehemalige' }))
 			)
 			.mockResolvedValueOnce(/** @type {any} */ (antwort(true, 200, vorschau)));
 		const { container, getByRole, findByRole, queryByRole } = render(LusdImport);

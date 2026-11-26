@@ -12,7 +12,7 @@
 	import { anzahlText } from '../../utils/format.js';
 
 	/**
-	 * Die Sachgruppen als Tabelle; je Zeile ändern oder löschen. Nach jeder Änderung lädt
+	 * Die Systematik als Tabelle; je Zeile ändern oder löschen. Nach jeder Änderung lädt
 	 * onGeaendert die Liste neu.
 	 * @type {{ liste: any[], onGeaendert: () => Promise<void> }}
 	 */
@@ -27,9 +27,9 @@
 	let verlangt = $state(false);
 	const kuerzelFehlt = $derived(verlangt && !bearbeiteKuerzel.trim());
 	const bezeichnungFehlt = $derived(verlangt && !bearbeiteBezeichnung.trim());
-	// Die Sachgruppe, deren Löschen läuft; bis zur Antwort ist „Löschen" gesperrt, der Ladekreis
+	// Die Systematik, deren Löschen läuft; bis zur Antwort ist „Löschen" gesperrt, der Ladekreis
 	// steht nur in ihrer Zeile. Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE,
-	// und nach „Sachgruppe gelöscht." stand „Sachgruppe nicht gefunden".
+	// und nach „Systematik gelöscht." stand „Systematik nicht gefunden".
 	let loescht = $state(/** @type {string | null} */ (null));
 
 	/** @param {any} eintrag */
@@ -72,7 +72,7 @@
 				'success'
 			);
 		} else {
-			snackbars.addToast('Sachgruppe geändert', 'success');
+			snackbars.addToast('Systematik geändert', 'success');
 		}
 	}
 
@@ -81,7 +81,7 @@
 		if (loescht) return;
 		if (
 			!(await loeschenBestaetigen(
-				`Sachgruppe ${eintrag.kuerzel} „${eintrag.bezeichnung}“ löschen?`
+				`Systematik ${eintrag.kuerzel} „${eintrag.bezeichnung}“ löschen?`
 			))
 		)
 			return;
@@ -89,7 +89,7 @@
 		try {
 			await apiDelete(`/api/systematics/${eintrag.id}`);
 			await onGeaendert();
-			snackbars.addToast('Sachgruppe gelöscht', 'success');
+			snackbars.addToast('Systematik gelöscht', 'success');
 		} catch {
 			// Meldung kam bereits aus apiDelete (z. B. "hängt noch an Büchern").
 		} finally {
@@ -150,7 +150,7 @@
 									size="sm"
 									onclick={() => starteBearbeiten(eintrag)}
 									data-tip="Bearbeiten"
-									aria-label="Sachgruppe {eintrag.kuerzel} bearbeiten"
+									aria-label="Systematik {eintrag.kuerzel} bearbeiten"
 								>
 									<Icon name="edit" />
 								</Button>
@@ -161,7 +161,7 @@
 									onclick={() => loeschen(eintrag)}
 									disabled={loescht !== null}
 									data-tip="Löschen"
-									aria-label="Sachgruppe {eintrag.kuerzel} löschen"
+									aria-label="Systematik {eintrag.kuerzel} löschen"
 								>
 									{#if loescht === eintrag.id}
 										<Ladekreis size="sm" farbe="aktuell" />

@@ -94,7 +94,7 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 	dsgvoZeile(p, tr, "Geburtsdatum", dsgvoTextOderStrich(st.Geburtsdatum))
 	dsgvoZeile(p, tr, "Schuleintritt", dsgvoTextOderStrich(st.SchulEintrittAm))
 	dsgvoZeile(p, tr, "Abgangsjahr", fmt.Sprint(st.AbgaengerJahr))
-	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitOderStrich(st.AbgaengerSeit))
+	dsgvoZeile(p, tr, "Ehemalig seit", dsgvoZeitOderStrich(st.AbgaengerSeit))
 	dsgvoZeile(p, tr, "Letzter abgeschlossener Vorgang", dsgvoZeitOderStrich(st.LetzterVorgangAm))
 	dsgvoZeile(p, tr, "LUSD-ID", dsgvoTextOderStrich(st.LUSDID))
 	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitOderStrich(st.LUSDBestaetigtAm))
@@ -105,7 +105,7 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 	dsgvoZeile(p, tr, "Gesperrt", dsgvoJaNein(st.IstGesperrt))
 	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IstVonHandGesperrt))
 	dsgvoZeile(p, tr, "Sperrgrund", dsgvoTextOderStrich(st.Sperrgrund))
-	dsgvoZeile(p, tr, "Abgänger", dsgvoJaNein(st.IstAbgaenger))
+	dsgvoZeile(p, tr, "Ehemalig", dsgvoJaNein(st.IstAbgaenger))
 	dsgvoZeile(p, tr, "Erfasst am", dsgvoZeit(st.ErstelltAm))
 	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(st.AktualisiertAm))
 	if st.GeloeschtAm != nil {

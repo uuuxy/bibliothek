@@ -86,13 +86,13 @@ export const rechteBeschreibungen = [
 		]
 	},
 	{
-		category: 'Bestellungen & Kiosk',
+		category: 'Bestellungen & Theke',
 		icon: 'shopping_cart',
 		items: [
 			{
 				key: 'perform_actions',
-				label: 'Kiosk bedienen',
-				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk, die Kernfunktion der Helfer-Rolle, ohne Leserdatei und Mahnwesen'
+				label: 'Theke bedienen',
+				desc: 'Ausleihe, Rückgabe, Scan und Suche an der Theke, die Kernfunktion der Helfer-Rolle, ohne Leserdatei und Mahnwesen'
 			},
 			{
 				key: 'extend_loans',

@@ -71,7 +71,7 @@ func (z *Zeitplan) FuehreAbgaengerLoeschungAus(ctx context.Context) {
 
 	// Die Zusammenfassung des Laufs ins Protokoll.
 	if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "schueler", "BATCH_DELETE",
-		"DSGVO-Abgänger-Batch-Löschung",
+		"DSGVO-Batch-Löschung der Ehemaligen",
 		map[string]any{
 			"geloescht":      geloescht,
 			"fehlschlaege":   len(fehlschlaege),

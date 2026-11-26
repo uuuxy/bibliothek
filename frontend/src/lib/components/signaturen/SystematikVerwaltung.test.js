@@ -29,7 +29,7 @@ async function klicke(knopf) {
 
 // „Anlegen" und „Speichern" bleiben bei leerem Feld bedienbar: Der Klick nennt am Feld, was
 // fehlt, führt dorthin und schickt nichts ab.
-describe('Sachgruppen: leeres Feld', () => {
+describe('Systematik: leeres Feld', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(apiGet).mockResolvedValue([{ id: 's1', kuerzel: 'Deu', bezeichnung: 'Deutsch' }]);
@@ -72,7 +72,7 @@ describe('Sachgruppen: leeres Feld', () => {
 
 	it('„Speichern" nennt am geleerten Feld, was fehlt, und schickt nichts ab', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Sachgruppe Deu bearbeiten' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Systematik Deu bearbeiten' }));
 		const kuerzel = k.getByLabelText('Kürzel bearbeiten');
 		await fireEvent.input(kuerzel, { target: { value: '  ' } });
 
@@ -85,16 +85,16 @@ describe('Sachgruppen: leeres Feld', () => {
 });
 
 // Eine offene Zeile der Tabelle übersteht das Nachladen der Liste, das ein Anlegen oben auslöst.
-describe('Sachgruppen: offene Zeile beim Nachladen', () => {
+describe('Systematik: offene Zeile beim Nachladen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(apiGet).mockResolvedValue([{ id: 's1', kuerzel: 'Deu', bezeichnung: 'Deutsch' }]);
 		vi.mocked(apiPost).mockResolvedValue({});
 	});
 
-	it('lässt die getippte Änderung stehen, wenn oben eine Sachgruppe angelegt wird', async () => {
+	it('lässt die getippte Änderung stehen, wenn oben eine Systematik angelegt wird', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Sachgruppe Deu bearbeiten' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Systematik Deu bearbeiten' }));
 		await fireEvent.input(k.getByLabelText('Bezeichnung bearbeiten'), {
 			target: { value: 'Deutsch als Zweitsprache' }
 		});
@@ -111,9 +111,9 @@ describe('Sachgruppen: offene Zeile beim Nachladen', () => {
 	});
 });
 
-// Ein zweiter Auftrag zum Löschen vor der Antwort schickte ein zweites DELETE: Nach „Sachgruppe
-// gelöscht." stand „Sachgruppe nicht gefunden", in Chromium, Firefox und WebKit.
-describe('Sachgruppen: Löschen', () => {
+// Ein zweiter Auftrag zum Löschen vor der Antwort schickte ein zweites DELETE: Nach „Systematik
+// gelöscht." stand „Systematik nicht gefunden", in Chromium, Firefox und WebKit.
+describe('Systematik: Löschen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(apiGet).mockResolvedValue([{ id: 's1', kuerzel: 'Deu', bezeichnung: 'Deutsch' }]);
@@ -127,7 +127,7 @@ describe('Sachgruppen: Löschen', () => {
 		);
 		const k = render(SystematikVerwaltung);
 		const knopf = /** @type {HTMLButtonElement} */ (
-			await k.findByRole('button', { name: 'Sachgruppe Deu löschen' })
+			await k.findByRole('button', { name: 'Systematik Deu löschen' })
 		);
 
 		await fireEvent.click(knopf);

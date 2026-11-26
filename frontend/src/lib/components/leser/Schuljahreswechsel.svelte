@@ -110,7 +110,7 @@
 		<h3 class="text-title-medium text-on-surface">Schuljahreswechsel</h3>
 		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Zählt die Klassenbezeichnung aller aktiven Schüler stur um eine Jahrgangsstufe hoch, aus 5a
-			wird 6a, und markiert Abschlussklassen automatisch als Abgänger. Ausnahmen wie Sitzenbleiber
+			wird 6a, und markiert Abschlussklassen automatisch als Ehemalige. Ausnahmen wie Sitzenbleiber
 			oder individuelle Klassenwechsel lassen sich danach gezielt per LUSD-Import korrigieren.
 		</p>
 	</div>

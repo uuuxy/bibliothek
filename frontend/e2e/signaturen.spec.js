@@ -8,7 +8,7 @@ import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu, menuepunkt } from './h
 // `signatures`, die kein Buch je referenzierte, und `systematik_kategorien` war
 // nur lesbar — es gab keinen Weg, sie zu füllen, obwohl der Signatur-Vorschlag
 // im Buchformular von ihr abhängt.
-test('Signaturen: Regal per Präfix finden, Sachgruppe anlegen', async ({ page }) => {
+test('Signaturen: Regal per Präfix finden, Systematik anlegen', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
 	const basis = `E2E BIB ${suffix}`;
@@ -40,7 +40,7 @@ test('Signaturen: Regal per Präfix finden, Sachgruppe anlegen', async ({ page }
 			'Nachbarsignatur ohne Leerzeichen-Grenze gehoert nicht ins Regal'
 		).toHaveCount(0);
 
-		// Vokabular pflegen: Sachgruppe anlegen — der Beleg liegt in der DB.
+		// Vokabular pflegen: Systematik anlegen — der Beleg liegt in der DB.
 		await page.getByLabel('Kürzel').fill(kuerzel);
 		await page.getByLabel('Bezeichnung', { exact: true }).fill(`E2E-Fach-${suffix}`);
 		await page.getByRole('button', { name: 'Anlegen' }).click();

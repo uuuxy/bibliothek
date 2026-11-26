@@ -1,7 +1,7 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
 Stand: 2026-10-31. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
-wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
+wie der Import Schüler wiedererkennt, was mit Ehemaligen passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `internal/api/leser/lusd.go` und
 `internal/repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
 die Bedienung im [Handbuch](HANDBUCH.md), die Abnahme in der
@@ -78,19 +78,19 @@ Bestandsschüler erst in der Normalform zusammen (Bauer/Baur), meldet die Vorsch
 mehrdeutig und fasst sie nicht an — weder Zuordnung noch Abgang.
 
 Gedächtnis `lusd_bestaetigt_am`: Jeder Import stempelt jede Zeile, die er im Export
-wiedergefunden oder angelegt hat. **Abgänger** ist, wer bestätigt war und jetzt fehlt.
+wiedergefunden oder angelegt hat. Zu den **Ehemaligen** zählt, wer bestätigt war und jetzt fehlt.
 Handanlagen, die nie in einem Export standen, bleiben unangetastet („nicht im Export").
 
 Was ohne Schüler-ID **nicht** von selbst geht: eine **Namensänderung** in der LUSD
 (Schreibkorrektur, Umlaut, zweiter Vorname fällt weg, Adoption) oder ein **korrigiertes
-Geburtsdatum**. Der Schlüssel findet dann niemanden; ohne §3 bis §5 hieße das Abgänger +
-Neuanlage, und der Abgänger ohne Bücher würde sofort anonymisiert. Littera
+Geburtsdatum**. Der Schlüssel findet dann niemanden; ohne §3 bis §5 hieße das Ehemaliger +
+Neuanlage, und der Ehemalige ohne Bücher würde sofort anonymisiert. Littera
 hatte dasselbe Problem (Abgleich über Vorname + Zuname + Geburtsdatum, gedruckte
 Abgängerliste zum Abhaken). Die Antwort darauf sind §3 bis §5.
 
 ## 3. Umbenennung erkennen: die Vorschau schlägt Paare vor
 
-Aus den Abgängern und den Neuzugängen **einer** Vorschau bildet der Import Paare, die nach
+Aus den Ehemaligen und den Neuzugängen **einer** Vorschau bildet der Import Paare, die nach
 allem, was der Export sonst hergibt, dieselbe Person sind
 (`internal/lusd/paarung.go`). Signale, absteigend nach Gewicht:
 
@@ -110,23 +110,23 @@ Zwei Schutzregeln: Ein **abweichender Vorname bei gleichem
 Geburtsdatum** ist ein Gegen-Signal — so sehen Zwillinge aus — und macht ein Paar nie
 „sicher" (Grund nennt „Vorname abweichend, vielleicht ein Zwilling"). Bei **Gleichstand** zweier
 Kandidaten mit exakt gleich starken Signalen wird kein Paar gebildet, statt zu raten;
-das Kind bleibt Abgänger + Neuzugang, und der Admin führt bei Bedarf über die Akte
+das Kind bleibt Ehemaliger + Neuzugang, und der Admin führt bei Bedarf über die Akte
 zusammen (§5).
 
 Der **Admin** (Recht `import_students`) kreuzt an. Bestätigt heißt: derselbe Datensatz
 bekommt den neuen Namen bzw. das korrigierte Geburtsdatum und behält UUID, Ausweis-Barcode,
-Ausleihen und Historie. Nicht bestätigt: Abgänger + Neuanlage wie bisher. Jeder Abgänger und
+Ausleihen und Historie. Nicht bestätigt: Ehemaliger + Neuanlage wie bisher. Jeder Ehemalige und
 jede Zeile stehen in höchstens einem Paar; bei Konkurrenz gewinnt das stärkere. Auch
-Abgänger **früherer** Läufe sind Kandidaten, solange sie nicht anonymisiert sind — dafür
+Ehemalige **früherer** Läufe sind Kandidaten, solange sie nicht anonymisiert sind — dafür
 gibt es die Karenzzeit (§4). Paare gibt es nur im Modus Name + Geburtsdatum: Im Nur-Name-Modus
 trägt ohne Datum kein Signal, im ID-Modus löst die LUSD-ID jede Umbenennung selbst.
 
 Der Server nimmt nur Paare an, die diese Vorschau selbst vorgeschlagen hat; eine fremde
 Kombination wird mit 400 abgewiesen, nicht geraten.
 
-## 4. Abgänger: Karenzzeit statt sofortiger Anonymisierung
+## 4. Ehemalige: Karenzzeit statt sofortiger Anonymisierung
 
-Wer bestätigt war und im Export fehlt, wird Abgänger:
+Wer bestätigt war und im Export fehlt, zählt zu den Ehemaligen:
 
 | Zustand                                  | Was passiert                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -139,7 +139,7 @@ Rückgabe falsch in der Akte. Nur wer wieder im Export steht und aus der Zeit al
 etwas offen hat, bleibt mit dem Grund „Automatisierte Ehemaligen-Sperre wegen offener Vorgänge"
 gesperrt, bis ein Abgleich nichts Offenes mehr findet.
 
-Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit_
+Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Karenzzeit für Ehemalige_
 (Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr läuft ab dem späteren
 von zwei Zeitpunkten: `abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, nicht
 verschoben bei weiteren Läufen, geräumt bei Rückkehr) und `letzter_vorgang_am` (Migration
@@ -157,7 +157,7 @@ Hand). Ein anonymisierter Datensatz ist dafür verloren.
 ## 5. Reparatur von Hand: zwei Datensätze zusammenführen
 
 Fällt eine Dublette erst später auf — das Kind steht mit dem alten Ausweis an der Theke und
-gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Leser zusammenführen" — einzeln delegierbar) beide
+gilt als gesperrter Ehemaliger — führt ein Admin (Recht `merge_students`, „Leser zusammenführen" — einzeln delegierbar) beide
 Datensätze zusammen: **Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
 
 Regeln (`internal/repository/leser_zusammenfuehren.go`):
@@ -170,14 +170,14 @@ Regeln (`internal/repository/leser_zusammenfuehren.go`):
   jüngere von beiden — es kommt nie aus der LUSD) und Protokollspuren wandern; danach
   wird die Zeile endgültig gelöscht — kein Papierkorb.
 - **LUSD führend:** Stammdaten kommen vom Datensatz mit dem jüngeren `lusd_bestaetigt_am`;
-  ein **aktiver** Datensatz schlägt dabei einen Abgänger (der Abgänger ist der Stand, den
+  ein **aktiver** Datensatz schlägt dabei einen Ehemaligen (der Ehemalige ist der Stand, den
   die LUSD nicht mehr kennt — etwa wenn das umbenannte Kind von Hand neu angelegt wurde
   und der alte Datensatz wegen des Ausweises bleibt); leere Felder füllt der andere.
-- Das Ziel ist danach aktiv; eine automatische Abgänger-Sperre fällt, sofern nichts offen
+- Das Ziel ist danach aktiv; eine automatische Ehemaligen-Sperre fällt, sofern nichts offen
   ist (sonst „Sperre wegen offener Vorgänge"). Eine **manuelle Sperre bleibt — auf beiden
   Seiten:** War die Quelle manuell gesperrt (Ausweis gestohlen, Hausverbot), trägt das
   Ziel danach diese Sperre mit ihrem Grund.
-- Die Kandidatensuche im Dialog sieht **auch Abgänger und Gesperrte** — die Aktivliste der
+- Die Kandidatensuche im Dialog sieht **auch Ehemalige und Gesperrte** — die Aktivliste der
   Leserdatei blendet sie aus. Anonymisierte lassen sich nicht zusammenführen.
 - **Rückweg:** In derselben Transaktion entsteht in `audit_log` (Tabelle `schueler`,
   Aktion `ZUSAMMENGEFUEHRT`, am Ziel) ein Eintrag mit den vollständigen Stammdaten der
@@ -193,8 +193,8 @@ Regeln (`internal/repository/leser_zusammenfuehren.go`):
 2. Admin: _Einstellungen → LUSD & Versetzung_ → Datei → **Vorschau laden**.
 3. Banner lesen (Stufe), dann die Rubriken: **Vermutlich dieselbe Person** zuerst — Paare
    prüfen und ankreuzen; dann Neue, Zusammengeführt (Geburtsdatum/ID nachgetragen),
-   Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export, Nicht abgleichbar, Mehrdeutig.
-4. **Import finalisieren.** Bei mehr als 30 % Abgängern verlangt der Server die zweite
+   Klassenwechsel, Rückkehrer, Ehemalige, Nicht im Export, Nicht abgleichbar, Mehrdeutig.
+4. **Import finalisieren.** Bei mehr als 30 % Ehemaligen verlangt der Server die zweite
    Bestätigung (Massenabgang) — beim echten Schuljahreswechsel normal.
 5. Gegenprobe: je Rubrik zwei, drei Schüler in der Leserdatei aufrufen.
 6. Danach die Versetzung (Klassen hochzählen), falls der Export noch die alten Klassen trug.
@@ -220,9 +220,9 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_pg_test.go`).
 | Kopfzeilen, Aliase, Pflichtspalten                                   | `internal/lusd/spalten.go`                                                                                                                                  |
 | Parsen, Modus-Erkennung, Dubletten in der Datei                      | `internal/lusd/datei.go`, `internal/lusd/quelle.go`                                                                                                        |
 | Bestandsindex je Modus                                               | `internal/lusd/bestand.go`, `internal/repository/lusd_bestand.go`                                                                                                    |
-| Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `internal/lusd/klassifizierung.go`                                                                                                                          |
+| Klassifizierung (neu / Wechsel / Rückkehrer / Ehemalige / mehrdeutig) | `internal/lusd/klassifizierung.go`                                                                                                                         |
 | Umbenennungs-Paare                                                   | `internal/lusd/paarung.go`                                                                                                                                  |
-| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `internal/repository/lusd_import.go` (die Anweisungen)                                                            |
+| Anwenden: Batch, Neuanlage, Ehemalige, Karenz                        | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `internal/repository/lusd_import.go` (die Anweisungen)                                                            |
 | Lauf, Bremse des Massenabgangs                                       | `internal/lusd/lauf.go`                                                                                                                                |
 | Tür: Upload, Wahl des Admins, Audit                                  | `internal/api/leser/lusd.go`                                                                                                                                          |
 | Zusammenführen                                                       | `internal/repository/leser_zusammenfuehren.go`, `internal/api/leser/leser_zusammenfuehren.go`                                                                             |
@@ -256,11 +256,11 @@ Schuljahre. Gezählt wurde nach jedem Schritt an der Datenbank.
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Jahr 1, Erstimport         | 1.890 Schüler in 80 Klassen, Namen mit Umlauten, Bindestrich und Apostroph, 20 Namensdoppel mit verschiedenem Geburtsdatum          | 1.890 angelegt, keine Dublette, keine falsche Klasse, Dauer unter 2 Sekunden; danach jedem drei Bücher ausgeliehen (5.670 Ausleihen) |
 | Jahr 2, Schuljahreswechsel | 1.587 Klassenwechsel, 202 Abgänge, 251 Neue, davon 6 mit dem Namen eines vorhandenen Schülers                                       | jede Klasse wie in der Datei, kein Ausweis geändert, alle 5.670 Ausleihen an vorhandenen Lesern, Abgänger mit Büchern gesperrt       |
-| Jahr 3                     | 10 Abgänger ohne und 10 mit offenen Büchern, 5 Rückkehrer, zwei Zeilen mit gleichem Namen und Geburtsdatum in verschiedenen Klassen | Rückkehrer mit derselben Kennung wieder aktiv, keine Dublette; die zwei Zeilen wurden eine Person                                    |
+| Jahr 3                     | 10 Ehemalige ohne und 10 mit offenen Büchern, 5 Rückkehrer, zwei Zeilen mit gleichem Namen und Geburtsdatum in verschiedenen Klassen | Rückkehrer mit derselben Kennung wieder aktiv, keine Dublette; die zwei Zeilen wurden eine Person                                   |
 
 Ohne die Paarung bei Umbenennung (§3), die Karenzzeit vor der Anonymisierung (§4) und das
 Zusammenführen von Hand (§5) entstanden in diesem Lauf im zweiten Jahr aus 8
 Nachnamensänderungen und 5 berichtigten Geburtsdaten 13 doppelte Datensätze, und im dritten
-verloren Abgänger ohne offene Bücher ihren Namen noch im Import. Das
+verloren Ehemalige ohne offene Bücher ihren Namen noch im Import. Das
 Messprotokoll mit allen Zahlen steht im Verlauf des Repositorys:
 `git show 424f186a:docs/lusd-simulation-2026-09-02.md`.

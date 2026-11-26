@@ -192,7 +192,7 @@ describe('Benutzerliste: Meldungen', () => {
 
 		await fireEvent.input(suche, { target: { value: 'niemand' } });
 		expect(screen.queryByText('Kora Muster')).toBeNull();
-		expect(screen.getByText('Keine Systembenutzer gefunden')).toBeTruthy();
+		expect(screen.getByText('Keine Benutzer gefunden')).toBeTruthy();
 	});
 
 	// Wie überall: Scheitert nur das Neuladen, ist die Liste von vorhin noch brauchbar. Der Grund
@@ -219,7 +219,7 @@ describe('Benutzerliste: Meldungen', () => {
 		expect(screen.queryByText('Benutzerkonten nicht geladen')).toBeNull();
 	});
 
-	// Darunter stand „Keine Systembenutzer gefunden": Es gäbe keine Konten, während nur der
+	// Darunter stand „Keine Benutzer gefunden": Es gäbe keine Konten, während nur der
 	// Abruf scheiterte.
 	it('nennt den Grund statt der leeren Liste, wenn die Konten nicht kommen, und lädt neu', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}, false, 500));
@@ -227,7 +227,7 @@ describe('Benutzerliste: Meldungen', () => {
 
 		await screen.findByText('Benutzerkonten nicht geladen');
 		expect(screen.getAllByText('Der Server meldet einen Fehler.')).toHaveLength(1);
-		expect(screen.queryByText('Keine Systembenutzer gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Benutzer gefunden')).toBeNull();
 
 		server();
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
