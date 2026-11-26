@@ -442,8 +442,8 @@ die Abgänger, die **noch Bücher haben**, zum Einsammeln vor der Entlassung: Ko
 an die Klassenleitungen mailen (Mailen nur mit _Mahnungen versenden_, wie beim Mahnwesen); wer alles
 zurückgegeben hat, verschwindet. Gedruckt wird, was die
 Liste zeigt (gewählte Klasse, Suche); so lässt sich ein einzelner Kontoauszug nachdrucken. Eine
-Klasse, die mit keinem Jahrgang von 1 bis 13 beginnt (14A, eine Buchnummer im Feld Klasse), versetzt
-der Schuljahreswechsel nicht; seine Vorschau nennt sie.
+Klasse, die mit keinem Jahrgang von 1 bis 13 beginnt (14A, eine Buchnummer im Feld Klasse, die
+Einführungsphase ET1 bis ET3), versetzt der Schuljahreswechsel nicht; seine Vorschau nennt sie.
 
 Wer die Schule **verlassen** hat, steht in der Leserdatei unter _Ehemalige_, mit offenen Büchern
 auch im Mahnwesen. Er bleibt bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage, ab Abgang oder letzter

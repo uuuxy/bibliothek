@@ -455,8 +455,8 @@ H-Zweig ab Jahrgang 9 (9H, auch das freiwillige 10H), R-Zweig ab 10, sonst ab 13
 `repository.AbschlussklasseSQL`, dieselbe Regel, mit der die Versetzung Ehemalige markiert und
 ihre Klassenleitungs-Zuordnung entfernt (Paar-Gate `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`,
 Regel-Tabelle `TestAbschlussklasseSQL_Regel`). Eine Klasse, die mit keinem Jahrgang von 1 bis 13
-beginnt (14A, eine Buchnummer im Feld Klasse), ist keine Abschlussklasse: Die Versetzung lässt
-ihre Schüler stehen und nennt sie in der Vorschau. Sie sind noch an der Schule (`ist_abgaenger = false`)
+beginnt (14A, eine Buchnummer im Feld Klasse, die Einführungsphase ET1 bis ET3), ist keine
+Abschlussklasse: Die Versetzung lässt ihre Schüler stehen und nennt sie in der Vorschau. Sie sind noch an der Schule (`ist_abgaenger = false`)
 und leihen weiter aus. Sichtbar ist die Liste in der **Saison 01.05.–31.07.** (fester Wert,
 `internal/api/mahnwesen/abgaenger_fenster.go`; `Server.Uhr` nur für Tests): außerhalb antwortet `GET /api/abgaenger`
 mit `fenster.offen = false` und leerer Liste, der Druck mit `404`, der Versand mit `409`. Je Klasse

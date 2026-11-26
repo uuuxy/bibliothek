@@ -11,8 +11,8 @@ import (
 )
 
 // Eine Klasse, die mit keinem Jahrgang von 1 bis 13 beginnt („14A", eine Buchnummer im Feld
-// Klasse), versetzt der Schuljahreswechsel nicht und macht ihre Schüler nicht zu Abgängern; die
-// Vorschau nennt sie. Die übrigen Klassen versetzt er wie immer. Eine Zahl über 2.147.483.647
+// Klasse, die Einführungsphase „ET1" ohne Ziffer am Anfang), versetzt der Schuljahreswechsel
+// nicht und macht ihre Schüler nicht zu Abgängern; die Vorschau nennt sie. Die übrigen Klassen versetzt er wie immer. Eine Zahl über 2.147.483.647
 // brach den ganzen Lauf mit 500 ab.
 func TestVersetzung_KlassenAusserhalbDesJahrgangsbereichs(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -25,7 +25,7 @@ func TestVersetzung_KlassenAusserhalbDesJahrgangsbereichs(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 
-	klassen := []string{"05F1", "13", "14A", "4711000123"}
+	klassen := []string{"05F1", "13", "14A", "4711000123", "ET1"}
 	schueler := map[string]string{}
 	for i, klasse := range klassen {
 		schueler[klasse] = testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("JGB-%d", i), "Kind"+klasse, klasse)
@@ -35,7 +35,7 @@ func TestVersetzung_KlassenAusserhalbDesJahrgangsbereichs(t *testing.T) {
 		}
 	}
 
-	ausserhalb := []string{"14A", "4711000123"}
+	ausserhalb := []string{"14A", "4711000123", "ET1"}
 	for _, lauf := range []struct {
 		name  string
 		probe bool
@@ -60,6 +60,7 @@ func TestVersetzung_KlassenAusserhalbDesJahrgangsbereichs(t *testing.T) {
 		"13":         {"ABG", true},
 		"14A":        {"14A", false},
 		"4711000123": {"4711000123", false},
+		"ET1":        {"ET1", false},
 	}
 	for alt, s := range soll {
 		var klasse string

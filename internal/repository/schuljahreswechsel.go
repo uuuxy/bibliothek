@@ -133,15 +133,16 @@ func VersetzeSchueler(ctx context.Context, db Datenbank, zone string) (versetzt,
 	return versetzt, abgaenger, err
 }
 
-// LadeKlassenAusserhalbDerVersetzung nennt die Klassen aktiver Schüler, die mit einer Zahl
-// beginnen, aber mit keinem Jahrgang von 1 bis 13. Die Versetzung lässt sie stehen; die
-// Vorschau nennt sie, damit sie vorher berichtigt werden. Eine Zeile je Klasse.
+// LadeKlassenAusserhalbDerVersetzung nennt die Klassen aktiver Schüler, die mit keinem Jahrgang
+// von 1 bis 13 beginnen. Die Versetzung lässt sie stehen; die Vorschau nennt sie, damit sie
+// vorher berichtigt werden oder der LUSD-Import sie nachzieht. Dazu gehört die Einführungsphase
+// dieser Schule (ET1 bis ET3), die ohne Ziffer am Anfang geschrieben wird. Eine Zeile je Klasse.
 func LadeKlassenAusserhalbDerVersetzung(ctx context.Context, db Datenbank) ([]string, error) {
 	rows, err := db.Query(ctx, `
 		SELECT klasse FROM schueler
 		WHERE ist_abgaenger = false
 		  AND deleted_at IS NULL
-		  AND klasse ~ '^\d'
+		  AND klasse <> ''
 		  AND NOT `+jahrgangImBereichSQL("klasse")+`
 		GROUP BY klasse
 		ORDER BY klasse COLLATE deutsch`)
