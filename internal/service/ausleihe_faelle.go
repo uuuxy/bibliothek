@@ -34,7 +34,7 @@ func (d *AusleihDienst) legeAusleiheAn(
 	}
 
 	// Doppelter Scan desselben Ausleihers: gewünschter Zustand besteht schon.
-	deutung := d.deuteAusleiheKonflikt(ctx, tx, exemplar, vorgang)
+	deutung := d.deuteAusleiheKonflikt(ctx, exemplar, vorgang)
 	var bereits errAusleiheBereitsVorhanden
 	if errors.As(deutung, &bereits) {
 		return bereits.ausleihe, nil
@@ -48,14 +48,16 @@ func (d *AusleihDienst) legeAusleiheAn(
 // Leser ist ein Fehler, den der Arbeitsplatz sehen muss; sonst gäbe die Theke ein Buch heraus,
 // das auf jemand anderem steht.
 //
-// Read Committed: Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
+// Gelesen wird ohne Sperre: Die Transaktion hält hier schon das Exemplar, und die Ausleihe kommt
+// in der Reihenfolge aus ausleihe_zeilensperren.go davor. Eine Rückgabe im selben Augenblick hält
+// die Ausleihe und wartet auf das Exemplar; mit FOR UPDATE warteten beide aufeinander, bis die
+// Datenbank eine abbricht. Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
 func (d *AusleihDienst) deuteAusleiheKonflikt(
 	ctx context.Context,
-	tx pgx.Tx,
 	exemplar *repository.Exemplar,
 	vorgang *ausleihVorgang,
 ) error {
-	aktiv, err := d.ausleihAbfragen.SperreOffene(ctx, tx, exemplar.ID)
+	aktiv, err := d.ausleihAbfragen.FindeOffene(ctx, exemplar.ID)
 	if err != nil {
 		return err
 	}

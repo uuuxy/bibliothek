@@ -64,6 +64,9 @@ type ausleihPflege interface {
 	// SperreOffene liefert die offene Ausleihe eines Exemplars und sperrt ihre Zeile bis zum
 	// Ende der Transaktion; nil, wenn das Exemplar nicht verliehen ist.
 	SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*repository.Ausleihe, error)
+	// FindeOffene liest die offene Ausleihe eines Exemplars ohne Sperre; nil, wenn es nicht
+	// verliehen ist.
+	FindeOffene(ctx context.Context, exemplarID string) (*repository.Ausleihe, error)
 	// LegeAn legt die Ausleihe eines Lesers in der Transaktion an, zum jetzigen Zeitpunkt;
 	// istDauerleihe kennzeichnet die Ausleihe für das Schuljahr, sie wird nicht überfällig.
 	LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Ausleihe, error)

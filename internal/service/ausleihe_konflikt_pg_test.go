@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/internal/db"
 	"bibliothek/internal/repository"
 )
 
@@ -20,12 +19,7 @@ func TestDeuteAusleiheKonflikt(t *testing.T) {
 		repository.NewAusleihAbfragen(w.pool), repository.NewProtokollAbfragen(w.pool))
 	deute := func(leser string) error {
 		t.Helper()
-		tx, err := w.pool.Begin(ctx)
-		if err != nil {
-			t.Fatalf("Transaktion: %v", err)
-		}
-		defer db.Verwerfe(ctx, tx)
-		return dienst.deuteAusleiheKonflikt(ctx, tx, &repository.Exemplar{ID: w.exemplarID}, &ausleihVorgang{leserID: leser})
+		return dienst.deuteAusleiheKonflikt(ctx, &repository.Exemplar{ID: w.exemplarID}, &ausleihVorgang{leserID: leser})
 	}
 
 	if err := deute(w.anna); !errors.Is(err, ErrKonflikt) || MeldungAus(err) != "Dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen" {

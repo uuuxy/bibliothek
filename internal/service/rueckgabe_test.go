@@ -23,6 +23,9 @@ type rueckgabeAttrappe struct {
 func (m *rueckgabeAttrappe) SperreOffene(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Ausleihe, error) {
 	return nil, m.offeneFehler
 }
+func (m *rueckgabeAttrappe) FindeOffene(ctx context.Context, copyID string) (*repository.Ausleihe, error) {
+	return nil, m.offeneFehler
+}
 func (m *rueckgabeAttrappe) BeginneTx(ctx context.Context) (pgx.Tx, error) {
 	return m.tx, m.beginnFehler
 }

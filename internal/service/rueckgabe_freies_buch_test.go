@@ -34,6 +34,10 @@ func (r *selbstausleiheAttrappe) SperreOffene(_ context.Context, _ pgx.Tx, _ str
 	return nil, nil // Buch ist frei — genau der Fall, in dem der Sonderweg zuschlug
 }
 
+func (r *selbstausleiheAttrappe) FindeOffene(_ context.Context, _ string) (*repository.Ausleihe, error) {
+	return nil, nil
+}
+
 func (r *selbstausleiheAttrappe) LegeAn(_ context.Context, _ pgx.Tx, _, _, _ string, _ time.Time, _ bool) (*repository.Ausleihe, error) {
 	r.geschrieb = true
 	return &repository.Ausleihe{}, nil

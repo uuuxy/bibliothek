@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 24.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 26.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -2105,7 +2105,7 @@ Deploy ist ein geordneter Abriss von höchstens 10 s.
 
 ## 11. Risiken und technische Schulden
 
-Stand: 08.11.2026
+Stand: 26.11.2026
 
 Kein Arbeitsplan: Was zu tun ist, steht nur in [OFFEN.md](OFFEN.md). Hier stehen Risiken aus der
 Bauweise und in 11.5 bekannte Grenzen. Bewertet nach Auswirkung und Sichtbarkeit; ein Risiko,
@@ -2125,7 +2125,10 @@ zweite Instanz ist ein Umbau, keine Einstellung; für acht Arbeitsplätze richti
 
 Auswirkung hoch (Deadlock) · Sichtbarkeit mittel. Ein neuer Pfad mit anderer Folge verklemmt
 sich. Eingetreten am Rückgabe-Trigger (A7): Postgres bricht eine Buchung ab (40P01), erneutes
-Scannen bucht. Einen Detektor gibt es nicht.
+Scannen bucht. Die Deutung eines abgeprallten Schreibens (`deuteAusleiheKonflikt`) liest die
+Ausleihe ohne Sperre, weil die Transaktion dort das Exemplar schon hält. Einen allgemeinen Detektor
+gibt es nicht; den Weg des Scans hält `TestBucheAmLeser_ZwanzigThekenEinExemplar`: Zwanzig
+gestaffelte Scans eines freien Exemplars brechen bei umgekehrter Folge mit 40P01 ab.
 
 #### R3 — Die gefilterte Sicht `schueler` erzeugt stille 404
 
