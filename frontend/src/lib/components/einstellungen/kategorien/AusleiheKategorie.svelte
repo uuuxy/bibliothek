@@ -112,7 +112,7 @@
 			max={365}
 			nachlaufend={tage}
 		/>
-		<Feld type="number" bind:value={maxAusleihen} etikett="Max. Ausleihen" min={1} max={50} />
+		<Feld type="number" bind:value={maxAusleihen} etikett="Max. Ausleihen" min={1} max={100} />
 		<Feld
 			bind:value={lmfEingang}
 			etikett="Eingangsjahrgänge"

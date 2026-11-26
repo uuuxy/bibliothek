@@ -91,6 +91,7 @@
 			<Feld
 				type="number"
 				min={1}
+				max={365}
 				bind:value={linkTage}
 				etikett="Bestätigungs-Link gültig"
 				nachlaufend={tage}

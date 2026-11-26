@@ -169,6 +169,7 @@
 			nachlaufend={tage}
 			type="number"
 			min="1"
+			max="365"
 			bind:value={fristTage}
 			feld="w-32"
 		/>

@@ -56,6 +56,6 @@
 
 	<div class="grid max-w-xl grid-cols-2 gap-x-8 gap-y-6">
 		<Feld type="number" bind:value={tageBisSperre} etikett="Tage bis Sperre" min={0} max={365} />
-		<Feld type="number" bind:value={abMedien} etikett="Ab x Medien sperren" min={1} max={50} />
+		<Feld type="number" bind:value={abMedien} etikett="Ab x Medien sperren" min={1} max={100} />
 	</div>
 </KategorieRahmen>

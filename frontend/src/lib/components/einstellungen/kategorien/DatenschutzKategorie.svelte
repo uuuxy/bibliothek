@@ -186,7 +186,7 @@
 			etikett="Karenzzeit für Ehemalige"
 			nachlaufend={tage}
 			min={0}
-			max={365}
+			max={3650}
 			hint="Vorgabe 90. 0 = sofort anonymisieren"
 		/>
 	</div>
