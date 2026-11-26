@@ -63,6 +63,12 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"Q2", 2028, "Q2 ebenfalls Jahrgang 12"},
 		{"Q3", 2027, "Q3 liegt in Jahrgang 13"},
 		{"Q4", 2027, "Q4 ebenfalls Jahrgang 13"},
+		// Mit Zusatz zählt die Ziffer hinter Q; ohne erkennbare Ziffer gilt Jahrgang 12, damit ein
+		// gültiger Ausweis nicht ein Jahr zu früh abläuft.
+		{"Q1a", 2028, "Q1 mit Kurszusatz liegt in Jahrgang 12"},
+		{"Q2T", 2028, "Q2 mit Zusatz ebenfalls Jahrgang 12"},
+		{"Q3b", 2027, "Q3 mit Zusatz liegt in Jahrgang 13"},
+		{"QX", 2028, "unbekannter Zusatz: das spätere Ablaufdatum"},
 
 		// Die Oberstufe in der Schreibweise dieser Schule: ET, 12T, 13T. 12T und 13T beginnen
 		// mit einer Ziffer und fallen unter die Regel ab Jahrgang 11.

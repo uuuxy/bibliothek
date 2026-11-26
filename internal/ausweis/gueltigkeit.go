@@ -132,15 +132,16 @@ func oberstufenJahrgang(k string) (int, bool) {
 	switch {
 	case strings.HasPrefix(k, "E"):
 		return jahrgangEinfuehrungsphase, true
-	case k == "Q1", k == "Q2":
+	case strings.HasPrefix(k, "Q1"), strings.HasPrefix(k, "Q2"):
+		// Auch mit Zusatz („Q1a", „Q2T"): Das Halbjahr steht in der Ziffer.
 		return jahrgangQ12, true
-	case k == "Q3", k == "Q4":
+	case strings.HasPrefix(k, "Q3"), strings.HasPrefix(k, "Q4"):
 		return jahrgangQ34, true
 	case strings.HasPrefix(k, "Q"):
 		// Ein unbekannter Zusatz hinter Q: Die Phase steht fest, das Jahr nicht. Angenommen
-		// wird der spätere Jahrgang: Ein zu frühes Ablaufdatum macht einen gültigen Ausweis
-		// ungültig, ein zu spätes fällt beim nächsten Druck auf.
-		return jahrgangQ34, true
+		// wird Jahrgang 12 und damit das spätere Ablaufdatum: Ein zu frühes macht einen gültigen
+		// Ausweis ungültig, ein zu spätes fällt beim nächsten Druck auf.
+		return jahrgangQ12, true
 	}
 	return 0, false
 }
