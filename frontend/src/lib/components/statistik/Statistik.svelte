@@ -287,10 +287,7 @@
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">
-					<UeberfaelligQuote
-						aktuellVerliehen={kennzahlen.zirkulation?.aktuell_verliehen ?? 0}
-						{medientyp}
-					/>
+					<UeberfaelligQuote {medientyp} />
 				</div>
 			</div>
 

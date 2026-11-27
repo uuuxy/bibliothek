@@ -67,6 +67,8 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 	erwartet := mahnUebersicht{
 		Ueberfaellig:        8,
 		MaxTageUeberfaellig: 80,
+		// Die acht überfälligen und „Mahn offen“; die Dauerleihe zählt nicht, die Rückgabe nicht.
+		LaufendeAusleihen: 9,
 		Zeitspannen: []ueberfaelligZeitspanne{
 			{Bezeichnung: "bis 14 Tage", Anzahl: 4},
 			{Bezeichnung: "15–30 Tage", Anzahl: 1},

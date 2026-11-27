@@ -8,11 +8,10 @@
 	import Icon from '../ui/Icon.svelte';
 	import { anzahlText, formatZahl } from '../../utils/format.js';
 
-	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
-	 *  medientyp: der Bestandsfilter der Übersicht ('' Gesamt, 'freihand', 'lmf'). Die Zahl
-	 *  der Überfälligen folgt ihm, damit Zähler und Nenner aus derselben Grundmenge stammen.
-	 * @type {{ aktuellVerliehen?: number, medientyp?: string }} */
-	let { aktuellVerliehen = 0, medientyp = '' } = $props();
+	/** medientyp: der Bestandsfilter der Übersicht ('' Gesamt, 'freihand', 'lmf'). Die Zahlen
+	 *  der Kachel folgen ihm.
+	 * @type {{ medientyp?: string }} */
+	let { medientyp = '' } = $props();
 
 	/** @type {any} */
 	let uebersicht = $state(null);
@@ -26,11 +25,11 @@
 	const mahnwesenOffen = $derived(erlaubteBildschirme(authStore.currentUser).has('mahnwesen'));
 
 	// Neutrale Überfälligkeitsquote = überfällig ÷ laufende Ausleihen. Rein informativ,
-	// keine Ampel — die Statistik-Seite ist ein Analyse-Kontext, kein Alarm.
+	// keine Ampel — die Statistik-Seite ist ein Analyse-Kontext, kein Alarm. Beide Zahlen kommen
+	// aus derselben Abfrage des Servers, ohne Dauerleihen: „Aktuell verliehen“ zählt sie mit.
+	const laufend = $derived(uebersicht?.laufende_ausleihen ?? 0);
 	const quote = $derived(
-		aktuellVerliehen > 0
-			? Math.round(((uebersicht?.total_overdue ?? 0) / aktuellVerliehen) * 100)
-			: null
+		laufend > 0 ? Math.round(((uebersicht?.total_overdue ?? 0) / laufend) * 100) : null
 	);
 
 	// Anonyme Dauer-Verteilung statt Klarnamen (Datenminimierung, Art. 5 DSGVO).

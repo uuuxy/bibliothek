@@ -22,6 +22,9 @@ type mahnUebersicht struct {
 	Ueberfaellig        int                      `json:"total_overdue"`
 	MaxTageUeberfaellig int                      `json:"max_tage_overdue"` // längste Überfälligkeit in Tagen (anonym)
 	Zeitspannen         []ueberfaelligZeitspanne `json:"overdue_buckets"`  // anonyme Verteilung nach Dauer
+	// LaufendeAusleihen ist der Nenner der Quote: die offenen Ausleihen derselben Grundmenge wie
+	// total_overdue (repository.MahnKennzahlen.Laufend).
+	LaufendeAusleihen int `json:"laufende_ausleihen"`
 }
 
 // ueberfaelligZeitspanne ist ein anonymer Zähler je Überfälligkeits-Zeitspanne.
@@ -48,6 +51,7 @@ func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 		uebersicht := mahnUebersicht{
 			Ueberfaellig:        k.Ueberfaellig,
 			MaxTageUeberfaellig: k.MaxTage,
+			LaufendeAusleihen:   k.Laufend,
 			Zeitspannen: []ueberfaelligZeitspanne{
 				// „bis 14 Tage" und nicht „1–14": Ein Buch, dessen Frist erst vor Stunden ablief, steht
 				// mit 0 vollen Tagen hier, wie im Reiter „Akut fällig" des Mahnwesens.

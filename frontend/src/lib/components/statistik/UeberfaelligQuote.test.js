@@ -54,18 +54,27 @@ describe('UeberfaelligQuote: die Quote', () => {
 			/** @type {any} */ ({
 				ok: true,
 				status: 200,
-				json: async () => ({ total_overdue: 3, overdue_buckets: [] })
+				json: async () => ({ total_overdue: 3, laufende_ausleihen: 12, overdue_buckets: [] })
 			})
 		);
 	});
 
-	it('rechnet gegen die laufenden Ausleihen', async () => {
-		const screen = render(UeberfaelligQuote, { aktuellVerliehen: 12 });
+	// Zähler und Nenner kommen aus derselben Abfrage, ohne Dauerleihen; „aktuell verliehen“ der
+	// Übersicht zählt Dauerleihen mit und ist nicht der Nenner.
+	it('rechnet gegen die laufenden Ausleihen der Mahnzahlen, nicht gegen „aktuell verliehen“', async () => {
+		const screen = render(UeberfaelligQuote, /** @type {any} */ ({ aktuellVerliehen: 30 }));
 		expect(await screen.findByText('≈ 25 % der laufenden Ausleihen')).toBeTruthy();
 	});
 
 	it('nennt ohne laufende Ausleihe keine Quote', async () => {
-		const screen = render(UeberfaelligQuote, { aktuellVerliehen: 0 });
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				json: async () => ({ total_overdue: 3, laufende_ausleihen: 0, overdue_buckets: [] })
+			})
+		);
+		const screen = render(UeberfaelligQuote);
 		await vi.waitFor(() => expect(screen.container.textContent).toContain('3'));
 		expect(screen.container.textContent).not.toContain('der laufenden Ausleihen');
 	});
