@@ -1,5 +1,5 @@
 // Package betrag führt Geldbeträge in ganzen Cent und schreibt sie in der deutschen Form: zwei
-// Nachkommastellen mit Komma.
+// Nachkommastellen mit Komma, Tausender mit Punkt wie die Oberfläche (formatEuro).
 //
 // Eine Stelle für Papier und Bildschirm: Briefe, Berichte und die Meldungen der Theke schreiben
 // einen Betrag gleich.
@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -19,9 +20,9 @@ import (
 // Cent liest und schreibt beide Formen genau, ohne Umweg über float64.
 type Cent int64
 
-// Text ist der Betrag ohne Währung: „12,50".
+// Text ist der Betrag ohne Währung: „12,50", „1.250,00".
 func (c Cent) Text() string {
-	return c.mitTrenner(",")
+	return c.mitTrennern(",", ".")
 }
 
 // Euro ist der Betrag mit Euro-Zeichen: „12,50 €".
@@ -34,13 +35,21 @@ func (c Cent) Mal(n int) Cent {
 	return c * Cent(n)
 }
 
-// mitTrenner schreibt den Betrag in Euro mit zwei Nachkommastellen und dem Trenner.
-func (c Cent) mitTrenner(trenner string) string {
+// mitTrennern schreibt den Betrag in Euro mit zwei Nachkommastellen, dem Dezimaltrenner und
+// zwischen je drei Stellen der Euro dem Tausendertrenner; ohne Tausendertrenner („") für
+// Maschinen, die die Zahl lesen (JSON, Datenbank).
+func (c Cent) mitTrennern(dezimal, tausender string) string {
 	vorzeichen, wert := "", int64(c)
 	if wert < 0 {
 		vorzeichen, wert = "-", -wert
 	}
-	return fmt.Sprintf("%s%d%s%02d", vorzeichen, wert/100, trenner, wert%100)
+	euro := strconv.FormatInt(wert/100, 10)
+	if tausender != "" {
+		for i := len(euro) - 3; i > 0; i -= 3 {
+			euro = euro[:i] + tausender + euro[i:]
+		}
+	}
+	return fmt.Sprintf("%s%s%s%02d", vorzeichen, euro, dezimal, wert%100)
 }
 
 // LeseEuro liest einen Betrag in Euro aus Text („12.5", „12,50", „12"). Mehr als zwei
@@ -66,7 +75,7 @@ func LeseEuro(text string) (Cent, error) {
 
 // MarshalJSON schreibt den Betrag als Zahl in Euro mit zwei Nachkommastellen: 1250 → 12.50.
 func (c Cent) MarshalJSON() ([]byte, error) {
-	return []byte(c.mitTrenner(".")), nil
+	return []byte(c.mitTrennern(".", "")), nil
 }
 
 // UnmarshalJSON liest eine Zahl in Euro wie LeseEuro. null lässt den Wert stehen, wie
@@ -110,5 +119,5 @@ func (c *Cent) Scan(quelle any) error {
 
 // Value schreibt den Betrag als Text in Euro, den Postgres in NUMERIC genau übernimmt.
 func (c Cent) Value() (driver.Value, error) {
-	return c.mitTrenner("."), nil
+	return c.mitTrennern(".", ""), nil
 }

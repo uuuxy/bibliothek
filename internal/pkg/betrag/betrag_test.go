@@ -13,7 +13,11 @@ func TestCent_Text(t *testing.T) {
 		{1250, "12,50"},
 		{0, "0,00"},
 		{1990, "19,90"},
-		{123450, "1234,50"},
+		{123450, "1.234,50"},
+		{99999, "999,99"},
+		{100000, "1.000,00"},
+		{123456789, "1.234.567,89"},
+		{-123450, "-1.234,50"},
 		{-320, "-3,20"},
 		{5, "0,05"},
 		{-5, "-0,05"},
@@ -71,6 +75,10 @@ func TestCent_JSON(t *testing.T) {
 	}{Betrag: 1250})
 	if err != nil || string(roh) != `{"betrag":12.50,"leer":null}` {
 		t.Errorf("json.Marshal = %s, %v", roh, err)
+	}
+	// Ohne Tausendertrenner: Die Oberfläche liest eine Zahl.
+	if roh, err := json.Marshal(Cent(123450)); err != nil || string(roh) != `1234.50` {
+		t.Errorf("json.Marshal(Cent(123450)) = %s, %v; erwartet 1234.50", roh, err)
 	}
 
 	var gelesen struct {
