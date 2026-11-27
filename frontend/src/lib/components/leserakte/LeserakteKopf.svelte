@@ -22,7 +22,17 @@
 
 	const initials = $derived(initialen(leser));
 
-	let imageFailed = $state(false);
+	// Das Passbild mit seinem Stand (?t=): Ein neues Foto hat eine neue Adresse.
+	const fotoQuelle = $derived(
+		!leser.foto_url
+			? ''
+			: leser.foto_url.startsWith('data:')
+				? leser.foto_url
+				: leser.foto_url + '?t=' + timestamp
+	);
+	// Ein Bild, das nicht lud, gilt nur für seine Adresse: Nach einem neuen Foto lädt die Akte
+	// desselben Lesers neu, ohne den Kopf neu aufzubauen, und das neue Bild soll erscheinen.
+	let fehlgeschlagen = $state('');
 	// Ein Kollege ist kein Schüler mit fehlenden Angaben: Klasse und Abgangsjahr gibt es
 	// bei ihm nicht, und „Klasse " mit nichts dahinter sähe aus wie ein Datenfehler.
 	const kollege = $derived(istKollegium(leser));
@@ -43,14 +53,12 @@
 
 	<!-- Foto -->
 	<div class="relative group">
-		{#if leser.foto_url && !imageFailed}
+		{#if fotoQuelle && fotoQuelle !== fehlgeschlagen}
 			<img
-				src={leser.foto_url.startsWith('data:')
-					? leser.foto_url
-					: leser.foto_url + '?t=' + timestamp}
+				src={fotoQuelle}
 				alt="Passbild"
 				class="w-28 h-28 object-cover rounded-2xl border border-outline-variant"
-				onerror={() => (imageFailed = true)}
+				onerror={() => (fehlgeschlagen = fotoQuelle)}
 			/>
 		{:else}
 			<div
