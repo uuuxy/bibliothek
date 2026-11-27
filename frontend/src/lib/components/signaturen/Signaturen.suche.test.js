@@ -9,8 +9,8 @@ vi.mock('../../apiFetch.js', async (original) => ({
 import { apiGet } from '../../apiFetch.js';
 import Signaturen from './Signaturen.svelte';
 
-// Die Suche über die Signaturen liest Umlaute, Akzente und groß und klein wie die übrigen
-// Listen (suchnorm), hält aber die Folge: Eine Signatur ist eine Regaladresse.
+// Die Suche über die Signaturen liest wie die übrigen Listen und die Titelsuche im Katalog:
+// Umlaute, Akzente und groß und klein zählen nicht, jedes Wort für sich, in beliebiger Folge.
 describe('Signaturen: Suche', () => {
 	beforeEach(() => {
 		vi.mocked(apiGet).mockReset();
@@ -19,7 +19,9 @@ describe('Signaturen: Suche', () => {
 				? [
 						{ signatur: 'D Mül', exemplare: 2 },
 						{ signatur: 'LMF Deu 7', exemplare: 30 },
-						{ signatur: 'LMF Deu 17', exemplare: 4 }
+						{ signatur: 'LMF Deu 7 / Bie', exemplare: 28 },
+						{ signatur: 'LMF Bio 7', exemplare: 25 },
+						{ signatur: 'LMF Deu 8', exemplare: 30 }
 					]
 				: []
 		);
@@ -38,9 +40,16 @@ describe('Signaturen: Suche', () => {
 		expect(screen.queryByText('LMF Deu 7')).toBeNull();
 	});
 
-	it('trifft mit „LMF Deu 7“ nicht „LMF Deu 17“', async () => {
-		await suche('lmf deu 7');
+	it('findet mit „LMF 7“ alle Regale des 7. Jahrgangs', async () => {
+		await suche('lmf 7');
 		expect(screen.getByText('LMF Deu 7')).toBeTruthy();
-		expect(screen.queryByText('LMF Deu 17')).toBeNull();
+		expect(screen.getByText('LMF Bio 7')).toBeTruthy();
+		expect(screen.queryByText('LMF Deu 8')).toBeNull();
+	});
+
+	it('findet die Wörter in jeder Folge', async () => {
+		await suche('bie deu');
+		expect(screen.getByText('LMF Deu 7 / Bie')).toBeTruthy();
+		expect(screen.queryByText('LMF Deu 7')).toBeNull();
 	});
 });
