@@ -54,6 +54,10 @@ var sqlTitelAendern = func() string {
 	for _, f := range titelFelder {
 		fmt.Fprintf(&b, "%[2]s = CASE WHEN '%[1]s' = ANY($21::text[]) THEN %[3]s ELSE %[2]s END, ", f.name, f.spalte, f.wert)
 	}
+	// Den Stand NOT_FOUND hat der Cover-Abgleich der alten ISBN gegeben; eine neue fragt er
+	// wieder. Rechts vom Gleichheitszeichen trägt isbn noch den alten Wert.
+	b.WriteString("cover_status = CASE WHEN 'isbn' = ANY($21::text[]) AND cover_status = 'NOT_FOUND' " +
+		"AND NULLIF($1, '') IS DISTINCT FROM isbn THEN 'PENDING' ELSE cover_status END, ")
 	b.WriteString("aktualisiert_am = NOW() WHERE id = $15")
 	return b.String()
 }()

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -122,7 +123,12 @@ func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *katalogdie
 	cancel()
 
 	switch {
+	case errors.Is(err, katalogdienste.ErrISBNUnbekannt), errors.Is(err, katalogdienste.ErrUngueltigeISBN):
+		// Keine Quelle kennt die ISBN, oder sie ist keine: Ein neuer Lauf fände dasselbe.
+		nichtGefunden.Add(1)
+		d.vermerkeCoverStatus(ctx, titel.ID, "NOT_FOUND")
 	case err != nil:
+		// Mindestens eine Quelle war nicht erreichbar: Der nächste Lauf fragt wieder.
 		gescheitert.Add(1)
 		d.vermerkeCoverStatus(ctx, titel.ID, "FAILED")
 	case treffer.CoverURL != "":

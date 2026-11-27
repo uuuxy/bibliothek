@@ -3,6 +3,7 @@ package katalogdienste
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -31,8 +32,8 @@ func TestSucheNachISBN(t *testing.T) {
 func testSucheISBNInvalid(t *testing.T) {
 	client := &MetadatenClient{}
 	_, err := client.SucheNachISBN(context.Background(), "invalid")
-	if err == nil || !strings.Contains(err.Error(), "ungültiges ISBN format") {
-		t.Errorf("SucheNachISBN(…, \"invalid\") = %v, erwartet den Fehler „ungültiges ISBN format“", err)
+	if !errors.Is(err, ErrUngueltigeISBN) {
+		t.Errorf("SucheNachISBN(…, \"invalid\") = %v, erwartet ErrUngueltigeISBN", err)
 	}
 }
 
@@ -199,8 +200,8 @@ func testSucheISBNNotFound(t *testing.T) {
 	}
 
 	_, err := client.SucheNachISBN(context.Background(), "9783161484100")
-	if err == nil || !strings.Contains(err.Error(), "keine metadaten für ISBN gefunden") {
-		t.Errorf("SucheNachISBN(…) = %v, erwartet den Fehler „keine metadaten für ISBN gefunden“", err)
+	if !errors.Is(err, ErrISBNUnbekannt) {
+		t.Errorf("SucheNachISBN(…) = %v, erwartet ErrISBNUnbekannt", err)
 	}
 }
 

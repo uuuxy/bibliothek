@@ -87,9 +87,8 @@ Nur, was kein Test leisten kann.
 - [x] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
 - [x] Medienkatalog: Die Titelliste bleibt, wie sie ist, auch das Neuladen beim Wechsel des
   Reiters; festgehalten in ARCHITEKTUR 11.5. (5.207)
-- [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
-  Testserver dieselben 693 Titel viermal am Tag. Entschieden: als `NOT_FOUND` vermerken; bauen.
-  (5.209)
+- [x] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
+  Testserver dieselben 693 Titel viermal am Tag.
 - [x] Gedankenstrich in PDF, Mail und Protokoll des Servers: dieselbe Regel wie in
   Oberfläche und Meldungen.
 
@@ -327,19 +326,6 @@ Die Omnibox wartet 150 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`
 `WARTEZEIT_MS`), die übrigen Suchfelder 300 ms, der Katalog ohne Anmeldung 400 ms. Ein Test
 kann nicht zeigen, ob die Liste beim Tippen unruhig wird; wird sie es, ist der Wert dort zu
 erhöhen.
-
-### 5.209 Cover-Abgleich fragt unbekannte ISBNs bei jedem Lauf
-
-`verarbeiteCover` (`internal/service/cover.go`) setzt `FAILED`, wenn keine Quelle die ISBN kennt,
-wie bei einem Ausfall aller Dienste, und `FAILED` kommt beim nächsten Lauf wieder dran (alle sechs
-Stunden und nach jedem Neustart). ARCHITEKTUR 11.5 nennt das als bekannte Grenze, und
-`TestVerarbeiteCover_SchreibtErgebnisUndStand` verlangt es („kein Dienst kennt die ISBN: FAILED“).
-Gemessen im Log des Testservers über drei Tage: jeder Lauf 693 Titel, 0 gefunden, 693
-gescheitert, je Lauf knapp sechs Minuten mit bis zu drei Anfragen je Titel an DNB, Google und
-OpenLibrary.
-
-Entschieden: „keine Quelle kennt die ISBN“ und eine ISBN, die keine ist, als `NOT_FOUND` vermerken;
-`FAILED` nur, wenn keine Quelle erreichbar war. Nächster Schritt: bauen.
 
 ## So wird die Liste geführt
 

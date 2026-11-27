@@ -2296,8 +2296,10 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   Start, auf den man spürbar wartet; dann seltene Bildschirme bei Bedarf laden, die Theke bleibt im
   Paket.
 - **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in `uploads/`
-  zurück; für Schulbücher liefern die Dienste wenig. Die DNB fragt nur der Cover-Abgleich, und der
-  fragt eine ISBN, die kein Dienst kennt, bei jedem Lauf neu (`verarbeiteCover` setzt `FAILED`).
+  zurück; für Schulbücher liefern die Dienste wenig. Eine ISBN, die kein Dienst kennt, fragt der
+  Cover-Abgleich nicht wieder (`NOT_FOUND`), bis sie in der Titel-Verwaltung geändert wird; lernt
+  ein Dienst sie später, holt „Cover neu holen“ am Titel das Cover. War eine der drei Quellen nicht
+  erreichbar, fragt der nächste Lauf wieder (`FAILED`).
 - **Das Anfrage-Log** nennt weder Dauer noch Kennung.
 
 #### Oberfläche

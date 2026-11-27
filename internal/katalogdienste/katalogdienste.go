@@ -107,6 +107,10 @@ var ErrNichtInDerDNB = errors.New("die DNB kennt diese ISBN nicht")
 // ErrUngueltigeISBN heißt: Die Eingabe hat nicht die Form einer ISBN; gefragt wurde niemand.
 var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 
+// ErrISBNUnbekannt heißt: Jede Quelle hat geantwortet, keine kennt die ISBN. War eine Quelle
+// nicht erreichbar, ist das nicht belegt, und SucheNachISBN liefert einen anderen Fehler.
+var ErrISBNUnbekannt = errors.New("keine metadaten für ISBN gefunden")
+
 // SucheDNBNachISBN fragt nur die DNB, für den Vorschlag der Schlagworte im Formular des Titels
 // und beim Nachbestellen (GET /api/schlagworte/dnb-vorschlag). Schlagworte liefert keine andere
 // Quelle; SucheNachISBN fragt nach der DNB auch Google Books und OpenLibrary und lädt das Cover
@@ -141,7 +145,7 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	// isbnutil.HatForm nimmt einen vorab übersetzten regulären Ausdruck, statt ihn bei jedem Aufruf
 	// neu zu übersetzen.
 	if !isbnutil.HatForm(saubereISBN) {
-		return nil, fmt.Errorf("ungültiges ISBN format: sicherheitsabbruch")
+		return nil, fmt.Errorf("%w: sicherheitsabbruch", ErrUngueltigeISBN)
 	}
 
 	// Der Reihe nach: DNB (beste Quelle für deutsche Schulbücher), Google, OpenLibrary.
@@ -177,7 +181,10 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	if !erreichbar {
 		return nil, fmt.Errorf("%w (zuletzt: %w)", ErrKatalogdiensteNichtErreichbar, letzterAusfall)
 	}
-	return nil, fmt.Errorf("keine metadaten für ISBN gefunden")
+	if letzterAusfall != nil {
+		return nil, fmt.Errorf("keine metadaten für ISBN gefunden, nicht jede quelle war erreichbar: %w", letzterAusfall)
+	}
+	return nil, ErrISBNUnbekannt
 }
 
 // beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf:

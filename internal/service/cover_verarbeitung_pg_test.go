@@ -43,9 +43,10 @@ const dnbAntwortOhneSatz = `<searchRetrieveResponse xmlns="http://www.loc.gov/zi
 // katalog stellt die Katalogdienste nach: die DNB mit oder ohne Satz zur ISBN und ihren
 // Cover-Dienst mit oder ohne Bild. Google Books und OpenLibrary antworten, kennen aber nichts.
 type katalog struct {
-	ausfall bool   // kein Dienst ist erreichbar
-	dnbSatz bool   // die DNB kennt die ISBN
-	cover   []byte // das Bild des DNB-Cover-Dienstes; nil = keines
+	ausfall    bool   // kein Dienst ist erreichbar
+	dnbAusfall bool   // nur die DNB ist nicht erreichbar
+	dnbSatz    bool   // die DNB kennt die ISBN
+	cover      []byte // das Bild des DNB-Cover-Dienstes; nil = keines
 }
 
 func (k katalog) client() *katalogdienste.MetadatenClient {
@@ -55,7 +56,7 @@ func (k katalog) client() *katalogdienste.MetadatenClient {
 }
 
 func (k katalog) antworte(req *http.Request) (*http.Response, error) {
-	if k.ausfall {
+	if k.ausfall || (k.dnbAusfall && req.URL.Host == "services.dnb.de") {
 		return nil, errors.New("testnetz: dienst nicht erreichbar")
 	}
 	antwort := func(status int, typ string, rumpf []byte) (*http.Response, error) {
@@ -192,11 +193,39 @@ func TestVerarbeiteCover_SchreibtErgebnisUndStand(t *testing.T) {
 		}
 	})
 
-	t.Run("kein Dienst kennt die ISBN: FAILED", func(t *testing.T) {
+	// Jeder Lauf fragte sonst dieselben Titel wieder, am Testserver 693 je Lauf ohne einen Treffer.
+	t.Run("kein Dienst kennt die ISBN: NOT_FOUND, nicht wieder in der Auswahl", func(t *testing.T) {
 		mc := coverTitel(t, pool, "9789991940052", "PENDING", "")
+		if _, ohneCover, _ := verarbeite(pool, katalog{}, mc); ohneCover != 1 {
+			t.Errorf("als „ohne Cover“ gezählt: %d, erwartet 1", ohneCover)
+		}
+		if status, _ := coverStand(t, pool, mc.ID); status != "NOT_FOUND" {
+			t.Errorf("Stand %q, erwartet NOT_FOUND", status)
+		}
+		if inDerAuswahl(t, pool, mc.ID) {
+			t.Error("eine ISBN, die kein Dienst kennt, steht weiter in der Auswahl")
+		}
+	})
+
+	t.Run("eine ISBN, die keine ist: NOT_FOUND", func(t *testing.T) {
+		mc := coverTitel(t, pool, "12345", "PENDING", "")
 		verarbeite(pool, katalog{}, mc)
+		if status, _ := coverStand(t, pool, mc.ID); status != "NOT_FOUND" {
+			t.Errorf("Stand %q, erwartet NOT_FOUND", status)
+		}
+	})
+
+	// Kennen Google und OpenLibrary die ISBN nicht, kann die DNB sie trotzdem kennen.
+	t.Run("nur die DNB nicht erreichbar, die übrigen kennen die ISBN nicht: FAILED", func(t *testing.T) {
+		mc := coverTitel(t, pool, "9789991940083", "PENDING", "")
+		if _, _, gescheitert := verarbeite(pool, katalog{dnbAusfall: true}, mc); gescheitert != 1 {
+			t.Errorf("als gescheitert gezählt: %d, erwartet 1", gescheitert)
+		}
 		if status, _ := coverStand(t, pool, mc.ID); status != "FAILED" {
 			t.Errorf("Stand %q, erwartet FAILED", status)
+		}
+		if !inDerAuswahl(t, pool, mc.ID) {
+			t.Error("nach dem Ausfall der DNB fragt der nächste Lauf den Titel nicht wieder")
 		}
 	})
 }
