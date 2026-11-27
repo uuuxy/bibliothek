@@ -98,7 +98,8 @@
 				label: 'Klassensatz-Reservierungen',
 				anzahl: uiStore.pendingReservierungen
 			},
-			{ id: 'anliegen', label: 'Meldungen' }
+			// Dieselbe Zahl, die die Seitenleiste an „Bestellungen“ mitzählt (wartendeArbeit).
+			{ id: 'anliegen', label: 'Meldungen', anzahl: uiStore.offeneAnliegen }
 		]}
 	/>
 
