@@ -44,7 +44,7 @@ Nur, was kein Test leisten kann.
 - [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [x] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
   sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid.
-- [ ] Weitere Stellen sperren ihren Knopf bei leerem Feld: vier Dialoge (Eigentum, Topf der
+- [x] Weitere Stellen sperren ihren Knopf bei leerem Feld: vier Dialoge (Eigentum, Topf der
   Bestellung, Inventur starten, Storno einer Gebühr), drei Formulare, zwei Suchen; dazu nennt die
   Sperre der Ausleihe den fehlenden Grund in einem Kasten statt am Feld. Entscheiden, ob dieselbe
   Regel wie 5.203 gilt. (5.211)
@@ -280,24 +280,6 @@ Beide Entwürfe stehen ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
 - **Die Probe** der Vertretung: 7.4.
 
 ---
-
-### 5.211 Weitere Knöpfe, die bei leerem Feld gesperrt sind
-
-Diese Stellen sperren ihren Knopf, bis ein Feld gefüllt ist (gesucht nach `disabled=` mit `trim()`
-und `!bereit`); ARCHITEKTUR („Felder und Eingabe“) verlangt den Klick, der am Feld nennt, was fehlt, M3 Dialogs: „Errors about the dialog fields should always appear inline where
-they occur“ und „Disable confirming actions until a choice is made“.
-
-- Dialoge: `ExemplarEigentumDialog` (Grund), `BestellMittelDialog` (Grund; ein unveränderter Topf
-  ist keine Wahl), `InventurStartDialog` (Signatur oder Filter), Storno in `LeserGebuehrenKarte`
-  (Grund; `e2e/schadensfall.spec.js` erwartet den gesperrten Knopf).
-- Formulare: Zuordnung in `Klassenleitungen` (Klasse und E-Mail), `LMFVerlaengerung` (Klasse und
-  Datum), `LmfPlanKopf` („Plan speichern“ und „Veröffentlichen“ nach `gueltig`).
-- Suchen: „Suchen“ in `NeueAuflageDialog` und `ThekenAuskunft` ohne Suchtext.
-- `LeserSperreDialog`: Der Knopf bleibt bedienbar, der fehlende Grund steht aber in einem Kasten
-  unter dem Feld statt am Feld.
-
-Empfehlung: die vier Dialoge und die Sperre wie 5.203, die Formulare ebenso; die zwei Suchen
-bleiben gesperrt, ein leerer Suchtext ist keine Wahl. Nächster Schritt: entscheiden.
 
 ## So wird die Liste geführt
 

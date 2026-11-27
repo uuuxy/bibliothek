@@ -2,9 +2,10 @@
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import Datumsfeld from '../ui/Datumsfeld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Select from '../ui/Select.svelte';
 	import {
 		erzeugeKlassenVorschlaege,
@@ -24,10 +25,17 @@
 	const klassenListe = erzeugeKlassenVorschlaege();
 	const klassen = $derived(klassenListe.liste);
 	onMount(klassenListe.lade);
+	// Die Klasse ist eine Auswahl: Ohne sie bleibt der Knopf gesperrt. Ein fehlendes Datum nennt
+	// der Klick am Feld (ARCHITEKTUR, „Felder und Eingabe“).
+	let verlangt = $state(false);
+	const datumFehlt = $derived(verlangt && !neuesDatum);
 
 	async function verlaengereAlle() {
-		if (!klasse.trim() || !neuesDatum) {
-			snackbars.addToast('Bitte Klasse wählen und neues Rückgabedatum eingeben', 'warning');
+		if (!klasse.trim()) return;
+		verlangt = true;
+		if (!neuesDatum) {
+			await tick();
+			document.getElementById('extendDatum')?.focus();
 			return;
 		}
 
@@ -54,6 +62,7 @@
 				);
 				klasse = '';
 				neuesDatum = '';
+				verlangt = false;
 			} else {
 				snackbars.addToast(await leseApiFehler(res), 'error');
 			}
@@ -76,6 +85,7 @@
 		</p>
 	</div>
 
+	<Pflichthinweis />
 	<div class="flex items-end gap-4 flex-wrap">
 		<div class="grid gap-y-1.5">
 			<label for="extendKlasse" class="text-sm font-medium text-on-surface-variant">Klasse</label>
@@ -93,13 +103,12 @@
 			etikett="Neues Rückgabedatum"
 			bind:value={neuesDatum}
 			class="w-48"
+			aria-required="true"
+			ungueltig={datumFehlt}
+			hint={datumFehlt ? 'Bitte das neue Rückgabedatum eintragen' : ''}
 		/>
 
-		<Button
-			onclick={verlaengereAlle}
-			disabled={isExtending || !klasse.trim() || !neuesDatum}
-			class="px-6"
-		>
+		<Button onclick={verlaengereAlle} disabled={isExtending || !klasse.trim()} class="px-6">
 			{isExtending ? 'Wird verarbeitet …' : 'Klassen-LMF global verlängern'}
 		</Button>
 	</div>

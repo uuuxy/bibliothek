@@ -241,10 +241,10 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 	it('belegt den letzten Tag vor, schickt ihn als letzter_tag; den Beginn zeigt die erste Zeile', async () => {
 		const gesendet = antworte({ ...STAND, vorschlag: { ...STAND.vorschlag, rahmen: RAHMEN } });
 		render(LmfPlan);
-		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText(/^Letzter Tag/));
 		expect(feld.value).toBe('24.06.2027');
 		expect(screen.getByText('Ende am letzten Tag')).toBeTruthy();
-		expect(screen.queryByLabelText('Erster Tag')).toBeNull();
+		expect(screen.queryByLabelText(/^Erster Tag/)).toBeNull();
 		await vi.waitFor(() => expect(gesendet.length).toBeGreaterThan(0));
 		expect(gesendet[0].letzter_tag).toBe('2027-06-24');
 		expect(gesendet[0].letzte_stunde).toBe(4);
@@ -264,7 +264,7 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 			vorschlag: { ...STAND.vorschlag, rahmen: { ...RAHMEN, letzter_tag: '' } }
 		});
 		render(LmfPlan);
-		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText(/^Letzter Tag/));
 		expect(feld.value).toBe('');
 		// Der Satz zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update: Genau das hat
 		// Absprache vom 06.09.2026 an der Selbstprüfung beanstandet („eine Warnung, die nur ein
@@ -279,10 +279,13 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		// Entprellung nur noch zufällig, was dieser Test zu prüfen behauptet.
 		await new Promise((r) => setTimeout(r, VORSCHAU_ENTPRELLUNG_MS + 150));
 		expect(gesendet).toHaveLength(0);
-		expect(
-			/** @type {HTMLButtonElement} */ (screen.getByRole('button', { name: 'Plan speichern' }))
-				.disabled
-		).toBe(true);
+		// Speichern bleibt bedienbar: Der Klick nennt den fehlenden Tag am Feld, führt dorthin und
+		// schickt nichts (ARCHITEKTUR, „Felder und Eingabe“).
+		await fireEvent.click(screen.getByRole('button', { name: 'Plan speichern' }));
+		expect(screen.getByText('Bitte den letzten Tag eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		await vi.waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(gesendet).toHaveLength(0);
 	});
 });
 

@@ -18,12 +18,13 @@
 <script>
 	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import Select from '../ui/Select.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
 	import { STUNDEN } from './lmfplanDienst.js';
 	import { anzahlText } from '../../utils/format.js';
 
-	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], sommerferien: import('./lmfplanDienst.js').Sommerferien | null }} */
-	let { art, entwurf = $bindable(), ausfaelle, sommerferien } = $props();
+	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], sommerferien: import('./lmfplanDienst.js').Sommerferien | null, ankerFehlt?: boolean }} */
+	let { art, entwurf = $bindable(), ausfaelle, sommerferien, ankerFehlt = false } = $props();
 
 	const ende = $derived(art === 'rueckgabe');
 	// Die Felder des Ankers — je Art ein anderes Paar im Entwurf.
@@ -54,12 +55,19 @@
 			{ferienText}
 		</p>
 	{/if}
+	<Pflichthinweis klasse="mt-4" />
 	<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
 		<Datumsfeld
 			id="lmf-plan-anker-tag"
 			etikett={ende ? 'Letzter Tag' : 'Erster Tag'}
 			bind:value={entwurf[tagFeld]}
-			hint={ende ? 'Donnerstag vor den Sommerferien' : 'Erster Schultag nach den Sommerferien'}
+			aria-required="true"
+			ungueltig={ankerFehlt}
+			hint={ankerFehlt
+				? `Bitte den ${ende ? 'letzten' : 'ersten'} Tag eintragen`
+				: ende
+					? 'Donnerstag vor den Sommerferien'
+					: 'Erster Schultag nach den Sommerferien'}
 		/>
 		<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
 			<label for="lmf-plan-anker-stunde" class="text-sm font-medium text-on-surface-variant"

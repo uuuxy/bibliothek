@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
 vi.mock('../../apiFetch.js', () => ({
@@ -17,7 +17,7 @@ async function verlaengere() {
 	const screen = render(LMFVerlaengerung);
 	await fireEvent.click(screen.getByRole('combobox'));
 	await fireEvent.click(await screen.findByRole('option', { name: '7a' }));
-	await fireEvent.input(screen.getByLabelText('Neues Rückgabedatum'), {
+	await fireEvent.input(screen.getByLabelText(/^Neues Rückgabedatum/), {
 		target: { value: '2027-07-27' }
 	});
 	await fireEvent.click(screen.getByRole('button', { name: 'Klassen-LMF global verlängern' }));
@@ -59,5 +59,26 @@ describe('LMF-Massenverlängerung: das neue Rückgabedatum', () => {
 				neues_rueckgabe_datum: '2027-07-27'
 			})
 		);
+	});
+});
+
+// Die Klasse ist eine Auswahl, das Datum ein Feld: Ohne Klasse gesperrt; ohne Datum nennt der
+// Klick das Feld, führt dorthin und fragt nicht nach.
+describe('LMF-Massenverlängerung: fehlendes Datum', () => {
+	it('sperrt ohne Klasse und nennt ein fehlendes Datum beim Klick', async () => {
+		vi.mocked(bestaetigen).mockReset();
+		const screen = render(LMFVerlaengerung);
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Klassen-LMF global verlängern' })
+		);
+		expect(knopf.disabled).toBe(true);
+		await fireEvent.click(screen.getByRole('combobox'));
+		await fireEvent.click(await screen.findByRole('option', { name: '7a' }));
+		await fireEvent.click(knopf);
+		const feld = screen.getByLabelText(/^Neues Rückgabedatum/);
+		expect(screen.getByText('Bitte das neue Rückgabedatum eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(bestaetigen).not.toHaveBeenCalled();
 	});
 });

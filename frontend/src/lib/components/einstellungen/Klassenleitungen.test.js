@@ -151,7 +151,7 @@ describe('Klassenleitungen: Hinzufügen', () => {
 		const klasse = await screen.findByRole('combobox');
 		await fireEvent.click(klasse);
 		await fireEvent.click(await screen.findByRole('option', { name: '05F' }));
-		await fireEvent.input(screen.getByLabelText('E-Mail'), {
+		await fireEvent.input(screen.getByLabelText(/^E-Mail/), {
 			target: { value: 'lehrkraft@schule.de' }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: 'Hinzufügen' }));
@@ -162,5 +162,30 @@ describe('Klassenleitungen: Hinzufügen', () => {
 				lehrer_email: 'lehrkraft@schule.de'
 			})
 		);
+	});
+
+	// Die Klasse ist eine Auswahl: ohne sie gesperrt. Eine fehlende Adresse nennt der Klick am
+	// Feld, führt dorthin und schickt nichts.
+	it('sperrt ohne Klasse und nennt eine fehlende Adresse beim Klick', async () => {
+		vi.clearAllMocks();
+		vi.mocked(apiGet).mockResolvedValue([]);
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ['05F'] })
+		);
+		const screen = render(Klassenleitungen);
+		const knopf = /** @type {HTMLButtonElement} */ (
+			await screen.findByRole('button', { name: 'Hinzufügen' })
+		);
+		expect(knopf.disabled).toBe(true);
+		await fireEvent.click(await screen.findByRole('combobox'));
+		await fireEvent.click(await screen.findByRole('option', { name: '05F' }));
+		expect(knopf.disabled).toBe(false);
+
+		await fireEvent.click(knopf);
+		const feld = screen.getByLabelText(/^E-Mail/);
+		expect(screen.getByText('Bitte die E-Mail-Adresse der Klassenleitung eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(apiPost).not.toHaveBeenCalled();
 	});
 });

@@ -17,13 +17,12 @@
 	import Segmente from '../ui/Segmente.svelte';
 	import { ARTEN, datumKurz } from './lmfplanDienst.js';
 
-	/** @type {{ art: string, stand: any, laedt: boolean, ladeFehler: boolean, gueltig: boolean, speichert: boolean, onart: (a: string) => void, onpdf: () => void, onverwerfen: () => void, onspeichern: () => void, onveroeffentlichen: () => void }} */
+	/** @type {{ art: string, stand: any, laedt: boolean, ladeFehler: boolean, speichert: boolean, onart: (a: string) => void, onpdf: () => void, onverwerfen: () => void, onspeichern: () => void, onveroeffentlichen: () => void }} */
 	let {
 		art,
 		stand,
 		laedt,
 		ladeFehler,
-		gueltig,
 		speichert,
 		onart,
 		onpdf,
@@ -62,12 +61,12 @@
 					Plan verwerfen
 				</Button>
 				{#if laufend && !veroeffentlicht}
-					<Button variant="secondary" onclick={onveroeffentlichen} disabled={!gueltig || speichert}>
+					<Button variant="secondary" onclick={onveroeffentlichen} disabled={speichert}>
 						<Icon name="send" />
 						Veröffentlichen
 					</Button>
 				{/if}
-				<Button onclick={onspeichern} disabled={!gueltig || speichert}>Plan speichern</Button>
+				<Button onclick={onspeichern} disabled={speichert}>Plan speichern</Button>
 			</div>
 		{/if}
 	</div>

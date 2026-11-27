@@ -1,21 +1,14 @@
 <script>
-	import { apiGet, apiPost, apiDelete } from '../../apiFetch.js';
+	import { apiGet, apiDelete } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { onMount } from 'svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
-	import Feld from '../ui/Feld.svelte';
 	import Button from '../ui/Button.svelte';
-	import Select from '../ui/Select.svelte';
-	import {
-		erzeugeKlassenVorschlaege,
-		klassenPlatzhalter,
-		klassenLadefehler
-	} from '../leser/klassenVorschlaege.svelte.js';
 	import Icon from '../ui/Icon.svelte';
-	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
+	import KlassenleitungNeu from './KlassenleitungNeu.svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
 	let mappingRows = $state([]);
@@ -23,13 +16,6 @@
 	// Nach einem gescheiterten Laden steht weder Liste noch Formular da: Hinzufügen ersetzt die
 	// Zuordnung derselben Klasse, und die wäre gerade nicht zu sehen.
 	let ladeFehler = $state(false);
-	let newMappingKlasse = $state('');
-	let newMappingEmail = $state('');
-	let zuordnungSpeichert = $state(false);
-	meldeFormular(() => newMappingKlasse.trim() !== '' || newMappingEmail.trim() !== '');
-	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
-	// nicht gibt, und ihre Mahnliste ginge an niemanden.
-	const klassenListe = erzeugeKlassenVorschlaege();
 
 	async function fetchMapping() {
 		zuordnungLaedt = true;
@@ -44,28 +30,9 @@
 		}
 	}
 
-	onMount(async () => {
-		await Promise.all([fetchMapping(), klassenListe.lade()]);
+	onMount(() => {
+		fetchMapping();
 	});
-
-	async function upsertMapping() {
-		if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
-		zuordnungSpeichert = true;
-		try {
-			await apiPost('/api/klassen-mapping', {
-				klasse: newMappingKlasse.trim(),
-				lehrer_email: newMappingEmail.trim()
-			});
-			newMappingKlasse = '';
-			newMappingEmail = '';
-			await fetchMapping();
-			snackbars.addToast('Zuordnung gespeichert', 'success');
-		} catch {
-			// Toast already shown by apiPost
-		} finally {
-			zuordnungSpeichert = false;
-		}
-	}
 
 	// Die Klasse, deren Zuordnung gerade gelöscht wird; bis die Liste nachgeladen ist, sind die
 	// Löschknöpfe gesperrt. Ein zweiter Klick schickte ein zweites DELETE, und nach dem Löschen
@@ -155,39 +122,6 @@
 
 	<!-- Neuen Eintrag hinzufügen: flacher Eingabeblock ohne Box -->
 	{#if !ladeFehler}
-		<div class="flex flex-col md:flex-row items-end gap-4">
-			<div class="w-full md:w-32">
-				<div class="grid gap-y-1.5">
-					<label for="routing-klasse" class="text-sm font-medium text-on-surface-variant"
-						>Klasse</label
-					>
-					<Select
-						id="routing-klasse"
-						bind:value={newMappingKlasse}
-						options={klassenListe.liste.map((k) => ({ value: k, label: k }))}
-						placeholder={klassenPlatzhalter(klassenListe.liste.length, klassenListe.ladefehler)}
-					/>
-				</div>
-			</div>
-			<div class="flex-1 w-full">
-				<Feld
-					bind:value={newMappingEmail}
-					etikett="E-Mail"
-					type="email"
-					placeholder="lehrkraft@schule.de"
-				/>
-			</div>
-			<Button
-				onclick={upsertMapping}
-				disabled={zuordnungSpeichert || !newMappingKlasse.trim() || !newMappingEmail.trim()}
-				class="w-full md:w-auto whitespace-nowrap"
-			>
-				{zuordnungSpeichert ? 'Wird gespeichert …' : 'Hinzufügen'}
-			</Button>
-		</div>
-		<!-- Unter der Zeile, nicht unter der Auswahl: Auswahl, Feld und Knopf stehen bündig unten. -->
-		{#if klassenListe.ladefehler}
-			<p role="alert" class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</p>
-		{/if}
+		<KlassenleitungNeu ongespeichert={fetchMapping} />
 	{/if}
 </div>

@@ -11,7 +11,7 @@
      bewegen (laden, Vorschau, speichern, veröffentlichen, verwerfen), liegen in
      lmfplanPlaner.svelte.js. -->
 <script>
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { abonniere } from '../../liveEvents.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
@@ -52,6 +52,17 @@
 			z.entwurf.zeilen.every((x) => x.klassen.length > 0 || x.vermerk.trim() !== '') &&
 			dienst.festePlaetzeVollstaendig(z.entwurf.zeilen)
 	);
+	// Speichern und Veröffentlichen bleiben bedienbar: Fehlt etwas, führt der Klick zum ersten
+	// Feld, das es nennt (ARCHITEKTUR, „Felder und Eingabe“). Vermerk und Tag eines festen
+	// Platzes nennt die Reihenfolge schon beim Bearbeiten, den fehlenden Anker erst der Klick.
+	let verlangt = $state(false);
+	/** @param {() => unknown} aktion */
+	async function wennGueltig(aktion) {
+		verlangt = true;
+		if (gueltig) return aktion();
+		await tick();
+		/** @type {HTMLElement | null} */ (document.querySelector('[aria-invalid="true"]'))?.focus();
+	}
 
 	// Nicht `onMount(planer.lade)`: Svelte nähme die zurückgegebene Zusage als
 	// Aufräum-Funktion. Die Abmeldung des Abonnements IST die Aufräum-Funktion.
@@ -76,13 +87,12 @@
 		stand={z.stand}
 		laedt={z.laedt}
 		ladeFehler={z.ladeFehler}
-		{gueltig}
 		speichert={z.speichert}
 		onart={planer.waehleArt}
 		onpdf={planer.pdf}
 		onverwerfen={planer.verwerfen}
-		onspeichern={planer.speichern}
-		onveroeffentlichen={planer.veroeffentlichen}
+		onspeichern={() => wennGueltig(planer.speichern)}
+		onveroeffentlichen={() => wennGueltig(planer.veroeffentlichen)}
 	/>
 
 	{#if z.fremdeAenderung}
@@ -115,6 +125,7 @@
 			<LmfPlanRahmen
 				art={z.art}
 				bind:entwurf={z.entwurf}
+				ankerFehlt={verlangt && !dienst.ankerGesetzt(z.art, z.entwurf)}
 				ausfaelle={z.ausfaelle}
 				sommerferien={z.stand?.sommerferien ?? null}
 			/>

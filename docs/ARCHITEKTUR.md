@@ -667,9 +667,11 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
 
 *Felder und Eingabe*
 
-- Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt am Feld, was fehlt (`verlangt` in
-  `BuchFormular.svelte`, in `ui/EingabeDialog`, `SchadenMeldenDialog` und im Bescheid). Gesperrt
-  bleibt er nur, solange keine Wahl getroffen ist: keine Auswahl, ein unveränderter Wert in einem
+- Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt am Feld, was fehlt, und führt
+  dorthin (`verlangt`, etwa in `BuchFormular.svelte`, `ui/EingabeDialog`, `SchadenMeldenDialog`,
+  im Bescheid und im LMF-Plan). Gesperrt bleibt er nur, solange keine Wahl getroffen ist: keine
+  Auswahl (Radio, Auswahlliste, beim Filter der Inventur Fach oder Klasse), ein leerer Suchtext
+  vor „Suchen“, ein unveränderter Wert in einem
   vorbelegten Feld (Preis, Schreibweise eines Schlagworts), Angaben, die der Dialog nicht beheben
   kann (Einstellungen zum Bescheid), solange noch geladen wird, woran der Klick entscheidet (Ziel
   beim Zusammenführen von Schlagworten, Vorschlag des Ersatzbetrags; ein Klick davor meldete einen
