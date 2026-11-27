@@ -22,7 +22,7 @@ func newTitelSchreibLauf() *titelSchreibLauf {
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
 func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	c := newTitelSchreibLauf()
-	c.bestand.nachTitel["LMF-Deutschbuch 9"] = "id-bestand"
+	c.bestand.Merke("", "LMF-Deutschbuch 9", "id-bestand") // aus der Bestands-CSV, ohne ISBN
 
 	batch := &pgx.Batch{}
 	ok := reiheTitelEin(batch, Titel{
