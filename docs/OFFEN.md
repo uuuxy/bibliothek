@@ -34,7 +34,7 @@ Nur, was kein Test leisten kann.
 - [ ] Mit dem Scanner je ein Littera-Etikett, ein gedrucktes Etikett und eine ISBN mit Preiszusatz
   scannen. (7.10)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
-- [ ] An der Theke Namen tippen und ansehen, ob die Trefferliste mit der kürzeren Wartezeit
+- [x] An der Theke Namen tippen und ansehen, ob die Trefferliste mit der kürzeren Wartezeit
   beim Tippen unruhig wird. (5.206)
 - [ ] In Excel für Windows eine kleine Leserliste anlegen und in jedem CSV-Format speichern, das
   „Speichern unter" anbietet; die Dateien gibst du mir. (7.10)
@@ -280,13 +280,6 @@ Beide Entwürfe stehen ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
 - **Die Probe** der Vertretung: 7.4.
 
 ---
-
-### 5.206 Wartezeit der Suche an der Theke
-
-Die Omnibox wartet 150 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`,
-`WARTEZEIT_MS`), die übrigen Suchfelder 300 ms, der Katalog ohne Anmeldung 400 ms. Ein Test
-kann nicht zeigen, ob die Liste beim Tippen unruhig wird; wird sie es, ist der Wert dort zu
-erhöhen.
 
 ### 5.211 Weitere Knöpfe, die bei leerem Feld gesperrt sind
 
