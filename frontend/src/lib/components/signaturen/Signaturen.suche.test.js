@@ -11,6 +11,7 @@ import Signaturen from './Signaturen.svelte';
 
 // Die Suche über die Signaturen liest wie die übrigen Listen und die Titelsuche im Katalog:
 // Umlaute, Akzente und groß und klein zählen nicht, jedes Wort für sich, in beliebiger Folge.
+// Die Liste trägt nur Regaladressen, den Teil vor „ / “, wie GET /api/signaturen sie liefert.
 describe('Signaturen: Suche', () => {
 	beforeEach(() => {
 		vi.mocked(apiGet).mockReset();
@@ -19,7 +20,6 @@ describe('Signaturen: Suche', () => {
 				? [
 						{ signatur: 'D Mül', exemplare: 2 },
 						{ signatur: 'LMF Deu 7', exemplare: 30 },
-						{ signatur: 'LMF Deu 7 / Bie', exemplare: 28 },
 						{ signatur: 'LMF Bio 7', exemplare: 25 },
 						{ signatur: 'LMF Deu 8', exemplare: 30 }
 					]
@@ -48,8 +48,9 @@ describe('Signaturen: Suche', () => {
 	});
 
 	it('findet die Wörter in jeder Folge', async () => {
-		await suche('bie deu');
-		expect(screen.getByText('LMF Deu 7 / Bie')).toBeTruthy();
-		expect(screen.queryByText('LMF Deu 7')).toBeNull();
+		await suche('7 deu');
+		expect(screen.getByText('LMF Deu 7')).toBeTruthy();
+		expect(screen.queryByText('LMF Bio 7')).toBeNull();
+		expect(screen.queryByText('LMF Deu 8')).toBeNull();
 	});
 });
