@@ -78,20 +78,20 @@ var texte = map[string]Texte{
 		Kurz:    "Lernmittelfreiheit",
 		Traeger: "Land",
 		Betreff: "Bestellung im Rahmen der Lernmittelfreiheit",
-		Vermerk: "Die Bücher werden im Rahmen der Lernmittelfreiheit beschafft — Sammelbestellung der Schule.",
+		Vermerk: "Die Bücher werden im Rahmen der Lernmittelfreiheit als Sammelbestellung der Schule beschafft.",
 	},
 	Schultraeger: {
 		Kurz:    "Schülerbücherei",
 		Traeger: "Schulträger",
 		Betreff: "Bestellung für die Schülerbücherei",
-		Vermerk: "Die Bücher sind eine Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers — keine Beschaffung im Rahmen der Lernmittelfreiheit.",
+		Vermerk: "Die Bücher sind eine Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers und keine Beschaffung im Rahmen der Lernmittelfreiheit.",
 	},
 	// „ohne Topf" sagt der Bibliothek, was die Spende ist; der Händler liest „Spende".
 	Spende: {
 		Kurz:    "Spende",
 		Traeger: "ohne Topf",
 		Betreff: "Bestellung aus Spendenmitteln",
-		Vermerk: "Die Bücher sind eine Spende — keine Beschaffung aus Mitteln des Landes oder des Schulträgers.",
+		Vermerk: "Die Bücher sind eine Spende und keine Beschaffung aus Mitteln des Landes oder des Schulträgers.",
 	},
 }
 

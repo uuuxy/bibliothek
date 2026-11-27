@@ -93,7 +93,7 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 // Bücher und die Fußzeile.
 func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSchueler) {
 	pdf.SetFont(pdfzeichen.Schrift, "B", 14)
-	pdf.Cell(0, 9, tr("Mahnung – Schulbibliothek"))
+	pdf.Cell(0, 9, tr("Mahnung der Schulbibliothek"))
 	pdf.Ln(7)
 
 	pdf.SetFont(pdfzeichen.Schrift, "", 9)
@@ -139,7 +139,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	pdf.Ln(10)
 	pdf.SetFont(pdfzeichen.Schrift, "I", 8)
 	pdf.SetTextColor(130, 130, 130)
-	pdf.Cell(0, 5, tr("Schulbibliothek – Bei Fragen wende dich bitte an das Bibliotheksteam."))
+	pdf.Cell(0, 5, tr("Bei Fragen wende dich bitte an das Bibliotheksteam."))
 	pdf.SetTextColor(0, 0, 0)
 }
 

@@ -81,7 +81,7 @@ const tabellen = (screen) =>
  * @param {string} topf
  */
 const gezeichnet = (screen, topf) =>
-	screen.getByRole('table', { name: `Zugangsbuch — ${topf}` }).querySelectorAll('tbody tr').length;
+	screen.getByRole('table', { name: `Zugangsbuch, ${topf}` }).querySelectorAll('tbody tr').length;
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -93,7 +93,7 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 
 		for (const name of [`${LAND} · 0`, `${TRAEGER} · 0`, `${OHNE} · 2`])
 			expect(screen.getByRole('button', { name }), name).toBeTruthy();
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${OHNE}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${OHNE}`]);
 		expect(screen.queryByText(LEER)).toBeNull();
 		expect(screen.getByRole('heading', { name: `${OHNE} · 2 Exemplare` })).toBeTruthy();
 	});
@@ -162,7 +162,7 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 			wortSingular: 'Zugang',
 			spalten
 		});
-		const tabelle = await screen.findByRole('table', { name: `Zugangsbuch — ${LAND}` });
+		const tabelle = await screen.findByRole('table', { name: `Zugangsbuch, ${LAND}` });
 		const zelle = /** @type {HTMLElement} */ (tabelle.querySelectorAll('tbody td')[3]);
 		const teile = [...zelle.querySelectorAll('span.whitespace-nowrap')].map((t) => t.textContent);
 		expect(teile).toEqual(['B-00200', 'B-00201', 'B-00300\u00a0–\u00a0B-00302']);
@@ -171,15 +171,15 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 
 	it('zeigt nach einem Klick nur diesen Topf und nach dem zweiten wieder alle', async () => {
 		const screen = await zugangsbuch({ land: 1, traeger: 2 });
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${LAND}`, `Zugangsbuch — ${TRAEGER}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${LAND}`, `Zugangsbuch, ${TRAEGER}`]);
 
 		const feld = screen.getByRole('button', { name: `${TRAEGER} · 2` });
 		await fireEvent.click(feld);
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${TRAEGER}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${TRAEGER}`]);
 		expect(feld.getAttribute('aria-pressed')).toBe('true');
 
 		await fireEvent.click(feld);
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${LAND}`, `Zugangsbuch — ${TRAEGER}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${LAND}`, `Zugangsbuch, ${TRAEGER}`]);
 	});
 
 	it('sagt bei einem leeren Topf erst nach dem Klick darauf, dass nichts zuging', async () => {
@@ -202,15 +202,15 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 	// verlassen wurde, mit den Zeilen, die „Mehr laden" dazugeholt hat.
 	it('baut eine ausgeblendete Liste beim Zurückschalten nicht neu auf', async () => {
 		const screen = await zugangsbuch({ land: 1, traeger: 60 });
-		const vorher = screen.getByRole('table', { name: `Zugangsbuch — ${TRAEGER}` });
+		const vorher = screen.getByRole('table', { name: `Zugangsbuch, ${TRAEGER}` });
 		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden, noch 10 Zeilen übrig' }));
 
 		const feld = screen.getByRole('button', { name: `${LAND} · 1` });
 		await fireEvent.click(feld);
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${LAND}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${LAND}`]);
 		await fireEvent.click(feld);
 
-		expect(screen.getByRole('table', { name: `Zugangsbuch — ${TRAEGER}` })).toBe(vorher);
+		expect(screen.getByRole('table', { name: `Zugangsbuch, ${TRAEGER}` })).toBe(vorher);
 		expect(gezeichnet(screen, TRAEGER)).toBe(60);
 	});
 
@@ -264,12 +264,12 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 	it('zeigt wieder alle Töpfe, wenn der gewählte im neuen Zeitraum nicht vorkommt', async () => {
 		const screen = await zugangsbuch({ land: 1, ohne: 1 });
 		await fireEvent.click(screen.getByRole('button', { name: `${OHNE} · 1` }));
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${OHNE}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${OHNE}`]);
 
 		vi.mocked(apiFetch).mockResolvedValue(antwort({ land: 3 }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Anzeigen' }));
 		await screen.findByRole('button', { name: `${LAND} · 3` });
-		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${LAND}`]);
+		expect(tabellen(screen)).toEqual([`Zugangsbuch, ${LAND}`]);
 	});
 });
 

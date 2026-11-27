@@ -45,7 +45,7 @@ func (s *Schreiber) klaereBarcodes(
 			brauchtNeue = append(brauchtNeue, e)
 		case belegt[wunsch]:
 			s.prot.Warnung(e.ID, wunsch,
-				"Barcode bereits vergeben – Exemplar bekommt eine neue Nummer aus barcode_seq")
+				"Barcode bereits vergeben, Exemplar bekommt eine neue Nummer aus barcode_seq")
 			brauchtNeue = append(brauchtNeue, e)
 		default:
 			belegt[wunsch] = true
@@ -80,14 +80,14 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 		var ok bool
 		if nummer, ok = s.etikettAmBuch(e); !ok {
 			s.prot.Warnung(e.ID, e.Exemplarnummer,
-				"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden – "+
+				"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden; "+
 					"neue Nummer aus barcode_seq, das Buch braucht ein neues Etikett")
 			return ""
 		}
 	}
 	if len(nummer) > uebernahme.MaxBarcode {
 		s.prot.Warnung(e.ID, nummer,
-			"Barcode ist länger als die Spalte barcode_id – neue Nummer aus barcode_seq")
+			"Barcode ist länger als die Spalte barcode_id, neue Nummer aus barcode_seq")
 		return ""
 	}
 	return nummer
@@ -106,13 +106,13 @@ func (s *Schreiber) etikettAmBuch(e Exemplar) (string, bool) {
 	switch {
 	case gedrucktOK && gerechnetOK && gedruckt != gerechnet:
 		s.prot.Warnung(e.ID, e.Exemplarnummer, "das Etikett trägt "+gedruckt+
-			", aus Exemplar- und Bibliotheksnummer folgt "+gerechnet+" – übernommen wird das Etikett")
+			", aus Exemplar- und Bibliotheksnummer folgt "+gerechnet+"; übernommen wird das Etikett")
 		return gedruckt, true
 	case gedrucktOK:
 		return gedruckt, true
 	case strings.TrimSpace(e.Barcode) != "":
 		s.prot.Warnung(e.ID, e.Exemplarnummer,
-			"die Druckzeichenkette ist kein lesbarer EAN-13 – Etikett aus Exemplar- und Bibliotheksnummer gerechnet")
+			"die Druckzeichenkette ist kein lesbarer EAN-13, Etikett aus Exemplar- und Bibliotheksnummer gerechnet")
 	}
 	return gerechnet, gerechnetOK
 }

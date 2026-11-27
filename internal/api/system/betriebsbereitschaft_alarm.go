@@ -224,7 +224,7 @@ func schreibeWarnungsteil(sb *strings.Builder, warnBefunde []bereitschaft.Befund
 			if len(warnBefunde) == 1 {
 				verb = "steht"
 			}
-			fmt.Fprintf(sb, "Daneben %s %s — Details unter System → Einstellungen → Betriebsbereitschaft.\n", verb, warnungenText(len(warnBefunde)))
+			fmt.Fprintf(sb, "Daneben %s %s. Details unter System → Einstellungen → Betriebsbereitschaft.\n", verb, warnungenText(len(warnBefunde)))
 		}
 		return
 	}

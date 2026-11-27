@@ -153,7 +153,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 			"Summe Schülerbücherei · Schulträger: 1 Bestellung, 5 Exemplare", "45,50 €",
 			"ohne Zuordnung", "02.09.2019  ·  Bericht-Probe Alt  ·  Kd.-Nr. KD-Alt",
 			"Summe ohne Zuordnung: 1 Bestellung, 2 Exemplare", "10,00 €",
-			"Gesamtbetrag 01.09.2019 – 30.09.2019", "255,50 €")
+			"Gesamtbetrag 01.09.2019–30.09.2019", "255,50 €")
 		text := strings.Join(texte, "\n")
 		if strings.Contains(text, "Probe August") || strings.Contains(text, "Probe Oktober") {
 			t.Error("eine Bestellung außerhalb des Zeitraums steht auf dem Blatt")
@@ -167,7 +167,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		setzePreise(t, "false")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30")
 		folge(t, texte, "Bestellungen: 4", "Exemplare: 57", "Lernmittelfreiheit · Land",
-			"Summe Lernmittelfreiheit · Land: 2 Bestellungen, 50 Exemplare", "Gesamt 01.09.2019 – 30.09.2019", "57")
+			"Summe Lernmittelfreiheit · Land: 2 Bestellungen, 50 Exemplare", "Gesamt 01.09.2019–30.09.2019", "57")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "€") {
 			t.Errorf("der Mengenbericht nennt einen Betrag: %q", texte)
 		}
@@ -176,7 +176,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 	t.Run("auf einen Topf eingeengt: Überschrift nennt ihn, der andere fehlt", func(t *testing.T) {
 		setzePreise(t, "true")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30&mittel=schultraeger")
-		folge(t, texte, "Bestellbericht — Schülerbücherei · Schulträger", "Bestellungen: 1", "Gesamtbetrag: 45,50 €",
+		folge(t, texte, "Bestellbericht · Schülerbücherei · Schulträger", "Bestellungen: 1", "Gesamtbetrag: 45,50 €",
 			"Schülerbücherei · Schulträger", "Summe Schülerbücherei · Schulträger: 1 Bestellung, 5 Exemplare", "45,50 €")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "Lernmittelfreiheit") || strings.Contains(text, "ohne Zuordnung") {
 			t.Errorf("der Bericht über einen Topf nennt einen anderen: %q", texte)
@@ -187,7 +187,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		setzePreise(t, "true")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30&lieferant_id="+haendler)
 		folge(t, texte, "Lieferantenabrechnung", "Bestellungen: 1", "Exemplare: 30", "Gesamtbetrag: 120,00 €",
-			"04.09.2019  ·  Bericht-Probe Land-A  ·  Kd.-Nr. KD-Land-A", "Gesamtbetrag 01.09.2019 – 30.09.2019", "120,00 €")
+			"04.09.2019  ·  Bericht-Probe Land-A  ·  Kd.-Nr. KD-Land-A", "Gesamtbetrag 01.09.2019–30.09.2019", "120,00 €")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "Land-B") || strings.Contains(text, "Probe Oktober") {
 			t.Errorf("die Abrechnung eines Lieferanten nennt eine fremde Bestellung oder eine außerhalb des Zeitraums: %q", texte)
 		}
@@ -206,7 +206,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		texte := blatt(t, "von=2019-11-01&bis=2019-11-30&jahresansicht=true")
 		folge(t, texte, "Zeitraum: 01.11.2019 bis 30.11.2019", "Bestellungen: 1", "Gesamtbetrag: 2,00 €",
 			"Übersicht nach Monat", "November", "1",
-			"01.11.2019  ·  Bericht-Probe Nacht-Anfang  ·  Kd.-Nr. KD-Nacht-Anfang", "Gesamtbetrag 01.11.2019 – 30.11.2019", "2,00 €")
+			"01.11.2019  ·  Bericht-Probe Nacht-Anfang  ·  Kd.-Nr. KD-Nacht-Anfang", "Gesamtbetrag 01.11.2019–30.11.2019", "2,00 €")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "Nacht-Ende") || strings.Contains(text, "Oktober") {
 			t.Errorf("der November nennt die Bestellung vom 01.12. oder zählt eine im Oktober: %q", texte)
 		}

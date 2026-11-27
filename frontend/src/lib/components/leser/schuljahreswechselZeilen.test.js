@@ -17,7 +17,7 @@ describe('Schuljahreswechsel: Zeilen der Zusammenfassung', () => {
 
 		expect(versetzt.value).toBe(120);
 		expect(versetzt.hint).toBe(
-			'Klasse wird um eine Stufe hochgezählt — nicht versetzt, weil kein Jahrgang von 1 bis 13: 14A, 4711000123'
+			'Klasse wird um eine Stufe hochgezählt. Nicht versetzt, weil kein Jahrgang von 1 bis 13: 14A, 4711000123.'
 		);
 	});
 

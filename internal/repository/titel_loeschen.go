@@ -328,7 +328,7 @@ func protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVor
 	}); err != nil {
 		return err
 	}
-	kontext := "Titel gelöscht — Exemplar mit entfernt"
+	kontext := "Titel gelöscht, Exemplar mit entfernt"
 	for _, ex := range vorher.exemplare {
 		details := map[string]any{
 			"barcode_id": ex.barcode, "titel": vorher.titel, "titel_id": vorher.id,

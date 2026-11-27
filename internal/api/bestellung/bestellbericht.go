@@ -54,7 +54,7 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
 	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
 	if beschriftung := mitteltopf.Beschriftung(mittel); mittel != "" && beschriftung != "" {
-		titel += " — " + beschriftung
+		titel += " · " + beschriftung
 	}
 	return titel
 }

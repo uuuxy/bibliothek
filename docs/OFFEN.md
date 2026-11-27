@@ -90,8 +90,8 @@ Nur, was kein Test leisten kann.
 - [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
   Testserver dieselben 693 Titel viermal am Tag. Entschieden: als `NOT_FOUND` vermerken; bauen.
   (5.209)
-- [ ] Gedankenstrich in PDF, Mail und Protokoll des Servers: dieselbe Regel wie in
-  Oberfläche und Meldungen. Entschieden; bauen. (5.210)
+- [x] Gedankenstrich in PDF, Mail und Protokoll des Servers: dieselbe Regel wie in
+  Oberfläche und Meldungen.
 
 ### Termin
 
@@ -340,19 +340,6 @@ OpenLibrary.
 
 Entschieden: „keine Quelle kennt die ISBN“ und eine ISBN, die keine ist, als `NOT_FOUND` vermerken;
 `FAILED` nur, wenn keine Quelle erreichbar war. Nächster Schritt: bauen.
-
-### 5.210 Gedankenstrich in den Texten des Servers außerhalb der Meldungen
-
-Oberfläche (5.185) und Meldungen (STIL.md 11) setzen keinen Gedankenstrich; die vier Sätze des
-Servers, die in der Oberfläche stehen, sind angeglichen. Für Klammern und Schrägstriche gilt die
-Regel schon in PDF, Mail und Protokoll (5.192, 5.194), für den Strich nicht. Ihn tragen noch:
-Fußnoten von Zugangs- und Abgangsbuch (`internal/pdf/zugangsbuch.go`, `abgangsbuch.go`), der
-Titel des Bestellberichts (`bestellbericht.go`), die Auskunft nach Art. 15
-(`internal/auskunft/blatt.go`, `blatt_protokoll.go`), zwei Kontexte im Protokoll
-(`bescheid_rueckkehr.go`, `titel_loeschen.go`) und die Alarm-Mail der Betriebsbereitschaft. Die
-übrigen Funde sind Log und Startfehler.
-
-Entschieden: Die Regel gilt auch dort. Nächster Schritt: umformulieren wie unter 5.185.
 
 ## So wird die Liste geführt
 

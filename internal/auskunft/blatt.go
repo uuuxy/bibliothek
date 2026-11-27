@@ -257,13 +257,13 @@ func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []
 func dsgvoNachbuchErgebnis(ergebnis string) string {
 	switch ergebnis {
 	case repository.NachbuchUmgebucht:
-		return "lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen"
+		return "lag bei jemand anderem, dort zurückgenommen und neu ausgeliehen"
 	case repository.NachbuchNurReaktiviert:
 		return "Buch war abgeschrieben und ist wieder im Umlauf"
 	case repository.NachbuchNichtGebucht:
 		return "nicht gebucht"
 	case repository.NachbuchVeraltet:
-		return "nicht gebucht — es gab schon eine neuere Buchung"
+		return "nicht gebucht, weil es schon eine neuere Buchung gab"
 	case repository.NachbuchBereitsAusgeliehen:
 		return "war schon ausgeliehen"
 	case repository.NachbuchZurueckgegeben:

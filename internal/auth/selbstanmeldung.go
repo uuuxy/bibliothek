@@ -52,10 +52,10 @@ func SelbstanmeldeDomain() string {
 // Fällen nur „Anmeldung fehlgeschlagen".
 func SelbstanmeldungStatus() string {
 	if d := SelbstanmeldeDomain(); d != "" {
-		return fmt.Sprintf("Selbstanmeldung aktiv für @%s — neue Konten entstehen inaktiv "+
+		return fmt.Sprintf("Selbstanmeldung aktiv für @%s, neue Konten entstehen inaktiv "+
 			"und müssen freigeschaltet werden", d)
 	}
-	return fmt.Sprintf("Selbstanmeldung abgeschaltet, weil %s nicht gesetzt ist — Konten legt "+
+	return fmt.Sprintf("Selbstanmeldung abgeschaltet, weil %s nicht gesetzt ist; Konten legt "+
 		"ausschließlich die Benutzerverwaltung an", selbstanmeldeDomainVariable)
 }
 

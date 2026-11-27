@@ -291,6 +291,15 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   `pruefung/nebenzeichen_ratsche_test.go` mit denselben Fällen für alle Texte des Servers. Ein
   Dateipfad ist wie eine Webadresse Code (Slashes: „Use forward slashes, as appropriate, in
   computer file paths and URLs.“). Der Bescheid behält den Wortlaut der Vorlage, die die Schule vorgelegt hat (`nebenVorlage`).
+- Kein Gedankenstrich, auch nicht in PDF, Mail und Protokoll. M3 (Content design, Grammar and
+  punctuation): „Em dashes are best avoided in UX writing, as they indicate a break in the flow of
+  a sentence that could be simplified using a comma, period, or new sentence.“ Statt dessen ein
+  Komma, ein Punkt oder ein neuer Satz; Teile einer Überschrift oder eines Betreffs trennt „ · “
+  („Bestellbericht · Lernmittelfreiheit · Land“). Einen Bereich verbindet der Halbgeviertstrich
+  ohne Leerzeichen („Use an en dash without spaces to indicate a range, such as 9 AM–Noon“), allein
+  steht er für einen fehlenden Wert. `pruefung/nebenzeichen_ratsche_test.go` hält es für die Texte
+  des Servers, `frontend-hygiene-satzzeichen.test.js` für die der Oberfläche, auch für Teile, die
+  klein beginnen; Fehlertexte und Log bleiben außen vor.
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut

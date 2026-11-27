@@ -49,7 +49,7 @@ test('Klassensätze: ein Buch in zwei Auflagen zählt einmal und zeigt die Misch
 			'aus Ausleihen · 6 Leser'
 		);
 		await expect(kachel.getByTestId('klassensatz-auflagen').locator('li')).toHaveText([
-			'4. Aufl. · 2023: 4 Kinder — diese Auflage',
+			'4. Aufl. · 2023: 4 Kinder · diese Auflage',
 			'3. Aufl. · 2019: 2 Kinder'
 		]);
 

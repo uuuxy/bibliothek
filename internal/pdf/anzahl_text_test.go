@@ -36,8 +36,8 @@ func TestSaetzeFuerEinEinzelnesBuch(t *testing.T) {
 			"Hinweis: 3 weitere Exemplare sind ausgesondert",
 			[]string{"Exemplare", "Sie wurden", "können", "sie stehen"}},
 		"Abgangsbuch aus dem Katalog gelöscht": {hinweisAusKatalogGeloescht,
-			"Hinweis: 1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht",
-			"Hinweis: 3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht",
+			"Hinweis: 1 Exemplar wurde in diesem Zeitraum mit seinem Titel",
+			"Hinweis: 3 Exemplare wurden in diesem Zeitraum mit ihrem Titel",
 			[]string{"Exemplare", "mit ihnen", "sie stehen", "Ihre Nummern"}},
 	} {
 		if ist := f.satz(1); !strings.HasPrefix(ist, f.eins) {

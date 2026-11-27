@@ -92,7 +92,7 @@ func TestBaueMahnMail_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing.T) {
 	if mail.Art != mailservice.MailartMahnliste {
 		t.Errorf("Art = %q, erwartet %q", mail.Art, mailservice.MailartMahnliste)
 	}
-	if !einerDerTage(mail.Betreff, "Mahnliste Schulbibliothek – Klasse 07B – %s", "02.01.2006") {
+	if !einerDerTage(mail.Betreff, "Mahnliste Schulbibliothek · Klasse 07B · %s", "02.01.2006") {
 		t.Errorf("Betreff = %q, erwartet Klasse und heutigen Tag in der Form TT.MM.JJJJ", mail.Betreff)
 	}
 	kopf, rest, _ := strings.Cut(mail.Text, "\n\nBetroffene")

@@ -60,7 +60,7 @@ function zuPruefendeFuer(posten, erg) {
 	} else if (erg.ergebnis === 'umgebucht') {
 		pruefen.push({
 			barcode: posten.barcode,
-			meldung: 'lag bei jemand anderem — dort zurückgenommen und neu ausgeliehen'
+			meldung: 'lag bei jemand anderem, dort zurückgenommen und neu ausgeliehen'
 		});
 	} else {
 		const gebucht = erg.daten?.type;

@@ -40,9 +40,11 @@ function satzende(t) {
 /** @param {string} roh @param {boolean} [ohneSchlusspunkt] @returns {string[]} */
 function verstoesse(roh, ohneSchlusspunkt = false) {
 	const t = roh.replace(/\s+/g, ' ').trim();
-	if (!/^[\p{Lu}\d„"{]/u.test(t) || !t.includes(' ') || !/\p{Ll}/u.test(t)) return [];
-	const funde = [];
-	if (/—| – /.test(t)) funde.push('Gedankenstrich');
+	// Der Gedankenstrich auch in einem Teil, der klein beginnt oder erst angehängt wird: Er steht
+	// danach mitten im Satz. Der Halbgeviertstrich allein ist der Platzhalter für einen fehlenden Wert.
+	const strich = t !== '–' && /—| – /.test(roh.replace(/\s+/g, ' '));
+	const funde = strich ? ['Gedankenstrich'] : [];
+	if (!/^[\p{Lu}\d„"{]/u.test(t) || !t.includes(' ') || !/\p{Ll}/u.test(t)) return funde;
 	const mehrere = satzende(t);
 	const ende = t.replace(/([\p{L}“")])([.!?])\{…\}$/u, '$1$2');
 	const letztes = ende.split(' ').pop() ?? '';
@@ -260,6 +262,11 @@ describe('Satzzeichen in den Texten der Oberfläche', () => {
 		expect(verstoesse('Buch gespeichert')).toEqual([]);
 		expect(verstoesse('Netzwerkfehler — die Suche')).toEqual(['Gedankenstrich']);
 		expect(verstoesse('Der Name genügt – @{…} ergänzt')).toEqual(['Gedankenstrich']);
+		expect(verstoesse(' — diese Auflage')).toEqual(['Gedankenstrich']);
+		expect(verstoesse('nicht gebucht — es gab schon eine neuere Buchung')).toEqual([
+			'Gedankenstrich'
+		]);
+		expect(verstoesse(' – ')).toEqual([]);
 		expect(verstoesse('Erster Satz. Zweiter Satz')).toEqual(['mehrere Sätze ohne Punkt']);
 		expect(verstoesse('Eingebucht. {…} brauchen ein Etikett')).toEqual([
 			'mehrere Sätze ohne Punkt'

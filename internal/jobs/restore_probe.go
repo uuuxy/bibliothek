@@ -141,7 +141,7 @@ func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, 
 	}
 	e.Tabellen = tabellen
 	if tabellen < probeMindestTabellen {
-		e.Fehler = fmt.Sprintf("nur %d Tabellen wiederhergestellt, erwartet mindestens %d — der Dump ist unvollständig", tabellen, probeMindestTabellen)
+		e.Fehler = fmt.Sprintf("nur %d von mindestens %d Tabellen wiederhergestellt, der Dump ist unvollständig", tabellen, probeMindestTabellen)
 		return e
 	}
 	e.Erfolg = true

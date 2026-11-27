@@ -202,14 +202,14 @@ func hinweisOhneZeitpunkt(n int) string {
 // ausgesondert wurden, in der Form für eines oder für mehrere.
 func hinweisAusKatalogGeloescht(n int) string {
 	if n == 1 {
-		return "Hinweis: 1 Exemplar wurde in diesem Zeitraum aus dem Katalog gelöscht, statt " +
-			"ausgesondert zu werden — mit seinem Titel oder als endgültig entfernter Verlust. " +
+		return "Hinweis: 1 Exemplar wurde in diesem Zeitraum mit seinem Titel oder als endgültig entfernter " +
+			"Verlust aus dem Katalog gelöscht, statt ausgesondert zu werden. " +
 			"Titel, Signatur und Abgangsgrund sind mit ihm gelöscht worden; es steht " +
 			"deshalb in keiner Liste oben. Seine Nummer ist im Protokoll nachschlagbar."
 	}
 	return fmt.Sprintf(
-		"Hinweis: %d Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt "+
-			"ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. "+
+		"Hinweis: %d Exemplare wurden in diesem Zeitraum mit ihrem Titel oder als endgültig entfernter "+
+			"Verlust aus dem Katalog gelöscht, statt ausgesondert zu werden. "+
 			"Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen "+
 			"deshalb in keiner Liste oben. Ihre Nummern sind im Protokoll nachschlagbar.", n)
 }

@@ -128,7 +128,7 @@ func vormerkungsKonflikt(err error) (meldung string, ok bool) {
 	case errors.Is(err, repository.ErrVormerkungNurFuerSchueler):
 		return "Vormerken lässt sich nur für Schüler", true
 	case errors.Is(err, repository.ErrVormerkungExemplarFrei):
-		return "Ein Exemplar steht frei im Regal – ausleihen statt vormerken", true
+		return "Ein Exemplar steht frei im Regal, bitte ausleihen statt vormerken", true
 	}
 	return "", false
 }

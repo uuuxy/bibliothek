@@ -84,7 +84,7 @@ func VormerkSchluessel(roh string) string {
 func KlaereISBN(p *Protokoll, quellID, roh string, gesehen map[string]string) string {
 	norm, ok := pruefeISBN(roh)
 	if roh != "" && !ok {
-		p.Warnung(quellID, roh, "ungültige ISBN-Prüfziffer – Titel wird ohne ISBN übernommen")
+		p.Warnung(quellID, roh, "ungültige ISBN-Prüfziffer, Titel wird ohne ISBN übernommen")
 		return ""
 	}
 	if norm == "" {
@@ -93,7 +93,7 @@ func KlaereISBN(p *Protokoll, quellID, roh string, gesehen map[string]string) st
 	norm = VormerkSchluessel(norm)
 	if vorher, belegt := gesehen[norm]; belegt {
 		p.Warnung(quellID, norm, fmt.Sprintf(
-			"doppelte ISBN – bereits übernommen als %s=%s; Titel wird ohne ISBN übernommen", p.idFeld, vorher))
+			"doppelte ISBN, bereits übernommen als %s=%s; Titel wird ohne ISBN übernommen", p.idFeld, vorher))
 		return ""
 	}
 	gesehen[norm] = quellID

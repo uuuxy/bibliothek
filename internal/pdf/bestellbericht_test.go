@@ -146,7 +146,7 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 			"Block-Eins", "03.09.2026  ·  Haendler-A  ·  Kd.-Nr. K-1", "Summe: 30 Exemplare", "120,00 €",
 			"03.09.2026  ·  Haendler-B  ·  Kd.-Nr. K-1", "Summe: 20 Exemplare", "80,00 €",
 			"Summe Block-Eins: 2 Bestellungen, 50 Exemplare", "200,00 €",
-			"Gesamtbetrag 01.09.2026 – 30.09.2026", "245,50 €",
+			"Gesamtbetrag 01.09.2026–30.09.2026", "245,50 €",
 		}},
 		{false, []string{
 			"Bestellungen: 3", "Exemplare: 55", "Bestellungen im Detail",
@@ -155,7 +155,7 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 			"Block-Eins", "03.09.2026  ·  Haendler-A  ·  Kd.-Nr. K-1", "Summe: 30 Exemplare",
 			"03.09.2026  ·  Haendler-B  ·  Kd.-Nr. K-1", "Summe: 20 Exemplare",
 			"Summe Block-Eins: 2 Bestellungen, 50 Exemplare",
-			"Gesamt 01.09.2026 – 30.09.2026", "55",
+			"Gesamt 01.09.2026–30.09.2026", "55",
 		}},
 	} {
 		roh, err := ErzeugeBestellbericht(Bestellbericht{

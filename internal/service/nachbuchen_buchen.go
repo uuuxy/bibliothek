@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"bibliothek/internal/pkg/schulzeit"
@@ -103,7 +104,7 @@ func (d *AusleihDienst) bucheAusleiheNach(ctx context.Context, tx pgx.Tx, l *nac
 	ergebnis := repository.NachbuchAusgeliehen
 	if vorbesitzer != nil {
 		ergebnis = repository.NachbuchUmgebucht
-		m := d.baueMeldung(l, ergebnis, "lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen")
+		m := d.baueMeldung(l, ergebnis, "lag bei jemand anderem, dort zurückgenommen und neu ausgeliehen")
 		m.VorbesitzerSchuelerID = &vorbesitzer.ID
 		if err := repository.SchreibeNachbuchMeldung(ctx, tx, m); err != nil {
 			return nil, err
@@ -218,7 +219,7 @@ func (d *AusleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l
 	hinweis := l.befund.AufsichtHinweis()
 	meldungsGrund := grund
 	if hinweis != "" {
-		meldungsGrund = grund + " — " + hinweis
+		meldungsGrund = strings.TrimSuffix(grund, ".") + ". " + hinweis
 	}
 	abweisung, err := d.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, meldungsGrund)
 	if err != nil {

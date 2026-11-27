@@ -74,7 +74,7 @@ describe('BuchAuflagen', () => {
 		// Über den ganzen Absatz: Der Zusatz steht in einem eigenen span, und genau an der Naht
 		// fehlte am 25.09.2026 das Leerzeichen („2019— diese Auflage").
 		expect(screen.getByText(/3\. Aufl\. · 2019/).closest('p')?.textContent).toMatch(
-			/2019 — diese Auflage/
+			/2019 · diese Auflage/
 		);
 		expect(screen.getByText('Zusammen: 88 von 95 verfügbar')).toBeTruthy();
 	});

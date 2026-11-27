@@ -31,10 +31,10 @@
 
 	/** Die sieben Ergebniswörter der Tür in der Sprache der Theke. */
 	const WORT = {
-		umgebucht: 'lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen',
+		umgebucht: 'lag bei jemand anderem, dort zurückgenommen und neu ausgeliehen',
 		nur_reaktiviert: 'Buch war abgeschrieben und ist wieder im Umlauf',
 		nicht_gebucht: 'nicht gebucht',
-		veraltet: 'nicht gebucht — es gab schon eine neuere Buchung',
+		veraltet: 'nicht gebucht, weil es schon eine neuere Buchung gab',
 		bereits_ausgeliehen: 'war schon ausgeliehen',
 		zurueckgegeben: 'zurückgegeben',
 		bereits_gebucht: 'war schon gebucht'

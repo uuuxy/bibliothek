@@ -46,9 +46,9 @@ func TestDSGVOVorgang(t *testing.T) {
 			`{"action":"titel_geloescht_mit_offenem_bezug"}`, "Titel gelöscht, während eine Vormerkung offen war, automatisch"},
 		// Was das Blatt nicht kennt, bleibt stehen: Aktion, Tabelle, kontext, Akteur.
 		{"unbekannter Vorgang", ProtokollEintrag{Tabelle: "neue_tabelle", Aktion: "NEUE_AKTION", Akteur: "DIENST", Kontext: satz("neuer Satz")},
-			`{}`, "NEUE_AKTION (neue_tabelle) — neuer Satz, DIENST"},
+			`{}`, "NEUE_AKTION (neue_tabelle): neuer Satz, DIENST"},
 		{"bekannter Vorgang mit neuem kontext", ProtokollEintrag{Tabelle: "ausleihen", Aktion: "RETURN", Akteur: "USER", Kontext: satz("am Automaten")},
-			`{}`, "Rückgabe — am Automaten"},
+			`{}`, "Rückgabe: am Automaten"},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {

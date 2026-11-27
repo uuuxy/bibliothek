@@ -48,7 +48,7 @@
 		{
 			pfad: '/katalog',
 			name: 'Katalog (OPAC)',
-			wer: 'für Schüler, Eltern, Kollegium — ohne Anmeldung'
+			wer: 'für Schüler, Eltern und Kollegium, ohne Anmeldung'
 		},
 		{
 			pfad: '/monitor',

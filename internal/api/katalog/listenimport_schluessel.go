@@ -38,7 +38,7 @@ import (
 const importSchluesselKopf = "X-Idempotency-Key"
 
 const importLaeuftMeldung = "Dieser Import läuft noch auf dem Server. Bitte warten und dann erneut auf " +
-	"„Liste importieren“ drücken – das holt das Ergebnis ab, ohne die Liste ein zweites Mal einzuspielen."
+	"„Liste importieren“ drücken. Das holt das Ergebnis ab, ohne die Liste ein zweites Mal einzuspielen."
 
 // importLaeuftMarker ist die Antwort, die ein reservierter, noch offener Schlüssel liefert.
 // Einmal beim Start gebaut — ein Marshal-Fehler an einem festen Literal wäre ein

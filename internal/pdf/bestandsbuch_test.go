@@ -68,7 +68,7 @@ func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 		"Summe Topf Zwei: 2 Exemplare",
 		"Abgänge im Zeitraum: 9 Exemplare",
 		"7 weitere Exemplare sind ausgesondert",
-		"3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht",
+		"3 Exemplare wurden in diesem Zeitraum mit ihrem Titel",
 	}, []string{
 		"Topf Leer", // eine Überschrift ohne Zeilen hilft auf dem abgehefteten Blatt niemandem
 		"kein Exemplar aus dem Bestand gegangen",

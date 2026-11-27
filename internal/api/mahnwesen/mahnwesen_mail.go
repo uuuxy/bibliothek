@@ -76,7 +76,7 @@ func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesam
 
 	return mailservice.Nachricht{
 		An:      empfaenger.Email,
-		Betreff: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
+		Betreff: fmt.Sprintf("Mahnliste Schulbibliothek · Klasse %s · %s", empfaenger.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
 		Text:    text,
 		Art:     mailservice.MailartMahnliste,
 		Anhaenge: []mailservice.Anhang{

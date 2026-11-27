@@ -242,7 +242,7 @@ func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser)
 	if !erg.Uebernommen {
 		p.bericht.Uebersprungen++
 		p.s.prot.Fehler(l.ID, l.Lesernummer,
-			"Person übersprungen – "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
+			"Person übersprungen: "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
 		return nil
 	}
 
@@ -298,7 +298,7 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 	}
 	if rueckfall {
 		p.s.prot.Warnung(l.ID, l.Lesernummer, fmt.Sprintf(
-			"Klasse „%s“ nennt keinen Jahrgang – Abgangsjahr %d eingesetzt wie bei der Handanlage; "+
+			"Klasse „%s“ nennt keinen Jahrgang, Abgangsjahr %d eingesetzt wie bei der Handanlage; "+
 				"das richtige setzt der Abgang bei Versetzung oder LUSD-Import", l.Klasse, jahr))
 	}
 	return Zielleser{LeserID: id, IstSchueler: true}, nil
@@ -384,11 +384,11 @@ func (p *personenlauf) ausweis(l Leser) string {
 		// Die Schule nutzt Herstellerausweise, für diese Person führt Littera aber keinen: Ein
 		// Ausweis in ihrer Hand findet sie nicht — das muss vor dem ersten Scan jemand wissen.
 		p.s.prot.Warnung(l.ID, nummer,
-			"keine Karte in FremdLeserNummer – Ausweis trägt die Lesernummer, ein vorhandener Herstellerausweis findet die Person nicht")
+			"keine Karte in FremdLeserNummer; Ausweis trägt die Lesernummer, ein vorhandener Herstellerausweis findet die Person nicht")
 	}
 	if p.mehrereKarten[l.ID] {
 		p.s.prot.Warnung(l.ID, nummer,
-			"mehrere Karten hinterlegt – die zuletzt angelegte gilt, mit einer älteren findet die Theke niemanden")
+			"mehrere Karten hinterlegt; die zuletzt angelegte gilt, mit einer älteren findet die Theke niemanden")
 	}
 	if nummer != "" && !p.belegteAusweise[nummer] && !p.buchBarcodes[nummer] {
 		p.belegteAusweise[nummer] = true
@@ -415,7 +415,7 @@ func (p *personenlauf) ausweis(l Leser) string {
 	case p.buchBarcodes[nummer]:
 		grund = "Ausweisnummer ist schon der Barcode eines Buchs"
 	}
-	p.s.prot.Warnung(l.ID, nummer, grund+" – Ausweis "+ersatz+" vergeben, Karte muss neu gedruckt werden")
+	p.s.prot.Warnung(l.ID, nummer, grund+"; Ausweis "+ersatz+" vergeben, Karte muss neu gedruckt werden")
 	p.belegteAusweise[ersatz] = true
 	return ersatz
 }
@@ -453,9 +453,9 @@ func (p *personenlauf) mailadresse(l Leser) string {
 	}
 	ersatz := "littera-" + l.ID + platzhalterDomain
 	if echt != "" {
-		p.s.prot.Warnung(l.ID, l.Lesernummer, "E-Mail-Adresse bereits vergeben – Platzhalter "+ersatz+" eingesetzt")
+		p.s.prot.Warnung(l.ID, l.Lesernummer, "E-Mail-Adresse bereits vergeben, Platzhalter "+ersatz+" eingesetzt")
 	} else {
-		p.s.prot.Warnung(l.ID, "", "keine E-Mail im Altbestand – Platzhalter "+ersatz+
+		p.s.prot.Warnung(l.ID, "", "keine E-Mail im Altbestand, Platzhalter "+ersatz+
 			" eingesetzt (benutzer.email ist NOT NULL); vor dem ersten Mailversand nachtragen")
 	}
 	p.belegteMails[ersatz] = true

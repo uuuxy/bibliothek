@@ -177,7 +177,7 @@ func TestSchuelerOhneJahrgangBekommtDenRueckfall(t *testing.T) {
 	if klasse != "AUS" || abgaenger {
 		t.Errorf("klasse, ist_abgaenger = %q, %v, erwartet AUS, false", klasse, abgaenger)
 	}
-	if text := protokoll(); !strings.Contains(text, "Klasse „AUS“ nennt keinen Jahrgang – Abgangsjahr 2031") {
+	if text := protokoll(); !strings.Contains(text, "Klasse „AUS“ nennt keinen Jahrgang, Abgangsjahr 2031") {
 		t.Errorf("die Warnung muss Klasse und eingesetztes Jahr nennen:\n%s", text)
 	}
 }

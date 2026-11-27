@@ -48,7 +48,7 @@
 			{#if art}<StatusChip text={art.text} ton={art.ton ?? 'neutral'} />{/if}
 		</p>
 		<p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-on-surface-variant">
-			<span class="truncate">{neben}{notiz ? ` — „${notiz}"` : ''}</span>
+			<span class="truncate">{neben}{notiz ? ` · „${notiz}"` : ''}</span>
 			{#if chip}<StatusChip
 					text={chip.text}
 					ton={chip.ton ?? 'neutral'}

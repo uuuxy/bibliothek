@@ -108,7 +108,7 @@ func (l *ausleihlauf) aussortieren(ausleihen []Ausleihe) []buchbar {
 		if b.istOffen() && offenJeExemplar[a.ExemplarID] {
 			l.bericht.Doppelbelegung++
 			l.s.prot.Fehler(a.ID, a.ExemplarID,
-				"zweite offene Ausleihe desselben Exemplars – ein Buch liegt nur bei einer Person; "+
+				"zweite offene Ausleihe desselben Exemplars; ein Buch liegt nur bei einer Person, "+
 					"die jüngere Ausleihe wurde übernommen, diese nicht")
 			continue
 		}
@@ -125,14 +125,14 @@ func (l *ausleihlauf) hatBeideEnden(a Ausleihe) bool {
 	if _, ok := l.exemplare[a.ExemplarID]; !ok {
 		l.bericht.OhneExemplar++
 		l.s.prot.Fehler(a.ID, a.ExemplarID,
-			"das ausgeliehene Exemplar steht nicht im übernommenen Bestand – Ausleihe nicht übernommen")
+			"das ausgeliehene Exemplar steht nicht im übernommenen Bestand, Ausleihe nicht übernommen")
 		return false
 	}
 	if _, ok := l.entleiher[a.LeserID]; !ok {
 		l.bericht.OhneLeser++
 		l.s.prot.Fehler(a.ID, a.LeserID,
 			"der Entleiher wurde nicht übernommen (seine eigene FEHLER-Zeile nennt den Grund, "+
-				"oder er fehlt in Leser) – Ausleihe nicht übernommen")
+				"oder er fehlt in Leser), Ausleihe nicht übernommen")
 		return false
 	}
 	return true
@@ -144,7 +144,7 @@ func (l *ausleihlauf) meldeFristVorAusgabe(a Ausleihe) {
 	}
 	l.bericht.FristVorAusgabe++
 	l.s.prot.Warnung(a.ID, a.ExemplarID,
-		"Rückgabefrist liegt vor dem Verleihdatum – so aus Littera übernommen, "+
+		"Rückgabefrist liegt vor dem Verleihdatum; so aus Littera übernommen, "+
 			"die Ausleihe erscheint sofort als überfällig")
 }
 
@@ -160,7 +160,7 @@ func (l *ausleihlauf) rueckgabeAm(a Ausleihe) *time.Time {
 	}
 	if a.RueckgabeAm.Before(a.AusgeliehenAm) {
 		l.s.prot.Warnung(a.ID, a.ExemplarID,
-			"Rückgabedatum liegt vor dem Verleihdatum – verworfen, die Ausleihe bleibt offen")
+			"Rückgabedatum liegt vor dem Verleihdatum; verworfen, die Ausleihe bleibt offen")
 		return nil
 	}
 	t := a.RueckgabeAm
@@ -205,7 +205,7 @@ func (l *ausleihlauf) verarbeiteAusleihe(ctx context.Context, tx pgx.Tx, a buchb
 	if !erg.Uebernommen {
 		l.bericht.Uebersprungen++
 		l.s.prot.Fehler(a.ID, a.ExemplarID,
-			"Ausleihe übersprungen – "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
+			"Ausleihe übersprungen: "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
 		return nil
 	}
 	l.bericht.Geschrieben++
@@ -241,6 +241,6 @@ func (l *ausleihlauf) frist(a Ausleihe) time.Time {
 		return a.Frist
 	}
 	l.s.prot.Warnung(a.ID, a.ExemplarID,
-		"keine Rückgabefrist im Altbestand – Verleihdatum eingesetzt (rueckgabe_frist ist NOT NULL)")
+		"keine Rückgabefrist im Altbestand, Verleihdatum eingesetzt (rueckgabe_frist ist NOT NULL)")
 	return a.AusgeliehenAm
 }

@@ -37,7 +37,7 @@
 {#if anzahl === 0}
 	{@render nichts()}
 {:else}
-	<Tabelle beschriftung="{buchname} — {abschnitt.titel}">
+	<Tabelle beschriftung="{buchname}, {abschnitt.titel}">
 		<thead>
 			<tr>
 				{#each spalten as spalte (spalte.feld)}

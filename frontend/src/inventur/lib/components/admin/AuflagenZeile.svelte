@@ -23,7 +23,7 @@
 
 	const zusatz = $derived([titel, isbn, verlag].filter(Boolean).join(' · '));
 
-	// DIESE_AUFLAGE ist eine Konstante statt {' — …'} im Markup, weil svelte/no-useless-mustaches
+	// DIESE_AUFLAGE ist eine Konstante statt {' · …'} im Markup, weil svelte/no-useless-mustaches
 	// den Literal dort ablehnt; warum das Leerzeichen vorn zum Wert gehört, steht an der Konstante.
 </script>
 

@@ -160,7 +160,7 @@ func merkeRueckgabeNachUebergabe(ctx context.Context, q Datenbank, f rueckkehrFo
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("bescheid %s ließ sich nicht als Rückgabe nach Übergabe vermerken", f.bescheidID)
 	}
-	kontext := "Rückgabe nach Übergabe — die Schulaufsicht ist unverzüglich zu informieren"
+	kontext := "Rückgabe nach Übergabe, die Schulaufsicht ist unverzüglich zu informieren"
 	return schreibeProtokollEintrag(ctx, q, protokollEintrag{
 		Tabelle: "schadensersatz_bescheide", Aktion: "UPDATE", DatensatzID: f.bescheidID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,

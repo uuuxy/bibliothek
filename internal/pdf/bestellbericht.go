@@ -159,7 +159,7 @@ func zeichneBerichtGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r bericht
 	p.Ln(4)
 	p.SetFont(pdfzeichen.Schrift, "B", 11)
 	p.SetFillColor(220, 230, 255)
-	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(datumsformat), r.Bis.Format(datumsformat))
+	zeitraum := fmt.Sprintf("%s–%s", r.Von.Format(datumsformat), r.Bis.Format(datumsformat))
 	if r.MitPreisen {
 		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 9, tr(r.GesamtBetrag.Euro()), "1", 1, "R", true, 0, "")

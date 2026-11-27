@@ -287,7 +287,7 @@ func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailse
 
 	return mailservice.Nachricht{
 		An:       kl.Empfaenger,
-		Betreff:  fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
+		Betreff:  fmt.Sprintf("Kontoauszüge Abgänger · Klasse %s · %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DatumsformatDE)),
 		Text:     text,
 		Anhaenge: anhaenge,
 		Art:      mailservice.MailartAbgaenger,

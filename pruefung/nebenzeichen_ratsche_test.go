@@ -13,18 +13,19 @@ import (
 	"unicode"
 )
 
-// Prüfung: Die Texte des Servers setzen Klammern und Schrägstriche wie die Oberfläche: Meldungen,
-// PDFs, Mails, Betriebsbereitschaft, Protokoll und Beschriftungen.
+// Prüfung: Die Texte des Servers setzen Klammern, Schrägstriche und Gedankenstriche wie die
+// Oberfläche: Meldungen, PDFs, Mails, Betriebsbereitschaft, Protokoll und Beschriftungen.
 //
 // Warum: M3 (Content design, Grammar and punctuation): „Parentheses can be used to define acronyms
 // or jargon or when referencing a source. They shouldn’t be used when adding a side note or an
 // afterthought of a sentence.“ Googles developer documentation style guide (Slashes): „Don't use
-// slashes to separate alternatives.“ Die Regel steht in docs/STIL.md 11; für die Oberfläche hält
+// slashes to separate alternatives.“ M3 (Grammar and punctuation): „Em dashes are best avoided in
+// UX writing“. Die Regel steht in docs/STIL.md 11; für die Oberfläche hält
 // sie frontend-hygiene-satzzeichen.test.js, mit denselben Fällen (nebenzeichen in
 // frontend/src/lib/utils/satzzeichen.faelle.json).
 //
 // Regel: In keiner Zeichenkette unter internal/ steht eine Klammer außer um ein Kürzel oder eine
-// Quelle, und kein Schrägstrich zwischen Wörtern. Ein Platzhalter (%s, {{.Datum}}) zählt wie {…}
+// Quelle, kein Schrägstrich zwischen Wörtern und kein Gedankenstrich. Ein Platzhalter (%s, {{.Datum}}) zählt wie {…}
 // in der Oberfläche. Code bleibt außen vor: SQL, reguläre Ausdrücke, Routen, Kopfzeilen und
 // Medientypen, Zeitzonen, Rechte in der Form ROLLE/recht, der User-Agent der Katalogdienste und
 // Muster, mit denen der Server fremde Daten vergleicht (strings.HasPrefix). Ein Dateipfad ist
@@ -95,6 +96,12 @@ func nebenzeichen(roh string) []string {
 	ohneZitat := nebenAdresse.ReplaceAllString(nebenZitat.ReplaceAllString(t, "„…“"), "…")
 	if !nebenCode.MatchString(ohneZitat) && nebenStrich.MatchString(ohneZitat) {
 		funde = append(funde, "Schrägstrich")
+	}
+	// Der Gedankenstrich wie in satzzeichenVerstoss; die Oberfläche prüft ihn in verstoesse().
+	// Der kurze Strich ohne Leerzeichen bleibt, für einen fehlenden Wert („–“) und zwischen
+	// zwei Zahlen („5–13“).
+	if strings.Contains(t, "—") || strings.Contains(nebenLeer.ReplaceAllString(roh, " "), " – ") {
+		funde = append(funde, "Gedankenstrich")
 	}
 	return funde
 }

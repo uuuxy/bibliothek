@@ -89,7 +89,7 @@ func ergaenzeMittelVermerk(betreff, text, rohBetreff, rohText string, texte mitt
 		return betreff, text
 	}
 	if !strings.Contains(rohBetreff, platzhalterMittel) {
-		betreff += " – " + texte.Kurz
+		betreff += " · " + texte.Kurz
 	}
 	if !strings.Contains(rohText, platzhalterMittel) {
 		text += "\n\n" + texte.Vermerk + " Bitte führen Sie diesen Vermerk auch auf der Rechnung."

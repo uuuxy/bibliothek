@@ -91,7 +91,7 @@ func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (Bestan
 
 	for _, e := range ab.ExemplareOhneTitel {
 		s.prot.Fehler(e.ID, e.Exemplarnummer,
-			"das Exemplar verweist auf keinen Titel der Tabelle Titel (\""+e.TitelID+"\") – nicht übernommen")
+			"das Exemplar verweist auf keinen Titel der Tabelle Titel (\""+e.TitelID+"\"), nicht übernommen")
 	}
 
 	vorherT, vorherE, err := s.zaehleBestand(ctx)
@@ -206,7 +206,7 @@ func (l *bestandslauf) verarbeiteTitel(ctx context.Context, tx pgx.Tx, t Titel) 
 		}
 		l.bericht.Uebersprungen++
 		l.s.prot.Fehler(t.ID, t.ISBN,
-			"Titel samt Exemplaren übersprungen – "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
+			"Titel samt Exemplaren übersprungen: "+uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
 		return nil
 	}
 
@@ -252,7 +252,7 @@ func (l *bestandslauf) bucheVermerke(exemplare []Exemplar) {
 		case !bekannt:
 			l.bericht.VermerkUnbekannt++
 			l.s.prot.Warnung(e.ID, e.Exemplarnummer,
-				"Eigentumsvermerk steht nicht in der festen Liste – nicht übernommen, in Littera nachsehen")
+				"Eigentumsvermerk steht nicht in der festen Liste; nicht übernommen, in Littera nachsehen")
 		case vermerk.Eigentum == mitteltopf.Land:
 			l.bericht.EigentumLand++
 		case vermerk.Eigentum == mitteltopf.Schultraeger:
@@ -426,7 +426,7 @@ func (l *bestandslauf) felder(t Titel) titelfelder {
 	// Oberfläche eine leere Zeile, die niemand zuordnen kann.
 	if f.titel == "" {
 		f.titel = "[ohne Titel, Littera " + t.ID + "]"
-		l.s.prot.Warnung(t.ID, t.ISBN, "Haupttitel ist leer – Platzhalter eingesetzt")
+		l.s.prot.Warnung(t.ID, t.ISBN, "Haupttitel ist leer, Platzhalter eingesetzt")
 	}
 	if name := l.ab.Medienarten[t.MedienartID]; name != "" {
 		f.medientyp = k("medientyp", name, uebernahme.MaxMedientyp)

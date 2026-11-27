@@ -85,7 +85,7 @@ func dsgvoVorgang(e ProtokollEintrag, details map[string]any) string {
 		}
 	}
 	if e.Kontext != nil && *e.Kontext != "" && (!bekannt || !dsgvoProgrammSaetze[*e.Kontext]) {
-		worte += " — " + *e.Kontext
+		worte += ": " + *e.Kontext
 	}
 	switch e.Akteur {
 	case "USER", "":
@@ -125,7 +125,7 @@ func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege [
 		} else if e.Tabelle == "ausleihen" && (e.Aktion == "CHECKOUT" || e.Aktion == "RETURN") {
 			zeilen = append([]string{"Das Buch oder Gerät ist nicht mehr im Bestand."}, zeilen...)
 		}
-		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoVorgang(e, details), append(zeilen, rest...))
+		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" · "+dsgvoVorgang(e, details), append(zeilen, rest...))
 	}
 }
 
@@ -142,7 +142,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 	p.Ln(1)
 	for _, e := range eintraege {
 		details, rest := dsgvoDetails(e.Details)
-		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoVerwaltungsVorgang(e.Aktion),
+		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" · "+dsgvoVerwaltungsVorgang(e.Aktion),
 			append(dsgvoAngabenZeilen(details, false, e.Aktion), rest...))
 	}
 }
@@ -151,7 +151,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 func dsgvoKontoEreignisse(p *gofpdf.Fpdf, tr func(string) string, ereignisse []repository.DSGVOKontoEreignis) {
 	for _, e := range ereignisse {
 		details, rest := dsgvoDetails(e.Details)
-		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion),
+		dsgvoProtokollEintrag(p, tr, dsgvoZeit(e.Zeitpunkt)+" · "+dsgvoKontoAktion(e.Aktion),
 			append(dsgvoAngabenZeilen(details, false, e.Aktion), rest...))
 	}
 }

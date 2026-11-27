@@ -154,7 +154,8 @@ func zugangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, gesamt int, ohneBes
 		p.SetFont(pdfzeichen.Schrift, "I", 9)
 		p.SetTextColor(90, 90, 90)
 		p.MultiCell(180, 5, tr("Hinweis: Zu den Exemplaren im Abschnitt „ohne Zuordnung\" ist keine Bestellung "+
-			"hinterlegt — Altbestand, Handanlage oder Bestandskorrektur. Aus welchen Mitteln sie bezahlt "+
+			"hinterlegt, weil sie aus dem Altbestand, einer Handanlage oder einer Bestandskorrektur stammen. "+
+			"Aus welchen Mitteln sie bezahlt "+
 			"wurden, ist deshalb nicht belegt, und ihr Zugangsdatum ist der Tag, an dem sie im Programm "+
 			"angelegt wurden."), "", "L", false)
 		p.SetTextColor(0, 0, 0)

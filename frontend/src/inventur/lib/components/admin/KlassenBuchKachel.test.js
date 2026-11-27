@@ -32,7 +32,7 @@ describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 		});
 		const block = getByTestId('klassensatz-auflagen');
 		expect([...block.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-			'4. Aufl. · 2023: 4 Kinder — diese Auflage',
+			'4. Aufl. · 2023: 4 Kinder · diese Auflage',
 			'3. Aufl. · 2019: 3 Kinder'
 		]);
 		expect(block.querySelector('p')?.textContent).toBe('Auflagen in der Klasse');

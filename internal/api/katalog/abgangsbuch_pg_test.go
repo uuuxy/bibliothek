@@ -295,7 +295,7 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplar",
 		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplar",
 		"7 weitere Exemplare", // der Hinweis auf die Abgänge ohne Zeitpunkt
-		"3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht", // die zweite Lücke
+		"3 Exemplare wurden in diesem Zeitraum mit ihrem Titel", // die zweite Lücke
 	} {
 		if !strings.Contains(blatt, muss) {
 			t.Errorf("auf dem Blatt fehlt %q:\n%s", muss, blatt)

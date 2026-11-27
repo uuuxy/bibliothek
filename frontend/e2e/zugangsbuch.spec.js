@@ -52,14 +52,14 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		await page.getByRole('button', { name: 'Anzeigen' }).click();
 
 		// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
-		const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit · Land/ });
+		const land = page.getByRole('table', { name: /Zugangsbuch, Lernmittelfreiheit · Land/ });
 		await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
 		await expect(land.getByText(`E2E-Haendler ${s}`)).toBeVisible();
 
 		// 2. Der Zugang OHNE Bestellung steht nicht dort, sondern unter „ohne Zuordnung" —
 		//    geraten wird der Topf nicht.
 		await expect(land.getByText(`E2E-ZUG-B-${s}`)).toHaveCount(0);
-		const ohne = page.getByRole('table', { name: /Zugangsbuch — ohne Zuordnung/ });
+		const ohne = page.getByRole('table', { name: /Zugangsbuch, ohne Zuordnung/ });
 		await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
 
 		// 3. Und die Einschränkung steht dabei, statt Vollständigkeit zu behaupten.
@@ -144,7 +144,7 @@ test('Zugangsbuch: Ein Topf mit mehr als 50 Zeilen zeigt 50 und „Mehr laden"',
 		await expect(
 			page.getByRole('heading', { name: 'ohne Zuordnung · 57 Exemplare' })
 		).toBeVisible();
-		const ohne = page.getByRole('table', { name: 'Zugangsbuch — ohne Zuordnung' });
+		const ohne = page.getByRole('table', { name: 'Zugangsbuch, ohne Zuordnung' });
 		await expect(ohne.locator('tbody tr')).toHaveCount(50);
 
 		// Die drei Exemplare des ersten Titels: eine Zeile mit Anzahl und Bereich.

@@ -78,7 +78,7 @@
 			<Icon name="manage_search" class="mt-0.5 text-warning" />
 			<div>
 				<h2 class="text-title-medium text-on-surface">
-					Fehlbestand{etikett ? ` — ${etikett}` : ''}
+					Fehlbestand{etikett ? ` · ${etikett}` : ''}
 				</h2>
 				<p class="mt-0.5 text-sm text-on-surface-variant">
 					{eintraege.length}

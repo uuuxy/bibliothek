@@ -16,7 +16,7 @@ func TestBestellMailTraegtDenTopfAuchOhnePlatzhalter(t *testing.T) {
 	subject, body := LoeseBestellMailAuf("Buchbestellung {{.Datum}}", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.",
 		BestellMailWerte{Kundennummer: "K-1", AnzahlTitel: 2, AnzahlExemplare: 5, Link: "", GueltigBis: nil, Mittel: mitteltopf.Schultraeger})
 
-	if !strings.HasSuffix(subject, "– Schülerbücherei") {
+	if !strings.HasSuffix(subject, "· Schülerbücherei") {
 		t.Errorf("Betreff ohne Topf: %q", subject)
 	}
 	if !strings.Contains(body, "Anschaffung für die Schülerbücherei") {

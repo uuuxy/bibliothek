@@ -58,7 +58,7 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 		KreisQuellTitel: len(kreise.JeTitel), KreisQuellZuordnungen: kreise.Zuordnungen, KreisOhneWort: kreise.OhneWort,
 	}
 	if q.VerweisWoerter+q.VerweisZuordnungen > 0 {
-		s.prot.Warnung("", "", fmt.Sprintf("Verweise zu Schlagworten nicht übernommen – %d Wörter, %d Zuordnungen; "+
+		s.prot.Warnung("", "", fmt.Sprintf("Verweise zu Schlagworten nicht übernommen: %d Wörter, %d Zuordnungen; "+
 			"ihre Form ist an echten Daten noch nicht geprüft, docs/OFFEN.md 4.20", q.VerweisWoerter, q.VerweisZuordnungen))
 	}
 
@@ -126,16 +126,16 @@ func (s *Schreiber) schlagwortAuftraege(ab *Altbestand, bestand BestandBericht, 
 func (s *Schreiber) bereiteSchlagworteVor(t Titel, roh []string, b *SchlagwortBericht) []string {
 	woerter, auf := repository.SchlagworteAusFremddaten(roh)
 	for range auf.ZuLang {
-		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("Schlagwort länger als %d Zeichen – weggelassen",
+		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("Schlagwort länger als %d Zeichen, weggelassen",
 			repository.SchlagwortMaxZeichen))
 	}
 	for range auf.Leer {
-		s.prot.Warnung(t.ID, t.ISBN, "Schlagwort leer – weggelassen")
+		s.prot.Warnung(t.ID, t.ISBN, "Schlagwort leer, weggelassen")
 	}
 	b.Weggelassen += auf.Leer + auf.ZuLang
 	if auf.Gekuerzt {
 		b.Gekuerzt++
-		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("mehr als %d Schlagworte – die ersten %d übernommen",
+		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("mehr als %d Schlagworte, die ersten %d übernommen",
 			repository.SchlagworteJeTitelMax, repository.SchlagworteJeTitelMax))
 	}
 	return woerter
@@ -163,7 +163,7 @@ func (s *Schreiber) schreibeSchlagwortBatch(ctx context.Context, auftraege []sch
 		}
 		if !erg.Uebernommen {
 			b.Uebersprungen++
-			s.prot.Warnung(a.litteraID, "", "Schlagworte nicht übernommen – "+
+			s.prot.Warnung(a.litteraID, "", "Schlagworte nicht übernommen: "+
 				uebernahme.BeschreibeFehler(erg.Zurueckgerollt))
 			continue
 		}

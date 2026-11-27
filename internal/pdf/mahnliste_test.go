@@ -313,7 +313,7 @@ func TestMahnliste_LangeListeHaeltJedeZeileBeisammen(t *testing.T) {
 // Bis zehn Bücher bleibt es eine Seite. Die Fußzeile steht nie allein auf einem Blatt: Jede
 // Seite trägt mindestens eine Zeile, die letzte dazu die Fußzeile.
 func TestMahnliste_FusszeileStehtBeiDerLetztenZeile(t *testing.T) {
-	const fuss = "Schulbibliothek – Bei Fragen wende dich bitte an das Bibliotheksteam."
+	const fuss = "Bei Fragen wende dich bitte an das Bibliotheksteam."
 	for n := 1; n <= 40; n++ {
 		seiten := pdftest.TexteJeSeite(t, mahnliste(t, langeMahnliste(n, "")))
 		wieViele := 1 + (max(n, 10)-10+11)/12

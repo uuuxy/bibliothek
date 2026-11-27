@@ -74,8 +74,8 @@ func TestSchreibeSchlagworte_AlleWoerterUeberDenSchreibpfad(t *testing.T) {
 			b.Weggelassen, b.Gekuerzt, b.OhneTitel, b.Uebersprungen)
 	}
 	log := protokoll()
-	for _, grund := range []string{"Schlagwort leer – weggelassen", "Schlagwort länger als 80 Zeichen – weggelassen",
-		"mehr als 300 Schlagworte – die ersten 300 übernommen"} {
+	for _, grund := range []string{"Schlagwort leer, weggelassen", "Schlagwort länger als 80 Zeichen, weggelassen",
+		"mehr als 300 Schlagworte, die ersten 300 übernommen"} {
 		if !strings.Contains(log, grund) {
 			t.Errorf("Protokoll nennt „%s“ nicht:\n%s", grund, log)
 		}

@@ -37,7 +37,7 @@ func TestFormatiereAlarmMail(t *testing.T) {
 		}
 		for _, muss := range []string{
 			"Auslagerung der Backups", "Kein Ziel außer Haus", "Plattenausfall", "S3_ENDPOINT",
-			"Daneben steht 1 Warnung —", "Betriebsbereitschaft",
+			"Daneben steht 1 Warnung.", "Betriebsbereitschaft",
 		} {
 			if !strings.Contains(text, muss) {
 				t.Errorf("Mail-Text ohne %q:\n%s", muss, text)
@@ -141,11 +141,11 @@ func TestFormatiereAlarmMail_Warnungen(t *testing.T) {
 		t.Errorf("Kritisches an %d, Warnung an %d, erwartet erst das Kritische:\n%s", i, j, text)
 	}
 	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, kritisch}, ohneFehler, alarmWarnungen{imLog: imLog})
-	if !strings.Contains(text, "Daneben steht 1 Warnung —") || strings.Contains(text, "⚠") {
+	if !strings.Contains(text, "Daneben steht 1 Warnung.") || strings.Contains(text, "⚠") {
 		t.Errorf("Schalter aus: erwartet nur die Fußnote:\n%s", text)
 	}
 	_, text, _ = formatiereAlarmMail([]bereitschaft.Befund{warnBefund, warnBefund, kritisch}, ohneFehler, alarmWarnungen{imLog: imLog})
-	if !strings.Contains(text, "Daneben stehen 2 Warnungen —") {
+	if !strings.Contains(text, "Daneben stehen 2 Warnungen.") {
 		t.Errorf("Schalter aus, zwei Warnungen: erwartet die Fußnote in der Mehrzahl:\n%s", text)
 	}
 }

@@ -53,7 +53,7 @@ test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) 
 		await expect(liste.getByRole('listitem')).toHaveCount(2);
 		await expect(liste.getByRole('listitem').first()).toContainText('4. Aufl. · 2023');
 		await expect(liste.getByRole('listitem').last()).toContainText(
-			/3\. Aufl\. · 2019 — diese Auflage/
+			/3\. Aufl\. · 2019 · diese Auflage/
 		);
 		await expect(page.getByText('Zusammen: 2 von 2 verfügbar')).toBeVisible();
 		expect(

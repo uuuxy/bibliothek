@@ -58,7 +58,7 @@ describe('auflagenDerKlasse', () => {
 				],
 				'neu'
 			)
-		).toEqual(['4. Aufl. · 2023: 20 Kinder — diese Auflage', '3. Aufl. · 2019: 1 Kind']);
+		).toEqual(['4. Aufl. · 2023: 20 Kinder · diese Auflage', '3. Aufl. · 2019: 1 Kind']);
 	});
 
 	it('markiert nichts, wenn die Auflage der Kachel in der Klasse fehlt', () => {
