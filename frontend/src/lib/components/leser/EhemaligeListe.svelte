@@ -13,6 +13,7 @@
 	import { grenzeAus, istGekappt } from '../../utils/listenGrenze.js';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 
 	/** @type {{ onSelect: (student: any) => void }} */
 	let { onSelect } = $props();
@@ -156,7 +157,7 @@
 							{/if}
 						</td>
 						<td>
-							{#if s.ist_gesperrt}
+							{#if ausleiheGesperrt(s)}
 								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
 							<span class="sr-only">Profil anzeigen</span>

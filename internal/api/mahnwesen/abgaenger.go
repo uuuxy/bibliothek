@@ -24,16 +24,18 @@ import (
 // davon überfälligen Bücher — das ist die handlungsrelevante Information (was muss noch
 // zurück?), nicht die Ausweisnummer.
 type AbgaengerZeile struct {
-	ID              string `json:"id"`
-	BarcodeID       string `json:"barcode_id"`
-	Vorname         string `json:"vorname"`
-	Nachname        string `json:"nachname"`
-	Klasse          string `json:"klasse"`
-	AbgaengerJahr   int    `json:"abgaenger_jahr"`
-	IstGesperrt     bool   `json:"ist_gesperrt"`
-	OffeneAusleihen int    `json:"offene_buecher"`
-	Ueberfaellig    int    `json:"ueberfaellig"`
-	LehrerEmail     string `json:"lehrer_email"`
+	ID            string `json:"id"`
+	BarcodeID     string `json:"barcode_id"`
+	Vorname       string `json:"vorname"`
+	Nachname      string `json:"nachname"`
+	Klasse        string `json:"klasse"`
+	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	IstGesperrt   bool   `json:"ist_gesperrt"`
+	// IstVonHandGesperrt ist die Sperre von Hand; der Vermerk gilt bei einer der beiden.
+	IstVonHandGesperrt bool   `json:"is_manually_blocked"`
+	OffeneAusleihen    int    `json:"offene_buecher"`
+	Ueberfaellig       int    `json:"ueberfaellig"`
+	LehrerEmail        string `json:"lehrer_email"`
 }
 
 // AbgaengerAntwort ist die Antwort von GET /api/abgaenger: das Saisonfenster und die

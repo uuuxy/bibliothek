@@ -21,3 +21,23 @@ describe('Zusammenführen: offene Ausleihen eines Kandidaten', () => {
 		expect(screen.getByText('1 offene Ausleihe')).toBeTruthy();
 	});
 });
+
+// Der Vermerk folgt der Regel der Theke (sperrStatus.ausleiheGesperrt): beide Sperren, ein
+// Kollege nie. Beim Zusammenführen gehen beide Sperren auf den bleibenden Datensatz über.
+describe('Zusammenführen: Vermerk gesperrt', () => {
+	it('nennt auch die Sperre von Hand', () => {
+		const screen = render(ZusammenfuehrenKandidat, {
+			kandidat: { ...LESER, art: 'schueler', is_manually_blocked: true }
+		});
+
+		expect(screen.getByText('gesperrt')).toBeTruthy();
+	});
+
+	it('nennt bei einem Kollegen keine Sperre, wie die Theke', () => {
+		const screen = render(ZusammenfuehrenKandidat, {
+			kandidat: { ...LESER, art: 'lehrkraft', is_manually_blocked: true }
+		});
+
+		expect(screen.queryByText('gesperrt')).toBeNull();
+	});
+});

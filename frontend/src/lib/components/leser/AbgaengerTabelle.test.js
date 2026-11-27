@@ -86,6 +86,18 @@ describe('AbgaengerTabelle', () => {
 		expect(queryByText('Alle Abgänger entlastet')).toBeNull();
 	});
 
+	// Die Sperre von Hand hält an der Theke wie die des Programms; die Liste vermerkt beide
+	// (sperrStatus.ausleiheGesperrt), sonst stünde ein Gesperrter ohne Vermerk da.
+	it('vermerkt auch die Sperre von Hand', () => {
+		const { getByText } = render(AbgaengerTabelle, {
+			zeilen: [{ ...zeile, is_manually_blocked: true }],
+			leer: false,
+			fenster: saison,
+			onProfil: () => {}
+		});
+		expect(getByText('Sperre aktiv')).toBeTruthy();
+	});
+
 	it('in der Saison mit Posten: Tabelle mit Klasse, Name und Überfälligkeit', () => {
 		const { getByRole, getByText } = render(AbgaengerTabelle, {
 			zeilen: [zeile],

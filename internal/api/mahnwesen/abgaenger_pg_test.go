@@ -1,6 +1,7 @@
 package mahnwesen
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -56,6 +57,12 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	weg := testdaten.LegeAbgaengerAn(t, pool, "S-10", "Jo", "ABG")
 	testdaten.LegeAusleiheMitFristAn(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
 
+	// Anna ist von Hand gesperrt: Die Zeile trägt die Sperre, damit der Vermerk erscheint.
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE leser SET is_manually_blocked = true, block_reason = 'Probe' WHERE barcode_id = 'S-1'`); err != nil {
+		t.Fatalf("Anna sperren: %v", err)
+	}
+
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	antwort := abgaengerAntwort(t, srv)
 	if !antwort.Fenster.Offen {
@@ -64,6 +71,9 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	inListe := map[string]bool{}
 	for _, z := range antwort.Abgaenger {
 		inListe[z.Vorname] = true
+		if von := z.Vorname == "Anna"; z.IstVonHandGesperrt != von {
+			t.Errorf("%s: is_manually_blocked = %v, erwartet %v", z.Vorname, z.IstVonHandGesperrt, von)
+		}
 	}
 	imKonto := kontoauszugNamen(t, srv)
 

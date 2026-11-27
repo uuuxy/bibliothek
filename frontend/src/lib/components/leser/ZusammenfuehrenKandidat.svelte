@@ -4,6 +4,7 @@
      Datensätze, kompakt als Zeile in der Trefferliste. -->
 <script>
 	import Icon from '../ui/Icon.svelte';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 
 	/** @type {{ kandidat: any, etikett?: string, kompakt?: boolean, onAbwaehlen?: () => void }} */
 	let { kandidat, etikett = '', kompakt = false, onAbwaehlen = undefined } = $props();
@@ -42,7 +43,8 @@
 			<span class="font-mono">{kandidat.barcode_id}</span>
 			{#if kandidat.geburtsdatum}<span>geb. {datum(kandidat.geburtsdatum)}</span>{/if}
 			{#if kandidat.ist_abgaenger}<span class="text-body-small-emphasized">ehemalig</span>{/if}
-			{#if kandidat.ist_gesperrt}<span class="text-error text-body-small-emphasized">gesperrt</span
+			{#if ausleiheGesperrt(kandidat)}<span class="text-error text-body-small-emphasized"
+					>gesperrt</span
 				>{/if}
 			{#if offene > 0}<span>{offene} offene {offene === 1 ? 'Ausleihe' : 'Ausleihen'}</span>{/if}
 		</p>

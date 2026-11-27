@@ -57,6 +57,16 @@ describe('EhemaligeListe', () => {
 		expect(getByText(/1 Ausleihe\b/)).toBeTruthy();
 	});
 
+	// Die Sperre von Hand hält an der Theke wie die des Programms (sperrStatus.ausleiheGesperrt).
+	it('vermerkt auch die Sperre von Hand', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort([{ ...ehemalige[0], ist_gesperrt: false, is_manually_blocked: true }])
+		);
+		const { findByText } = render(EhemaligeListe, { onSelect: () => {} });
+
+		expect(await findByText('Sperre aktiv')).toBeTruthy();
+	});
+
 	// Ohne Suchwort kappt der Server die Liste und nennt die Grenze. Ohne den Satz sähen 500
 	// Ehemalige aus wie alle, und wer jemanden dahinter sucht, hielte ihn für nicht da.
 	it('sagt, dass die Liste gekappt ist, und schweigt bei vollständiger Liste', async () => {

@@ -13,18 +13,20 @@ var abgaengerBedingung = "s.deleted_at IS NULL AND s.ist_abgaenger = false AND "
 
 // AbgaengerMitAusleihen ist ein Schüler einer Abschlussklasse mit der Zahl seiner offenen und
 // davon überfälligen Bücher und der Adresse seiner Klassenleitung (leer, wenn keine
-// hinterlegt ist).
+// hinterlegt ist). IstGesperrt ist die Sperre des Programms, IstVonHandGesperrt die von Hand;
+// den Vermerk zeigt die Oberfläche nach beiden (sperrStatus.ausleiheGesperrt).
 type AbgaengerMitAusleihen struct {
-	ID              string
-	BarcodeID       string
-	Vorname         string
-	Nachname        string
-	Klasse          string
-	AbgaengerJahr   int
-	IstGesperrt     bool
-	OffeneAusleihen int
-	Ueberfaellig    int
-	LehrerEmail     string
+	ID                 string
+	BarcodeID          string
+	Vorname            string
+	Nachname           string
+	Klasse             string
+	AbgaengerJahr      int
+	IstGesperrt        bool
+	IstVonHandGesperrt bool
+	OffeneAusleihen    int
+	Ueberfaellig       int
+	LehrerEmail        string
 }
 
 // LadeAbgaengerMitOffenenAusleihen liefert eine Zeile je Abgänger mit offenen Ausleihen, nach
@@ -32,6 +34,7 @@ type AbgaengerMitAusleihen struct {
 func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]AbgaengerMitAusleihen, error) {
 	query := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+		       coalesce(s.is_manually_blocked, false),
 		       COUNT(a.id)                                        AS offene_buecher,
 		       COUNT(a.id) FILTER (WHERE a.rueckgabe_frist < now()) AS ueberfaellig,
 		       coalesce(m.lehrer_email, '')                        AS lehrer_email
@@ -44,7 +47,7 @@ func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]Abga
 		LEFT JOIN klassen_lehrer_mapping m ON lower(btrim(m.klasse)) = lower(btrim(s.klasse))
 		WHERE ` + abgaengerBedingung + `
 		  AND a.rueckgabe_am IS NULL
-		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, m.lehrer_email
+		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, s.is_manually_blocked, m.lehrer_email
 		ORDER BY s.klasse COLLATE deutsch, s.nachname COLLATE deutsch
 	`
 	rows, err := db.Query(ctx, query)
@@ -57,7 +60,7 @@ func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]Abga
 	for rows.Next() {
 		var z AbgaengerMitAusleihen
 		if err := rows.Scan(&z.ID, &z.BarcodeID, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr,
-			&z.IstGesperrt, &z.OffeneAusleihen, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
+			&z.IstGesperrt, &z.IstVonHandGesperrt, &z.OffeneAusleihen, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)

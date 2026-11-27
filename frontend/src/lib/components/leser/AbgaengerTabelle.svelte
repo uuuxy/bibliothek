@@ -10,6 +10,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, ladefehler?: string | null, onErneut?: () => void, onProfil: (student: any) => void }} */
 	let { zeilen, leer, fenster, ladefehler = null, onErneut = () => {}, onProfil } = $props();
 
@@ -73,7 +74,7 @@
 							{/if}
 						</td>
 						<td>
-							{#if student.ist_gesperrt}
+							{#if ausleiheGesperrt(student)}
 								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
 							<span class="sr-only">Profil anzeigen</span>

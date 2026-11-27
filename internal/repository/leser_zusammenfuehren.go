@@ -581,15 +581,19 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p zusammenge
 // Gesperrte, denn genau die sucht man beim Zusammenführen — die Aktivliste der
 // Schülerdatei blendet sie aus.
 type ZusammenfuehrenKandidat struct {
-	ID              string  `json:"id"`
-	BarcodeID       string  `json:"barcode_id"`
-	Vorname         string  `json:"vorname"`
-	Nachname        string  `json:"nachname"`
-	Klasse          string  `json:"klasse"`
-	Geburtsdatum    *string `json:"geburtsdatum,omitempty"`
-	IstAbgaenger    bool    `json:"ist_abgaenger"`
-	IstGesperrt     bool    `json:"ist_gesperrt"`
-	OffeneAusleihen int64   `json:"offene_buecher"`
+	ID           string  `json:"id"`
+	BarcodeID    string  `json:"barcode_id"`
+	Vorname      string  `json:"vorname"`
+	Nachname     string  `json:"nachname"`
+	Klasse       string  `json:"klasse"`
+	Geburtsdatum *string `json:"geburtsdatum,omitempty"`
+	IstAbgaenger bool    `json:"ist_abgaenger"`
+	IstGesperrt  bool    `json:"ist_gesperrt"`
+	// Art und Sperre von Hand braucht der Vermerk „gesperrt“: Er folgt derselben Regel wie die
+	// Theke (sperrStatus.ausleiheGesperrt), die einen Kollegen nie sperrt.
+	Art                string `json:"art"`
+	IstVonHandGesperrt bool   `json:"is_manually_blocked"`
+	OffeneAusleihen    int64  `json:"offene_buecher"`
 }
 
 // FindeZusammenfuehrenKandidaten sucht mit denselben Bausteinen wie Theke und
@@ -612,7 +616,7 @@ func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.Pool, ausserID,
 	rows, err := pool.Query(ctx, leserSuchCTE+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 		       TO_CHAR(s.geburtsdatum, 'YYYY-MM-DD'),
-		       s.ist_abgaenger, s.ist_gesperrt,
+		       s.ist_abgaenger, s.ist_gesperrt, s.art, COALESCE(s.is_manually_blocked, false),
 		       (SELECT count(*) FROM ausleihen a WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL)
 		FROM leser s
 		WHERE s.deleted_at IS NULL AND s.anonymized_at IS NULL AND s.id <> $4
@@ -628,7 +632,7 @@ func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.Pool, ausserID,
 	for rows.Next() {
 		var k ZusammenfuehrenKandidat
 		if err := rows.Scan(&k.ID, &k.BarcodeID, &k.Vorname, &k.Nachname, &k.Klasse, &k.Geburtsdatum,
-			&k.IstAbgaenger, &k.IstGesperrt, &k.OffeneAusleihen); err != nil {
+			&k.IstAbgaenger, &k.IstGesperrt, &k.Art, &k.IstVonHandGesperrt, &k.OffeneAusleihen); err != nil {
 			return nil, err
 		}
 		out = append(out, k)

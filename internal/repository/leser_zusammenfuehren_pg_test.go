@@ -151,12 +151,22 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Die Sperre von Hand und die Art kommen mit: Der Vermerk „gesperrt“ folgt der Regel der
+	// Theke (sperrStatus.ausleiheGesperrt) und braucht beide.
+	if _, err := pool.Exec(ctx, `UPDATE leser SET is_manually_blocked = true WHERE id = $1`, alt); err != nil {
+		t.Fatal(err)
+	}
+
 	treffer, err := repository.FindeZusammenfuehrenKandidaten(ctx, pool, ich, "Suchwort", 20)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(treffer) != 1 || treffer[0].Nachname != "Suchwort-Alt" || !treffer[0].IstAbgaenger || !treffer[0].IstGesperrt {
 		t.Fatalf("FindeZusammenfuehrenKandidaten(…) = %+v, erwartet genau den gesperrten Abgänger", treffer)
+	}
+	if !treffer[0].IstVonHandGesperrt || treffer[0].Art != "schueler" {
+		t.Errorf("Treffer: is_manually_blocked = %v, art = %q; erwartet true und schueler",
+			treffer[0].IstVonHandGesperrt, treffer[0].Art)
 	}
 	if treffer[0].OffeneAusleihen != 2 {
 		t.Errorf("offene Ausleihen des Treffers = %d, erwartet 2", treffer[0].OffeneAusleihen)
