@@ -99,15 +99,18 @@ func LadeTitelFuerCoverAbgleich(ctx context.Context, db Datenbank) ([]TitelMitIS
 }
 
 // SetzeGefundenesCover trägt die Adresse des gefundenen Covers ein, solange der Titel kein
-// lokales trägt.
-func SetzeGefundenesCover(ctx context.Context, db Datenbank, titelID, coverURL string) error {
-	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2 AND `+coverNichtLokal, coverURL, titelID)
+// lokales trägt und noch die ISBN, nach der der Abgleich gefragt hat: Zwischen Auswahl und
+// Schreiben liegt die Laufzeit des Abgleichs, und ein Cover der alten ISBN gehört nicht an die
+// berichtigte.
+func SetzeGefundenesCover(ctx context.Context, db Datenbank, titelID, isbn, coverURL string) error {
+	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2 AND isbn = $3 AND `+coverNichtLokal, coverURL, titelID, isbn)
 	return err
 }
 
 // SetzeCoverStatus merkt das Ergebnis des Abgleichs am Titel, solange er kein lokales Cover
-// trägt.
-func SetzeCoverStatus(ctx context.Context, db Datenbank, titelID, status string) error {
-	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2 AND `+coverNichtLokal, status, titelID)
+// trägt und noch die ISBN, nach der gefragt wurde (wie SetzeGefundenesCover): Sonst fragte der
+// Abgleich eine berichtigte ISBN mit NOT_FOUND nie.
+func SetzeCoverStatus(ctx context.Context, db Datenbank, titelID, isbn, status string) error {
+	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2 AND isbn = $3 AND `+coverNichtLokal, status, titelID, isbn)
 	return err
 }

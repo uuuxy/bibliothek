@@ -46,6 +46,7 @@ func TestAendereTitel_NeueISBNFragtDenCoverAbgleichWieder(t *testing.T) {
 	}{
 		{"ein anderes Feld", KatalogTitel{ISBN: neu, Titel: "Cover-Probe, berichtigt"}, []string{"title"}, "NOT_FOUND"},
 		{"dieselbe ISBN", KatalogTitel{ISBN: alt}, []string{"isbn"}, "NOT_FOUND"},
+		{"dieselbe ISBN mit Bindestrichen", KatalogTitel{ISBN: "978-0-00-014141-1"}, []string{"isbn"}, "NOT_FOUND"},
 		{"eine neue ISBN", KatalogTitel{ISBN: neu}, []string{"isbn"}, "PENDING"},
 	} {
 		if err := abfragen.AendereTitel(ctx, id, schritt.eintrag, schritt.felder, nil); err != nil {

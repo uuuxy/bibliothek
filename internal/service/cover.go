@@ -126,26 +126,26 @@ func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *katalogdie
 	case errors.Is(err, katalogdienste.ErrISBNUnbekannt), errors.Is(err, katalogdienste.ErrUngueltigeISBN):
 		// Keine Quelle kennt die ISBN, oder sie ist keine: Ein neuer Lauf fände dasselbe.
 		nichtGefunden.Add(1)
-		d.vermerkeCoverStatus(ctx, titel.ID, "NOT_FOUND")
+		d.vermerkeCoverStatus(ctx, titel, "NOT_FOUND")
 	case err != nil:
 		// Mindestens eine Quelle war nicht erreichbar: Der nächste Lauf fragt wieder.
 		gescheitert.Add(1)
-		d.vermerkeCoverStatus(ctx, titel.ID, "FAILED")
+		d.vermerkeCoverStatus(ctx, titel, "FAILED")
 	case treffer.CoverURL != "":
 		gefunden.Add(1)
-		if schreibFehler := repository.SetzeGefundenesCover(ctx, d.pool, titel.ID, treffer.CoverURL); schreibFehler != nil {
+		if schreibFehler := repository.SetzeGefundenesCover(ctx, d.pool, titel.ID, titel.ISBN, treffer.CoverURL); schreibFehler != nil {
 			slog.Error("Cover Sync: DB-Update fehlgeschlagen", "titel", titel.ID, "fehler", schreibFehler)
 		}
 	default:
 		nichtGefunden.Add(1)
-		d.vermerkeCoverStatus(ctx, titel.ID, "NOT_FOUND")
+		d.vermerkeCoverStatus(ctx, titel, "NOT_FOUND")
 	}
 }
 
 // vermerkeCoverStatus setzt cover_status eines Titels. Ein Fehler steht nur im Log: Der nächste
 // Lauf nimmt den Titel ohnehin wieder.
-func (d *CoverDienst) vermerkeCoverStatus(ctx context.Context, id, status string) {
-	if err := repository.SetzeCoverStatus(ctx, d.pool, id, status); err != nil {
-		slog.Error("Cover Sync: Status konnte nicht gesetzt werden", "status", status, "titel", id, "fehler", err)
+func (d *CoverDienst) vermerkeCoverStatus(ctx context.Context, titel fehlendesCover, status string) {
+	if err := repository.SetzeCoverStatus(ctx, d.pool, titel.ID, titel.ISBN, status); err != nil {
+		slog.Error("Cover Sync: Status konnte nicht gesetzt werden", "status", status, "titel", titel.ID, "fehler", err)
 	}
 }

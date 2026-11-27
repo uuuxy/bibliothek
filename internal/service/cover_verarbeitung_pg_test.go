@@ -233,6 +233,37 @@ func TestVerarbeiteCover_SchreibtErgebnisUndStand(t *testing.T) {
 // Zwischen der Auswahl und dem Schreiben liegt die Laufzeit des Abgleichs, beim Altbestand
 // Stunden. Lädt in dieser Zeit jemand ein Cover von Hand hoch, bleibt es stehen, mit seinem
 // Stand — gleich, was der Abgleich für den Titel findet.
+// Ebenso eine ISBN, die während des Laufs berichtigt wird: Was der Abgleich zur alten ISBN
+// findet oder nicht findet, gehört nicht an die neue. Der Titel bleibt in der Auswahl, und der
+// nächste Lauf fragt die neue ISBN.
+func TestVerarbeiteCover_ISBNWaehrendDesLaufsBerichtigt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	t.Chdir(t.TempDir())
+
+	faelle := map[string]struct {
+		alt, neu string
+		k        katalog
+	}{
+		"der Abgleich findet ein Cover": {"9789991940090", "9789991940106", katalog{dnbSatz: true, cover: probeBild(t)}},
+		"kein Dienst kennt die ISBN":    {"9789991940113", "9789991940120", katalog{}},
+	}
+	for name, f := range faelle {
+		t.Run(name, func(t *testing.T) {
+			mc := coverTitel(t, pool, f.alt, "PENDING", "")
+			if _, err := pool.Exec(context.Background(), `UPDATE buecher_titel SET isbn = $2 WHERE id = $1`, mc.ID, f.neu); err != nil {
+				t.Fatal(err)
+			}
+			verarbeite(pool, f.k, mc)
+			if status, url := coverStand(t, pool, mc.ID); status != "PENDING" || url != "" {
+				t.Errorf("nach dem Abgleich der alten ISBN: Stand %q, Cover %q — erwartet PENDING ohne Cover", status, url)
+			}
+			if !inDerAuswahl(t, pool, mc.ID) {
+				t.Error("der nächste Lauf fragt die berichtigte ISBN nicht")
+			}
+		})
+	}
+}
+
 func TestVerarbeiteCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
