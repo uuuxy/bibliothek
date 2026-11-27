@@ -237,15 +237,16 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 	}
 }
 
-// Fehlt nur ein Teil der Anschrift, steht der andere da und kein Vermerk.
-func TestMahnbrief_HalbeAnschriftOhneVermerk(t *testing.T) {
+// Fehlt ein Teil der Anschrift, steht der Vermerk da wie ohne Anschrift: Eine halbe Anschrift
+// ginge unzustellbar zur Post (briefAnschrift, dieselbe Regel wie Bescheid und Ersatzforderung).
+func TestMahnbrief_HalbeAnschriftNenntDenVermerk(t *testing.T) {
 	nurOrt := testMahnbriefEmpfaenger()
 	nurOrt.PLZ, nurOrt.Ort = "61169", "Friedberg"
-	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurOrt), []string{"61169 Friedberg"}, []string{"Keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurOrt), []string{"Keine Adresse hinterlegt"}, []string{"61169 Friedberg"})
 
 	nurStrasse := testMahnbriefEmpfaenger()
 	nurStrasse.Strasse = "Blumenweg"
-	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"Keine Adresse hinterlegt"})
+	pruefeBlatt(t, erzeugeElternMahnbrief(t, nurStrasse), []string{"Keine Adresse hinterlegt"}, []string{"Blumenweg"})
 }
 
 // langerMahnbrief baut einen Brief mit n Büchern, jedes mit eigenen Texten.

@@ -73,12 +73,7 @@ func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 	if e.Volljaehrig {
 		name = strings.TrimSpace(e.Vorname + " " + e.Nachname)
 	}
-	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
-	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
-	if strasse == "" && ort == "" {
-		strasse = "Keine Adresse hinterlegt"
-	}
-	return []string{name, strasse, ort}
+	return briefAnschrift([]string{name}, e.Strasse+" "+e.Hausnummer, e.PLZ, e.Ort)
 }
 
 // zeichneMahnbriefKoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.

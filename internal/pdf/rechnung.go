@@ -88,19 +88,15 @@ func baueAnschrift(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 		),
 	)
 
-	// Die Anschrift. Fehlt sie, steht das im Fensterfeld: Zwei leere Zeilen sähen aus wie ein
-	// Druckfehler, so ist sofort sichtbar, dass die Rechnung nicht mit der Post gehen kann
-	// (dieselbe Regel wie beim Eltern-Mahnbrief, mahnbrief.go).
-	zeile2 := strings.TrimSpace(schueler.Strasse + " " + schueler.Hausnummer)
-	zeile3 := strings.TrimSpace(schueler.PLZ + " " + schueler.Ort)
-	if zeile2 == "" && zeile3 == "" {
-		zeile2 = "Keine Adresse hinterlegt"
+	// Die Anschrift nach der Regel aller Briefe an Leser (briefAnschrift). Einen minderjährigen
+	// Schüler vertreten die Erziehungsberechtigten: Die Zeile über dem Namen ist die des Bescheids,
+	// passend zur Anrede „Sehr geehrte Erziehungsberechtigte“ (baueEinleitung).
+	kopf := make([]string, 0, 2)
+	if !schueler.Volljaehrig {
+		kopf = append(kopf, BescheidAnAnErzieher)
 	}
-	anschriftZeilen := []string{
-		fmt.Sprintf("%s %s", schueler.Vorname, schueler.Nachname),
-		zeile2,
-		zeile3,
-	}
+	kopf = append(kopf, strings.TrimSpace(schueler.Vorname+" "+schueler.Nachname))
+	anschriftZeilen := briefAnschrift(kopf, schueler.Strasse+" "+schueler.Hausnummer, schueler.PLZ, schueler.Ort)
 
 	for _, zeile := range anschriftZeilen {
 		m.AddRow(5,

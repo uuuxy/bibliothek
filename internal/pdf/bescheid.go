@@ -185,15 +185,11 @@ func bescheidKopf(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 // das an der Stelle, an der sie stehen müsste: Ein Bescheid ohne Empfänger darf nicht aussehen
 // wie ein vollständiger (dieselbe Regel wie beim Eltern-Mahnbrief).
 func bescheidAnschriftZeilen(e BescheidEmpfaenger) []string {
-	zeilen := make([]string, 0, 4)
+	kopf := make([]string, 0, 2)
 	if e.AnZeile != "" {
-		zeilen = append(zeilen, e.AnZeile)
+		kopf = append(kopf, e.AnZeile)
 	}
-	zeilen = append(zeilen, e.Name)
-	if strings.TrimSpace(e.Strasse) == "" || strings.TrimSpace(e.Ort) == "" {
-		return append(zeilen, "Keine Adresse hinterlegt")
-	}
-	return append(zeilen, e.Strasse, strings.TrimSpace(e.PLZ+" "+e.Ort))
+	return briefAnschrift(append(kopf, e.Name), e.Strasse, e.PLZ, e.Ort)
 }
 
 // bescheidInfoblock setzt Geschäftszeichen, Bearbeiter, Durchwahl und Datum rechts neben
