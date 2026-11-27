@@ -40,22 +40,11 @@ type LMFListenFilter struct {
 	MitEntwuerfen bool
 }
 
-// SchuljahrBeginn liefert den 1. August des Schuljahres, in dem t liegt (Hessen:
-// 1. August bis 31. Juli) — in der Schulzeitzone, weil daraus Kalendertage werden.
-func SchuljahrBeginn(t time.Time) time.Time {
-	t = t.In(schulzeit.Zone())
-	jahr := t.Year()
-	if t.Month() < time.August {
-		jahr--
-	}
-	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
-}
-
 // schuljahrVon liefert das Schuljahr eines Zeitpunkts als Zahl — das Jahr seines
 // 1. August (Schuljahr 2026/27 → 2026). Die Differenz zweier solcher Zahlen ist die Zahl
 // der Schuljahre dazwischen; genau das braucht das Verleihjahr im Schadensersatz-Bescheid.
 func schuljahrVon(t time.Time) int {
-	return SchuljahrBeginn(t).Year()
+	return schulzeit.SchuljahrBeginn(t).Year()
 }
 
 // LMFAbfragen liest und schreibt den Plan der Lernmittel: die Termine der Rückgabe und Ausgabe
@@ -166,7 +155,7 @@ func (a *LMFAbfragen) LadeRueckgabeTerminLage(ctx context.Context, klasse string
 		JOIN lmf_plaene p ON p.id = t.plan_id
 		LEFT JOIN lmf_termin_klassen k ON k.termin_id = t.id
 		WHERE t.art = 'rueckgabe' AND p.veroeffentlicht_am IS NOT NULL`,
-		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.TauschBegonnen)
+		heute, klasse, schulzeit.SchuljahrBeginn(heute)).Scan(&naechster, &lage.TauschBegonnen)
 	if err != nil {
 		return LMFTerminLage{}, err
 	}
@@ -240,7 +229,7 @@ func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Da
 // sqlSchulbuchFristGehtMit mit einer Klasse und nur Fristen im Schuljahr [von, bis). Welcher
 // Stichtag gilt, hängt wie bei LMFStichtagNachJahren am Jahrgang des Kindes im folgenden Schuljahr.
 func (a *LMFAbfragen) SetzeLernmittelFristAbTauschbeginn(ctx context.Context, ex Datenbank, beginn time.Time, ferien lmfplan.Ferientabelle, von, bis time.Time) (int64, error) {
-	ende := SchuljahrBeginn(beginn).Year() + 2
+	ende := schulzeit.SchuljahrBeginn(beginn).Year() + 2
 	mittelstufe := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, true, ferien))
 	sonst := schulzeit.TagesEnde(lmfStichtagAmEnde(ende, false, ferien))
 	tag, err := ex.Exec(ctx, `

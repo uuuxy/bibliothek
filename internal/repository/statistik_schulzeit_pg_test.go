@@ -67,7 +67,7 @@ func TestAusleihZeitraumBedingung_BeginntUmMitternachtDerSchule(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	beginn := map[string]string{
-		"schuljahr": "'" + schuljahresBeginn(schulzeit.Jetzt()).Format("2006-01-02") + "'::timestamp",
+		"schuljahr": "'" + schulzeit.SchuljahrBeginn(schulzeit.Jetzt()).Format("2006-01-02") + "'::timestamp",
 		"monat":     "(" + schulzeit.SQLHeute + " - 30)::timestamp",
 	}
 	for _, zone := range []string{"UTC", "Etc/GMT+12", "Etc/GMT-14"} {

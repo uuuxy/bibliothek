@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // Bestellbedarf ist eine Zeile der Bedarfsliste: ein Schulbuch, dessen Bestand nicht für die
@@ -83,7 +85,7 @@ const sqlSchulbuchImSchuljahr = `t.ist_lernmittel AND (
 // wird am Buch (COALESCE(werk_id, id)), gezeigt die neueste Auflage, denn die wird bestellt.
 func LadeBestellbedarf(ctx context.Context, db Datenbank, heute time.Time) ([]Bestellbedarf, error) {
 	neueste := sqlNeuesteAuflageZuerst("t")
-	beginn := SchuljahrBeginn(heute)
+	beginn := schulzeit.SchuljahrBeginn(heute)
 	query := fmt.Sprintf(`
 		WITH titel AS (
 			SELECT t.id, COALESCE(t.werk_id, t.id) AS buch, t.titel, t.autor, t.isbn, t.verlag,
@@ -172,7 +174,7 @@ func LadeBestellbedarf(ctx context.Context, db Datenbank, heute time.Time) ([]Be
 // Schuljahr ein Schulbuch bekommen haben: die Grundlage von LadeBestellbedarf. Ohne sie hieße
 // eine leere Liste „es fehlt nichts", auch wenn noch kein Schulbuch ausgegeben ist.
 func LadeBestellbedarfGrundlage(ctx context.Context, db Datenbank, heute time.Time) (kinder, mitSchulbuch int, err error) {
-	beginn := SchuljahrBeginn(heute)
+	beginn := schulzeit.SchuljahrBeginn(heute)
 	err = db.QueryRow(ctx, `
 		WITH `+sqlBedarfKinder+`
 		SELECT (SELECT count(*) FROM kinder)::int,

@@ -35,7 +35,7 @@ const lmfLetzterJahrgangMittelstufe = 10
 // Schuljahr um eins vor. Die Uhrzeit ist 12:00 der Schulzeitzone, damit der Kalendertag bei keiner
 // Zeitumstellung kippt; zur Frist wird er erst über schulzeit.TagesEnde.
 func LMFStichtagNachJahren(tag time.Time, klasse string, jahre int, ferien lmfplan.Ferientabelle) time.Time {
-	ende := SchuljahrBeginn(tag).Year() + 1 + jahre
+	ende := schulzeit.SchuljahrBeginn(tag).Year() + 1 + jahre
 	return lmfStichtagAmEnde(ende, lmfMittelstufe(klasse, jahre), ferien)
 }
 

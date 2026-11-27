@@ -2,9 +2,6 @@ package ausweis
 
 import (
 	"testing"
-	"time"
-
-	"bibliothek/internal/pkg/schulzeit"
 )
 
 // Die Schreibweisen der Klassen stammen aus der Schule: "05F1" oder "5F1", "06G2" oder
@@ -166,26 +163,6 @@ func TestSchuljahrVerschiebtMit(t *testing.T) {
 		}
 		if will := ende + 2; jahr != will {
 			t.Errorf("Schuljahresende %d: %d, erwartet %d", ende, jahr, will)
-		}
-	}
-}
-
-// Das Schuljahr wechselt am 1. August, gezählt am Kalendertag der Schule: Der Abend des 31. Juli
-// in UTC ist in Berlin schon der 1. August.
-func TestSchuljahrEnde(t *testing.T) {
-	berlin := schulzeit.Zone()
-	faelle := []struct {
-		jetzt time.Time
-		will  int
-	}{
-		{time.Date(2026, time.December, 15, 10, 0, 0, 0, berlin), 2027},
-		{time.Date(2027, time.July, 31, 12, 0, 0, 0, berlin), 2027},
-		{time.Date(2027, time.August, 1, 0, 30, 0, 0, berlin), 2028},
-		{time.Date(2027, time.July, 31, 22, 30, 0, 0, time.UTC), 2028},
-	}
-	for _, f := range faelle {
-		if got := SchuljahrEnde(f.jetzt); got != f.will {
-			t.Errorf("SchuljahrEnde(%s) = %d, erwartet %d", f.jetzt.Format(time.RFC3339), got, f.will)
 		}
 	}
 }

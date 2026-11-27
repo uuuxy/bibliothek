@@ -81,7 +81,7 @@ func LadeLMFPlanZeilenVorher(ctx context.Context, lmfAbfragen *repository.LMFAbf
 	if err != nil {
 		return nil, err
 	}
-	if stand.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(time.DateOnly) || stand.Plan.VeroeffentlichtAm == nil {
+	if stand.Plan.SchuljahrBeginn != schulzeit.SchuljahrBeginn(tag).Format(time.DateOnly) || stand.Plan.VeroeffentlichtAm == nil {
 		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
 		return nil, nil
 	}
@@ -173,7 +173,7 @@ func setzeLMFFristenAbTauschbeginn(ctx context.Context, lmfAbfragen *repository.
 
 // schuljahrGrenzen liefert [1. August des Schuljahres, 1. August des nächsten).
 func schuljahrGrenzen(tag time.Time) (time.Time, time.Time) {
-	von := repository.SchuljahrBeginn(tag)
+	von := schulzeit.SchuljahrBeginn(tag)
 	return von, von.AddDate(1, 0, 0)
 }
 

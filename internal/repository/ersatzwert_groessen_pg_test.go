@@ -27,7 +27,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	repo := NewBescheidAbfragen(pool)
 
-	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
+	schuljahrBeginn := schulzeit.SchuljahrBeginn(schulzeit.Jetzt())
 
 	var schuelerID, titelID string
 	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SEW-"+suffix, "Ersatz", "Wert", "07B", 2032)

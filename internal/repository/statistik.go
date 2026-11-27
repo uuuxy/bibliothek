@@ -155,23 +155,13 @@ const sqlSchulzone = `'` + schulzeit.ZonenName + `'`
 func AusleihZeitraumBedingung(zeitraum string) string {
 	switch zeitraum {
 	case "schuljahr":
-		return "AND a.ausgeliehen_am >= ('" + schuljahresBeginn(schulzeit.Jetzt()).Format("2006-01-02") +
+		return "AND a.ausgeliehen_am >= ('" + schulzeit.SchuljahrBeginn(schulzeit.Jetzt()).Format("2006-01-02") +
 			"'::timestamp AT TIME ZONE " + sqlSchulzone + ")"
 	case "monat":
 		return "AND a.ausgeliehen_am >= ((" + schulzeit.SQLHeute + " - 30)::timestamp AT TIME ZONE " + sqlSchulzone + ")"
 	default:
 		return ""
 	}
-}
-
-// schuljahresBeginn: der 1. August des laufenden Schuljahres zu t (Juli gehört noch
-// zum vorigen Schuljahr).
-func schuljahresBeginn(t time.Time) time.Time {
-	jahr := t.Year()
-	if t.Month() < time.August {
-		jahr--
-	}
-	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, t.Location())
 }
 
 // LadeRenner liefert die meistausgeliehenen Titel.

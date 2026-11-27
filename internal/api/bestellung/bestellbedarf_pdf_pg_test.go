@@ -13,7 +13,7 @@ import (
 	"bibliothek/internal/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
-	"bibliothek/internal/repository"
+	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/testdaten"
 
 	"github.com/google/go-cmp/cmp"
@@ -38,7 +38,7 @@ func TestBestellbedarfPDF_ZeileNenntBedarfBestandUndMenge(t *testing.T) {
 	})
 
 	// Drei Kinder der 7 haben ihr Schulbuch für dieses Schuljahr, fünf rücken aus der 6 nach.
-	frist := repository.SchuljahrBeginn(time.Now()).AddDate(1, 0, 0).Add(-time.Hour)
+	frist := schulzeit.SchuljahrBeginn(time.Now()).AddDate(1, 0, 0).Add(-time.Hour)
 	for i := range 5 {
 		testdaten.LegeSchuelerAn(t, pool, fmt.Sprintf("BBL-6-%d", i), "Kind", "06a")
 	}

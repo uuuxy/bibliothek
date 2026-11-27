@@ -150,7 +150,7 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 
 func (t *Tueren) lmfPlanFuerPDF(ctx context.Context, abfragen *repository.LMFAbfragen, mitEntwuerfen bool) ([]repository.LMFTermin, error) {
 	if mitEntwuerfen {
-		return abfragen.LadeTermine(ctx, repository.SchuljahrBeginn(t.Jetzt()),
+		return abfragen.LadeTermine(ctx, schulzeit.SchuljahrBeginn(t.Jetzt()),
 			repository.LMFListenFilter{MitEntwuerfen: true})
 	}
 	return abfragen.LadeNaechstenPlan(ctx, t.Jetzt())

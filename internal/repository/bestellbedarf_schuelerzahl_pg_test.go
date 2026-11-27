@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/schulzeit"
 	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
 
@@ -23,7 +24,7 @@ import (
 // vorigen und des nächsten Schuljahres.
 func bedarfHeute() (heute, fristDiesesJahr, fristVorjahr, fristNaechstesJahr time.Time) {
 	heute = time.Now()
-	beginn := repository.SchuljahrBeginn(heute)
+	beginn := schulzeit.SchuljahrBeginn(heute)
 	ende := beginn.AddDate(1, 0, 0).Add(-time.Hour)
 	return heute, ende, ende.AddDate(-1, 0, 0), ende.AddDate(1, 0, 0)
 }

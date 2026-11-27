@@ -66,3 +66,28 @@ func TestKalendertag(t *testing.T) {
 		}
 	}
 }
+
+// Das Schuljahr beginnt am 1. August, gezählt am Kalendertag der Schule: Der Abend des 31. Juli
+// in UTC ist in Berlin schon der 1. August. Juli zählt zum vorigen Schuljahr.
+func TestSchuljahrBeginnUndEnde(t *testing.T) {
+	berlin := Zone()
+	faelle := []struct {
+		jetzt  time.Time
+		beginn string
+		ende   int
+	}{
+		{time.Date(2026, time.December, 15, 10, 0, 0, 0, berlin), "2026-08-01", 2027},
+		{time.Date(2027, time.January, 1, 0, 30, 0, 0, berlin), "2026-08-01", 2027},
+		{time.Date(2027, time.July, 31, 12, 0, 0, 0, berlin), "2026-08-01", 2027},
+		{time.Date(2027, time.August, 1, 0, 30, 0, 0, berlin), "2027-08-01", 2028},
+		{time.Date(2027, time.July, 31, 22, 30, 0, 0, time.UTC), "2027-08-01", 2028},
+	}
+	for _, f := range faelle {
+		if got := SchuljahrBeginn(f.jetzt); got.Format(time.DateOnly) != f.beginn || got.Location() != berlin {
+			t.Errorf("SchuljahrBeginn(%s) = %s, erwartet %s in der Zone der Schule", f.jetzt.Format(time.RFC3339), got, f.beginn)
+		}
+		if got := SchuljahrEnde(f.jetzt); got != f.ende {
+			t.Errorf("SchuljahrEnde(%s) = %d, erwartet %d", f.jetzt.Format(time.RFC3339), got, f.ende)
+		}
+	}
+}

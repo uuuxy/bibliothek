@@ -5,6 +5,7 @@ import (
 
 	"bibliothek/internal/ausweis"
 	"bibliothek/internal/db"
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // Leser ist jeder, der ausleiht: Schüler, Lehrkraft oder LiV (Tabelle leser), unterscheidbar an
@@ -108,7 +109,7 @@ func leseLeserMitZusatz(row scanner, zusatz ...any) (*Leser, error) {
 // Rückgabe nil bei einer Klassenbezeichnung, aus der sich nichts ableiten lässt. Der
 // Druckdialog fragt dann nach, statt ein Datum zu erfinden.
 func ausweisGueltigBis(klasse string) *int {
-	jahr, ok := ausweis.GueltigBisJahr(klasse, ausweis.SchuljahrEnde(time.Now()))
+	jahr, ok := ausweis.GueltigBisJahr(klasse, schulzeit.SchuljahrEnde(time.Now()))
 	if !ok {
 		return nil
 	}

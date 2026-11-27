@@ -27,7 +27,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	repo := NewBescheidAbfragen(pool)
 
-	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
+	schuljahrBeginn := schulzeit.SchuljahrBeginn(schulzeit.Jetzt())
 
 	var schuelerID, titelID string
 	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SVJ-"+suffix, "Verleih", "Jahr", "08A", 2031)

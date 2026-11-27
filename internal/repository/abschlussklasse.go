@@ -150,9 +150,5 @@ func AbgaengerJahrAm(klasse string, jetzt time.Time) int {
 	if yearsLeft < 0 {
 		yearsLeft = 0
 	}
-	baseYear := jetzt.Year()
-	if jetzt.Month() >= time.August {
-		baseYear++
-	}
-	return baseYear + yearsLeft
+	return schulzeit.SchuljahrEnde(jetzt) + yearsLeft
 }

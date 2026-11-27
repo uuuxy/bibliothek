@@ -100,3 +100,22 @@ func VorigesHalbjahr(t time.Time) (von, bis time.Time) {
 	anfang, _ := Halbjahr(t)
 	return Halbjahr(anfang.AddDate(0, 0, -1))
 }
+
+// SchuljahrBeginn liefert den 1. August des Schuljahres, in dem t liegt (Hessen: 1. August bis
+// 31. Juli), am Kalendertag der Schule, gleich in welcher Zone t ankommt. Es ist die eine Grenze
+// des Schuljahres für LMF-Plan, Stichtage, Bescheid, Statistik, Ausweis, Abgangsjahr und den
+// Import aus Littera; eine zweite Auslegung verschöbe Fristen und Ausweise um ein Jahr.
+func SchuljahrBeginn(t time.Time) time.Time {
+	d := t.In(Zone())
+	jahr := d.Year()
+	if d.Month() < time.August {
+		jahr--
+	}
+	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, Zone())
+}
+
+// SchuljahrEnde liefert das Jahr, in dem das Schuljahr endet, in dem t liegt (Schuljahr
+// 2026/27: 2027).
+func SchuljahrEnde(t time.Time) int {
+	return SchuljahrBeginn(t).Year() + 1
+}

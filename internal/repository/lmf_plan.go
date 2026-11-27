@@ -237,7 +237,7 @@ func (a *LMFAbfragen) SchreibePlan(ctx context.Context, tx pgx.Tx, plan LMFPlan,
 		return LMFPlanStand{}, err
 	}
 
-	sjb := SchuljahrBeginn(ersterTag)
+	sjb := schulzeit.SchuljahrBeginn(ersterTag)
 	var st LMFPlanStand
 	// Das Ende (Anker des Rückgabe-Plans) als NULL, wenn leer — der Check der Tabelle
 	// verlangt es beim Rückgabe-Plan und verbietet es beim Ausgabe-Plan.

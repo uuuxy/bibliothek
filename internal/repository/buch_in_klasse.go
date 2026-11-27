@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/internal/pkg/schulzeit"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -39,7 +41,7 @@ type BuchFremdInKlasse struct {
 // auch eine andere Auflage (COALESCE(werk_id, id)); die meldet LadeAuflagenMischungInKlasse. Die
 // Oberstufe fragt es nicht, dort lernen Kurse statt Klassen.
 func FindeBuchFremdInKlasse(ctx context.Context, q Datenbank, titelID, schuelerID string, frist time.Time) (*BuchFremdInKlasse, error) {
-	beginn := SchuljahrBeginn(frist)
+	beginn := schulzeit.SchuljahrBeginn(frist)
 	var h BuchFremdInKlasse
 	var andereHabenEs bool
 	err := q.QueryRow(ctx, `

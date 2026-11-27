@@ -25,7 +25,7 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	repo := NewBescheidAbfragen(pool)
 
 	// Der Bestelltag liegt im vorigen Schuljahr, der Zugang (heute) im laufenden.
-	bestelltAm := SchuljahrBeginn(schulzeit.Jetzt()).AddDate(0, 0, -20)
+	bestelltAm := schulzeit.SchuljahrBeginn(schulzeit.Jetzt()).AddDate(0, 0, -20)
 
 	var schuelerID, titelID string
 	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SZS-"+suffix, "Zugang", "Staffel", "07B", 2032)

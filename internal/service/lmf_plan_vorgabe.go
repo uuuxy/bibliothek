@@ -92,7 +92,7 @@ func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LMFPlan, jetzt time.Ti
 	if err != nil {
 		beginn = jetzt
 	}
-	jahr := repository.SchuljahrBeginn(beginn).Year()
+	jahr := schulzeit.SchuljahrBeginn(beginn).Year()
 	z, ok := tab.Sommerferien(jahr)
 	return z, jahr, ok
 }

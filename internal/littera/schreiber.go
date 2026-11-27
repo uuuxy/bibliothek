@@ -45,11 +45,7 @@ type Optionen struct {
 // Das Schuljahr endet im Sommer: Ab August zählt bereits das nächste Kalenderjahr.
 // Dieselbe Auslegung wie im Versetzungslauf, am Kalendertag der Schule.
 func OptionenVorgabe(jetzt time.Time) Optionen {
-	jetzt = jetzt.In(schulzeit.Zone())
-	schuljahrEnde := jetzt.Year()
-	if jetzt.Month() >= time.August {
-		schuljahrEnde++
-	}
+	schuljahrEnde := schulzeit.SchuljahrEnde(jetzt)
 	return Optionen{
 		Barcodes:           BarcodeLittera,
 		BatchGroesse:       200,
