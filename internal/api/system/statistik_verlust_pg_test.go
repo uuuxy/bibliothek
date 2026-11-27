@@ -31,7 +31,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	}
 	buecher := repository.NewKatalogAbfragen(pool)
 	for _, id := range []string{nie, imBestand} {
-		if err := buecher.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+		if _, err := buecher.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 			t.Fatalf("als verloren ausbuchen: %v", err)
 		}
 	}
@@ -120,7 +120,7 @@ func TestStatistik_GeloeschterVerlustZaehltWeiter(t *testing.T) {
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	buecher := repository.NewKatalogAbfragen(pool)
 	for _, id := range []string{verloren, verlorenFrei} {
-		if err := buecher.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, bearbeiter); err != nil {
+		if _, err := buecher.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, bearbeiter); err != nil {
 			t.Fatalf("als verloren ausbuchen: %v", err)
 		}
 	}

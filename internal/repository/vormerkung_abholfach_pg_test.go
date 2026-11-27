@@ -46,7 +46,8 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 			return err
 		}},
 		{"DecommissionCopy", ex[3], func(ex string) error {
-			return books.AendereExemplarStatus(ctx, ex, nil, ExemplarStatusStand{IstAusgesondert: true}, "", nil, bearbeiter)
+			_, err := books.AendereExemplarStatus(ctx, ex, nil, ExemplarStatusStand{IstAusgesondert: true}, "", nil, bearbeiter)
+			return err
 		}},
 	}
 	for _, tuer := range tueren {

@@ -83,8 +83,9 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 		bisher = &repository.ExemplarStatusStand{IstAusleihbar: req.Bisher.IstAusleihbar, IstAusgesondert: req.Bisher.IstAusgesondert}
 	}
 	neu := repository.ExemplarStatusStand{IstAusleihbar: req.IstAusleihbar, IstAusgesondert: req.IstAusgesondert}
-	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, bisher, neu,
-		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.KontoID); err != nil {
+	befund, err := katalogAbfragen.AendereExemplarStatus(ctx, id, bisher, neu,
+		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.KontoID)
+	if err != nil {
 		if errors.Is(err, repository.ErrExemplarInzwischenGeaendert) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungExemplarInzwischenGeaendert, err)
 			return
@@ -108,7 +109,13 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	//
 	// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
 	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
-	antwort := map[string]any{"status": "success"}
+	// Kam ein verlorenes Buch zurück, nennt die Antwort die stornierte Forderung, oder wen
+	// jemand anrufen muss, weil der Bescheid schon übergeben ist (wie der Fehlbestandsbericht).
+	antwort := map[string]any{"status": "success",
+		"stornierte_forderungen": befund.StornierteForderungen, "stornierter_betrag": befund.StornierterBetrag}
+	if hinweis := befund.AufsichtHinweis(); hinweis != "" {
+		antwort["hinweis"] = hinweis
+	}
 	if g, groessenErr := bescheidAbfragen.LadeGroessenFuerExemplar(ctx, id); groessenErr == nil {
 		v := service.ErsatzwertVorschlagAus(g, service.LadeErsatzwertPreisquelle(ctx, t.DB.Pool))
 		antwort["ersatzwert"] = v.Betrag

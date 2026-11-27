@@ -64,13 +64,17 @@ type ExemplarStatusStand struct {
 // Dialog, der seit einer Schadensmeldung an einem anderen Platz offen stand, den alten Status
 // zurück, und das ausgesonderte Buch stünde wieder im Bestand, während die Forderung bleibt. nil
 // prüft nicht.
-func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, bisher *ExemplarStatusStand, neu ExemplarStatusStand, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
+//
+// Kommt ein ausgesondertes Exemplar so in den Bestand zurück, endet seine Forderung wie an der
+// Theke (verbucheRueckkehr); der Befund nennt, was storniert ist.
+func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, bisher *ExemplarStatusStand, neu ExemplarStatusStand, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) (RueckkehrBefund, error) {
+	var befund RueckkehrBefund
 	if neu.IstAusgesondert && bearbeiterID == "" {
-		return ErrAussonderungOhneBearbeiter
+		return befund, ErrAussonderungOhneBearbeiter
 	}
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("status: transaktion öffnen: %w", err)
+		return befund, fmt.Errorf("status: transaktion öffnen: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx)
 
@@ -78,7 +82,7 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 	// aussondern, schrieben sonst beide einen Eintrag.
 	warAusgesondert, err := sperreExemplarStatus(ctx, tx, id, bisher)
 	if err != nil {
-		return err
+		return befund, err
 	}
 
 	query := `
@@ -100,23 +104,30 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 	`
 	tag, err := tx.Exec(ctx, query, neu.IstAusleihbar, neu.IstAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
 	if err != nil {
-		return err
+		return befund, err
 	}
 	if tag.RowsAffected() == 0 {
 		if neu.IstAusgesondert {
-			return deuteAussonderungsHindernis(ctx, tx, id)
+			return befund, deuteAussonderungsHindernis(ctx, tx, id)
 		}
-		return ErrExemplarNichtGefunden
+		return befund, ErrExemplarNichtGefunden
 	}
 	if neu.IstAusgesondert && !warAusgesondert {
 		if err := protokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
-			return err
+			return befund, err
+		}
+	}
+	// Kommt ein ausgesondertes Exemplar in den Bestand zurück, ist es zurück wie an der Theke:
+	// Die Forderung für das nicht zurückgegebene Buch endet.
+	if warAusgesondert && !neu.IstAusgesondert {
+		if befund, err = verbucheRueckkehr(ctx, tx, id, bearbeiterID); err != nil {
+			return RueckkehrBefund{}, err
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("status: commit: %w", err)
+		return RueckkehrBefund{}, fmt.Errorf("status: commit: %w", err)
 	}
-	return nil
+	return befund, nil
 }
 
 // IstExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt: weder ausgesondert noch

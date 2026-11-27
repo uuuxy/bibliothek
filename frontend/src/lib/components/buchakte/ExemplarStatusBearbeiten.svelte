@@ -48,6 +48,16 @@
 	};
 	let fehler = $state('');
 
+	// Kommt ein verlorenes Buch zurück, endet seine Forderung wie an der Theke; der Satz nennt sie.
+	/** @param {{ stornierte_forderungen?: number, stornierter_betrag?: number }} antwort */
+	function gespeichertSatz(antwort) {
+		const n = Number(antwort.stornierte_forderungen) || 0;
+		const betrag = formatEuro(antwort.stornierter_betrag);
+		if (n === 0) return 'Status erfolgreich gespeichert';
+		if (n === 1) return `Status gespeichert, die Forderung über ${betrag} ist storniert`;
+		return `Status gespeichert, ${n} Forderungen über zusammen ${betrag} sind storniert`;
+	}
+
 	async function speichereStatus() {
 		fehler = '';
 		try {
@@ -94,7 +104,10 @@
 					ex.ersatzwert_bekannt = antwort.ersatzwert_bekannt === true;
 				}
 				onDone();
-				melde('Status erfolgreich gespeichert', 'success');
+				melde(gespeichertSatz(antwort), 'success');
+				// Liegt der Bescheid schon bei der Aufsicht, bleibt die Forderung offen; der Server
+				// sagt, wen jemand anrufen muss.
+				if (antwort.hinweis) melde(antwort.hinweis, 'warning');
 			} else {
 				fehler = await leseApiFehler(res, 'Fehler beim Speichern');
 			}

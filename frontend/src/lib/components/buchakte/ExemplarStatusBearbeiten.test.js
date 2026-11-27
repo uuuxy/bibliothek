@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import ExemplarStatusBearbeiten from './ExemplarStatusBearbeiten.svelte';
 import { apiClient } from '../../apiFetch.js';
+import { melde } from '../../../inventur/lib/store.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiClient: { put: vi.fn() },
@@ -51,6 +52,30 @@ describe('Status-Editor: nach dem Speichern', () => {
 		await oeffneUndSpeichere(ex);
 
 		await vi.waitFor(() => expect(ex.im_bestand).toBe(true));
+	});
+
+	// Ein verlorenes Buch, das zurückkommt, beendet seine Forderung am Server; die Meldung sagt
+	// es, und den Hinweis auf einen schon übergebenen Bescheid zeigt sie als Warnung.
+	it('nennt die stornierte Forderung und den Hinweis des Servers', async () => {
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					stornierte_forderungen: 1,
+					stornierter_betrag: 12.5,
+					hinweis: 'Bescheid B-1 liegt bei der Aufsicht'
+				})
+			})
+		);
+		await oeffneUndSpeichere(zurueckgeholt());
+
+		await vi.waitFor(() =>
+			expect(vi.mocked(melde)).toHaveBeenCalledWith(
+				expect.stringMatching(/^Status gespeichert, die Forderung über 12,50\s€ ist storniert$/),
+				'success'
+			)
+		);
+		expect(vi.mocked(melde)).toHaveBeenCalledWith('Bescheid B-1 liegt bei der Aufsicht', 'warning');
 	});
 
 	it('lässt im_bestand stehen, wenn die Antwort das Feld nicht nennt', async () => {
