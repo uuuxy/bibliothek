@@ -72,7 +72,7 @@ test('Abmelden in der Seitenleiste fragt; die nächste Anmeldung beginnt an der 
 		await expect(page.locator(feld)).toHaveValue(wert);
 	}
 	await page.getByRole('button', { name: 'Anmelden' }).click();
-	await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+	await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 	await expect(rueckfrage(page)).toHaveCount(0);
 });
 

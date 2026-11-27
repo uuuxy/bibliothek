@@ -19,7 +19,7 @@ test.describe.serial('Theke: Scanner mit amerikanischer Tastatur', () => {
 
 	test('der Ausweis öffnet die Akte, auch wenn der Bindestrich als ß ankommt', async ({ page }) => {
 		await uiLogin(page);
-		await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+		await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 
 		await scanneWieScanner(page, nummer, { deutscherRechner: true });
 

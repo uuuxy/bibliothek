@@ -21,7 +21,7 @@
 	// description of the information people can search").
 	const hinweis = $derived.by(() => {
 		if (schnellrueckgabe) return 'Schnellrückgabe: Bücher scannen';
-		return belegt ? 'Buch-Barcode scannen' : 'Scannen oder Namen eingeben';
+		return belegt ? 'Buch-Barcode scannen' : 'Scannen oder Leser und Bücher suchen';
 	});
 </script>
 

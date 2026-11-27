@@ -70,7 +70,7 @@ async function stapel(page) {
 			.poll(() => ausleihen(barcode), { message: `${barcode} ist nicht verliehen` })
 			.toBe('1/1');
 		await page.keyboard.press('Escape');
-		await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+		await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 	}
 	return { s, buch };
 }

@@ -24,7 +24,7 @@ const offeneAusleihen = (barcode) =>
 /** @param {import('@playwright/test').Page} page */
 async function oeffneMaskeAnDerTheke(page) {
 	await uiLogin(page);
-	await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+	await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 	await scanneWieScanner(page, AUSWEIS);
 	await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
 	await page.getByRole('button', { name: 'Bearbeiten' }).click();
@@ -104,7 +104,9 @@ test.describe.serial('Theke: Scans bei offener Stammdaten-Maske', () => {
 		const kontext = await browser.newContext();
 		const andererPlatz = await kontext.newPage();
 		await uiLogin(andererPlatz);
-		await expect(andererPlatz.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+		await expect(
+			andererPlatz.getByPlaceholder('Scannen oder Leser und Bücher suchen')
+		).toBeVisible();
 		await scanneWieScanner(andererPlatz, AUSWEIS);
 		await expect(andererPlatz.getByPlaceholder('Buch-Barcode scannen')).toBeVisible();
 		await scanneWieScanner(andererPlatz, BUCH_ANDERER_PLATZ);

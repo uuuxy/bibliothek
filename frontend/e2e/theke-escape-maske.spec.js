@@ -12,7 +12,7 @@ const AUSWEIS = `S-TE-${s}`;
 /** @param {import('@playwright/test').Page} page */
 async function oeffneMaskeAnDerTheke(page) {
 	await uiLogin(page);
-	await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+	await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 	await scanneWieScanner(page, AUSWEIS);
 	await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
 	await page.getByRole('button', { name: 'Bearbeiten' }).click();
@@ -83,7 +83,7 @@ test.describe.serial('Theke: Escape bei offener Stammdaten-Maske', () => {
 		await fokusAusDenFeldern(page);
 		await page.keyboard.press('Escape');
 		await rueckfrage(page).getByRole('button', { name: 'Verwerfen und weiter' }).click();
-		await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+		await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 		expect(querySQL(`SELECT ort FROM leser WHERE barcode_id = '${AUSWEIS}'`)).toBe(
 			'Friedrichsdorf'
 		);
@@ -94,7 +94,7 @@ test.describe.serial('Theke: Escape bei offener Stammdaten-Maske', () => {
 		await fokusAusDenFeldern(page);
 		await page.keyboard.press('Escape');
 
-		await expect(page.getByPlaceholder('Scannen oder Namen eingeben')).toBeVisible();
+		await expect(page.getByPlaceholder('Scannen oder Leser und Bücher suchen')).toBeVisible();
 		await expect(rueckfrage(page)).toHaveCount(0);
 	});
 });
