@@ -28,31 +28,33 @@ func istGleicherTag(a, b time.Time) bool {
 	return ay == by && am == bm && ad == bd
 }
 
-// --- leseJahrgang: reine Jahrgangs-Extraktion (kritisch für mehrjährige LMF-Ausleihen) ---
+// --- mehrjahresbandJahre: Jahre über das laufende Schuljahr hinaus (kritisch für mehrjährige
+// LMF-Ausleihen). Der Jahrgang kommt aus repository.AbschlussJahrgang, derselben Regel wie der
+// Stichtag (lmfMittelstufe); eine Klasse ohne Jahrgang am Anfang bekommt ein Schuljahr. ---
 
-func TestLeseJahrgang(t *testing.T) {
+func TestMehrjahresbandJahre(t *testing.T) {
+	bis10 := &repository.Exemplar{Mehrjahresband: true, JahrgangBis: 10}
+	bis13 := &repository.Exemplar{Mehrjahresband: true, JahrgangBis: 13}
 	cases := []struct {
-		klasse string
-		want   int
+		exemplar *repository.Exemplar
+		klasse   string
+		want     int
 	}{
-		{"5a", 5},
-		{"10R", 10},
-		{"7", 7},
-		{"  9b ", 9},
-		{"E1", 11},
-		{"EF", 11},
-		{"Q1", 12},
-		{"Q2", 12},
-		{"Q3", 13},
-		{"Q4", 13},
-		{"q1", 12}, // case-insensitive
-		{"", 0},
-		{"ohne-zahl", 0},
-		{"5f1", 5}, // Klassensatz-Notation: erste Zahl zählt
+		{bis10, "5a", 5},
+		{bis10, "05F1", 5},
+		{bis10, "  9b ", 1},
+		{bis10, "10R1", 0},
+		{bis10, "E1", 0}, // über der Spanne
+		{bis13, "ET1", 2},
+		{bis13, "12T1", 1},
+		{bis13, "Q1", 0},  // Die Schule führt die Oberstufe als 12T und 13T; Q1 trägt keinen Jahrgang.
+		{bis10, "IK1", 0}, // Keine Zahl am Anfang: Die erste Zahl im Namen gäbe Jahrgang 1 und neun Jahre.
+		{bis10, "", 0},
+		{&repository.Exemplar{JahrgangBis: 10}, "5a", 0}, // kein Mehrjahresband
 	}
 	for _, c := range cases {
-		if got := leseJahrgang(c.klasse); got != c.want {
-			t.Errorf("leseJahrgang(%q) = %d, erwartet %d", c.klasse, got, c.want)
+		if got := mehrjahresbandJahre(c.exemplar, c.klasse); got != c.want {
+			t.Errorf("mehrjahresbandJahre(bis %d, %q) = %d, erwartet %d", c.exemplar.JahrgangBis, c.klasse, got, c.want)
 		}
 	}
 }

@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -63,29 +61,6 @@ func berechneFrist(jetzt time.Time, angaben fristAngaben) time.Time {
 	}
 
 	return lmfplan.FerientabelleAus(angaben.Sommerferien).Tagesfrist(ortszeit, angaben.FristBuchTage)
-}
-
-// leseJahrgang liest den Jahrgang aus dem Namen der Klasse; 0 heißt unbekannt.
-func leseJahrgang(klasse string) int {
-	gross := strings.ToUpper(strings.TrimSpace(klasse))
-	if strings.HasPrefix(gross, "E") || gross == "EF" {
-		return 11
-	}
-	if strings.HasPrefix(gross, "Q1") || strings.HasPrefix(gross, "Q2") {
-		return 12
-	}
-	if strings.HasPrefix(gross, "Q3") || strings.HasPrefix(gross, "Q4") {
-		return 13
-	}
-	// Sonst die erste Zahl im Namen.
-	zahlen := regexp.MustCompile(`\d+`)
-	treffer := zahlen.FindString(gross)
-	if treffer != "" {
-		if n, err := strconv.Atoi(treffer); err == nil {
-			return n
-		}
-	}
-	return 0
 }
 
 // bestimmeFrist bestimmt die Frist einer neuen Ausleihe ab der Uhr des Dienstes.
@@ -173,13 +148,16 @@ func AbgaengerFrist(frist time.Time, klasse string, kalender lmfplan.Ferientabel
 
 // mehrjahresbandJahre zählt die Jahre, die ein Band über mehrere Jahrgänge über das laufende
 // Schuljahr hinaus beim Kind bleibt: den Abstand zwischen seiner Klasse und JahrgangBis. Ein
-// Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
+// Kind über der Spanne bekommt ein Schuljahr wie jedes andere, ebenso eines in einer Klasse ohne
+// Jahrgang. Den Jahrgang liest die Regel, nach der auch der Stichtag rechnet
+// (repository.AbschlussJahrgang).
 func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
-	if exemplar.Mehrjahresband && exemplar.JahrgangBis > 0 && klasse != "" {
-		jahrgang := leseJahrgang(klasse)
-		if jahrgang > 0 && exemplar.JahrgangBis >= jahrgang {
-			return exemplar.JahrgangBis - jahrgang
-		}
+	if !exemplar.Mehrjahresband || exemplar.JahrgangBis <= 0 {
+		return 0
+	}
+	jahrgang, _, ok := repository.AbschlussJahrgang(klasse)
+	if ok && exemplar.JahrgangBis >= jahrgang {
+		return exemplar.JahrgangBis - jahrgang
 	}
 	return 0
 }
