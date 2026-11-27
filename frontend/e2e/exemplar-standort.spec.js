@@ -63,7 +63,16 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	const dialog = page.getByRole('dialog', { name: 'Standort ändern' });
 	await expect(dialog).toContainText('Gilt für 1 Exemplar');
 	const bestaetigen = dialog.getByRole('button', { name: 'Standort ändern' });
-	await expect(bestaetigen).toBeDisabled();
+	// Der Knopf bleibt bedienbar: Ohne Standort nennt der Klick das Feld und schickt nichts.
+	await bestaetigen.click();
+	await expect(
+		dialog.getByText('Bitte einen Standort eintragen oder „Standort entfernen“ wählen')
+	).toBeVisible();
+	await expect(dialog.getByLabel('Standort', { exact: true })).toHaveAttribute(
+		'aria-invalid',
+		'true'
+	);
+	await expect(dialog.getByLabel('Standort', { exact: true })).toBeFocused();
 	// Der vorhandene Standort steht im Menü des Felds; der Pfeil im Feld zeigt es ohne Tippen.
 	await dialog.getByRole('button', { name: 'Vorschläge zeigen' }).click();
 	await expect(dialog.getByRole('option', { name: /^Lehrerschrank/ })).toBeVisible();
@@ -136,6 +145,7 @@ test('Standort: ein Scan in den offenen Dialog ändert nichts', async ({ page })
 
 	await expect(feld).toHaveValue('');
 	await expect(dialog).toBeVisible();
-	await expect(dialog.getByRole('button', { name: 'Standort ändern' })).toBeDisabled();
+	// Das Enter des Scans schickt nichts ab und nennt keinen Fehler am Feld.
+	await expect(feld).not.toHaveAttribute('aria-invalid', 'true');
 	expect(standorteInDerTabelle(barcodes)).toBe('Lehrerschrank|-');
 });

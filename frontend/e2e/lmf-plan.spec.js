@@ -167,7 +167,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	// der Nachbar-Regel hinter der letzten Klasse ihres Jahrgangs und Zweigs (07G6 im
 	// Seed), mitten im Regel-Vorschlag.
 	await page.getByRole('button', { name: 'Andere Klasse eintragen' }).click();
-	await page.getByLabel('Klasse', { exact: true }).fill(klasse);
+	await page.getByLabel('Klasse*', { exact: true }).fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
 	const tabelle = page.getByTestId('lmf-reihenfolge');
 	const zeile = tabelle.getByRole('row').filter({ hasText: klasse });
@@ -366,7 +366,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(page.getByLabel('Erster Tag')).toBeVisible();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Andere Klasse eintragen' }).click();
-	await page.getByLabel('Klasse', { exact: true }).fill(klasse);
+	await page.getByLabel('Klasse*', { exact: true }).fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
 
 	const tabelle = page.getByTestId('lmf-reihenfolge');

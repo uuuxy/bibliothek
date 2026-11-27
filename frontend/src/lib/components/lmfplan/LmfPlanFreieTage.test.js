@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
 
 // Freie Tage des Plans (Brückentag, pädagogischer Tag) trägt die Bibliothek ein — seit
@@ -11,7 +11,7 @@ describe('LmfPlanFreieTage', () => {
 	/** Chip → Dialog → Felder → „Freihalten". */
 	async function freihalten(r, datum, grund) {
 		await fireEvent.click(r.getByRole('button', { name: 'Tag freihalten' }));
-		await fireEvent.input(r.getByLabelText('Freier Tag'), { target: { value: datum } });
+		await fireEvent.input(r.getByLabelText('Freier Tag*'), { target: { value: datum } });
 		await fireEvent.input(r.getByLabelText('Grund'), { target: { value: grund } });
 		await fireEvent.click(r.getByRole('button', { name: 'Freihalten' }));
 	}
@@ -34,12 +34,18 @@ describe('LmfPlanFreieTage', () => {
 		expect(r.queryByTestId('lmf-freie-tage')).toBeNull();
 	});
 
-	it('lässt sich ohne Datum nicht bestätigen', async () => {
+	it('nennt ohne Datum beim Klick das Feld und trägt nichts ein', async () => {
 		const r = render(LmfPlanFreieTage, { tage: [], ausfaelle: [] });
 		await fireEvent.click(r.getByRole('button', { name: 'Tag freihalten' }));
-		expect(
-			/** @type {HTMLButtonElement} */ (r.getByRole('button', { name: 'Freihalten' })).disabled
-		).toBe(true);
+		const knopf = /** @type {HTMLButtonElement} */ (r.getByRole('button', { name: 'Freihalten' }));
+		expect(knopf.disabled).toBe(false);
+		expect(r.queryByText('Bitte den freien Tag eintragen')).toBeNull();
+		await fireEvent.click(knopf);
+		expect(r.getByText('Bitte den freien Tag eintragen')).toBeTruthy();
+		const datum = /** @type {HTMLInputElement} */ (r.getByLabelText(/Freier Tag/));
+		expect(datum.getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(datum));
+		expect(r.queryByTestId('lmf-freie-tage')).toBeNull();
 	});
 
 	it('nennt die übersprungenen Tage mit Wochentag und Grund', () => {

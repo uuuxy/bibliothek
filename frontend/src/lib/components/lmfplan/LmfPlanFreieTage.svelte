@@ -13,6 +13,7 @@
 	import Datumsfeld from '../ui/Datumsfeld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { datumKurz, wochentag } from './lmfplanDienst.js';
 
 	/** @type {{ tage: import('./lmfplanDienst.js').FreierTag[], ausfaelle: import('./lmfplanDienst.js').Ausfall[] }} */
@@ -20,6 +21,7 @@
 
 	let offen = $state(false);
 	let datum = $state('');
+	let verlangt = $state(false);
 	let grund = $state('');
 
 	function oeffnen() {
@@ -74,10 +76,19 @@
 	titel="Tag freihalten"
 	aktion="Freihalten"
 	gueltig={Boolean(datum)}
+	bind:verlangt
 	onclose={() => (offen = false)}
 	onbestaetigen={hinzufuegen}
 >
-	<Datumsfeld id="lmf-freier-tag-datum" etikett="Freier Tag" bind:value={datum} />
+	<Pflichthinweis />
+	<Datumsfeld
+		id="lmf-freier-tag-datum"
+		etikett="Freier Tag"
+		aria-required="true"
+		bind:value={datum}
+		ungueltig={verlangt && !datum}
+		hint={verlangt && !datum ? 'Bitte den freien Tag eintragen' : ''}
+	/>
 	<Feld
 		id="lmf-freier-tag-grund"
 		etikett="Grund"

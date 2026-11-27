@@ -16,9 +16,11 @@
      Dialog sagt das, damit niemand den Knopf zum Ausprobieren drückt. Der Zustand lebt
      in bescheidFormular.svelte.js. -->
 <script>
+	import { tick } from 'svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Datumsfeld from '../ui/Datumsfeld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import BescheidPositionen from './BescheidPositionen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -45,7 +47,21 @@
 	const formular = new BescheidFormular(schuelerId);
 	formular.laden();
 
+	/** @type {HTMLDivElement | undefined} */
+	let inhalt = $state();
+
+	// Der Knopf bleibt bedienbar: Fehlt ein Betrag oder die Frist, führt der Klick zum Feld,
+	// das den Grund nennt (ARCHITEKTUR, „Felder und Eingabe“).
 	async function erstellen() {
+		if (formular.gesperrt) return;
+		formular.verlangt = true;
+		if (!formular.bereit) {
+			await tick();
+			/** @type {HTMLElement | null | undefined} */ (
+				inhalt?.querySelector('[aria-invalid="true"]')
+			)?.focus();
+			return;
+		}
 		const bescheid = await formular.erstellen();
 		if (!bescheid) return;
 		snackbars.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt`, 'success', {
@@ -61,7 +77,7 @@
 </script>
 
 <Dialog open={true} {onclose} size="2xl" {ebene} beschriftetDurch="bescheid-titel">
-	<div class="space-y-5 p-6">
+	<div bind:this={inhalt} class="space-y-5 p-6">
 		<div>
 			<h2 id="bescheid-titel" class="dialog-titel">
 				Schadensersatz-Bescheid{formular.vorschlag?.schueler_name
@@ -103,6 +119,7 @@
 				keinem Bescheid steht
 			</p>
 		{:else}
+			<Pflichthinweis />
 			<BescheidPositionen
 				positionen={formular.positionen}
 				bind:gewaehlt={formular.gewaehlt}
@@ -115,7 +132,11 @@
 				<Datumsfeld
 					id="bescheid-frist"
 					etikett="Zahlungsfrist"
-					hint="Steht als Datum im Brief"
+					aria-required="true"
+					ungueltig={formular.fristFehlt}
+					hint={formular.fristFehlt
+						? 'Bitte die Zahlungsfrist eintragen'
+						: 'Steht als Datum im Brief'}
 					bind:value={formular.frist}
 					feld="w-44"
 				/>
@@ -130,7 +151,7 @@
 
 		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
-			<Button onclick={erstellen} disabled={!formular.bereit}>
+			<Button onclick={erstellen} disabled={formular.gesperrt}>
 				{#if formular.sendet}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Bescheid erstellen
 			</Button>

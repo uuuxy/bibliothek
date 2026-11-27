@@ -15,6 +15,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 
 	/** @type {{ klassen: string[], draussen: (klasse: string) => boolean, marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, onhinein: (klasse: string) => void }} */
 	let { klassen, draussen, marker, onhinein } = $props();
@@ -24,6 +25,7 @@
 	let zeigeBewusst = $state(false);
 	let dialogOffen = $state(false);
 	let neue = $state('');
+	let verlangt = $state(false);
 
 	function eintragen() {
 		const k = neue.trim();
@@ -91,14 +93,20 @@
 	titel="Andere Klasse eintragen"
 	aktion="In den Plan"
 	gueltig={neue.trim() !== ''}
+	bind:verlangt
 	onclose={() => (dialogOffen = false)}
 	onbestaetigen={eintragen}
 >
+	<Pflichthinweis />
 	<Feld
 		id="lmf-plan-weitere-klasse"
 		etikett="Klasse"
+		aria-required="true"
 		bind:value={neue}
 		placeholder="z. B. 07G1"
-		hint="Eine Klasse, die es im Programm noch nicht gibt, sie kommt mit dem LUSD-Import"
+		ungueltig={verlangt && neue.trim() === ''}
+		hint={verlangt && neue.trim() === ''
+			? 'Bitte die Klasse eintragen'
+			: 'Eine Klasse, die es im Programm noch nicht gibt, sie kommt mit dem LUSD-Import'}
 	/>
 </EingabeDialog>

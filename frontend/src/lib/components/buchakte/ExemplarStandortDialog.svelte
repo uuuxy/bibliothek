@@ -23,6 +23,7 @@
 	let standort = $state('');
 	let entfernen = $state(false);
 	let sendet = $state(false);
+	let verlangt = $state(false);
 	/** @type {import('../../utils/standorte.js').StandortZahl[]} */
 	let vorhandene = $state([]);
 
@@ -41,13 +42,14 @@
 
 	const anzahl = $derived(exemplarIds.length);
 	const neu = $derived(standort.trim());
-	const gueltig = $derived(!sendet && (entfernen || neu !== ''));
+	const gueltig = $derived(entfernen || neu !== '');
+	const fehlt = $derived(verlangt && !gueltig);
 
 	/** @param {number} n */
 	const exemplare = (n) => anzahlText(n, 'Exemplar', 'Exemplare');
 
 	async function speichern() {
-		if (!gueltig) return;
+		if (sendet || !gueltig) return;
 		const weg = entfernen;
 		sendet = true;
 		try {
@@ -77,6 +79,8 @@
 	titel="Standort ändern"
 	aktion={sendet ? 'Wird gespeichert …' : 'Standort ändern'}
 	{gueltig}
+	gesperrt={sendet}
+	bind:verlangt
 	{onclose}
 	onbestaetigen={speichern}
 >
@@ -88,6 +92,8 @@
 			bind:value={standort}
 			vorschlaege={vorhandene.map((s) => ({ wert: s.standort, zusatz: exemplare(s.anzahl) }))}
 			disabled={entfernen}
+			ungueltig={fehlt}
+			hint={fehlt ? 'Bitte einen Standort eintragen oder „Standort entfernen“ wählen' : ''}
 		/>
 	</div>
 	<Kaestchen bind:checked={entfernen} etikett="Standort entfernen" />

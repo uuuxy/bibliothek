@@ -8,6 +8,7 @@
 	import { untrack } from 'svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { anzahlText } from '../../utils/format.js';
@@ -25,6 +26,7 @@
 
 	let preis = $state(/** @type {string | number | null} */ (''));
 	let sendet = $state(false);
+	let verlangt = $state(false);
 
 	// Beim Öffnen mit dem gespeicherten Preis füllen; ein Neuladen der Bestellung während der
 	// Eingabe nähme sonst den getippten Preis mit.
@@ -34,17 +36,19 @@
 
 	const zahl = $derived(Number(preis));
 	const gueltig = $derived(
-		!sendet &&
-			preis !== null &&
+		preis !== null &&
 			String(preis).trim() !== '' &&
 			Number.isFinite(zahl) &&
 			zahl >= 0 &&
-			zahl <= 99999.99 &&
-			zahl !== Number(position?.einzelpreis)
+			zahl <= 99999.99
 	);
+	// Ein unveränderter Preis ist noch keine Wahl: Der Knopf bleibt gesperrt, wie M3 es bis zur
+	// Wahl vorsieht; ein leerer oder falscher Preis nennt beim Klick am Feld den Grund.
+	const unveraendert = $derived(gueltig && zahl === Number(position?.einzelpreis));
+	const falsch = $derived(verlangt && !gueltig);
 
 	async function speichern() {
-		if (!gueltig || !position) return;
+		if (sendet || !gueltig || !position) return;
 		sendet = true;
 		try {
 			await apiPut(`/api/bestellungen/${bestellungId}/positionen/${position.id}/einzelpreis`, {
@@ -66,21 +70,24 @@
 	titel="Preis ändern"
 	aktion="Preis ändern"
 	{gueltig}
+	gesperrt={sendet || unveraendert}
+	bind:verlangt
 	{onclose}
 	onbestaetigen={speichern}
 >
+	<Pflichthinweis />
 	<Feld
 		id="bestellung-einzelpreis"
 		etikett="Einzelpreis"
 		type="number"
 		step="0.01"
 		min="0"
+		aria-required="true"
 		bind:value={preis}
-		hint="Gilt für {anzahlText(
-			position?.menge,
-			'Exemplar',
-			'Exemplare'
-		)} von „{position?.titel_name ?? ''}“ aus dieser Bestellung"
+		ungueltig={falsch}
+		hint={falsch
+			? 'Bitte einen Preis von 0 bis 99.999,99 € eintragen'
+			: `Gilt für ${anzahlText(position?.menge, 'Exemplar', 'Exemplare')} von „${position?.titel_name ?? ''}“ aus dieser Bestellung`}
 	>
 		{#snippet nachlaufend()}€{/snippet}
 	</Feld>

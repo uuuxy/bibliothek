@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
 
@@ -75,7 +75,7 @@ describe('BescheidDialog: Brief öffnen', () => {
 // als Fehler markiert (M3: Fehlerfarbe, Symbol, Fehlertext statt Hilfetext), und „Bescheid
 // erstellen" bleibt gesperrt.
 describe('BescheidDialog: Betrag', () => {
-	it('markiert ein gewähltes Buch ohne Betrag und sperrt den Brief', async () => {
+	it('markiert ein gewähltes Buch ohne Betrag und erstellt keinen Brief', async () => {
 		vi.mocked(apiGet).mockResolvedValue({
 			frist_bis: '2026-12-01',
 			fehlende_angaben: [],
@@ -104,14 +104,30 @@ describe('BescheidDialog: Betrag', () => {
 		expect(feld.getAttribute('aria-invalid')).toBeNull();
 		expect(knopf.disabled).toBe(false);
 
+		// Der Knopf bleibt bedienbar: Der Klick führt zum Feld, das den Grund nennt, und erstellt
+		// keinen Bescheid.
 		await fireEvent.input(feld, { target: { value: '' } });
 		expect(feld.getAttribute('aria-invalid')).toBe('true');
 		expect(screen.getByText('Betrag eintragen')).toBeTruthy();
-		expect(knopf.disabled).toBe(true);
+		expect(knopf.disabled).toBe(false);
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(apiPost).not.toHaveBeenCalled();
 
 		await fireEvent.input(feld, { target: { value: '7.5' } });
 		expect(feld.getAttribute('aria-invalid')).toBeNull();
 		expect(screen.queryByText('Betrag eintragen')).toBeNull();
-		expect(knopf.disabled).toBe(false);
+
+		// Ohne Frist nennt der Klick die Frist; ohne gewähltes Buch ist der Knopf gesperrt.
+		const frist = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Zahlungsfrist/));
+		await fireEvent.input(frist, { target: { value: '' } });
+		await fireEvent.blur(frist);
+		await fireEvent.click(knopf);
+		expect(screen.getByText('Bitte die Zahlungsfrist eintragen')).toBeTruthy();
+		await waitFor(() => expect(document.activeElement).toBe(frist));
+		expect(apiPost).not.toHaveBeenCalled();
+
+		await fireEvent.click(screen.getByLabelText('Physik 8 in den Bescheid aufnehmen'));
+		expect(knopf.disabled).toBe(true);
 	});
 });

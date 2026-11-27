@@ -55,7 +55,12 @@ describe('LmfPlanVorrat', () => {
 		// Ohne fehlende Klasse: kein „Noch nicht im Plan", nur der Eintragen-Chip.
 		expect(r.queryByText('Noch nicht im Plan:')).toBeNull();
 		await fireEvent.click(r.getByRole('button', { name: 'Andere Klasse eintragen' }));
-		const feld = r.getByLabelText('Klasse');
+		const feld = r.getByLabelText('Klasse*');
+		// Leer abgeschickt nennt das Feld den Grund, eingetragen wird nichts.
+		await fireEvent.submit(/** @type {HTMLElement} */ (feld.closest('form')));
+		expect(r.getByText('Bitte die Klasse eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(hinein).not.toHaveBeenCalled();
 		await fireEvent.input(feld, { target: { value: ' 07G1 ' } });
 		await fireEvent.submit(/** @type {HTMLElement} */ (feld.closest('form')));
 		expect(hinein).toHaveBeenCalledWith('07G1');

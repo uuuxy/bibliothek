@@ -42,24 +42,32 @@ describe('ExemplarStandortDialog', () => {
 		);
 	});
 
-	it('gibt die Aktion erst mit einem Standort oder mit „Standort entfernen" frei', async () => {
-		const { getByRole, getByLabelText } = dialog();
+	// Der Knopf bleibt bedienbar: Ohne Standort und ohne „Standort entfernen" nennt der Klick das
+	// Feld und schickt nichts.
+	it('nennt ohne Standort beim Klick das Feld, bis ein Standort oder „Standort entfernen" gewählt ist', async () => {
+		const fehler = 'Bitte einen Standort eintragen oder „Standort entfernen“ wählen';
+		const { getByRole, getByLabelText, queryByText } = dialog();
 		expect(getByRole('dialog').textContent).toContain('Gilt für 2 Exemplare');
 		expect(feld(getByLabelText).value).toBe('');
-		expect(aendern(getByRole).disabled).toBe(true);
+		expect(aendern(getByRole).disabled).toBe(false);
+		expect(queryByText(fehler)).toBeNull();
 
 		await fireEvent.input(feld(getByLabelText), { target: { value: '   ' } });
-		expect(aendern(getByRole).disabled).toBe(true);
+		await fireEvent.click(aendern(getByRole));
+		expect(queryByText(fehler)).toBeTruthy();
+		expect(feld(getByLabelText).getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(feld(getByLabelText)));
 
 		await fireEvent.input(feld(getByLabelText), { target: { value: 'Lehrerschrank' } });
-		expect(aendern(getByRole).disabled).toBe(false);
+		expect(queryByText(fehler)).toBeNull();
 
 		await fireEvent.input(feld(getByLabelText), { target: { value: '' } });
-		expect(aendern(getByRole).disabled).toBe(true);
+		expect(queryByText(fehler)).toBeTruthy();
 
 		await fireEvent.click(getByLabelText('Standort entfernen'));
-		expect(aendern(getByRole).disabled).toBe(false);
+		expect(queryByText(fehler)).toBeNull();
 		expect(feld(getByLabelText).disabled).toBe(true);
+		expect(apiPut).not.toHaveBeenCalled();
 	});
 
 	it('schickt Kennungen und getrimmten Standort und lädt danach neu', async () => {
@@ -133,7 +141,7 @@ describe('ExemplarStandortDialog', () => {
 	// Ein Handscanner tippt in das Feld mit dem Fokus und endet mit Enter; im Dialog bestätigte
 	// das Enter die Änderung (ui/EingabeDialog).
 	it('nimmt einen Scan ins offene Feld nicht als Standort', async () => {
-		const { getByRole, getByLabelText } = dialog();
+		const { getByLabelText } = dialog();
 		const eingabe = feld(getByLabelText);
 		/** @param {string} key @param {number} zeit */
 		const druecke = (key, zeit) => {
@@ -151,7 +159,8 @@ describe('ExemplarStandortDialog', () => {
 
 		expect(enter.defaultPrevented).toBe(true);
 		await waitFor(() => expect(eingabe.value).toBe(''));
-		expect(aendern(getByRole).disabled).toBe(true);
+		// Das Enter des Scans schickt nichts ab und nennt auch keinen Fehler am Feld.
+		expect(eingabe.getAttribute('aria-invalid')).toBeNull();
 		expect(apiPut).not.toHaveBeenCalled();
 	});
 });

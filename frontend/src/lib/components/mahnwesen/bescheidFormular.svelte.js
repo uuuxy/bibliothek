@@ -54,6 +54,8 @@ export class BescheidFormular {
 	/** @type {Record<string, number>} */
 	betraege = $state({});
 	frist = $state('');
+	/** Ein Klick auf „Bescheid erstellen" hat die Felder geprüft; danach nennen sie ihren Fehler. */
+	verlangt = $state(false);
 	/** Der Brief ist der des Landes (Wortlaut und Konto der Lernmittelfreiheit). Die
 	 *  Rechnung der Schülerbücherei ist noch nicht gebaut (Konzept 4.7, Etappe 3); ihre
 	 *  Zeilen stehen gesperrt in der Liste, und der Server weist alles andere ab. */
@@ -71,12 +73,15 @@ export class BescheidFormular {
 	summe = $derived(this.ausgewaehlt.reduce((s, p) => s + (Number(this.betraege[p.key]) || 0), 0));
 	/** @type {string[]} */
 	fehlt = $derived(this.vorschlag?.fehlende_angaben ?? []);
+	/** Gesperrt nur ohne Wahl, ohne die Angaben aus den Einstellungen und beim Senden (M3
+	 *  Dialogs: „Disable confirming actions until a choice is made"); ein fehlender Betrag oder
+	 *  eine fehlende Frist nennt beim Klick ihr Feld. */
+	gesperrt = $derived(this.ausgewaehlt.length === 0 || this.fehlt.length > 0 || this.sendet);
+	fristFehlt = $derived(this.verlangt && this.frist === '');
 	bereit = $derived(
-		this.ausgewaehlt.length > 0 &&
+		!this.gesperrt &&
 			this.ausgewaehlt.every((p) => betragGueltig(this.betraege[p.key])) &&
-			this.frist !== '' &&
-			this.fehlt.length === 0 &&
-			!this.sendet
+			this.frist !== ''
 	);
 
 	/** Der Vorschlag wird EINMAL geholt; danach gehört das Formular dem Menschen.

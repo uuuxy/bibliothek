@@ -668,8 +668,13 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
 *Felder und Eingabe*
 
 - Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt am Feld, was fehlt (`verlangt` in
-  `BuchFormular.svelte`). Pflicht trägt `required` oder `aria-required` an `ui/Feld` (`aria-required` nimmt, wer die Pflicht
-  selbst prüft; es sperrt im Browser nichts), das Sternchen
+  `BuchFormular.svelte`, in `ui/EingabeDialog`, `SchadenMeldenDialog` und im Bescheid). Gesperrt
+  bleibt er nur, solange keine Wahl getroffen ist: keine Auswahl, ein unveränderter Wert in einem
+  vorbelegten Feld (Preis, Schreibweise eines Schlagworts), Angaben, die der Dialog nicht beheben
+  kann (Einstellungen zum Bescheid), und während des Sendens (`gesperrt` an `ui/EingabeDialog`). M3
+  Dialogs: „Disable confirming actions until a choice is made.“ Pflicht trägt `required` oder
+  `aria-required` an `ui/Feld` (`aria-required` nimmt, wer die Pflicht selbst prüft; es sperrt im
+  Browser nichts), das Sternchen
   hängt ohne Leerzeichen an der Beschriftung, `ui/Pflichthinweis` steht am Anfang der Maske.
 - Ein Betrag ist `ui/Feld` mit `type="number"` und `step="0.01"`: Das Feld wird dann ein Textfeld
   mit Zifferntastatur (`inputmode="decimal"`), zeigt den Betrag wie `formatEuro` („7,90“,

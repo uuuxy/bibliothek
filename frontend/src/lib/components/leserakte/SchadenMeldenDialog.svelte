@@ -3,10 +3,12 @@
      Ebene „darueber": Der Dialog öffnet aus der Schülerakte heraus, die selbst ein Overlay
      ist; auf der Grundebene läge er unsichtbar dahinter. -->
 <script>
+	import { tick } from 'svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
 
@@ -44,6 +46,11 @@
 	// verlangt wird) — deshalb eine Wahl, kein Rückschluss aus dem Freitext.
 	let art = $state('nicht_zurueckgegeben');
 	const geraetZustand = $derived(art === 'beschaedigt' ? 'defekt' : 'verloren');
+	// Der Knopf bleibt bedienbar: Fehlt Grund oder Betrag, nennt der Klick das Feld, wie in
+	// BuchFormular (ARCHITEKTUR, „Felder und Eingabe“).
+	let verlangt = $state(false);
+	const grundFehlt = $derived(verlangt && !grund.trim());
+	const betragFalsch = $derived(verlangt && betragFehlt);
 
 	// Der Vorschlag kommt vom Server, weil dort die Regeln liegen: die Staffel der
 	// Arbeitshilfe für Lernmittel, der Neuwert ohne Abschlag für den Bücherei-Bestand
@@ -81,7 +88,13 @@
 		};
 	});
 
-	function melde() {
+	async function melde() {
+		verlangt = true;
+		if (!grund.trim() || betragFehlt) {
+			await tick();
+			document.getElementById(!grund.trim() ? 'damage-reason' : 'damage-amount')?.focus();
+			return;
+		}
 		onSubmit(grund, ohneForderung ? 0 : schadensbetrag, art);
 	}
 </script>
@@ -112,6 +125,7 @@
 			</p>
 
 			<div class="space-y-4">
+				<Pflichthinweis />
 				<fieldset class="space-y-2">
 					<legend class="text-title-small text-on-surface">Was ist passiert?</legend>
 					<Radio
@@ -124,8 +138,11 @@
 				<Feld
 					id="damage-reason"
 					etikett="Grund"
+					aria-required="true"
 					bind:value={grund}
 					placeholder="z. B. Wasserschaden, Verloren …"
+					ungueltig={grundFehlt}
+					hint={grundFehlt ? 'Bitte den Grund eintragen' : ''}
 				/>
 				{#if !ohneForderung}
 					<Feld
@@ -134,7 +151,13 @@
 						type="number"
 						step="0.01"
 						min="0"
-						hint={geraet ? 'Für Geräte gibt es keinen Vorschlag' : herleitung}
+						aria-required="true"
+						ungueltig={betragFalsch}
+						hint={betragFalsch
+							? 'Bitte den Ersatzbetrag eintragen'
+							: geraet
+								? 'Für Geräte gibt es keinen Vorschlag'
+								: herleitung}
 						bind:value={schadensbetrag}
 						oninput={() => (vonHand = true)}
 					>
@@ -143,11 +166,7 @@
 				{/if}
 				<div class="flex gap-3 justify-end pt-4">
 					<Button variant="ghost" onclick={onCancel}>Abbrechen</Button>
-					<Button
-						variant="danger-solid"
-						onclick={melde}
-						disabled={isSubmitting || !grund.trim() || betragFehlt}
-					>
+					<Button variant="danger-solid" onclick={melde} disabled={isSubmitting}>
 						{isSubmitting ? 'Wird gemeldet …' : 'Melden'}
 					</Button>
 				</div>

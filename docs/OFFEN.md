@@ -42,9 +42,12 @@ Nur, was kein Test leisten kann.
 ### Nebenbei
 
 - [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
-- [ ] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
-  sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid. Entschieden: Fehler am
-  Feld wie bei „Titel anlegen“; bauen. (5.203)
+- [x] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
+  sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid.
+- [ ] Weitere Stellen sperren ihren Knopf bei leerem Feld: vier Dialoge (Eigentum, Topf der
+  Bestellung, Inventur starten, Storno einer Gebühr), drei Formulare, zwei Suchen; dazu nennt die
+  Sperre der Ausleihe den fehlenden Grund in einem Kasten statt am Feld. Entscheiden, ob dieselbe
+  Regel wie 5.203 gilt. (5.211)
 - [x] Oberstufe zum Schuljahresbeginn: Schulbücher hält nur die Sperre von Hand auf, auch mit
   Büchern des Vorjahres; festgehalten in FACHKONZEPT 2.2. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -125,35 +128,6 @@ Adresse der Schule aus dem globalen Adressbuch ein, über das Kürzel oder den N
 Nächster Schritt: am Testserver und am Schulserver den Zugang eintragen und „Probelauf“ wählen.
 Bleiben viele Konten ohne Treffer, an den Gründen ablesen, welche Schreibweise fehlt; Littera
 kennt keine Kürzel, dort zählt nur der Name.
-
-### 5.203 Dialoge: gesperrter Knopf statt Fehlertext am Feld
-
-ARCHITEKTUR, „Felder und Eingabe“: „Ein leeres Pflichtfeld sperrt den Knopf nicht: Der Klick nennt
-am Feld, was fehlt“. Drei Dialoge sperren stattdessen: „Melden“ in `SchadenMeldenDialog` bei leerem
-Grund und bei fehlendem Betrag, jeder `ui/EingabeDialog` über `gueltig` (darunter „Preis ändern“),
-`BescheidDialog` bei fehlendem Betrag, dort mit Fehlertext am Feld. `sweeps.md` nennt dafür keine
-Abweichung mit Grund.
-
-Material 3, Dialogs (gelesen über r.jina.ai): „Disable confirming actions until a choice is made.
-Dismissive actions are never disabled.“ (Actions; das Bild zeigt eine fehlende Pflicht-Auswahl)
-und „Errors about the dialog fields should always appear inline where they occur … Show all errors
-on the page at once so people can fix everything before trying again.“ (Error messages); für
-Vollbild-Dialoge „Don't disable the confirmation button“. `ui/EingabeDialog` beruft sich auf den
-ersten Satz. Was den Knopf heute sperrt (außer dem Senden):
-
-- `SchadenMeldenDialog`, „Melden“: Grund leer, Betrag leer oder keine Zahl.
-- `BescheidDialog`, „Bescheid erstellen“: kein Buch gewählt (eine Wahl), ein Betrag unter einem
-  Cent (der Fehler steht schon am Feld), keine Frist, fehlende Angaben in den Einstellungen.
-- `BestellPreisDialog`, „Preis ändern“: Preis leer, keine Zahl, über 99.999,99 oder unverändert.
-- `ExemplarStandortDialog`: kein Standort und nicht „entfernen“.
-- `SchlagwortPflegeDialog`: das Wort verletzt eine Regel der Pflege (Hinweis unter dem Feld).
-- `LmfPlanFreieTage`: kein Datum. `LmfPlanVorrat`, „In den Plan“: keine Klasse.
-
-Entschieden: Felder nach `verlangt` wie bei „Titel anlegen“ (der Knopf
-bleibt bedienbar, der Klick nennt am Feld, was fehlt; `ui/EingabeDialog` gibt den Feldern dafür
-`verlangt` mit); gesperrt bleiben nur die fehlende Wahl im Bescheid und die fehlenden Angaben, die
-der Dialog nicht beheben kann. Offen dabei: was ein Klick auf „Preis ändern“ bei unverändertem
-Preis tut (schließen oder am Feld sagen, dass sich nichts ändert).
 
 ### 5.204 Fokusring an scrollbaren Listen in Firefox
 
@@ -313,6 +287,24 @@ Die Omnibox wartet 150 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`
 `WARTEZEIT_MS`), die übrigen Suchfelder 300 ms, der Katalog ohne Anmeldung 400 ms. Ein Test
 kann nicht zeigen, ob die Liste beim Tippen unruhig wird; wird sie es, ist der Wert dort zu
 erhöhen.
+
+### 5.211 Weitere Knöpfe, die bei leerem Feld gesperrt sind
+
+Diese Stellen sperren ihren Knopf, bis ein Feld gefüllt ist (gesucht nach `disabled=` mit `trim()`
+und `!bereit`); ARCHITEKTUR („Felder und Eingabe“) verlangt den Klick, der am Feld nennt, was fehlt, M3 Dialogs: „Errors about the dialog fields should always appear inline where
+they occur“ und „Disable confirming actions until a choice is made“.
+
+- Dialoge: `ExemplarEigentumDialog` (Grund), `BestellMittelDialog` (Grund; ein unveränderter Topf
+  ist keine Wahl), `InventurStartDialog` (Signatur oder Filter), Storno in `LeserGebuehrenKarte`
+  (Grund; `e2e/schadensfall.spec.js` erwartet den gesperrten Knopf).
+- Formulare: Zuordnung in `Klassenleitungen` (Klasse und E-Mail), `LMFVerlaengerung` (Klasse und
+  Datum), `LmfPlanKopf` („Plan speichern“ und „Veröffentlichen“ nach `gueltig`).
+- Suchen: „Suchen“ in `NeueAuflageDialog` und `ThekenAuskunft` ohne Suchtext.
+- `LeserSperreDialog`: Der Knopf bleibt bedienbar, der fehlende Grund steht aber in einem Kasten
+  unter dem Feld statt am Feld.
+
+Empfehlung: die vier Dialoge und die Sperre wie 5.203, die Formulare ebenso; die zwei Suchen
+bleiben gesperrt, ein leerer Suchtext ist keine Wahl. Nächster Schritt: entscheiden.
 
 ## So wird die Liste geführt
 

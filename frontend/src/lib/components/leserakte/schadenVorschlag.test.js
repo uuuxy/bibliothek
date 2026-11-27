@@ -166,12 +166,33 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 			screen.getByRole('button', { name: 'Melden' })
 		);
 
+		// Der Knopf bleibt bedienbar: Der Klick nennt am Feld, was fehlt, und meldet nicht.
 		for (const getippt of ['', 'zwölf']) {
 			await fireEvent.input(feld, { target: { value: getippt } });
-			expect(melden.disabled).toBe(true);
+			expect(melden.disabled).toBe(false);
+			await fireEvent.click(melden);
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(feld.getAttribute('aria-invalid')).toBe('true');
+			expect(screen.getByText('Bitte den Ersatzbetrag eintragen')).toBeTruthy();
+			await waitFor(() => expect(document.activeElement).toBe(feld));
 		}
 		await fireEvent.input(feld, { target: { value: '0' } });
-		expect(melden.disabled).toBe(false);
+		await fireEvent.click(melden);
+		expect(onSubmit).toHaveBeenCalledWith('Verloren', 0, 'nicht_zurueckgegeben');
+	});
+
+	it('meldet nicht ohne Grund und nennt das Feld', async () => {
+		serverLiefert({ betrag: 24.9, herleitung: 'Kaufpreis', ist_lernmittel: true });
+		const onSubmit = vi.fn();
+		const screen = render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit });
+		const grund = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Grund/));
+		expect(screen.queryByText('Bitte den Grund eintragen')).toBeNull();
+		await fireEvent.input(grund, { target: { value: '  ' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Melden' }));
+		expect(onSubmit).not.toHaveBeenCalled();
+		expect(grund.getAttribute('aria-invalid')).toBe('true');
+		expect(screen.getByText('Bitte den Grund eintragen')).toBeTruthy();
+		await waitFor(() => expect(document.activeElement).toBe(grund));
 	});
 
 	it('fragt bei einem Kollegen gar nicht erst — dort entsteht keine Forderung', async () => {

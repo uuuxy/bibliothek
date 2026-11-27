@@ -25,11 +25,12 @@ describe('BestellPreisDialog', () => {
 			props: { bestellungId: 'best-1', position, onclose, onAktualisieren }
 		});
 
-		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis'));
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis*'));
 		expect(feld.value).toBe('9,50');
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Preis ändern' })
 		);
+		// Ein unveränderter Preis ist noch keine Wahl: gesperrt (M3 Dialogs).
 		expect(knopf.disabled).toBe(true);
 		expect(
 			screen.getByText('Gilt für 2 Exemplare von „Mathe 7“ aus dieser Bestellung')
@@ -48,30 +49,24 @@ describe('BestellPreisDialog', () => {
 		expect(onAktualisieren).toHaveBeenCalled();
 	});
 
-	it('sperrt ein leeres Feld und eines ohne Zahl, statt 0 € zu speichern', async () => {
+	// Ein leerer, falscher, negativer oder zu großer Preis sperrt den Knopf nicht: Der Klick nennt
+	// am Feld den Grund und speichert nichts, statt 0 € zu schreiben.
+	it('nennt bei leerem, falschem, negativem oder zu großem Preis das Feld und speichert nicht', async () => {
 		const screen = render(BestellPreisDialog, {
 			props: { bestellungId: 'best-1', position, onclose: vi.fn(), onAktualisieren: vi.fn() }
 		});
-		const feld = await screen.findByLabelText('Einzelpreis');
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Einzelpreis*'));
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Preis ändern' })
 		);
-		for (const getippt of ['', 'zwölf']) {
+		for (const getippt of ['', 'zwölf', '-3', '100000']) {
 			await fireEvent.input(feld, { target: { value: getippt } });
-			expect(knopf.disabled).toBe(true);
+			expect(knopf.disabled, getippt).toBe(false);
+			await fireEvent.click(knopf);
+			expect(screen.getByText('Bitte einen Preis von 0 bis 99.999,99 € eintragen')).toBeTruthy();
+			expect(feld.getAttribute('aria-invalid')).toBe('true');
+			await waitFor(() => expect(document.activeElement).toBe(feld));
 		}
-	});
-
-	it('sperrt einen negativen Preis', async () => {
-		const screen = render(BestellPreisDialog, {
-			props: { bestellungId: 'best-1', position, onclose: vi.fn(), onAktualisieren: vi.fn() }
-		});
-		const feld = await screen.findByLabelText('Einzelpreis');
-		await fireEvent.input(feld, { target: { value: '-3' } });
-		const knopf = /** @type {HTMLButtonElement} */ (
-			screen.getByRole('button', { name: 'Preis ändern' })
-		);
-		expect(knopf.disabled).toBe(true);
 		expect(apiPut).not.toHaveBeenCalled();
 	});
 });

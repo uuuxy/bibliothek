@@ -26,6 +26,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { verweisWahl, dialogHinweis } from './schlagwortPflege.js';
 	import { erzeugeSchlagwortPflegeListe } from './schlagwortPflegeListe.svelte.js';
@@ -45,6 +46,7 @@
 	}
 
 	let laeuft = $state(false);
+	let verlangt = $state(false);
 
 	// Beim Öffnen vorbelegt (Umbenennen beginnt mit der alten Schreibweise), danach die
 	// Eingabe; ein neuer Auftrag setzt sie zurück.
@@ -62,32 +64,45 @@
 				)
 			: undefined
 	);
-	const gueltig = $derived(
-		!laeuft &&
-			neu !== '' &&
-			(auftrag?.art === 'umbenennen' ? neu !== wort : auftrag?.art === 'verweis' || Boolean(ziel))
-	);
+	const gueltig = $derived(neu !== '' && (auftrag?.art !== 'zusammenfuehren' || Boolean(ziel)));
+	// Eine unveränderte Schreibweise ist noch keine Wahl, wie ein unveränderter Preis: Der Knopf
+	// bleibt gesperrt. Ein leeres Feld oder ein unbekanntes Ziel nennt beim Klick das Feld.
+	const gesperrt = $derived(laeuft || (auftrag?.art === 'umbenennen' && neu === wort));
 
 	const texte = $derived(
 		{
 			umbenennen: {
 				titel: `„${wort}“ umbenennen`,
 				aktion: 'Umbenennen',
-				label: 'Neue Schreibweise'
+				label: 'Neue Schreibweise',
+				leer: 'Bitte die neue Schreibweise eintragen'
 			},
 			zusammenfuehren: {
 				titel: `„${wort}“ zusammenführen`,
 				aktion: 'Zusammenführen',
-				label: 'Mit Schlagwort'
+				label: 'Mit Schlagwort',
+				leer: 'Bitte das Schlagwort eintragen, mit dem es zusammengeführt wird'
 			},
-			verweis: { titel: `Verweis auf „${wort}“`, aktion: 'Verweis anlegen', label: 'Schreibweise' }
+			verweis: {
+				titel: `Verweis auf „${wort}“`,
+				aktion: 'Verweis anlegen',
+				label: 'Schreibweise',
+				leer: 'Bitte die Schreibweise eintragen'
+			}
 		}[auftrag?.art ?? 'umbenennen']
 	);
 
 	const hinweis = $derived(auftrag ? dialogHinweis(auftrag.art, auftrag.zeile, neu) : '');
+	const fehler = $derived(
+		!verlangt || gueltig
+			? ''
+			: neu === ''
+				? texte.leer
+				: 'Kein Schlagwort mit dieser Schreibweise, bitte eines aus der Liste wählen'
+	);
 
 	async function ausfuehren() {
-		if (!auftrag || !gueltig) return;
+		if (!auftrag || laeuft || !gueltig) return;
 		const { art, zeile } = auftrag;
 		laeuft = true;
 		try {
@@ -126,13 +141,18 @@
 	titel={texte.titel}
 	aktion={texte.aktion}
 	{gueltig}
+	{gesperrt}
+	bind:verlangt
 	{onclose}
 	onbestaetigen={ausfuehren}
 >
+	<Pflichthinweis />
 	<VorschlagFeld
 		etikett={texte.label}
+		aria-required="true"
 		bind:value={eingabe}
-		hint={hinweis}
+		ungueltig={fehler !== ''}
+		hint={fehler || hinweis}
 		vorschlaege={auftrag?.art === 'zusammenfuehren'
 			? gefunden
 					.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id)

@@ -76,7 +76,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 		await expect(
 			page.getByRole('dialog').getByRole('checkbox', { name: `„${krimi}“ als Verweis behalten` })
 		).toBeChecked();
-		await dialog(`„${krimi}“ umbenennen`, 'Neue Schreibweise', roman, 'Umbenennen');
+		await dialog(`„${krimi}“ umbenennen`, 'Neue Schreibweise*', roman, 'Umbenennen');
 		await expect.poll(amTitel).toBe(`${abenteuer}|${detektiv}|${roman}`);
 		expect(verweisZiel(krimi)).toBe(roman);
 
@@ -84,7 +84,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 		await menue(detektiv, 'Zusammenführen mit …');
 		await dialog(
 			`„${detektiv}“ zusammenführen`,
-			'Mit Schlagwort',
+			'Mit Schlagwort*',
 			roman,
 			'Zusammenführen',
 			`„${detektiv}“ als Verweis behalten`
@@ -94,7 +94,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 		expect(querySQL(`SELECT count(*) FROM schlagworte WHERE wort = '${detektiv}'`)).toBe('0');
 
 		await menue(roman, 'Verweis anlegen …');
-		await dialog(`Verweis auf „${roman}“`, 'Schreibweise', verweis, 'Verweis anlegen');
+		await dialog(`Verweis auf „${roman}“`, 'Schreibweise*', verweis, 'Verweis anlegen');
 		await expect
 			.poll(() =>
 				querySQL(`SELECT count(*) FROM schlagworte v JOIN schlagworte z ON z.id = v.verweis_auf
