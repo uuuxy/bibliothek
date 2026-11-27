@@ -4,7 +4,8 @@ import "testing"
 
 // Die eine Frage beider Importe an den Titelbestand: zuerst die ISBN, in welcher Schreibweise
 // auch immer, sonst der Titeltext. Der Titeltext zählt auch für eine Zeile mit ISBN, weil der
-// Bestand denselben Titel ohne ISBN führen kann.
+// Bestand denselben Titel ohne ISBN führen kann; ein Titel mit anderer ISBN ist eine andere
+// Auflage und trifft sie nicht.
 func TestTitelBestand_TitelZu(t *testing.T) {
 	b := NewTitelBestand()
 	b.Merke("9783060619000", "Deutschbuch 9", "id-deutsch")
@@ -24,6 +25,8 @@ func TestTitelBestand_TitelZu(t *testing.T) {
 		{"unbekannte ISBN, bekannter Titeltext", "9780000000002", "Faust", "id-faust", true},
 		{"Titeltext mit Anführungszeichen und doppeltem Leerraum", "", `"Faust"`, "id-faust", true},
 		{"die ISBN geht dem Titeltext vor", "9783060619000", "Faust", "id-deutsch", true},
+		{"unbekannte ISBN, Titeltext eines Titels mit anderer ISBN: eine neue Auflage", "9780000000002", "Deutschbuch 9", "", false},
+		{"ohne ISBN über den Titeltext eines Titels mit ISBN", "", "Deutschbuch 9", "id-deutsch", true},
 		{"weder ISBN noch Titeltext", "9780000000002", "Unbekannt", "", false},
 		{"alles leer", "", "", "", false},
 	} {

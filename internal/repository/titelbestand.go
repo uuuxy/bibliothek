@@ -16,34 +16,44 @@ import (
 type TitelBestand struct {
 	nachISBN  map[string]string // Normalform der ISBN → Kennung des Titels
 	nachTitel map[string]string // NormalisiereTitelSchluessel des Titels → Kennung des Titels
+	// ohneISBN ist nachTitel, beschränkt auf Titel ohne ISBN: Nur sie trifft eine Zeile mit ISBN
+	// über den Titeltext.
+	ohneISBN map[string]string
 }
 
 // NewTitelBestand liefert einen leeren Bestand.
 func NewTitelBestand() TitelBestand {
-	return TitelBestand{nachISBN: map[string]string{}, nachTitel: map[string]string{}}
+	return TitelBestand{nachISBN: map[string]string{}, nachTitel: map[string]string{}, ohneISBN: map[string]string{}}
 }
 
 // TitelZu ordnet eine Zeile eines Imports einem Titel des Bestands zu: zuerst über die ISBN in
 // ihrer Normalform, sonst über den Titeltext. Der Titeltext zählt auch für eine Zeile mit ISBN,
-// weil der Bestand denselben Titel ohne ISBN führen kann. bekannt ist false, wenn der Bestand
-// keinen solchen Titel führt.
+// weil der Bestand denselben Titel ohne ISBN führen kann; ein Titel mit anderer ISBN ist eine
+// andere Auflage, wie beim Zusammenführen von Hand (ErrTitelZusammenfuehrenZweiISBN). bekannt ist
+// false, wenn der Bestand keinen solchen Titel führt.
 func (b TitelBestand) TitelZu(isbn, titel string) (id string, bekannt bool) {
+	titelSchluessel := NormalisiereTitelSchluessel(titel)
 	if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
 		if id, bekannt = b.nachISBN[schluessel]; bekannt {
 			return id, true
 		}
+		id, bekannt = b.ohneISBN[titelSchluessel]
+		return id, bekannt
 	}
-	id, bekannt = b.nachTitel[NormalisiereTitelSchluessel(titel)]
+	id, bekannt = b.nachTitel[titelSchluessel]
 	return id, bekannt
 }
 
 // Merke trägt einen Titel nach, den der laufende Import angelegt hat: Die folgenden Zeilen der
 // Datei finden ihn dann. Ohne ISBN steht er nur unter seinem Titeltext.
 func (b TitelBestand) Merke(isbn, titel, id string) {
+	titelSchluessel := NormalisiereTitelSchluessel(titel)
 	if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
 		b.nachISBN[schluessel] = id
+	} else {
+		b.ohneISBN[titelSchluessel] = id
 	}
-	b.nachTitel[NormalisiereTitelSchluessel(titel)] = id
+	b.nachTitel[titelSchluessel] = id
 }
 
 // LadeTitelBestand lädt den vorhandenen Titelbestand; beide Importe ordnen damit zu. Tragen
@@ -62,12 +72,15 @@ func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (TitelBestand, error) {
 		if err := rows.Scan(&id, &isbn, &titel); err != nil {
 			return TitelBestand{}, err
 		}
+		titelSchluessel := NormalisiereTitelSchluessel(titel)
 		if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
 			if _, belegt := bestand.nachISBN[schluessel]; !belegt || isbn == schluessel {
 				bestand.nachISBN[schluessel] = id
 			}
+		} else {
+			bestand.ohneISBN[titelSchluessel] = id
 		}
-		bestand.nachTitel[NormalisiereTitelSchluessel(titel)] = id
+		bestand.nachTitel[titelSchluessel] = id
 	}
 	if err := rows.Err(); err != nil {
 		return TitelBestand{}, err
