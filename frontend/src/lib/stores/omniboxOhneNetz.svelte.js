@@ -95,9 +95,13 @@ export function erzeugeOmniboxOhneNetz({
 			return true;
 		}
 		if (einordnung.art !== 'buch') {
-			// Nach einem unklaren Scan fällt der Merker: Das nächste Buch soll keiner Person
+			// Nach einem unklaren Scan fallen Merker und geladene Person: Die Nummer kann der
+			// Ausweis eines anderen Kindes sein, und das nächste Buch soll keiner Person
 			// zugeschrieben werden, bei der niemand mehr sicher ist.
-			if (einordnung.art === 'unklar') offlineAusweis = '';
+			if (einordnung.art === 'unklar') {
+				offlineAusweis = '';
+				entferneLeser();
+			}
 			verwirfOfflineScan(einordnung);
 			return false;
 		}

@@ -283,6 +283,23 @@ describe('Omnibox offline', () => {
 			expect(await ladeWarteschlange(), 'der Ausweis selbst ist keine Buchung').toHaveLength(0);
 		});
 
+		// Ein unklarer Scan kann der Ausweis eines anderen Kindes sein: Danach geht kein Buch mehr
+		// an die Person, die vorher geladen war.
+		it('laesst nach einem unklaren Scan auch die geladene Person fallen', async () => {
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.eingabe = 'B12345678901';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			expect(omniboxStore.aktiverLeser).toBeNull();
+
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			const q = await ladeWarteschlange();
+			expect(
+				q.some((e) => e.leser_id === 'schueler-7'),
+				'kein Buch an Anna'
+			).toBe(false);
+		});
+
 		it('schreibt die folgenden Buecher dem gemerkten Ausweis zu', async () => {
 			omniboxStore.eingabe = 'S-10001';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
