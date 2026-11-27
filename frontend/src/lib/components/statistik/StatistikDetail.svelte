@@ -15,6 +15,7 @@
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import { anzahlText } from '../../utils/format.js';
+	import { passtZurSuche } from '../../utils/suchnorm.js';
 
 	/** @param {string} alle @param {string[]} werte */
 	const mitAlle = (alle, werte) => [
@@ -66,11 +67,8 @@
 		items.filter((i) => {
 			if (filterFach !== 'alle' && i.fachbereich !== filterFach) return false;
 			if (filterSystematik !== 'alle' && i.systematik !== filterSystematik) return false;
-			if (suchbegriff) {
-				const q = suchbegriff.toLowerCase();
-				if (!`${i.titel} ${i.autor}`.toLowerCase().includes(q)) return false;
-			}
-			return true;
+			// Die Suchregel der übrigen Listen: Umlaute, Akzente und die Folge der Wörter zählen nicht.
+			return passtZurSuche(suchbegriff, i.titel, i.autor);
 		})
 	);
 </script>

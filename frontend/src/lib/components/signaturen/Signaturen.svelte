@@ -10,6 +10,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { suchnorm } from '../../utils/suchnorm.js';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
@@ -19,8 +20,10 @@
 
 	const darfPflegen = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
+	// Umlaute, Akzente und groß und klein zählen nicht (suchnorm, wie in den übrigen Listen); die
+	// Folge schon, weil die Signatur eine Regaladresse ist: „LMF Deu 7“ trifft nicht „LMF Deu 17“.
 	const gefiltert = $derived(
-		signaturen.filter((s) => s.signatur.toLowerCase().includes(suche.trim().toLowerCase()))
+		signaturen.filter((s) => suchnorm(s.signatur).includes(suchnorm(suche.trim())))
 	);
 
 	// Kommen die Signaturen nicht, steht der Grund da: „Noch kein Buch trägt eine Signatur" hieße,

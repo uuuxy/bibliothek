@@ -116,4 +116,18 @@ describe('Statistik-Detailseite: Suche', () => {
 		expect(screen.getByText('Brücke nach Terabithia')).toBeTruthy();
 		expect(screen.queryByText('Momo')).toBeNull();
 	});
+
+	// Dieselbe Regel wie die übrigen Listen (passtZurSuche): Umlaut ausgeschrieben, Wörter in
+	// beliebiger Folge über Titel und Autor.
+	it('findet mit ausgeschriebenem Umlaut und Wörtern in anderer Folge', async () => {
+		const screen = render(StatistikDetail);
+		await screen.findByText('Momo');
+
+		await fireEvent.input(screen.getByLabelText('Titel oder Autor suchen'), {
+			target: { value: 'Paterson Bruecke' }
+		});
+
+		expect(screen.getByText('Brücke nach Terabithia')).toBeTruthy();
+		expect(screen.queryByText('Momo')).toBeNull();
+	});
 });
