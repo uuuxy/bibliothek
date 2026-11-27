@@ -11,15 +11,12 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Reiter from '../ui/Reiter.svelte';
-	import { ANSICHTEN } from './mahnungen.js';
+	import { ANSICHTEN, berechneMahnstufe, maxTageUeberfaellig } from './mahnungen.js';
 
-	/** Höchste Überfälligkeit eines Schülers in Tagen. @param {any} s */
-	const maxTage = (s) =>
-		s.medien.reduce(
-			(/** @type {number} */ max, /** @type {any} */ m) =>
-				m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max,
-			0
-		);
+	// Die Mahnstufe eines Kindes wie in der Liste (stores/mahnwesen.svelte.js): Mit einer eigenen
+	// Grenze hier liefe die Zahl am Reiter der Liste davon.
+	/** @param {any} s */
+	const mahnstufe = (s) => berechneMahnstufe(maxTageUeberfaellig(s.medien));
 	/** @param {(s: any) => boolean} passt */
 	const zaehle = (passt) =>
 		mahnwesenStore.klassen.reduce(
@@ -27,8 +24,6 @@
 			0
 		);
 
-	// „Akut fällig" = überfällig bis 14 Tage (inkl. der <24h-Fälle mit maxTage 0),
-	// passend zur Mahnstufe '1. Erinnerung'. So stimmt die Register-Zahl mit der Liste.
 	// `id` ist der Filterwert des Stores, damit Reiter und Liste dieselbe Sprache sprechen.
 	// Vierter Eintrag: Schadensersatz — die Geld-Seite des Verfahrens. Die ersten drei
 	// Reiter fragen „Wer hat Bücher zu spät?", dieser fragt „Wer schuldet Geld?": Kinder
@@ -38,8 +33,8 @@
 	const register = $derived(
 		[
 			{ id: 'Alle', anzahl: zaehle(() => true) },
-			{ id: '1. Erinnerung', anzahl: zaehle((s) => maxTage(s) <= 14) },
-			{ id: 'Mahnung', anzahl: zaehle((s) => maxTage(s) > 14) },
+			{ id: '1. Erinnerung', anzahl: zaehle((s) => mahnstufe(s) === '1. Erinnerung') },
+			{ id: 'Mahnung', anzahl: zaehle((s) => mahnstufe(s) === 'Mahnung') },
 			{ id: 'Schadensersatz', anzahl: bescheideStore.beiDerSchule }
 		].map((r) => ({ ...r, label: ANSICHTEN[r.id] }))
 	);

@@ -80,6 +80,8 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 	pdf.SetXY(144, obenY)
 	pdf.CellFormat(22, zeilenHoehe, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
 
+	// Rot und fett ab der Grenze, an der das Mahnwesen ein Kind unter „Eskaliert“ führt
+	// (berechneMahnstufe in frontend/src/lib/components/mahnwesen/mahnungen.js).
 	if med.TageUeberfaellig > 14 {
 		pdf.SetTextColor(200, 30, 30)
 		pdf.SetFont(pdfzeichen.Schrift, "B", 8)

@@ -62,6 +62,8 @@ export function maxTageUeberfaellig(medien) {
 /**
  * Reiter eines Schülers nach Überfälligkeit. Die Liste enthält nur überfällige Ausleihen;
  * tage_ueberfaellig ist unter 24 Stunden 0, das heißt „gerade fällig“, nicht „erledigt“.
+ * Dieselbe Grenze färbt die Tage in der Mahnliste an die Klassenleitung rot
+ * (internal/pdf/mahnliste.go) und teilt die Mahnkennzahlen (internal/repository/mahnkennzahlen.go).
  * @param {number} maxTage
  * @returns {string}
  */
