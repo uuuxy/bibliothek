@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 26.11.2026
+Stand: 27.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -81,6 +81,14 @@ Nur, was kein Test leisten kann.
 - [ ] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
   Ersatzforderung sprechen Volljährige selbst an. Entscheiden, ob der Mahnbrief es ebenso hält.
   (5.205)
+- [ ] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten; nur nach deinem
+  Ja. (5.206)
+- [ ] Medienkatalog: die Titelliste schlanker und nicht bei jedem Wechsel zwischen „Suche &
+  Filter“ und „Titel-Verwaltung“ neu laden; entscheiden, ob. (5.207)
+- [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
+  Testserver dieselben 693 Titel viermal am Tag. Entscheiden. (5.209)
+- [ ] Gedankenstrich in PDF, Mail und Protokoll des Servers: entscheiden, ob dort dieselbe Regel
+  gilt wie in Oberfläche und Meldungen. (5.210)
 
 ### Termin
 
@@ -125,8 +133,26 @@ Grund und bei fehlendem Betrag, jeder `ui/EingabeDialog` über `gueltig` (darunt
 `BescheidDialog` bei fehlendem Betrag, dort mit Fehlertext am Feld. `sweeps.md` nennt dafür keine
 Abweichung mit Grund.
 
-Nächster Schritt: Material 3, Dialogs, lesen, ob ein Dialog anders verfährt; sonst die drei nach
-dem Muster `verlangt` in `BuchFormular` angleichen, vorher mit Bildern.
+Material 3, Dialogs (gelesen über r.jina.ai): „Disable confirming actions until a choice is made.
+Dismissive actions are never disabled.“ (Actions; das Bild zeigt eine fehlende Pflicht-Auswahl)
+und „Errors about the dialog fields should always appear inline where they occur … Show all errors
+on the page at once so people can fix everything before trying again.“ (Error messages); für
+Vollbild-Dialoge „Don't disable the confirmation button“. `ui/EingabeDialog` beruft sich auf den
+ersten Satz. Was den Knopf heute sperrt (außer dem Senden):
+
+- `SchadenMeldenDialog`, „Melden“: Grund leer, Betrag leer oder keine Zahl.
+- `BescheidDialog`, „Bescheid erstellen“: kein Buch gewählt (eine Wahl), ein Betrag unter einem
+  Cent (der Fehler steht schon am Feld), keine Frist, fehlende Angaben in den Einstellungen.
+- `BestellPreisDialog`, „Preis ändern“: Preis leer, keine Zahl, über 99.999,99 oder unverändert.
+- `ExemplarStandortDialog`: kein Standort und nicht „entfernen“.
+- `SchlagwortPflegeDialog`: das Wort verletzt eine Regel der Pflege (Hinweis unter dem Feld).
+- `LmfPlanFreieTage`: kein Datum. `LmfPlanVorrat`, „In den Plan“: keine Klasse.
+
+Nächster Schritt: Bilder ansehen und entscheiden. Vorschlag: Felder nach `verlangt` (der Knopf
+bleibt bedienbar, der Klick nennt am Feld, was fehlt; `ui/EingabeDialog` gibt den Feldern dafür
+`verlangt` mit); gesperrt bleiben nur die fehlende Wahl im Bescheid und die fehlenden Angaben, die
+der Dialog nicht beheben kann. Offen dabei: was ein Klick auf „Preis ändern“ bei unverändertem
+Preis tut (schließen oder am Feld sagen, dass sich nichts ändert).
 
 ### 5.204 Fokusring an scrollbaren Listen in Firefox
 
@@ -291,6 +317,54 @@ ausgeliehen hat.
 Frage: Soll der Mahnbrief Volljährige selbst anschreiben? Empfehlung: ja, wie der Bescheid.
 Umfang: die Abfrage der Empfänger um `sqlVolljaehrig` ergänzen, die Anschrift ohne „Eltern von“,
 und ein Text, der zu beiden passt, oder eine zweite Vorlage.
+
+### 5.206 Wartezeit der Suche an der Theke
+
+Die Omnibox wartet 300 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`), der Katalog ohne
+Anmeldung 400 ms (`OpacSuche.svelte`), Mein Portal und die Leserdatei 300 ms. Der Server braucht
+für `GET /api/search` seit Migration 186 bei Titeln 3 bis 13 ms (lokal, 13.674 Titel), bei Lesern
+an der Schule (rund 1.900) etwa 10 ms. Die Wartezeit ist damit der größte Teil bis zur Trefferliste.
+
+Nächster Schritt: nach deinem Ja 150 ms an der Theke, dann am Gerät tippen und ansehen, ob die
+Liste beim Tippen unruhig wird.
+
+### 5.207 Titelliste des Medienkatalogs
+
+`GET /api/books` (gemessen lokal, 12.672 Titel): 60 ms Hauptabfrage, je 19 ms für Suchwörter und
+Standorte (12.672 Kennungen als Parameter), 11 ms Sortieren, 10 ms JSON; 6,2 MB JSON, 0,52 MB über
+das Netz. „Suche & Filter“ und „Titel-Verwaltung“ laden die Liste bei jedem Wechsel des Reiters
+neu. Mögliche Schritte: die Kennungen als Binärwerte oder beide Nachlader nebeneinander (rund 30 ms),
+Felder ohne Nutzen in der Liste weglassen (`stock` gleicht `gesamt`, `erweiterteEigenschaften` und
+`schlagworte` sind immer leer), eine Liste für beide Reiter. Die ganze Liste im Browser ist
+entschieden (ARCHITEKTUR 11.5).
+
+Nächster Schritt: entscheiden, ob und welcher Schritt.
+
+### 5.209 Cover-Abgleich fragt unbekannte ISBNs bei jedem Lauf
+
+`verarbeiteCover` (`internal/service/cover.go`) setzt `FAILED`, wenn keine Quelle die ISBN kennt,
+wie bei einem Ausfall aller Dienste, und `FAILED` kommt beim nächsten Lauf wieder dran (alle sechs
+Stunden und nach jedem Neustart). ARCHITEKTUR 11.5 nennt das als bekannte Grenze, und
+`TestVerarbeiteCover_SchreibtErgebnisUndStand` verlangt es („kein Dienst kennt die ISBN: FAILED“).
+Gemessen im Log des Testservers über drei Tage: jeder Lauf 693 Titel, 0 gefunden, 693
+gescheitert, je Lauf knapp sechs Minuten mit bis zu drei Anfragen je Titel an DNB, Google und
+OpenLibrary.
+
+Vorschlag: „keine Quelle kennt die ISBN“ und eine ISBN, die keine ist, als `NOT_FOUND` vermerken;
+`FAILED` nur, wenn keine Quelle erreichbar war. Nächster Schritt: entscheiden.
+
+### 5.210 Gedankenstrich in den Texten des Servers außerhalb der Meldungen
+
+Oberfläche (5.185) und Meldungen (STIL.md 11) setzen keinen Gedankenstrich; die vier Sätze des
+Servers, die in der Oberfläche stehen, sind angeglichen. Für Klammern und Schrägstriche gilt die
+Regel schon in PDF, Mail und Protokoll (5.192, 5.194), für den Strich nicht. Ihn tragen noch:
+Fußnoten von Zugangs- und Abgangsbuch (`internal/pdf/zugangsbuch.go`, `abgangsbuch.go`), der
+Titel des Bestellberichts (`bestellbericht.go`), die Auskunft nach Art. 15
+(`internal/auskunft/blatt.go`, `blatt_protokoll.go`), zwei Kontexte im Protokoll
+(`bescheid_rueckkehr.go`, `titel_loeschen.go`) und die Alarm-Mail der Betriebsbereitschaft. Die
+übrigen Funde sind Log und Startfehler.
+
+Nächster Schritt: entscheiden, ob die Regel auch dort gilt; dann umformulieren wie unter 5.185.
 
 ## So wird die Liste geführt
 
