@@ -20,6 +20,9 @@ const (
 	AktionLieferantGeaendert      = "LIEFERANT_GEAENDERT"
 	AktionLieferantGeloescht      = "LIEFERANT_GELOESCHT"
 	AktionFristKlasseGeaendert    = "FRIST_KLASSE_GEAENDERT"
+	// Eine überfällige Ausleihe verlängert: Mahnfolge und Überfällig-Sperre beginnen neu, ein
+	// Eingriff in eine Sanktion wie die Frist von Hand (FRIST_OVERRIDE).
+	AktionUeberfaelligVerlaengert = "UEBERFAELLIG_VERLAENGERT"
 	// Schlagworte: Zusammenführen, Umleiten und Löschen lassen sich nicht zurücknehmen. Die
 	// Wörter sind Vokabular des Katalogs und stehen deshalb im Eintrag.
 	AktionSchlagwortZusammengefuehrt = "SCHLAGWORT_ZUSAMMENGEFUEHRT"

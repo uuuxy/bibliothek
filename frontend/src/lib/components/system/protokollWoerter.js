@@ -64,6 +64,7 @@ export const VERWALTUNG_AKTIONEN = {
 	SELBSTANMELDUNG: 'Zugang über die eigene Anmeldung beantragt',
 	TITEL_ZUSAMMENGEFUEHRT: 'Titel zusammengeführt',
 	TRESEN_AUSKUNFT: 'Theken-Auskunft abgefragt',
+	UEBERFAELLIG_VERLAENGERT: 'Überfällige Ausleihe verlängert',
 	UPDATE_MAIL_SETTINGS: 'Mail-Einstellungen geändert',
 	UPDATE_WEBMAIL_ZUGANG: 'Zugang zum Webmail geändert',
 	UPDATE_SETTINGS: 'Einstellungen geändert',

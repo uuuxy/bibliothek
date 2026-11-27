@@ -112,7 +112,8 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		antworteFristGeaendert(w, alteFrist)
 		return
 	}
-	neueFrist, err := ladeVerlaengerteFrist(ctx, tx, ausleiheID, alteFrist, t.Jetzt(), tage, lmfplan.FerientabelleAus(sommerferien))
+	jetzt := t.Jetzt()
+	neueFrist, err := ladeVerlaengerteFrist(ctx, tx, ausleiheID, alteFrist, jetzt, tage, lmfplan.FerientabelleAus(sommerferien))
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einzel-verlängerung: %w", err))
 		return
@@ -126,6 +127,16 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	if err := tx.Commit(ctx); err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("abschluss der einzel-verlängerung: %w", err))
 		return
+	}
+	// War die Frist schon vorbei, beginnen Mahnfolge und Überfällig-Sperre neu: ein Eingriff in
+	// eine Sanktion wie die Frist von Hand, also ins Protokoll. Vor Ablauf der Frist ist es der
+	// gewöhnliche Fall der Leserakte und steht nicht da.
+	if alteFrist.Before(jetzt) {
+		t.ProtokolliereVerwaltung(ctx, tuer.AktionUeberfaelligVerlaengert, map[string]any{
+			"ausleihe_id":     ausleiheID,
+			"bisherige_frist": alteFrist.Format(time.RFC3339),
+			"neue_frist":      gesetzteFrist.Format(time.RFC3339),
+		})
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -469,5 +470,57 @@ func TestAusleiheVerlaengern_GezeigteFristHinterDerGrenzeDerHandeingabe(t *testi
 	}
 	if frist := testdaten.LadeFrist(t, pool, ausleihe); !frist.After(gezeigt) {
 		t.Errorf("Frist %s, erwartet nach der bisherigen %s", frist.Format(time.RFC3339), gezeigt.Format(time.RFC3339))
+	}
+}
+
+// Wer eine überfällige Ausleihe verlängert, setzt Mahnfolge und Überfällig-Sperre zurück, wie
+// mit der Frist von Hand (FRIST_OVERRIDE). Das steht im Protokoll; die Verlängerung vor Ablauf
+// der Frist, der gewöhnliche Fall der Leserakte, nicht.
+func TestAusleiheVerlaengern_UeberfaelligStehtImProtokoll(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var bearbeiter string
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Vera', 'Verlaengert', $1, 'admin', true) RETURNING id`,
+		fmt.Sprintf("verlaengert-%d@example.org", time.Now().UnixNano())).Scan(&bearbeiter); err != nil {
+		t.Fatalf("Bearbeiter anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE admin_id = $1`, bearbeiter)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, bearbeiter)
+	})
+
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VG-9", "Protokoll", "05F1")
+	ueberfaellig := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, "Buch über der Frist", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+	inDerFrist := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, "Buch in der Frist", time.Now().AddDate(0, 0, 5))
+
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
+	}))
+	for _, ausleihe := range []string{ueberfaellig, inDerFrist} {
+		req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleihe+"/verlaengern", nil)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: bearbeiter, Rolle: auth.RolleAdmin}))
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Verlängerung %s: Status %d: %s", ausleihe, rec.Code, rec.Body.String())
+		}
+	}
+
+	for ausleihe, soll := range map[string]int{ueberfaellig: 1, inDerFrist: 0} {
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs
+			WHERE aktion = 'UEBERFAELLIG_VERLAENGERT' AND admin_id = $1 AND details->>'ausleihe_id' = $2`,
+			bearbeiter, ausleihe).Scan(&n); err != nil {
+			t.Fatalf("Protokoll zählen: %v", err)
+		}
+		if n != soll {
+			t.Errorf("Ausleihe %s: %d Einträge UEBERFAELLIG_VERLAENGERT, erwartet %d", ausleihe, n, soll)
+		}
 	}
 }
