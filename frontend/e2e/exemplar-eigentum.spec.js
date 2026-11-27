@@ -40,13 +40,15 @@ test('Eigentum: Karte zeigt die Herkunft, markierte Exemplare werden mit Grund g
 	await leiste.getByRole('button', { name: 'Alle auswählen' }).click();
 	await expect(leiste).toContainText('2 ausgewählt');
 
-	// Ändern: erst mit Auswahl und Grund frei.
+	// Ändern: erst mit Auswahl frei; ohne Grund nennt der Klick das Feld.
 	await leiste.getByRole('button', { name: 'Eigentum ändern' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Eigentum ändern' });
 	await expect(dialog).toContainText('Gilt für 2 Exemplare');
 	const bestaetigen = dialog.getByRole('button', { name: 'Eigentum ändern' });
-	await dialog.getByLabel('Land', { exact: true }).check();
 	await expect(bestaetigen).toBeDisabled();
+	await dialog.getByLabel('Land', { exact: true }).check();
+	await bestaetigen.click();
+	await expect(dialog.getByText('Bitte den Grund der Änderung eintragen')).toBeVisible();
 	await dialog.getByLabel('Grund der Änderung').fill('Klassensatz aus LMF-Mitteln');
 	await bestaetigen.click();
 

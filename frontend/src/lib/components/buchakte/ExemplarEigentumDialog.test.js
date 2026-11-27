@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({ apiPut: vi.fn() }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
@@ -22,8 +22,10 @@ describe('ExemplarEigentumDialog', () => {
 		vi.mocked(apiPut).mockResolvedValue({ geaendert: 2 });
 	});
 
-	it('gibt die Aktion erst mit Auswahl und Grund frei', async () => {
-		const { getByRole, getByLabelText } = render(ExemplarEigentumDialog, {
+	// Ohne Auswahl ist keine Wahl getroffen: gesperrt. Ein fehlender Grund sperrt nicht; der
+	// Klick nennt ihn am Feld, führt dorthin und schickt nichts.
+	it('sperrt bis zur Auswahl und nennt einen fehlenden Grund beim Klick', async () => {
+		const { getByRole, getByLabelText, getByText } = render(ExemplarEigentumDialog, {
 			open: true,
 			exemplarIds: ['e1', 'e2'],
 			onclose: () => {},
@@ -33,15 +35,15 @@ describe('ExemplarEigentumDialog', () => {
 		expect(aendern(getByRole).disabled).toBe(true);
 
 		await fireEvent.click(getByLabelText('Land'));
-		expect(aendern(getByRole).disabled).toBe(true);
-
-		await fireEvent.input(getByLabelText(/Grund der Änderung/), { target: { value: '   ' } });
-		expect(aendern(getByRole).disabled).toBe(true);
-
-		await fireEvent.input(getByLabelText(/Grund der Änderung/), {
-			target: { value: 'Klassensatz aus LMF-Mitteln' }
-		});
 		expect(aendern(getByRole).disabled).toBe(false);
+
+		const feld = getByLabelText(/Grund der Änderung/);
+		await fireEvent.input(feld, { target: { value: '   ' } });
+		await fireEvent.click(aendern(getByRole));
+		expect(getByText('Bitte den Grund der Änderung eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(apiPut).not.toHaveBeenCalled();
 	});
 
 	it('schickt Kennungen, Eigentum und getrimmten Grund und lädt danach neu', async () => {

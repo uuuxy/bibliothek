@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -90,5 +90,26 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		await stillhalten();
 		expect(screen.getByRole('alert').textContent).toContain('Der Leser liegt im Papierkorb');
 		expect(snackbars.addToast).not.toHaveBeenCalled();
+	});
+});
+
+// Ein fehlender Grund steht am Feld, nicht im Kasten der Meldungen des Servers, und der Klick
+// führt dorthin, ohne zu senden.
+describe('Leser sperren: fehlender Grund', () => {
+	beforeEach(() => {
+		vi.mocked(apiClient.patch).mockReset();
+	});
+
+	it('nennt den fehlenden Grund am Feld und schickt nichts', async () => {
+		const screen = render(LeserSperreDialog, {
+			props: { open: true, leser: LESER, onsuccess: vi.fn() }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Bestätigen' }));
+		const feld = screen.getByRole('textbox');
+		expect(screen.getByText('Bitte den Grund der Sperre eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(screen.queryByRole('alert')).toBeNull();
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(apiClient.patch).not.toHaveBeenCalled();
 	});
 });

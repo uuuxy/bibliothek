@@ -37,10 +37,12 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await neu.click();
 		await expect(startTitel).toBeVisible();
 
-		// Scope: nur die Test-Signatur. Ohne Signatur lässt sich nicht starten.
+		// Scope: nur die Test-Signatur. Ohne Signatur nennt der Klick das Feld und startet nichts.
 		const starten = page.getByRole('button', { name: 'Starten', exact: true });
 		await page.getByText('Nur bestimmte Signatur').click();
-		await expect(starten).toBeDisabled();
+		await starten.click();
+		await expect(page.getByText('Bitte die Signatur eintragen')).toBeVisible();
+		await expect(page.getByLabel('Signatur auswählen')).toBeFocused();
 		await page.getByLabel('Signatur auswählen').fill(sigName);
 		await starten.click();
 

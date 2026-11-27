@@ -97,13 +97,15 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	expect(pdf.headers()['content-type']).toContain('application/pdf');
 	expect((await pdf.body()).length).toBeGreaterThan(1000);
 
-	// Storno-Weg: ohne Grund gesperrt, mit Grund wird die Forderung erlassen.
+	// Storno-Weg: ohne Grund nennt der Klick das Feld, mit Grund wird die Forderung erlassen.
 	await gebuehrenKarte.getByRole('button', { name: 'Stornieren' }).click();
 	// Über Rolle und Namen, nicht über die Struktur `div:has(> h3 …)`: Der alte Selektor
 	// hing daran, wie das Markup verschachtelt ist — und riss beim Umzug des Dialogs auf
 	// Dialog.svelte (07.09.2026). Ein Mensch findet den Dialog an seiner Überschrift.
 	const stornoModal = page.getByRole('dialog', { name: 'Gebühr wirklich stornieren?' });
-	await expect(stornoModal.getByRole('button', { name: 'Stornieren' })).toBeDisabled();
+	await stornoModal.getByRole('button', { name: 'Stornieren' }).click();
+	await expect(stornoModal.getByText('Bitte den Stornierungsgrund eintragen')).toBeVisible();
+	await expect(stornoModal.locator('#storno-grund')).toBeFocused();
 	await stornoModal.locator('#storno-grund').fill('E2E: Buch wiedergefunden');
 	await stornoModal.getByRole('button', { name: 'Stornieren' }).click();
 

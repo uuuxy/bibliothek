@@ -1,6 +1,7 @@
 <!-- @component LeserSperreDialog — Ausleihe eines Schülers sperren oder freigeben.
      Kopfzeile und Schließen-Knopf stellt Dialog.svelte. -->
 <script>
+	import { tick } from 'svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Icon from '../ui/Icon.svelte';
@@ -25,6 +26,11 @@
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem
 	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
 	let wirdGesperrt = $derived(leser && !gesperrt);
+	// Ein fehlender Grund steht am Feld, nicht im Kasten darunter: Der Kasten gehört den
+	// Meldungen des Servers (M3 Dialogs: „Errors about the dialog fields should always appear
+	// inline where they occur").
+	let verlangt = $state(false);
+	const grundFehlt = $derived(verlangt && wirdGesperrt && reason.trim() === '');
 
 	// Das Modal bleibt (via bind:open) dauerhaft gemountet, der State überlebt also das
 	// Schließen. Ohne diesen Reset blitzte beim nächsten Öffnen — ggf. für einen anderen
@@ -33,6 +39,7 @@
 		if (!open) {
 			fehler = '';
 			reason = '';
+			verlangt = false;
 		}
 	});
 
@@ -42,7 +49,9 @@
 	async function bestaetige() {
 		if (!leser) return;
 		if (wirdGesperrt && reason.trim() === '') {
-			fehler = 'Bitte einen Grund für die Sperre angeben';
+			verlangt = true;
+			await tick();
+			document.getElementById('sperre-grund')?.focus();
 			return;
 		}
 		const name = `${leser.vorname} ${leser.nachname}`;
@@ -98,9 +107,12 @@
 		{#if wirdGesperrt}
 			<Pflichthinweis />
 			<Feld
+				id="sperre-grund"
 				bind:value={reason}
 				etikett="Grund der Sperre"
 				aria-required="true"
+				ungueltig={grundFehlt}
+				hint={grundFehlt ? 'Bitte den Grund der Sperre eintragen' : ''}
 				mehrzeilig
 				zeilen={2}
 				disabled={laeuft}

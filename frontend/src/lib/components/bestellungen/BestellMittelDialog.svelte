@@ -8,9 +8,10 @@
      rausging. Deshalb ist der Grund Pflicht, und der Eingriff steht im Verwaltungsprotokoll.
 
      Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
-     ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->
+     ein Feld für den Grund. Gesperrt nur, solange der Topf unverändert ist (noch keine Wahl);
+     ein fehlender Grund nennt sich beim Klick am Feld (ARCHITEKTUR, „Felder und Eingabe“). -->
 <script>
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -36,6 +37,7 @@
 	let gewaehlt = $state('');
 	let grund = $state('');
 	let sendet = $state(false);
+	let verlangt = $state(false);
 
 	// Beim Öffnen auf den Stand der Bestellung setzen — nicht beim Einhängen: Der Dialog
 	// bleibt eingehängt und wird nur ein- und ausgeblendet. Nur beim Öffnen: Die Bestellung lädt
@@ -44,14 +46,22 @@
 		if (open) {
 			gewaehlt = untrack(() => aktuell);
 			grund = '';
+			verlangt = false;
 		}
 	});
 
 	const unveraendert = $derived(gewaehlt === aktuell);
-	const bereit = $derived(!unveraendert && grund.trim() !== '' && !sendet);
+	const gesperrt = $derived(unveraendert || sendet);
+	const grundFehlt = $derived(verlangt && grund.trim() === '');
 
 	async function speichern() {
-		if (!bereit) return;
+		if (gesperrt) return;
+		verlangt = true;
+		if (grund.trim() === '') {
+			await tick();
+			document.getElementById('mittel-grund')?.focus();
+			return;
+		}
 		sendet = true;
 		try {
 			await apiPut(`/api/bestellungen/${bestellungId}/mittel`, {
@@ -96,12 +106,14 @@
 			etikett="Grund der Korrektur"
 			bind:value={grund}
 			placeholder="z. B. Titel war falsch als Lernmittel gekennzeichnet"
-			required
+			aria-required="true"
+			ungueltig={grundFehlt}
+			hint={grundFehlt ? 'Bitte den Grund der Korrektur eintragen' : ''}
 		/>
 
 		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
-			<Button onclick={speichern} disabled={!bereit}>
+			<Button onclick={speichern} disabled={gesperrt}>
 				{sendet ? 'Wird gespeichert …' : 'Topf ändern'}
 			</Button>
 		</div>

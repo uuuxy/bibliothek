@@ -1,10 +1,12 @@
 <script>
+	import { tick } from 'svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Dialog from '../ui/Dialog.svelte';
+	import Pflichthinweis from '../ui/Pflichthinweis.svelte';
 	import { anzahlText, formatDatum, formatEuro as euro } from '../../utils/format.js';
 	import BescheidDialog from '../mahnwesen/BescheidDialog.svelte';
 
@@ -24,6 +26,10 @@
 
 	let stornoFall = $state(/** @type {any} */ (null));
 	let stornoGrund = $state('');
+	// Der Knopf bleibt bedienbar; fehlt der Grund, nennt der Klick das Feld (ARCHITEKTUR,
+	// „Felder und Eingabe“).
+	let stornoVerlangt = $state(false);
+	const grundFehlt = $derived(stornoVerlangt && stornoGrund.trim() === '');
 	let laeuft = $state(false);
 	let bescheidOffen = $state(false);
 
@@ -39,6 +45,17 @@
 		// beim nächsten Fall als vorausgefüllte Begründung durchrutschen.
 		stornoFall = null;
 		stornoGrund = '';
+		stornoVerlangt = false;
+	}
+
+	async function storniere() {
+		stornoVerlangt = true;
+		if (stornoGrund.trim() === '') {
+			await tick();
+			document.getElementById('storno-grund')?.focus();
+			return;
+		}
+		erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert');
 	}
 
 	async function erledige(url, erfolgsMeldung) {
@@ -159,21 +176,20 @@
 				mit Begründung im Protokoll festgehalten.
 			</p>
 
+			<Pflichthinweis />
 			<Feld
 				id="storno-grund"
 				etikett="Stornierungsgrund"
 				bind:value={stornoGrund}
 				placeholder="z. B. Buch wiedergefunden, Kulanzentscheidung …"
+				aria-required="true"
+				ungueltig={grundFehlt}
+				hint={grundFehlt ? 'Bitte den Stornierungsgrund eintragen' : ''}
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">
 				<Button variant="secondary" onclick={schliesseStorno}>Abbrechen</Button>
-				<Button
-					variant="danger"
-					onclick={() =>
-						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert')}
-					disabled={laeuft || stornoGrund.trim() === ''}
-				>
+				<Button variant="danger" onclick={storniere} disabled={laeuft}>
 					<Icon name="receipt_long" />
 					Stornieren
 				</Button>

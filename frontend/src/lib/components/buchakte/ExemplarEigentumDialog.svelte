@@ -2,12 +2,14 @@
      Littera „Exemplardaten anpassen": markieren, einen Wert für alle setzen.
 
      Bauform wie „Topf der Bestellung ändern" (bestellungen/BestellMittelDialog): Modal,
-     Radio-Gruppe, Pflicht-Grund, die Aktion erst mit Auswahl und Grund frei. M3 Dialogs:
-     „Disable confirming actions until a choice is made", höchstens zwei Aktionen. M3 Radio
+     Radio-Gruppe, Pflicht-Grund, die Aktion erst mit einer Auswahl frei. M3 Dialogs:
+     „Disable confirming actions until a choice is made", höchstens zwei Aktionen. Ein fehlender
+     Grund sperrt nicht: Der Klick nennt ihn am Feld (ARCHITEKTUR, „Felder und Eingabe“). M3 Radio
      button: „a single selection from a list of options"; im Dialog wirkt sie erst beim
      Bestätigen. Keine Auswahl vorbelegt: Die markierten Exemplare können verschiedene Werte
      tragen, und eine Vorbelegung wäre eine Entscheidung, die niemand getroffen hat. -->
 <script>
+	import { tick } from 'svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -28,19 +30,28 @@
 	let gewaehlt = $state('');
 	let grund = $state('');
 	let sendet = $state(false);
+	let verlangt = $state(false);
 
 	$effect(() => {
 		if (open) {
 			gewaehlt = '';
 			grund = '';
+			verlangt = false;
 		}
 	});
 
 	const anzahl = $derived(exemplarIds.length);
-	const bereit = $derived(gewaehlt !== '' && grund.trim() !== '' && !sendet);
+	const gesperrt = $derived(gewaehlt === '' || sendet);
+	const grundFehlt = $derived(verlangt && grund.trim() === '');
 
 	async function speichern() {
-		if (!bereit) return;
+		if (gesperrt) return;
+		verlangt = true;
+		if (grund.trim() === '') {
+			await tick();
+			document.getElementById('eigentum-grund')?.focus();
+			return;
+		}
 		sendet = true;
 		try {
 			const antwort = await apiPut('/api/exemplare/eigentum', {
@@ -97,12 +108,14 @@
 			etikett="Grund der Änderung"
 			bind:value={grund}
 			placeholder="z. B. Klassensatz aus LMF-Mitteln gekauft"
-			required
+			aria-required="true"
+			ungueltig={grundFehlt}
+			hint={grundFehlt ? 'Bitte den Grund der Änderung eintragen' : ''}
 		/>
 
 		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
-			<Button onclick={speichern} disabled={!bereit}>
+			<Button onclick={speichern} disabled={gesperrt}>
 				{sendet ? 'Wird gespeichert …' : 'Eigentum ändern'}
 			</Button>
 		</div>

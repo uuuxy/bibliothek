@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import LeserGebuehrenKarte from './LeserGebuehrenKarte.svelte';
 import { apiClient } from '../../apiFetch.js';
 import { serverAntwort } from '../../serverAntwort.js';
@@ -75,13 +75,16 @@ describe('LeserGebuehrenKarte', () => {
 			screen.getAllByRole('button', { name: /Stornieren/ }).find((b) => b.closest('.fixed'))
 		);
 		if (!bestaetigen) throw new Error('Bestätigen-Knopf im Modal nicht gefunden');
-		// Ohne Grund ist der Bestätigen-Knopf gesperrt — kein Request.
-		expect(bestaetigen.disabled).toBe(true);
-
-		await fireEvent.input(screen.getByLabelText('Stornierungsgrund'), {
-			target: { value: '  Kulanz  ' }
-		});
+		// Ohne Grund nennt der Klick das Feld, führt dorthin und schickt nichts.
 		expect(bestaetigen.disabled).toBe(false);
+		await fireEvent.click(bestaetigen);
+		const feld = screen.getByLabelText(/Stornierungsgrund/);
+		expect(screen.getByText('Bitte den Stornierungsgrund eintragen')).toBeTruthy();
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		await waitFor(() => expect(document.activeElement).toBe(feld));
+		expect(apiClient.post).not.toHaveBeenCalled();
+
+		await fireEvent.input(feld, { target: { value: '  Kulanz  ' } });
 		await fireEvent.click(bestaetigen);
 
 		expect(apiClient.post).toHaveBeenCalledWith('/api/schadensfaelle/sf-1/storno', {
@@ -89,7 +92,7 @@ describe('LeserGebuehrenKarte', () => {
 		});
 		expect(onChanged).toHaveBeenCalled();
 		// Modal zu, Grund geleert — beim nächsten Fall darf nichts vorausgefüllt sein.
-		expect(screen.queryByLabelText('Stornierungsgrund')).toBeNull();
+		expect(screen.queryByLabelText(/Stornierungsgrund/)).toBeNull();
 	});
 
 	it('Bezahlt schickt keinen Body-Betrag — der kommt aus der Datenbank', async () => {
