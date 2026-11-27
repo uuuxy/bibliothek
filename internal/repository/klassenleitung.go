@@ -56,10 +56,13 @@ func LadeKlassenleitungsAdressen(ctx context.Context, db Datenbank) (map[string]
 
 // SetzeKlassenleitung trägt die Adresse für die Klasse ein oder ersetzt sie. neu sagt, dass es
 // für die Klasse noch keine Zuordnung gab, unveraendert, dass dieselbe Adresse schon dastand:
-// Daran entscheidet der Aufrufer über den Eintrag im Protokoll.
+// Daran entscheidet der Aufrufer über den Eintrag im Protokoll. Der Auslöser schreibt die Klasse
+// in der Schreibweise des Vokabulars („5f1“ als „05F1“); den Stand davor findet deshalb
+// klassen_normkey, nicht der Vergleich mit der Eingabe.
 func SetzeKlassenleitung(ctx context.Context, db Datenbank, klasse, lehrerEmail string) (neu, unveraendert bool, err error) {
 	err = db.QueryRow(ctx, `
-			WITH alt AS (SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = $1)
+			WITH alt AS (SELECT lehrer_email FROM klassen_lehrer_mapping
+			             WHERE klassen_normkey(klasse) = klassen_normkey($1))
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email)
 			VALUES ($1, $2)
 			ON CONFLICT (klasse) DO UPDATE SET lehrer_email = EXCLUDED.lehrer_email
@@ -69,11 +72,11 @@ func SetzeKlassenleitung(ctx context.Context, db Datenbank, klasse, lehrerEmail 
 	return neu, unveraendert, err
 }
 
-// LoescheKlassenleitung entfernt die Zuordnung der Klasse und nennt die Zahl der getroffenen
-// Zeilen; null heißt, es gab keine.
+// LoescheKlassenleitung entfernt die Zuordnung der Klasse in jeder Schreibweise (klassen_normkey)
+// und nennt die Zahl der getroffenen Zeilen; null heißt, es gab keine.
 func LoescheKlassenleitung(ctx context.Context, db Datenbank, klasse string) (int64, error) {
 	tag, err := db.Exec(ctx,
-		`DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse)
+		`DELETE FROM klassen_lehrer_mapping WHERE klassen_normkey(klasse) = klassen_normkey($1)`, klasse)
 	if err != nil {
 		return 0, err
 	}
@@ -120,10 +123,12 @@ func LadeKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]Klasse
 	return zeilen, nil
 }
 
-// IstKlassenleitungVorhanden sagt, ob es für die Klasse eine Zuordnung gibt.
+// IstKlassenleitungVorhanden sagt, ob es für die Klasse in irgendeiner Schreibweise eine
+// Zuordnung gibt (klassen_normkey).
 func IstKlassenleitungVorhanden(ctx context.Context, db Datenbank, klasse string) (bool, error) {
 	var vorhanden bool
-	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, klasse).Scan(&vorhanden)
+	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping
+		WHERE klassen_normkey(klasse) = klassen_normkey($1))`, klasse).Scan(&vorhanden)
 	return vorhanden, err
 }
 
