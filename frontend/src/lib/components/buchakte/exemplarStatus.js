@@ -7,9 +7,10 @@
  * Gesperrt ist ein Buch, das im Regal steht und nicht ausgeliehen werden darf. Ob ein
  * Exemplar zum Bestand zählt, sagt der Server (`im_bestand`); fehlt das Feld, gilt es als
  * Bestand. Beide Wörter tragen den neutralen Ton, die Fehlerfarbe bleibt der Sperre
- * (M3, Color roles: „Use error roles to communicate error states").
+ * (M3, Color roles: „Use error roles to communicate error states"). Ein Exemplar im Abholfach
+ * ist nicht verliehen und trotzdem nicht verfügbar, wie im Katalog.
  *
- * @param {{ ist_ausleihbar?: boolean, ist_ausgesondert?: boolean, im_bestand?: boolean, ist_verfuegbar?: boolean }} ex
+ * @param {{ ist_ausleihbar?: boolean, ist_ausgesondert?: boolean, im_bestand?: boolean, ist_verfuegbar?: boolean, im_abholfach?: boolean }} ex
  * @returns {{ ton: 'erfolg' | 'warten' | 'neutral' | 'fehler', text: string }}
  */
 export function exemplarStatus(ex) {
@@ -17,6 +18,7 @@ export function exemplarStatus(ex) {
 	if (ex.im_bestand === false) return { ton: 'neutral', text: 'Bestellt' };
 	if (!ex.ist_ausleihbar) return { ton: 'fehler', text: 'Gesperrt' };
 	if (!ex.ist_verfuegbar) return { ton: 'warten', text: 'Ausgeliehen' };
+	if (ex.im_abholfach) return { ton: 'warten', text: 'Im Abholfach' };
 	return { ton: 'erfolg', text: 'Verfügbar' };
 }
 
@@ -25,7 +27,7 @@ export function exemplarStatus(ex) {
  * Bestand, davon verfügbar, und bestellt. Ein ausgesondertes Exemplar steht in keiner der
  * Zahlen.
  *
- * @param {{ ist_ausleihbar?: boolean, ist_ausgesondert?: boolean, im_bestand?: boolean, ist_verfuegbar?: boolean }[]} exemplare
+ * @param {{ ist_ausleihbar?: boolean, ist_ausgesondert?: boolean, im_bestand?: boolean, ist_verfuegbar?: boolean, im_abholfach?: boolean }[]} exemplare
  * @returns {{ bestand: number, verfuegbar: number, bestellt: number }}
  */
 export function exemplarZahlen(exemplare) {
@@ -39,7 +41,7 @@ export function exemplarZahlen(exemplare) {
 			continue;
 		}
 		bestand += 1;
-		if (ex.ist_ausleihbar && ex.ist_verfuegbar) verfuegbar += 1;
+		if (ex.ist_ausleihbar && ex.ist_verfuegbar && !ex.im_abholfach) verfuegbar += 1;
 	}
 	return { bestand, verfuegbar, bestellt };
 }

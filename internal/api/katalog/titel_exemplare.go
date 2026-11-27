@@ -52,6 +52,9 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		// weder ausgesondert noch bestellt. Die Buchmaske listet nur diese.
 		ImBestand     bool `json:"im_bestand"`
 		IstVerfuegbar bool `json:"ist_verfuegbar"`
+		// ImAbholfach: liegt für eine Vormerkung zurück, solange die Abholfrist läuft. Es ist
+		// nicht verliehen und trotzdem nicht verfügbar, wie im Katalog (sqlExemplarNichtImAbholfach).
+		ImAbholfach bool `json:"im_abholfach"`
 		// Ersatzwert und Herleitung: was ein Ersatz für dieses Exemplar heute kostet. Gerechnet
 		// wird mit service.ErsatzwertVorschlagAus, derselben Funktion wie im Dialog zum Melden
 		// eines Schadens, damit Buchakte und Forderung nie zwei Zahlen für dasselbe Buch zeigen.
@@ -85,6 +88,7 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 			IstAusgesondert:         z.IstAusgesondert,
 			ImBestand:               z.ImBestand,
 			IstVerfuegbar:           z.IstVerfuegbar,
+			ImAbholfach:             z.ImAbholfach,
 			Eigentum:                z.Eigentum,
 			EigentumHerkunft:        z.EigentumHerkunft,
 			LitteraEigentumsvermerk: z.LitteraEigentumsvermerk,

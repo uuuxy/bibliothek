@@ -30,6 +30,20 @@ describe('exemplarStatus', () => {
 		});
 	});
 
+	// Für eine Vormerkung zurückgelegt: nicht verliehen, aber auch nicht im Regal. Der Katalog
+	// zählt es nicht als verfügbar; „Verfügbar" hieße, es stünde zum Ausleihen da.
+	it('nennt ein Exemplar im Abholfach so und zählt es nicht als verfügbar', () => {
+		expect(exemplarStatus({ ...imRegal, im_abholfach: true })).toEqual({
+			ton: 'warten',
+			text: 'Im Abholfach'
+		});
+		expect(exemplarZahlen([imRegal, { ...imRegal, im_abholfach: true }])).toEqual({
+			bestand: 2,
+			verfuegbar: 1,
+			bestellt: 0
+		});
+	});
+
 	it('zählt ein Exemplar ohne das Feld im_bestand zum Bestand', () => {
 		expect(exemplarStatus({ ist_ausleihbar: false, ist_verfuegbar: true }).text).toBe('Gesperrt');
 	});

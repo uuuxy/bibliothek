@@ -1059,7 +1059,7 @@ Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor, ISB
 Ausleihe, die nicht für eine Vormerkung im Abholfach liegen, solange die Abholfrist läuft; so
 zählen Katalog, Suche, Klassensätze und Lernmittel (`repository.SQLBestandVerfuegbar`,
 `sqlFilterVerfuegbar`), mit derselben Bedingung, mit der die Theke das Exemplar einem anderen
-verweigert. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
+verweigert. Die Buchakte nennt ein solches Exemplar „Im Abholfach“ statt „Verfügbar“. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
 öffentlichen Seiten** (`repository.OeffentlichSichtbar`, für Katalog und Monitor
 dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`) und
 mindestens ein Exemplar im Haus (nicht

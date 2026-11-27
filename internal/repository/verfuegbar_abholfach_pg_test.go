@@ -10,7 +10,8 @@ import (
 // Ein Exemplar im Abholfach zählt nicht als verfügbar, solange die Abholfrist läuft: Die Theke
 // gibt es keinem anderen (FindeVormerkungAmExemplar). Katalog, Suche, Klassensätze und Lernmittel
 // zeigten es trotzdem als „1 verfügbar“, und wer danach im Regal suchte, fand nichts. Nach Ablauf
-// der Frist und bei einer bloß wartenden Vormerkung ist es wieder verfügbar.
+// der Frist und bei einer bloß wartenden Vormerkung ist es wieder verfügbar. Die Buchakte nennt
+// es nach derselben Bedingung „Im Abholfach“ statt „Verfügbar“ (LadeExemplareDesTitels).
 func TestVerfuegbar_OhneExemplarImAbholfach(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -63,6 +64,13 @@ func TestVerfuegbar_OhneExemplarImAbholfach(t *testing.T) {
 		}
 		if jeTitel != f.verfuegbar || gejoint != f.verfuegbar {
 			t.Errorf("%s: verfügbar %d (je Titel) und %d (gejoint), erwartet %d", f.name, jeTitel, gejoint, f.verfuegbar)
+		}
+		exemplare, err := LadeExemplareDesTitels(ctx, tx, titelID)
+		if err != nil || len(exemplare) != 1 {
+			t.Fatalf("%s: LadeExemplareDesTitels = %+v, %v; erwartet ein Exemplar", f.name, exemplare, err)
+		}
+		if imAbholfach := f.verfuegbar == 0; exemplare[0].ImAbholfach != imAbholfach {
+			t.Errorf("%s: Buchakte ImAbholfach = %v, erwartet %v", f.name, exemplare[0].ImAbholfach, imAbholfach)
 		}
 	}
 }
