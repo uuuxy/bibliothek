@@ -2286,8 +2286,10 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
 - **Rate-Limiter** räumen erst ab 5.000 Einträgen.
 - **Katalogdienste** in einer Anfrage, die die Oberfläche nach 10 s aufgibt (`aus-isbn`,
   „Cover herunterladen“).
-- **Der Medienkatalog lädt die ganze Titelliste** (gekappt bei 50.000). Anlass: Er öffnet spürbar
-  langsam; dann 304 wie bei den Buchnummern der Theke.
+- **Der Medienkatalog lädt die ganze Titelliste** (gekappt bei 50.000), bei jedem Wechsel zwischen
+  „Suche & Filter“ und „Titel-Verwaltung“ neu: So zeigt jeder Wechsel den Stand, auch den anderer
+  Plätze. Gemessen lokal mit 12.672 Titeln: rund 0,15 s am Server, 0,52 MB über das Netz. Anlass:
+  Er öffnet spürbar langsam; dann 304 wie bei den Buchnummern der Theke.
 - **Das Startpaket trägt fast alle Bildschirme** (1,07 MB, 344 KB gzip), auch für Katalog, Monitor
   und Bestellbestätigung ohne Anmeldung. Gemessen am lokalen Stack mit vierfach gebremstem
   Prozessor: Die Anmeldung steht beim ersten Besuch nach 240 ms, danach nach 130 ms. Anlass: ein

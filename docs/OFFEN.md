@@ -84,8 +84,8 @@ Nur, was kein Test leisten kann.
   (5.205)
 - [ ] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
   Entschieden; bauen. (5.206)
-- [ ] Medienkatalog: die Titelliste schlanker und nicht bei jedem Wechsel zwischen „Suche &
-  Filter“ und „Titel-Verwaltung“ neu laden; entscheiden, ob. (5.207)
+- [x] Medienkatalog: Die Titelliste bleibt, wie sie ist, auch das Neuladen beim Wechsel des
+  Reiters; festgehalten in ARCHITEKTUR 11.5. (5.207)
 - [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
   Testserver dieselben 693 Titel viermal am Tag. Entschieden: als `NOT_FOUND` vermerken; bauen.
   (5.209)
@@ -329,21 +329,6 @@ an der Schule (rund 1.900) etwa 10 ms. Die Wartezeit ist damit der größte Teil
 
 Entschieden: 150 ms an der Theke. Nach dem Bau am Gerät tippen und ansehen, ob die
 Liste beim Tippen unruhig wird.
-
-### 5.207 Titelliste des Medienkatalogs
-
-`GET /api/books` (gemessen lokal, 12.672 Titel): 60 ms Hauptabfrage, je 19 ms für Suchwörter und
-Standorte (12.672 Kennungen als Parameter), 11 ms Sortieren, 10 ms JSON; 6,2 MB JSON, 0,52 MB über
-das Netz. „Suche & Filter“ und „Titel-Verwaltung“ laden die Liste bei jedem Wechsel des Reiters
-neu. Mögliche Schritte: die Kennungen als Binärwerte oder beide Nachlader nebeneinander (rund 30 ms),
-Felder ohne Nutzen in der Liste weglassen (`stock` gleicht `gesamt`, `erweiterteEigenschaften` und
-`schlagworte` sind immer leer), eine Liste für beide Reiter. Die ganze Liste im Browser ist
-entschieden (ARCHITEKTUR 11.5).
-
-Empfehlung: keinen Schritt, solange das Öffnen nicht langsam wirkt; der erste Schritt spart rund 30 ms.
-Eine Liste für beide Reiter müsste nach jeder Änderung nachgeführt werden, heute zeigt jeder
-Wechsel den Stand, auch den von anderen Plätzen. Nächster Schritt: entscheiden, ob und welcher
-Schritt.
 
 ### 5.209 Cover-Abgleich fragt unbekannte ISBNs bei jedem Lauf
 
