@@ -25,6 +25,7 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 
 import { apiGet, apiPost } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
 import Wareneingang from './Wareneingang.svelte';
 
@@ -47,6 +48,11 @@ const gruppe = (exemplare, stand = {}) => ({
 		}
 	],
 	...stand
+});
+
+// Die Knöpfe stehen nur mit dem Recht create_orders da (wie die Tür es verlangt).
+beforeEach(() => {
+	authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
 });
 
 describe('Wareneingang: der Zulauf bleibt aktuell', () => {
@@ -167,5 +173,20 @@ describe('Wareneingang: vorgemerkte Exemplare', () => {
 				'warning'
 			)
 		);
+	});
+});
+
+// Ohne das Recht create_orders lehnt die Tür das Einbuchen mit 403 ab; der Knopf steht nicht da.
+describe('Wareneingang: ohne Recht zu bestellen', () => {
+	it('lässt markieren, zeigt aber kein „Einbuchen“', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'mitarbeiter',
+			permissions: ['view_orders']
+		});
+		holen.mockResolvedValue([gruppe(['e1'])]);
+		const screen = render(Wareneingang, { ...offen, incomingShipments: [gruppe(['e1'])] });
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Titel A auswählen' }));
+		expect(screen.getByText('1 Exemplar ausgewählt')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Einbuchen' })).toBeNull();
 	});
 });

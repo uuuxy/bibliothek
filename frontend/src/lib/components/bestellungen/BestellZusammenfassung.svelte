@@ -10,6 +10,12 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { formatEuro, anzahlText } from '../../utils/format.js';
+	import { hatRecht } from '../../menue.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+
+	// Die Tür verlangt create_orders; ohne das Recht scheiterte der Klick mit 403. Wie in
+	// BestellDetail steht der Knopf dann nicht da.
+	const darfBestellen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	const anzahlBestellungen = $derived(bestellStore.gruppen.length);
 	const exemplare = $derived(anzahlText(bestellStore.totalQty, 'Exemplar', 'Exemplare'));
@@ -80,34 +86,36 @@
 			<Kaestchen bind:checked={bestellStore.attachBarcodes} etikett="Barcodes mitschicken" />
 			<!-- Eigener Block: Kästchen und Knopf sind beide inline; ab 600 px stand der Knopf
 			     sonst in der Zeile des Kästchens, sobald beide hineinpassten. -->
-			<div class="space-y-2">
-				<Button
-					size="lg"
-					onclick={() => bestellStore.submitOrder()}
-					disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
-					class="w-full sm:w-auto"
-				>
-					{#if bestellStore.submitting}
-						<Ladekreis size="sm" farbe="aktuell" />
-						Wird gesendet …
-					{:else if anzahlBestellungen > 1}
-						{anzahlBestellungen} Bestellungen auslösen · {exemplare}
-					{:else}
-						Bestellung auslösen · {exemplare}
-					{/if}
-				</Button>
-				{#if anzahlBestellungen > 1}
-					<!-- Kein Hinweis, der erschrickt, sondern die Ansage, was gleich passiert: Der
+			{#if darfBestellen}
+				<div class="space-y-2">
+					<Button
+						size="lg"
+						onclick={() => bestellStore.submitOrder()}
+						disabled={bestellStore.submitting || !bestellStore.selectedSupplier}
+						class="w-full sm:w-auto"
+					>
+						{#if bestellStore.submitting}
+							<Ladekreis size="sm" farbe="aktuell" />
+							Wird gesendet …
+						{:else if anzahlBestellungen > 1}
+							{anzahlBestellungen} Bestellungen auslösen · {exemplare}
+						{:else}
+							Bestellung auslösen · {exemplare}
+						{/if}
+					</Button>
+					{#if anzahlBestellungen > 1}
+						<!-- Kein Hinweis, der erschrickt, sondern die Ansage, was gleich passiert: Der
 					     Händler bekommt zwei Mails und stellt zwei Rechnungen — so will es die
 					     getrennte Finanzierung von Land und Schulträger. -->
-					<p class="text-label-small text-on-surface-variant">
-						Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler
-					</p>
-				{/if}
-				{#if !bestellStore.selectedSupplier}
-					<p class="text-label-small text-warning">Bitte zuerst einen Lieferanten wählen</p>
-				{/if}
-			</div>
+						<p class="text-label-small text-on-surface-variant">
+							Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler
+						</p>
+					{/if}
+					{#if !bestellStore.selectedSupplier}
+						<p class="text-label-small text-warning">Bitte zuerst einen Lieferanten wählen</p>
+					{/if}
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>

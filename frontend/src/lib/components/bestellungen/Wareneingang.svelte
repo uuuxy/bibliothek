@@ -10,6 +10,12 @@
 	import Button from '../ui/Button.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import { anzahlText } from '../../utils/format.js';
+	import { hatRecht } from '../../menue.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+
+	// Die Tür verlangt create_orders; ohne das Recht scheiterte der Klick mit 403. Wie in
+	// BestellDetail steht der Knopf dann nicht da.
+	const darfBestellen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	let { incomingShipments = [], onReceived } = $props();
 
@@ -117,12 +123,14 @@
 			beschriftung="Aktionen für die ausgewählten Positionen"
 			onleeren={() => (gewaehlteExemplare = [])}
 		>
-			<Button onclick={bucheAlleEin} disabled={laeuft}>
-				{#if laeuft}
-					<Ladekreis size="sm" farbe="aktuell" />
-				{/if}
-				Einbuchen
-			</Button>
+			{#if darfBestellen}
+				<Button onclick={bucheAlleEin} disabled={laeuft}>
+					{#if laeuft}
+						<Ladekreis size="sm" farbe="aktuell" />
+					{/if}
+					Einbuchen
+				</Button>
+			{/if}
 		</AuswahlLeiste>
 	{/if}
 </div>

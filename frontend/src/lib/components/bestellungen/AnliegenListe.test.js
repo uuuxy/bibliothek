@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import AnliegenListe from './AnliegenListe.svelte';
 import { apiFetch } from '../../apiFetch.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
+	registriereSitzungAbgelaufenHandler: vi.fn(),
 	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
@@ -14,6 +16,12 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.f
 // (`anliegen = res.ok ? await res.json() : []`) — die Wünsche und Meldungen des
 // Kollegiums blieben dann liegen, ohne dass jemand davon wusste (Register,
 // Bestands-Durchgang 10.09.2026).
+
+// Die Knöpfe stehen nur mit dem Recht create_orders da (wie die Tür es verlangt).
+beforeEach(() => {
+	authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+});
+
 describe('AnliegenListe', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
@@ -97,5 +105,32 @@ describe('AnliegenListe', () => {
 
 		await findByRole('heading', { name: 'Wünsche' });
 		expect(container.querySelectorAll('section')).toHaveLength(1);
+	});
+});
+
+// Ohne das Recht create_orders lehnt die Tür das Abhaken mit 403 ab; der Knopf steht nicht da.
+describe('AnliegenListe: ohne Recht zu bestellen', () => {
+	it('zeigt die Meldung, aber kein „Abhaken“', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'mitarbeiter',
+			permissions: ['view_orders']
+		});
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{
+						id: 'm',
+						art: 'meldung',
+						titel_text: 'Neue Meldung',
+						klasse: '8G3',
+						erstellt_am: '2026-10-05T08:00:00Z'
+					}
+				]
+			})
+		);
+		const { findByText, queryByRole } = render(AnliegenListe);
+		expect(await findByText('Neue Meldung')).toBeTruthy();
+		expect(queryByRole('button', { name: 'Abhaken' })).toBeNull();
 	});
 });

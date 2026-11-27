@@ -21,6 +21,12 @@
 	import KlassensatzErledigte from './KlassensatzErledigte.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Icon from '../ui/Icon.svelte';
+	import { hatRecht } from '../../menue.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+
+	// Die Tür verlangt create_orders; ohne das Recht scheiterte der Klick mit 403. Wie in
+	// BestellDetail steht der Knopf dann nicht da.
+	const darfBestellen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erledigt_notiz?: string, erledigt_am?: string, erstellt_am: string }} KlassensatzReservierung */
 
@@ -119,10 +125,12 @@
 	>
 		{#snippet aktion()}
 			{#if confirmingId !== r.id}
-				<Button variant="primary" onclick={() => requestConfirm(r.id)}>
-					<Icon name="check" />
-					Abschließen
-				</Button>
+				{#if darfBestellen}
+					<Button variant="primary" onclick={() => requestConfirm(r.id)}>
+						<Icon name="check" />
+						Abschließen
+					</Button>
+				{/if}
 			{/if}
 		{/snippet}
 	</ArbeitsZeile>

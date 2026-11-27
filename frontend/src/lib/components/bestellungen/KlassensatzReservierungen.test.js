@@ -3,9 +3,11 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import KlassensatzReservierungen from './KlassensatzReservierungen.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
+	registriereSitzungAbgelaufenHandler: vi.fn(),
 	FRIST_MAILVERSAND_MS: 1000,
 	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
@@ -15,6 +17,12 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.f
 // und genau das stand bis zum 12.09.2026 auch dann da, wenn der Abruf gescheitert war.
 // Klassensätze sind Unterrichtsvorbereitung — wer hier wartet, wartet auf Bücher für
 // eine Stunde mit Termin.
+
+// Die Knöpfe stehen nur mit dem Recht create_orders da (wie die Tür es verlangt).
+beforeEach(() => {
+	authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+});
+
 describe('KlassensatzReservierungen', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
@@ -133,5 +141,36 @@ describe('KlassensatzReservierungen: Abschließen', () => {
 
 		await waitFor(() => expect(snackbars.addToast).toHaveBeenCalled());
 		expect(screen.getByRole('button', { name: /Abschließen & Mail senden/ })).toBeTruthy();
+	});
+});
+
+// Ohne das Recht create_orders lehnt die Tür das Abschließen mit 403 ab; der Knopf steht nicht da.
+describe('KlassensatzReservierungen: ohne Recht zu bestellen', () => {
+	it('zeigt die Reservierung, aber kein „Abschließen“', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'mitarbeiter',
+			permissions: ['view_orders']
+		});
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				json: async () => [
+					{
+						id: 'r1',
+						titel_name: 'Natura 7',
+						klasse: '07A',
+						anzahl: 25,
+						verfuegbar: 30,
+						erledigt: false,
+						erstellt_am: '2026-10-01T08:00:00Z'
+					}
+				]
+			})
+		);
+		const screen = render(KlassensatzReservierungen);
+		expect(await screen.findByText('Natura 7')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Abschließen' })).toBeNull();
 	});
 });

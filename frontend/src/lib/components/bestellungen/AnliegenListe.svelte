@@ -15,6 +15,12 @@
 	import Icon from '../ui/Icon.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { formatDatum } from '../../utils/format.js';
+	import { hatRecht } from '../../menue.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+
+	// Die Tür verlangt create_orders; ohne das Recht scheiterte der Klick mit 403. Wie in
+	// BestellDetail steht der Knopf dann nicht da.
+	const darfBestellen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
 
@@ -123,10 +129,12 @@
 	>
 		{#snippet aktion()}
 			{#if confirmingId !== a.id}
-				<Button variant="primary" onclick={() => requestConfirm(a.id)}>
-					<Icon name="check" />
-					Abhaken
-				</Button>
+				{#if darfBestellen}
+					<Button variant="primary" onclick={() => requestConfirm(a.id)}>
+						<Icon name="check" />
+						Abhaken
+					</Button>
+				{/if}
 			{/if}
 		{/snippet}
 	</ArbeitsZeile>
