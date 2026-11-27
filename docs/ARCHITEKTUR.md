@@ -533,6 +533,7 @@ Die Datenbankschicht bleibt ein Paket (A25).
 | `betrag`                                | Geld in ganzen Cent, deutsch geschrieben (`geld_in_cent_ratsche_test.go`)              |
 | `imageutil`                             | Bilder umwandeln und verkleinern                                                       |
 | `csvutil`                               | Schutz vor Formel-Injection im Export (CWE-1236)                                       |
+| `ordnung`                               | Text ordnen wie ein deutsches Register, wie die Kollation deutsch und der Browser      |
 | `pdfzeichen`                            | Schriften aller PDFs (Arimo, Tinos, Cousine), Textform, Kürzen nach Breite (`pdfzeichen_ratsche_test.go`) |
 | `xlsxgrenze`                            | Die eine Tür zu hochgeladenen XLSX, mit Grenzen                                        |
 | `isbnutil`, `strichcode`, `code39`, `kennung` | ISBN; Code 128 und QR; altes Prüfzeichen (A14); UUID wie Postgres                |

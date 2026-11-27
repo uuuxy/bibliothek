@@ -1,21 +1,17 @@
 package katalog
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"sort"
 	"strings"
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
+	"bibliothek/internal/pkg/ordnung"
 	"bibliothek/internal/repository"
-
-	"golang.org/x/text/collate"
-	"golang.org/x/text/language"
 )
 
 // TitelListe verarbeitet GET-Anfragen für die Bücherübersicht.
@@ -52,73 +48,13 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 	}
 }
 
-// sortiereBuecherNachTitel ordnet die Liste nach dem Titel, wie ein deutsches Register:
-// Umlaute stehen bei ihrem Grundbuchstaben, Zahlen nach ihrer Größe („Teil 2" vor „Teil 10"),
-// Groß- und Kleinschreibung trennt keine Buchstaben. Dieselbe Reihenfolge gibt der Browser
-// mit Intl.Collator('de', {numeric: true}), nach dem die Listen der Oberfläche ordnen; beide
-// Seiten prüft titelReihenfolge.faelle.json. Gleiche Titel behalten die Reihenfolge der
-// Abfrage.
-//
-// Der Collator entsteht je Aufruf: Er hält Zustand und darf nicht zwei Anfragen zugleich
-// dienen.
+// sortiereBuecherNachTitel ordnet die Liste nach dem Titel, wie ein deutsches Register
+// (ordnung.Sortiere). Dieselbe Reihenfolge gibt der Browser mit Intl.Collator('de', {numeric:
+// true}), nach dem die Listen der Oberfläche ordnen; beide Seiten prüft
+// titelReihenfolge.faelle.json. Gleiche Titel behalten die Reihenfolge der Abfrage.
 func sortiereBuecherNachTitel(buecher []repository.KatalogTitel) {
-	if len(buecher) <= 1 {
-		return
-	}
-
-	ordnung := collate.New(language.German)
-	var puffer collate.Buffer
-	schluessel := make([][]byte, len(buecher))
-	reihenfolge := make([]int, len(buecher))
-	for i := range buecher {
-		titel := zahlenNachGroesse(strings.TrimSpace(buecher[i].Titel))
-		schluessel[i] = ordnung.KeyFromString(&puffer, titel)
-		reihenfolge[i] = i
-	}
-	sort.SliceStable(reihenfolge, func(a, b int) bool {
-		return bytes.Compare(schluessel[reihenfolge[a]], schluessel[reihenfolge[b]]) < 0
-	})
-
-	sortiert := make([]repository.KatalogTitel, len(buecher))
-	for ziel, quelle := range reihenfolge {
-		sortiert[ziel] = buecher[quelle]
-	}
-	copy(buecher, sortiert)
+	ordnung.Sortiere(buecher, func(b repository.KatalogTitel) string { return b.Titel })
 }
-
-// zahlenNachGroesse schreibt jede Ziffernfolge so um, dass die Buchstabenfolge sie nach ihrer
-// Größe ordnet: Führende Nullen fallen weg, davor steht zweistellig die Zahl der Stellen
-// („5" wird „015", „10" wird „0210").
-//
-// collate.Numeric leistet das nicht: Es ordnet die Zahl 0 hinter jede andere, sobald Text
-// folgt („Heft 5 …" vor „Heft 0 …").
-func zahlenNachGroesse(text string) string {
-	var umgeschrieben strings.Builder
-	umgeschrieben.Grow(len(text) + 8)
-	for i := 0; i < len(text); {
-		if !istZiffer(text[i]) {
-			umgeschrieben.WriteByte(text[i])
-			i++
-			continue
-		}
-		ende := i
-		for ende < len(text) && istZiffer(text[ende]) {
-			ende++
-		}
-		ziffern := strings.TrimLeft(text[i:ende], "0")
-		if ziffern == "" {
-			ziffern = "0"
-		}
-		stellen := min(len(ziffern), 99)
-		umgeschrieben.WriteByte(byte('0' + stellen/10))
-		umgeschrieben.WriteByte(byte('0' + stellen%10))
-		umgeschrieben.WriteString(ziffern)
-		i = ende
-	}
-	return umgeschrieben.String()
-}
-
-func istZiffer(zeichen byte) bool { return zeichen >= '0' && zeichen <= '9' }
 
 // Titel verarbeitet GET-Anfragen für ein einzelnes Buch.
 func (t *Tueren) Titel() http.HandlerFunc {

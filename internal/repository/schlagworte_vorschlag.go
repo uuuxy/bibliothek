@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"bibliothek/internal/pkg/ordnung"
 )
 
 // schlagwortStichwoerterMax kappt die Kandidaten eines Satzes. Die DNB liefert bis zu 98
@@ -175,8 +176,9 @@ func schlagworteZusammen(listen ...[]string) []string {
 	return alphabetischOhneDoppelte(alle)
 }
 
-// alphabetischOhneDoppelte sortiert ohne Rücksicht auf Groß- und Kleinschreibung und lässt
-// Doppelte fallen; das erste gewinnt. Nie nil.
+// alphabetischOhneDoppelte ordnet wie ein deutsches Register (ordnung.Sortiere: Umlaute beim
+// Grundbuchstaben, Zahlen nach ihrer Größe, groß und klein ohne Trennung) und lässt Doppelte
+// ohne Rücksicht auf Groß- und Kleinschreibung fallen; das erste gewinnt. Nie nil.
 func alphabetischOhneDoppelte(woerter []string) []string {
 	aus := []string{}
 	gesehen := map[string]bool{}
@@ -186,6 +188,6 @@ func alphabetischOhneDoppelte(woerter []string) []string {
 			aus = append(aus, w)
 		}
 	}
-	sort.SliceStable(aus, func(i, j int) bool { return strings.ToLower(aus[i]) < strings.ToLower(aus[j]) })
+	ordnung.Sortiere(aus, func(w string) string { return w })
 	return aus
 }

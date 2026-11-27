@@ -1,9 +1,10 @@
 package adressabgleich
 
 import (
-	"sort"
 	"strings"
 	"unicode"
+
+	"bibliothek/internal/pkg/ordnung"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -339,14 +340,12 @@ func istPlatzhalter(email, platzhalterDomain string) bool {
 }
 
 // reihenfolgeNachName liefert die Indizes der Konten nach Namen sortiert, damit Liste und Mail in
-// derselben Ordnung stehen.
+// derselben Ordnung stehen, wie ein deutsches Register (ordnung.Sortiere).
 func reihenfolgeNachName(konten []Konto) []int {
 	reihe := make([]int, len(konten))
 	for i := range reihe {
 		reihe[i] = i
 	}
-	sort.SliceStable(reihe, func(a, b int) bool {
-		return glaette(konten[reihe[a]].Nachname+" "+konten[reihe[a]].Vorname) < glaette(konten[reihe[b]].Nachname+" "+konten[reihe[b]].Vorname)
-	})
+	ordnung.Sortiere(reihe, func(i int) string { return glaette(konten[i].Nachname + " " + konten[i].Vorname) })
 	return reihe
 }

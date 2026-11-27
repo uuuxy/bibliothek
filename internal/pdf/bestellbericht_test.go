@@ -206,13 +206,14 @@ func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
 }
 
 // Die Übersicht nach Lieferant der Jahresansicht nennt die Lieferanten nach dem Namen
-// geordnet, ohne Rücksicht auf Groß- und Kleinschreibung. Gesammelt werden sie in einer Map;
+// geordnet wie ein deutsches Register: ohne Rücksicht auf Groß- und Kleinschreibung, ein
+// Umlaut bei seinem Grundbuchstaben. Gesammelt werden sie in einer Map;
 // ohne feste Ordnung stünden sie bei jedem Druck desselben Berichts anders untereinander.
 func TestBestellbericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
-	// Acht Lieferanten in der Reihenfolge ihrer Bestellungen: Dass eine Map sie zufällig
-	// geordnet ausgibt, kommt einmal in 40.320 Läufen vor.
-	namen := []string{"Klett", "cornelsen", "Westermann", "Buchner", "Auer", "Schroedel", "Diesterweg", "Oldenbourg"}
-	want := []string{"Auer", "Buchner", "cornelsen", "Diesterweg", "Klett", "Oldenbourg", "Schroedel", "Westermann"}
+	// Neun Lieferanten in der Reihenfolge ihrer Bestellungen: Dass eine Map sie zufällig
+	// geordnet ausgibt, kommt einmal in 362.880 Läufen vor.
+	namen := []string{"Klett", "cornelsen", "Westermann", "Österreichischer Bundesverlag", "Buchner", "Auer", "Schroedel", "Diesterweg", "Oldenbourg"}
+	want := []string{"Auer", "Buchner", "cornelsen", "Diesterweg", "Klett", "Oldenbourg", "Österreichischer Bundesverlag", "Schroedel", "Westermann"}
 	bestellungen := make([]BestellberichtBestellung, 0, len(namen))
 	for i, name := range namen {
 		bestellungen = append(bestellungen, BestellberichtBestellung{

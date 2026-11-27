@@ -3,13 +3,12 @@ package pdf
 // Die zwei Übersichten der Jahresansicht eines Bestellberichts: nach Monat und nach Lieferant.
 
 import (
-	"cmp"
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"bibliothek/internal/pkg/betrag"
+	"bibliothek/internal/pkg/ordnung"
 	"bibliothek/internal/pkg/pdfzeichen"
 	"bibliothek/internal/pkg/schulzeit"
 
@@ -123,17 +122,14 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, bestellun
 	p.SetFont(pdfzeichen.Schrift, "", 9)
 	p.SetFillColor(255, 255, 255)
 	// Eine Map hat keine Reihenfolge: Ohne die sortierten Namen stünden die Lieferanten bei
-	// jedem Druck anders untereinander.
+	// jedem Druck anders untereinander. Geordnet wie ein deutsches Register (ordnung.Sortiere);
+	// slices.Sort legt vorher fest, wie zwei Namen mit demselben Schlüssel stehen.
 	namen := make([]string, 0, len(jeLieferant))
 	for name := range jeLieferant {
 		namen = append(namen, name)
 	}
-	slices.SortFunc(namen, func(a, b string) int {
-		if c := cmp.Compare(strings.ToLower(a), strings.ToLower(b)); c != 0 {
-			return c
-		}
-		return cmp.Compare(a, b)
-	})
+	slices.Sort(namen)
+	ordnung.Sortiere(namen, func(name string) string { return name })
 	for _, name := range namen {
 		werte := jeLieferant[name]
 		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")

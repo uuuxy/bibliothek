@@ -187,3 +187,21 @@ func TestBerechneZuordnung_NameStages(t *testing.T) {
 		t.Errorf("BerechneZuordnung mit Stufen des Namens (-erwartet +ist):\n%s", diff)
 	}
 }
+
+// Liste und Mail des Abgleichs stehen nach dem Namen wie ein deutsches Register: „Özdemir“
+// bei O, nicht hinter „Zimmermann“.
+func TestReihenfolgeNachName_Deutsch(t *testing.T) {
+	konten := []Konto{
+		{Vorname: "Zoe", Nachname: "Zimmermann"},
+		{Vorname: "Ayla", Nachname: "Özdemir"},
+		{Vorname: "Olaf", Nachname: "Ott"},
+		{Vorname: "Anna", Nachname: "Arnold"},
+	}
+	var namen []string
+	for _, i := range reihenfolgeNachName(konten) {
+		namen = append(namen, konten[i].Nachname)
+	}
+	if diff := cmp.Diff([]string{"Arnold", "Ott", "Özdemir", "Zimmermann"}, namen); diff != "" {
+		t.Errorf("reihenfolgeNachName (-erwartet +ist):\n%s", diff)
+	}
+}
