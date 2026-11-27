@@ -340,7 +340,7 @@ Felder ohne Nutzen in der Liste weglassen (`stock` gleicht `gesamt`, `erweiterte
 `schlagworte` sind immer leer), eine Liste für beide Reiter. Die ganze Liste im Browser ist
 entschieden (ARCHITEKTUR 11.5).
 
-Empfehlung: keinen Schritt, solange das Öffnen nicht langsam wirkt; die Schritte sparen rund 30 ms.
+Empfehlung: keinen Schritt, solange das Öffnen nicht langsam wirkt; der erste Schritt spart rund 30 ms.
 Eine Liste für beide Reiter müsste nach jeder Änderung nachgeführt werden, heute zeigt jeder
 Wechsel den Stand, auch den von anderen Plätzen. Nächster Schritt: entscheiden, ob und welcher
 Schritt.
