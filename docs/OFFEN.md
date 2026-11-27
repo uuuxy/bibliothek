@@ -41,7 +41,8 @@ Nur, was kein Test leisten kann.
 
 - [x] Verlorenes Gerät: „Verlust oder Schaden melden“ auch an der Gerätezeile der Leserakte. (5.202)
 - [ ] Drei Dialoge sperren ihren Knopf bei leerem oder falschem Feld, statt beim Klick am Feld zu
-  sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid. (5.203)
+  sagen, was fehlt: Schaden melden, jeder `ui/EingabeDialog`, der Bescheid. Entschieden: Fehler am
+  Feld wie bei „Titel anlegen“; bauen. (5.203)
 - [x] Oberstufe zum Schuljahresbeginn: Schulbücher hält nur die Sperre von Hand auf, auch mit
   Büchern des Vorjahres; festgehalten in FACHKONZEPT 2.2. (5.181)
 - [ ] Adressabgleich mit dem Webmail einrichten: Zugang eintragen, Probelauf, die Konten ohne
@@ -79,16 +80,17 @@ Nur, was kein Test leisten kann.
 - [ ] Firefox: Die scrollbare Liste auf „Signaturen“ bekommt beim Tabben den Fokusring von
   Firefox statt des M3-Rings; nur auf Auftrag, vorher Bild. (5.204)
 - [ ] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
-  Ersatzforderung sprechen Volljährige selbst an. Entscheiden, ob der Mahnbrief es ebenso hält.
+  Ersatzforderung sprechen Volljährige selbst an. Entschieden: der Mahnbrief ebenso; bauen.
   (5.205)
-- [ ] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten; nur nach deinem
-  Ja. (5.206)
+- [ ] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
+  Entschieden; bauen. (5.206)
 - [ ] Medienkatalog: die Titelliste schlanker und nicht bei jedem Wechsel zwischen „Suche &
   Filter“ und „Titel-Verwaltung“ neu laden; entscheiden, ob. (5.207)
 - [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
-  Testserver dieselben 693 Titel viermal am Tag. Entscheiden. (5.209)
-- [ ] Gedankenstrich in PDF, Mail und Protokoll des Servers: entscheiden, ob dort dieselbe Regel
-  gilt wie in Oberfläche und Meldungen. (5.210)
+  Testserver dieselben 693 Titel viermal am Tag. Entschieden: als `NOT_FOUND` vermerken; bauen.
+  (5.209)
+- [ ] Gedankenstrich in PDF, Mail und Protokoll des Servers: dieselbe Regel wie in
+  Oberfläche und Meldungen. Entschieden; bauen. (5.210)
 
 ### Termin
 
@@ -148,7 +150,7 @@ ersten Satz. Was den Knopf heute sperrt (außer dem Senden):
 - `SchlagwortPflegeDialog`: das Wort verletzt eine Regel der Pflege (Hinweis unter dem Feld).
 - `LmfPlanFreieTage`: kein Datum. `LmfPlanVorrat`, „In den Plan“: keine Klasse.
 
-Nächster Schritt: Bilder ansehen und entscheiden. Vorschlag: Felder nach `verlangt` (der Knopf
+Entschieden: Felder nach `verlangt` wie bei „Titel anlegen“ (der Knopf
 bleibt bedienbar, der Klick nennt am Feld, was fehlt; `ui/EingabeDialog` gibt den Feldern dafür
 `verlangt` mit); gesperrt bleiben nur die fehlende Wahl im Bescheid und die fehlenden Angaben, die
 der Dialog nicht beheben kann. Offen dabei: was ein Klick auf „Preis ändern“ bei unverändertem
@@ -314,7 +316,7 @@ nach `repository.sqlVolljaehrig`: Volljährige werden selbst angeschrieben. Bei 
 volljährigen Schüler ginge der Mahnbrief damit an die Eltern, obwohl der Schüler selbst
 ausgeliehen hat.
 
-Frage: Soll der Mahnbrief Volljährige selbst anschreiben? Empfehlung: ja, wie der Bescheid.
+Entschieden: Der Mahnbrief schreibt Volljährige selbst an, wie der Bescheid.
 Umfang: die Abfrage der Empfänger um `sqlVolljaehrig` ergänzen, die Anschrift ohne „Eltern von“,
 und ein Text, der zu beiden passt, oder eine zweite Vorlage.
 
@@ -325,7 +327,7 @@ Anmeldung 400 ms (`OpacSuche.svelte`), Mein Portal und die Leserdatei 300 ms. De
 für `GET /api/search` seit Migration 186 bei Titeln 3 bis 13 ms (lokal, 13.674 Titel), bei Lesern
 an der Schule (rund 1.900) etwa 10 ms. Die Wartezeit ist damit der größte Teil bis zur Trefferliste.
 
-Nächster Schritt: nach deinem Ja 150 ms an der Theke, dann am Gerät tippen und ansehen, ob die
+Entschieden: 150 ms an der Theke. Nach dem Bau am Gerät tippen und ansehen, ob die
 Liste beim Tippen unruhig wird.
 
 ### 5.207 Titelliste des Medienkatalogs
@@ -338,7 +340,10 @@ Felder ohne Nutzen in der Liste weglassen (`stock` gleicht `gesamt`, `erweiterte
 `schlagworte` sind immer leer), eine Liste für beide Reiter. Die ganze Liste im Browser ist
 entschieden (ARCHITEKTUR 11.5).
 
-Nächster Schritt: entscheiden, ob und welcher Schritt.
+Empfehlung: keinen Schritt, solange das Öffnen nicht langsam wirkt; die Schritte sparen rund 30 ms.
+Eine Liste für beide Reiter müsste nach jeder Änderung nachgeführt werden, heute zeigt jeder
+Wechsel den Stand, auch den von anderen Plätzen. Nächster Schritt: entscheiden, ob und welcher
+Schritt.
 
 ### 5.209 Cover-Abgleich fragt unbekannte ISBNs bei jedem Lauf
 
@@ -350,8 +355,8 @@ Gemessen im Log des Testservers über drei Tage: jeder Lauf 693 Titel, 0 gefunde
 gescheitert, je Lauf knapp sechs Minuten mit bis zu drei Anfragen je Titel an DNB, Google und
 OpenLibrary.
 
-Vorschlag: „keine Quelle kennt die ISBN“ und eine ISBN, die keine ist, als `NOT_FOUND` vermerken;
-`FAILED` nur, wenn keine Quelle erreichbar war. Nächster Schritt: entscheiden.
+Entschieden: „keine Quelle kennt die ISBN“ und eine ISBN, die keine ist, als `NOT_FOUND` vermerken;
+`FAILED` nur, wenn keine Quelle erreichbar war. Nächster Schritt: bauen.
 
 ### 5.210 Gedankenstrich in den Texten des Servers außerhalb der Meldungen
 
@@ -364,7 +369,7 @@ Titel des Bestellberichts (`bestellbericht.go`), die Auskunft nach Art. 15
 (`bescheid_rueckkehr.go`, `titel_loeschen.go`) und die Alarm-Mail der Betriebsbereitschaft. Die
 übrigen Funde sind Log und Startfehler.
 
-Nächster Schritt: entscheiden, ob die Regel auch dort gilt; dann umformulieren wie unter 5.185.
+Entschieden: Die Regel gilt auch dort. Nächster Schritt: umformulieren wie unter 5.185.
 
 ## So wird die Liste geführt
 
