@@ -121,7 +121,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe 
 			Titel:     exemplar.Titel,
 			CoverURL:  exemplar.CoverURL,
 			Status:    "ausser_scope",
-			Warnungen: []string{"Buch gehört nicht zum Bereich dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
+			Warnungen: []string{"Buch gehört nicht zum Bereich dieser Inventur und wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
 		})
 		return
 	}

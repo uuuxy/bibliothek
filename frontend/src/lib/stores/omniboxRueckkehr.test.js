@@ -20,7 +20,7 @@ import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 
 const STORNO = 'Buch reaktiviert. Die Forderung über 12,00 € ist storniert.';
 const AUFSICHT =
-	'Die Forderung steht auf Bescheid 4801-2026-1234-0001, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren.';
+	'Die Forderung steht auf Bescheid 4801-2026-1234-0001, der bereits an die Schulaufsicht übergeben wurde. Die Schulaufsicht ist unverzüglich zu informieren.';
 
 /** @param {Record<string, unknown>} data @returns {any} */
 function antwort(data) {

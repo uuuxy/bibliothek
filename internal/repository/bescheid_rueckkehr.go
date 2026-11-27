@@ -38,7 +38,7 @@ func (b RueckkehrBefund) AufsichtHinweis() string {
 	if len(b.AufsichtInformieren) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("Die Forderung steht auf Bescheid %s, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren. Die Forderung bleibt bis dahin offen.",
+	return fmt.Sprintf("Die Forderung steht auf Bescheid %s, der bereits an die Schulaufsicht übergeben wurde. Die Schulaufsicht ist unverzüglich zu informieren. Die Forderung bleibt bis dahin offen.",
 		strings.Join(b.AufsichtInformieren, ", "))
 }
 

@@ -130,7 +130,10 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 						resolve(
 							/** @type {any} */ ({
 								ok: true,
-								json: async () => ({ betrag: 0, herleitung: 'kein Preis hinterlegt' })
+								json: async () => ({
+									betrag: 0,
+									herleitung: 'Kein Preis hinterlegt, bitte den Betrag eintragen'
+								})
 							})
 						);
 				})
@@ -143,7 +146,9 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		await fireEvent.input(feld, { target: { value: '12.5' } });
 		liefere();
 		await waitFor(() =>
-			expect(screen.container.textContent ?? '').toContain('kein Preis hinterlegt')
+			expect(screen.container.textContent ?? '').toContain(
+				'Kein Preis hinterlegt, bitte den Betrag eintragen'
+			)
 		);
 
 		expect(feld.value).toBe('12.5');

@@ -122,7 +122,7 @@ func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	// Dieselbe Regel wie das Feld `bekannt` der Antwort — eine Funktion, nicht zwei
 	// Bedingungen, die zufällig dasselbe sagen.
 	if !v.HatPreis() {
-		return "kein Preis hinterlegt — Betrag bitte eintragen"
+		return "Kein Preis hinterlegt, bitte den Betrag eintragen"
 	}
 	basis := "Kaufpreis"
 	switch v.Basis {

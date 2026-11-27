@@ -66,7 +66,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 				SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 			},
 			wantBetrag:    0,
-			wantImSatz:    "kein Preis hinterlegt",
+			wantImSatz:    "Kein Preis hinterlegt",
 			wantOhnePreis: true,
 		},
 		{
@@ -98,7 +98,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 				SchuljahreMitAusleihe: 2, SchuljahreImBestand: 3,
 			},
 			wantBetrag:    0,
-			wantImSatz:    "kein Preis hinterlegt",
+			wantImSatz:    "Kein Preis hinterlegt",
 			wantOhnePreis: true,
 		},
 	}

@@ -67,7 +67,7 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 		n, err := strconv.Atoi(strings.TrimPrefix(teil, "0"))
 		if err != nil || n < 1 || n > 13 {
 			return "", &EinstellungUngueltigFehler{Feld: "Eingangsjahrgänge",
-				Grund: fmt.Sprintf("%q ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“", teil)}
+				Grund: fmt.Sprintf("%q ist kein Jahrgang zwischen 1 und 13, erwartet wird etwa „5, 7“", teil)}
 		}
 		if gesehen[n] {
 			continue

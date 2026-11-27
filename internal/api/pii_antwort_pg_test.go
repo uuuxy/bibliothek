@@ -316,11 +316,11 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		//
 		// Positiv-Kontrolle auf den Satz für den leeren Fall: Das Exemplar der Kanarienwelt ist
 		// ohne Einkaufspreis angelegt, und sein Titel ist kein Lernmittel; der Vorschlag ist
-		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich geantwortet
+		// deshalb 0 mit „Kein Preis hinterlegt". Das beweist, dass die Route wirklich geantwortet
 		// hat (ohne Positiv-Kontrolle misst dieser Test nichts). Dass die Rechnung stimmt, steht
 		// woanders: internal/repository/ersatzwert_groessen_pg_test.go und
 		// internal/service/ersatzwert_vorschlag_test.go.
-		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"kein Preis hinterlegt"}},
+		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"Kein Preis hinterlegt"}},
 		"GET /api/bescheide": {URL: "/api/bescheide"},
 		// Nachbuch-Meldungen: Stufe 1 hinter view_students; die Liste
 		// nennt Ausleiher und Vorbesitzer mit Namen; der Zähler fürs Band ist Stufe 0.

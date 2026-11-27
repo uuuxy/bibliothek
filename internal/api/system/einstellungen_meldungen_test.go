@@ -23,7 +23,7 @@ func TestEinstellungenSchreiben_MeldungJePruefung(t *testing.T) {
 			"Nichts gespeichert. Leihfrist Bücher: 0 liegt außerhalb von 1 bis 365 Tagen; " +
 				"Ab x Medien sperren: 999999 liegt außerhalb von 1 bis 100."},
 		{"Eingangsjahrgang mit Schrägstrich", `{"lmf_eingangsjahrgaenge": "8/9"}`,
-			`Eingangsjahrgänge: "8/9" ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“`},
+			`Eingangsjahrgänge: "8/9" ist kein Jahrgang zwischen 1 und 13, erwartet wird etwa „5, 7“`},
 		{"Sommerferien unlesbar", `{"sommerferien": "kaputt"}`,
 			"Sommerferien: die Liste ist nicht lesbar"},
 		{"Sommerferien doppelt", sommerferienRumpf(`{"jahr":2027,"von":"2027-06-28","bis":"2027-08-06"},{"jahr":2027,"von":"2027-06-28","bis":"2027-08-06"}`),
