@@ -21,7 +21,8 @@
 <!-- Solide Fläche statt Milchglas: Die Liste schwebt über Inhalt und muss von ihm
      getrennt sein, sonst steht Text auf Text. Ein flacher Schatten leistet das
      (Material-3-Elevation 2). Gruppen brauchen keine eigenen Wrapper: Die Überschrift ist
-     ein Geschwister der Zeilen, kein Elternteil. -->
+     ein Geschwister der Zeilen, kein Elternteil. M3-Listen kennen keine Gruppenüberschrift; sie
+     steht in title-small wie die Abschnittsüberschrift der Navigationsleiste. -->
 <div
 	id="omnibox-dropdown"
 	role="listbox"
@@ -29,7 +30,7 @@
 	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-surface-container rounded-sm shadow-level2 py-2"
 >
 	{#if suchTreffer.students.length > 0}
-		<div class="px-4 pt-3 pb-2 text-xs font-medium text-on-surface-variant">
+		<div class="px-4 pt-3 pb-2 text-title-small text-on-surface-variant">
 			{gruppenTitel(
 				'Leser',
 				suchTreffer.students.length,
@@ -41,7 +42,7 @@
 		{/each}
 	{/if}
 	{#if suchTreffer.books.length > 0}
-		<div class="px-4 pt-3 pb-2 text-xs font-medium text-on-surface-variant">
+		<div class="px-4 pt-3 pb-2 text-title-small text-on-surface-variant">
 			{gruppenTitel(
 				'Bücher',
 				suchTreffer.books.length,

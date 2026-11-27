@@ -76,7 +76,7 @@
 				{/if}
 				{#if katalogTreffer.length > 0}
 					<div
-						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
+						class="bg-surface-container px-3.5 py-2 text-title-small text-on-surface-variant sticky top-0 z-5"
 					>
 						Im lokalen Bestand
 					</div>
@@ -99,7 +99,7 @@
 
 				{#if dnbTreffer.length > 0}
 					<div
-						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
+						class="bg-surface-container px-3.5 py-2 text-title-small text-on-surface-variant sticky top-0 z-5"
 					>
 						Neu aus der DNB
 					</div>
