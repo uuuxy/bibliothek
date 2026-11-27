@@ -26,6 +26,19 @@ describe('SchlagworteKategorie', () => {
 		vi.mocked(apiGet).mockReset();
 	});
 
+	// Der Ladefehler nennt die Schlagworte, nicht die Einstellungen, und spricht nicht von
+	// Formularen, die hier keine sind.
+	it('nennt beim Ladefehler die Schlagworte und lädt neu', async () => {
+		vi.mocked(apiGet).mockRejectedValueOnce(new Error('weg')).mockResolvedValue([]);
+		const screen = render(SchlagworteKategorie);
+		expect(await screen.findByText('Schlagworte nicht geladen')).toBeTruthy();
+		expect(screen.queryByText('Einstellungen nicht geladen')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+
+		await waitFor(() => expect(screen.queryByText('Schlagworte nicht geladen')).toBeNull());
+	});
+
 	it('sucht am Server und sagt, wie viele Wörter passen', async () => {
 		vi.mocked(apiGet).mockImplementation(async (/** @type {string} */ pfad) => {
 			return pfad.includes('suche=')

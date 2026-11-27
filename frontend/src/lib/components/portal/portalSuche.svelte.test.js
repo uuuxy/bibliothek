@@ -36,6 +36,32 @@ describe('Portal-Suche', () => {
 	});
 	afterEach(() => vi.useRealTimers());
 
+	// Nach einem Fehlschlag sucht „Erneut versuchen“ mit derselben Eingabe noch einmal, ohne dass
+	// jemand den Text ändern muss.
+	it('sucht mit erneut() dieselbe Eingabe noch einmal', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false }))
+			.mockResolvedValue(antwort([{ id: 't1', titel: 'Mathe 7' }]));
+		const { suche, stopp } = aufbau();
+		try {
+			suche.text = 'Mathe';
+			flushSync();
+			await vi.advanceTimersByTimeAsync(300);
+			expect(suche.fehler).toBe(true);
+
+			suche.erneut();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(vi.mocked(apiFetch).mock.calls.map(([pfad]) => pfad)).toEqual([
+				'/api/reservierungen/klassensatz/katalog?q=Mathe',
+				'/api/reservierungen/klassensatz/katalog?q=Mathe'
+			]);
+			expect(suche.fehler).toBe(false);
+			expect(suche.treffer.map((/** @type {any} */ t) => t.titel)).toEqual(['Mathe 7']);
+		} finally {
+			stopp();
+		}
+	});
+
 	it('sucht mit einem Filter auch ohne Text und nimmt die Gesamtzahl aus dem Kopf', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort([{ id: 't1', titel: 'Mondflug' }], 52));
 		const { suche, stopp } = aufbau();

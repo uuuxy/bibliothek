@@ -133,6 +133,10 @@ export function erzeugePortalSuche() {
 		get leer() {
 			return text.trim() === '' && schlagwort === null;
 		},
+		/** Sucht nach einem Fehlschlag mit derselben Eingabe noch einmal. */
+		erneut() {
+			if (aktiv) suche(suchtext, schlagwort, ++lauf);
+		},
 		ladeFilter
 	});
 }

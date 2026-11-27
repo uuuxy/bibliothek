@@ -16,6 +16,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Feld from '../ui/Feld.svelte';
+	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
 	import FachKarte from './FachKarte.svelte';
 	import SchulbuchBlatt from './SchulbuchBlatt.svelte';
@@ -153,7 +154,10 @@
 	</div>
 
 	{#if fehler}
-		<p role="alert" class="text-body-medium-emphasized text-error">{fehler}</p>
+		<p role="alert" class="text-body-medium-emphasized text-error">
+			{fehler}
+			<Button variant="ghost" size="sm" onclick={lade}>Erneut versuchen</Button>
+		</p>
 	{:else if laedt && faecher.length === 0}
 		<p class="py-4 text-sm text-on-surface-variant">Wird geladen …</p>
 	{:else if faecher.length === 0}

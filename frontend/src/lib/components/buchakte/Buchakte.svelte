@@ -107,6 +107,9 @@
 			<p class="text-body-medium-emphasized text-error" role="alert">
 				Nicht geladen: {nenneFehlende(akte.fehlendeListen)}. Diese Reiter sind leer, weil der Abruf
 				gescheitert ist und nicht, weil nichts da wäre.
+				<Button variant="ghost" size="sm" onclick={() => titelId && akte.ladeAlles(titelId)}>
+					Erneut versuchen
+				</Button>
 			</p>
 		{/if}
 

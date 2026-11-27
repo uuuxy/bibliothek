@@ -1,5 +1,6 @@
 <script>
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import Button from '../ui/Button.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
@@ -116,8 +117,9 @@
 
 		{#if suche.fehler}
 			<p class="text-body-medium-emphasized text-error" role="alert">
-				Die Suche ist fehlgeschlagen. Bitte erneut versuchen. Es werden keine Treffer angezeigt,
-				damit hier nichts Falsches steht.
+				Die Suche ist fehlgeschlagen. Es werden keine Treffer angezeigt, damit hier nichts Falsches
+				steht.
+				<Button variant="ghost" size="sm" onclick={suche.erneut}>Erneut versuchen</Button>
 			</p>
 		{/if}
 

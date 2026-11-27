@@ -30,6 +30,19 @@ describe('PortalSchulbuecher: der Server lehnt ab', () => {
 		expect(await screen.findByText('Keine Berechtigung für diese Aktion')).toBeTruthy();
 	});
 
+	it('lädt mit „Erneut versuchen“ noch einmal und zeigt danach die Liste', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(serverAntwort(500, { error: 'Die Datenbank antwortet nicht' }))
+			.mockResolvedValue(serverAntwort(200, LISTE));
+		const screen = render(PortalSchulbuecher);
+		await screen.findByText('Die Datenbank antwortet nicht');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+
+		expect(await screen.findByTestId('schulbuecher-faecher')).toBeTruthy();
+		expect(screen.queryByText('Die Datenbank antwortet nicht')).toBeNull();
+	});
+
 	it('lässt die Ablehnung eines überholten Abrufs nicht über der neuen Liste stehen', async () => {
 		/** @type {(rumpf: string) => void} */
 		let alterGrund = () => {};

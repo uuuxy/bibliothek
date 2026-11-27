@@ -118,3 +118,23 @@ describe('Buchakte: Zahlen zu den Exemplaren', () => {
 		expect(screen.queryByText('Exemplare', { selector: 'dt' })).toBeNull();
 	});
 });
+
+// Scheitert eine Liste, sagt die Zeile über den Reitern es und bietet „Erneut versuchen“ an, wie
+// die Leserakte (ListenNichtGeladen): Sonst müsste man die Akte schließen und neu öffnen.
+describe('Buchakte: eine Liste kommt nicht', () => {
+	it('lädt mit „Erneut versuchen“ noch einmal', async () => {
+		let vormerkungenScheitern = true;
+		vi.mocked(apiFetch).mockImplementation(async (url) =>
+			String(url).includes('/api/vormerkungen') && vormerkungenScheitern
+				? /** @type {any} */ ({ ok: false, status: 500, text: async () => '{"error":"weg"}' })
+				: /** @type {any} */ ({ ok: true, status: 200, json: async () => [] })
+		);
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
+		expect(await screen.findByText(/Nicht geladen: /)).toBeTruthy();
+
+		vormerkungenScheitern = false;
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+
+		await vi.waitFor(() => expect(screen.queryByText(/Nicht geladen: /)).toBeNull());
+	});
+});

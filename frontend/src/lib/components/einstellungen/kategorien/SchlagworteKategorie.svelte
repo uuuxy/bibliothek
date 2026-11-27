@@ -109,7 +109,11 @@
 	{/snippet}
 
 	{#if pflege.ladeFehler}
-		<LadeFehler onerneut={pflege.lade} />
+		<LadeFehler
+			titel="Schlagworte nicht geladen"
+			text="Die Liste der Schlagworte konnte nicht abgerufen werden"
+			onerneut={pflege.lade}
+		/>
 	{:else if !liste}
 		<div class="flex justify-center py-8"><Ladekreis size="lg" verzoegert /></div>
 	{:else if liste.gesamt === 0}

@@ -12,6 +12,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import Button from '../ui/Button.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import KlassenKarte from '../../../inventur/lib/components/admin/KlassenKarte.svelte';
 	import SchulbuchBlatt from './SchulbuchBlatt.svelte';
@@ -34,7 +35,9 @@
 	/** @param {any} b */
 	const waehle = (b) => (gewaehltId = gewaehltId === b.id ? null : b.id);
 
-	onMount(async () => {
+	async function lade() {
+		laedt = true;
+		ladefehler = false;
 		try {
 			const k = await apiFetch('/api/portal/klassensaetze');
 			if (k.ok) klassensaetze = await k.json();
@@ -46,7 +49,8 @@
 		} finally {
 			laedt = false;
 		}
-	});
+	}
+	onMount(lade);
 </script>
 
 {#if laedt}
@@ -59,8 +63,9 @@
 	<div class="pt-2 {gewaehlt ? SEITENBLATT_PLATZ : ''}">
 		{#if ladefehler}
 			<p class="py-4 text-body-medium-emphasized text-error" role="alert">
-				Die Klassensätze konnten nicht geladen werden. Bitte die Seite neu laden. Das hier bedeutet
-				NICHT, dass keine zugeordnet sind.
+				Die Klassensätze konnten nicht geladen werden. Das hier bedeutet NICHT, dass keine
+				zugeordnet sind.
+				<Button variant="ghost" size="sm" onclick={lade}>Erneut versuchen</Button>
 			</p>
 		{:else if klassensaetze.length === 0}
 			<p class="py-4 text-sm text-on-surface-variant">Noch keine Klassensätze zugeordnet</p>
