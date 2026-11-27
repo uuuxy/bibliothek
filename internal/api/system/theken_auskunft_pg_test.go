@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"bibliothek/internal/auth"
 	"bibliothek/internal/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/pkg/code39"
 	"bibliothek/internal/repository"
 	"bibliothek/internal/testdaten"
 
@@ -191,6 +194,60 @@ func TestThekenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	if e := auskunft.Ereignisse[0]; !e.PersonenbezugGetilgt || e.Entleiher != "" {
 		t.Errorf("Eintrag nach Tilgung = %+v, erwartet getilgt=true ohne Namen", e)
 	}
+}
+
+// Ein altes Etikett trägt im Strichcode nicht die Nummer des Bestands: Littera eine EAN-13 um
+// die Mediennummer, ein Code-39-Etikett ein angehängtes Prüfzeichen. Die Auskunft löst beide
+// auf wie die Theke (service.ExemplarKandidaten).
+func TestThekenAuskunftLiestAlteAufdrucke(t *testing.T) {
+	pool := pgtest.Pool(t)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	frage := func(t *testing.T, w thekenTestWelt, scan string) {
+		t.Helper()
+		t.Cleanup(func() {
+			pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = $1`, scan)
+		})
+		auskunft := rufeThekenAuskunft(t, srv, w.adminID, scan)
+		if len(auskunft.Exemplare) != 1 || auskunft.Exemplare[0].Titel != "Theken-Testband" {
+			t.Errorf("Auskunft zu %q: Exemplare = %+v, erwartet den Theken-Testband", scan, auskunft.Exemplare)
+		}
+	}
+
+	t.Run("Code 39 mit Prüfzeichen", func(t *testing.T) {
+		w := baueThekenWelt(t, pool)
+		zeichen, ok := code39.Pruefzeichen(w.barcode)
+		if !ok {
+			t.Fatalf("kein Prüfzeichen zu %q", w.barcode)
+		}
+		frage(t, w, w.barcode+string(zeichen))
+	})
+
+	t.Run("Etikett von Littera", func(t *testing.T) {
+		w := baueThekenWelt(t, pool)
+		nummer := strconv.FormatInt(1000000+time.Now().UnixNano()%9000000, 10)
+		if _, err := pool.Exec(context.Background(),
+			`UPDATE buecher_exemplare SET barcode_id = $1 WHERE id = $2`, nummer, w.exemplarID); err != nil {
+			t.Fatalf("Mediennummer setzen: %v", err)
+		}
+		frage(t, w, litteraEtikett(nummer))
+	})
+}
+
+// litteraEtikett baut den Strichcode, den Littera zu einer Mediennummer druckt: die Nummer mit
+// Nullen auf acht Stellen, die Bibliotheksnummer, die Stellenzahl und die Prüfziffer der EAN-13
+// (zu 58968 gemessen: 5896800039556).
+func litteraEtikett(nummer string) string {
+	daten := nummer + strings.Repeat("0", 8-len(nummer)) + "395" + strconv.Itoa(len(nummer))
+	summe := 0
+	for i, c := range daten {
+		gewicht := 1
+		if i%2 == 1 {
+			gewicht = 3
+		}
+		summe += int(c-'0') * gewicht
+	}
+	return daten + strconv.Itoa((10-summe%10)%10)
 }
 
 // Ein nie vergebener Barcode ist eine leere, aber gültige Antwort (200) — und auch

@@ -24,6 +24,7 @@ import (
 	"bibliothek/internal/pkg/clientip"
 	"bibliothek/internal/pkg/leserart"
 	"bibliothek/internal/repository"
+	"bibliothek/internal/service"
 )
 
 // thekenExemplar ist ein Exemplar, das der Barcode heute oder früher bezeichnete.
@@ -95,10 +96,19 @@ func (t *Tueren) gibThekenAuskunft(w http.ResponseWriter, r *http.Request, proto
 		return
 	}
 
-	exemplarZeilen, err := repository.FindeThekenExemplare(r.Context(), t.DB.Pool, barcode)
-	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-		return
+	// Ein altes Etikett trägt im Strichcode etwas anderes als der Bestand (Littera, Prüfzeichen
+	// von Code 39): dieselben Kandidaten wie an der Theke, der erste mit Treffern gilt.
+	var exemplarZeilen []repository.ThekenExemplarZeile
+	for _, kandidat := range service.ExemplarKandidaten(barcode) {
+		zeilen, err := repository.FindeThekenExemplare(r.Context(), t.DB.Pool, kandidat)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			return
+		}
+		if len(zeilen) > 0 {
+			exemplarZeilen = zeilen
+			break
+		}
 	}
 	exemplare := []thekenExemplar{}
 	ids := make([]string, 0, len(exemplarZeilen))
