@@ -65,11 +65,11 @@ func RueckeNachMitExemplar(ctx context.Context, db SpurenDatenbank, exemplarID, 
 	return "", stempleFreigabe(ctx, db, exemplarID, jetzt)
 }
 
-// BedieneWartendenMitEingang teilt ein Exemplar, das aus dem Zulauf in den Bestand kommt, dem
+// bedieneWartendenMitEingang teilt ein Exemplar, das aus dem Zulauf in den Bestand kommt, dem
 // nächsten Wartenden desselben Titels zu wie eine Rückgabe: Ein bestellter Titel lässt sich
 // vormerken (VormerkungsAbfragen.LegeAn). fuer nennt ihn mit Klasse; leer heißt: Niemand wartet,
 // und das Exemplar gehört ins Regal.
-func BedieneWartendenMitEingang(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, err error) {
+func bedieneWartendenMitEingang(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, err error) {
 	fuer, _, err = bedieneWartendenMitNamen(ctx, db, exemplarID, titelID, jetzt)
 	return fuer, err
 }

@@ -154,7 +154,7 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 });
 
 // Wartet jemand auf den Titel, bedient der Server die Vormerkung beim Einbuchen; die Meldung sagt,
-// welches Exemplar ins Abholfach gehört, mit dem Satz der Inventur-Rückgabe.
+// welches Exemplar ins Abholfach gehört.
 describe('Wareneingang: vorgemerkte Exemplare', () => {
 	it('nennt das Exemplar, das ins Abholfach gehört', async () => {
 		const meldung = vi.spyOn(snackbars, 'addToast');
@@ -169,7 +169,7 @@ describe('Wareneingang: vorgemerkte Exemplare', () => {
 
 		await vi.waitFor(() =>
 			expect(meldung).toHaveBeenCalledWith(
-				'Vorgemerkt für Anna Warte, 07B: „Titel A“ (B-7) nicht ins Regal stellen, ins Abholfach legen.',
+				'Vorgemerkt für Anna Warte, 07B: „Titel A“ B-7 ins Abholfach legen, nicht ins Regal',
 				'warning'
 			)
 		);

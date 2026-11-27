@@ -112,22 +112,27 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 		}
 		return befund, ErrExemplarNichtGefunden
 	}
-	if neu.IstAusgesondert && !warAusgesondert {
-		if err := protokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
-			return befund, err
-		}
-	}
-	// Kommt ein ausgesondertes Exemplar in den Bestand zurück, ist es zurück wie an der Theke:
-	// Die Forderung für das nicht zurückgegebene Buch endet.
-	if warAusgesondert && !neu.IstAusgesondert {
-		if befund, err = verbucheRueckkehr(ctx, tx, id, bearbeiterID); err != nil {
-			return RueckkehrBefund{}, err
-		}
+	if befund, err = folgenDesStatuswechsels(ctx, tx, id, warAusgesondert, neu, bearbeiterID); err != nil {
+		return RueckkehrBefund{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return RueckkehrBefund{}, fmt.Errorf("status: commit: %w", err)
 	}
 	return befund, nil
+}
+
+// folgenDesStatuswechsels schreibt, was ein Wechsel nach sich zieht: Wird ein Exemplar
+// ausgesondert, steht es mit der Person im Protokoll. Kommt ein ausgesondertes in den Bestand
+// zurück, ist es zurück wie an der Theke, und die Forderung für das nicht zurückgegebene Buch
+// endet (verbucheRueckkehr).
+func folgenDesStatuswechsels(ctx context.Context, tx pgx.Tx, id string, warAusgesondert bool, neu ExemplarStatusStand, bearbeiterID string) (RueckkehrBefund, error) {
+	switch {
+	case neu.IstAusgesondert && !warAusgesondert:
+		return RueckkehrBefund{}, protokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil)
+	case warAusgesondert && !neu.IstAusgesondert:
+		return verbucheRueckkehr(ctx, tx, id, bearbeiterID)
+	}
+	return RueckkehrBefund{}, nil
 }
 
 // IstExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt: weder ausgesondert noch

@@ -83,7 +83,7 @@ type EingebuchtesExemplar struct {
 // traf. Es trifft nur ein Exemplar, das bestellt und nicht ausgesondert ist: Eines, das der
 // Händler nicht liefert und das deshalb ausgesondert wurde, kommt so nicht in den Bestand
 // zurück und behält seine Notiz. Wartet jemand auf den Titel, geht das Exemplar an ihn wie bei
-// einer Rückgabe (BedieneWartendenMitEingang); db ist deshalb am besten eine Transaktion.
+// einer Rückgabe (bedieneWartendenMitEingang); db ist deshalb am besten eine Transaktion.
 func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]EingebuchtesExemplar, error) {
 	rows, err := db.Query(ctx, `
 		UPDATE buecher_exemplare e
@@ -120,7 +120,7 @@ func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]
 	}
 	rows.Close()
 	for i := range eingebucht {
-		fuer, err := BedieneWartendenMitEingang(ctx, db, eingebuchteIDs[i], titelIDs[i], schulzeit.Jetzt())
+		fuer, err := bedieneWartendenMitEingang(ctx, db, eingebuchteIDs[i], titelIDs[i], schulzeit.Jetzt())
 		if err != nil {
 			return nil, err
 		}
