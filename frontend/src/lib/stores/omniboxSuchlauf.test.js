@@ -34,6 +34,20 @@ describe('Omnibox-Suchlauf', () => {
 	beforeEach(() => vi.useFakeTimers());
 	afterEach(() => vi.useRealTimers());
 
+	it('sucht 150 ms nach dem letzten Tastendruck', async () => {
+		const store = erzeugeOmniboxStore();
+		vi.mocked(apiFetch)
+			.mockClear()
+			.mockImplementation(async () => treffer('Schmidt'));
+
+		store.eingabe = 'Schm';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(149);
+		expect(apiFetch, 'die Suche lief vor Ablauf der Wartezeit').not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(apiFetch, 'die Theke wartet länger als 150 ms').toHaveBeenCalledTimes(1);
+	});
+
 	it('verwirft die Antwort eines überholten Suchlaufs', async () => {
 		const store = erzeugeOmniboxStore();
 		/** @type {(r: Response) => void} */

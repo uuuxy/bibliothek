@@ -52,7 +52,7 @@ export function erzeugeSchlagwortPflegeListe() {
 			suche = wert;
 		},
 		lade,
-		// 300 ms wie in der Leserdatei und der Omnibox — dieselbe Eingabe, dieselbe Wartezeit.
+		// 300 ms wie in der Leserdatei und Mein Portal; die Theke wartet kürzer.
 		angestossen() {
 			clearTimeout(timer);
 			timer = setTimeout(lade, 300);

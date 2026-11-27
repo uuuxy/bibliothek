@@ -5,6 +5,10 @@
 
 import { apiFetch, leseApiFehler } from '../apiFetch.js';
 
+// Kürzer als die 300 ms der übrigen Suchfelder: Der Server antwortet an der Theke in wenigen
+// Millisekunden, die Wartezeit war der größte Teil bis zur Trefferliste.
+const WARTEZEIT_MS = 150;
+
 /**
  * @param {{
  *   leseEingabe: () => string,
@@ -83,7 +87,7 @@ export function erzeugeOmniboxSuche({ leseEingabe, setzeEingabe, fuehreAktionAus
 				verwirfTreffer();
 				console.error('Suche fehlgeschlagen:', err);
 			}
-		}, 300);
+		}, WARTEZEIT_MS);
 	}
 
 	// Ein Leser aus der Trefferliste wird über seine ID geladen, weil ein Kollege aus der

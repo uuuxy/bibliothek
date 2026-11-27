@@ -34,6 +34,8 @@ Nur, was kein Test leisten kann.
 - [ ] Mit dem Scanner je ein Littera-Etikett, ein gedrucktes Etikett und eine ISBN mit Preiszusatz
   scannen. (7.10)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
+- [ ] An der Theke Namen tippen und ansehen, ob die Trefferliste mit der kürzeren Wartezeit
+  beim Tippen unruhig wird. (5.206)
 - [ ] In Excel für Windows eine kleine Leserliste anlegen und in jedem CSV-Format speichern, das
   „Speichern unter" anbietet; die Dateien gibst du mir. (7.10)
 
@@ -82,8 +84,7 @@ Nur, was kein Test leisten kann.
 - [ ] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
   Ersatzforderung sprechen Volljährige selbst an. Entschieden: der Mahnbrief ebenso; bauen.
   (5.205)
-- [ ] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
-  Entschieden; bauen. (5.206)
+- [x] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
 - [x] Medienkatalog: Die Titelliste bleibt, wie sie ist, auch das Neuladen beim Wechsel des
   Reiters; festgehalten in ARCHITEKTUR 11.5. (5.207)
 - [ ] Cover-Abgleich: eine ISBN, die kein Dienst kennt, nicht bei jedem Lauf neu fragen; am
@@ -322,13 +323,10 @@ und ein Text, der zu beiden passt, oder eine zweite Vorlage.
 
 ### 5.206 Wartezeit der Suche an der Theke
 
-Die Omnibox wartet 300 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`), der Katalog ohne
-Anmeldung 400 ms (`OpacSuche.svelte`), Mein Portal und die Leserdatei 300 ms. Der Server braucht
-für `GET /api/search` seit Migration 186 bei Titeln 3 bis 13 ms (lokal, 13.674 Titel), bei Lesern
-an der Schule (rund 1.900) etwa 10 ms. Die Wartezeit ist damit der größte Teil bis zur Trefferliste.
-
-Entschieden: 150 ms an der Theke. Nach dem Bau am Gerät tippen und ansehen, ob die
-Liste beim Tippen unruhig wird.
+Die Omnibox wartet 150 ms nach dem letzten Tastendruck (`omniboxSuche.svelte.js`,
+`WARTEZEIT_MS`), die übrigen Suchfelder 300 ms, der Katalog ohne Anmeldung 400 ms. Ein Test
+kann nicht zeigen, ob die Liste beim Tippen unruhig wird; wird sie es, ist der Wert dort zu
+erhöhen.
 
 ### 5.209 Cover-Abgleich fragt unbekannte ISBNs bei jedem Lauf
 

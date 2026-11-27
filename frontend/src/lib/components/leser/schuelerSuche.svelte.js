@@ -177,7 +177,7 @@ export function erzeugeSchuelerSuche() {
 		lade,
 
 		// Tippen wird entprellt, damit nicht jeder Tastendruck eine Abfrage auslöst.
-		// 300 ms wie in der Omnibox — dieselbe Eingabegeschwindigkeit, dieselbe Wartezeit.
+		// 300 ms wie in Mein Portal und der Schlagwort-Pflege; die Theke wartet kürzer.
 		angestossen() {
 			sucheLaeuft = true;
 			clearTimeout(timer);

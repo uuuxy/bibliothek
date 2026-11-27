@@ -286,7 +286,7 @@ describe('Eine Suche, die erst nach „Theke leeren" antwortet', () => {
 		vi.mocked(apiFetch).mockImplementationOnce(() => new Promise((ja) => (antworte = ja)));
 		omniboxStore.eingabe = 'Mus';
 		omniboxStore.suche.verarbeiteEingabe();
-		// Die Entprellung (300 ms) läuft ab, die Suche ist unterwegs.
+		// Die Entprellung läuft ab, die Suche ist unterwegs.
 		await vi.waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1), { timeout: 1000 });
 
 		thekeLeeren();
