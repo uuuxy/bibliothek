@@ -2288,6 +2288,11 @@ Anlass, bei dem gebaut würde. Tritt er ein, kommt der Schritt nach [OFFEN.md](O
   „Cover herunterladen“).
 - **Der Medienkatalog lädt die ganze Titelliste** (gekappt bei 50.000). Anlass: Er öffnet spürbar
   langsam; dann 304 wie bei den Buchnummern der Theke.
+- **Das Startpaket trägt fast alle Bildschirme** (1,07 MB, 344 KB gzip), auch für Katalog, Monitor
+  und Bestellbestätigung ohne Anmeldung. Gemessen am lokalen Stack mit vierfach gebremstem
+  Prozessor: Die Anmeldung steht beim ersten Besuch nach 240 ms, danach nach 130 ms. Anlass: ein
+  Start, auf den man spürbar wartet; dann seltene Bildschirme bei Bedarf laden, die Theke bleibt im
+  Paket.
 - **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in `uploads/`
   zurück; für Schulbücher liefern die Dienste wenig. Die DNB fragt nur der Cover-Abgleich, und der
   fragt eine ISBN, die kein Dienst kennt, bei jedem Lauf neu (`verarbeiteCover` setzt `FAILED`).
