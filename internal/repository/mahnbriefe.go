@@ -19,16 +19,18 @@ type MahnbriefBuch struct {
 }
 
 // MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und der Anschrift
-// für das Fensterkuvert.
+// für das Fensterkuvert. Volljaehrig entscheidet, ob der Brief an die Eltern geht oder an ihn
+// selbst (sqlVolljaehrig).
 type MahnbriefEmpfaenger struct {
-	SchuelerID string
-	Vorname    string
-	Nachname   string
-	Strasse    string
-	Hausnummer string
-	PLZ        string
-	Ort        string
-	Buecher    []MahnbriefBuch
+	SchuelerID  string
+	Vorname     string
+	Nachname    string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
+	Buecher     []MahnbriefBuch
 }
 
 // sqlMahnbriefe liest zu den gewählten Ausleihen, was auf dem Mahnbrief steht: je Schüler
@@ -38,6 +40,7 @@ type MahnbriefEmpfaenger struct {
 const sqlMahnbriefe = `
 	SELECT s.id, s.vorname, s.nachname,
 	       coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
+	       ` + sqlVolljaehrig + `,
 	       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist,
 	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int)
 	FROM ausleihen a
@@ -94,7 +97,7 @@ func (a *MahnwesenAbfragen) LadeMahnbriefe(ctx context.Context, tx pgx.Tx, ids [
 		var e MahnbriefEmpfaenger
 		var b MahnbriefBuch
 		if err := rows.Scan(&e.SchuelerID, &e.Vorname, &e.Nachname,
-			&e.Strasse, &e.Hausnummer, &e.PLZ, &e.Ort,
+			&e.Strasse, &e.Hausnummer, &e.PLZ, &e.Ort, &e.Volljaehrig,
 			&b.Titel, &b.Barcode, &b.AusgeliehenAm, &b.Frist, &b.TageUeberfaellig); err != nil {
 			return nil, err
 		}

@@ -81,9 +81,8 @@ Nur, was kein Test leisten kann.
   gewählt; vor dem Umbau Bilder. (5.201)
 - [ ] Firefox: Die scrollbare Liste auf „Signaturen“ bekommt beim Tabben den Fokusring von
   Firefox statt des M3-Rings; nur auf Auftrag, vorher Bild. (5.204)
-- [ ] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
-  Ersatzforderung sprechen Volljährige selbst an. Entschieden: der Mahnbrief ebenso; bauen.
-  (5.205)
+- [x] Mahnbrief bei volljährigen Schülern: Er geht an „Eltern von …“, Bescheid und
+  Ersatzforderung sprechen Volljährige selbst an.
 - [x] Suche an der Theke: nach dem letzten Tastendruck 150 statt 300 ms warten.
 - [x] Medienkatalog: Die Titelliste bleibt, wie sie ist, auch das Neuladen beim Wechsel des
   Reiters; festgehalten in ARCHITEKTUR 11.5. (5.207)
@@ -307,18 +306,6 @@ Beide Entwürfe stehen ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
 - **Die Probe** der Vertretung: 7.4.
 
 ---
-
-### 5.205 Mahnbrief an Volljährige
-
-`mahnbriefAnschrift` (`internal/pdf/mahnbrief.go`) setzt ins Fensterfeld immer „Eltern von
-<Name>“, den Text liefert die Vorlage der Schule. Bescheid und Ersatzforderung wählen die Anrede
-nach `repository.sqlVolljaehrig`: Volljährige werden selbst angeschrieben. Bei einem
-volljährigen Schüler ginge der Mahnbrief damit an die Eltern, obwohl der Schüler selbst
-ausgeliehen hat.
-
-Entschieden: Der Mahnbrief schreibt Volljährige selbst an, wie der Bescheid.
-Umfang: die Abfrage der Empfänger um `sqlVolljaehrig` ergänzen, die Anschrift ohne „Eltern von“,
-und ein Text, der zu beiden passt, oder eine zweite Vorlage.
 
 ### 5.206 Wartezeit der Suche an der Theke
 

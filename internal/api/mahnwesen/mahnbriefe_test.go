@@ -19,12 +19,12 @@ func TestMahnbriefEmpfaenger_FuelltJedesFeldDerEingabe(t *testing.T) {
 	ausgeliehen := time.Date(2026, time.March, 3, 9, 0, 0, 0, time.UTC)
 	frist := time.Date(2026, time.May, 4, 21, 59, 59, 0, time.UTC)
 	briefe := []repository.MahnbriefEmpfaenger{
-		{SchuelerID: "s-1", Vorname: "Mia", Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg",
+		{SchuelerID: "s-1", Vorname: "Mia", Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg", Volljaehrig: true,
 			Buecher: []repository.MahnbriefBuch{
 				{Titel: "Titel 1", Barcode: "B-1", AusgeliehenAm: ausgeliehen, Frist: frist, TageUeberfaellig: 9},
 				{Titel: "Titel 2", Barcode: "B-2", AusgeliehenAm: ausgeliehen.AddDate(0, 0, 1), Frist: frist.AddDate(0, 0, 2), TageUeberfaellig: 7},
 			}},
-		{SchuelerID: "s-2", Vorname: "Ben", Nachname: "Birne", Strasse: "Am Hang", Hausnummer: "12b", PLZ: "61381", Ort: "Friedrichsdorf",
+		{SchuelerID: "s-2", Vorname: "Ben", Nachname: "Birne", Strasse: "Am Hang", Hausnummer: "12b", PLZ: "61381", Ort: "Friedrichsdorf", Volljaehrig: true,
 			Buecher: []repository.MahnbriefBuch{
 				{Titel: "Titel 3", Barcode: "B-3", AusgeliehenAm: ausgeliehen.AddDate(0, 0, 3), Frist: frist.AddDate(0, 0, 4), TageUeberfaellig: 5},
 			}},
@@ -32,12 +32,12 @@ func TestMahnbriefEmpfaenger_FuelltJedesFeldDerEingabe(t *testing.T) {
 
 	eingabe := mahnbriefEmpfaenger(briefe)
 	want := []pdf.MahnbriefEmpfaenger{
-		{Vorname: "Mia", Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg",
+		{Vorname: "Mia", Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg", Volljaehrig: true,
 			Buecher: []pdf.MahnbriefBuch{
 				{Titel: "Titel 1", Barcode: "B-1", AusgeliehenAm: ausgeliehen, Frist: frist, TageUeberfaellig: 9},
 				{Titel: "Titel 2", Barcode: "B-2", AusgeliehenAm: ausgeliehen.AddDate(0, 0, 1), Frist: frist.AddDate(0, 0, 2), TageUeberfaellig: 7},
 			}},
-		{Vorname: "Ben", Nachname: "Birne", Strasse: "Am Hang", Hausnummer: "12b", PLZ: "61381", Ort: "Friedrichsdorf",
+		{Vorname: "Ben", Nachname: "Birne", Strasse: "Am Hang", Hausnummer: "12b", PLZ: "61381", Ort: "Friedrichsdorf", Volljaehrig: true,
 			Buecher: []pdf.MahnbriefBuch{
 				{Titel: "Titel 3", Barcode: "B-3", AusgeliehenAm: ausgeliehen.AddDate(0, 0, 3), Frist: frist.AddDate(0, 0, 4), TageUeberfaellig: 5},
 			}},

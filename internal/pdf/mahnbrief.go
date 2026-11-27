@@ -14,12 +14,23 @@ import (
 )
 
 // MahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht. Betreff und Text
-// kennen die Platzhalter {{.Vorname}}, {{.Nachname}} und {{.Frist}}, der Text dazu
-// {{.BuchListe}}.
+// gehen an die Eltern, BetreffVolljaehrig und TextVolljaehrig an einen volljährigen Schüler
+// selbst. Betreff und Text kennen die Platzhalter {{.Vorname}}, {{.Nachname}} und {{.Frist}},
+// der Text dazu {{.BuchListe}}.
 type MahnbriefVorlage struct {
-	Betreff  string
-	Text     string
-	Absender string
+	Betreff            string
+	Text               string
+	BetreffVolljaehrig string
+	TextVolljaehrig    string
+	Absender           string
+}
+
+// texteFuer liefert Betreff und Text für den Brief an e.
+func (v MahnbriefVorlage) texteFuer(e MahnbriefEmpfaenger) (betreff, text string) {
+	if e.Volljaehrig {
+		return v.BetreffVolljaehrig, v.TextVolljaehrig
+	}
+	return v.Betreff, v.Text
 }
 
 // MahnbriefBuch ist ein Buch auf dem Mahnbrief.
@@ -32,15 +43,16 @@ type MahnbriefBuch struct {
 }
 
 // MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und der Anschrift für
-// das Fensterkuvert.
+// das Fensterkuvert. Einen volljährigen Schüler schreibt der Brief selbst an, sonst seine Eltern.
 type MahnbriefEmpfaenger struct {
-	Vorname    string
-	Nachname   string
-	Strasse    string
-	Hausnummer string
-	PLZ        string
-	Ort        string
-	Buecher    []MahnbriefBuch
+	Vorname     string
+	Nachname    string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
+	Buecher     []MahnbriefBuch
 }
 
 // Maße des Mahnbriefs in Millimetern. Folgeseiten beginnen mahnbriefRand unter der Kante, und
@@ -58,6 +70,9 @@ const (
 // Klassenleitung geht.
 func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 	name := fmt.Sprintf("Eltern von %s %s", e.Vorname, e.Nachname)
+	if e.Volljaehrig {
+		name = strings.TrimSpace(e.Vorname + " " + e.Nachname)
+	}
 	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
 	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
 	if strasse == "" && ort == "" {
@@ -165,13 +180,14 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 
 	// In der Betreffzeile hat die Tabelle keinen Platz; ein dort eingetragenes
 	// {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
+	betreff, text := v.texteFuer(e)
 	pdf.SetFont(pdfzeichen.Schrift, "B", 12)
 	pdf.SetXY(20, 100)
-	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(ersetzer.Replace(v.Betreff), platzhalterBuchListe, ""))))
+	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(ersetzer.Replace(betreff), platzhalterBuchListe, ""))))
 
 	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
 	// Vorkommen fallen weg.
-	teile := strings.SplitN(ersetzer.Replace(v.Text), platzhalterBuchListe, 2)
+	teile := strings.SplitN(ersetzer.Replace(text), platzhalterBuchListe, 2)
 	pdf.SetFont(pdfzeichen.Schrift, "", 11)
 	pdf.SetXY(20, 115)
 	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)

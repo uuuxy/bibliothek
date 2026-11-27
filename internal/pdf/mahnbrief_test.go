@@ -59,6 +59,34 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 	}
 }
 
+// Einen volljährigen Schüler schreibt der Brief selbst an, wie Bescheid und Ersatzforderung:
+// im Fensterfeld sein Name, Betreff und Text aus der Vorlage für Volljährige. Im selben Druck
+// geht der Brief eines minderjährigen Schülers weiter an die Eltern.
+func TestMahnbrief_VolljaehrigerBekommtDenBriefSelbst(t *testing.T) {
+	volljaehrig := testMahnbriefEmpfaenger()
+	volljaehrig.Volljaehrig = true
+	minderjaehrig := testMahnbriefEmpfaenger()
+	minderjaehrig.Vorname = "Ben"
+	roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{volljaehrig, minderjaehrig}, MahnbriefVorlage{
+		Betreff: "Betreff Eltern", Text: "Liebe Eltern von {{.Vorname}}:\n{{.BuchListe}}",
+		BetreffVolljaehrig: "Betreff selbst", TextVolljaehrig: "Guten Tag {{.Vorname}} {{.Nachname}}:\n{{.BuchListe}}",
+		Absender: "Testschule",
+	})
+	if err != nil {
+		t.Fatalf("PDF erzeugen: %v", err)
+	}
+	seiten := pdftest.TexteJeSeite(t, roh)
+	if len(seiten) != 2 {
+		t.Fatalf("%d Seiten, erwartet 2", len(seiten))
+	}
+	pruefeBlatt(t, strings.Join(seiten[0], "\n"),
+		[]string{"Mia Musterkind", "Betreff selbst", "Guten Tag Mia Musterkind:", "Testband"},
+		[]string{"Eltern", "Betreff Eltern"})
+	pruefeBlatt(t, strings.Join(seiten[1], "\n"),
+		[]string{"Eltern von Ben Musterkind", "Betreff Eltern", "Liebe Eltern von Ben:"},
+		[]string{"Guten Tag", "Betreff selbst"})
+}
+
 // {{.Frist}} trägt die älteste Rückgabefrist der gemahnten Bücher, nicht das Druckdatum:
 // Der Text der Vorlage nennt sie über einer Tabelle mit den Tagen über der Frist.
 func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {

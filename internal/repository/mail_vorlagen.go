@@ -51,8 +51,15 @@ func LadeBestellVorlage(ctx context.Context, db Datenbank) (betreff, text string
 	return betreff, text, err
 }
 
-// LadeMahnVorlage liest Betreff und Text der Vorlage für den Mahnbrief an die Eltern.
-func LadeMahnVorlage(ctx context.Context, db Datenbank) (betreff, text string, err error) {
-	err = db.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'MAHNUNG_ELTERN'").Scan(&betreff, &text)
+// Die Vorlagen des Mahnbriefs: an die Eltern eines minderjährigen Schülers und an einen
+// volljährigen Schüler selbst (sqlVolljaehrig), wie Bescheid und Ersatzforderung.
+const (
+	VorlageMahnungEltern      = "MAHNUNG_ELTERN"
+	VorlageMahnungVolljaehrig = "MAHNUNG_VOLLJAEHRIG"
+)
+
+// LadeMahnVorlage liest Betreff und Text einer Vorlage des Mahnbriefs (VorlageMahnung…).
+func LadeMahnVorlage(ctx context.Context, db Datenbank, typ string) (betreff, text string, err error) {
+	err = db.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = $1", typ).Scan(&betreff, &text)
 	return betreff, text, err
 }

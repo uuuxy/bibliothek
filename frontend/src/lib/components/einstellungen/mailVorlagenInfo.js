@@ -8,7 +8,13 @@ export const vorlagenInfo = {
 	MAHNUNG_ELTERN: {
 		name: 'Mahnbrief an die Eltern',
 		verwendung:
-			'Gedruckter Eltern-Mahnbrief für das Fensterkuvert, es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
+			'Gedruckter Mahnbrief für das Fensterkuvert an die Eltern eines minderjährigen Schülers, es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
+		platzhalter: ['{{.Vorname}}', '{{.Nachname}}', '{{.BuchListe}}', '{{.Frist}}']
+	},
+	MAHNUNG_VOLLJAEHRIG: {
+		name: 'Mahnbrief an volljährige Schüler',
+		verwendung:
+			'Gedruckter Mahnbrief für das Fensterkuvert an einen Schüler, der 18 oder älter ist. Ohne Geburtsdatum gilt ein Schüler als minderjährig, der Brief geht dann an die Eltern.',
 		platzhalter: ['{{.Vorname}}', '{{.Nachname}}', '{{.BuchListe}}', '{{.Frist}}']
 	},
 	BESTELLUNG_HAENDLER: {

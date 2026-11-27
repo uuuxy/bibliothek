@@ -248,6 +248,37 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		}
 	})
 
+	// Wie Bescheid und Ersatzforderung: Wer am Kalendertag der Schule 18 ist, bekommt den Brief
+	// selbst, mit der Vorlage für Volljährige; wer erst morgen 18 wird, noch über die Eltern.
+	t.Run("ein volljähriger Schüler bekommt den Brief selbst", func(t *testing.T) {
+		lea := testdaten.LegeSchuelerAn(t, pool, "MBF-S-21", "Lea", "13T3")
+		tim := testdaten.LegeSchuelerAn(t, pool, "MBF-S-22", "Tim", "13T3")
+		if _, err := pool.Exec(ctx, `
+			UPDATE schueler SET geburtsdatum = (`+schulzeit.SQLHeute+` - INTERVAL '18 years'
+			                                    + CASE WHEN id = $2 THEN INTERVAL '1 day' ELSE INTERVAL '0' END)::date
+			WHERE id IN ($1, $2)`, lea, tim); err != nil {
+			t.Fatalf("Geburtsdatum setzen: %v", err)
+		}
+		buchLea := testdaten.LegeAusleiheMitFristAn(t, pool, lea, "Band Lea", abgelaufen)
+		buchTim := testdaten.LegeAusleiheMitFristAn(t, pool, tim, "Band Tim", abgelaufen)
+
+		rec := drucke(t, buchLea, buchTim)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		for _, soll := range []string{"Guten Tag Lea Test,", "Band Lea", "Eltern von Tim Test", "Liebe Eltern von Tim Test,"} {
+			if !strings.Contains(blatt, soll) {
+				t.Errorf("auf den Briefen fehlt %q:\n%s", soll, blatt)
+			}
+		}
+		for _, falsch := range []string{"Eltern von Lea", "Guten Tag Tim"} {
+			if strings.Contains(blatt, falsch) {
+				t.Errorf("auf den Briefen steht %q:\n%s", falsch, blatt)
+			}
+		}
+	})
+
 	// Die Mahnliste zeigt je Kind, wie oft und wann zuletzt gemahnt wurde; die Zahl dazu
 	// liefert die Liste je Buch.
 	t.Run("nach dem Druck nennt die Mahnliste die Mahnung", func(t *testing.T) {

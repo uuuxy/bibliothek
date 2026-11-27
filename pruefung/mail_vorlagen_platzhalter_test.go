@@ -5,8 +5,8 @@ package pruefung_test
 // Drei Orte nennen je Typ der Vorlage, welche {{.X}}-Platzhalter gelten:
 //
 //   1. der Renderer in Go, die einzige Menge, die wirklich ersetzt wird
-//      (internal/pdf/mahnbrief.go für MAHNUNG_ELTERN, internal/service/bestellmail_text.go für
-//      BESTELLUNG_HAENDLER),
+//      (internal/pdf/mahnbrief.go für MAHNUNG_ELTERN und MAHNUNG_VOLLJAEHRIG,
+//      internal/service/bestellmail_text.go für BESTELLUNG_HAENDLER),
 //   2. die Anzeige im Editor der Vorlagen (vorlagenInfo in mailVorlagenInfo.js),
 //   3. die Vorgabetexte (schema.sql).
 //
@@ -30,13 +30,15 @@ var platzhalterMuster = regexp.MustCompile(`\{\{\.[A-Za-z]+\}\}`)
 // tragen (Replacer, Split, Ersatzvorlage).
 var rendererQuellen = map[string]string{
 	"MAHNUNG_ELTERN":      filepath.Join("internal", "pdf", "mahnbrief.go"),
+	"MAHNUNG_VOLLJAEHRIG": filepath.Join("internal", "pdf", "mahnbrief.go"),
 	"BESTELLUNG_HAENDLER": filepath.Join("internal", "service", "bestellmail_text.go"),
 }
 
 // standardtextQuellen: je Typ die Go-Datei mit dem Text, der gilt, wenn die gespeicherte
 // Vorlage fehlt oder leer ist, sofern er nicht beim Renderer steht.
 var standardtextQuellen = map[string]string{
-	"MAHNUNG_ELTERN": filepath.Join("internal", "api", "mahnwesen", "mahnbriefe.go"),
+	"MAHNUNG_ELTERN":      filepath.Join("internal", "api", "mahnwesen", "mahnbriefe.go"),
+	"MAHNUNG_VOLLJAEHRIG": filepath.Join("internal", "api", "mahnwesen", "mahnbriefe.go"),
 }
 
 // ohneRenderer: Typen aus den Vorgabetexten, die absichtlich keinen Renderer haben, je mit

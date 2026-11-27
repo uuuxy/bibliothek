@@ -429,6 +429,22 @@ Gesamtanzahl Exemplare: {{.AnzahlExemplare}}
 
 Mit freundlichen Grüßen
 Schulbibliothek'
+),
+-- Migration 187: der Mahnbrief an einen volljährigen Schüler selbst.
+(
+    'MAHNUNG_VOLLJAEHRIG',
+    'Erinnerung: Bitte Bücher in die Schulbibliothek zurückbringen',
+    'Guten Tag {{.Vorname}} {{.Nachname}},
+
+wir möchten Sie höflich daran erinnern, dass die Leihfrist für folgende Medien abgelaufen ist:
+
+{{.BuchListe}}
+
+Bitte geben Sie die Medien zeitnah in der Bibliothek ab.
+Ursprüngliche Frist: {{.Frist}}
+
+Vielen Dank!
+Ihre Schulbibliothek'
 )
 ON CONFLICT (typ) DO NOTHING;
 
@@ -2014,7 +2030,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('183_namenssuche_ohne_trenner.sql'),
 ('184_namenssuche_apostroph_und_festes_leerzeichen.sql'),
 ('185_geloeschte_exemplare_preis.sql'),
-('186_titelsuche_suchtext.sql')
+('186_titelsuche_suchtext.sql'),
+('187_mahnbrief_an_volljaehrige.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -14,14 +14,21 @@ import (
 	"bibliothek/internal/repository"
 )
 
-// ladeMahnVorlageText lädt die Vorlage des Mahnbriefs. Fehlt sie oder ist ein Teil leer, gilt
-// der Vorgabetext: Der Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder
-// Betreff noch Anschreiben.
-func (t *Tueren) ladeMahnVorlageText(ctx context.Context) (betreff, text string) {
-	betreff, text, err := repository.LadeMahnVorlage(ctx, t.DB.Pool)
+// mahnVorgabetexte gelten, wenn eine Vorlage des Mahnbriefs fehlt oder ein Teil leer ist: Der
+// Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder Betreff noch Anschreiben.
+var mahnVorgabetexte = map[string][2]string{
+	repository.VorlageMahnungEltern: {"Mahnung: Überfällige Bücher",
+		"Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."},
+	repository.VorlageMahnungVolljaehrig: {"Mahnung: Überfällige Bücher",
+		"Guten Tag {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."},
+}
+
+// ladeMahnVorlageText lädt eine Vorlage des Mahnbriefs (repository.VorlageMahnung…), ersatzweise
+// ihren Vorgabetext.
+func (t *Tueren) ladeMahnVorlageText(ctx context.Context, typ string) (betreff, text string) {
+	betreff, text, err := repository.LadeMahnVorlage(ctx, t.DB.Pool, typ)
 	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(text) == "" {
-		betreff = "Mahnung: Überfällige Bücher"
-		text = "Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."
+		betreff, text = mahnVorgabetexte[typ][0], mahnVorgabetexte[typ][1]
 	}
 	return betreff, text
 }
@@ -30,13 +37,15 @@ func (t *Tueren) ladeMahnVorlageText(ctx context.Context) (betreff, text string)
 // Angaben zur Schule. Sind die Einstellungen nicht lesbar, kommt der Fehler zurück: Mit den
 // Vorgaben hätte der Brief keinen Absender.
 func (t *Tueren) ladeMahnbriefVorlage(ctx context.Context) (pdf.MahnbriefVorlage, error) {
-	betreff, text := t.ladeMahnVorlageText(ctx)
+	betreff, text := t.ladeMahnVorlageText(ctx, repository.VorlageMahnungEltern)
+	betreffVolljaehrig, textVolljaehrig := t.ladeMahnVorlageText(ctx, repository.VorlageMahnungVolljaehrig)
 	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
 	if err != nil {
 		return pdf.MahnbriefVorlage{}, fmt.Errorf("einstellungen lesen: %w", err)
 	}
 	schule := tuer.SchuleAus(einstellungen)
-	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}, nil
+	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, BetreffVolljaehrig: betreffVolljaehrig,
+		TextVolljaehrig: textVolljaehrig, Absender: schule.Absenderzeile()}, nil
 }
 
 // mahnbriefEmpfaenger füllt die Eingabe des Erzeugers aus den Zeilen der Abfrage: je Schüler
@@ -55,13 +64,14 @@ func mahnbriefEmpfaenger(briefe []repository.MahnbriefEmpfaenger) []pdf.Mahnbrie
 			})
 		}
 		eingabe = append(eingabe, pdf.MahnbriefEmpfaenger{
-			Vorname:    e.Vorname,
-			Nachname:   e.Nachname,
-			Strasse:    e.Strasse,
-			Hausnummer: e.Hausnummer,
-			PLZ:        e.PLZ,
-			Ort:        e.Ort,
-			Buecher:    buecher,
+			Vorname:     e.Vorname,
+			Nachname:    e.Nachname,
+			Strasse:     e.Strasse,
+			Hausnummer:  e.Hausnummer,
+			PLZ:         e.PLZ,
+			Ort:         e.Ort,
+			Volljaehrig: e.Volljaehrig,
+			Buecher:     buecher,
 		})
 	}
 	return eingabe

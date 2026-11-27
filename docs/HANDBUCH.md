@@ -397,8 +397,10 @@ die 50 am längsten Überfälligen, _Mehr laden_ die nächsten; das Häkchen üb
 _Liste drucken_ umfassen alle Treffer.
 
 **Mahnbriefe:** Kinder anhaken, dann _Mahnbriefe drucken_: je Kind ein Brief an die Eltern für das
-Fensterkuvert mit dem Text der Vorlage (_Einstellungen → Mail_); fehlt die Anschrift, steht das im
-Adressfeld, und der Brief geht über das Kind. Der Druck zählt die Mahnung, höchstens einmal am Tag
+Fensterkuvert mit dem Text der Vorlage (_Einstellungen → Mail_); wer 18 oder älter ist, bekommt den
+Brief selbst, mit dem Text der Vorlage „Mahnbrief an volljährige Schüler“. Ohne Geburtsdatum gilt
+ein Schüler als minderjährig. Fehlt die Anschrift, steht das im Adressfeld, und der Brief geht über
+das Kind. Der Druck zählt die Mahnung, höchstens einmal am Tag
 je Buch; ein zweiter Druck am selben Tag (Papierstau) zählt nicht. Die Liste zeigt je Kind, wie oft
 und wann zuletzt gemahnt wurde („2× gemahnt, zuletzt 26.09.2026“); an die Zahl knüpft das Programm
 nichts. Auf den Brief kommt nur ein Buch, dessen Frist abgelaufen ist. Drucken und den Mahnlauf
