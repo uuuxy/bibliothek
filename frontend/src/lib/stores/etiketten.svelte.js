@@ -8,8 +8,7 @@ import { snackbars } from './snackbars.svelte.js';
 import { erzeugeKlassenBuecher } from './klassenBuecher.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { normalisiereScan } from '../utils/scanEinordnen.js';
-import { dekodiereLitteraEtikett } from '../utils/litteraEtikett.js';
-import { ohnePruefzeichen } from '../utils/code39Pruefzeichen.js';
+import { exemplarZumScan, nummernDes } from '../components/etiketten/exemplarNummern.js';
 import { druckeBogen } from '../components/etiketten/etikettenDruck.js';
 
 function erzeugeEtikettenStore() {
@@ -44,12 +43,12 @@ function erzeugeEtikettenStore() {
 	// Zählt die Abrufe der Exemplare: Nur die Antwort des jüngsten zählt. Die langsamere
 	// Antwort eines früher gewählten Titels stellte sonst dessen Nummern unter den neuen Titel.
 	let exemplarLauf = 0;
-	// Der Text im Nummernfeld über der Liste: zeigt nur die Exemplare, deren Nummer ihn enthält.
+	// Der Text im Nummernfeld über der Liste: zeigt nur die Exemplare, deren Nummern ihn enthalten.
 	let exemplarSuche = $state('');
 	let sichtbareExemplare = $derived.by(() => {
 		const text = exemplarSuche.trim().toLowerCase();
 		if (!text) return vorhandeneExemplare;
-		return vorhandeneExemplare.filter((c) => String(c.barcode_id).toLowerCase().includes(text));
+		return vorhandeneExemplare.filter((c) => nummernDes(c).some((n) => n.includes(text)));
 	});
 	let auswahl = $derived({
 		gewaehlt: vorhandeneExemplare.filter((c) => c.checked).length,
@@ -114,27 +113,17 @@ function erzeugeEtikettenStore() {
 
 	/**
 	 * Die Eingabetaste im Nummernfeld, wie sie ein Handscanner schickt: setzt das Exemplar mit
-	 * genau dieser Nummer auf den Bogen und leert das Feld. Gelesen wird wie an der Theke: die
-	 * Nummer, ein altes LMF-Etikett, das Littera-Etikett, ein Etikett mit Prüfzeichen. Ein Teil
-	 * wählt nichts. Groß und klein zählen nicht: Das Feld sucht nur Nummern dieses Titels.
+	 * genau dieser Nummer auf den Bogen und leert das Feld. Gelesen wird wie an der Theke
+	 * (exemplarZumScan); ein Teil wählt nichts.
 	 * @returns {boolean} ob ein Exemplar dieses Titels gefunden wurde
 	 */
 	function uebernimmNummer() {
 		const scan = normalisiereScan(exemplarSuche);
-		if (!scan) return false;
-		const ueberLMF = vorhandeneExemplare.find((c) => c.lmf_barcode === scan)?.barcode_id;
-		for (const nummer of [scan, ueberLMF, dekodiereLitteraEtikett(scan), ohnePruefzeichen(scan)]) {
-			const gesucht = nummer?.toLowerCase();
-			const exemplar = gesucht
-				? vorhandeneExemplare.find((c) => String(c.barcode_id).toLowerCase() === gesucht)
-				: undefined;
-			if (exemplar) {
-				exemplar.checked = true;
-				exemplarSuche = '';
-				return true;
-			}
-		}
-		return false;
+		const exemplar = scan ? exemplarZumScan(vorhandeneExemplare, scan) : undefined;
+		if (!exemplar) return false;
+		exemplar.checked = true;
+		exemplarSuche = '';
+		return true;
 	}
 
 	function verarbeiteSuche() {

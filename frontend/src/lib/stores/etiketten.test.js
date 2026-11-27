@@ -14,6 +14,7 @@ import { etikettenStore } from './etiketten.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
 import { serverAntwort } from '../serverAntwort.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
+import { pruefzeichen } from '../utils/code39Pruefzeichen.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -367,6 +368,29 @@ describe('etikettenStore: alle, keine und einzelne Exemplare wählen', () => {
 		await etikettenStore.waehleTitel({ id: 't6', titel: 'Titel', autor: '' });
 		etikettenStore.setzeSichtbare(false);
 		etikettenStore.exemplarSuche = 'lmf-9783060158423-001';
+		expect(etikettenStore.uebernimmNummer()).toBe(true);
+		expect(aufDemBogen()).toEqual(['B-20001']);
+	});
+
+	// Das alte LMF-Etikett gilt auch mit Prüfzeichen, wie an der Theke: jeder Kandidat des Scans
+	// gegen Nummer und LMF-Etikett. Beim Tippen zeigt das Feld es auch über einen Teil davon.
+	it('nimmt ein altes LMF-Etikett auch mit Prüfzeichen und zeigt es beim Tippen', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ barcode_id: 'B-20001', lmf_barcode: 'LMF-9783060158423-001' },
+					{ barcode_id: 'B-20002', lmf_barcode: '' }
+				]
+			})
+		);
+		await etikettenStore.waehleTitel({ id: 't7', titel: 'Titel', autor: '' });
+		etikettenStore.setzeSichtbare(false);
+		etikettenStore.exemplarSuche = '9783060158423';
+		expect(etikettenStore.sichtbareExemplare.map((c) => c.barcode_id)).toEqual(['B-20001']);
+
+		const lmf = 'LMF-9783060158423-001';
+		etikettenStore.exemplarSuche = lmf + pruefzeichen(lmf);
 		expect(etikettenStore.uebernimmNummer()).toBe(true);
 		expect(aufDemBogen()).toEqual(['B-20001']);
 	});
