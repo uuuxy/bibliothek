@@ -10,6 +10,7 @@ import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
 import { anzahlText, verbindeSaetze } from '../utils/format.js';
+import { exportiereWarteschlange } from './offlineSicherung.js';
 
 // Endgueltige Ergebnisse: Der Eintrag ist erledigt und fliegt aus der Warteschlange.
 // „wiederholen" ist das einzige, das NICHT endgueltig ist (Server nicht erreichbar, oder
@@ -121,20 +122,6 @@ async function verarbeiteNachbuchErgebnisse(antwort, batchItems) {
 		await dequeueOfflineAction(posten.id);
 	}
 	return { pruefen, weiter };
-}
-
-async function exportiereWarteschlange() {
-	const q = await ladeWarteschlange();
-	if (q.length === 0) return;
-	const blob = new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = `offline_scans_backup_${new Date().toISOString().slice(0, 10)}.json`;
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-	URL.revokeObjectURL(url);
 }
 
 // Sagt dem Bediener, was er von Hand klären muss — mit Barcode und Grund je Eintrag. Das

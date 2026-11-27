@@ -29,7 +29,7 @@ const BESTAND = {
 	'src/lib/stores/etiketten.svelte.js': 332,
 	'src/lib/stores/leerlaufSperre.svelte.js': 379,
 	'src/lib/stores/mahnwesen.svelte.js': 221,
-	'src/lib/stores/offlineSync.svelte.js': 381,
+	'src/lib/stores/offlineSync.svelte.js': 368,
 	'src/lib/stores/omnibox.svelte.js': 412,
 	'src/lib/components/inventur/useInventur.svelte.js': 232,
 	'src/lib/components/leserakte/useLeserakte.svelte.js': 294

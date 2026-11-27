@@ -13,7 +13,7 @@ import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-
 // als `.download =` oder das Attribut download an einem Link oder an ui/Button.
 const ALS_DATEI = {
 	'src/inventur/lib/admin_api.js': 'der Katalog als CSV',
-	'src/lib/stores/offlineSync.svelte.js': 'die Sicherung der Offline-Scans, zum Aufheben',
+	'src/lib/stores/offlineSicherung.js': 'die Sicherung der Offline-Scans, zum Aufheben',
 	'src/lib/components/lmfplan/lmfplanDienst.js': 'der LMF-Plan, Termine je Klasse',
 	'src/lib/components/bestellungen/Bestellbedarf.svelte': 'die Bestellliste',
 	'src/lib/components/portal/FachKarte.svelte': 'die Bücher eines Fachs im Portal'

@@ -675,6 +675,28 @@ describe('offlineSync: Sicherung der Warteschlange als Datei', () => {
 		expect(inhalt.map((/** @type {any} */ e) => e.barcode)).toEqual(['B-SICHERUNG']);
 	});
 
+	// Der Tag im Namen ist der Kalendertag am Arbeitsplatz: Um 0:30 Uhr in Berlin ist in UTC noch
+	// der Vortag. Die Zone steht fest, damit der Fall auch auf einem Rechner in UTC gilt.
+	it('nennt im Dateinamen den Tag am Arbeitsplatz, nicht den in UTC', async () => {
+		const zone = process.env.TZ;
+		process.env.TZ = 'Europe/Berlin';
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-11-27T23:30:00Z'));
+		try {
+			await enqueueOfflineAction(ausleihe('B-NACHT', 'schueler-1'));
+			const { klick } = fangeDownload();
+
+			await offlineSync.exportiereWarteschlange();
+
+			const link = /** @type {HTMLAnchorElement} */ (klick.mock.contexts[0]);
+			expect(link.download).toBe('offline_scans_backup_2026-11-28.json');
+		} finally {
+			vi.useRealTimers();
+			if (zone === undefined) delete process.env.TZ;
+			else process.env.TZ = zone;
+		}
+	});
+
 	it('ohne wartende Vorgänge entsteht keine Datei', async () => {
 		const { klick } = fangeDownload();
 
