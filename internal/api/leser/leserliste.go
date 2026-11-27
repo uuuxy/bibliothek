@@ -51,32 +51,48 @@ func (t *Tueren) Leserliste(leserAbfragen *repository.LeserAbfragen, lmfAbfragen
 		// beiden letzten wäre ein Kollege in der Liste falsch: Eine Vormerkung schickt
 		// eine Nachricht an die Elternadresse, und die hat er nicht. Deshalb bleibt die
 		// Vorgabe „nur Schüler", und wer alle meint, sagt es.
-		lade := func(ctx context.Context, suche string) ([]repository.LeserListenZeile, error) {
-			switch {
-			case r.URL.Query().Get("status") == "ehemalige":
-				return leserAbfragen.LadeEhemaligenListe(ctx, suche, sortierung)
-			case r.URL.Query().Get("art") == "alle":
-				return leserAbfragen.LadeLeserListe(ctx, klassen, suche, sortierung)
-			default:
-				return leserAbfragen.LadeSchuelerListe(ctx, klassen, suche, sortierung)
-			}
-		}
-		leser, err := lade(r.Context(), suche)
+		ansicht := leserAnsicht{status: r.URL.Query().Get("status"), art: r.URL.Query().Get("art"),
+			klassen: klassen, sortierung: sortierung}
+		leser, err := ladeLeserliste(r.Context(), leserAbfragen, ansicht, suche)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
-		}
-		// Ein alter Ausweis trägt im Strichcode ein Prüfzeichen von Code 39 („A-100037“ für
-		// A-10003). Findet der Scan niemanden, gilt er ohne das Zeichen, wie an der Theke
-		// (service.OmniboxDienst.VerarbeiteEingabe), und nur als zweiter Versuch.
-		if kern, hatPruefzeichen := code39.OhnePruefzeichen(suche); len(leser) == 0 && hatPruefzeichen {
-			if leser, err = lade(r.Context(), kern); err != nil {
-				return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
-			}
 		}
 
 		tuer.AntworteListe(w, leser, repository.LeserListeGrenze(suche))
 		return nil
 	})
+}
+
+// leserAnsicht sagt, welche der drei Ansichten an dieser Tür fragt und wie sie filtert und ordnet.
+type leserAnsicht struct {
+	status, art string
+	klassen     []string
+	sortierung  repository.LeserSortierung
+}
+
+// ladeLeserliste lädt die Liste der Ansicht zum Suchtext. Ein alter Ausweis trägt im Strichcode
+// ein Prüfzeichen von Code 39 („A-100037“ für A-10003): Findet der Scan niemanden, gilt er ohne
+// das Zeichen, wie an der Theke (service.OmniboxDienst.VerarbeiteEingabe), und nur als zweiter
+// Versuch.
+func ladeLeserliste(ctx context.Context, leserAbfragen *repository.LeserAbfragen, ansicht leserAnsicht, suche string) ([]repository.LeserListenZeile, error) {
+	lade := func(suche string) ([]repository.LeserListenZeile, error) {
+		switch {
+		case ansicht.status == "ehemalige":
+			return leserAbfragen.LadeEhemaligenListe(ctx, suche, ansicht.sortierung)
+		case ansicht.art == "alle":
+			return leserAbfragen.LadeLeserListe(ctx, ansicht.klassen, suche, ansicht.sortierung)
+		default:
+			return leserAbfragen.LadeSchuelerListe(ctx, ansicht.klassen, suche, ansicht.sortierung)
+		}
+	}
+	leser, err := lade(suche)
+	if err != nil || len(leser) > 0 {
+		return leser, err
+	}
+	if kern, hatPruefzeichen := code39.OhnePruefzeichen(suche); hatPruefzeichen {
+		return lade(kern)
+	}
+	return leser, nil
 }
 
 // leserSortierung liest Spalte und Richtung aus der Anfrage.

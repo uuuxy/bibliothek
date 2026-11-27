@@ -128,20 +128,26 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("abschluss der einzel-verlängerung: %w", err))
 		return
 	}
-	// War die Frist schon vorbei, beginnen Mahnfolge und Überfällig-Sperre neu: ein Eingriff in
-	// eine Sanktion wie die Frist von Hand, also ins Protokoll. Vor Ablauf der Frist ist es der
-	// gewöhnliche Fall der Leserakte und steht nicht da.
-	if alteFrist.Before(jetzt) {
-		t.ProtokolliereVerwaltung(ctx, tuer.AktionUeberfaelligVerlaengert, map[string]any{
-			"ausleihe_id":     ausleiheID,
-			"bisherige_frist": alteFrist.Format(time.RFC3339),
-			"neue_frist":      gesetzteFrist.Format(time.RFC3339),
-		})
-	}
+	t.protokolliereUeberfaelligVerlaengert(ctx, ausleiheID, alteFrist, gesetzteFrist, jetzt)
 
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"success":               true,
 		"neues_rueckgabe_datum": gesetzteFrist,
+	})
+}
+
+// protokolliereUeberfaelligVerlaengert schreibt eine Verlängerung ins Protokoll, wenn die Frist
+// schon vorbei war: Dann beginnen Mahnfolge und Überfällig-Sperre neu, ein Eingriff in eine
+// Sanktion wie die Frist von Hand. Vor Ablauf der Frist ist es der gewöhnliche Fall der Leserakte
+// und steht nicht im Protokoll.
+func (t *Tueren) protokolliereUeberfaelligVerlaengert(ctx context.Context, ausleiheID string, alteFrist, neueFrist, jetzt time.Time) {
+	if !alteFrist.Before(jetzt) {
+		return
+	}
+	t.ProtokolliereVerwaltung(ctx, tuer.AktionUeberfaelligVerlaengert, map[string]any{
+		"ausleihe_id":     ausleiheID,
+		"bisherige_frist": alteFrist.Format(time.RFC3339),
+		"neue_frist":      neueFrist.Format(time.RFC3339),
 	})
 }
 
