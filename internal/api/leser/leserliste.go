@@ -1,6 +1,7 @@
 package leser
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"bibliothek/internal/api/tuer"
 	"bibliothek/internal/apierrors"
+	"bibliothek/internal/pkg/code39"
 	"bibliothek/internal/repository"
 )
 
@@ -49,18 +51,27 @@ func (t *Tueren) Leserliste(leserAbfragen *repository.LeserAbfragen, lmfAbfragen
 		// beiden letzten wäre ein Kollege in der Liste falsch: Eine Vormerkung schickt
 		// eine Nachricht an die Elternadresse, und die hat er nicht. Deshalb bleibt die
 		// Vorgabe „nur Schüler", und wer alle meint, sagt es.
-		var leser []repository.LeserListenZeile
-		var err error
-		switch {
-		case r.URL.Query().Get("status") == "ehemalige":
-			leser, err = leserAbfragen.LadeEhemaligenListe(r.Context(), suche, sortierung)
-		case r.URL.Query().Get("art") == "alle":
-			leser, err = leserAbfragen.LadeLeserListe(r.Context(), klassen, suche, sortierung)
-		default:
-			leser, err = leserAbfragen.LadeSchuelerListe(r.Context(), klassen, suche, sortierung)
+		lade := func(ctx context.Context, suche string) ([]repository.LeserListenZeile, error) {
+			switch {
+			case r.URL.Query().Get("status") == "ehemalige":
+				return leserAbfragen.LadeEhemaligenListe(ctx, suche, sortierung)
+			case r.URL.Query().Get("art") == "alle":
+				return leserAbfragen.LadeLeserListe(ctx, klassen, suche, sortierung)
+			default:
+				return leserAbfragen.LadeSchuelerListe(ctx, klassen, suche, sortierung)
+			}
 		}
+		leser, err := lade(r.Context(), suche)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
+		}
+		// Ein alter Ausweis trägt im Strichcode ein Prüfzeichen von Code 39 („A-100037“ für
+		// A-10003). Findet der Scan niemanden, gilt er ohne das Zeichen, wie an der Theke
+		// (service.OmniboxDienst.VerarbeiteEingabe), und nur als zweiter Versuch.
+		if kern, hatPruefzeichen := code39.OhnePruefzeichen(suche); len(leser) == 0 && hatPruefzeichen {
+			if leser, err = lade(r.Context(), kern); err != nil {
+				return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
+			}
 		}
 
 		tuer.AntworteListe(w, leser, repository.LeserListeGrenze(suche))
