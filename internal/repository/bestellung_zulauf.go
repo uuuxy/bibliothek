@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"time"
+
+	"bibliothek/internal/pkg/schulzeit"
 )
 
 // ZulaufExemplar ist ein bestelltes Exemplar, das noch nicht eingetroffen ist, mit seinem Titel
@@ -72,12 +74,16 @@ type EingebuchtesExemplar struct {
 	Titel           string
 	Autor           string
 	EtikettGedruckt bool
+	// Abholfach nennt den Schüler mit Klasse, für den das Exemplar ins Abholfach gehört; leer heißt
+	// ins Regal.
+	Abholfach string
 }
 
 // BucheZulaufEin gibt die genannten Exemplare aus dem Zulauf frei und liefert die, die es
 // traf. Es trifft nur ein Exemplar, das bestellt und nicht ausgesondert ist: Eines, das der
 // Händler nicht liefert und das deshalb ausgesondert wurde, kommt so nicht in den Bestand
-// zurück und behält seine Notiz.
+// zurück und behält seine Notiz. Wartet jemand auf den Titel, geht das Exemplar an ihn wie bei
+// einer Rückgabe (BedieneWartendenMitEingang); db ist deshalb am besten eine Transaktion.
 func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]EingebuchtesExemplar, error) {
 	rows, err := db.Query(ctx, `
 		UPDATE buecher_exemplare e
@@ -90,7 +96,7 @@ func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]
 		  AND e.bestellstatus IS NOT NULL
 		  AND e.ist_ausgesondert = false
 		  AND e.id = ANY($1)
-		RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
+		RETURNING e.id, e.titel_id, e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
 	`, exemplarIDs)
 	if err != nil {
 		return nil, err
@@ -98,15 +104,27 @@ func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]
 	defer rows.Close()
 
 	var eingebucht []EingebuchtesExemplar
+	var eingebuchteIDs, titelIDs []string
 	for rows.Next() {
 		var e EingebuchtesExemplar
-		if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.EtikettGedruckt); err != nil {
+		var exemplarID, titelID string
+		if err := rows.Scan(&exemplarID, &titelID, &e.BarcodeID, &e.Titel, &e.Autor, &e.EtikettGedruckt); err != nil {
 			return nil, err
 		}
 		eingebucht = append(eingebucht, e)
+		eingebuchteIDs = append(eingebuchteIDs, exemplarID)
+		titelIDs = append(titelIDs, titelID)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	rows.Close()
+	for i := range eingebucht {
+		fuer, err := BedieneWartendenMitEingang(ctx, db, eingebuchteIDs[i], titelIDs[i], schulzeit.Jetzt())
+		if err != nil {
+			return nil, err
+		}
+		eingebucht[i].Abholfach = fuer
 	}
 	return eingebucht, nil
 }

@@ -19,10 +19,12 @@ vi.mock('../../liveEvents.js', async (importOriginal) => ({
 }));
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
-	apiGet: vi.fn(async () => [])
+	apiGet: vi.fn(async () => []),
+	apiPost: vi.fn()
 }));
 
-import { apiGet } from '../../apiFetch.js';
+import { apiGet, apiPost } from '../../apiFetch.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
 import Wareneingang from './Wareneingang.svelte';
 
@@ -142,5 +144,28 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		screen.unmount();
 
 		expect(leitung.hoerer.get('bestellstand')?.size).toBe(0);
+	});
+});
+
+// Wartet jemand auf den Titel, bedient der Server die Vormerkung beim Einbuchen; die Meldung sagt,
+// welches Exemplar ins Abholfach gehört, mit dem Satz der Inventur-Rückgabe.
+describe('Wareneingang: vorgemerkte Exemplare', () => {
+	it('nennt das Exemplar, das ins Abholfach gehört', async () => {
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		holen.mockResolvedValue([gruppe(['e1'])]);
+		vi.mocked(apiPost).mockResolvedValue({
+			received_count: 1,
+			received_items: [{ barcode_id: 'B-7', titel: 'Titel A', abholfach: 'Anna Warte, 07B' }]
+		});
+		const screen = render(Wareneingang, { ...offen, incomingShipments: [gruppe(['e1'])] });
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Titel A auswählen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Einbuchen' }));
+
+		await vi.waitFor(() =>
+			expect(meldung).toHaveBeenCalledWith(
+				'Vorgemerkt für Anna Warte, 07B: „Titel A“ (B-7) nicht ins Regal stellen, ins Abholfach legen.',
+				'warning'
+			)
+		);
 	});
 });

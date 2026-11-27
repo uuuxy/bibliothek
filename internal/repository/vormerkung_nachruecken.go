@@ -58,23 +58,41 @@ func bedieneNaechstenWartenden(ctx context.Context, db SpurenDatenbank, exemplar
 // wie die Theke ihn bei einer Rückgabe nennt; leer heißt: Niemand wartet, und das Exemplar gehört
 // ins Regal. Gefragt wird zuerst, ob jemand wartet: Ohne Wartenden bleibt es bei einer Abfrage.
 func RueckeNachMitExemplar(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, err error) {
-	wartet, err := ersteZeile[bool](ctx, db, `SELECT EXISTS (
+	fuer, wartet, err := bedieneWartendenMitNamen(ctx, db, exemplarID, titelID, jetzt)
+	if err != nil || wartet {
+		return fuer, err
+	}
+	return "", stempleFreigabe(ctx, db, exemplarID, jetzt)
+}
+
+// BedieneWartendenMitEingang teilt ein Exemplar, das aus dem Zulauf in den Bestand kommt, dem
+// nächsten Wartenden desselben Titels zu wie eine Rückgabe: Ein bestellter Titel lässt sich
+// vormerken (VormerkungsAbfragen.LegeAn). fuer nennt ihn mit Klasse; leer heißt: Niemand wartet,
+// und das Exemplar gehört ins Regal.
+func BedieneWartendenMitEingang(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, err error) {
+	fuer, _, err = bedieneWartendenMitNamen(ctx, db, exemplarID, titelID, jetzt)
+	return fuer, err
+}
+
+// bedieneWartendenMitNamen fragt, ob jemand auf den Titel wartet, teilt ihm dann das Exemplar zu
+// und nennt ihn mit Klasse. wartet ist false, wenn niemand wartet; fuer bleibt leer, wenn
+// niemand bedient wurde.
+func bedieneWartendenMitNamen(ctx context.Context, db SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (fuer string, wartet bool, err error) {
+	wartet, err = ersteZeile[bool](ctx, db, `SELECT EXISTS (
 		SELECT 1 FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
 		WHERE v.titel_id = $1 AND v.status = 'wartend' AND `+sqlWartenderDarfAbholen+`)`, titelID)
-	if err != nil {
-		return "", err
-	}
-	if !wartet {
-		return "", stempleFreigabe(ctx, db, exemplarID, jetzt)
+	if err != nil || !wartet {
+		return "", wartet, err
 	}
 	bedient, err := bedieneNaechstenWartenden(ctx, db, exemplarID, titelID, jetzt)
 	if err != nil || !bedient {
-		return "", err
+		return "", true, err
 	}
-	return ersteZeile[string](ctx, db, `SELECT s.vorname || ' ' || s.nachname
+	fuer, err = ersteZeile[string](ctx, db, `SELECT s.vorname || ' ' || s.nachname
 		       || CASE WHEN coalesce(s.klasse, '') <> '' THEN ', ' || s.klasse ELSE '' END
 		FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
 		WHERE v.bereitgestellt_exemplar_id = $1 AND v.status = 'abholbereit'`, exemplarID)
+	return fuer, true, err
 }
 
 // ersteZeile liest den einen Wert der ersten Zeile; eine leere Antwort ist pgx.ErrNoRows.

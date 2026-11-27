@@ -66,6 +66,16 @@
 				`${anzahlText(daten.received_count, 'Exemplar', 'Exemplare')} eingebucht`,
 				'success'
 			);
+			// Wartet jemand auf den Titel, geht das Exemplar wie bei einer Rückgabe an ihn; der Satz
+			// ist der der Inventur-Rückgabe, damit es nicht ins Regal kommt.
+			for (const e of daten.received_items ?? []) {
+				if (e.abholfach) {
+					snackbars.addToast(
+						`Vorgemerkt für ${e.abholfach}: „${e.titel}“ (${e.barcode_id}) nicht ins Regal stellen, ins Abholfach legen.`,
+						'warning'
+					);
+				}
+			}
 			gewaehlteExemplare = [];
 			onReceived(daten.received_items ?? []);
 		} catch {

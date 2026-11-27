@@ -9,7 +9,7 @@ import (
 )
 
 // Der UPDATE…RETURNING-Kern von BucheWareneingang (Regex für pgxmock).
-const wareneingangAbfrage = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+(?:--[^\n]*\s+)*AND e\.bestellstatus IS NOT NULL\s+AND e\.ist_ausgesondert = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
+const wareneingangAbfrage = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+(?:--[^\n]*\s+)*AND e\.bestellstatus IS NOT NULL\s+AND e\.ist_ausgesondert = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.id, e\.titel_id, e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
 
 func TestBucheWareneingang_NenntEtikettStandJeExemplar(t *testing.T) {
 	mock, err := pgxmock.NewPool()
@@ -20,11 +20,17 @@ func TestBucheWareneingang_NenntEtikettStandJeExemplar(t *testing.T) {
 
 	ids := []string{"ex-1", "ex-2"}
 
+	mock.ExpectBegin()
 	mock.ExpectQuery(wareneingangAbfrage).
 		WithArgs(ids).
-		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}).
-			AddRow("B-100", "Faust", "Goethe", true).
-			AddRow("B-101", "Die Verwandlung", "Kafka", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "titel", "autor", "etikett_gedruckt"}).
+			AddRow("ex-1", "t-1", "B-100", "Faust", "Goethe", true).
+			AddRow("ex-2", "t-2", "B-101", "Die Verwandlung", "Kafka", false))
+	// Niemand wartet auf die Titel: Beide Exemplare gehören ins Regal.
+	for _, titel := range []string{"t-1", "t-2"} {
+		mock.ExpectQuery(`SELECT EXISTS`).WithArgs(titel).WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	}
+	mock.ExpectCommit()
 
 	// Audit-Log-Insert (Anzahl = 2)
 	mock.ExpectExec(`INSERT INTO audit_logs`).
@@ -64,9 +70,11 @@ func TestBucheWareneingang_OhnePassendeExemplareEinFehler(t *testing.T) {
 
 	ids := []string{"bereits-freigegeben"}
 
+	mock.ExpectBegin()
 	mock.ExpectQuery(wareneingangAbfrage).
 		WithArgs(ids).
-		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "titel", "autor", "etikett_gedruckt"}))
+	mock.ExpectCommit()
 
 	items, err := BucheWareneingang(t.Context(), mock, repository.NewProtokollAbfragen(mock), WareneingangAngaben{
 		ExemplarIDs:  ids,

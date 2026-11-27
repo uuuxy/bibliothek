@@ -15,6 +15,8 @@ type EingebuchtesExemplar struct {
 	Titel           string `json:"titel"`
 	Autor           string `json:"autor"`
 	EtikettGedruckt bool   `json:"etikett_gedruckt"`
+	// Abholfach nennt den Schüler, für den das Exemplar ins Abholfach gehört; leer heißt ins Regal.
+	Abholfach string `json:"abholfach,omitempty"`
 }
 
 // ErrNichtsEinzubuchen meldet, dass keines der genannten Exemplare im Zulauf stand: Ein
@@ -35,8 +37,18 @@ type WareneingangAngaben struct {
 // ins Protokoll. Scheitert nur der Eintrag, bleibt die Buchung, und der Fehler steht im Log
 // (meldeProtokollFehler).
 func BucheWareneingang(ctx context.Context, pool db.Pool, protokollAbfragen *repository.ProtokollAbfragen, angaben WareneingangAngaben) ([]EingebuchtesExemplar, error) {
-	eingebucht, err := repository.BucheZulaufEin(ctx, pool, angaben.ExemplarIDs)
+	// Eine Transaktion: Das Exemplar kommt nur zusammen mit der Vormerkung, die es bedient, in
+	// den Bestand.
+	tx, err := pool.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+	defer db.Verwerfe(ctx, tx)
+	eingebucht, err := repository.BucheZulaufEin(ctx, tx, angaben.ExemplarIDs)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 	if len(eingebucht) == 0 {
