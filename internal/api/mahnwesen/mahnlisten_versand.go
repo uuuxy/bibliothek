@@ -261,12 +261,9 @@ type versandErgebnis struct {
 	Abgebrochen                              bool
 }
 
-// versendeKlassenMahnungen erzeugt je Klasse das Mahn-PDF und mailt es an die
-// hinterlegte Klassenleitung. Klassen ohne E-Mail oder ohne überfällige Schüler
-// werden übersprungen. Ein Fehler bei einer einzelnen Klasse (PDF, abgelehnte Adresse)
-// bricht den Lauf nicht ab, zählt aber als fehlgeschlagen — nicht als übersprungen. Ein
-// Mailserver-Fehler (ErrSMTPVersand) bricht ab: Das Relay ist weg, jede weitere Klasse
-// hinge nur bis zur Frist; die Restlichen zählen als fehlgeschlagen.
+// versendeKlassenMahnungen erzeugt je Klasse das Mahn-PDF und mailt es an die hinterlegte
+// Klassenleitung; gezählt und abgebrochen wird nach versendeJeKlasse. Klassen ohne E-Mail oder
+// ohne überfällige Schüler werden übersprungen, ein gescheitertes PDF zählt als fehlgeschlagen.
 //
 // erzeugePDF und sendeMail kommen als Parameter (im Betrieb erzeugeMahnliste und Sende),
 // damit sich das Überspringen und die Adressierung ohne echten PDF- und Mailversand prüfen
@@ -277,9 +274,47 @@ func versendeKlassenMahnungen(
 	erzeugePDF func([]repository.MahnwesenKlasse) ([]byte, error),
 	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
+	return versendeJeKlasse(ctx, klassen,
+		func(kl repository.MahnwesenKlasse) bool { return kl.LehrerEmail == "" || len(kl.Schueler) == 0 },
+		func(kl repository.MahnwesenKlasse) (mailservice.Nachricht, bool) {
+			einzelKlasse := []repository.MahnwesenKlasse{kl}
+			pdfDaten, err := erzeugePDF(einzelKlasse)
+			if err != nil {
+				slog.Error("bulk-overdue: PDF für Klasse fehlgeschlagen", "klasse", kl.Klasse, "fehler", err)
+				return mailservice.Nachricht{}, false
+			}
+			schuelerGesamt, medienGesamt := mahnStatistik(einzelKlasse)
+			return baueMahnMail(
+				mahnlisteEmpfaenger{Klasse: kl.Klasse, Email: kl.LehrerEmail},
+				pdfDaten, schuelerGesamt, medienGesamt,
+			), true
+		},
+		sendeMail,
+		func(kl repository.MahnwesenKlasse, err error) {
+			slog.Error("bulk-overdue: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.LehrerEmail, "fehler", err)
+		},
+	)
+}
+
+// versendeJeKlasse ist die Schleife beider Versände an die Klassenleitungen (Mahnlisten und
+// Kontoauszüge der Abgänger): Als zwei Schleifen liefen Zählen und Abbrechen zweimal auseinander.
+// ohneAuftrag heißt übersprungen, und das ist Absicht (keine Adresse, nichts zu senden).
+// Entsteht keine Nachricht (baueNachricht liefert false) oder lehnt der Versand ab, zählt die
+// Klasse als fehlgeschlagen: Als „übersprungen“ erklärt, sähe ein toter Mailserver aus wie
+// Absicht, und niemand sendete nach. Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab, weil jede
+// weitere Klasse sonst bis zur Frist am toten Relay hinge; danach zählt jede Klasse mit Auftrag
+// als fehlgeschlagen.
+func versendeJeKlasse[K any](
+	ctx context.Context,
+	klassen []K,
+	ohneAuftrag func(K) bool,
+	baueNachricht func(K) (mailservice.Nachricht, bool),
+	sendeMail func(context.Context, mailservice.Nachricht) error,
+	meldeVersandfehler func(K, error),
+) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {
-		if kl.LehrerEmail == "" || len(kl.Schueler) == 0 {
+		if ohneAuftrag(kl) {
 			erg.Uebersprungen++
 			continue
 		}
@@ -287,24 +322,13 @@ func versendeKlassenMahnungen(
 			erg.Fehlgeschlagen++
 			continue
 		}
-
-		einzelKlasse := []repository.MahnwesenKlasse{kl}
-
-		pdfDaten, err := erzeugePDF(einzelKlasse)
-		if err != nil {
-			slog.Error("bulk-overdue: PDF für Klasse fehlgeschlagen", "klasse", kl.Klasse, "fehler", err)
+		nachricht, ok := baueNachricht(kl)
+		if !ok {
 			erg.Fehlgeschlagen++
 			continue
 		}
-
-		schuelerGesamt, medienGesamt := mahnStatistik(einzelKlasse)
-		nachricht := baueMahnMail(
-			mahnlisteEmpfaenger{Klasse: kl.Klasse, Email: kl.LehrerEmail},
-			pdfDaten, schuelerGesamt, medienGesamt,
-		)
-
 		if err := sendeMail(ctx, nachricht); err != nil {
-			slog.Error("bulk-overdue: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.LehrerEmail, "fehler", err)
+			meldeVersandfehler(kl, err)
 			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
 				erg.Abgebrochen = true

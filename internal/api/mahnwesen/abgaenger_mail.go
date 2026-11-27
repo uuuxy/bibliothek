@@ -2,7 +2,6 @@ package mahnwesen
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -196,18 +195,14 @@ func erzeugeKontoauszugPDF(schule pdf.SchuleInfo) func(pdf.KontoauszugEintrag) (
 	}
 }
 
-// versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je Abgänger.
-// erzeugePDF und sendeMail kommen als Parameter, damit sich das Überspringen und die
-// Adressierung ohne echten PDF- und Mailversand prüfen lassen.
+// versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je Abgänger;
+// gezählt und abgebrochen wird nach versendeJeKlasse. erzeugePDF und sendeMail kommen als
+// Parameter, damit sich das Überspringen und die Adressierung ohne echten PDF- und Mailversand
+// prüfen lassen.
 //
-// Best effort auf zwei Ebenen: Ein gescheitertes PDF kostet nur diesen einen Anhang, nicht die
-// ganze Klasse; 29 fertige Kontoauszüge wegen eines kaputten zurückzuhalten wäre der teurere
-// Fehler. Drei Ausgänge: „übersprungen" ist Absicht (keine Adresse, keine Auszüge),
-// „fehlgeschlagen" ist ein Problem (alle PDFs kaputt, Versand abgelehnt); als „übersprungen"
-// erklärt, sähe ein toter Mailserver am Zeugnistag aus wie Absicht, und niemand sendete nach.
-// Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab wie beim Mahnlauf, weil jede weitere Klasse
-// sonst bis zu 70 s am toten Relay hinge; danach zählt eine Klasse ohne Adresse oder ohne
-// Auszüge als übersprungen, jede andere als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
+// Ein gescheitertes PDF kostet nur diesen einen Anhang, nicht die ganze Klasse; 29 fertige
+// Kontoauszüge wegen eines kaputten zurückzuhalten wäre der teurere Fehler. Erst wenn jedes PDF
+// der Klasse scheitert, zählt sie als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
 // unschädlich, der Lauf darf wiederholt werden.
 func versendeAbgaengerKontoauszuege(
 	ctx context.Context,
@@ -215,36 +210,20 @@ func versendeAbgaengerKontoauszuege(
 	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
 	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
-	var erg versandErgebnis
-	for _, kl := range klassen {
-		if kl.Empfaenger == "" || len(kl.Eintraege) == 0 {
-			erg.Uebersprungen++
-			continue
-		}
-		if erg.Abgebrochen {
-			erg.Fehlgeschlagen++
-			continue
-		}
-
-		anhaenge := baueKontoauszugAnhaenge(kl, erzeugePDF)
-		if len(anhaenge) == 0 {
-			// Jedes einzelne PDF dieser Klasse ist gescheitert — das ist ein Problem,
-			// keine Absicht.
-			erg.Fehlgeschlagen++
-			continue
-		}
-
-		if err := sendeMail(ctx, baueAbgaengerMail(kl, anhaenge)); err != nil {
-			slog.Error("abgaenger-kontoauszug: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.Empfaenger, "fehler", err)
-			erg.Fehlgeschlagen++
-			if errors.Is(err, mailservice.ErrSMTPVersand) {
-				erg.Abgebrochen = true
+	return versendeJeKlasse(ctx, klassen,
+		func(kl abgaengerKlasse) bool { return kl.Empfaenger == "" || len(kl.Eintraege) == 0 },
+		func(kl abgaengerKlasse) (mailservice.Nachricht, bool) {
+			anhaenge := baueKontoauszugAnhaenge(kl, erzeugePDF)
+			if len(anhaenge) == 0 {
+				return mailservice.Nachricht{}, false
 			}
-			continue
-		}
-		erg.Versendet++
-	}
-	return erg
+			return baueAbgaengerMail(kl, anhaenge), true
+		},
+		sendeMail,
+		func(kl abgaengerKlasse, err error) {
+			slog.Error("abgaenger-kontoauszug: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.Empfaenger, "fehler", err)
+		},
+	)
 }
 
 func baueKontoauszugAnhaenge(
