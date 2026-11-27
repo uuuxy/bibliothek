@@ -71,10 +71,10 @@ type abholbereiteVormerkung struct {
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
-// sendeThekenEreignis schickt das Ereignis über die Live-Leitung; ohne Exemplar (Gerät)
-// schickt es nichts.
+// sendeThekenEreignis schickt nach einer Ausleihe oder Rückgabe das Ereignis über die
+// Live-Leitung. Es nennt kein Buch und gilt deshalb für ein Gerät genauso.
 func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
-	if antwort.Exemplar == nil {
+	if antwort.Art != "ausleihe" && antwort.Art != "rueckgabe" {
 		return
 	}
 	var leserID string

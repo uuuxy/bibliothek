@@ -259,9 +259,7 @@ func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnib
 	t.legeAntwortAb(ctx, req.IdempotenzSchluessel, antwort, http.StatusOK)
 
 	// Nach Ausleihe und Rückgabe erfahren es die übrigen Arbeitsplätze über die Live-Leitung.
-	if antwort.Art == "ausleihe" || antwort.Art == "rueckgabe" {
-		t.sendeThekenEreignis(*antwort)
-	}
+	t.sendeThekenEreignis(*antwort)
 
 	tuer.AntworteJSON(w, http.StatusOK, antwort)
 }

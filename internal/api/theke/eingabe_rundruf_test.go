@@ -23,10 +23,11 @@ func (o *festeOmnibox) VerarbeiteEingabe(context.Context, service.OmniboxEingabe
 	return o.ergebnis, nil
 }
 
-// Nach einer Ausleihe und nach einer Rückgabe an der Theke geht ein Rundruf an die
-// Arbeitsplätze; ein gescannter Ausweis und ein Hinweis ohne Buchung lösen keinen aus. Geprüft am Strom: Nach jedem Scan
-// geht eine Marke über die Leitung, und was vor ihr ankommt, hat der Scan gesendet.
-func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
+// hoereRundrufe startet einen Broker und hört an ihm zu wie ein Arbeitsplatz. Die gelieferte
+// Funktion führt einen Vorgang aus und sammelt die Rundrufe „action", die er sendet: Danach geht
+// eine Marke über die Leitung, und was vor ihr ankommt, hat der Vorgang gesendet.
+func hoereRundrufe(t *testing.T) (*sse.Broker, func(vorgang func()) []string) {
+	t.Helper()
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
@@ -77,16 +78,9 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 	}
 
 	marken := 0
-	rundrufeNach := func(ergebnis *service.OmniboxErgebnis) []string {
+	return broker, func(vorgang func()) []string {
 		t.Helper()
-		req := httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(`{"query":"B-1"}`))
-		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
-			&auth.Claims{Rolle: auth.RolleAdmin, KontoID: "u1"}))
-		w := httptest.NewRecorder()
-		(&Tueren{Basis: &tuer.Basis{Broker: broker}}).EingabeVerarbeiten(&festeOmnibox{ergebnis})(w, req)
-		if w.Code != http.StatusOK {
-			t.Fatalf("Scan mit Ergebnis %q: Status %d: %s", ergebnis.Art, w.Code, w.Body.String())
-		}
+		vorgang()
 		marken++
 		marke := fmt.Sprintf("marke-%d", marken)
 		broker.Verteile(marke, "{}")
@@ -100,36 +94,63 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 			}
 		}
 	}
+}
 
-	buch := &repository.Exemplar{ID: "c1", BarcodeID: "B-1", Titel: "Rundruf-Band"}
-	leser := &repository.Leser{ID: "l1"}
-	for _, f := range []struct {
-		typ      string
-		fremd    bool
-		ereignis string
-	}{
-		{"ausleihe", false, "ausleihe"},
-		{"rueckgabe", false, "rueckgabe"},
-		{"rueckgabe", true, "fremdrueckgabe"},
-	} {
-		rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: f.typ, Exemplar: buch, Leser: leser, Fremdrueckgabe: f.fremd})
-		if len(rundrufe) != 1 || !strings.Contains(rundrufe[0], `"event":"`+f.ereignis+`"`) || !strings.Contains(rundrufe[0], `"student_id":"l1"`) {
-			t.Errorf("nach %s (fremd %v): Rundrufe %q — erwartet genau einen mit event %q und der Kennung des Lesers", f.typ, f.fremd, rundrufe, f.ereignis)
-			continue
-		}
-		// Den Rundruf bekommt jede Sitzung, auch das Kollegium. Welches Buch, steht nicht darin:
-		// Mit der Kennung des Lesers ergäbe es eine Lesehistorie neben der befristeten.
-		for _, buchangabe := range []string{"Rundruf-Band", "B-1", `"c1"`} {
-			if strings.Contains(rundrufe[0], buchangabe) {
-				t.Errorf("nach %s (fremd %v): Rundruf %s nennt das Buch (%s)", f.typ, f.fremd, rundrufe[0], buchangabe)
+// Nach einer Ausleihe und nach einer Rückgabe an der Theke, eines Buchs wie eines Geräts, geht
+// ein Rundruf an die Arbeitsplätze; ein gescannter Ausweis, ein Hinweis ohne Buchung und die
+// Auskunft zu einem Gerät lösen keinen aus.
+func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
+	broker, rundrufeNach := hoereRundrufe(t)
+	scan := func(ergebnis *service.OmniboxErgebnis) func() {
+		return func() {
+			req := httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(`{"query":"B-1"}`))
+			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+				&auth.Claims{Rolle: auth.RolleAdmin, KontoID: "u1"}))
+			w := httptest.NewRecorder()
+			(&Tueren{Basis: &tuer.Basis{Broker: broker}}).EingabeVerarbeiten(&festeOmnibox{ergebnis})(w, req)
+			if w.Code != http.StatusOK {
+				t.Fatalf("Scan mit Ergebnis %q: Status %d: %s", ergebnis.Art, w.Code, w.Body.String())
 			}
 		}
 	}
-	if rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: "student"}); len(rundrufe) != 0 {
-		t.Errorf("nach einem gescannten Ausweis: Rundrufe %q — erwartet keinen", rundrufe)
+
+	buch := &repository.Exemplar{ID: "c1", BarcodeID: "B-1", Titel: "Rundruf-Band"}
+	geraet := &repository.Geraet{ID: "g1", BarcodeID: "G-1", Modellname: "Rundruf-Tablet"}
+	leser := &repository.Leser{ID: "l1"}
+	for _, f := range []struct {
+		name     string
+		ergebnis *service.OmniboxErgebnis
+		ereignis string
+	}{
+		{"Ausleihe", &service.OmniboxErgebnis{Art: "ausleihe", Exemplar: buch, Leser: leser}, "ausleihe"},
+		{"Rückgabe", &service.OmniboxErgebnis{Art: "rueckgabe", Exemplar: buch, Leser: leser}, "rueckgabe"},
+		{"fremder Rückgabe", &service.OmniboxErgebnis{Art: "rueckgabe", Exemplar: buch, Leser: leser, Fremdrueckgabe: true}, "fremdrueckgabe"},
+		{"Ausleihe eines Geräts", &service.OmniboxErgebnis{Art: "ausleihe", Geraet: geraet, Leser: leser}, "ausleihe"},
+		{"Rückgabe eines Geräts", &service.OmniboxErgebnis{Art: "rueckgabe", Geraet: geraet, Leser: leser}, "rueckgabe"},
+	} {
+		rundrufe := rundrufeNach(scan(f.ergebnis))
+		if len(rundrufe) != 1 || !strings.Contains(rundrufe[0], `"event":"`+f.ereignis+`"`) || !strings.Contains(rundrufe[0], `"student_id":"l1"`) {
+			t.Errorf("nach %s: Rundrufe %q — erwartet genau einen mit event %q und der Kennung des Lesers", f.name, rundrufe, f.ereignis)
+			continue
+		}
+		// Den Rundruf bekommt jede Sitzung, auch das Kollegium. Was ausgeliehen wurde, steht nicht
+		// darin: Mit der Kennung des Lesers ergäbe es eine Lesehistorie neben der befristeten.
+		for _, angabe := range []string{"Rundruf-Band", "B-1", `"c1"`, "Rundruf-Tablet", "G-1", `"g1"`} {
+			if strings.Contains(rundrufe[0], angabe) {
+				t.Errorf("nach %s: Rundruf %s nennt, was ausgeliehen wurde (%s)", f.name, rundrufe[0], angabe)
+			}
+		}
 	}
-	// Ein Hinweis zu einem Buch, bei dem nichts gebucht wurde.
-	if rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: "info", Exemplar: buch}); len(rundrufe) != 0 {
-		t.Errorf("nach einem Hinweis ohne Buchung: Rundrufe %q — erwartet keinen", rundrufe)
+	for _, f := range []struct {
+		name     string
+		ergebnis *service.OmniboxErgebnis
+	}{
+		{"einem gescannten Ausweis", &service.OmniboxErgebnis{Art: "student"}},
+		{"einem Hinweis ohne Buchung", &service.OmniboxErgebnis{Art: "info", Exemplar: buch}},
+		{"der Auskunft zu einem Gerät", &service.OmniboxErgebnis{Art: "geraet_check", Geraet: geraet}},
+	} {
+		if rundrufe := rundrufeNach(scan(f.ergebnis)); len(rundrufe) != 0 {
+			t.Errorf("nach %s: Rundrufe %q — erwartet keinen", f.name, rundrufe)
+		}
 	}
 }

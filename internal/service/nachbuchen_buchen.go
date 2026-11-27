@@ -40,9 +40,14 @@ func (d *AusleihDienst) bucheRueckgabeNach(ctx context.Context, tx pgx.Tx, l *na
 	erg.Exemplar = l.exemplar
 	erg.AusleiheID = &l.offeneAusleihe.ID
 	erg.Fremdrueckgabe = fremd
-	erg.Vorbesitzer = vorbesitzer
-	if !fremd {
-		erg.Leser = l.leser
+	if fremd {
+		erg.Vorbesitzer = vorbesitzer
+	}
+	// Leser ist wie an der Theke der, dessen Ausleihe endet: Die Live-Meldung lädt seine Akte
+	// an den übrigen Arbeitsplätzen neu.
+	erg.Leser = l.leser
+	if vorbesitzer != nil {
+		erg.Leser = vorbesitzer
 	}
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchZurueckgegeben, Gebucht: erg}, nil
 }
@@ -235,7 +240,8 @@ func (d *AusleihDienst) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l
 var errScanVeraltet = errors.New("scan veraltet")
 
 // beendeAusleiheZumScan beendet die offene Ausleihe zum Zeitpunkt des Scans, bedient die
-// Vormerkung und schreibt das Protokoll; es liefert den Vorbesitzer für Ergebnis und Meldung.
+// Vormerkung und schreibt das Protokoll. Es liefert den Leser der beendeten Ausleihe, außer er
+// war an der Theke schon geöffnet.
 func (d *AusleihDienst) beendeAusleiheZumScan(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, erg *AusleihErgebnis) (*repository.Leser, error) {
 	aktiv := l.offeneAusleihe
 	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.eintrag.BearbeiterID, fremd, &l.gescannt); err != nil {
@@ -253,7 +259,7 @@ func (d *AusleihDienst) beendeAusleiheZumScan(ctx context.Context, tx pgx.Tx, l 
 	if err := d.protokollAbfragen.ProtokolliereRueckgabe(ctx, tx, l.exemplar.ID, *aktiv.SchuelerID, "", l.eintrag.BearbeiterID); err != nil {
 		return nil, err
 	}
-	if !fremd {
+	if !fremd && l.leser != nil {
 		return nil, nil
 	}
 	return d.leserAbfragen.Finde(ctx, *aktiv.SchuelerID)

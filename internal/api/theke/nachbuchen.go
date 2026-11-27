@@ -205,6 +205,8 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nac
 	}
 	if erg.Gebucht != nil {
 		out.Daten = zurEingabeAntwort(service.OmniboxErgebnisAus(erg.Gebucht))
+		// Die übrigen Arbeitsplätze erfahren es wie nach einer Buchung an der Theke.
+		t.sendeThekenEreignis(*out.Daten)
 	}
 	t.legeNachbuchErgebnisAb(ctx, out)
 	if erg.Schranke != nil {
