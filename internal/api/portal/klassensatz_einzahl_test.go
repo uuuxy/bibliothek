@@ -24,3 +24,11 @@ func TestKlassensatz_EinExemplarStehtInDerEinzahl(t *testing.T) {
 		}
 	}
 }
+
+// Der Fuß der Bereit-Mail schreibt „Abschließen“ mit ß, wie jeder Text an die Lehrkräfte.
+func TestKlassensatz_BereitMailNenntDenAnlass(t *testing.T) {
+	text := klassensatzBereitText(&repository.ErledigteReservierung{TitelName: "Tschick", Klasse: "08G1", Anzahl: 28})
+	if soll := "Diese Mail wurde automatisch beim Abschließen der Reservierung verschickt."; !strings.HasSuffix(text, soll) {
+		t.Errorf("Bereit-Mail endet mit %q, erwartet %q", text[strings.LastIndex(text, "\n")+1:], soll)
+	}
+}

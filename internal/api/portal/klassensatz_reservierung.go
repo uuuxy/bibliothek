@@ -241,7 +241,7 @@ func klassensatzBereitText(e *repository.ErledigteReservierung) string {
 	if e.ErledigtNotiz != "" {
 		text += fmt.Sprintf("\nNotiz der Bibliothek:\n  %s\n", e.ErledigtNotiz)
 	}
-	return text + "\nDiese Mail wurde automatisch beim Abschliessen der Reservierung verschickt."
+	return text + "\nDiese Mail wurde automatisch beim Abschließen der Reservierung verschickt."
 }
 
 // pruefeKlassensatzAnfrage prüft die Pflichtfelder und setzt die Anzahl (Vorgabe 1,
