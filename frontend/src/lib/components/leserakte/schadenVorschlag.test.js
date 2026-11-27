@@ -181,6 +181,34 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		expect(onSubmit).toHaveBeenCalledWith('Verloren', 0, 'nicht_zurueckgegeben');
 	});
 
+	// Bis der Vorschlag da ist, steht im Feld der Startwert 0. Ein Klick in dieser Zeit schickte
+	// eine Forderung über 0 €, die niemand gewählt hat.
+	it('sperrt „Melden“, solange der Vorschlag berechnet wird', async () => {
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					liefere = () =>
+						resolve(
+							/** @type {any} */ ({
+								ok: true,
+								json: async () => ({ betrag: 24.9, herleitung: 'Neuwert laut Rechnung' })
+							})
+						);
+				})
+		);
+		const onSubmit = vi.fn();
+		const screen = render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit });
+		const knopf = /** @type {HTMLButtonElement} */ (screen.getByRole('button', { name: 'Melden' }));
+		// Einen gesperrten Knopf klickt der Browser nicht, jsdom liefert den Klick trotzdem aus;
+		// darum prüft der Test die Sperre selbst.
+		expect(knopf.disabled).toBe(true);
+		liefere();
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+		await fireEvent.click(knopf);
+		expect(onSubmit).toHaveBeenCalledWith('Verloren', 24.9, 'nicht_zurueckgegeben');
+	});
+
 	it('meldet nicht ohne Grund und nennt das Feld', async () => {
 		serverLiefert({ betrag: 24.9, herleitung: 'Kaufpreis', ist_lernmittel: true });
 		const onSubmit = vi.fn();

@@ -39,7 +39,11 @@
 	);
 	// Hat jemand den Betrag selbst eingetragen? Dann bleibt er stehen, auch wenn der Vorschlag
 	// erst danach eintrifft — sonst entstünde die Forderung über den Vorschlag statt den Betrag.
-	let vonHand = false;
+	let vonHand = $state(false);
+	// Solange der Vorschlag unterwegs ist, ist die 0 im Feld nur der Startwert und keine Wahl: Ein
+	// Klick schickte sonst eine Forderung über 0 €. Wer selbst einen Betrag tippt, hat gewählt.
+	let vorschlagLaeuft = $state(false);
+	const wartetAufVorschlag = $derived(vorschlagLaeuft && !vonHand);
 	/** Der Satz unter dem Betragsfeld: Herleitung, Ladehinweis oder Fehlermeldung. */
 	let herleitung = $state('');
 	// Die Fallgruppe steht im Bescheid an die Eltern (welches Kästchen, ob Rückgabe
@@ -60,10 +64,12 @@
 	// Ohne Forderung (Kollege) wird nicht gefragt: Dann gibt es kein Betragsfeld.
 	$effect(() => {
 		const exemplarId = ausleihe?.id;
+		vorschlagLaeuft = false;
 		if (!exemplarId || ohneForderung || geraet) return;
 
 		let abgebrochen = false;
 		vonHand = false;
+		vorschlagLaeuft = true;
 		herleitung = 'Vorschlag wird berechnet …';
 
 		apiFetch(`/api/buecher/exemplare/${exemplarId}/ersatzwert-vorschlag`)
@@ -73,11 +79,13 @@
 			})
 			.then((v) => {
 				if (abgebrochen) return;
+				vorschlagLaeuft = false;
 				if (!vonHand) schadensbetrag = v.betrag ?? 0;
 				herleitung = v.herleitung ?? '';
 			})
 			.catch((e) => {
 				if (abgebrochen) return;
+				vorschlagLaeuft = false;
 				// Kein stilles 0,00 €: Wer hier nichts liest, hielte den Startwert für
 				// einen berechneten Vorschlag. Der Grund steht dabei, etwa „Keine Verbindung zum Server".
 				herleitung = `Vorschlag konnte nicht berechnet werden: ${fehlertext(e).replace(/\.$/, '')}. Bitte Betrag selbst eintragen.`;
@@ -166,7 +174,11 @@
 				{/if}
 				<div class="flex gap-3 justify-end pt-4">
 					<Button variant="ghost" onclick={onCancel}>Abbrechen</Button>
-					<Button variant="danger-solid" onclick={melde} disabled={isSubmitting}>
+					<Button
+						variant="danger-solid"
+						onclick={melde}
+						disabled={isSubmitting || wartetAufVorschlag}
+					>
 						{isSubmitting ? 'Wird gemeldet …' : 'Melden'}
 					</Button>
 				</div>

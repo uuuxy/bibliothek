@@ -671,7 +671,10 @@ gegen den ganzen Code gehalten ist, steht in [sweeps.md](sweeps.md) (Abdeckung d
   `BuchFormular.svelte`, in `ui/EingabeDialog`, `SchadenMeldenDialog` und im Bescheid). Gesperrt
   bleibt er nur, solange keine Wahl getroffen ist: keine Auswahl, ein unveränderter Wert in einem
   vorbelegten Feld (Preis, Schreibweise eines Schlagworts), Angaben, die der Dialog nicht beheben
-  kann (Einstellungen zum Bescheid), und während des Sendens (`gesperrt` an `ui/EingabeDialog`). M3
+  kann (Einstellungen zum Bescheid), solange noch geladen wird, woran der Klick entscheidet (Ziel
+  beim Zusammenführen von Schlagworten, Vorschlag des Ersatzbetrags; ein Klick davor meldete einen
+  falschen Fehler oder schickte den Startwert), und während des Sendens (`gesperrt` an
+  `ui/EingabeDialog`). M3
   Dialogs: „Disable confirming actions until a choice is made.“ Pflicht trägt `required` oder
   `aria-required` an `ui/Feld` (`aria-required` nimmt, wer die Pflicht selbst prüft; es sperrt im
   Browser nichts), das Sternchen

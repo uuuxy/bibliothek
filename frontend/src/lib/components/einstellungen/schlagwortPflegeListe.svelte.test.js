@@ -64,6 +64,30 @@ describe('erzeugeSchlagwortPflegeListe', () => {
 		expect(liste.liste?.zeilen[0].wort).toBe('Zwergpinguin');
 	});
 
+	// Der Zusammenführen-Dialog sperrt, solange sucht gilt. Endete es mit einer Antwort, die schon
+	// unterwegs war, prüfte der Dialog die neue Eingabe an der alten Liste.
+	it('sucht vom Anstoß bis zur Antwort der jüngsten Anfrage', async () => {
+		/** @type {(wert: any) => void} */
+		let alteFertig = () => {};
+		vi.mocked(apiGet)
+			.mockImplementationOnce(() => new Promise((fertig) => (alteFertig = fertig)))
+			.mockResolvedValueOnce(antwort('Zwergpinguin'));
+		const liste = erzeugeSchlagwortPflegeListe();
+		liste.suche = 'zw';
+		liste.angestossen();
+		expect(liste.sucht).toBe(true);
+		await vi.advanceTimersByTimeAsync(300);
+		liste.suche = 'zwerg';
+		liste.angestossen();
+		alteFertig(antwort('Zwanzig'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(liste.sucht).toBe(true);
+		expect(liste.liste).toBeNull();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(liste.sucht).toBe(false);
+		expect(liste.liste?.zeilen[0].wort).toBe('Zwergpinguin');
+	});
+
 	it('meldet einen Ladefehler und nimmt ihn mit der nächsten Antwort zurück', async () => {
 		vi.mocked(apiGet).mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce(antwort('Aal'));
 		const liste = erzeugeSchlagwortPflegeListe();

@@ -67,7 +67,10 @@
 	const gueltig = $derived(neu !== '' && (auftrag?.art !== 'zusammenfuehren' || Boolean(ziel)));
 	// Eine unveränderte Schreibweise ist noch keine Wahl, wie ein unveränderter Preis: Der Knopf
 	// bleibt gesperrt. Ein leeres Feld oder ein unbekanntes Ziel nennt beim Klick das Feld.
-	const gesperrt = $derived(laeuft || (auftrag?.art === 'umbenennen' && neu === wort));
+	// Beim Zusammenführen steht das Ziel erst mit der Antwort der Suche fest; bis dahin ist keine
+	// Wahl möglich, und ein Klick fände fälschlich kein Schlagwort.
+	const suchtZiel = $derived(auftrag?.art === 'zusammenfuehren' && kandidaten.sucht);
+	const gesperrt = $derived(laeuft || suchtZiel || (auftrag?.art === 'umbenennen' && neu === wort));
 
 	const texte = $derived(
 		{
@@ -98,7 +101,9 @@
 			? ''
 			: neu === ''
 				? texte.leer
-				: 'Kein Schlagwort mit dieser Schreibweise, bitte eines aus der Liste wählen'
+				: suchtZiel
+					? ''
+					: 'Kein Schlagwort mit dieser Schreibweise, bitte eines aus der Liste wählen'
 	);
 
 	async function ausfuehren() {

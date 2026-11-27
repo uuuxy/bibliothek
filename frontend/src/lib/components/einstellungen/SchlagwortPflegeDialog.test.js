@@ -8,7 +8,7 @@ vi.mock('../../apiFetch.js', () => ({
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
-import { apiPost, apiPut } from '../../apiFetch.js';
+import { apiGet, apiPost, apiPut } from '../../apiFetch.js';
 import SchlagwortPflegeDialog from './SchlagwortPflegeDialog.svelte';
 
 // Jede Art des Dialogs geht an ihre Tür: Umbenennen ändert das Wort, ein Verweis legt eine neue
@@ -43,11 +43,41 @@ describe('SchlagwortPflegeDialog', () => {
 	it('nennt beim Zusammenführen ein Ziel, das es nicht gibt', async () => {
 		const { getByLabelText, getByRole, getByText } = dialog('zusammenfuehren');
 		await fireEvent.input(getByLabelText('Mit Schlagwort*'), { target: { value: 'Gibtsnicht' } });
-		await fireEvent.click(getByRole('button', { name: 'Zusammenführen' }));
+		const knopf = /** @type {HTMLButtonElement} */ (
+			getByRole('button', { name: 'Zusammenführen' })
+		);
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+		await fireEvent.click(knopf);
 		expect(
 			getByText('Kein Schlagwort mit dieser Schreibweise, bitte eines aus der Liste wählen')
 		).toBeTruthy();
 		expect(apiPost).not.toHaveBeenCalled();
+	});
+
+	// Das Ziel steht erst mit der Antwort der Suche fest. Ein Klick davor fand keins, meldete
+	// fälschlich „Kein Schlagwort …“ und schickte nichts; jetzt wartet der gesperrte Knopf.
+	it('sperrt beim Zusammenführen, bis die Suche das Ziel kennt', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce({
+			zeilen: [{ id: 's2', wort: 'Kriminalroman', titel: 4, verweise: [] }]
+		});
+		const { getByLabelText, getByRole, queryByText } = dialog('zusammenfuehren');
+		await fireEvent.input(getByLabelText('Mit Schlagwort*'), {
+			target: { value: 'Kriminalroman' }
+		});
+		const knopf = /** @type {HTMLButtonElement} */ (
+			getByRole('button', { name: 'Zusammenführen' })
+		);
+		expect(knopf.disabled).toBe(true);
+		await fireEvent.click(knopf);
+		expect(queryByText(/Kein Schlagwort mit dieser Schreibweise/)).toBeNull();
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+		await fireEvent.click(knopf);
+		await waitFor(() =>
+			expect(apiPost).toHaveBeenCalledWith('/api/schlagworte/s1/zusammenfuehren', {
+				ziel_id: 's2',
+				alte_als_verweis: true
+			})
+		);
 	});
 
 	it('benennt über die Tür des Worts um', async () => {

@@ -17,6 +17,9 @@ export function erzeugeSchlagwortPflegeListe() {
 	let liste = $state(null);
 	let ladeFehler = $state(false);
 	let suche = $state('');
+	// Vom Anstoß bis zur Antwort der jüngsten Anfrage: Solange steht die Liste zur Eingabe noch
+	// nicht fest, und wer an ihr prüft, muss warten (SchlagwortPflegeDialog).
+	let sucht = $state(false);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
 	// Sequenznummer wie in useLeserakte: Zwei schnell umgelegte Schalter laden die Liste
@@ -26,6 +29,7 @@ export function erzeugeSchlagwortPflegeListe() {
 	async function lade() {
 		clearTimeout(timer);
 		const meine = ++laufNr;
+		sucht = true;
 		const text = suche.trim();
 		try {
 			const frage = text ? `?suche=${encodeURIComponent(text)}` : '';
@@ -35,6 +39,8 @@ export function erzeugeSchlagwortPflegeListe() {
 			ladeFehler = false;
 		} catch {
 			if (meine === laufNr) ladeFehler = true; // Meldung kam bereits aus apiGet.
+		} finally {
+			if (meine === laufNr) sucht = false;
 		}
 	}
 
@@ -48,6 +54,9 @@ export function erzeugeSchlagwortPflegeListe() {
 		get suche() {
 			return suche;
 		},
+		get sucht() {
+			return sucht;
+		},
 		set suche(wert) {
 			suche = wert;
 		},
@@ -55,6 +64,10 @@ export function erzeugeSchlagwortPflegeListe() {
 		// 300 ms wie in der Leserdatei und Mein Portal; die Theke wartet kürzer.
 		angestossen() {
 			clearTimeout(timer);
+			// Eine Anfrage, die noch unterwegs ist, ist damit veraltet: Ihre Antwort beendete sonst
+			// das Suchen, bevor die Liste zur jetzigen Eingabe da ist.
+			laufNr++;
+			sucht = true;
 			timer = setTimeout(lade, 300);
 		}
 	});
