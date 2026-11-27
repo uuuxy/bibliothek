@@ -155,7 +155,9 @@ func bestellanschreiben(positionen []bestellterTitel, weg pdf.EtikettenWeg, mitt
 }
 
 // erzeugeBarcodeCSV schreibt die Zuordnung von Barcode und ISBN für die Warenwirtschaft des
-// Lieferanten.
+// Lieferanten. Ohne BOM, anders als der Bestandsexport für Excel: Die Warenwirtschaft ordnet über
+// ISBN und Barcode zu, und ein BOM vor dem ersten Feld kann dort die Spalte „ISBN“ unkenntlich
+// machen; Umlaute in Titel und Autor wiegen weniger.
 func erzeugeBarcodeCSV(etiketten []buchetikett.Etikett) ([]byte, error) {
 	var buf bytes.Buffer
 	schreiber := csv.NewWriter(&buf)
