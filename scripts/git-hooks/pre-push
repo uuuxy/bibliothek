@@ -14,6 +14,19 @@ echo "======================================================"
 echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
 echo "======================================================"
 
+# 0. Keine Daten-Dateien in den Commits, die hinausgehen (Zeilen „lokal-ref lokal-sha fern-ref
+# fern-sha" auf stdin). Ein neuer Zweig zählt alles, was noch auf keinem Remote liegt.
+NULL_SHA=0000000000000000000000000000000000000000
+while read -r _ LOKAL_SHA _ FERN_SHA; do
+    [ "$LOKAL_SHA" = "$NULL_SHA" ] && continue
+    if [ "$FERN_SHA" = "$NULL_SHA" ]; then
+        DATEIEN=$(git log --name-only --diff-filter=ACR --format= "$LOKAL_SHA" --not --remotes)
+    else
+        DATEIEN=$(git log --name-only --diff-filter=ACR --format= "$FERN_SHA..$LOKAL_SHA")
+    fi
+    printf '%s\n' "$DATEIEN" | sh scripts/git-hooks/keine-daten.sh || exit 1
+done
+
 # Die Datenbank der DB-Integrationstests: Steht der Entwicklungs-Stack, benutzen wir ihn.
 # Ohne sie überspringen sich die *_pg_test.go, und eine Änderung, die nur der
 # Postgres-Test sieht, kommt lokal grün durch und macht erst CI rot.

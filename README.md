@@ -115,7 +115,8 @@ Entwicklung und Tests akzeptiert `IMAP_HOST=mock` jedes Passwort.
 Der Anspruch ist nicht „es gibt Tests", sondern: **Jedes Gate muss man einmal rot gesehen
 haben.** Ein Gate, das seine Aussage nicht verlieren kann, prüft nichts.
 
-- **`scripts/install-hooks.sh`** installiert zwei Hooks: pre-commit prüft Formatierung,
+- **`scripts/install-hooks.sh`** installiert zwei Hooks: Beide halten zuerst Daten-Dateien
+  auf (Excel, CSV, PDF, Littera-Sicherungen); pre-commit prüft dann Formatierung,
   ESLint und `golangci-lint`; pre-push fährt neun Stufen — Go-Tests, `golangci-lint`,
   `svelte-check`, Vitest, `npm audit`, `govulncheck`, `gosec`, Trivy und `deadcode`. Der pre-push-Hook meldet außerdem, was
   er **nicht** geprüft hat: Die DB-Integrationstests überspringen sich ohne

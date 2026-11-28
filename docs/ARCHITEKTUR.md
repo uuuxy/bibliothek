@@ -1219,8 +1219,8 @@ und was in die Datenbank, in 8.12.
 | `release.yml`        | Tag `v*.*.*`                      | Release nur bei grüner CI auf `main`                                                     |
 | `fuzz.yml`           | nachts, manuell                   | Je Fuzz-Test 15 Minuten; ein Fund macht den Lauf rot                                     |
 
-`scripts/install-hooks.sh` installiert pre-commit (Formatierung, ESLint, golangci-lint) und
-pre-push (Tests, Linter, `svelte-check`, Vitest, Scanner, Deadcode, Skip-Bilanz). Der Linter
+`scripts/install-hooks.sh` installiert pre-commit (Daten-Dateien, Formatierung, ESLint,
+golangci-lint) und pre-push (Daten-Dateien, Tests, Linter, `svelte-check`, Vitest, Scanner, Deadcode, Skip-Bilanz). Der Linter
 läuft in der CI vor den Tests; bricht er ab, laufen auch die Tests nicht, deshalb kennt ihn der
 Hook vor dem Push: `go vet` meldet ungenutzte Typen nicht.
 

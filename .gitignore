@@ -120,13 +120,18 @@ grafana-provisioning/
 # (internal/littera) arbeitet mit CSV-Exporten aus mdb-export; sein Lauf gegen
 # echte Daten hängt an LITTERA_CSV_DIR und zeigt bewusst auf ein Verzeichnis
 # ausserhalb des Projekts. Testfixtures im Code sind erfundene Namen.
+# Ebenso die Excel-Datei mit dem Datenmodell aller Littera-Tabellen und die Etikettendrucke
+# der Leser (Namen, Ausweisnummern, Passfotos). Keine Datei dieser Formate liegt im
+# Repository; scripts/git-hooks/keine-daten.sh hält sie auch bei `git add -f` auf.
 *.mdb
 *.accdb
-littera*.csv
-leser*.csv
-exemplar*.csv
-titel*.csv
-personen*.csv
+*.bak
+*.abf
+*.csv
+*.xls
+*.xlsx
+*.pdf
+item.data
 
 # Coverage-Report für den SonarQube-Scan (scripts/sonar_scan.sh)
 coverage.out
