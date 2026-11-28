@@ -237,6 +237,27 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 	}
 }
 
+// Der Strichcode einer langen Nummer füllt sein Feld von 30 mm mit zwei Pixeln je Strich. Im Bild
+// von 300 Pixeln bekäme jeder Strich einen Pixel und gedruckt 0,1 mm, die Hälfte dessen, was
+// die 13 Ziffern aus Littera bekommen; deren Bild bleibt, wie es ist.
+func TestMahnbrief_LangeNummerFuelltDasFeldDesStrichcodes(t *testing.T) {
+	faelle := []struct{ nummer, bildbreite string }{
+		{"0000000123456", "/Width 300\n"},
+		{"ABCDEFGHIJKLM", "/Width 356\n"},
+	}
+	for _, f := range faelle {
+		e := testMahnbriefEmpfaenger()
+		e.Buecher[0].Barcode = f.nummer
+		roh, err := ErzeugeMahnbriefe([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
+		if err != nil {
+			t.Fatalf("ErzeugeMahnbriefe() mit der Nummer %q: %v", f.nummer, err)
+		}
+		if !bytes.Contains(roh, []byte(f.bildbreite)) {
+			t.Errorf("ErzeugeMahnbriefe() mit der Nummer %q: kein Bild mit %q", f.nummer, strings.TrimSpace(f.bildbreite))
+		}
+	}
+}
+
 // Fehlt ein Teil der Anschrift, steht der Vermerk da wie ohne Anschrift: Eine halbe Anschrift
 // ginge unzustellbar zur Post (briefAnschrift, dieselbe Regel wie Bescheid und Ersatzforderung).
 func TestMahnbrief_HalbeAnschriftNenntDenVermerk(t *testing.T) {

@@ -247,6 +247,21 @@ func TestMahnliste_BarcodeAlsBildUndNummer(t *testing.T) {
 	}
 }
 
+// Wie im Mahnbrief füllt der Strichcode einer langen Nummer sein Feld mit zwei Pixeln je Strich;
+// das Bild der 13 Ziffern aus Littera bleibt, wie es ist.
+func TestMahnliste_LangeNummerFuelltDasFeldDesStrichcodes(t *testing.T) {
+	faelle := []struct{ nummer, bildbreite string }{
+		{"0000000123456", "/Width 300\n"},
+		{"ABCDEFGHIJKLM", "/Width 356\n"},
+	}
+	for _, f := range faelle {
+		roh := mahnliste(t, []MahnlisteSchueler{{Name: "N", Klasse: "K", Medien: []MahnlisteMedium{{Titel: "T", Barcode: f.nummer}}}})
+		if !bytes.Contains(roh, []byte(f.bildbreite)) {
+			t.Errorf("ErzeugeMahnliste() mit der Nummer %q: kein Bild mit %q", f.nummer, strings.TrimSpace(f.bildbreite))
+		}
+	}
+}
+
 // langeMahnliste baut einen Schüler mit n Büchern, jedes mit Cover und eigenen Texten.
 func langeMahnliste(n int, coverURL string) []MahnlisteSchueler {
 	medien := make([]MahnlisteMedium, 0, n)

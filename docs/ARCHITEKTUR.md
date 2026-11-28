@@ -1505,6 +1505,11 @@ Lernmitteln, solange das Datum nicht vorbei ist (`leseclubFrist`); das Mahnwesen
 
 - Strichcodes sind Code 128 ohne Prüfzeichen; alte Code-39-Aufdrucke liest `internal/pkg/code39`
   (A14). Cover gehen als WebP-Umwandlung in die PDFs (`coverdatei.BindeEin`).
+- In der Tabellenzelle von Mahnbrief und Mahnliste kommt der Strichcode aus
+  `strichcode.PNGFuerBlatt`: Eine Nummer, deren Striche im Bild nur einen Pixel bekämen (über 150
+  Module, mit Buchstaben ab etwa 11 Zeichen), füllt das Feld randlos, der Strich wird so breit, wie
+  das Feld es zulässt. Die Ruhezone lässt der Rand der Zelle. Die Etiketten nehmen `strichcode.PNG`
+  mit dem Rand im Bild, weil dort die Kante des Etiketts das Feld begrenzt.
 - Eine Tabellenzeile prüft vor dem Zeichnen ihren Platz und beginnt sonst selbst eine Seite mit
   Spaltenköpfen; Folgeseiten von Mahnliste und Mahnbrief nennen, wem sie gehören. Text wird auf
   die gedruckte Breite seiner Zelle gekürzt (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von

@@ -70,3 +70,60 @@ func TestPNG_ZuLangerInhaltIstErrZuGross(t *testing.T) {
 		t.Errorf("Inhalt genau an der Grenze: %v", err)
 	}
 }
+
+// messeStriche liest die mittlere Pixelzeile eines Strichcodes: die Breite des Bilds, den
+// schmalsten Strich und den hellen Rand links und rechts.
+func messeStriche(t *testing.T, daten []byte) (breite, schmalster, randLinks, randRechts int) {
+	t.Helper()
+	bild, err := png.Decode(bytes.NewReader(daten))
+	if err != nil {
+		t.Fatalf("Ausgabe ist kein gültiges PNG: %v", err)
+	}
+	grenzen := bild.Bounds()
+	y := grenzen.Min.Y + grenzen.Dy()/2
+	erster, letzter, lauf := -1, -1, 0
+	schmalster = grenzen.Dx()
+	for x := grenzen.Min.X; x < grenzen.Max.X; x++ {
+		rot, _, _, _ := bild.At(x, y).RGBA()
+		if rot < 0x8000 {
+			if erster < 0 {
+				erster = x - grenzen.Min.X
+			}
+			letzter = x - grenzen.Min.X
+			lauf++
+			continue
+		}
+		if lauf > 0 {
+			schmalster = min(schmalster, lauf)
+		}
+		lauf = 0
+	}
+	return grenzen.Dx(), schmalster, erster, grenzen.Dx() - 1 - letzter
+}
+
+// Für ein Feld auf einem Blatt bleibt eine Nummer, deren Striche in der Wunschbreite zwei Pixel
+// bekommen, das Bild von PNG. Eine längere füllt das Bild ohne Rand mit zwei Pixeln je Strich; in
+// PNG fiele sie auf einen Pixel und gedruckt auf die halbe Strichbreite.
+func TestPNGFuerBlatt_LangeNummerFuelltDasBild(t *testing.T) {
+	kurz, err := PNGFuerBlatt("0000000123456", 300, 80)
+	if err != nil {
+		t.Fatalf("PNGFuerBlatt(13 Ziffern): %v", err)
+	}
+	wiePNG, err := PNG("0000000123456", false, 300, 80)
+	if err != nil {
+		t.Fatalf("PNG(13 Ziffern): %v", err)
+	}
+	if !bytes.Equal(kurz, wiePNG) {
+		t.Error("PNGFuerBlatt(13 Ziffern, 300) weicht vom Bild aus PNG ab, erwartet dasselbe Bild")
+	}
+
+	lang, err := PNGFuerBlatt("ABCDEFGHIJKLM", 300, 80)
+	if err != nil {
+		t.Fatalf("PNGFuerBlatt(13 Buchstaben): %v", err)
+	}
+	breite, schmalster, links, rechts := messeStriche(t, lang)
+	if breite != 356 || schmalster != 2 || links != 0 || rechts != 0 {
+		t.Errorf("PNGFuerBlatt(13 Buchstaben, 300) = %d Pixel breit, schmalster Strich %d, Rand %d und %d, erwartet 356, 2, 0 und 0",
+			breite, schmalster, links, rechts)
+	}
+}

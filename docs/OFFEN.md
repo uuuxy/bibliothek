@@ -247,7 +247,8 @@ kennt nur 10 oder 13).
 **Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`internal/pdf/orte_test.go`),
 Rand und Maßstab des Druckers nicht. Je einmal drucken: einen Mahnbrief für einen Schüler mit
 mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folgeseite mit
-„Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die
+„Fortsetzung: …", ein Strichcode vom Brief an der Theke gescannt), die Mahnliste an die
+Klassenleitung (Versand an eine eigene Adresse, ein Strichcode vom Blatt gescannt), die
 Ersatzforderung aus der Leserakte, das Anschreiben im Anhang der Bestellmail und die
 DSGVO-Auskunft.
 

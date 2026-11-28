@@ -64,7 +64,7 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 	strichX := pdf.GetX()
 	pdf.CellFormat(40, zeilenHoehe, "", "1", 0, "", false, 0, "")
 	if med.Barcode != "" {
-		if png, err := strichcode.PNG(med.Barcode, false, 300, 80); err == nil {
+		if png, err := strichcode.PNGFuerBlatt(med.Barcode, 300, 80); err == nil {
 			bildName := "bc_" + med.Barcode
 			optionen := gofpdf.ImageOptions{ImageType: "PNG"}
 			pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))

@@ -113,7 +113,7 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 		strichX := pdf.GetX()
 		pdf.CellFormat(35, zeilenHoehe, "", "1", 0, "", false, 0, "")
 		if b.Barcode != "" {
-			if png, err := strichcode.PNG(b.Barcode, false, 300, 80); err == nil {
+			if png, err := strichcode.PNGFuerBlatt(b.Barcode, 300, 80); err == nil {
 				bildName := "bc_eltern_" + b.Barcode
 				optionen := gofpdf.ImageOptions{ImageType: "PNG"}
 				pdf.RegisterImageOptionsReader(bildName, optionen, bytes.NewReader(png))
