@@ -933,8 +933,9 @@ hebt die strukturierte Ausgabe **und** diesen Schutz auf.
 ### Prüfungen vor dem Push (lokal)
 
 - Beide Hooks halten zuerst jede Datei in einem Datenformat auf (Excel, CSV, PDF, Access,
-  SQL-Server-Sicherung, `item.data`), auch nach `git add -f`: `scripts/git-hooks/keine-daten.sh`.
-  Littera-Exporte und Etikettendrucke tragen Namen, Ausweisnummern und Passfotos.
+  SQL-Server-Sicherung, `item.data`, ZIP, 7z, RAR, JPEG, HEIC), auch nach `git add -f`:
+  `scripts/git-hooks/keine-daten.sh`. Littera-Exporte, Etikettendrucke und der Fotoordner tragen
+  Namen, Ausweisnummern und Passfotos; PNG bleibt für die Logos erlaubt.
 
 - `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): neun Gates
   (Schritte 1–6 samt 1b, 2b und 4b), darunter Go-Tests, `golangci-lint`, `svelte-check`,
