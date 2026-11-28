@@ -1207,8 +1207,10 @@ Fällt die Verbindung aus, geht der Betrieb an der Theke weiter. Was dabei gesch
 `A-…`/`S-…`/`L-…` sind Ausweise, `G-…` sind Geräte. Eine nackte Ziffernfolge entscheidet die
 Buch-Barcode-Liste, die der Rechner bei jeder Anmeldung holt (`GET /api/action/buchbarcodes`,
 nur Buchnummern, keine Personendaten); ein Littera-Etikett wird dafür aus der EAN-13
-zurückgerechnet. Steht die Nummer nicht auf der Liste, gilt der Scan als **unklar** und wird
-nicht gebucht — wer hier riete, schriebe das nächste Buch einer fremden Person zu.
+zurückgerechnet. Steht die Nummer nicht auf der Liste, ist sie ein Ausweis, wenn sie die Form
+eines alten Ausweises aus Littera hat („B“ und elf Ziffern, die Nummer des Kartenherstellers);
+sonst gilt der Scan als **unklar** und wird nicht gebucht — wer hier riete, schriebe das
+nächste Buch einer fremden Person zu.
 
 **Personen.** Ein ohne Netz gescannter Ausweis wird als NUMMER gemerkt; die folgenden Bücher
 tragen sie, der Server löst sie beim Nachbuchen auf. Vor jedem weiteren Buch fragt die Theke

@@ -16,19 +16,18 @@ import (
 
 // Die Barcode-Liste der Theke für die Arbeit ohne Netz.
 //
-// Ohne Netz muss der Theken-Rechner eine nackte Ziffernfolge selbst einordnen: Buch oder
-// Ausweis? Die Vorsilben B-/LMF- und S-/L- sagen es; die Littera-Etiketten des Altbestands
-// und die alten Ausweise sagen es nicht — ein Schülerausweis liefert einen Buchstaben und elf
-// Ziffern (etwa `B12345678901`), ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
-// laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
-// auf.
+// Ohne Netz muss der Theken-Rechner eine nackte Nummer selbst einordnen: Buch oder Ausweis?
+// Die Vorsilben B-/LMF- und A-/S-/L- sagen es, ein alter Ausweis aus Littera seine Form („B“
+// und elf Ziffern, etwa `B12345678901`); ein Littera-Etikett mit seiner 13-stelligen
+// EAN sagt es nicht. Verwechselt der Rechner beides, laufen die folgenden Bücher auf die
+// falsche Person, und das fällt erst beim Nachbuchen auf.
 //
 // Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
 // Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett
 // rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/utils/litteraEtikett.js,
-// dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch; sonst
-// gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. Keine
-// Personendaten: nur Buchnummern.
+// dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch, hat
+// sie die Form eines alten Ausweises, ein Ausweis; sonst gilt sie als unklar und sperrt die
+// Zuordnung, bis ein eindeutiger Ausweis kommt. Keine Personendaten: nur Buchnummern.
 //
 // Bewusst ohne LIMIT, anders als jede andere Listen-Route
 // (vgl. internal/api/system/protokoll_grenze_pg_test.go).

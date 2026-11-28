@@ -20,10 +20,14 @@
  *  - Alles andere ist eine nackte Nummer, und die entscheidet die Barcode-Liste. Erst
  *    roh nachschlagen, dann über die Littera-Rückrechnung: Littera druckt die
  *    Mediennummer im Klartext und codiert im Strichcode eine EAN-13 (litteraEtikett.js).
- *    Steht sie drauf, ist es ein Buch; sonst „unklar".
+ *    Steht sie drauf, ist es ein Buch.
+ *  - Ein Schülerausweis aus Littera liefert die Nummer des Kartenherstellers, ein „B" und elf
+ *    Ziffern (etwa `B12345678901`). Steht sie nicht als Buch in der Liste, ist sie ein
+ *    Ausweis: Kein Buchetikett hat diese Form, und die Datenbank lässt keine Nummer zu, die
+ *    zugleich Buch und Ausweis ist. Alles Übrige ist „unklar".
  *
- * Warum „unklar" und nicht „dann eben Ausweis": Ein Schülerausweis des Altbestands
- * liefert einen Buchstaben und elf Ziffern (etwa `B12345678901`), ein Buchetikett eine 13-stellige EAN. Wer hier rät,
+ * Warum „unklar" und nicht „dann eben Ausweis": Eine nackte Nummer kann ein Buch sein, das
+ * noch nicht in der Liste steht, oder die alte Lesernummer eines Kindes. Wer hier rät,
  * schreibt die nächsten Bücher einem fremden Kind zu. Ein unklarer Scan sperrt deshalb
  * die Zuordnung, bis ein eindeutiger Ausweis kommt.
  */
@@ -80,6 +84,9 @@ export const AUSWEIS_VORSILBEN = ['A-', 'S-', 'L-'];
 /** Vorsilben, die ein Buch auch ohne Barcode-Liste eindeutig machen. */
 export const BUCH_VORSILBEN = ['B-', 'LMF-'];
 
+/** Die Form eines Schülerausweises aus Littera: „B" und elf Ziffern, die Nummer des Kartenherstellers. */
+const ALTER_AUSWEIS = /^B\d{11}$/;
+
 /**
  * @typedef {{ art: 'buch' | 'ausweis' | 'geraet' | 'suche' | 'unklar', nummer: string }} ScanEinordnung
  */
@@ -105,7 +112,7 @@ export function ordneScanEin(roh, istBuch) {
 	// schlicht falsch und hülfe niemandem weiter.
 	//
 	// Erkannt am Fehlen von Ziffern oder an einem Leerzeichen — beides kommt aus keinem
-	// Strichcode. Eine Nummer wie B12345678901 bleibt damit „unklar", ein „Mueller" oder
+	// Strichcode. Eine Nummer wie B12345678901 bleibt damit eine Nummer, ein „Mueller" oder
 	// „Anna Mueller" wird zur Suche.
 	if (!/\d/.test(scan) || /\s/.test(scan)) return { art: 'suche', nummer: scan };
 
@@ -117,6 +124,10 @@ export function ordneScanEin(roh, istBuch) {
 	// Gebucht wird unter der NUMMER, nicht unter dem Aufdruck — der Server kennt nur sie.
 	const ausEtikett = dekodiereLitteraEtikett(scan);
 	if (ausEtikett !== null && istBuch(ausEtikett)) return { art: 'buch', nummer: ausEtikett };
+
+	// Ein Ausweis aus Littera hat keine Vorsilbe, aber eine eigene Form. Er kommt vor dem
+	// gekürzten Scan, wie am Server der Ausweis vor dem zweiten Versuch (omnibox.go).
+	if (ALTER_AUSWEIS.test(scan)) return { art: 'ausweis', nummer: scan };
 
 	// Zuletzt ein älterer Aufdruck: Code 39 mit Prüfzeichen, das das Lesegerät als Teil der
 	// Nummer zurückgibt (aus „58968" wird „58968-"). Diese Karten und Etiketten sind im

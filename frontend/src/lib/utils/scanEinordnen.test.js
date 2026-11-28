@@ -51,11 +51,23 @@ describe('Scan ohne Netz einordnen', () => {
 	});
 
 	it('haelt eine unbekannte Nummer fuer unklar — und raet NICHT auf Ausweis', () => {
-		// Ein Schuelerausweis des Altbestands liefert einen Buchstaben und elf Ziffern (B12345678901), ein
-		// Buchetikett eine 13-stellige EAN. Wer hier raet, schreibt die naechsten Buecher
-		// einem fremden Kind zu.
-		expect(ein('B12345678901')).toEqual({ art: 'unklar', nummer: 'B12345678901' });
+		// Eine nackte Nummer kann ein Buch sein, das noch nicht in der Liste steht, oder die alte
+		// Lesernummer eines Kindes. Wer hier raet, schreibt die naechsten Buecher einem fremden
+		// Kind zu.
 		expect(ein('999999')).toEqual({ art: 'unklar', nummer: '999999' });
+		expect(ein('X12345678901')).toEqual({ art: 'unklar', nummer: 'X12345678901' });
+	});
+
+	it('erkennt einen Ausweis aus Littera an seiner Form: B und elf Ziffern', () => {
+		// Die Nummer des Kartenherstellers. Kein Buchetikett hat diese Form, und die Datenbank
+		// laesst keine Nummer zu, die zugleich Buch und Ausweis ist.
+		expect(ein('B12345678901')).toEqual({ art: 'ausweis', nummer: 'B12345678901' });
+		// Nur genau diese Form: eine Ziffer mehr oder weniger, ein kleines b bleibt unklar.
+		for (const nahe of ['B1234567890', 'B123456789012', 'b12345678901']) {
+			expect(ein(nahe).art, nahe).toBe('unklar');
+		}
+		// Steht die Nummer als Buch in der Liste, gilt die Liste.
+		expect(ordneScanEin('B12345678901', (n) => n === 'B12345678901').art).toBe('buch');
 	});
 
 	it('ein Etikett, dessen Nummer nicht auf der Liste steht, bleibt unklar', () => {
@@ -72,9 +84,9 @@ describe('Scan ohne Netz einordnen', () => {
 	});
 
 	it('eine Nummer mit Ziffern bleibt unklar und wird NICHT zur Suche', () => {
-		// Gegenprobe: Ein alter Ausweis liefert einen Buchstaben und elf Ziffern (B12345678901) — Ziffern, kein
-		// Leerzeichen. Der gehoert nicht in die Namenssuche.
-		expect(ein('B12345678901').art).toBe('unklar');
+		// Gegenprobe: Buchstaben und Ziffern ohne Leerzeichen sind eine Nummer. Die gehoert nicht
+		// in die Namenssuche.
+		expect(ein('X12345678901').art).toBe('unklar');
 	});
 
 	// Von Hand getippt: Gespeichert sind die Nummern mit grosser Vorsilbe, und der Server

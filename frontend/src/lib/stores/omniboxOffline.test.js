@@ -251,7 +251,7 @@ describe('Omnibox offline', () => {
 		});
 
 		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
-			omniboxStore.eingabe = 'B12345678901';
+			omniboxStore.eingabe = '999999';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await ladeWarteschlange()).toHaveLength(0);
 			expect(omniboxStore.rueckmeldung.fehler).toMatch(/nicht eindeutig|NICHT gebucht/);
@@ -287,7 +287,7 @@ describe('Omnibox offline', () => {
 		// an die Person, die vorher geladen war.
 		it('laesst nach einem unklaren Scan auch die geladene Person fallen', async () => {
 			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
-			omniboxStore.eingabe = 'B12345678901';
+			omniboxStore.eingabe = '999999';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(omniboxStore.aktiverLeser).toBeNull();
 
@@ -312,6 +312,26 @@ describe('Omnibox offline', () => {
 			// Ohne Person UND ohne Merker waere es eine Rueckgabe — mit Merker ist es eine
 			// Ausleihe an die Person hinter der Karte.
 			expect(q[0].art).toBe('ausleihe');
+		});
+
+		// Ein Ausweis aus Littera traegt keine Vorsilbe; die Theke erkennt ihn an seiner Form und
+		// behandelt ihn wie jeden Ausweis ohne Netz.
+		it('merkt sich einen alten Ausweis aus Littera und schreibt ihm die folgenden Buecher zu', async () => {
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.eingabe = 'B12345678901';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			expect(omniboxStore.offlineAusweis).toBe('B12345678901');
+			expect(omniboxStore.aktiverLeser).toBeNull();
+
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			const q = await ladeWarteschlange();
+			expect(q).toHaveLength(1);
+			expect(q[0]).toMatchObject({
+				art: 'ausleihe',
+				ausweis_barcode: 'B12345678901',
+				leser_id: null
+			});
 		});
 
 		// Mit jedem Buch geht die Dauer des Besuchs mit: Daran nimmt das Nachbuchen zurück, was
@@ -349,7 +369,7 @@ describe('Omnibox offline', () => {
 		it('ein unklarer Scan sperrt die Zuordnung: der Merker faellt', async () => {
 			omniboxStore.eingabe = 'S-10001';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
-			omniboxStore.eingabe = 'B12345678901'; // weder Buch noch erkennbarer Ausweis
+			omniboxStore.eingabe = '999999'; // weder Buch noch erkennbarer Ausweis
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(omniboxStore.offlineAusweis, 'bis zum naechsten eindeutigen Ausweis').toBe('');
