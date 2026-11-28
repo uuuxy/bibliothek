@@ -1362,7 +1362,7 @@ Technische Alternativen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 4.3.
 | **Nachbau des Littera-Etiketts beim Nachdruck** | 30.09.2026 (`bb5e3104`) | Der Scanwert ist derselbe, und Bildschirm und Mahnliste zeigen die 13 Ziffern. Nachgedruckt wird das Etikett dieses Programms (§9) |
 | **Reihe neuer Nummern ohne Exemplar im Druck-Center** („Neue Barcodes" ab einer Start-Ziffer, auch aus `barcode_seq` gezogen) | 22.10.2026 | Jede Nummer entsteht mit ihrem Exemplar: bei der Bestellung (§7), in der Maske des Titels und bei der Übernahme aus Littera. Eine Nummer, die nur auf Papier steht, gehört keinem Exemplar, und eine Bestellung könnte sie ein zweites Mal vergeben |
 | **Seitenzahlen, die über alle Ausdrucke des Zugangsbuchs weiterlaufen** („fortlaufend paginiert" im Leitfaden Lernmittelfreiheit, 11.5) | 29.10.2026 | Jeder Ausdruck steht für sich |
-| **Meldung an die übrigen Arbeitsplätze nach einer Schadensmeldung oder einem Bescheid** | `5383c92eb` | Beides ist selten; die Bescheide lädt das Mahnwesen bei jedem Besuch neu. Die Meldung geht nach jeder Ausleihe und Rückgabe: an der Theke für Bücher und Geräte, beim Nachbuchen und in der Inventur |
+| **Meldung an die übrigen Arbeitsplätze nach einer Schadensmeldung oder einem Bescheid** | `5383c92eb` | Beides ist selten; die Bescheide lädt das Mahnwesen bei jedem Besuch neu. Die Meldung geht nach Ausleihe und Rückgabe an der Theke, für Bücher und Geräte, nach dem Nachbuchen und nach der Rückgabe in der Inventur; eine Schadensmeldung, die eine Ausleihe beendet, meldet sich nicht |
 
 An anderer Stelle beschrieben, weil die Entscheidung dort zum Ablauf gehört: keine
 seitenübergreifende Suchleiste ([HANDBUCH.md](HANDBUCH.md), „Suchen"), kein Buchwunsch und kein
