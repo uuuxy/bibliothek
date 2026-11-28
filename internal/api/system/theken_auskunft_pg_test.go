@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -84,7 +85,9 @@ func baueThekenWelt(t *testing.T, pool *pgxpool.Pool) thekenTestWelt {
 // Middleware sie nach verlangeRecht hinterlegt) und liest die Antwort.
 func rufeThekenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) thekenAuskunft {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+barcode, nil)
+	// Kodiert wie die Oberfläche (encodeURIComponent): Das Prüfzeichen von Code 39 kann ein
+	// Leerzeichen, „+“ oder „%“ sein.
+	req := httptest.NewRequest(http.MethodGet, "/api/audit/tresen-auskunft?barcode="+url.QueryEscape(barcode), nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 		&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
 	rec := httptest.NewRecorder()
