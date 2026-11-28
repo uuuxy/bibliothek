@@ -20,9 +20,12 @@ type Altbestand struct {
 	ExemplareOhneTitel []Exemplar
 	Leser              []Leser
 	Ausleihen          []Ausleihe
-	Verlage            map[string]string // Verlag.Buchungsnummer → Name
-	Medienarten        map[string]string // Medienart.Buchungsnummer → Bezeichnung
-	Signaturen         map[string]string // Titel.Buchungsnummer → Signatur (aus den Exemplaren)
+	// LeereLeser zählt die Leser ohne Vor- und Nachnamen und ohne Ausleihe, die nicht mitkommen
+	// (ohneLeereLeser).
+	LeereLeser  int
+	Verlage     map[string]string // Verlag.Buchungsnummer → Name
+	Medienarten map[string]string // Medienart.Buchungsnummer → Bezeichnung
+	Signaturen  map[string]string // Titel.Buchungsnummer → Signatur (aus den Exemplaren)
 	// SignaturAbweichend nennt die Titel, deren Exemplare untereinander verschiedene
 	// Signaturen tragen. Sie werden übernommen (häufigster Wert gewinnt), stehen aber
 	// hier, damit der Bericht sie nennen kann.
@@ -33,8 +36,8 @@ type Altbestand struct {
 
 	// Ausweisnummern bildet Leser.Buchungsnummer → Barcode des Schülerausweises ab,
 	// Fremdbarcodes Exemplar.Buchungsnummer → Barcode am Buch. Beide stammen aus
-	// Littera-Tabellen für fremde Nummern (siehe fremdnummern.go) und sind leer, wenn die
-	// Schule keine herstellerbedruckten Ausweise oder Ersatzetiketten benutzt.
+	// Littera-Tabellen für fremde Nummern (siehe fremdnummern.go); die Ausweise kommen an der
+	// Schule aus dem Etikettendruck, Ersatzetiketten hat sie keine.
 	Ausweisnummern map[string]string
 	Fremdbarcodes  map[string]string
 	// AusweisMehrfach nennt Leser mit mehr als einer hinterlegten Karte.
@@ -57,6 +60,7 @@ type Altbestand struct {
 //	mdb-export littera_sav.mdb Personen_Zuordnung > personen_zuordnung.csv
 //	mdb-export littera_sav.mdb Leser              > leser.csv
 //	mdb-export littera_sav.mdb Leser_UG           > leser_ug.csv
+//	mdb-export littera_sav.mdb Leser_OG           > leser_og.csv   (freiwillig)
 //	mdb-export littera_sav.mdb Verleih            > verleih.csv
 //	mdb-export littera_sav.mdb Schlagworte            > schlagworte.csv
 //	mdb-export littera_sav.mdb Schlag_zuord           > schlag_zuord.csv
@@ -73,7 +77,10 @@ const (
 	dateiPersonenZuordnung = "personen_zuordnung.csv"
 	dateiLeser             = "leser.csv"
 	dateiLeserUG           = "leser_ug.csv"
-	dateiVerleih           = "verleih.csv"
+	// Die Obergruppen sind freiwillig: Bis 2010 trug die Untergruppe die Art („Schüler“), und eine
+	// Gruppe, die ohne sie keine Art hat, hält den Lauf an (OhneZuordnung) statt still zu fehlen.
+	dateiLeserOG = "leser_og.csv"
+	dateiVerleih = "verleih.csv"
 	// Die Schlagworte sind Pflicht wie die übrigen: Fehlte eine Datei, kämen die Titel still ohne
 	// ihre Schlagworte an. Littera führt alle vier Tabellen schon im Stand von 2010, die beiden
 	// Verweis-Tabellen dort leer.
@@ -84,20 +91,20 @@ const (
 	// Die Interessenkreise ebenso; die Sicherung von 2010 führt beide Tabellen.
 	dateiInteressenkreise = "interessenskreis.csv"
 	dateiIntZuMed         = "intzumed.csv"
-	// Die beiden Tabellen der Fremdnummern sind freiwillig: In einer Installation ohne
-	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien dann nicht.
+	// Die beiden Tabellen der Fremdnummern sind freiwillig: Ohne Kartenliste und ohne
+	// Ersatzetiketten fehlen sie.
 	// Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
 	dateiFremdLeserNummer = "fremdlesernummer.csv"
 	dateiFremdBarcode     = "fremdbarcode.csv"
 )
 
-// LeseAltbestandMit liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs und nimmt
-// aus, was nach der Regel kein Standort ist.
+// LeseAltbestandMit liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs, nimmt aus, was
+// nach der Regel kein Standort ist, und ordnet Lesergruppen nach zuordnung zu (darf nil sein).
 //
 // Alle Dateien sind Pflicht. Eine fehlende Nachschlagetabelle würde nicht auffallen,
 // sondern still „11" statt „Klett" in den Katalog schreiben — der Lauf soll dann
 // abbrechen, nicht mit halbem Ergebnis weitermachen.
-func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, error) {
+func LeseAltbestandMit(verzeichnis string, regel Standortregel, zuordnung Gruppenzuordnung) (*Altbestand, error) {
 	ab := &Altbestand{}
 	var err error
 
@@ -121,7 +128,7 @@ func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, er
 	if err = leseSchlagworteUndInteressenkreise(verzeichnis, ab); err != nil {
 		return nil, err
 	}
-	if err = leseLeserUndAusleihen(verzeichnis, ab); err != nil {
+	if err = leseLeserUndAusleihen(verzeichnis, ab, zuordnung); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +140,7 @@ func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, er
 	return ab, nil
 }
 
-// leseFremdnummern liest die beiden optionalen Tabellen mit herstellereigenen Barcodes.
+// leseFremdnummern liest die beiden optionalen Tabellen mit Kartennummern und Ersatzetiketten.
 //
 // Eine fehlende Datei ist hier ausdrücklich kein Fehler — anders als bei den
 // Nachschlagetabellen, deren Fehlen still „11" statt „Klett" in den Katalog schriebe.
@@ -220,8 +227,17 @@ func leseSchlagworteUndInteressenkreise(verzeichnis string, ab *Altbestand) erro
 	return err
 }
 
-func leseLeserUndAusleihen(verzeichnis string, ab *Altbestand) error {
-	gruppen, err := mitDatei(verzeichnis, dateiLeserUG, leseLesergruppen)
+func leseLeserUndAusleihen(verzeichnis string, ab *Altbestand, zuordnung Gruppenzuordnung) error {
+	obergruppen := map[string]string{}
+	if istVorhanden(verzeichnis, dateiLeserOG) {
+		var err error
+		if obergruppen, err = mitDatei(verzeichnis, dateiLeserOG, leseObergruppen); err != nil {
+			return err
+		}
+	}
+	gruppen, err := mitDatei(verzeichnis, dateiLeserUG, func(r io.Reader) (map[string]lesergruppe, error) {
+		return leseLesergruppen(r, obergruppen, zuordnung)
+	})
 	if err != nil {
 		return err
 	}
@@ -229,8 +245,30 @@ func leseLeserUndAusleihen(verzeichnis string, ab *Altbestand) error {
 		func(r io.Reader) ([]Leser, error) { return leseLeser(r, gruppen) }); err != nil {
 		return err
 	}
-	ab.Ausleihen, err = mitDatei(verzeichnis, dateiVerleih, leseAusleihen)
-	return err
+	if ab.Ausleihen, err = mitDatei(verzeichnis, dateiVerleih, leseAusleihen); err != nil {
+		return err
+	}
+	ab.Leser, ab.LeereLeser = ohneLeereLeser(ab.Leser, ab.Ausleihen)
+	return nil
+}
+
+// ohneLeereLeser nimmt die Leser ohne Vor- und Nachnamen heraus, die nichts ausgeliehen haben:
+// Sie tragen nichts, was ankommen könnte, und hielten mit ihrer leeren Gruppe den Lauf an. Ein
+// leerer Leser mit Ausleihe bleibt, damit seine Bücher nicht als verfügbar gelten.
+func ohneLeereLeser(leser []Leser, ausleihen []Ausleihe) (behalten []Leser, leer int) {
+	mitAusleihe := make(map[string]bool, len(ausleihen))
+	for _, a := range ausleihen {
+		mitAusleihe[a.LeserID] = true
+	}
+	behalten = make([]Leser, 0, len(leser))
+	for _, l := range leser {
+		if l.Vorname == "" && l.Nachname == "" && !mitAusleihe[l.ID] {
+			leer++
+			continue
+		}
+		behalten = append(behalten, l)
+	}
+	return behalten, leer
 }
 
 // mitDatei öffnet eine Exportdatei, reicht sie an den Leser weiter und schließt sie.

@@ -533,3 +533,36 @@ func TestImportierteLehrkraftIstAmScannerAuffindbar(t *testing.T) {
 		t.Errorf("die Theke muss die Art am Treffer sehen, gelesen: %q", lehrkraft.Art)
 	}
 }
+
+// TestSperreAusLitteraKommtMit: Ein Schüler, den Littera sperrt, kommt gesperrt an, mit Datum und
+// Begründung als Grund, über die Tür der Akte. Eine gesperrte Lehrkraft nicht, denn das Programm
+// sperrt Kollegen nicht; das steht im Protokoll.
+func TestSperreAusLitteraKommtMit(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+
+	gesperrt := leser("1", "24", "07H1", ArtSchueler)
+	gesperrt.Sperrgrund = "In Littera gesperrt am 12.03.2024: Ausweis verloren"
+	kollege := leser("3", "26", "", ArtLehrkraft)
+	kollege.Sperrgrund = "In Littera gesperrt am 01.02.2023"
+	ab := &Altbestand{Leser: []Leser{gesperrt, leser("2", "25", "07H1", ArtSchueler), kollege}}
+	bericht, err := s.SchreibePersonen(context.Background(), ab)
+	if err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = '24' AND is_manually_blocked
+		AND block_reason = 'In Littera gesperrt am 12.03.2024: Ausweis verloren'`); n != 1 {
+		t.Errorf("der gesperrte Schüler muss mit Grund gesperrt ankommen, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id IN ('25', '26')
+		AND (coalesce(is_manually_blocked, false) OR ist_gesperrt)`); n != 0 {
+		t.Errorf("der freie Schüler und die Lehrkraft dürfen nicht gesperrt sein, gefunden: %d", n)
+	}
+	if bericht.Gesperrt != 1 || bericht.SperreKollege != 1 {
+		t.Errorf("Bericht: gesperrt %d, bei Kollegen %d; erwartet 1 und 1", bericht.Gesperrt, bericht.SperreKollege)
+	}
+	if text := protokoll(); !strings.Contains(text, "das Programm sperrt Kollegen nicht") {
+		t.Errorf("die nicht übernommene Sperre der Lehrkraft muss im Protokoll stehen:\n%s", text)
+	}
+}

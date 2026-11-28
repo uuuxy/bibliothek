@@ -141,39 +141,26 @@ Knöpfe gibt; sie ist sichtbar und kommt deshalb nur auf Auftrag.
 
 ### 7.2 Frisches Littera-Backup
 
-`littera_sav.mdb` ist ein Stand von 2010: Es fehlen die offenen Ausleihen und alle Ausweisnummern
-und Exemplare nach 2010, rund 1.350 Titel haben keine Signatur. Die Übernahme beschreibt
-[SCRIPTS.md](SCRIPTS.md) (Abschnitte 0, 1 und 1b), was Littera speichert,
+Die Schule führt Littera mit SQL Server. Ihre Daten kamen als Excel-Datei, deren Datenmodell
+(Power Pivot) alle Tabellen der Datenbank trägt, dazu der Etikettendruck „Barcode – Leser“ aller
+Leser mit den Ausweisnummern. Ein Lesewerkzeug außerhalb des Repositorys macht daraus die CSVs der
+Übernahme; die Generalprobe damit ist bestanden: 15.429 Titel, 70.279 von 70.297 Exemplaren
+(18 ohne Titel), 3.244 Leser mit Ausweisnummer, 17.067 von 17.068 Ausleihen, 54 Sperren. Die
+Übernahme beschreibt [SCRIPTS.md](SCRIPTS.md) (Abschnitte 0, 1 und 1b), was Littera speichert,
 [littera_schema_befund.md](littera_schema_befund.md).
 
-**Die Sicherung der Schule.** Sie hat kein Kennwort. Die verschlüsselten `.7z` auf dem
-Arbeitsrechner sind eine Testdatenbank des Medienzentrums mit unbekanntem Kennwort; sie zählen
-nicht. Ist die Sicherung eine `littera.mdb` (Littera mit Access), übernimmt
-`scripts/littera_uebernahme.sh` sie direkt. Ist sie eine `.bak` (Littera mit eigenem SQL Server,
-Handbuch „Datensicherung mit SQL Server-Datenbank"), fehlt der Schritt davor: die `.bak` in einen
-SQL Server im Container einspielen, die Tabellen aus SCRIPTS.md Abschnitt 1 als CSV ausgeben,
-Spaltennamen und Datumsformate gegen den Importer prüfen.
-
-**Was die Übernahme mit der Sicherung der Schule beantworten muss** (Probelauf und Bericht von
-`scripts/littera_uebernahme.sh`; mit der Sicherung von 2010 in der Generalprobe bestanden):
-
-1. Ist `FremdLeserNummer` gefüllt? Sonst muss jeder Ausweis neu gedruckt werden; der Lauf trägt
-   dann die Lesernummer als Ausweisnummer ein.
-2. Kommen die offenen Ausleihen, die Ausweisnummern nach 2010 und das Geburtsdatum mit, die
-   Brücke zum LUSD-Abgleich?
-3. Etiketten: `LITTERA_CSV_DIR=… go test ./internal/littera/` vergleicht den EAN-13 jedes
-   Etiketts mit der Rechnung (`pruefeEtiketten`).
-4. Lesergruppen ohne Zuordnung halten den Lauf an; die Bücherei ordnet sie in Littera zu, bevor
-   die Sicherung für den Umstieg gezogen wird.
-5. Standorte: Die Zahl der Vermerke liegt in der Größe der Titelliste vom Juni 2026 (678); bei
-   null hat `Personen_Zuordnung.Flags` eine andere Form. Verfasser ohne Komma und Leser aus einem
-   Zeitschriften-Rundlauf mit `-kein-standort` ausnehmen. Entscheiden, ob „Buchbestand
+1. Der Weg in die Schule: Excel-Datei und Etikettendruck in einer Datei, eingespielt per Upload
+   im Programm, mit Probelauf vor dem Schreiben. Das Lesewerkzeug kommt dafür ins Repository.
+2. 338 Leser stehen in „Undefinierte Obergruppe“ ohne erkennbare Klasse („Undefinerte
+   Untergruppe“ 335, „NDHS“ 2, „-/L2“ 1; fast alle in den 2000ern geboren, 3 offene Ausleihen).
+   Für den Lauf zuordnen (`-gruppe`); als Schüler macht sie der erste LUSD-Import zu Abgängern,
+   wenn sie dort fehlen.
+3. Standorte: Die Listen des Trockenlaufs (34 Vermerke am Titel, 54 Sonderstandorte) lesen und,
+   was kein Standort ist, mit `-kein-standort` ausnehmen. Entscheiden, ob „Buchbestand
    Bibliothek" und „Bibliothek" als Standort mitkommen.
-6. Sperren und Salden (`Leser.GesperrtAm`, `Leser.Saldo`) übernimmt der Lauf nicht: zählen, dann
-   entscheiden, ob Nachtragen von Hand genügt.
-7. Die Verweise der Schlagworte (4.20), und ob die Theke die kurze Nummer der Littera-Etiketten
-   annehmen muss ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
-8. Lernmittel mit LMF-Etikett: Hängt der Bestands-Import (Kombi-CSV) ihre Exemplare an den Titel
+4. Die Verweise der Schlagworte (4.20; an der Schule 260 Wörter, 254 Zuordnungen), und ob die
+   Theke die kurze Nummer der Littera-Etiketten annehmen muss ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
+5. Lernmittel mit LMF-Etikett: Hängt der Bestands-Import (Kombi-CSV) ihre Exemplare an den Titel
    aus Littera, oder entsteht ein zweiter Titel desselben Buchs? Am Testserver stehen
    „Natur und Technik - Biologie 7 - 10 Berl…" (Liste vom Juni, ohne ISBN, mit 101634) und
    „Natur und Technik - Biologie 7/10" (ISBN 9783060158423, nur das Exemplar mit dem Etikett
@@ -182,7 +169,7 @@ Spaltennamen und Datumsformate gegen den Importer prüfen.
    „Sammelbestand, kein Einzeletikett" nennt (dort bei „Red line"), legt der Bestands-Import als
    etikettiert an; solche Bücher fehlen dann unter „Fehlende Etiketten". Klären, ob sie über den
    Listenimport kommen, der sie ohne Etikett anlegt.
-9. Etiketten mit `B-`-Nummern aus der Zeit am Testserver: Die neue Datenbank vergibt ab `B-10001`
+6. Etiketten mit `B-`-Nummern aus der Zeit am Testserver: Die neue Datenbank vergibt ab `B-10001`
    neu. Klebt ein solches Etikett an einem Buch, das am Schulserver nicht mit dieser Nummer
    hereinkommt, bekäme ein anderes Buch dieselbe Nummer. Am Testserver zählen:
    `SELECT count(*), max(substr(barcode_id, 3)::bigint) FROM buecher_exemplare WHERE barcode_id ~ '^B-[0-9]{1,15}$' AND etikett_gedruckt;`

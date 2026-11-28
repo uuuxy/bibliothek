@@ -229,7 +229,7 @@ func TestLeseAltbestandMitTrenntExemplareOhneTitel(t *testing.T) {
 			"1,17,101,\"Ea 1\",\"Xyz\"\n2,,102,\"Ea 1\",\"Xyz\"\n3,99,103,\"Ea 1\",\"Xyz\"\n",
 	})
 
-	ab, err := LeseAltbestandMit(verzeichnis, Standortregel{})
+	ab, err := LeseAltbestandMit(verzeichnis, Standortregel{}, nil)
 	if err != nil {
 		t.Fatalf("LeseAltbestandMit: %v", err)
 	}

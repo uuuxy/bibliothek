@@ -22,7 +22,7 @@ const gruppenCSV = `Buchungsdatum,Buchungsnummer,KurzBez,Untergruppe,Obergruppe
 `
 
 func TestArtAusUntergruppe(t *testing.T) {
-	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV))
+	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV), nil, nil)
 	if err != nil {
 		t.Fatalf("Gruppen lesen: %v", err)
 	}
@@ -85,7 +85,7 @@ const leserCSV = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,Geburt
 `
 
 func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
-	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV))
+	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV), nil, nil)
 	if err != nil {
 		t.Fatalf("Gruppen: %v", err)
 	}
@@ -174,5 +174,150 @@ func TestLeserOhneGruppe(t *testing.T) {
 	}
 	if leser[0].Art != ArtUnbekannt || leser[0].Klasse != "" {
 		t.Errorf("nicht aufloesbare Gruppe: %+v", leser[0])
+	}
+}
+
+// Aufbau der Datenbank der Schule: Die Untergruppe nennt die Klasse, die Art steht in der
+// Obergruppe (Leser_OG). Bezeichnungen wie dort, „Undefinerte" so geschrieben.
+const obergruppenCSV = `Buchungsnummer,KurzBez,Obergruppe
+1,"UNDEF","Undefinierte Obergruppe"
+3,"Fö","Förderstufe"
+7,"Gym","Gymnasialzweig"
+8,"SekII","Sekundarstufe II"
+9,"Ab","Abgegangen"
+74,"Lehrer","Lehrer"
+84,"Neu","Grundschüler / Oberstufe"
+`
+
+const gruppenHeuteCSV = `Buchungsnummer,KurzBez,Untergruppe,Obergruppe
+1,"UNDEF","Undefinerte Untergruppe",1
+27,"05F1","05F1",3
+60,"05G1","05G1",7
+70,"ET1","11T1",8
+218,"-/IKL1","-/IKL1",1
+230,"ET8","ET8",1
+240,"13T8","13T8",1
+250,"NDHS","NDHS",1
+95,"Ab","Abgegangen",9
+90,"Lehrerin","Lehrerin",74
+129,"U+","U-plus",74
+300,"04Neu","04Neu",84
+`
+
+func leseGruppenHeute(t *testing.T, zuordnung Gruppenzuordnung) (map[string]lesergruppe, error) {
+	t.Helper()
+	obergruppen, err := leseObergruppen(strings.NewReader(obergruppenCSV))
+	if err != nil {
+		t.Fatalf("Obergruppen: %v", err)
+	}
+	return leseLesergruppen(strings.NewReader(gruppenHeuteCSV), obergruppen, zuordnung)
+}
+
+func TestArtUndKlasseImHeutigenAufbau(t *testing.T) {
+	gruppen, err := leseGruppenHeute(t, nil)
+	if err != nil {
+		t.Fatalf("Gruppen: %v", err)
+	}
+	faelle := map[string]struct {
+		art    LeserArt
+		klasse string
+		warum  string
+	}{
+		"27":  {ArtSchueler, "05F1", "Förderstufe, Klasse aus der Untergruppe"},
+		"60":  {ArtSchueler, "05G1", "Gymnasialzweig"},
+		"70":  {ArtSchueler, "11T1", "Einführungsphase: die Kurzbezeichnung ET1 nennt keinen Jahrgang"},
+		"218": {ArtSchueler, "-/IKL1", "Inklusionsklasse ohne Obergruppe"},
+		"230": {ArtSchueler, "ET8", "Einführungsphase ohne Obergruppe"},
+		"240": {ArtSchueler, "13T8", "Klasse mit Jahrgang ohne Obergruppe"},
+		"250": {ArtUnbekannt, "NDHS", "ein Name ohne Regel hält den Lauf an"},
+		"1":   {ArtUnbekannt, "UNDEF", "undefiniert bleibt undefiniert"},
+		"95":  {ArtAbgegangen, "Ab", "Abgegangene"},
+		"90":  {ArtLehrkraft, "Lehrerin", "Lehrkraft"},
+		"129": {ArtUPlus, "U+", "U-plus unter der Obergruppe Lehrer"},
+		"300": {ArtSchueler, "04Neu", "Grundschüler über die Obergruppe"},
+	}
+	for id, erwartet := range faelle {
+		g := gruppen[id]
+		if g.Art != erwartet.art {
+			t.Errorf("Gruppe %s (%s): Art %d, erwartet %d", id, erwartet.warum, g.Art, erwartet.art)
+		}
+		if g.Klasse != erwartet.klasse {
+			t.Errorf("Gruppe %s (%s): Klasse %q, erwartet %q", id, erwartet.warum, g.Klasse, erwartet.klasse)
+		}
+	}
+}
+
+// Die Zuordnung des Laufs gilt vor jeder Regel, auch für eine Klasse, die eine Regel erkennt;
+// ein Tippfehler im Gruppennamen und ein Ziel ohne Art halten an, statt nichts zu bewirken.
+func TestGruppenzuordnungGiltVorJederRegel(t *testing.T) {
+	gruppen, err := leseGruppenHeute(t, Gruppenzuordnung{
+		"Undefinerte Untergruppe": "Abgegangen", "13T8": "Abgegangen"})
+	if err != nil {
+		t.Fatalf("Gruppen: %v", err)
+	}
+	if gruppen["1"].Art != ArtAbgegangen || gruppen["240"].Art != ArtAbgegangen {
+		t.Errorf("Zuordnung nicht angewandt: %+v / %+v", gruppen["1"], gruppen["240"])
+	}
+	if _, err := leseGruppenHeute(t, Gruppenzuordnung{"Gibt es nicht": "Schüler"}); err == nil {
+		t.Error("eine Zuordnung zu einer fehlenden Lesergruppe muss abbrechen")
+	}
+	if err := (Gruppenzuordnung{"NDHS": "Kinder"}).Pruefe(); err == nil {
+		t.Error("ein Ziel, das keine Art benennt, muss abbrechen")
+	}
+	if err := (Gruppenzuordnung{"NDHS": "Schüler"}).Pruefe(); err != nil {
+		t.Errorf("Schüler ist eine Art: %v", err)
+	}
+}
+
+func TestSperrgrundAus(t *testing.T) {
+	faelle := []struct{ am, begruendung, erwartet string }{
+		{"03/12/24 10:15:00", " Ausweis  verloren\n", "In Littera gesperrt am 12.03.2024: Ausweis verloren"},
+		{"03/12/24 10:15:00", "", "In Littera gesperrt am 12.03.2024"},
+		// Die Begründung bleibt nach dem Aufheben stehen; ohne Sperrdatum ist niemand gesperrt.
+		{"", "Hat 5 ausständige Hörbücher", ""},
+	}
+	for _, f := range faelle {
+		if got := sperrgrundAus(f.am, f.begruendung); got != f.erwartet {
+			t.Errorf("sperrgrundAus(%q, %q) = %q, erwartet %q", f.am, f.begruendung, got, f.erwartet)
+		}
+	}
+}
+
+// Die Spalten heißen in Littera GesperrtAm und SperrenBegründung; ein falscher Name ließe jede
+// Sperre still fallen.
+func TestLeseLeserLiestDieSperre(t *testing.T) {
+	gruppen, err := leseLesergruppen(strings.NewReader(gruppenCSV), nil, nil)
+	if err != nil {
+		t.Fatalf("Gruppen: %v", err)
+	}
+	csv := "Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,GesperrtAm,SperrenBegründung\n" +
+		"1,1001,\"Anna\",\"Gesperrt\",22,\"03/12/24 10:15:00\",\"Ausweis verloren\"\n" +
+		"2,1002,\"Bert\",\"Frei\",22,,\"alte Begründung\"\n"
+	leser, err := leseLeser(strings.NewReader(csv), gruppen)
+	if err != nil {
+		t.Fatalf("Leser: %v", err)
+	}
+	if leser[0].Sperrgrund != "In Littera gesperrt am 12.03.2024: Ausweis verloren" || leser[1].Sperrgrund != "" {
+		t.Errorf("Sperrgründe: %q / %q", leser[0].Sperrgrund, leser[1].Sperrgrund)
+	}
+}
+
+// Ein Leser ohne Namen und ohne Ausleihe trägt nichts und kommt nicht mit; hat er eine Ausleihe,
+// bleibt er, sonst gälte das Buch als verfügbar.
+func TestLeereLeserOhneAusleiheFallenWeg(t *testing.T) {
+	leser := []Leser{
+		{ID: "1", Vorname: "Anna", Nachname: "Voll"},
+		{ID: "2"},
+		{ID: "3"},
+		{ID: "4", Nachname: "Nurnachname"},
+	}
+	behalten, leer := ohneLeereLeser(leser, []Ausleihe{{LeserID: "3"}})
+	if leer != 1 || len(behalten) != 3 {
+		t.Fatalf("leer %d, behalten %d; erwartet 1 und 3", leer, len(behalten))
+	}
+	for _, l := range behalten {
+		if l.ID == "2" {
+			t.Error("der leere Leser ohne Ausleihe darf nicht mitkommen")
+		}
 	}
 }

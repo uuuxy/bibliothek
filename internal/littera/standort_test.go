@@ -264,7 +264,7 @@ func TestLeseAltbestandMitStandorten(t *testing.T) {
 
 	ab, err := LeseAltbestandMit(verzeichnis, Standortregel{KeinStandort: map[string]bool{
 		"Louise Carleton-Gertsch": true, "4711 Mustermann, Max": true,
-	}})
+	}}, nil)
 	if err != nil {
 		t.Fatalf("LeseAltbestandMit: %v", err)
 	}

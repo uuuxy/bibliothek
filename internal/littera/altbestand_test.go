@@ -139,7 +139,13 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		t.Skipf("leser_ug.csv fehlt — Leser-Pruefung uebersprungen: %v", err)
 	}
 	t.Cleanup(func() { _ = gf.Close() }) //nolint:errcheck // Testaufraeumen
-	gruppen, err := leseLesergruppen(gf)
+	obergruppen := map[string]string{}
+	if istVorhanden(basis, dateiLeserOG) {
+		if obergruppen, err = mitDatei(basis, dateiLeserOG, leseObergruppen); err != nil {
+			t.Fatalf("Obergruppen: %v", err)
+		}
+	}
+	gruppen, err := leseLesergruppen(gf, obergruppen, nil)
 	if err != nil {
 		t.Fatalf("Lesergruppen: %v", err)
 	}

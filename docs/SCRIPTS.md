@@ -128,8 +128,11 @@ das die Nummer behalten hat.
 
 Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
 gegen die EAN-13 des Etiketts, auch wenn sich diese aus fehlender oder unlesbarer
-Exemplarnummer gar nicht bilden ließe. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
-die Nummer des Kartenherstellers (`B12345678901`), und die steht in keinem Stammdatenfeld.
+Exemplarnummer gar nicht bilden ließe. Dasselbe gilt für Schülerausweise: `fremdlesernummer.csv`
+ordnet einem Leser (`Leser` = Buchungsnummer) seine Kartennummer zu (`FremdNummer`). Die Karten
+der Schule tragen Litteras verschlüsselten Leserbarcode (`B` und elf Ziffern); Littera speichert
+ihn nicht, sondern rechnet ihn beim Druck, und die Tabelle `FremdLeserNummer` ist dort leer. Die
+Liste kommt deshalb aus dem Etikettendruck „Barcode – Leser“ aller Leser.
 Beide Dateien sind optional; fehlen sie, rechnet der Import mit den Littera-Nummern.
 
 **Härtung:** Ein Savepoint je Datensatz (`internal/uebernahme`), Postgres-Fehler nach
@@ -166,7 +169,7 @@ die Datenbank neu angelegt statt aufgeräumt. Der Block bleibt für eine Test-Da
 `A-<Littera-Kennung>`. Das Aufräumen löscht die Zeilen der Schüler, und eine gelöschte A-Nummer
 vergibt das Programm nicht noch einmal (Migration 146) — der zweite Lauf gibt diesen Personen
 `A-<Littera-Kennung>-2`. Karten, die nach dem ersten Lauf gedruckt wurden, gelten dann nicht
-mehr. Nummern aus Littera selbst (Lesernummer, Herstellernummer der Karte) betrifft das nicht:
+mehr. Nummern aus Littera selbst (Lesernummer, Leserbarcode der Karte) betrifft das nicht:
 Sie sind keine A-Nummern.
 
 **Lehrkräfte** werden mit `aktiv = true` angelegt — die Ausweis-Abfrage der Omnibox
@@ -185,8 +188,23 @@ Handanlage (Kalenderjahr + 5) und eine Warnung. Eine Lesergruppe, die keiner Art
 ist (in der Sicherung von 2010 „Undefinierte Untergruppe", 5 Personen, 21 Ausleihen), **hält
 den Lauf mit `-personen` an, bevor er etwas schreibt** — der Trockenlauf mit denselben
 Schaltern endet dann ebenfalls mit 1 und nennt Gruppe, Personen- und Ausleihzahl. Zuordnen in
-Littera selbst (die Personen in ihre Gruppe setzen, neu sichern und ausgeben) oder, für eine
-neue Gruppenbezeichnung, in `artAusUntergruppe` (`internal/littera/leser.go`).
+Littera selbst (die Personen in ihre Gruppe setzen, neu sichern und ausgeben), für den Lauf mit
+`-gruppe 'Untergruppe=Art'` (mehrfach, Art wie in Littera: Schüler, Abgegangen, Lehrer …) oder,
+für eine neue Gruppenbezeichnung, in `artAusUntergruppe` (`internal/littera/leser.go`).
+
+**Woher die Art kommt** (`artDerGruppe`): Bis 2010 stand sie in der Untergruppe („Schüler“, die
+Klasse in der Kurzbezeichnung). Die Schule führt heute in der Untergruppe die Klasse („05F1“)
+und die Art in der Obergruppe (`Leser_OG`: Förderstufe, Realschulzweig, Gymnasialzweig,
+Sekundarstufe II, Lehrer …); die Klasse kommt dann aus der Untergruppe, denn die Kurzbezeichnung
+der Einführungsphase heißt „ET1“ statt „11T1“. Eine Klasse ohne Obergruppe erkennt der Lauf am
+Namen: Jahrgang und Zweig („13T8“), „ET…“ (Einführungsphase) und „IKL…“ (Inklusionsklasse) sind
+Schüler. Ein Leser ohne Vor- und Nachnamen und ohne Ausleihe kommt nicht mit; der Bericht zählt
+ihn.
+
+**Sperren:** Ein Schüler, den Littera sperrt (Sperrdatum `GesperrtAm`), kommt gesperrt an, über
+die Tür der Akte, mit dem Grund „In Littera gesperrt am TT.MM.JJJJ: Begründung“. Eine
+Begründung ohne Sperrdatum ist der Rest einer aufgehobenen Sperre und zählt nicht. Kollegen
+sperrt das Programm nicht; ihre Sperre steht als Warnung im Protokoll.
 
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
 Nach dem schreibenden Lauf legt das Kommando sein Ergebnis in `system_einstellungen` ab

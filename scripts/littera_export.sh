@@ -15,8 +15,9 @@ set -eu
 TABELLEN="Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih
 Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte Interessenskreis IntZuMed"
 # Ohne Ersatzetiketten und ohne Karten des Herstellers fehlen diese beiden Tabellen; die
-# Übernahme rechnet dann mit den Nummern aus Littera.
-WAHLWEISE="FremdLeserNummer FremdBarcode"
+# Übernahme rechnet dann mit den Nummern aus Littera. Leser_OG trägt die Art, seit die
+# Untergruppe die Klasse nennt; ohne sie hält eine solche Gruppe den Lauf an.
+WAHLWEISE="FremdLeserNummer FremdBarcode Leser_OG"
 
 [ $# -eq 2 ] || {
 	echo "Aufruf: $0 QUELLE ZIEL" >&2

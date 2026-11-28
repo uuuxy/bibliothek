@@ -65,6 +65,8 @@ type schalter struct {
 	erzwingen          bool
 	// keinStandort: Werte, die der Trockenlauf als Standort listet und die keiner sind.
 	keinStandort werteliste
+	// gruppen: Zuordnungen „Untergruppe=Art“ für Lesergruppen, die der Trockenlauf ohne Art nennt.
+	gruppen werteliste
 }
 
 // werteliste sammelt einen Schalter, der mehrfach stehen darf.
@@ -97,6 +99,20 @@ func (s schalter) standortregel() littera.Standortregel {
 	return regel
 }
 
+// gruppenzuordnung macht aus den Zuordnungen des Aufrufers die der Übernahme. Ein Eintrag ohne
+// „=“ oder mit einem Ziel, das keine Art benennt, hält den Lauf an, bevor er etwas liest.
+func (s schalter) gruppenzuordnung() (littera.Gruppenzuordnung, error) {
+	zuordnung := littera.Gruppenzuordnung{}
+	for _, eintrag := range s.gruppen {
+		gruppe, ziel, ok := strings.Cut(eintrag, "=")
+		if !ok || strings.TrimSpace(gruppe) == "" {
+			return nil, fmt.Errorf("-gruppe %q: erwartet „Untergruppe=Art“", eintrag)
+		}
+		zuordnung[strings.TrimSpace(gruppe)] = strings.TrimSpace(ziel)
+	}
+	return zuordnung, zuordnung.Pruefe()
+}
+
 func main() { os.Exit(fuehreAus()) }
 
 // fuehreAus hält die ganze Arbeit, damit die Kette der defer wirklich läuft: Das Protokoll wird
@@ -110,8 +126,13 @@ func fuehreAus() int {
 		return rueckgabeAbgebrochen
 	}
 
+	zuordnung, err := s.gruppenzuordnung()
+	if err != nil {
+		log.Printf("FEHLER: %v", err)
+		return rueckgabeAbgebrochen
+	}
 	log.Printf("Lese Littera-Export aus %s …", s.csvVerzeichnis)
-	ab, err := littera.LeseAltbestandMit(s.csvVerzeichnis, s.standortregel())
+	ab, err := littera.LeseAltbestandMit(s.csvVerzeichnis, s.standortregel(), zuordnung)
 	if err != nil {
 		log.Printf("FEHLER: Export nicht lesbar: %v", err)
 		return rueckgabeAbgebrochen
@@ -169,6 +190,9 @@ func leseSchalter() schalter {
 	flag.Var(&s.keinStandort, "kein-standort",
 		"Wert aus der Standortliste des Trockenlaufs, der kein Standort ist (mehrfach möglich): "+
 			"Ein Vermerk am Titel bleibt dann Verfasser, ein Sonderstandort kommt nicht mit")
+	flag.Var(&s.gruppen, "gruppe",
+		"Zuordnung „Untergruppe=Art“ für eine Lesergruppe ohne Art (mehrfach möglich), etwa "+
+			"„Undefinierte Untergruppe=Abgegangen“; Arten wie in Littera: Schüler, Abgegangen, Lehrer …")
 	flag.Parse()
 	return s
 }
@@ -198,6 +222,19 @@ func trockenlauf(ab *littera.Altbestand) {
 		nach[littera.ArtSchueler], nach[littera.ArtAbgegangen], nach[littera.ArtLehrkraft],
 		nach[littera.ArtLiV], nach[littera.ArtPraktikum], nach[littera.ArtSekretariat],
 		nach[littera.ArtUPlus], nach[littera.ArtFachbereich], nach[littera.ArtUnbekannt])
+	gesperrt, gesperrtKollegium := 0, 0
+	for _, l := range ab.Leser {
+		if l.Sperrgrund == "" {
+			continue
+		}
+		gesperrt++
+		if l.Art != littera.ArtSchueler && l.Art != littera.ArtAbgegangen {
+			gesperrtKollegium++
+		}
+	}
+	log.Printf("  Sperren: %d Leser in Littera gesperrt, davon %d im Kollegium (das Programm sperrt Kollegen nicht)",
+		gesperrt, gesperrtKollegium)
+	log.Printf("  Leer: %d Leser ohne Namen und ohne Ausleihe kommen nicht mit", ab.LeereLeser)
 
 	bekannt := make(map[string]bool, len(ab.Exemplare))
 	for _, e := range ab.Exemplare {
@@ -378,9 +415,12 @@ func drucke(b littera.Bericht, s schalter) {
 		druckeSchlagworte(b.Schlagworte)
 	}
 	if s.personen {
-		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)
+		log.Printf("Personen   Quelle %6d Leser, dazu %d ohne Namen und ohne Ausleihe (nicht übernommen)",
+			b.Personen.QuellLeser, b.Personen.Leer)
 		log.Printf("           geschrieben %6d Schüler / %4d Kollegium, nicht übernommen %d",
 			b.Personen.Schueler, b.Personen.Kollegium, b.Personen.Uebersprungen)
+		log.Printf("           gesperrt wie in Littera %d; Sperre bei Kollegen nicht übernommen %d",
+			b.Personen.Gesperrt, b.Personen.SperreKollege)
 		meldeAbgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Kollegium tatsächlich neu",
 			b.Personen.IstSchueler, b.Personen.IstKollegium))
 	}

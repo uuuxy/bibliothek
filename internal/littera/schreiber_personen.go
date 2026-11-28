@@ -16,9 +16,12 @@ import (
 // PersonenBericht ist die Bilanz des Personenteils.
 type PersonenBericht struct {
 	QuellLeser    int
+	Leer          int // ohne Namen und ohne Ausleihe, nicht übernommen (ohneLeereLeser)
 	Schueler      int
 	Kollegium     int // jede Leserzeile im Kollegium, mit Konto oder ohne (leserart.HatKonto)
 	Uebersprungen int // an einem Fehler gescheiterte
+	Gesperrt      int // Schüler, die Littera sperrt und die gesperrt ankommen
+	SperreKollege int // gesperrt in Littera, aber im Kollegium: das Programm sperrt Kollegen nicht
 
 	IstSchueler  int
 	IstKollegium int
@@ -94,6 +97,7 @@ const sqlLeserOhneKontoEinfuegen = `
 func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (PersonenBericht, error) {
 	bericht := PersonenBericht{
 		QuellLeser: len(ab.Leser),
+		Leer:       ab.LeereLeser,
 		Zielleser:  make(map[string]Zielleser, len(ab.Leser)),
 	}
 	if offen := OhneZuordnung(ab); len(offen) > 0 {
@@ -155,7 +159,7 @@ type personenlauf struct {
 	// buchBarcodes sind für Ausweise gesperrt: Die Theke löst eine Nummer ohne Vorsilbe
 	// zuerst als Buch auf (verarbeiteOhneVorsilbe).
 	buchBarcodes map[string]bool
-	// karten bildet Leser → Herstellernummer des Ausweises ab (FremdLeserNummer);
+	// karten bildet Leser → Kartennummer des Ausweises ab (FremdLeserNummer);
 	// mehrereKarten nennt die Leser, für die Littera mehr als eine Karte führt.
 	karten        map[string]string
 	mehrereKarten map[string]bool
@@ -233,8 +237,10 @@ func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser)
 	var neu Zielleser
 	erg, err := uebernahme.ImSavepoint(ctx, tx, "littera_id="+l.ID, func(sp pgx.Tx) error {
 		var innerErr error
-		neu, innerErr = p.schreibePerson(ctx, sp, l)
-		return innerErr
+		if neu, innerErr = p.schreibePerson(ctx, sp, l); innerErr != nil {
+			return innerErr
+		}
+		return p.sperre(ctx, sp, l, neu)
 	})
 	if err != nil {
 		return err
@@ -251,6 +257,28 @@ func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser)
 		p.bericht.Schueler++
 	} else {
 		p.bericht.Kollegium++
+	}
+	switch {
+	case l.Sperrgrund == "":
+	case neu.IstSchueler:
+		p.bericht.Gesperrt++
+	default:
+		p.bericht.SperreKollege++
+		p.s.prot.Warnung(l.ID, l.Lesernummer,
+			"in Littera gesperrt; das Programm sperrt Kollegen nicht, die Sperre ist nicht übernommen")
+	}
+	return nil
+}
+
+// sperre sperrt einen Schüler, den Littera sperrt, über die Tür der Akte
+// (repository.SetzeSperreVonHand), im Savepoint der Person: Scheitert die Sperre, fehlt die
+// Person, statt ungesperrt anzukommen. Kollegen sperrt das Programm nicht (Tür der Akte).
+func (p *personenlauf) sperre(ctx context.Context, tx pgx.Tx, l Leser, neu Zielleser) error {
+	if l.Sperrgrund == "" || !neu.IstSchueler {
+		return nil
+	}
+	if _, err := repository.SetzeSperreVonHand(ctx, tx, neu.LeserID, true, l.Sperrgrund); err != nil {
+		return fmt.Errorf("beim Sperren von %s %s: %w", l.Vorname, l.Nachname, err)
 	}
 	return nil
 }
@@ -374,7 +402,7 @@ func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser
 // kollidieren zwei Leser über dieselbe Lesernummer.
 //
 // Die Nummer ist die, die der Ausweis beim Scannen liefert: Steht in FremdLeserNummer eine
-// Herstellernummer, gewinnt sie gegen die Lesernummer (fremdnummern.go); ohne sie fände kein
+// Kartennummer, gewinnt sie gegen die Lesernummer (fremdnummern.go); ohne sie fände kein
 // alter Ausweis seine Person. Vergeben ist außerdem jede Nummer, die schon ein Buch trägt.
 func (p *personenlauf) ausweis(l Leser) string {
 	nummer := l.Lesernummer

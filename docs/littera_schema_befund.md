@@ -269,9 +269,9 @@ Ausweisnummern und laufende Ausleihen; der MAB-Export (`katalogisat.xml`, Juni 2
 13.708 Titel) deckt nur den Katalog. Die vorliegende `littera_sav.mdb` ist ein Stand
 von **2010** — belegt an Leser 37 (letzte Bewegung 11.11.2010 in der Datei gegen
 letzte Ausleihe 17.06.2026 im laufenden LITTERA 5.4) und an einem Buch von 2022 mit
-Exemplar-Nr. 105785, während die Datei bei 61.520 endet. Der Export muss
-`FremdLeserNummer` und `FremdBarcode` enthalten — dort liegen die Nummern der
-Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
+Exemplar-Nr. 105785, während die Datei bei 61.520 endet. Die Kartennummern stehen in keiner
+Tabelle: Littera rechnet den verschlüsselten Leserbarcode beim Druck, und `FremdLeserNummer` ist
+an der Schule leer. Sie kommen aus dem Etikettendruck „Barcode – Leser“ (SCRIPTS.md, Abschnitt 1).
 
 * **Autoren — erledigt.** `Titel.Verfasserangabe` ist nur bei 2.519 von 10.732 Titeln
   brauchbar gefüllt (23 %). Die gepflegte Quelle sind `Personen` + `Personen_Zuordnung`,

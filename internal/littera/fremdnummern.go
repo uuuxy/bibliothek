@@ -5,20 +5,20 @@ import (
 	"strings"
 )
 
-// Fremdnummern sind Barcodes, die nicht von Littera vergeben wurden.
+// Fremdnummern sind Barcodes, die Littera nicht in seinen Stammdaten führt.
 //
-// Der Schülerausweis der Schule trägt die Nummer seines Herstellers: einen Buchstaben und elf
-// Ziffern (hier das erfundene Beispiel `B12345678901`), während darunter nur die Nummer der
-// Bibliothek und die des Lesers aufgedruckt stehen (`[1234] 56`). Gemessen ist die Form, die
-// Nummern einer echten Karte stehen nicht im Repository.
-// Littera merkt sich diese Zuordnung in zwei eigenen Tabellen, und nur dort:
+// Der Schülerausweis trägt Litteras verschlüsselten Leserbarcode: B und elf Ziffern (hier das
+// erfundene Beispiel `B12345678901`), darunter die Nummer der Bibliothek und die des Lesers
+// (`[1234] 56`). Littera speichert ihn nicht, sondern rechnet ihn beim Druck; die Liste kommt aus
+// dem Etikettendruck „Barcode – Leser“ (docs/SCRIPTS.md, Abschnitt 1). Gemessen ist die Form, die
+// Nummern echter Karten stehen nicht im Repository. Die Übernahme liest beide Zuordnungen in der
+// Form der Littera-Tabellen:
 //
 //	FremdLeserNummer (FremdNummer Text(255), Leser Long)          → Ausweis → Leser
 //	FremdBarcode     (Buchungsnummer Long, Exemplarnummer Text(50)) → Exemplar → Barcode
 //
-// Ohne sie wäre der Import blind für die Etiketten, die tatsächlich gescannt werden. Im
-// Backup von 2010 sind beide Tabellen leer (die heutigen Karten sind jünger als die Datei);
-// in einer laufenden Installation sind sie die maßgebliche Quelle.
+// Ohne sie wäre der Import blind für die Etiketten, die tatsächlich gescannt werden. In Littera
+// selbst sind beide Tabellen an der Schule leer, wie im Backup von 2010.
 //
 // Deshalb sind die beiden Dateien beim Einlesen optional — aber wenn sie da sind, gewinnen
 // sie gegen die Littera-eigenen Nummern.

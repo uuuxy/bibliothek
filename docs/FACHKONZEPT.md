@@ -19,7 +19,7 @@ Buch-Exemplar → Ausweis (Schüler wie Kollegium) → Volltextsuche im Katalog
 
 Alle Leser stehen in einer Tabelle (Migration 125); eine Stufe sucht den Leser zum Ausweis,
 gleich welcher Art (`verarbeiteOhneVorsilbe`). Das geht auf, weil die Formen verschieden sind: Buchetiketten liefern eine 13-stellige
-EAN-13, Schülerausweise die Nummer ihres Kartenherstellers. Die Vorgängersoftware Littera
+EAN-13, Schülerausweise Litteras verschlüsselten Leserbarcode („B“ und elf Ziffern). Die Vorgängersoftware Littera
 kennt überhaupt keine Präfixe — sie hat getrennte Suchfelder, wir haben eines für alles.
 
 **Präfixe sind eine Abkürzung**, kein Muss. Sie überspringen die Auflösung und sprechen
@@ -39,8 +39,8 @@ jemand ist, steht in den Stammdaten und nicht auf seinem Ausweis. Gelesen werden
 Die Vorsilbe selbst BLEIBT, und der Grund ist nicht offensichtlich: **Ohne Netz ist sie
 die einzige Information, an der die Theke einen Buchscan von einem Ausweisscan
 unterscheiden kann.** Offline gibt es niemanden zu fragen. Littera kommt ohne aus, weil
-dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
-Kartenhersteller stammt; dieses zweite Feld haben wir nicht.
+dort Nummer und Scanwert zwei verschiedene Dinge sind: Den Scanwert der Karte rechnet Littera
+beim Druck aus Lesernummer und Bibliotheksnummer; dieses zweite Feld haben wir nicht.
 
 **Der Bindestrich als ß:** Ein Handscanner mit amerikanischer Tastatur tippt an einem
 Rechner mit deutscher jeden Bindestrich als ß; aus `S-10001` wird `Sß10001`. Jedes Feld, in das
@@ -1208,7 +1208,7 @@ Fällt die Verbindung aus, geht der Betrieb an der Theke weiter. Was dabei gesch
 Buch-Barcode-Liste, die der Rechner bei jeder Anmeldung holt (`GET /api/action/buchbarcodes`,
 nur Buchnummern, keine Personendaten); ein Littera-Etikett wird dafür aus der EAN-13
 zurückgerechnet. Steht die Nummer nicht auf der Liste, ist sie ein Ausweis, wenn sie die Form
-eines alten Ausweises aus Littera hat („B“ und elf Ziffern, die Nummer des Kartenherstellers);
+eines alten Ausweises aus Littera hat („B“ und elf Ziffern, Litteras verschlüsselter Leserbarcode);
 sonst gilt der Scan als **unklar** und wird nicht gebucht — wer hier riete, schriebe das
 nächste Buch einer fremden Person zu.
 
