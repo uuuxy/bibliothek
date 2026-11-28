@@ -59,6 +59,7 @@ internal/smtptest/server.go: unreachable func: lausche
 internal/smtptest/server.go: unreachable func: bediene
 internal/smtptest/server.go: unreachable func: leseNachricht
 internal/smtptest/server.go: unreachable func: adresseAus
+internal/smtptest/server.go: unreachable func: lehneEmpfaengerAb
 # Dazu das Warten auf die abgefangene Nachricht und ihr gekürzter Text für eine Fehlermeldung
 # (vorher Helfer in Testdateien von internal/api/).
 internal/smtptest/warten.go: unreachable func: WarteAufMail
@@ -174,6 +175,7 @@ internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
 internal/tuertest/dnb.go: unreachable func: Transport.RoundTrip
 internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.Lade
 internal/tuertest/mail.go: unreachable func: FangeMailAb
+internal/tuertest/mail.go: unreachable func: FangeMailAbMit
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 
