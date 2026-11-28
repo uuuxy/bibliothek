@@ -108,7 +108,8 @@ type LUSDAktualisierung struct {
 
 // AendereLUSDBestand übernimmt Klasse, Name und Kontaktdaten aus dem Export, alle Zeilen
 // als ein Batch. Ein leerer Wert des Exports überschreibt nichts (COALESCE(NULLIF(...))); ein
-// Export ohne Adressspalten löscht also keine Adressen.
+// Export ohne Adressspalten löscht also keine Adressen. Mit einer anderen Klasse kommt das
+// voraussichtliche Abgangsjahr neu aus AbgaengerJahr.
 //
 // Wer wieder im Export steht, ist kein Abgänger mehr: Der Name kommt immer aus dem Export, und
 // der Abgänger-Stand wird zurückgesetzt. Ein anonymisierter Abgänger wird entsperrt, er hatte
@@ -138,7 +139,15 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 			-- und die Klasse ist die Angabe, an der Ausleihlimit, Mahnweg und Abgaengerlauf
 			-- haengen. Ein leerer Wert hier ist nie eine gewollte Aussage.
 			klasse       = COALESCE(NULLIF($3, ''), klasse),
-			strasse      = COALESCE(NULLIF($4, ''), strasse),
+			-- Eine andere Klasse rechnet das voraussichtliche Abgangsjahr neu, wie die Änderung
+			-- von Hand; die Rückkehr auch, denn der Abgang hat das Jahr des Abgangs eingetragen.
+			-- Bleibt die Klasse, bleibt ein von Hand gesetztes Jahr.
+			abgaenger_jahr = CASE
+				WHEN NULLIF($3, '') IS NOT NULL
+				     AND (ist_abgaenger OR klassen_normkey(klasse) IS DISTINCT FROM klassen_normkey($3))
+				THEN $12::int
+				ELSE abgaenger_jahr END,
+			strasse     = COALESCE(NULLIF($4, ''), strasse),
 			hausnummer   = COALESCE(NULLIF($5, ''), hausnummer),
 			plz          = COALESCE(NULLIF($6, ''), plz),
 			ort          = COALESCE(NULLIF($7, ''), ort),
@@ -169,7 +178,7 @@ func AendereLUSDBestand(ctx context.Context, tx pgx.Tx, zeilen []LUSDAktualisier
 		WHERE id = $9`,
 			z.Vorname, z.Nachname, z.Klasse,
 			z.Strasse, z.Hausnummer, z.PLZ, z.Ort, z.ElternEmail, z.SchuelerID,
-			z.EintrittAm, z.Geburtsdatum)
+			z.EintrittAm, z.Geburtsdatum, AbgaengerJahr(z.Klasse))
 	}
 
 	br := tx.SendBatch(ctx, batch)

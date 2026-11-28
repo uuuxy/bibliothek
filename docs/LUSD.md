@@ -239,6 +239,11 @@ darin, dass jeder Neuzugang sofort geschrieben wird und die zweite Zeile ihn in 
 Transaktion sieht; wer das Einfügen ans Ende der Schleife verschiebt, bricht den ganzen Import
 ab. Die Stufe „nur Name" spielt `internal/api/leser/lusd_nurname_pg_test.go` durch.
 
+Mit einer anderen Klasse und bei einem Rückkehrer rechnet der Abgleich das voraussichtliche
+Abgangsjahr neu, wie die Änderung der Klasse von Hand (`repository.AbgaengerJahr`). Bleibt die
+Klasse, bleibt ein von Hand gesetztes Jahr; eine andere Schreibweise derselben Klasse ist kein
+Wechsel (`internal/repository/lusd_abgangsjahr_pg_test.go`).
+
 Grenzen, die bleiben: Ohne Schüler-ID sind zwei Zeilen mit gleichem Namen **und** gleichem
 Geburtsdatum in einer Datei eine Person (zusammengelegt, nicht „mehrdeutig"). Eine
 Umbenennung **und** ein Umzug **und** ein Klassensprung im selben Jahr ohne Schuleintritt

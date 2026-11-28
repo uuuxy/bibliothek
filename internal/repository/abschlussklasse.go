@@ -133,7 +133,8 @@ func IstAbschlussklasse(klasse string) bool {
 
 // AbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers aus seiner Klasse
 // und dem laufenden Schuljahr. Die Anlage von Hand, das Ändern der Klasse, das Zusammenführen
-// und der LUSD-Import fragen hier: eine Antwort auf dieselbe Frage.
+// und der LUSD-Import (Neuzugang, Klassenwechsel, Rückkehr) fragen hier: eine Antwort auf
+// dieselbe Frage.
 func AbgaengerJahr(klasse string) int {
 	return AbgaengerJahrAm(klasse, time.Now())
 }
