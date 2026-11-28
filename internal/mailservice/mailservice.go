@@ -113,6 +113,12 @@ func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
 // antwortet mit 502 und der Meldung.
 var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 
+// ErrSMTPAbgelehnt markiert unter den Fehlern mit ErrSMTPVersand die Antwort, mit der der Server
+// eine einzelne Nachricht abweist: Empfänger unbekannt, Postfach voll, Nachricht zu groß. Der
+// Server arbeitet, die nächste Nachricht kann ankommen; ein Sammelversand bricht deshalb nur ab,
+// wenn dieser Marker fehlt.
+var ErrSMTPAbgelehnt = errors.New("vom SMTP-Server abgelehnt")
+
 // BeschreibeSMTPFehler übersetzt die Fehler von net/smtp in eine Meldung, die sagt, was zu tun
 // ist. Vor allem beim Zertifikat lohnt sich das: Go prüft bei STARTTLS den Hostnamen streng, und
 // viele Schulserver liefern ein Zertifikat, das nur auf ihren echten Namen ausgestellt ist (etwa

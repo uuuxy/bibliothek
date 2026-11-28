@@ -117,6 +117,9 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
 		t.Fatalf("%+v, erwartet sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
 	}
+	if msg := mahnlistenMeldung(erg, ""); !strings.Contains(msg, "Für 1 Klasse nicht zugestellt: err") {
+		t.Errorf("mahnlistenMeldung() = %q, erwartet die Klasse beim Namen", msg)
+	}
 }
 
 // Mailserver-Fehler (ErrSMTPVersand) bricht den Lauf ab: Das Relay ist weg, jede weitere

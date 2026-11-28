@@ -5,11 +5,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
 
 	"bibliothek/internal/pdf"
 	"bibliothek/internal/repository"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/tuertest"
 )
 
 func eintrag(vorname, nachname, klasse string) pdf.KontoauszugEintrag {
@@ -225,11 +231,12 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 		{Klasse: "10b", Empfaenger: "kl10b@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Mia", "K", "10b")}},
 	}
 
-	// Einzelfehler (abgelehnte Adresse): failed, kein Abbruch.
+	// Einzelfehler vor dem Mailserver (unlesbare Adresse): failed, kein Abbruch. Die Adresse, die
+	// der Server abweist, prüft der Test darunter über den echten Versand.
 	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF,
 		func(_ context.Context, m mailservice.Nachricht) error {
 			if m.An == "kl10a@schule.de" {
-				return errors.New("550 mailbox unavailable")
+				return errors.New("invalid recipient email address")
 			}
 			return nil
 		})
@@ -244,6 +251,70 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 		})
 	if !erg.Abgebrochen || erg.Fehlgeschlagen != 2 || erg.Versendet != 0 {
 		t.Fatalf("%+v, erwartet Abbruch mit failed=2", erg)
+	}
+}
+
+// Der Lauf über den echten Versand (Postausgang.Sende): Weist der Server die Mail einer Klasse
+// ab, weil es die Adresse der Klassenleitung nicht mehr gibt, ist nur diese Klasse nicht
+// zugestellt. Die übrigen bekommen ihre Mail, und die Rückmeldung nennt die Klasse. Ein Fehler
+// von Hand prüft das nicht: Der echte Versand markiert jede Antwort des Servers mit
+// ErrSMTPVersand, auch die Ablehnung einer einzelnen Nachricht.
+func TestVersendeAbgaengerKontoauszuege_AbgewieseneKlasseHaeltDenLaufNichtAn(t *testing.T) {
+	klassen := []abgaengerKlasse{
+		{Klasse: "10a", Empfaenger: "kl10a@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Max", "M", "10a")}},
+		{Klasse: "10b", Empfaenger: smtptest.UnbekannterEmpfaenger, Eintraege: []pdf.KontoauszugEintrag{eintrag("Mia", "K", "10b")}},
+		{Klasse: "10c", Empfaenger: "kl10c@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Ole", "P", "10c")}},
+	}
+	post, sitzungen := tuertest.FangeMailAbMit(t, smtptest.KenntEmpfaengerNicht)
+
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF, post.Sende)
+
+	soll := versandErgebnis{Versendet: 2, Fehlgeschlagen: 1, NichtZugestellt: []string{"10b"}}
+	if diff := cmp.Diff(soll, erg); diff != "" {
+		t.Errorf("versendeAbgaengerKontoauszuege() weicht ab (-erwartet +ist):\n%s", diff)
+	}
+	var zugestellt []string
+	for range klassen {
+		select {
+		case sitzung := <-sitzungen:
+			if sitzung.Nachricht != "" {
+				zugestellt = append(zugestellt, sitzung.Empfaenger...)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("der Server sah weniger als %d Sitzungen: nach der abgewiesenen Klasse kam keine mehr", len(klassen))
+		}
+	}
+	slices.Sort(zugestellt)
+	if diff := cmp.Diff([]string{"kl10a@schule.de", "kl10c@schule.de"}, zugestellt); diff != "" {
+		t.Errorf("zugestellte Mails weichen ab (-erwartet +ist):\n%s", diff)
+	}
+	meldung := abgaengerVersandMeldung(erg, "")
+	if !strings.Contains(meldung, "Für 1 Klasse nicht zugestellt: 10b") || strings.Contains(meldung, "Der Lauf brach") {
+		t.Errorf("abgaengerVersandMeldung() = %q, erwartet die abgewiesene Klasse beim Namen und keinen Abbruch", meldung)
+	}
+}
+
+// Die Gegenprobe über den echten Versand: Ist der Server nicht erreichbar, bricht der Lauf an
+// der ersten Klasse ab, und die Rückmeldung nennt den Mailserver statt einer Klasse.
+func TestVersendeAbgaengerKontoauszuege_UnerreichbarerServerBrichtDenLaufAb(t *testing.T) {
+	klassen := []abgaengerKlasse{
+		{Klasse: "10a", Empfaenger: "kl10a@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Max", "M", "10a")}},
+		{Klasse: "10b", Empfaenger: "kl10b@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Mia", "K", "10b")}},
+	}
+	host, port := smtptest.GeschlossenerPort(t)
+	post := mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) {
+		return mailservice.SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.invalid"}, nil
+	})
+
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF, post.Sende)
+
+	soll := versandErgebnis{Fehlgeschlagen: 2, Abgebrochen: true}
+	if diff := cmp.Diff(soll, erg); diff != "" {
+		t.Errorf("versendeAbgaengerKontoauszuege() weicht ab (-erwartet +ist):\n%s", diff)
+	}
+	meldung := abgaengerVersandMeldung(erg, "")
+	if !strings.Contains(meldung, "Für 2 Klassen nicht zugestellt. Der Lauf brach nach einem Fehler des Mailservers ab") {
+		t.Errorf("abgaengerVersandMeldung() = %q, erwartet den Abbruch ohne Klassennamen", meldung)
 	}
 }
 
@@ -298,6 +369,14 @@ func TestVersandMeldung_Saetze(t *testing.T) {
 			"Kontoauszüge von 0 Klassen an die Klassenleitungen versendet, 2 übersprungen: keine E-Mail hinterlegt oder keine offenen Ausleihen"},
 		{"Kontoauszüge, nur fehlgeschlagen", abgaengerVersandMeldung(versandErgebnis{Fehlgeschlagen: 1}, ""),
 			"Kontoauszüge von 0 Klassen an die Klassenleitungen versendet, 0 übersprungen: keine E-Mail hinterlegt oder keine offenen Ausleihen. Für 1 Klasse nicht zugestellt."},
+		{"Kontoauszüge, zwei Klassen abgewiesen",
+			abgaengerVersandMeldung(versandErgebnis{Versendet: 1, Fehlgeschlagen: 2, NichtZugestellt: []string{"10b", "10d"}}, ""),
+			"Kontoauszüge von 1 Klasse an die Klassenleitungen versendet, 0 übersprungen: keine E-Mail hinterlegt oder keine offenen Ausleihen. Für 2 Klassen nicht zugestellt: 10b, 10d."},
+		{"Mahnlisten, abgewiesen und danach Abbruch",
+			mahnlistenMeldung(versandErgebnis{Fehlgeschlagen: 3, Abgebrochen: true, NichtZugestellt: []string{"7a"}}, ""),
+			"Mahnlisten von 0 Klassen an die Klassenleitungen versendet, 0 übersprungen: keine E-Mail hinterlegt oder keine Fälle. " +
+				"Für 3 Klassen nicht zugestellt. Der Lauf brach nach einem Fehler des Mailservers ab. Bitte den Mailserver " +
+				"prüfen und erneut senden. Keine Klasse wird doppelt gemahnt, weil der Mailversand die Mahnstufe nicht erhöht."},
 		{"Mahnlisten mit Umleitung und Abbruch",
 			mahnlistenMeldung(versandErgebnis{Versendet: 3, Uebersprungen: 1, Fehlgeschlagen: 1, Abgebrochen: true}, "test@schule.de"),
 			"Mahnlisten von 3 Klassen an test@schule.de versendet, 1 übersprungen: keine E-Mail hinterlegt oder keine Fälle. " +

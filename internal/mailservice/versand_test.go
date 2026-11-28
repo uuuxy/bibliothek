@@ -158,6 +158,49 @@ func TestVersendeUeberSMTPMeldetAbweisung(t *testing.T) {
 	}
 }
 
+// Weist der Server eine einzelne Nachricht ab, ihren Empfänger oder ihren Inhalt, trägt der
+// Fehler neben ErrSMTPVersand den Marker ErrSMTPAbgelehnt: Der Server arbeitet, ein
+// Sammelversand macht mit der nächsten Nachricht weiter. Meldet der Server sein Dienstende oder
+// ist er nicht erreichbar, fehlt der Marker. Der Fehlertext bleibt die Antwort des Servers; den
+// liest der Admin nach einem Testversand.
+func TestVersendeUeberSMTP_ErrSMTPAbgelehntNurFuerDieEinzelneNachricht(t *testing.T) {
+	erlaubeKlartext(t)
+	mitVerhalten := func(verhalten smtptest.Verhalten) func(*testing.T) (string, string) {
+		return func(t *testing.T) (string, string) {
+			host, port, _ := smtptest.Starte(t, verhalten)
+			return host, port
+		}
+	}
+	faelle := []struct {
+		name       string
+		server     func(*testing.T) (host, port string)
+		empfaenger string
+		abgelehnt  bool
+		antwort    string
+	}{
+		{"Empfänger unbekannt", mitVerhalten(smtptest.KenntEmpfaengerNicht), smtptest.UnbekannterEmpfaenger, true, `: 550 "5.1.1 Empfänger unbekannt"`},
+		{"Nachricht abgewiesen", mitVerhalten(smtptest.LehntNachrichtAb), "lehrerin@schule.de", true, `: 552 "5.3.4 Nachricht zu groß"`},
+		{"Dienstende", mitVerhalten(smtptest.MeldetDienstende), "lehrerin@schule.de", false, ""},
+		{"Server nicht erreichbar", smtptest.GeschlossenerPort, "lehrerin@schule.de", false, ""},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			host, port := f.server(t)
+			err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+				[]string{f.empfaenger}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
+			if !errors.Is(err, ErrSMTPVersand) {
+				t.Fatalf("versendeUeberSMTP() = %v, erwartet einen Fehler mit ErrSMTPVersand", err)
+			}
+			if ist := errors.Is(err, ErrSMTPAbgelehnt); ist != f.abgelehnt {
+				t.Errorf("errors.Is(%q, ErrSMTPAbgelehnt) = %v, erwartet %v", err, ist, f.abgelehnt)
+			}
+			if !strings.HasSuffix(err.Error(), f.antwort) {
+				t.Errorf("versendeUeberSMTP() = %q, erwartet am Ende die Antwort des Servers %q", err, f.antwort)
+			}
+		})
+	}
+}
+
 // Unerreichbarer Server: die häufigste Fehlkonfiguration überhaupt.
 func TestVersendeUeberSMTPMeldetUnerreichbarenServer(t *testing.T) {
 	host, port := smtptest.GeschlossenerPort(t)

@@ -211,6 +211,7 @@ func versendeAbgaengerKontoauszuege(
 	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
 	return versendeJeKlasse(ctx, klassen,
+		func(kl abgaengerKlasse) string { return kl.Klasse },
 		func(kl abgaengerKlasse) bool { return kl.Empfaenger == "" || len(kl.Eintraege) == 0 },
 		func(kl abgaengerKlasse) (mailservice.Nachricht, bool) {
 			anhaenge := baueKontoauszugAnhaenge(kl, erzeugePDF)

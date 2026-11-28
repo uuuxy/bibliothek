@@ -1569,6 +1569,12 @@ Lernmitteln, solange das Datum nicht vorbei ist (`leseclubFrist`); das Mahnwesen
 - **STARTTLS erzwungen** mit Zertifikatsprüfung (`errSMTPKlartext`, Ausnahme nur mit
   `SMTP_ALLOW_PLAINTEXT=true`); Kopfzeilen an der Schreibstelle gehärtet.
 - **Jede Verbindung hat eine Frist:** 10 s Aufbau, 60 s Sitzung (`internal/mailservice/versand.go`).
+- **Der Sammelversand an die Klassenleitungen trennt Ablehnung und Ausfall** (`versendeJeKlasse`):
+  Weist der Server eine einzelne Nachricht ab (Empfänger unbekannt, Postfach voll, zu groß;
+  `mailservice.ErrSMTPAbgelehnt`), ist nur diese Klasse nicht zugestellt, die Rückmeldung nennt
+  sie, und der Lauf geht weiter. Antwortet der Server nicht, scheitern Anmeldung oder Absender
+  oder meldet er sein Dienstende (421), bricht der Lauf ab: Jede weitere Klasse hinge bis zur
+  Frist an ihm.
 - **Eine Mail nach dem Speichern meldet ihr Ergebnis:** „Klassensatz liegt bereit“ und „Meldung
   erledigt“ gehen nach dem Commit hinaus; das Feld `mail` der Antwort nennt `versendet`,
   `fehlgeschlagen` oder `keine_adresse`, und die Oberfläche warnt.

@@ -409,7 +409,9 @@ lässt sich die Liste ansehen und drucken.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, senden): je
 Kind ein Blatt zum Austeilen; einen zweiten Lauf, auch von einem anderen Platz, weist das Programm
-ab („Es läuft bereits ein Mahnlauf“), bis der erste fertig ist. **Liste drucken** druckt die Mahnliste so, wie Reiter, Filter und Suche sie zeigen. Mail
+ab („Es läuft bereits ein Mahnlauf“), bis der erste fertig ist. Nimmt der Mailserver die Mail an
+eine Klassenleitung nicht an, nennt die Rückmeldung die Klasse, und die übrigen bekommen ihre Mail;
+das gilt auch für die Kontoauszüge der Abgänger. **Liste drucken** druckt die Mahnliste so, wie Reiter, Filter und Suche sie zeigen. Mail
 und Liste zählen nicht als Mahnung. Lehrkräfte werden nie angemahnt. Ehemalige stehen unter
 „Ehemalige“ statt unter ihrer früheren Klasse und bekommen den Mahnbrief über die Auswahl, an eine
 Klassenleitung geht nichts. Welche Klasse an welche Lehrkraft geht, wird unter _Einstellungen →

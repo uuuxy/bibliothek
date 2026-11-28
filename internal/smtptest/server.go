@@ -29,7 +29,15 @@ const (
 	BrichtVorQuitAb
 	// LehntNachrichtAb weist die Nachricht nach der Übertragung ab, etwa wegen ihrer Größe.
 	LehntNachrichtAb
+	// KenntEmpfaengerNicht weist den Empfänger UnbekannterEmpfaenger ab und nimmt jeden anderen
+	// an: die Adresse einer Klassenleitung, die es am Server nicht mehr gibt.
+	KenntEmpfaengerNicht
+	// MeldetDienstende beantwortet jeden Empfänger mit 421: Der Server stellt die Arbeit ein.
+	MeldetDienstende
 )
+
+// UnbekannterEmpfaenger ist die Adresse, die der Server unter KenntEmpfaengerNicht abweist.
+const UnbekannterEmpfaenger = "unbekannt@schule.invalid"
 
 // Sitzung hält fest, was der Server zu sehen bekam.
 type Sitzung struct {
@@ -120,7 +128,12 @@ func bediene(verbindung net.Conn, verhalten Verhalten, kanal chan<- Sitzung) {
 		case strings.HasPrefix(befehl, "MAIL FROM"):
 			schreibe("250 2.1.0 Ok")
 		case strings.HasPrefix(befehl, "RCPT TO"):
-			sitzung.Empfaenger = append(sitzung.Empfaenger, adresseAus(zeile))
+			adresse := adresseAus(zeile)
+			if ablehnung := lehneEmpfaengerAb(verhalten, adresse); ablehnung != "" {
+				schreibe(ablehnung)
+				continue
+			}
+			sitzung.Empfaenger = append(sitzung.Empfaenger, adresse)
 			schreibe("250 2.1.5 Ok")
 		case befehl == "DATA":
 			schreibe("354 Ende mit <CR><LF>.<CR><LF>")
@@ -144,6 +157,18 @@ func bediene(verbindung net.Conn, verhalten Verhalten, kanal chan<- Sitzung) {
 		}
 	}
 	kanal <- sitzung
+}
+
+// lehneEmpfaengerAb liefert die Antwort, mit der der Server einen Empfänger abweist; leer heißt,
+// er nimmt ihn an.
+func lehneEmpfaengerAb(verhalten Verhalten, adresse string) string {
+	switch {
+	case verhalten == KenntEmpfaengerNicht && adresse == UnbekannterEmpfaenger:
+		return "550 5.1.1 Empfänger unbekannt"
+	case verhalten == MeldetDienstende:
+		return "421 4.3.2 Dienst nicht verfügbar, die Verbindung wird geschlossen"
+	}
+	return ""
 }
 
 func leseNachricht(leser *bufio.Reader) string {

@@ -254,11 +254,15 @@ func mahnlistenMeldung(erg versandErgebnis, umleitung string) string {
 
 // versandErgebnis trennt drei Ausgänge: versendet, übersprungen (keine Adresse, keine Fälle:
 // Absicht) und fehlgeschlagen (PDF- oder Versandfehler: ein Problem). Abgebrochen: Nach einem
-// Mailserver-Fehler (ErrSMTPVersand) werden die übrigen Klassen nicht mehr versucht, weil
-// jeder weitere Versuch bis zu 70 s am toten Relay hinge; sie zählen als fehlgeschlagen.
+// Mailserver-Fehler (ErrSMTPVersand ohne ErrSMTPAbgelehnt) werden die übrigen Klassen nicht mehr
+// versucht, weil jeder weitere Versuch bis zu 70 s am toten Relay hinge; sie zählen als
+// fehlgeschlagen.
 type versandErgebnis struct {
 	Versendet, Uebersprungen, Fehlgeschlagen int
 	Abgebrochen                              bool
+	// NichtZugestellt nennt die Klassen, deren eigene Mail scheiterte, während der Lauf
+	// weiterging. Was nach einem Abbruch nicht mehr versucht wurde, zählt nur in Fehlgeschlagen.
+	NichtZugestellt []string
 }
 
 // versendeKlassenMahnungen erzeugt je Klasse das Mahn-PDF und mailt es an die hinterlegte
@@ -275,6 +279,7 @@ func versendeKlassenMahnungen(
 	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
 	return versendeJeKlasse(ctx, klassen,
+		func(kl repository.MahnwesenKlasse) string { return kl.Klasse },
 		func(kl repository.MahnwesenKlasse) bool { return kl.LehrerEmail == "" || len(kl.Schueler) == 0 },
 		func(kl repository.MahnwesenKlasse) (mailservice.Nachricht, bool) {
 			einzelKlasse := []repository.MahnwesenKlasse{kl}
@@ -303,10 +308,12 @@ func versendeKlassenMahnungen(
 // Klasse als fehlgeschlagen: Als „übersprungen“ erklärt, sähe ein toter Mailserver aus wie
 // Absicht, und niemand sendete nach. Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab, weil jede
 // weitere Klasse sonst bis zur Frist am toten Relay hinge; danach zählt jede Klasse mit Auftrag
-// als fehlgeschlagen.
+// als fehlgeschlagen. Weist der Server nur diese eine Nachricht ab (ErrSMTPAbgelehnt), arbeitet
+// er: Der Lauf geht weiter, und die Klasse steht mit ihrem Namen (name) im Ergebnis.
 func versendeJeKlasse[K any](
 	ctx context.Context,
 	klassen []K,
+	name func(K) string,
 	ohneAuftrag func(K) bool,
 	baueNachricht func(K) (mailservice.Nachricht, bool),
 	sendeMail func(context.Context, mailservice.Nachricht) error,
@@ -325,13 +332,16 @@ func versendeJeKlasse[K any](
 		nachricht, ok := baueNachricht(kl)
 		if !ok {
 			erg.Fehlgeschlagen++
+			erg.NichtZugestellt = append(erg.NichtZugestellt, name(kl))
 			continue
 		}
 		if err := sendeMail(ctx, nachricht); err != nil {
 			meldeVersandfehler(kl, err)
 			erg.Fehlgeschlagen++
-			if errors.Is(err, mailservice.ErrSMTPVersand) {
+			if errors.Is(err, mailservice.ErrSMTPVersand) && !errors.Is(err, mailservice.ErrSMTPAbgelehnt) {
 				erg.Abgebrochen = true
+			} else {
+				erg.NichtZugestellt = append(erg.NichtZugestellt, name(kl))
 			}
 			continue
 		}

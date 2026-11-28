@@ -115,11 +115,17 @@ func versandZiel(umleitung string) string {
 }
 
 // versandAusfall nennt, was nicht zugestellt wurde, und nach einem Fehler des Mailservers, was zu
-// tun ist; hinweis sagt, warum ein zweiter Lauf nicht schadet.
+// tun ist; hinweis sagt, warum ein zweiter Lauf nicht schadet. Ohne Abbruch stehen die Klassen
+// mit Namen da, damit jemand ihre Adresse prüfen kann; nach einem Abbruch zählt jede übrige
+// Klasse mit, und zu prüfen ist der Mailserver.
 func versandAusfall(erg versandErgebnis, hinweis string) []string {
 	var saetze []string
 	if erg.Fehlgeschlagen > 0 {
-		saetze = append(saetze, fmt.Sprintf("Für %s nicht zugestellt", klassen(erg.Fehlgeschlagen)))
+		satz := fmt.Sprintf("Für %s nicht zugestellt", klassen(erg.Fehlgeschlagen))
+		if !erg.Abgebrochen && len(erg.NichtZugestellt) > 0 {
+			satz += ": " + strings.Join(erg.NichtZugestellt, ", ")
+		}
+		saetze = append(saetze, satz)
 	}
 	if erg.Abgebrochen {
 		saetze = append(saetze, "Der Lauf brach nach einem Fehler des Mailservers ab",

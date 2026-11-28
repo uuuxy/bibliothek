@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/smtp"
+	"net/textproto"
 	"os"
 	"time"
 
@@ -155,24 +156,49 @@ func authentifiziere(c *smtp.Client, a smtp.Auth) error {
 }
 
 // uebertrage schickt den Umschlag (MAIL FROM / RCPT TO) und den Text der Nachricht. Sie kehrt
-// ohne Fehler zurück, sobald der Server die Nachricht angenommen hat.
+// ohne Fehler zurück, sobald der Server die Nachricht angenommen hat. Weist er einen Empfänger
+// oder die Nachricht ab, trägt der Fehler ErrSMTPAbgelehnt. Den Absender nicht: Er ist bei jeder
+// Nachricht derselbe, die nächste träfe es genauso.
 func uebertrage(c *smtp.Client, absender string, empfaenger []string, nachricht []byte) error {
 	if err := c.Mail(absender); err != nil {
 		return err
 	}
 	for _, e := range empfaenger {
 		if err := c.Rcpt(e); err != nil {
-			return err
+			return alsAblehnung(err)
 		}
 	}
 	w, err := c.Data()
 	if err != nil {
-		return err
+		return alsAblehnung(err)
 	}
 	if _, err := w.Write(nachricht); err != nil {
 		return err
 	}
 	// Close schreibt den abschließenden Punkt und liest die Antwort darauf; hier entscheidet sich,
 	// ob die Nachricht angenommen wurde.
-	return w.Close()
+	return alsAblehnung(w.Close())
+}
+
+// smtpDienstende ist die Antwort, mit der ein Server die Arbeit einstellt (RFC 5321: „Service
+// not available, closing transmission channel“). Sie gilt der Verbindung, nicht der Nachricht.
+const smtpDienstende = 421
+
+// ablehnung ist die Antwort des Servers auf eine einzelne Nachricht. Der Typ gibt dem Fehler
+// den Marker ErrSMTPAbgelehnt, ohne seinen Text zu ändern: Den liest der Admin als Meldung.
+type ablehnung struct{ error }
+
+func (a ablehnung) Is(ziel error) bool { return ziel == ErrSMTPAbgelehnt }
+
+func (a ablehnung) Unwrap() error { return a.error }
+
+// alsAblehnung markiert die Antwort, mit der der Server einen Empfänger oder die Nachricht
+// abweist. Ein Fehler ohne Antwort (Frist, abgerissene Verbindung) und das Dienstende bleiben,
+// wie sie sind: Dann arbeitet der Server nicht, und der nächste Versuch hinge an ihm.
+func alsAblehnung(err error) error {
+	var antwort *textproto.Error
+	if !errors.As(err, &antwort) || antwort.Code == smtpDienstende {
+		return err
+	}
+	return ablehnung{err}
 }
