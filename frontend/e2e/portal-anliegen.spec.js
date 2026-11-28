@@ -150,7 +150,7 @@ test.describe.serial('Portal: Problem melden', () => {
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/bestellungen');
-		await page.getByRole('tab', { name: 'Meldungen', exact: true }).click();
+		await page.getByRole('tab', { name: /^Meldungen/ }).click();
 
 		await expect(
 			page.getByText('Meldungen der Lehrkräfte aus dem Kollegiums-Portal')
